@@ -27,8 +27,8 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(OutboundCallId, McpRequest(), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
-        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
+        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
 
         result!.WafSpanAttributes.Should().ContainKey(McpBrokenAuth);
     }
@@ -39,8 +39,8 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(OutboundCallId, McpRequest(), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
-        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("401"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
+        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("401"), TimeoutMicroSeconds, isRasp: true, out _);
 
         (result!.WafSpanAttributes?.ContainsKey(McpBrokenAuth) ?? false).Should().BeFalse();
     }
@@ -52,8 +52,8 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var context = waf.CreateContext(out _)!;
         context.Run(new Dictionary<string, object> { [AddressesConstants.RequestQuery] = new Dictionary<string, object> { ["host"] = "169.254.169.254" } }, TimeoutMicroSeconds);
 
-        var request = context.RunInSubcontext(OutboundCallId, Request("https://169.254.169.254/somewhere/in/the/app"), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
-        var response = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        var request = context.RunInSubcontext(OutboundCallId, Request("https://169.254.169.254/somewhere/in/the/app"), TimeoutMicroSeconds, isRasp: true, out _);
+        var response = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
 
         request!.ShouldReportSecurityResult.Should().BeTrue();
         response!.ShouldReportSecurityResult.Should().BeFalse();
@@ -65,11 +65,11 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(1, McpRequest(), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
-        context.RunInSubcontext(2, Request("https://api.example.com/users"), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(1, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(2, Request("https://api.example.com/users"), TimeoutMicroSeconds, isRasp: true, out _);
 
-        var second = context.RunInSubcontext(2, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
-        var first = context.RunInSubcontext(1, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        var second = context.RunInSubcontext(2, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
+        var first = context.RunInSubcontext(1, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
 
         (second!.WafSpanAttributes?.ContainsKey(McpBrokenAuth) ?? false).Should().BeFalse();
         first!.WafSpanAttributes.Should().ContainKey(McpBrokenAuth);
@@ -81,9 +81,9 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(OutboundCallId, McpRequest(), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
         context.CloseSubcontext(OutboundCallId);
-        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
 
         (result!.WafSpanAttributes?.ContainsKey(McpBrokenAuth) ?? false).Should().BeFalse();
     }
@@ -94,10 +94,10 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(OutboundCallId, McpRequest(), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
 
         context.Invoking(c => c.Dispose()).Should().NotThrow();
-        context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out var outcome)
+        context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out var outcome)
                .Should().BeNull();
         outcome.Should().Be(WafOutcome.RequestEnded);
     }
@@ -108,13 +108,13 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
-        context.RunInSubcontext(OutboundCallId, Request("https://user:pass@api.example.com/files/report?token=s3cr3t#page"), closeSubcontext: false, TimeoutMicroSeconds, isRasp: true, out _);
+        context.RunInSubcontext(OutboundCallId, Request("https://user:pass@api.example.com/files/report?token=s3cr3t#page"), TimeoutMicroSeconds, isRasp: true, out _);
         var response = new Dictionary<string, object>
         {
             [AddressesConstants.DownstreamResponseStatus] = "200",
             [AddressesConstants.DownstreamResponseHeaders] = new Dictionary<string, object> { ["content-length"] = new[] { "12345678" } },
         };
-        var result = context.RunInSubcontext(OutboundCallId, response, closeSubcontext: true, TimeoutMicroSeconds, isRasp: true, out _);
+        var result = context.RunInSubcontext(OutboundCallId, response, TimeoutMicroSeconds, isRasp: true, out _);
 
         result!.WafSpanAttributes.Should().ContainKey(LargeResponseUrl);
         result.WafSpanAttributes![LargeResponseUrl].Should().Be("https://api.example.com/files/report");
@@ -126,19 +126,30 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     [InlineData("https://api.example.com/files?token=s3cr3t", "https://api.example.com/files")]
     [InlineData("https://api.example.com/files#fragment", "https://api.example.com/files")]
     [InlineData("https://user:pass@api.example.com:8443/files?a=1", "https://api.example.com:8443/files")]
-    [InlineData("https://user@api.example.com", "https://api.example.com")]
-    [InlineData("http://api.example.com?key=1", "http://api.example.com")]
-    [InlineData("/login?next=/home&token=s3cr3t", "/login")]
+    [InlineData("https://user@api.example.com", "https://api.example.com/")]
+    [InlineData("http://api.example.com?key=1", "http://api.example.com/")]
+    [InlineData("https://user:p#ss@api.example.com/files", "https://api.example.com/files")]
+    [InlineData("https://user:p?ss@api.example.com/files", "https://api.example.com/files")]
     [InlineData("https://api.example.com/path/with@sign", "https://api.example.com/path/with@sign")]
+    [InlineData("https://[::1]:8080/files?a=1", "https://[::1]:8080/files")]
+    [InlineData("//user:pass@api.example.com/next?a=1", "//api.example.com/next")]
+    [InlineData("/login?next=/home&token=s3cr3t", "/login")]
+    [InlineData("login#top", "login")]
     [InlineData("", "")]
-    public void GivenAUrlAttribute_WhenTheResultIsBuilt_ThenUserInfoQueryAndFragmentAreRemoved(string url, string expected)
+    public void GivenAUrl_WhenItIsRedacted_ThenUserInfoQueryAndFragmentAreRemoved(string url, string expected)
     {
-        foreach (var key in new[] { LargeResponseUrl, "api.security.redirection.move_target", "api.security.redirection.redirect_target" })
-        {
-            var result = CreateResult(key, url);
+        WafAttributeRedaction.RemoveUrlSecrets(url).Should().Be(expected);
+    }
 
-            result.WafSpanAttributes![key].Should().Be(expected);
-        }
+    [Theory]
+    [InlineData(LargeResponseUrl)]
+    [InlineData("api.security.redirection.move_target")]
+    [InlineData("api.security.redirection.redirect_target")]
+    public void GivenAUrlAttribute_WhenTheResultIsBuilt_ThenItIsRedacted(string key)
+    {
+        var result = CreateResult(key, "https://user:pass@api.example.com/files?token=s3cr3t");
+
+        result.WafSpanAttributes![key].Should().Be("https://api.example.com/files");
     }
 
     [Fact]

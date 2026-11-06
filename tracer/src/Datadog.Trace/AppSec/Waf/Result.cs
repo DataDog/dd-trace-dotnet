@@ -12,8 +12,6 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal sealed class Result : IResult
     {
-        private static readonly char[] QueryOrFragmentStart = ['?', '#'];
-
         /// <param name="returnStruct">the WAF result to decode</param>
         /// <param name="returnCode">the WAF return code</param>
         /// <param name="totals">the totals of the runs of the same scope of the request, which already include this
@@ -160,35 +158,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool Truncated { get; }
 
-        // attributes copying a URL the application called or was redirected to, which may carry credentials
-        private static bool IsUrlAttribute(string key)
-            => key is "api.security.large_response.url" or "api.security.redirection.move_target" or "api.security.redirection.redirect_target";
-
-        private static string RemoveUrlSecrets(string url)
-        {
-            var end = url.IndexOfAny(QueryOrFragmentStart);
-            if (end >= 0)
-            {
-                url = url.Substring(0, end);
-            }
-
-            var schemeEnd = url.IndexOf("://", StringComparison.Ordinal);
-            if (schemeEnd < 0)
-            {
-                return url;
-            }
-
-            var authorityStart = schemeEnd + 3;
-            var authorityEnd = url.IndexOf('/', authorityStart);
-            if (authorityEnd < 0)
-            {
-                authorityEnd = url.Length;
-            }
-
-            var userInfoEnd = authorityEnd > authorityStart ? url.LastIndexOf('@', authorityEnd - 1, authorityEnd - authorityStart) : -1;
-            return userInfoEnd < 0 ? url : url.Remove(authorityStart, userInfoEnd + 1 - authorityStart);
-        }
-
         private void BuildDerivatives(Dictionary<string, object?> derivatives)
         {
             foreach (var derivative in derivatives)
@@ -203,8 +172,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    var value = derivative.Value is string url && IsUrlAttribute(derivative.Key) ? RemoveUrlSecrets(url) : derivative.Value;
-                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, value);
+                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, WafAttributeRedaction.Redact(derivative.Key, derivative.Value));
                 }
             }
         }

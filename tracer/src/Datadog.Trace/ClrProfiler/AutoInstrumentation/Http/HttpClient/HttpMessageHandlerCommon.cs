@@ -87,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                         }
                         catch (AppSec.BlockException ex)
                         {
+                            RaspModule.CloseDownstreamSubcontext(scope.Span.SpanId);
                             scope.DisposeWithException(ex);
                             throw;
                         }

@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
@@ -17,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -220,7 +220,7 @@ internal static class RaspModule
         };
     }
 
-    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null, ulong? subcontextId = null, bool closeSubcontext = true)
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null, ulong? subcontextId = null)
     {
         var security = Security.Instance;
 
@@ -243,7 +243,7 @@ internal static class RaspModule
             return;
         }
 
-        RunWafRasp(arguments, rootSpan, address, subcontextId, closeSubcontext);
+        RunWafRasp(arguments, rootSpan, address, subcontextId);
     }
 
     internal static void RecordRaspOutcome(string address, WafOutcome outcome)
@@ -353,7 +353,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address, ulong? subcontextId, bool closeSubcontext)
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address, ulong? subcontextId)
     {
         var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
@@ -374,7 +374,7 @@ internal static class RaspModule
             return;
         }
 
-        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address, subcontextId: subcontextId, closeSubcontext: closeSubcontext);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address, subcontextId: subcontextId);
 
         // a null result carries no return code to classify, and RunWaf has already reported it from the
         // outcome the failing step returned: the context it could not hand out, the run that produced
@@ -567,7 +567,7 @@ internal static class RaspModule
 
                 // the response is evaluated in the same subcontext, so rules can combine request and response data
                 // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
-                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan, subcontextId: requestSpanId, closeSubcontext: false);
+                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan, subcontextId: requestSpanId);
                 return true;
             }
         }
@@ -613,7 +613,7 @@ internal static class RaspModule
                 AddBody(responseMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit).SafeWait();
             }
 
-            CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, subcontextId: requestSpanId, closeSubcontext: true);
+            CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, subcontextId: requestSpanId);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -621,13 +621,12 @@ internal static class RaspModule
         }
         finally
         {
-            // a no-op when the response run closed it, otherwise it would be held until the request ends
             CloseDownstreamSubcontext(requestSpanId);
         }
     }
 
     /// <summary>
-    /// Releases the subcontext opened by <see cref="OnDownstreamRequest"/> when its response is not evaluated.
+    /// Releases the subcontext kept for this outbound call since <see cref="OnDownstreamRequest"/>; a no-op if there is none.
     /// </summary>
     internal static void CloseDownstreamSubcontext(ulong requestSpanId)
     {
@@ -645,7 +644,7 @@ internal static class RaspModule
     {
         var wafArgs = new Dictionary<string, object>
         {
-            [AddressesConstants.DownstreamResponseStatus] = ((int)responseMessage.StatusCode).ToString(CultureInfo.InvariantCulture),
+            [AddressesConstants.DownstreamResponseStatus] = IntStringCache.ToInvariantString((int)responseMessage.StatusCode),
         };
 
         // Content-Length and Content-Type live in the content headers

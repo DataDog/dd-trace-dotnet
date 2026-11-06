@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -157,7 +158,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         response.Headers.Location = new Uri("https://example.com/next");
         response.Content = new ByteArrayContent([1, 2, 3]);
         response.Content.Headers.ContentLength = 12_345_678;
-        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
         var args = RaspModule.GetDownstreamResponseArgs(response);
 

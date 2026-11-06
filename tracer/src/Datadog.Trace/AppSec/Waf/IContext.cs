@@ -25,18 +25,18 @@ internal interface IContext : IDisposable
     /// <summary>
     /// Runs a batch in the subcontext identified by <paramref name="subcontextId"/>, creating it if needed,
     /// so that several batches of one operation (e.g. the request and the response of an outbound call)
-    /// are evaluated together while staying isolated from other operations.
+    /// are evaluated together while staying isolated from other operations. The subcontext is kept until
+    /// <see cref="CloseSubcontext"/> or the disposal of this context.
     /// </summary>
     /// <param name="subcontextId">identifies the operation the batch belongs to</param>
     /// <param name="addressData">the addresses to evaluate</param>
-    /// <param name="closeSubcontext">whether this is the last batch of the operation</param>
     /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
     /// <param name="isRasp">whether this run should be reported as a RASP run</param>
     /// <param name="outcome">why the run produced no result</param>
-    IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, bool closeSubcontext, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
+    IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
 
     /// <summary>
-    /// Releases a subcontext opened by <see cref="RunInSubcontext"/> whose operation ended without a last batch.
+    /// Releases the subcontext kept for <paramref name="subcontextId"/>; a no-op if there is none.
     /// </summary>
     void CloseSubcontext(ulong subcontextId);
 

@@ -74,8 +74,8 @@ internal sealed class Context : IContext
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
         => RunInternal(ephemeralAddressData, true, timeoutMicroSeconds, isRasp, out outcome);
 
-    public IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, bool closeSubcontext, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
-        => RunInternal(addressData, true, timeoutMicroSeconds, isRasp, out outcome, subcontextId, closeSubcontext);
+    public IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
+        => RunInternal(addressData, true, timeoutMicroSeconds, isRasp, out outcome, subcontextId);
 
     public void CloseSubcontext(ulong subcontextId)
     {
@@ -170,8 +170,7 @@ internal sealed class Context : IContext
     /// <param name="isRasp">whether this run should be reported as a RASP run</param>
     /// <param name="outcome">why the run produced no result</param>
     /// <param name="subcontextId">when set, the ephemeral batch runs in the subcontext kept for this id</param>
-    /// <param name="closeSubcontext">whether the kept subcontext is released after this batch</param>
-    private unsafe Result? RunInternal(IDictionary<string, object>? addressData, bool ephemeral, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome, ulong? subcontextId = null, bool closeSubcontext = true)
+    private unsafe Result? RunInternal(IDictionary<string, object>? addressData, bool ephemeral, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome, ulong? subcontextId = null)
     {
         DdwafObjectStruct retNative = default;
 
@@ -224,56 +223,45 @@ internal sealed class Context : IContext
             // WARNING: Don't use ref here, we need to make a copy because args is on the heap
             var argsValue = args.ResultDdwafObject;
 
-            if (ephemeral)
+            if (ephemeral && subcontextId is { } id)
             {
-                // One subcontext per ephemeral batch, or per operation when an id is given. Its evaluation
-                // caches are what makes a rule report its match only once, so a subcontext shared by every
-                // RASP call of a request would silently swallow all matches but the first one.
-                OpenSubcontext? subcontext = null;
-                if (subcontextId is { } id)
+                // the subcontext of the operation reads every batch until it is destroyed, so it owns them
+                if (_openSubcontexts is null || !_openSubcontexts.TryGetValue(id, out var subcontext))
                 {
-                    _openSubcontexts?.TryGetValue(id, out subcontext);
-                }
-
-                if (subcontext is null)
-                {
-                    var subcontextHandle = _waf.SubcontextInit(_contextHandle);
-                    if (subcontextHandle == IntPtr.Zero)
+                    if (!TryInitSubcontext(isRasp, args, out var subcontextHandle))
                     {
-                        Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
-                        RecordBindingError(isRasp);
-                        args.Dispose();
                         outcome = WafOutcome.BindingFailed;
                         return null;
                     }
 
                     subcontext = new OpenSubcontext(subcontextHandle);
-                    if (subcontextId is { } newId && !closeSubcontext)
-                    {
-                        (_openSubcontexts ??= new()).Add(newId, subcontext);
-                    }
+                    (_openSubcontexts ??= new()).Add(id, subcontext);
                 }
 
-                // the subcontext reads this batch until it is destroyed, so it owns the input buffers
                 subcontext.Inputs.Add(args);
+                code = _waf.SubcontextEval(subcontext.Handle, &argsValue, ref retNative, timeoutMicroSeconds);
+            }
+            else if (ephemeral)
+            {
+                // One subcontext per ephemeral batch. Its evaluation caches are what makes a rule report
+                // its match only once, so a subcontext shared by every RASP call of a request would
+                // silently swallow all matches but the first one.
+                if (!TryInitSubcontext(isRasp, args, out var subcontextHandle))
+                {
+                    outcome = WafOutcome.BindingFailed;
+                    return null;
+                }
 
                 try
                 {
-                    code = _waf.SubcontextEval(subcontext.Handle, &argsValue, ref retNative, timeoutMicroSeconds);
+                    code = _waf.SubcontextEval(subcontextHandle, &argsValue, ref retNative, timeoutMicroSeconds);
                 }
                 finally
                 {
-                    // once the subcontext is gone its input buffers can be released instead of piling up
-                    // for the whole request
-                    if (subcontextId is null || closeSubcontext)
-                    {
-                        if (subcontextId is { } closedId)
-                        {
-                            _openSubcontexts?.Remove(closedId);
-                        }
-
-                        subcontext.Destroy(_wafLibraryInvoker);
-                    }
+                    // the subcontext is the only reader of this batch, so once it is gone the input
+                    // buffers can be released instead of piling up for the whole request
+                    _wafLibraryInvoker.SubcontextDestroy(subcontextHandle);
+                    args.Dispose();
                 }
             }
             else
@@ -308,6 +296,21 @@ internal sealed class Context : IContext
         }
 
         return result;
+    }
+
+    // must be called with the context lock held
+    private bool TryInitSubcontext(bool isRasp, IEncodeResult args, out IntPtr subcontextHandle)
+    {
+        subcontextHandle = _waf.SubcontextInit(_contextHandle);
+        if (subcontextHandle != IntPtr.Zero)
+        {
+            return true;
+        }
+
+        Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
+        RecordBindingError(isRasp);
+        args.Dispose();
+        return false;
     }
 
     public void Dispose(bool disposing)

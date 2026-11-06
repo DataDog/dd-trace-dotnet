@@ -64,7 +64,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal bool ShouldScanResponse() => _appsecRequestContext.ShouldScanResponse();
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null, ulong? subcontextId = null, bool closeSubcontext = true)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null, ulong? subcontextId = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -96,7 +96,7 @@ internal readonly partial struct SecurityCoordinator
             var outcome = WafOutcome.Success;
             result = runWithEphemeral
                          ? subcontextId is { } id
-                               ? additiveContext.RunInSubcontext(id, args, closeSubcontext, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
+                               ? additiveContext.RunInSubcontext(id, args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
                                : additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
