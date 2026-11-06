@@ -12,9 +12,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
@@ -126,8 +128,27 @@ public class FeatureFlagsDependentFlagTests
         var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
 
         trace.Details.Error.Should().Be("GENERAL");
-        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("missing", "middle");
-        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagMetadata!["errorCode"]).Should().Equal("FLAG_NOT_FOUND", "GENERAL");
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("middle", "missing");
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagMetadata!["errorCode"]).Should().Equal("GENERAL", "FLAG_NOT_FOUND");
+        trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void EarlierSuccessfulSiblingIsRetainedBeforeFailureAndAllExposuresAreDiscarded()
+    {
+        var config = Configuration(
+            StaticFlag("successful", "on"),
+            DependentFlag(
+                "root",
+                Allocation("root", [Dependency("successful", "on"), Dependency("missing", "on")], "on")));
+
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        trace.Details.Reason.Should().Be(EvaluationReason.Error);
+        trace.Details.Error.Should().Be("GENERAL");
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("successful", "missing");
+        trace.DependencyEvaluations[0].Evaluation.FlagMetadata.Should().NotContainKey("errorCode");
+        trace.DependencyEvaluations[1].Evaluation.FlagMetadata!["errorCode"].Should().Be("FLAG_NOT_FOUND");
         trace.DependencyExposures.Should().BeEmpty();
     }
 
@@ -296,10 +317,13 @@ public class FeatureFlagsDependentFlagTests
         var cycle = Configuration(
             DependentFlag("a", Allocation("a", [Dependency("b", "on")], "on")),
             DependentFlag("b", Allocation("b", [Dependency("a", "on")], "on")));
-        var cycleResult = Evaluator(cycle).Evaluate("a", ValueType.String, "fallback", new EvaluationContext("subject"));
+        var cycleTrace = Evaluator(cycle).EvaluateWithTrace("a", ValueType.String, "fallback", new EvaluationContext("subject"));
+        var cycleResult = cycleTrace.Details;
 
         cycleResult.Reason.Should().Be(EvaluationReason.Error);
         cycleResult.Error.Should().Be("GENERAL");
+        cycleTrace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("b");
+        cycleTrace.DependencyExposures.Should().BeEmpty();
 
         var depth = Configuration(
             DependentFlag("root", Allocation("root", [Dependency("middle", "on")], "on")),
@@ -308,7 +332,7 @@ public class FeatureFlagsDependentFlagTests
         depth.EvaluatorParams = new EvaluatorParams { MaxDependencyDepth = 1 };
         var trace = Evaluator(depth).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
         trace.Details.Reason.Should().Be(EvaluationReason.Error);
-        trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().Equal("leaf", "middle");
+        trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().Equal("middle", "leaf");
         trace.DependencyEvaluations.Should().OnlyContain(e => e.Evaluation.FlagMetadata!["errorCode"] == "GENERAL");
 
         depth.EvaluatorParams.MaxDependencyDepth = 2;
@@ -316,14 +340,14 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Theory]
-    [InlineData(null, false)]
-    [InlineData(0, true)]
-    [InlineData(255, false)]
-    [InlineData(-1, true)]
-    [InlineData(256, true)]
-    [InlineData(1.5, true)]
-    [InlineData("invalid", true)]
-    public void EvaluatorParamsAreOptionalAndValidated(object? maxDepth, bool expectError)
+    [InlineData(null, false, false)]
+    [InlineData(0, true, false)]
+    [InlineData(255, false, false)]
+    [InlineData(-1, false, true)]
+    [InlineData(256, false, true)]
+    [InlineData(1.5, false, true)]
+    [InlineData("invalid", false, true)]
+    public void EvaluatorParamsAreOptionalAndValidated(object? maxDepth, bool expectError, bool expectLog)
     {
         var config = Configuration(
             StaticFlag("dependency", "on"),
@@ -333,17 +357,14 @@ public class FeatureFlagsDependentFlagTests
             config.EvaluatorParams = new EvaluatorParams { MaxDependencyDepth = maxDepth };
         }
 
-        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+        var logger = new Mock<IDatadogLogger>();
+        var trace = new FeatureFlagsEvaluator(null, config, logger: logger.Object)
+                   .EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
         var result = trace.Details;
 
         (result.Reason == EvaluationReason.Error).Should().Be(expectError);
-        if (expectError && maxDepth is not 0)
-        {
-            result.Error.Should().Be("PARSE_ERROR");
-            trace.DependencyEvaluations.Should().ContainSingle();
-            trace.DependencyEvaluations[0].Evaluation.FlagKey.Should().Be("dependency");
-            trace.DependencyEvaluations[0].Evaluation.FlagMetadata!["errorCode"].Should().Be("PARSE_ERROR");
-        }
+        trace.DependencyEvaluations.Should().ContainSingle();
+        logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error)).Should().Be(expectLog ? 1 : 0);
     }
 
     [Fact]
@@ -355,7 +376,7 @@ public class FeatureFlagsDependentFlagTests
 
         var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
 
-        trace.Details.Error.Should().Be("PARSE_ERROR");
+        trace.Details.Error.Should().Be("GENERAL");
         trace.DependencyEvaluations.Should().BeEmpty();
     }
 
@@ -391,7 +412,7 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Fact]
-    public void ExplicitNullMaximumDepthIsIgnoredWhenUnusedAndRejectedWhenUsed()
+    public void ExplicitNullMaximumDepthIsIgnoredWhenUnusedAndFallsBackWhenUsed()
     {
         var config = Configuration(
             StaticFlag("ordinary", "on"),
@@ -403,11 +424,10 @@ public class FeatureFlagsDependentFlagTests
         var trace = Evaluator(config).EvaluateWithTrace("dependent", ValueType.String, "fallback", new EvaluationContext("subject"));
         var dependent = trace.Details;
 
-        dependent.Reason.Should().Be(EvaluationReason.Error);
-        dependent.Error.Should().Be("PARSE_ERROR");
+        dependent.Reason.Should().NotBe(EvaluationReason.Error);
+        dependent.Value.Should().Be("on");
         trace.DependencyEvaluations.Should().ContainSingle();
         trace.DependencyEvaluations[0].Evaluation.FlagKey.Should().Be("dependency");
-        trace.DependencyEvaluations[0].Evaluation.FlagMetadata!["errorCode"].Should().Be("PARSE_ERROR");
     }
 
     [Fact]
@@ -439,7 +459,7 @@ public class FeatureFlagsDependentFlagTests
         var nullDepth = RoundTrip(nullDepthInput, out var nullDepthJson);
         nullDepthJson[nameof(ServerConfiguration.EvaluatorParams)]![nameof(EvaluatorParams.MaxDependencyDepth)]!.Type.Should().Be(JTokenType.Null);
         nullDepth.EvaluatorParams!.MaxDependencyDepthField.IsPresent.Should().BeTrue();
-        Evaluator(nullDepth).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Error.Should().Be("PARSE_ERROR");
+        Evaluator(nullDepth).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
 
         var nullParamsInput = Configuration(
             StaticFlag("dependency", "on"),
@@ -448,7 +468,7 @@ public class FeatureFlagsDependentFlagTests
         var nullParams = RoundTrip(nullParamsInput, out var nullParamsJson);
         nullParamsJson[nameof(ServerConfiguration.EvaluatorParams)]!.Type.Should().Be(JTokenType.Null);
         nullParams.EvaluatorParamsField.IsPresent.Should().BeTrue();
-        Evaluator(nullParams).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Error.Should().Be("PARSE_ERROR");
+        Evaluator(nullParams).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
 
         static ServerConfiguration RoundTrip(ServerConfiguration configuration, out JObject json)
         {
@@ -474,8 +494,70 @@ public class FeatureFlagsDependentFlagTests
         var result = trace.Details;
 
         result.Reason.Should().Be(EvaluationReason.Error);
-        trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().Equal("leaf", "a", "b");
+        trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().Equal(
+            sharedSubtreeFirst ? new[] { "a", "leaf", "b" } : new[] { "b", "a", "leaf" });
         trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void OmittedMaximumDepthAllowsExactlyTenEdgesAndRejectsEleven()
+    {
+        Evaluator(DependencyChain(10)).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                      .Value.Should().Be("on");
+
+        var trace = Evaluator(DependencyChain(11)).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        trace.Details.Reason.Should().Be(EvaluationReason.Error);
+        trace.Details.Error.Should().Be("GENERAL");
+        trace.DependencyEvaluations.Should().HaveCount(11);
+        trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MalformedAndThrowingEvaluatorOptionsLogAndFallBackLazily()
+    {
+        var options = new EvaluatorParams?[]
+        {
+            null,
+            EvaluatorParams.Invalid,
+            new() { MaxDependencyDepth = new ThrowingConvertible() },
+        };
+
+        foreach (var option in options)
+        {
+            var logger = new Mock<IDatadogLogger>();
+            var config = Configuration(
+                StaticFlag("ordinary", "ordinary"),
+                StaticFlag("dependency", "on"),
+                DependentFlag("root", Allocation("root", [Dependency("dependency", "on")], "on")));
+            config.EvaluatorParams = option;
+            var evaluator = new FeatureFlagsEvaluator(null, config, logger: logger.Object);
+
+            evaluator.Evaluate("ordinary", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("ordinary");
+            logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
+            evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
+            logger.Invocations.Should().ContainSingle(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
+        }
+    }
+
+    [Fact]
+    public void MemoizationDeduplicatesActualPrerequisiteEvaluation()
+    {
+        var reads = new CountingValue("paid");
+        var parent = DependentFlag("parent", Allocation("parent", [Attribute("plan", "paid")], "on"));
+        var root = DependentFlag(
+            "root",
+            Allocation("root", [Dependency("parent", "on"), Dependency("parent", "on")], "on"));
+
+        var trace = Evaluator(Configuration(parent, root)).EvaluateWithTrace(
+            "root",
+            ValueType.String,
+            "fallback",
+            new EvaluationContext("subject", new Dictionary<string, object?> { ["plan"] = reads }));
+
+        trace.Details.Value.Should().Be("on");
+        reads.Count.Should().Be(1);
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("parent");
     }
 
     [Theory]
@@ -549,4 +631,47 @@ public class FeatureFlagsDependentFlagTests
 
     private static ConditionConfiguration Attribute(string key, string value)
         => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = new[] { value } };
+    private static ServerConfiguration DependencyChain(int edges)
+    {
+        var flags = new List<Flag> { StaticFlag("node-" + edges, "on") };
+        for (var i = edges - 1; i >= 0; i--)
+        {
+            var key = i == 0 ? "root" : "node-" + i;
+            flags.Add(DependentFlag(key, Allocation(key, [Dependency("node-" + (i + 1), "on")], "on")));
+        }
+
+        return Configuration(flags.ToArray());
+    }
+
+    private sealed class CountingValue(string value)
+    {
+        public int Count { get; private set; }
+
+        public override string ToString()
+        {
+            Count++;
+            return value;
+        }
+    }
+
+    private sealed class ThrowingConvertible : IConvertible
+    {
+        public TypeCode GetTypeCode() => TypeCode.Object;
+        public bool ToBoolean(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public byte ToByte(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public char ToChar(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public DateTime ToDateTime(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public decimal ToDecimal(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public double ToDouble(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public short ToInt16(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public int ToInt32(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public long ToInt64(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public sbyte ToSByte(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public float ToSingle(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public string ToString(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public object ToType(Type conversionType, IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public ushort ToUInt16(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public uint ToUInt32(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+        public ulong ToUInt64(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+    }
 }

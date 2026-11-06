@@ -9,7 +9,7 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class EvaluatorParams
 {
-    internal static readonly EvaluatorParams Ignored = new();
+    internal static readonly EvaluatorParams Invalid = new() { IsInvalid = true };
 
     private OptionalField<object> _maxDependencyDepth;
 
@@ -20,6 +20,8 @@ internal sealed class EvaluatorParams
     }
 
     internal OptionalField<object> MaxDependencyDepthField => _maxDependencyDepth;
+
+    internal bool IsInvalid { get; private set; }
 
     public bool ShouldSerializeMaxDependencyDepth() => _maxDependencyDepth.IsPresent;
 }

@@ -26,15 +26,7 @@ internal sealed class ServerConfiguration
     public EvaluatorParams? EvaluatorParams
     {
         get => _evaluatorParams.Value;
-        set
-        {
-            if (ReferenceEquals(value, EvaluatorParams.Ignored))
-            {
-                return;
-            }
-
-            _evaluatorParams = new OptionalField<EvaluatorParams>(value);
-        }
+        set => _evaluatorParams = new OptionalField<EvaluatorParams>(value);
     }
 
     internal OptionalField<EvaluatorParams> EvaluatorParamsField => _evaluatorParams;

@@ -51,22 +51,25 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
+        private readonly IDatadogLogger _log;
 
         public FeatureFlagsEvaluator(
             ReportExposureDelegate? onExposureEvent,
             ServerConfiguration? config,
-            bool spanEnrichmentEnabled = false)
+            bool spanEnrichmentEnabled = false,
+            IDatadogLogger? logger = null)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
+            _log = logger ?? Log;
             if (_config is null)
             {
-                Log.Debug("Creating Evaluator without config");
+                _log.Debug("Creating Evaluator without config");
             }
             else
             {
-                Log.Debug<int>("Creating Evaluator with {Flags} flags", _config.Flags?.Count ?? 0);
+                _log.Debug<int>("Creating Evaluator with {Flags} flags", _config.Flags?.Count ?? 0);
             }
         }
 
@@ -551,33 +554,33 @@ namespace Datadog.Trace.FeatureFlags
             return matches;
         }
 
-        private static int GetMaxDependencyDepth(ServerConfiguration config)
+        private static int GetMaxDependencyDepth(ServerConfiguration config, IDatadogLogger log)
         {
-            if (!config.EvaluatorParamsField.IsPresent)
+            try
             {
-                return DefaultMaxDependencyDepth;
-            }
-
-            var evaluatorParams = config.EvaluatorParams;
-            if (evaluatorParams is null || !evaluatorParams.MaxDependencyDepthField.IsPresent)
-            {
-                if (evaluatorParams is not null)
+                if (!config.EvaluatorParamsField.IsPresent)
                 {
                     return DefaultMaxDependencyDepth;
                 }
 
-                throw new FormatException("evaluatorParams must be an object");
-            }
+                var evaluatorParams = config.EvaluatorParams;
+                if (evaluatorParams is null || evaluatorParams.IsInvalid)
+                {
+                    throw new FormatException("evaluatorParams must be an object");
+                }
 
-            var configured = evaluatorParams.MaxDependencyDepth;
+                if (!evaluatorParams.MaxDependencyDepthField.IsPresent)
+                {
+                    return DefaultMaxDependencyDepth;
+                }
 
-            if (configured is null or bool or string || configured is not IConvertible)
-            {
-                throw new FormatException("maxDependencyDepth must be an integer from 0 through 255");
-            }
+                var configured = evaluatorParams.MaxDependencyDepth;
 
-            try
-            {
+                if (configured is null or bool or string || configured is not IConvertible)
+                {
+                    throw new FormatException("maxDependencyDepth must be an integer from 0 through 255");
+                }
+
                 var value = Convert.ToDouble(configured, CultureInfo.InvariantCulture);
                 if (double.IsNaN(value) || double.IsInfinity(value) || value < 0 || value > 255 || Math.Truncate(value) != value)
                 {
@@ -586,13 +589,10 @@ namespace Datadog.Trace.FeatureFlags
 
                 return (int)value;
             }
-            catch (FormatException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
-                throw new FormatException("maxDependencyDepth must be an integer from 0 through 255", ex);
+                log.Error(ex, "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10");
+                return DefaultMaxDependencyDepth;
             }
         }
 
@@ -1162,7 +1162,7 @@ namespace Datadog.Trace.FeatureFlags
             private HashSet<string>? _exposureKeys;
             private List<ExposureCandidate>? _exposures;
             private Dictionary<string, MemoizedDependency>? _memo;
-            private HashSet<string>? _evaluated;
+            private Dictionary<string, int>? _evaluationSlots;
             private HashSet<string>? _active;
             private List<DependencyFrame>? _frames;
             private List<DependencyEvaluation>? _evaluations;
@@ -1216,24 +1216,13 @@ namespace Datadog.Trace.FeatureFlags
                 var memo = _memo ??= new Dictionary<string, MemoizedDependency>();
                 var active = _active ??= new HashSet<string> { _rootFlagKey };
                 var frames = _frames ??= [];
-                var depth = frames.Count + 1;
-                int maxDepth;
-                try
+                if (flagKey != _rootFlagKey)
                 {
-                    maxDepth = _maxDepth ??= GetMaxDependencyDepth(_config);
+                    ReserveEvaluation(flagKey);
                 }
-                catch (FormatException ex)
-                {
-                    // A dependency was reached, so its evaluation must be retained even though
-                    // evaluator configuration validation prevents the dependency from running.
-                    // A self-reference to the root is not a dependency evaluation.
-                    if (!active.Contains(flagKey))
-                    {
-                        EmitDependencyError(flagKey, "PARSE_ERROR", ex.Message);
-                    }
 
-                    throw new DependencyGraphException("PARSE_ERROR", ex.Message);
-                }
+                var depth = frames.Count + 1;
+                var maxDepth = _maxDepth ??= GetMaxDependencyDepth(_config, _owner._log);
 
                 if (depth > maxDepth)
                 {
@@ -1427,8 +1416,8 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _evaluated ??= [];
-                if (!_evaluated.Add(evaluation.FlagKey))
+                ReserveEvaluation(evaluation.FlagKey);
+                if (_evaluationSlots is null || !_evaluationSlots.TryGetValue(evaluation.FlagKey, out var index))
                 {
                     return;
                 }
@@ -1439,8 +1428,25 @@ namespace Datadog.Trace.FeatureFlags
                     _contextSnapshotted = true;
                 }
 
+                _evaluations![index] = DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes, _contextOmissions);
+            }
+
+            private void ReserveEvaluation(string flagKey)
+            {
+                if (!_collectDependencyEvaluations)
+                {
+                    return;
+                }
+
+                _evaluationSlots ??= new Dictionary<string, int>();
+                if (_evaluationSlots.ContainsKey(flagKey))
+                {
+                    return;
+                }
+
                 _evaluations ??= [];
-                _evaluations.Add(DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes, _contextOmissions));
+                _evaluationSlots.Add(flagKey, _evaluations.Count);
+                _evaluations.Add(null!);
             }
 
             private void EmitDepthError(string flagKey)

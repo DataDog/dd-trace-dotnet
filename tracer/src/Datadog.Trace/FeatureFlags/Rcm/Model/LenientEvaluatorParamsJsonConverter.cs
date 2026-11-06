@@ -25,7 +25,7 @@ internal sealed class LenientEvaluatorParamsJsonConverter : JsonConverter<Evalua
         }
 
         reader.Skip();
-        return EvaluatorParams.Ignored;
+        return EvaluatorParams.Invalid;
     }
 
     public override void WriteJson(JsonWriter writer, EvaluatorParams? value, JsonSerializer serializer)

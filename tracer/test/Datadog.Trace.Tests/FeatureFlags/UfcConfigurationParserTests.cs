@@ -7,11 +7,13 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -177,36 +179,57 @@ public class UfcConfigurationParserTests
     [InlineData("true")]
     [InlineData("\"invalid\"")]
     [InlineData("[]")]
-    public void IgnoresNonObjectEvaluatorParams(string token)
+    public void RetainsInvalidNonObjectEvaluatorParamsForLazyFallback(string token)
     {
         var body = ValidEnvelope.Replace("\"flags\": {}", $"\"evaluatorParams\": {token}, \"flags\": {{}}");
 
         Parse(body, out var configuration, out var error).Should().BeTrue();
 
         error.Should().BeNull();
-        configuration!.EvaluatorParamsField.IsPresent.Should().BeFalse();
-        configuration.EvaluatorParams.Should().BeNull();
-        JsonConvert.SerializeObject(configuration).Should().NotContain("\"evaluatorParams\"");
+        configuration!.EvaluatorParamsField.IsPresent.Should().BeTrue();
+        configuration.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.IsInvalid.Should().BeTrue();
     }
 
-    [Fact]
-    public void RejectsMalformedFlagEvaluationDescriptor()
+    [Theory]
+    [InlineData("{ \"key\": 123 }", "ONE_OF")]
+    [InlineData("{ \"key\": \"\" }", "ONE_OF")]
+    [InlineData("{ \"property\": \"variant\" }", "ONE_OF")]
+    [InlineData("{ \"key\": \"dependency\" }", "MATCHES")]
+    [InlineData("{ \"key\": \"dependency\" }", "NOT_MATCHES")]
+    public void RejectsMalformedFlagEvaluationDescriptor(string descriptor, string operatorName)
     {
-        const string descriptor = "{ \"key\": 123 }";
         var body = $$"""
             { "data": { "type": "universal-flag-configuration",
                         "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
                                         "environment": { "name": "production" },
                                         "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
                                           "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
-                                            "flagEvaluation": {{descriptor}}, "operator": "ONE_OF", "value": ["on"]
+                                            "flagEvaluation": {{descriptor}}, "operator": "{{operatorName}}", "value": ["on"]
                                           }] }], "splits": [] }] } } } } }
             """;
 
         Parse(body, out var configuration, out var error).Should().BeTrue();
 
         error.Should().BeNull();
-        configuration!.Flags.Should().NotContainKey("root");
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
+    public void RejectsConditionWithoutAttributeOrFlagEvaluation()
+    {
+        var body = ValidEnvelope.Replace(
+            "\"flags\": {}",
+            "\"flags\": { \"root\": { \"key\": \"root\", \"enabled\": true, \"variationType\": \"STRING\", \"allocations\": [{ \"key\": \"allocation\", \"rules\": [{ \"conditions\": [{ \"operator\": \"ONE_OF\", \"value\": [\"on\"] }] }], \"splits\": [] }] } }");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
     }
 
     [Fact]
