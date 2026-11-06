@@ -11,7 +11,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
-#endif
 
 namespace Datadog.Trace.Util;
 
@@ -23,7 +22,6 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal static class GzipWarmUp
 {
-#if !NETFRAMEWORK
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GzipWarmUp));
 
     // Keep this an explicit static constructor: without one the type is beforefieldinit, and calling the empty RunOnce()
@@ -43,23 +41,20 @@ internal static class GzipWarmUp
             Log.Error(ex, "Error warming up gzip compression");
         }
     }
-#endif
 
     /// <summary>
     /// Runs the warm-up once per process. Must be called before starting threads that compress concurrently.
     /// </summary>
     public static void RunOnce()
     {
-        // Intentionally empty: on .NET Core the first call triggers the static constructor, which does the work.
-        // There is nothing to do on .NET Framework.
+        // Intentionally empty: the first call triggers the static constructor, which does the work.
     }
 
-#if !NETFRAMEWORK
     // Kept separate so System.IO.Compression is only loaded on affected runtimes, and a load failure is caught above.
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void CompressOnce()
     {
         using var gzipStream = new GZipStream(Stream.Null, CompressionLevel.Fastest);
     }
-#endif
 }
+#endif
