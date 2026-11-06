@@ -147,6 +147,7 @@ public class CanonicalFixtureTests
                 Datadog.Trace.FeatureFlags.ValueType.String,
                 testCase["defaultValue"]!.Value<string>()!,
                 context.Build(),
+                deferredExposure: false,
                 evaluate: (key, type, fallback, targetingKey, attributes) =>
                 {
                     trace = evaluator.EvaluateWithTrace(key, (TracerFlags.ValueType)type, fallback, new TracerFlags.EvaluationContext(targetingKey, attributes));

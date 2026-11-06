@@ -54,6 +54,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly bool _spanEnrichmentEnabled;
         private readonly IDatadogLogger _log;
         private readonly Lazy<int>? _maxDependencyDepth;
+        private readonly HashSet<string>? _dependentFlagKeys;
 
         public FeatureFlagsEvaluator(
             ReportExposureDelegate? onExposureEvent,
@@ -65,6 +66,7 @@ namespace Datadog.Trace.FeatureFlags
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             _log = logger ?? Log;
+            _dependentFlagKeys = GetDependentFlagKeys(config);
             _maxDependencyDepth = config is null
                                       ? null
                                       : new Lazy<int>(() => ParseMaxDependencyDepth(config, _log), LazyThreadSafetyMode.ExecutionAndPublication);
@@ -196,14 +198,38 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         private bool HasDependencyCondition(string flagKey)
+            => _dependentFlagKeys?.Contains(flagKey) == true;
+
+        private HashSet<string>? GetDependentFlagKeys(ServerConfiguration? config)
         {
-            Flag? flag = null;
-            if (_config?.Flags?.Find(flagKey, out flag) != FlagLookupResult.Found || flag?.Allocations is null)
+            if (config?.Flags is not { } flags)
+            {
+                return null;
+            }
+
+            HashSet<string>? dependentFlagKeys = null;
+            foreach (var pair in flags.ValidFlags)
+            {
+                if (!FlagContainsDependency(pair.Value))
+                {
+                    continue;
+                }
+
+                dependentFlagKeys ??= new HashSet<string>();
+                dependentFlagKeys.Add(pair.Key);
+            }
+
+            return dependentFlagKeys;
+        }
+
+        private bool FlagContainsDependency(Flag flag)
+        {
+            if (flag.Allocations is not { } allocations)
             {
                 return false;
             }
 
-            foreach (var allocation in flag.Allocations)
+            foreach (var allocation in allocations)
             {
                 if (allocation.Rules is not { } rules)
                 {

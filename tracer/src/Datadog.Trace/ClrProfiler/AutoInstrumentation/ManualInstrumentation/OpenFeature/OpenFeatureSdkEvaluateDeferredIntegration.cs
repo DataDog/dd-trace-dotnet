@@ -45,6 +45,9 @@ public sealed class OpenFeatureSdkEvaluateDeferredIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        return new CallTargetReturn<TReturn?>(OpenFeatureSdkEvaluateIntegration.Evaluate((OpenFeatureSdkEvaluateIntegration.State)state.State!, deferExposure: true).DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn?>(OpenFeatureSdkEvaluateIntegration.Evaluate(
+            (OpenFeatureSdkEvaluateIntegration.State)state.State!,
+            deferExposure: true,
+            reportRootEvaluation: false).DuckCast<TReturn>());
     }
 }

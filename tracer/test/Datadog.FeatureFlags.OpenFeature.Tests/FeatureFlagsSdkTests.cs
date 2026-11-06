@@ -45,7 +45,7 @@ public class FeatureFlagsSdkTests
     [InlineData((int)EvaluationReason.Error, Reason.Error)]
     public void ResolutionUsesCanonicalOpenFeatureReason(int evaluationReason, string expected)
     {
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null, reason: (EvaluationReason)evaluationReason), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null, reason: (EvaluationReason)evaluationReason), null, deferredExposure: false);
 
         result.Reason.Should().Be(expected);
     }
@@ -88,7 +88,7 @@ public class FeatureFlagsSdkTests
     [Fact]
     public void ResolutionWithoutEventHookPreservesDefaultAndOmitsPrivateMetadata()
     {
-        var result = FeatureFlagsSdk.Resolve("flag", Trace.FeatureFlags.ValueType.Boolean, false, null, evaluate: null, evaluationEventsHook: null, deferredExposure: false);
+        var result = FeatureFlagsSdk.Resolve("flag", Trace.FeatureFlags.ValueType.Boolean, false, null, deferredExposure: false, evaluate: null, evaluationEventsHook: null);
 
         result.Value.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.ProviderNotReady);
@@ -171,6 +171,7 @@ public class FeatureFlagsSdkTests
             Trace.FeatureFlags.ValueType.Boolean,
             false,
             context,
+            deferredExposure: false,
             evaluate: (_, _, _, _, attributes) =>
             {
                 captured = attributes;
@@ -222,6 +223,7 @@ public class FeatureFlagsSdkTests
                 Trace.FeatureFlags.ValueType.Boolean,
                 false,
                 context,
+                deferredExposure: false,
                 evaluate: (_, _, _, _, attributes) =>
                 {
                     captured = attributes;
@@ -286,6 +288,7 @@ public class FeatureFlagsSdkTests
             Trace.FeatureFlags.ValueType.Boolean,
             false,
             context,
+            deferredExposure: false,
             evaluate: (_, _, _, _, attributes) =>
             {
                 captured = attributes;

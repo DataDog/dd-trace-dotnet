@@ -428,7 +428,7 @@ namespace Datadog.Trace.FeatureFlags
             => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false, reportRootEvaluation: false);
 
         // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure, bool reportRootEvaluation = false, int contextOmissionReasons = 0)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure, bool reportRootEvaluation, int contextOmissionReasons = 0)
         {
             var evaluationTime = DateTime.UtcNow;
             var context = new EvaluationContext(targetingKey, attributes, (ContextOmissionReason)contextOmissionReasons);

@@ -61,8 +61,8 @@ public class DeferredExposureTests
     {
         using var module = Module();
 
-        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
-        var second = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
+        var second = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         module.CommitExposure(first.FlagMetadata).Should().Be(ExposureCommitResult.New);
         module.CommitExposure(first.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending, "an evaluation commits at most once");
@@ -75,7 +75,7 @@ public class DeferredExposureTests
     {
         using var module = Module();
 
-        var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         module.CommitExposure(new Dictionary<string, string>(evaluation.FlagMetadata!)).Should().Be(ExposureCommitResult.NothingPending);
         module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.New);
@@ -100,8 +100,8 @@ public class DeferredExposureTests
     {
         using var module = Module();
 
-        module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
-        var later = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
+        var later = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         module.CommitExposure(later.FlagMetadata).Should().Be(ExposureCommitResult.New, "the first evaluation was never committed, as after a failed hook");
     }
@@ -110,8 +110,8 @@ public class DeferredExposureTests
     public async Task CommitsAfterShutdownGiveNoVerdict()
     {
         var module = Module();
-        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
-        var second = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
+        var second = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         await module.DisposeAsync();
 
@@ -125,7 +125,7 @@ public class DeferredExposureTests
         using var module = Module();
 
         var immediate = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null);
-        var deferred = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var deferred = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         immediate.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
         module.CommitExposure(deferred.FlagMetadata).Should().Be(ExposureCommitResult.Repeat);
@@ -136,7 +136,7 @@ public class DeferredExposureTests
     {
         using var module = Module();
         var evaluations = Enumerable.Range(0, 64)
-                                    .Select(_ => module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true))
+                                    .Select(_ => module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false))
                                     .ToList();
 
         var verdicts = await Task.WhenAll(evaluations.Select(e => Task.Run(() => module.CommitExposure(e.FlagMetadata))));
@@ -177,7 +177,7 @@ public class DeferredExposureTests
         };
         using var module = Module(flags);
 
-        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
 
         evaluation.FlagMetadata![FeatureFlagMetadataKeys.PendingExposure].Should().Be("true");
         module.CommitExposure(evaluation.FlagMetadata).Should().Be(

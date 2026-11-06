@@ -5,9 +5,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class OpenFeatureSdkEvaluateIntegration
 {
-    private static readonly ConcurrentDictionary<Type, BridgeAvailability> BridgeAvailabilityByType = new();
+    private static readonly ConditionalWeakTable<Type, BridgeAvailability> BridgeAvailabilityByType = new();
 
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
@@ -62,7 +62,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         => GetBridgeAvailability(targetType).HasEvaluationEventBridge;
 
     private static BridgeAvailability GetBridgeAvailability(Type targetType)
-        => BridgeAvailabilityByType.GetOrAdd(
+        => BridgeAvailabilityByType.GetValue(
             targetType,
             static type => new BridgeAvailability(
                 type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitBridge", throwOnError: false) is not null,
@@ -82,7 +82,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
             reportRootEvaluation: !HasEvaluationEventBridge(typeof(TTarget))).DuckCast<TReturn>());
     }
 
-    internal static FeatureFlags.Evaluation? Evaluate(State parameters, bool deferExposure, bool reportRootEvaluation = false)
+    internal static FeatureFlags.Evaluation? Evaluate(State parameters, bool deferExposure, bool reportRootEvaluation)
     {
         var flags = TracerManager.Instance.FeatureFlags;
 
@@ -109,7 +109,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
 #pragma warning restore CS0649
     }
 
-    private readonly record struct BridgeAvailability(bool HasExposureCommitBridge, bool HasEvaluationEventBridge);
+    private sealed record BridgeAvailability(bool HasExposureCommitBridge, bool HasEvaluationEventBridge);
 
     internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes, int ContextOmissionReasons)
     {
