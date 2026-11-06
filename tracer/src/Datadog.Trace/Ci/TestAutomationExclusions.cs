@@ -86,10 +86,10 @@ internal readonly struct TestAutomationExclusions
     {
         switch (attributeType.FullName)
         {
-            case "Datadog.Trace.Ci.PreventFailureSuppressionAttribute":
+            case $"Datadog.Trace.Ci.{nameof(PreventFailureSuppressionAttribute)}":
                 preventFailureSuppression = true;
                 break;
-            case "Datadog.Trace.Ci.NoAutoRetryAttribute":
+            case $"Datadog.Trace.Ci.{nameof(NoAutoRetryAttribute)}":
                 noAutoRetry = true;
                 break;
         }
