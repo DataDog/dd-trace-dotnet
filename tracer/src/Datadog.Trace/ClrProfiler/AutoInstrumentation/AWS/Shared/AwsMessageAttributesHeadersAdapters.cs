@@ -49,14 +49,11 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public void Add(string key, byte[] value)
         {
-            // FIXME BREAKING CHANGE:
-            // We are preserving the existing bug with the extra Base64 layer on the Base64 pathway header
-            // We will address this as a follow up
             _carrier
                .Append(value: '"')
                .Append(key)
                .Append("\":\"")
-               .Append(Convert.ToBase64String(value))
+               .Append(key == DataStreamsPropagationHeaders.PropagationKeyBase64 ? StringEncoding.UTF8.GetString(value) : Convert.ToBase64String(value))
                .Append("\",");
         }
     }

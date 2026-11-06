@@ -236,7 +236,7 @@ public class AwsMessageAttributesHeadersAdaptersTests
 
     [Theory]
     [CombinatorialData]
-    public void Inject_PreservesExistingDotnetWireFormat(bool legacyHeadersEnabled)
+    public void Inject_EncodesPathwayOnce(bool legacyHeadersEnabled)
     {
         var carrier = new StringBuilder("{");
         var adapter = AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(carrier);
@@ -247,8 +247,7 @@ public class AwsMessageAttributesHeadersAdaptersTests
         carrier.Append('}');
         var headers = JsonConvert.DeserializeObject<Dictionary<string, string>>(carrier.ToString());
 
-        // Existing .NET consumers expect two Base64 layers for this header.
-        headers[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().Be(EncodeAgain(Pathway));
+        headers[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().Be(Pathway);
         if (legacyHeadersEnabled)
         {
             headers[DataStreamsPropagationHeaders.PropagationKey].Should().Be(Pathway);

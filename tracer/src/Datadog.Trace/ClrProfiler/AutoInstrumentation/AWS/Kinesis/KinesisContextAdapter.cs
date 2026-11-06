@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -64,7 +65,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         {
             if (headers.TryGetValue(name, out var value))
             {
-                return Convert.FromBase64String(value[value.Count - 1]);
+                var last = value[value.Count - 1];
+                return name == DataStreamsPropagationHeaders.PropagationKeyBase64 ? Encoding.UTF8.GetBytes(last) : Convert.FromBase64String(last);
             }
 
             return [];
@@ -72,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public void Add(string name, byte[] value)
         {
-            Add(name, Convert.ToBase64String(value));
+            Add(name, name == DataStreamsPropagationHeaders.PropagationKeyBase64 ? Encoding.UTF8.GetString(value) : Convert.ToBase64String(value));
         }
     }
 }
