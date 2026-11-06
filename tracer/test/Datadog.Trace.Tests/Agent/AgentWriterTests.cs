@@ -45,6 +45,42 @@ namespace Datadog.Trace.Tests.Agent
 
         public Task DisposeAsync() => _agentWriter.FlushAndCloseAsync();
 
+        [Theory]
+        [CombinatorialData]
+        public async Task OtlpWithoutStats_PreservesNormalizationAndSampling(
+            bool protobuf,
+            [CombinatorialValues(SamplingPriorityValues.UserReject, SamplingPriorityValues.AutoReject, SamplingPriorityValues.AutoKeep, SamplingPriorityValues.UserKeep)] int priority)
+        {
+            var api = new Mock<IApi>();
+            api.SetupGet(x => x.TracesEncoding).Returns(protobuf ? TracesEncoding.OtlpProtobuf : TracesEncoding.OtlpJson);
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), false, It.IsAny<long>(), It.IsAny<long>(), true)).ReturnsAsync(true);
+            var stats = new Mock<IStatsAggregator>();
+            stats.SetupGet(x => x.CanComputeStats).Returns(false);
+            var agent = AgentWriterHelper.CreateWithManualFlush(api.Object, stats.Object);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
+            var span = new Span(new SpanContext(null, traceContext, "MixedCase-Service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority, SamplingMechanism.Manual, rate: null, limiterRate: null);
+            span.Finish();
+
+            try
+            {
+                agent.WriteTrace(new SpanCollection([span]));
+                await agent.FlushTracesAsync();
+
+                span.ServiceName.Should().Be("mixedcase-service");
+                agent.CanComputeStats.Should().BeFalse();
+                api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, false, It.IsAny<long>(), It.IsAny<long>(), true), priority > 0 ? Times.Once() : Times.Never());
+                stats.VerifyGet(x => x.CanComputeStats, Times.AtLeastOnce());
+                stats.VerifyNoOtherCalls();
+            }
+            finally
+            {
+                await agent.FlushAndCloseAsync();
+            }
+        }
+
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
         {

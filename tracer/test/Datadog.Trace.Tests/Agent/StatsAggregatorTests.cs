@@ -523,8 +523,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
+        [CombinatorialData]
         public async Task CreateStatsAggregator_Otlp_RequiresExplicitEnablement(bool enabled)
         {
             var settings = GetOtlpSettings(enabled);
@@ -538,7 +537,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(enabled: true), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             var traceContext = new TraceContext(tracer);
@@ -555,7 +554,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
         {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(enabled: true), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             var traceContext = new TraceContext(tracer);
@@ -873,7 +872,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task ShouldKeepTrace_Otlp_WhenSampled_ReturnsTrue()
         {
-            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetOtlpSettings(enabled: true), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -2028,7 +2027,7 @@ namespace Datadog.Trace.Tests.Agent
             return new Span(context, start);
         }
 
-        private static TracerSettings GetOtlpSettings(bool enabled = true)
+        private static TracerSettings GetOtlpSettings(bool enabled)
         {
             return TracerSettings.Create(new()
             {
