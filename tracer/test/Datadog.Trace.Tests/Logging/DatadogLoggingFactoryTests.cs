@@ -231,6 +231,37 @@ public class DatadogLoggingFactoryTests
         }
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("/")]
+    public void GetDefaultLogDirectory_WithTheSiteExtension_UsesTheExtensionVersionFolder(string trailingSeparator)
+    {
+        var source = new NameValueConfigurationSource(
+            new()
+            {
+                { "WEBSITE_SITE_NAME", "my-site-name" },
+                { "DD_AZURE_APP_SERVICES", "1" },
+                { "DD_DOTNET_TRACER_HOME", Path.Combine(Path.GetTempPath(), "SiteExtensions", "Datadog", "v3_57_0", "Tracer") + trailingSeparator },
+            });
+
+        var aasLogDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+        DatadogLoggingFactory.GetDefaultLogDirectory(source, NullConfigurationTelemetry.Instance).Should().Be(Path.Combine(aasLogDirectory, "v3_57_0"));
+    }
+
+    [Fact]
+    public void GetDefaultLogDirectory_WithTheSiteExtensionButNoTracerHome_ReturnsAzureLogDirectory()
+    {
+        var source = new NameValueConfigurationSource(
+            new()
+            {
+                { "WEBSITE_SITE_NAME", "my-site-name" },
+                { "DD_AZURE_APP_SERVICES", "1" },
+            });
+
+        DatadogLoggingFactory.GetDefaultLogDirectory(source, NullConfigurationTelemetry.Instance)
+                             .Should().Be(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog");
+    }
+
     [SkippableFact]
     public void GetProgramDataDirectory_OnWindows_ReturnsValidProgramDataPath()
     {

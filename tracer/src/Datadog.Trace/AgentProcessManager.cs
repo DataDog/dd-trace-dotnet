@@ -43,16 +43,12 @@ namespace Datadog.Trace
             Name = "datadog-trace-agent",
             IsTraceAgent = true,
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
         };
 
         internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
         {
             Name = "dogstatsd",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
@@ -97,6 +93,11 @@ namespace Datadog.Trace
                     Log.ErrorSkipTelemetry("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is likely missing. The trace_agent and dogstatsd process will not be started. Check your app configuration and restart the app service to try again.");
                     return;
                 }
+
+                TraceAgentMetadata.ProcessPath = azureAppServiceSettings.TraceAgentPath;
+                TraceAgentMetadata.ProcessArguments = azureAppServiceSettings.TraceAgentArgs;
+                DogStatsDMetadata.ProcessPath = azureAppServiceSettings.DogStatsDPath;
+                DogStatsDMetadata.ProcessArguments = azureAppServiceSettings.DogStatsDArgs;
 
                 if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {

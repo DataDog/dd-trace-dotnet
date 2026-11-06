@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.IO;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -100,6 +101,34 @@ namespace Datadog.Trace.Configuration
             AgentMaxRetryIntervalSeconds = config.WithKeys(ConfigurationKeys.AzureAppService.AasAgentMaxRetryIntervalSeconds)
                                                  .AsInt32(DefaultAgentMaxRetryIntervalSeconds, x => x > 0)
                                                  .Value;
+
+            TraceAgentPath = config.WithKeys(ConfigurationKeys.TraceAgentPath).AsString();
+            TraceAgentArgs = config.WithKeys(ConfigurationKeys.TraceAgentArgs).AsString();
+            DogStatsDPath = config.WithKeys(ConfigurationKeys.DogStatsDPath).AsString();
+            DogStatsDArgs = config.WithKeys(ConfigurationKeys.DogStatsDArgs).AsString();
+
+            // The site extension installs the trace agent and DogStatsD in the Agent folder next to the tracer home.
+            // Default to them when no path is set. The arguments get a default only along with the path,
+            // so a custom agent never gets the bundled agent's arguments.
+            var versionDirectory = IsUsingAzureAppServicesSiteExtension(source, telemetry)
+                                       ? GetSiteExtensionVersionDirectory(config.WithKeys(ConfigurationKeys.DotNetTracerHome).AsString())
+                                       : null;
+            if (versionDirectory is not null)
+            {
+                var agentDirectory = Path.Combine(versionDirectory, "Agent");
+
+                if (StringUtil.IsNullOrWhiteSpace(TraceAgentPath))
+                {
+                    TraceAgentPath = Path.Combine(agentDirectory, "datadog-trace-agent.exe");
+                    TraceAgentArgs = StringUtil.IsNullOrWhiteSpace(TraceAgentArgs) ? "--config " + Path.Combine(agentDirectory, "datadog.yaml") : TraceAgentArgs;
+                }
+
+                if (StringUtil.IsNullOrWhiteSpace(DogStatsDPath))
+                {
+                    DogStatsDPath = Path.Combine(agentDirectory, "dogstatsd.exe");
+                    DogStatsDArgs = StringUtil.IsNullOrWhiteSpace(DogStatsDArgs) ? "start -c " + agentDirectory : DogStatsDArgs;
+                }
+            }
         }
 
         public bool DebugModeEnabled { get; }
@@ -114,6 +143,28 @@ namespace Datadog.Trace.Configuration
         public int AgentMaxRetryIntervalSeconds { get; }
 
         public bool IsUnsafeToTrace { get; }
+
+        /// <summary>
+        /// Gets the trace agent executable that <see cref="AgentProcessManager"/> starts.
+        /// With the site extension, defaults to the one in the extension's Agent folder.
+        /// </summary>
+        public string? TraceAgentPath { get; }
+
+        /// <summary>
+        /// Gets the trace agent's command line arguments. Defaults along with <see cref="TraceAgentPath"/>.
+        /// </summary>
+        public string? TraceAgentArgs { get; }
+
+        /// <summary>
+        /// Gets the DogStatsD executable that <see cref="AgentProcessManager"/> starts.
+        /// With the site extension, defaults to the one in the extension's Agent folder.
+        /// </summary>
+        public string? DogStatsDPath { get; }
+
+        /// <summary>
+        /// Gets DogStatsD's command line arguments. Defaults along with <see cref="DogStatsDPath"/>.
+        /// </summary>
+        public string? DogStatsDArgs { get; }
 
         public string SiteExtensionVersion { get; }
 
@@ -240,6 +291,22 @@ namespace Datadog.Trace.Configuration
             return new ConfigurationBuilder(source, telemetry)
                    .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                    .AsString() == "1";
+        }
+
+        /// <summary>
+        /// Gets the Azure App Services site extension's version folder, the parent of the tracer home, which holds the
+        /// extension's <c>Tracer</c> and <c>Agent</c> folders: <c>...\v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>.
+        /// Returns null without a tracer home.
+        /// </summary>
+        internal static string? GetSiteExtensionVersionDirectory(string? tracerHome)
+        {
+            if (StringUtil.IsNullOrWhiteSpace(tracerHome))
+            {
+                return null;
+            }
+
+            var versionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return StringUtil.IsNullOrEmpty(versionDirectory) ? null : versionDirectory;
         }
     }
 }

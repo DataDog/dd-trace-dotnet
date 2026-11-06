@@ -183,6 +183,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
+        /// <summary>
+        /// Gets the name of the Azure App Services site extension's version folder, which holds its Tracer and Agent folders:
+        /// <c>v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>. Returns null without a tracer home.
+        /// </summary>
+        private static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
+        {
+            if (tracerHome is null || string.IsNullOrWhiteSpace(tracerHome))
+            {
+                return null;
+            }
+
+            var extensionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return string.IsNullOrEmpty(extensionDirectory) ? null : Path.GetFileName(extensionDirectory);
+        }
+
         internal static string GetDefaultLogDirectory<TEnvVars>(TEnvVars envVars)
             where TEnvVars : IEnvironmentVariableProvider
         {
@@ -192,7 +207,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             if (isAas)
             {
                 // Azure App Services and Azure Functions
-                return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+                var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+
+                // With the Azure App Services site extension (DD_AZURE_APP_SERVICES=1),
+                // each extension version logs to its own subfolder, such as datadog\v3_57_0.
+                // The native components pick the same folder (GetDefaultLogDir in shared/src/native-src/pal.h).
+                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(Startup.AzureAppServicesSiteExtensionKey) ?? false;
+                var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable(Startup.TracerHomePathKey)) : null;
+                return string.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
             }
 
             if (isWindows)

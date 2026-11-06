@@ -41,6 +41,7 @@ struct Dummy
 TEST(pal, DefaultLogFolderOnAAS)
 {
     EnvironmentVariable ev(IsRunningOnAAS, WStr("1"));
+    UnsetEnvironmentValue(WStr("DD_DOTNET_TRACER_HOME"));
 
     auto defaultPath = GetDefaultLogDir<Dummy>();
     auto expectedPath =
@@ -51,6 +52,27 @@ TEST(pal, DefaultLogFolderOnAAS)
 #endif
 
     ASSERT_EQ(expectedPath, defaultPath);
+}
+
+TEST(pal, DefaultLogFolderOnAASUsesTheSiteExtensionVersionFolder)
+{
+    EnvironmentVariable ev(IsRunningOnAAS, WStr("1"));
+
+#ifdef _WINDOWS
+    const auto expectedPath = fs::path(R"(C:\home\LogFiles\datadog\v3_57_0)");
+    const shared::WSTRING tracerHomes[] = {WStr(R"(C:\home\SiteExtensions\Datadog\v3_57_0\Tracer)"),
+                                           WStr(R"(C:\home\SiteExtensions\Datadog\v3_57_0\Tracer\)")};
+#else
+    const auto expectedPath = fs::path("/home/LogFiles/datadog/v3_57_0");
+    const shared::WSTRING tracerHomes[] = {WStr("/home/SiteExtensions/Datadog/v3_57_0/Tracer"),
+                                           WStr("/home/SiteExtensions/Datadog/v3_57_0/Tracer/")};
+#endif
+
+    for (const auto& tracerHome : tracerHomes)
+    {
+        EnvironmentVariable home(WStr("DD_DOTNET_TRACER_HOME"), tracerHome);
+        ASSERT_EQ(expectedPath, GetDefaultLogDir<Dummy>());
+    }
 }
 
 TEST(pal, DefaultLogFolderOnNonAAS)
