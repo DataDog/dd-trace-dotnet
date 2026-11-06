@@ -35,6 +35,36 @@ public class ExposureEventTests
         serialized.ContainsKey("serial_id").Should().BeFalse();
     }
 
+    [Fact]
+    public void SerializesFeaturesAsAFlatObjectWithTypedValues()
+    {
+        var exposure = CreateEvent(null) with
+        {
+            Features = new Dictionary<string, object> { ["holdout.key"] = "06ad", ["holdout.should_include_in_holdout_analysis"] = false, ["count"] = 3d },
+        };
+
+        var serialized = Serialize(exposure);
+
+        serialized["features"]!["holdout.key"]!.Value<string>().Should().Be("06ad");
+        serialized["features"]!["holdout.should_include_in_holdout_analysis"]!.Value<bool>().Should().BeFalse();
+        serialized["features"]!["count"]!.Value<double>().Should().Be(3);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OmitsFeaturesWhenTheSplitHasNone(bool empty)
+    {
+        var exposure = CreateEvent(null) with
+        {
+            Features = empty ? new Dictionary<string, object>() : null,
+        };
+
+        var serialized = Serialize(exposure);
+
+        serialized.ContainsKey("features").Should().BeFalse();
+    }
+
     private static JObject Serialize(ExposureEvent exposureEvent)
     {
         return JObject.Parse(JsonConvert.SerializeObject(exposureEvent, ExposureApi.SerializerSettings));

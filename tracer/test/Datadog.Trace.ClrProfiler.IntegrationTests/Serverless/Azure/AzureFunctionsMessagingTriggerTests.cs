@@ -16,8 +16,10 @@ using System;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.ServiceBus;
@@ -25,6 +27,7 @@ using Azure.Storage.Blobs;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -186,10 +189,18 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
             // Keep only those two traces. Matching on the per-run test id (the CloudEvent id, surfaced as
             // messaging.message_id) ignores events the emulator redelivers to the fixed 7071 webhook.
             var filteredSpans = allSpans.Where(s => s.Resource != "GET /admin/host/ping").ToImmutableList();
-            var sendSpan = filteredSpans.FirstOrDefault(s => s.Name == "azure_eventgrid.send" && s.GetTag("messaging.message_id") == testId);
             var receiveSpan = filteredSpans.FirstOrDefault(s => s.Name == "azure_eventgrid.receive" && s.GetTag("messaging.message_id") == testId);
+            receiveSpan.Should().NotBeNull();
+            var producerLink = receiveSpan.SpanLinks.Should().ContainSingle().Subject;
+            // Multiple publishes can share the test id, and their spans can arrive out of order.
+            // Select the producer linked by this delivery instead of independently taking the first send.
+            var sendSpan = filteredSpans.Should().ContainSingle(
+                s => s.Name == "azure_eventgrid.send"
+                  && s.GetTag("messaging.message_id") == testId
+                  && s.TraceId == producerLink.TraceIdLow
+                  && s.SpanId == producerLink.SpanId).Subject;
             var spans = filteredSpans
-                       .Where(s => s.TraceId == sendSpan?.TraceId || s.TraceId == receiveSpan?.TraceId)
+                       .Where(s => s.TraceId == sendSpan.TraceId || s.TraceId == receiveSpan.TraceId)
                        .ToImmutableList();
             var settings = GetMessagingTriggerSettings();
             await VerifyHelper.VerifySpans(spans, settings)
@@ -219,34 +230,29 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
 
     private static async Task SeedViaHttpAsync(string route)
     {
-        // Retry on 404: the host may accept connections before all function routes are registered.
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        // Only retry 404s while function routes are being registered. A timed-out or failed request
+        // may already have published the event, so retrying it can create duplicate producers.
+        using var http = new HttpClient();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var url = $"http://localhost:7071/api/{route}";
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (DateTime.UtcNow < deadline)
+        try
         {
-            try
+            while (true)
             {
-                var response = await http.PostAsync(url, content: null);
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                using var response = await http.PostAsync(url, content: null, cancellationToken: timeout.Token);
+                if (response.StatusCode != HttpStatusCode.NotFound)
                 {
+                    response.EnsureSuccessStatusCode();
                     return;
                 }
 
-                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
-                {
-                    response.EnsureSuccessStatusCode();
-                }
+                await Task.Delay(500, timeout.Token);
             }
-            catch (Exception) when (DateTime.UtcNow < deadline)
-            {
-                // Host not ready yet
-            }
-
-            await Task.Delay(500);
         }
-
-        throw new TimeoutException($"Function host did not accept route '{route}' within the timeout.");
+        catch (OperationCanceledException ex) when (timeout.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Function host did not complete route '{route}' within the timeout.", ex);
+        }
     }
 
     private static async Task PurgeQueue(ServiceBusReceiver receiver)

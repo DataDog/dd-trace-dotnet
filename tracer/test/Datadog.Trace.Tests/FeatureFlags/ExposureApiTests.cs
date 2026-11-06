@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -154,7 +155,7 @@ public class ExposureApiTests
         var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
 
         api.Dispose();
-        api.SendExposure(CreateExposure("after-dispose"));
+        api.SendExposure(CreateExposure("after-dispose")).Should().Be(ExposureRecordResult.NotRecorded, "nothing reaches the cache once reporting has stopped");
         await Task.Delay(TimeSpan.FromMilliseconds(20));
 
         local.RequestsSent.Should().BeEmpty();
@@ -184,6 +185,62 @@ public class ExposureApiTests
         logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Exit", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
+    [Fact]
+    public void SendExposureReturnsTheDeduplicationVerdict()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMilliseconds(10));
+
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New, "the first exposure of a subject is new");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat, "the same exposure again is a cache hit");
+
+        api.SendExposure(CreateExposure("flag", variant: "variant-b")).Should().Be(ExposureRecordResult.New, "a changed variant is a new exposure");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New, "switching back to an earlier variant is also a change");
+
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().Be(ExposureRecordResult.New, "a changed serial id is a new exposure");
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().Be(ExposureRecordResult.Repeat, "the new serial id repeats as a cache hit");
+
+        api.SendExposure(CreateExposure("other-flag")).Should().Be(ExposureRecordResult.New, "another flag is a new exposure");
+    }
+
+    [Fact]
+    public async Task SendExposureWithDatadogLoggingDisabledRecordsButSendsNothing()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        var settings = new TracerSettings(
+            new NameValueConfigurationSource(new NameValueCollection
+            {
+                ["DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED"] = "false",
+            }));
+        using var api = new ExposureApi(settings, transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
+
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New);
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat, "the cache still records with logging off");
+
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+        local.RequestsSent.Should().BeEmpty("no exposure reaches Datadog with the setting off");
+    }
+
+    [Fact]
+    public void SendExposureWithDatadogLoggingEnabledSendsNewExposuresOnly()
+    {
+        // The send loop can flush the first exposure before the second call, so every batch is counted.
+        // The factory only uses the given callbacks for the first requests, one callback per request.
+        var payloads = new ConcurrentQueue<string>();
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"), Enumerable.Repeat<Func<Uri, TestApiRequest>>(uri => new CollectingJsonApiRequest(uri, payloads), 4).ToArray());
+        using var transport = CreateLocalTransport(local);
+        var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(3));
+
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New);
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat);
+        api.Dispose();
+
+        payloads.Should().NotBeEmpty("the new exposure is sent");
+        payloads.Sum(json => JObject.Parse(json)["exposures"]!.Count()).Should().Be(1, "a repeat is not sent");
+    }
+
     private static Mock<IDatadogLogger> CreateDebugLogger()
     {
         var logger = new Mock<IDatadogLogger>();
@@ -210,13 +267,14 @@ public class ExposureApiTests
             initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4,
             logger: logger);
 
-    private static ExposureEvent CreateExposure(string flag)
+    private static ExposureEvent CreateExposure(string flag, string variant = "variant", long? serialId = null)
         => new(
             DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             new Allocation("allocation"),
             new Flag(flag),
-            new Variant("variant"),
-            new Subject("subject", new Dictionary<string, object?>()));
+            new Variant(variant),
+            new Subject("subject", new Dictionary<string, object?>()),
+            serialId);
 
     private static TracerSettings CreateSettings()
         => new(new NameValueConfigurationSource(new NameValueCollection()));
@@ -231,6 +289,15 @@ public class ExposureApiTests
             sendStarted.TrySetResult(true);
             await releaseSend.Task.ConfigureAwait(false);
             return await base.PostAsJsonAsync(payload, compression, settings).ConfigureAwait(false);
+        }
+    }
+
+    private sealed class CollectingJsonApiRequest(Uri endpoint, ConcurrentQueue<string> payloads) : RecordingJsonApiRequest(endpoint)
+    {
+        public override Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            payloads.Enqueue(JsonConvert.SerializeObject(payload, settings));
+            return base.PostAsJsonAsync(payload, compression, settings);
         }
     }
 
