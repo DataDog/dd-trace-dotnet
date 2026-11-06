@@ -55,6 +55,56 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => null;
     }
 
+    public class MockDbConnection : DbConnection
+    {
+        public override string ConnectionString { get; set; }
+
+        public override string Database => string.Empty;
+
+        public override string DataSource => string.Empty;
+
+        public override string ServerVersion => string.Empty;
+
+        public override ConnectionState State => ConnectionState.Open;
+
+        public override void ChangeDatabase(string databaseName)
+        {
+        }
+
+        public override void Close()
+        {
+        }
+
+        public override void Open()
+        {
+        }
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
+
+        protected override DbCommand CreateDbCommand() => throw new NotSupportedException();
+    }
+
+    /// <summary>
+    /// Mimics the ODP.NET OracleConnection.ActionName property, which is write-only.
+    /// </summary>
+    public class MockOracleConnection : MockDbConnection
+    {
+        public List<string> ActionNames { get; } = new List<string>();
+
+        public string ActionName
+        {
+            set => ActionNames.Add(value);
+        }
+    }
+
+    public class ThrowingOracleConnection : MockDbConnection
+    {
+        public string ActionName
+        {
+            set => throw new InvalidOperationException("Connection is closed");
+        }
+    }
+
     public class MockDbParameter : DbParameter
     {
         public override DbType DbType { get; set; }
@@ -171,9 +221,19 @@ namespace Microsoft.Data.Sqlite { public class SqliteCommand : MockDbCommand { }
 // ReSharper disable once InconsistentNaming
 namespace System.Data.SQLite { public class SQLiteCommand : MockDbCommand { } }
 
-namespace Oracle.ManagedDataAccess.Client { public class OracleCommand : MockDbCommand { } }
+namespace Oracle.ManagedDataAccess.Client
+{
+    public class OracleCommand : MockDbCommand { }
 
-namespace Oracle.DataAccess.Client { public class OracleCommand : MockDbCommand { } }
+    public class OracleConnection : MockOracleConnection { }
+}
+
+namespace Oracle.DataAccess.Client
+{
+    public class OracleCommand : MockDbCommand { }
+
+    public class OracleConnection : MockOracleConnection { }
+}
 
 #pragma warning restore SA1649
 #pragma warning restore SA1502

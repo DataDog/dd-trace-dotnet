@@ -102,6 +102,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                                 spanContext.RawTraceId);
                         }
                     }
+                    else if (integrationId == IntegrationId.Oracle && dbmPropagationMode == DbmPropagationLevel.Service && baseHash != null)
+                    {
+                        // With the service hash enabled, Oracle uses the session ACTION instead of a comment (no CommandText change).
+                        // The backend resolves the service from the span carrying the same hash, so only tag the span on success.
+                        if (DatabaseMonitoringPropagator.PropagateServiceHashViaOracleAction(command, baseHash))
+                        {
+                            tags.BaseHash = baseHash;
+                        }
+                    }
                     else
                     {
                         if (baseHash != null)

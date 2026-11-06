@@ -79,6 +79,17 @@ public class OracleTests : TracingIntegrationTest
         using var process = await RunSampleAndWaitForExit(agent, arguments: "--stored-procedure-comments");
 
         process.StandardOutput.Should().Contain("Stored procedure comment checks passed.");
+
+        // dynamic_service writes the service hash to the session ACTION: the backend resolves the service from spans with the same hash.
+        var actionHash = Regex.Match(process.StandardOutput, "Oracle service hash ACTION: (\\S+)");
+        actionHash.Success.Should().Be(dbmPropagation == "dynamic_service");
+        var oracleSpans = agent.Spans.Where(s => s.Type == SpanTypes.Sql && s.Tags.TryGetValue(Tags.DbType, out var dbType) && dbType == "oracle").ToList();
+        oracleSpans.Should().NotBeEmpty();
+        foreach (var span in oracleSpans)
+        {
+            span.Tags.TryGetValue(Tags.BaseHash, out var spanHash);
+            spanHash.Should().Be(actionHash.Success ? actionHash.Groups[1].Value : null);
+        }
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
