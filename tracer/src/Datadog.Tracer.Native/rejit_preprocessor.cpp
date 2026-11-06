@@ -92,8 +92,9 @@ bool RejitPreprocessor<RejitRequestDefinition>::HasModuleAndMethod(ModuleID modu
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 {
-    // No shutdown early return: AddNGenInlinerModule holds both locks while passing every cached ModuleID to the
-    // CLR, so taking them here is what keeps an unloading module out of an in-flight replay.
+    // No shutdown early return: AddNGenInlinerModule and GetNGenInlinerRejitRequests hold both locks while passing
+    // every cached ModuleID to the CLR, so taking them here is what keeps an unloading module out of an in-flight
+    // replay.
 
     // Removes the RejitHandlerModule instance
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
@@ -140,6 +141,26 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
     }
 }
 
+// The AddNGenInlinerModule replay without a new NGen module, for the methods ModuleLoadFinished instrumented after
+// its replay. On CoreCLR, GetNGenInlinerRejitRequestsForNewMethods already added their inliners to their own batch.
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequests(std::vector<RejitRequest>& rejitRequests)
+{
+    if (!m_isDesktopClr || m_rejit_handler->IsShutdownRequested())
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
+    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
+
+    for (const auto& mod : m_modules)
+    {
+        mod.second->GetRejitRequestsForInlinersInModules(m_ngenInlinersModules, mod.second->TakeNewMethods(),
+                                                         rejitRequests);
+    }
+}
+
 // On CoreCLR, the AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so
 // it never sees methods created afterwards. Add their inliners to the caller's batch so a method and its
 // precompiled callers are rejitted together. On Desktop CLR, the replay checks them instead.
@@ -151,7 +172,8 @@ void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNe
     {
         // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
         // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. AddNGenInlinerModule takes
-        // the new methods in ModuleLoadFinished/JITCachedFunctionSearchStarted instead.
+        // the new methods in ModuleLoadFinished/JITCachedFunctionSearchStarted instead, and
+        // GetNGenInlinerRejitRequests after ModuleLoadFinished's ReJIT.
         return;
     }
 

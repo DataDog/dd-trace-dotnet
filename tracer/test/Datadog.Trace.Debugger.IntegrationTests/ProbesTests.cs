@@ -526,6 +526,43 @@ public class ProbesTests : TestHelper
             await sample.StopSample();
         }
     }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task NGenInlinerOnFirstCallAfterModuleLoadInNetFrameworkTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(NGenInlinerAfterModuleLoadTest));
+        if (!testDescription.IsOptimized)
+        {
+            throw new SkipException("NGen only inlines optimized code.");
+        }
+
+        SetEnvironmentVariable(ConfigurationKeys.TraceMethods, "Samples.Probes.Unreferenced.External.NGenInlinedTarget[Target]");
+        var externalAssemblyPath = Path.Combine(Path.GetDirectoryName(EnvironmentHelper.GetSampleApplicationPath()), "Samples.Probes.Unreferenced.External.dll");
+        NgenHelper.InstallToNativeImageCache(Output, externalAssemblyPath);
+        try
+        {
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+            try
+            {
+                // The module load instruments Target, then Caller runs once.
+                await sample.RunCodeSample();
+
+                var spans = await agent.WaitForSpansAsync(1, operationName: "trace.annotation");
+                spans.Should().ContainSingle(span => span.Resource == "NGenInlinedTarget.Target");
+            }
+            finally
+            {
+                await sample.StopSample();
+            }
+        }
+        finally
+        {
+            NgenHelper.UninstallFromNativeImageCache(Output, externalAssemblyPath);
+        }
+    }
 #endif
 
     [SkippableTheory]
