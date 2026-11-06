@@ -120,161 +120,36 @@ internal static class Common
     {
         skippableTest = null;
         var currentContext = SynchronizationContext.Current;
+        var query = new SkippableTestCollection.Query(testMethodArguments, methodParameters, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
-            var skippableTests = GetSkippableTestsFromSuiteAndNames(testSuite, testName, moduleName, metadataTestName);
-            if (skippableTests.Count > 0)
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature is null)
             {
-                TestParameters? localTestParameters = null;
-                string? localTestParametersFingerprint = null;
-                foreach (var candidate in skippableTests)
-                {
-                    TestParameters? parameters = null;
-                    if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) &&
-                        !candidate.TryGetParameters(out parameters))
-                    {
-                        Log.Debug("Common: Ignoring a skippable test candidate because its parameters are not valid JSON.");
-                        continue;
-                    }
-
-                    if (parameters?.TryGetFingerprint(out var expectedFingerprint) == true)
-                    {
-                        localTestParameters ??= CreateTestParameters(
-                            testMethodArguments,
-                            methodParameters,
-                            includeMetadataTestNameInFingerprint ? metadataTestName : null,
-                            useParameterIndexForUnnamedParameters);
-                        localTestParametersFingerprint ??= localTestParameters.GetFingerprint();
-                        if (string.Equals(expectedFingerprint, localTestParametersFingerprint, StringComparison.Ordinal))
-                        {
-                            return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                        }
-
-                        continue;
-                    }
-
-                    // Same test name and no parameters
-                    if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
-                        (testMethodArguments is null || testMethodArguments.Length == 0) &&
-                        ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
-                    {
-                        return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                    }
-
-                    if (parameters?.Arguments is not null &&
-                        testMethodArguments is not null &&
-                        methodParameters is not null)
-                    {
-                        if (parameters.Arguments.Count != methodParameters.Length)
-                        {
-                            continue;
-                        }
-
-                        var matchSignature = true;
-                        for (var i = 0; i < methodParameters.Length; i++)
-                        {
-                            var targetValue = "(default)";
-                            if (i < testMethodArguments.Length)
-                            {
-                                targetValue = GetParametersValueData(testMethodArguments[i]);
-                            }
-
-                            if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue))
-                            {
-                                matchSignature = false;
-                                break;
-                            }
-
-                            if (argValue is not string strArgValue)
-                            {
-                                strArgValue = argValue?.ToString() ?? "(null)";
-                            }
-
-                            if (strArgValue != targetValue)
-                            {
-                                matchSignature = false;
-                                break;
-                            }
-                        }
-
-                        if (matchSignature)
-                        {
-                            if (ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
-                            {
-                                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                            }
-                        }
-                    }
-                }
+                return false;
             }
+
+            moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+            if (skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName).TryMatch(ref query, out var candidate))
+            {
+                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+            }
+
+            if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
+                !metadataTestName!.Equals(testName, StringComparison.Ordinal) &&
+                skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName).TryMatch(ref query, out candidate))
+            {
+                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+            }
+
+            return false;
         }
         finally
         {
+            query.Dispose();
             SynchronizationContext.SetSynchronizationContext(currentContext);
         }
-
-        return false;
-    }
-
-    private static List<SkippableTest> GetSkippableTestsFromSuiteAndNames(string testSuite, string testName, string? moduleName, string? metadataTestName)
-    {
-        var skippableFeature = TestOptimization.Instance.SkippableFeature;
-        if (skippableFeature is null)
-        {
-            return [];
-        }
-
-        var skippableTests = new List<SkippableTest>();
-        var seen = new HashSet<SkippableTest>();
-        AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName));
-        if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
-            !metadataTestName!.Equals(testName, StringComparison.Ordinal))
-        {
-            AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName));
-        }
-
-        return skippableTests;
-    }
-
-    private static void AddSkippableTests(List<SkippableTest> skippableTests, HashSet<SkippableTest> seen, IList<SkippableTest>? candidates)
-    {
-        if (candidates is null)
-        {
-            return;
-        }
-
-        foreach (var candidate in candidates)
-        {
-            if (seen.Add(candidate))
-            {
-                skippableTests.Add(candidate);
-            }
-        }
-    }
-
-    private static bool ParametersMetadataMatches(TestParameters? parameters, string? metadataTestName, bool allowParametersMetadataMismatch)
-    {
-        if (parameters?.Metadata is null ||
-            !parameters.Metadata.TryGetValue(TestTags.MetadataTestName, out var expectedMetadataTestName))
-        {
-            return true;
-        }
-
-        var expectedTestName = expectedMetadataTestName?.ToString();
-        if (StringUtil.IsNullOrEmpty(expectedTestName))
-        {
-            return true;
-        }
-
-        if (allowParametersMetadataMismatch && StringUtil.IsNullOrEmpty(metadataTestName))
-        {
-            return false;
-        }
-
-        return !StringUtil.IsNullOrEmpty(metadataTestName) &&
-               string.Equals(expectedTestName, metadataTestName, StringComparison.Ordinal);
     }
 
     /// <summary>
