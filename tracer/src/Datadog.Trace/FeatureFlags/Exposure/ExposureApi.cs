@@ -48,6 +48,7 @@ internal sealed class ExposureApi : IDisposable
     private readonly IDisposable _settingsSubscription;
     private readonly IDatadogLogger _log;
     private readonly bool _datadogLoggingEnabled;
+    private readonly Action? _queueAdmissionCallback;
 
     private Dictionary<string, string> _context;
     private Task? _sendLoopTask;
@@ -101,6 +102,18 @@ internal sealed class ExposureApi : IDisposable
             };
             Interlocked.Exchange(ref _context!, context);
         }
+    }
+
+    [TestingAndPrivateOnly]
+    internal ExposureApi(
+        TracerSettings tracerSettings,
+        FeatureFlagsEvpTransport transport,
+        TimeSpan? sendInterval,
+        TimeSpan? shutdownTimeout,
+        Action queueAdmissionCallback)
+        : this(tracerSettings, transport, sendInterval, shutdownTimeout)
+    {
+        _queueAdmissionCallback = queueAdmissionCallback;
     }
 
     public void Dispose()
@@ -238,6 +251,7 @@ internal sealed class ExposureApi : IDisposable
                 isNew = _exposureCache.Add(exposure);
                 if (isNew && _datadogLoggingEnabled)
                 {
+                    _queueAdmissionCallback?.Invoke();
                     lock (_exposures)
                     {
                         full = _exposures.Count >= _queueCapacity;

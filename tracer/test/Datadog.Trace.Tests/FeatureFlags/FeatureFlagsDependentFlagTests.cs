@@ -339,6 +339,22 @@ public class FeatureFlagsDependentFlagTests
         Evaluator(depth).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
     }
 
+    [Fact]
+    public void ReturnedBatchMaterializesCompletedSlotsInTraversalOrder()
+    {
+        var config = Configuration(
+            DependentFlag("root", Allocation("root", [Dependency("middle", "on")], "on")),
+            DependentFlag("middle", Allocation("middle", [Dependency("leaf", "on")], "on")),
+            StaticFlag("leaf", "on"));
+        config.EvaluatorParams = new EvaluatorParams { MaxDependencyDepth = 1 };
+
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        trace.Details.Reason.Should().Be(EvaluationReason.Error);
+        trace.DependencyEvaluations.Should().NotContainNulls();
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("middle", "leaf");
+    }
+
     [Theory]
     [InlineData(null, false, false)]
     [InlineData(0, true, false)]

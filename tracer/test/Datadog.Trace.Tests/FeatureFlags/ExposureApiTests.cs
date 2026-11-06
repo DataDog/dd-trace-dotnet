@@ -40,9 +40,14 @@ public class ExposureApiTests
     {
         var local = new TestRequestFactory(new Uri("http://agent:8126/"));
         using var transport = CreateLocalTransport(local);
-        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(3));
+        var producerReachedAdmission = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var api = new ExposureApi(
+            CreateSettings(),
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(30),
+            () => producerReachedAdmission.TrySetResult(true));
         var exposures = typeof(ExposureApi).GetField("_exposures", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
-        var lifecycle = typeof(ExposureApi).GetField("_lifecycleLock", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
         var drainStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var releaseDrain = new ManualResetEventSlim();
         var drain = Task.Factory.StartNew(
@@ -51,7 +56,10 @@ public class ExposureApiTests
                 lock (exposures)
                 {
                     drainStarted.TrySetResult(true);
-                    releaseDrain.Wait();
+                    if (!releaseDrain.Wait(TimeSpan.FromSeconds(30)))
+                    {
+                        throw new TimeoutException("Timed out waiting to release the simulated exposure drain");
+                    }
                 }
             },
             CancellationToken.None,
@@ -60,33 +68,31 @@ public class ExposureApiTests
 
         try
         {
-            (await Task.WhenAny(drainStarted.Task, Task.Delay(TimeSpan.FromSeconds(3))))
+            (await Task.WhenAny(drainStarted.Task, Task.Delay(TimeSpan.FromSeconds(30))))
                .Should().BeSameAs(drainStarted.Task);
             var send = Task.Run(() => api.SendExposure(CreateExposure("concurrent")));
-            SpinWait.SpinUntil(
-                         () =>
-                         {
-                             if (!Monitor.TryEnter(lifecycle))
-                             {
-                                 return true;
-                             }
+            (await Task.WhenAny(producerReachedAdmission.Task, Task.Delay(TimeSpan.FromSeconds(30))))
+               .Should().BeSameAs(producerReachedAdmission.Task);
 
-                             Monitor.Exit(lifecycle);
-                             return false;
-                         },
-                         TimeSpan.FromSeconds(3))
-                    .Should().BeTrue("the producer must reach queue admission while the drain lock is held");
+            // This is deliberately short: all failure bounds are 30 seconds, but after the callback
+            // proves admission has reached the held queue monitor, 100ms is enough to prove blocking.
             (await Task.WhenAny(send, Task.Delay(TimeSpan.FromMilliseconds(100))))
                .Should().NotBeSameAs(send, "queue admission must wait for an in-progress drain");
 
             releaseDrain.Set();
-            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(send);
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(30)))).Should().BeSameAs(send);
             (await send).Should().Be(ExposureRecordResult.New);
         }
         finally
         {
             releaseDrain.Set();
-            await Task.WhenAny(drain, Task.Delay(TimeSpan.FromSeconds(3)));
+            var completed = await Task.WhenAny(drain, Task.Delay(TimeSpan.FromSeconds(30)));
+            if (completed != drain)
+            {
+                throw new TimeoutException("Timed out waiting for the simulated exposure drain to finish");
+            }
+
+            await drain;
         }
     }
 

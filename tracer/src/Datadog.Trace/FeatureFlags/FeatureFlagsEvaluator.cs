@@ -1169,10 +1169,10 @@ namespace Datadog.Trace.FeatureFlags
             private HashSet<string>? _exposureKeys;
             private List<ExposureCandidate>? _exposures;
             private Dictionary<string, MemoizedDependency>? _memo;
-            private Dictionary<string, int>? _evaluationSlots;
+            private Dictionary<string, EvaluationSlot>? _evaluationSlots;
             private HashSet<string>? _active;
             private List<DependencyFrame>? _frames;
-            private List<DependencyEvaluation>? _evaluations;
+            private List<EvaluationSlot>? _evaluationOrder;
             private IReadOnlyDictionary<string, object?>? _contextAttributes;
             private ContextOmissionReason _contextOmissions;
             private bool _contextSnapshotted;
@@ -1361,7 +1361,7 @@ namespace Datadog.Trace.FeatureFlags
                     }
                 }
 
-                return new EvaluationTrace(details, _evaluations?.ToArray() ?? [], exposures, reachedDependencies: _memo is not null);
+                return new EvaluationTrace(details, MaterializeEvaluations(), exposures, reachedDependencies: _memo is not null);
             }
 
             private static object DefaultValue(ValueType type) => type switch
@@ -1423,8 +1423,8 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                ReserveEvaluation(evaluation.FlagKey);
-                if (_evaluationSlots is null || !_evaluationSlots.TryGetValue(evaluation.FlagKey, out var index))
+                var slot = ReserveEvaluation(evaluation.FlagKey);
+                if (slot is null)
                 {
                     return;
                 }
@@ -1435,25 +1435,46 @@ namespace Datadog.Trace.FeatureFlags
                     _contextSnapshotted = true;
                 }
 
-                _evaluations![index] = DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes, _contextOmissions);
+                slot.Complete(DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes, _contextOmissions));
             }
 
-            private void ReserveEvaluation(string flagKey)
+            private EvaluationSlot? ReserveEvaluation(string flagKey)
             {
                 if (!_collectDependencyEvaluations)
                 {
-                    return;
+                    return null;
                 }
 
-                _evaluationSlots ??= new Dictionary<string, int>();
-                if (_evaluationSlots.ContainsKey(flagKey))
+                _evaluationSlots ??= new Dictionary<string, EvaluationSlot>();
+                if (_evaluationSlots.TryGetValue(flagKey, out var existing))
                 {
-                    return;
+                    return existing;
                 }
 
-                _evaluations ??= [];
-                _evaluationSlots.Add(flagKey, _evaluations.Count);
-                _evaluations.Add(null!);
+                var slot = new EvaluationSlot();
+                _evaluationOrder ??= [];
+                _evaluationSlots.Add(flagKey, slot);
+                _evaluationOrder.Add(slot);
+                return slot;
+            }
+
+            private DependencyEvaluation[] MaterializeEvaluations()
+            {
+                if (_evaluationOrder is not { Count: > 0 })
+                {
+                    return [];
+                }
+
+                var completed = new List<DependencyEvaluation>(_evaluationOrder.Count);
+                foreach (var slot in _evaluationOrder)
+                {
+                    if (slot.Evaluation is { } evaluation)
+                    {
+                        completed.Add(evaluation);
+                    }
+                }
+
+                return completed.ToArray();
             }
 
             private void EmitDepthError(string flagKey)
@@ -1485,6 +1506,13 @@ namespace Datadog.Trace.FeatureFlags
                 public int DescendantDepth { get; } = descendantDepth;
 
                 public List<ExposureCandidate> ExposureTrace { get; } = exposureTrace;
+            }
+
+            private sealed class EvaluationSlot
+            {
+                public DependencyEvaluation? Evaluation { get; private set; }
+
+                public void Complete(DependencyEvaluation evaluation) => Evaluation = evaluation;
             }
         }
 
