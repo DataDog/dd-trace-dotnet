@@ -7,7 +7,6 @@ using System;
 using System.Text;
 using System.Text.Json;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -56,7 +55,16 @@ public class InjectedContextHelperTests
     [InlineData("{\"note\":\"{see \\\"_datadog\\\":{\\\"x\\\":1} for details}\"}")]
     [InlineData("{\"note\":\"{\\\"_datadog\\\":{\\\"a\\\":1} \\\"b\\\"}\"}")]
     [InlineData("{\"m\":\"{\\\"_datadog\\\":{}}\\x\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{}\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{}} /* example */\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{},/* example */\\\"x\\\":1}\"}")]
+    [InlineData("{\"body\":\"{'note':'see \\\"_datadog\\\":{} here'}\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{}},\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{},\\\"a\\\":1,}\"}")]
+    [InlineData("{\"body\":\"{a:1,\\\"_datadog\\\":{}}\"}")]
+    [InlineData("{\"body\":\"{\\\"_datadog\\\":{},\\\"n\\\":NaN}\"}")]
     [InlineData($"{{\"name\":\"\uFFFD\",\"_datadog\":{Carrier}}}")]
+    [InlineData("{\"Message\":\"{\\\"_datadog\\\":{},\\\"s\\\":\\\"\\ud800\\\"}\"}")]
     public void NothingToStrip_ReturnsSameInstance(string input)
     {
         InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
@@ -67,6 +75,9 @@ public class InjectedContextHelperTests
     [InlineData("{\"_datadog\":{\"a\":1},\"x\":{\"_datadog\":{\"b\":2")]
     [InlineData("{\"_datadog\":{},\"x\":\"_datadog")]
     [InlineData("{\"_datadog\":{\"a\":1},\"x\":\"abc _datadog")]
+    [InlineData("{\"_datadog\":{}")]
+    [InlineData("{\"a\":1,\"_datadog\":{}},")]
+    [InlineData("{'note':'see \"_datadog\":{} here'}")]
     public void MalformedJson_ReturnsSameInstance(string input)
     {
         InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
@@ -210,22 +221,6 @@ public class InjectedContextHelperTests
         decoded.RootElement.TryGetProperty("_datadog", out _).Should().BeFalse();
         decoded.RootElement.GetProperty("k").GetString().Should().Be("a/b");
         decoded.RootElement.GetProperty("A").GetInt32().Should().Be(1);
-    }
-
-    // -----------------------------------------------------------------------
-    // Lone surrogates: the caller relies on strict UTF-8 encoding to keep the original stream
-    // -----------------------------------------------------------------------
-
-    [Fact]
-    public void LoneSurrogateInEncodedJson_IsRejectedByStrictUtf8Encoding()
-    {
-        // The caller encodes with EncodingHelpers.Utf8NoBom and keeps the original stream when it throws
-        var input = "{\"Message\":\"{\\\"_datadog\\\":{},\\\"s\\\":\\\"\\ud800\\\"}\"}";
-
-        var stripped = InjectedContextHelper.StripContext(input);
-
-        var encode = () => EncodingHelpers.Utf8NoBom.GetBytes(stripped);
-        encode.Should().Throw<EncoderFallbackException>();
     }
 
     // -----------------------------------------------------------------------

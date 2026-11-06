@@ -5,11 +5,12 @@
 #if NET6_0_OR_GREATER
 #nullable enable
 using System;
+using System.Buffers;
 using System.Globalization;
-using System.IO;
 using System.Text;
+using System.Text.Json;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
-using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 internal static class InjectedContextHelper
 {
     /// <summary>SNS-to-SQS fan-out needs 2 levels of string-encoded JSON; one more is a safety margin.</summary>
+    [TestingAndPrivateOnly]
     internal const int MaxDepth = 3;
 
     private const string CarrierKey = "_datadog";
@@ -59,7 +61,10 @@ internal static class InjectedContextHelper
             return json;
         }
 
-        return StripJson(json, depth: 0);
+        var stripped = StripJson(json, depth: 0);
+
+        // Cutting text ranges is only safe on valid JSON; validated only when something was removed
+        return ReferenceEquals(stripped, json) || IsJsonObject(json) ? stripped : json;
     }
 
     /// <summary>
@@ -291,28 +296,39 @@ internal static class InjectedContextHelper
         return first < text.Length && text[first] == '{';
     }
 
-    // Only a string holding exactly one JSON object is rewritten;
-    // brace-delimited customer text such as "{...} is an example {}" is kept as is.
+    // Only a string holding exactly one RFC 8259 JSON object is rewritten. Utf8JsonReader is strict by default;
+    // Newtonsoft accepts single quotes, comments, trailing commas, and NaN, so customer text could be rewritten.
     private static bool IsJsonObject(string text)
     {
+        byte[]? buffer = null;
         try
         {
-            using var reader = new JsonTextReader(new StringReader(text))
-            {
-                ArrayPool = JsonArrayPool.Shared,
-                DateParseHandling = DateParseHandling.None,
-            };
+            // Throws on a lone surrogate, which could not be re-encoded as UTF-8 anyway
+            int length = EncodingHelpers.Utf8NoBom.GetByteCount(text);
+            buffer = ArrayPool<byte>.Shared.Rent(length);
+            EncodingHelpers.Utf8NoBom.GetBytes(text, 0, text.Length, buffer, 0);
 
-            while (reader.Read())
+            var reader = new Utf8JsonReader(buffer.AsSpan(0, length));
+            if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
             {
-                // throws on trailing content after the root object
+                return false;
             }
 
-            return true;
+            reader.Skip();
+
+            // Returns false when only whitespace follows the root object; throws on anything else
+            return !reader.Read();
         }
         catch (Exception)
         {
             return false;
+        }
+        finally
+        {
+            if (buffer != null)
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
     }
 
