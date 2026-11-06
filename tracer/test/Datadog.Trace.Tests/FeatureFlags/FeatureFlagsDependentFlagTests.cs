@@ -657,21 +657,37 @@ public class FeatureFlagsDependentFlagTests
     private sealed class ThrowingConvertible : IConvertible
     {
         public TypeCode GetTypeCode() => TypeCode.Object;
+
         public bool ToBoolean(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public byte ToByte(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public char ToChar(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public DateTime ToDateTime(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public decimal ToDecimal(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public double ToDouble(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public short ToInt16(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public int ToInt32(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public long ToInt64(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public sbyte ToSByte(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public float ToSingle(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public string ToString(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public object ToType(Type conversionType, IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public ushort ToUInt16(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public uint ToUInt32(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
+
         public ulong ToUInt64(IFormatProvider? provider) => throw new InvalidOperationException("conversion failed");
     }
 }
