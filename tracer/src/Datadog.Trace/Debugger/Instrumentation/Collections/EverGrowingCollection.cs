@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation.Collections
 {
     /// <summary>
-    /// A very fast, lock free, ordered collection to which items can be added, but never removed.
+    /// A very fast, lock free, ordered collection to which items can be added and cleared, but which never shrinks.
     /// It utilizes a generic type <typeparamref name="TPayload"/> to define the type of items stored in the registry.
     /// </summary>
     internal abstract class EverGrowingCollection<TPayload>
