@@ -276,6 +276,12 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             new(HttpHeaderNames.TracingEnabled, "false"),
         };
 
+        var capabilities = FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities());
+        if (capabilities is not null)
+        {
+            headers.Add(new("X-DD-FEATURE-FLAGS-CAPABILITIES", capabilities));
+        }
+
         if (endpoint.IsManaged)
         {
             // A custom endpoint is left to report its own authentication failure rather than

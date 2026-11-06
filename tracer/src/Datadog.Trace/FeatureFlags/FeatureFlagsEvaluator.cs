@@ -62,6 +62,9 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
+        // Opt-in requires prerequisite evaluation, error propagation, and exposure reporting.
+        internal static IReadOnlyCollection<string> GetCapabilities() => Array.Empty<string>();
+
         private delegate bool NumberEquality(double a, double b);
 
         /// <summary>
