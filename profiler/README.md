@@ -83,7 +83,72 @@ Note:
 
 ### Linux
 
-#### Minimun requirements
+#### Build and run a scenario
+
+Run these commands from the repository root. You need Docker on Linux or macOS; see the [general Docker build instructions](../tracer/README.md#linux). No Datadog Agent is needed for local captures. On a Linux host with the [native build prerequisites](#minimum-requirements) installed, use `./tracer/build.sh` instead.
+
+##### 1. Build once
+
+```bash
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeWrapper BuildProfilerHome BuildProfilerSamples --sample-name Samples.Computer01 --framework net11.0
+```
+
+This builds the profiler, its loader and dependencies, and the sample application. If host port 5003 is busy, run `export BUILD_DOCKER_PORT=0` before using the wrapper.
+
+##### 2. Choose a scenario
+
+`RunProfilerScenario` supports `Samples.Computer01` only. Read its [scenario IDs and descriptions](src/Demos/Samples.Computer01/Program.cs). The default is scenario 4 (PiComputation), .NET 11, for 30 seconds. Pass the ID and sample options together, for example `--scenario "5 --timeout 10 --threads 2"` for Fibonacci.
+
+##### 3. Edit, rebuild, run
+
+After changing profiler C++ code:
+
+```bash
+./tracer/build_in_docker.sh BuildProfilerHome RunProfilerScenario --scenario "5 --timeout 10"
+```
+
+For other changes, replace `BuildProfilerHome` with the corresponding target:
+
+| Changed code | Rebuild target |
+| --- | --- |
+| Profiler C++ | `BuildProfilerHome` |
+| Native loader (`shared/src/Datadog.Trace.ClrProfiler.Native/`) | `BuildNativeLoader` |
+| Linux API wrapper (`profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/`) | `BuildNativeWrapper` |
+| Managed or native tracer | `BuildTracerHome` |
+| Sample application | `BuildProfilerSamples --sample-name Samples.Computer01 --framework net11.0` |
+
+To rerun without rebuilding, omit `BuildProfilerHome`. Use the same `--framework` and `--build-configuration` when building and running. Append `--extra-env-vars DD_PROFILING_ALLOCATION_ENABLED=1 DD_TRACE_DEBUG=1` for allocation profiling and debug logs.
+
+#### What to expect
+
+A successful run prints `Produced N profile(s)`. Logs are under `artifacts/build_data/logs/profiler_scenario/Samples.Computer01/`, with captures in its `pprof/` subdirectory. Each run replaces those outputs.
+
+The command fails if the application fails or no nonempty profile/native profiler log is produced. For attach failures, check the native loader log first, then `DD-DotNet-Profiler-Native-*.log`.
+
+#### Inspect a capture
+
+For a Zstandard-compressed capture (requires `zstd` and Go):
+
+```bash
+zstd -dc path/to/capture.pprof > /tmp/profile.pb
+go tool pprof -top -symbolize=none -sample_index=cpu /tmp/profile.pb
+```
+
+For an uncompressed capture, pass it directly to `pprof`. Look for your scenario's frames in the output.
+
+#### Run sanitizer checks
+
+On Linux with the ASAN toolchain/runtime and .NET 7 runtime installed ([CI setup](../.azure-pipelines/ultimate-pipeline.yml)):
+
+```bash
+./tracer/build.sh RunProfilerAsanTest --framework net7.0
+```
+
+This builds with ASAN, runs native tests, and runs scenario 1 for 120 seconds. Results are under `profiler/build_data/`. Do not use the Alpine Docker wrapper for this target.
+
+**Warning:** normal, ASAN, and UBSAN builds share the CMake cache and published binaries, so they can interfere. Run `Clean` and rebuild when switching modes; this deletes build outputs and loses the incremental cache. Build isolation is tracked in [PROF-16371](https://datadoghq.atlassian.net/browse/PROF-16371).
+
+#### Minimum requirements
 
 To build C# projects
 - [Install the latest .NET SDK](https://docs.microsoft.com/en-us/dotnet/core/install/linux)

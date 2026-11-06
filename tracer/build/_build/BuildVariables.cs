@@ -41,6 +41,17 @@ partial class Build
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)
     {
         AddTracerEnvironmentVariables(envVars);
+        envVars.TryAdd("DD_PROFILING_ENABLED", "1");
+        if (IsArm64)
+        {
+            envVars.TryAdd("DD_INTERNAL_PROFILING_ENABLED_ARM64", "1");
+        }
+
+        if (EnvironmentInfo.IsLinux)
+        {
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            envVars.TryAdd("LD_PRELOAD", MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper);
+        }
     }
 
     public void AddTracerEnvironmentVariables(Dictionary<string, string> envVars)
@@ -78,7 +89,7 @@ partial class Build
 
         foreach (var envVar in extraEnvVars)
         {
-            var kvp = envVar.Split('=');
+            var kvp = envVar.Split('=', 2);
             envVars[kvp[0]] = kvp[1];
         }
     }
