@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci;
@@ -123,8 +124,8 @@ public class CodeOwnersFallbackTests
             ciValues.GitSearchFolder = repoRoot;
             var ownership = ciValues.ResolveSourceOwnership("src/SpanBenchmark.cs", useOSSeparator: false);
 
-            Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
-            Assert.False(ciValues.HasCodeOwners);
+            ownership.RepositoryRelativePath.Should().Be("src/SpanBenchmark.cs");
+            ciValues.HasCodeOwners.Should().BeFalse();
         }
         finally
         {
@@ -246,8 +247,8 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
         ciValues.GitSearchFolder = repoRoot;
 
-        Assert.Equal("jenkins", ciValues.Provider);
-        Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
+        ciValues.Provider.Should().Be("jenkins");
+        ResolveOwners(ciValues, "file.cs").Should().Equal("@gitlab-owner");
     }
 
     [SkippableFact]
@@ -269,7 +270,7 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
         ciValues.GitSearchFolder = repoRoot;
 
-        Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
+        ResolveOwners(ciValues, "file.cs").Should().Equal("@gitlab-owner");
     }
 
     [SkippableFact]
@@ -297,8 +298,8 @@ public class CodeOwnersFallbackTests
         ciValues.GitSearchFolder = repoRoot;
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
-        Assert.Equal(["@gitlab-owner"], ownership.MatchingOwners);
+        ownership.RepositoryRelativePath.Should().Be("src/SpanBenchmark.cs");
+        ownership.MatchingOwners.Should().Equal("@gitlab-owner");
     }
 
     [SkippableFact]
@@ -541,10 +542,10 @@ public class CodeOwnersFallbackTests
         var foreignRelativePath = "../../../../../../_/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs";
         var ownership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
 
-        Assert.True(ciValues.HasCodeOwners);
-        Assert.True(ownership.IsRepositoryRelative);
-        Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", ownership.RepositoryRelativePath);
-        Assert.Equal(["@DataDog/tracing-dotnet"], ownership.MatchingOwners);
+        ciValues.HasCodeOwners.Should().BeTrue();
+        ownership.IsRepositoryRelative.Should().BeTrue();
+        ownership.RepositoryRelativePath.Should().Be("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs");
+        ownership.MatchingOwners.Should().Equal("@DataDog/tracing-dotnet");
     }
 
     [SkippableTheory]
@@ -575,9 +576,9 @@ public class CodeOwnersFallbackTests
         ciValues.GitSearchFolder = repoRoot;
 
         var ownership = ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false);
-        Assert.True(ownership.IsRepositoryRelative);
-        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
-        Assert.Equal(["@owner"], ownership.MatchingOwners);
+        ownership.IsRepositoryRelative.Should().BeTrue();
+        ownership.RepositoryRelativePath.Should().Be("src/SpanBenchmark.cs");
+        ownership.MatchingOwners.Should().Equal("@owner");
     }
 
     [SkippableFact]
