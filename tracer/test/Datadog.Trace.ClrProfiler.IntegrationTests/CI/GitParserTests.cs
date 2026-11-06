@@ -19,6 +19,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     [Collection(nameof(CIEnvironmentVariableTests))]
     public class GitParserTests
     {
+        public static IEnumerable<object[]> GetTagCheckoutCases()
+        {
+            yield return [false, false];
+            yield return [true, false];
+            yield return [true, true];
+        }
+
         public static IEnumerable<object[]> GetData()
         {
             var dataFolder = DataHelpers.GetCiDataDirectory();
@@ -173,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
-        [CombinatorialData]
+        [MemberData(nameof(GetTagCheckoutCases))]
         public void OnlyReportsAnUnambiguousDetachedTag(bool detached, bool multiple)
         {
             using var checkout = new GitCheckout();
