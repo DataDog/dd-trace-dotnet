@@ -175,7 +175,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var profilerPath = GetProfilerNativeLibraryPath();
             var tracerPath = GetTracerNativeLibraryPath();
 
-            var loaderConfigFilePath = Path.GetTempFileName();
+            var loaderConfigFilePath = GetLoaderConfigFilePath();
             using var sw = new StreamWriter(loaderConfigFilePath);
 
             sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
@@ -440,6 +440,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var baseOutputDir = GetTestOutputPath();
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
+        }
+
+        private string GetLoaderConfigFilePath()
+        {
+            // Leave the file in the per-test output directory so CI uploads it with the logs.
+            // A test that starts several processes needs a distinct file for each one.
+            Directory.CreateDirectory(_testOutputPath);
+
+            var path = Path.Combine(_testOutputPath, "loader.conf");
+            var index = 2;
+            while (File.Exists(path))
+            {
+                path = Path.Combine(_testOutputPath, $"loader-{index}.conf");
+                index++;
+            }
+
+            return path;
         }
 
         private bool IsCoreClr()
