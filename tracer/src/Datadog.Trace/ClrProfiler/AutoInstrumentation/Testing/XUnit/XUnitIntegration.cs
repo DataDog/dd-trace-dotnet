@@ -49,6 +49,7 @@ internal static class XUnitIntegration
         var testOptimization = TestOptimization.Instance;
         var test = testSuite.CreateTest(testMethod?.Name ?? string.Empty);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
 
         // Store test case metadata
 #if NETCOREAPP3_1_OR_GREATER
@@ -112,12 +113,13 @@ internal static class XUnitIntegration
             }
 
             var testManagementData = Common.SetTestManagementFeature(test, isRetry);
-            var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix);
+            var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix, testTags.AutomationExclusions.AllowAutoRetry);
 
             testCaseMetadata.SelectedRetryMode = selectedRetryMode;
             testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
+            testCaseMetadata.AllowFailureSuppression = testTags.AutomationExclusions.AllowFailureSuppression;
 
             Common.ApplyRetryTags(testTags, isRetry, selectedRetryMode);
         }
@@ -383,8 +385,13 @@ internal static class XUnitIntegration
         }
     }
 
-    internal static TestRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix)
+    internal static TestRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix, bool allowAutoRetry)
     {
+        if (!allowAutoRetry)
+        {
+            return TestRetryMode.None;
+        }
+
         if (isAttemptToFix)
         {
             return TestRetryMode.AttemptToFix;
@@ -512,7 +519,7 @@ internal static class XUnitIntegration
             var testAssembly = runnerInstance.TestClass?.Assembly.GetName().Name ?? string.Empty;
             var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
             var testMethod = runnerInstance.TestMethod?.Name ?? string.Empty;
-            return testOptimization.TestManagementFeature.GetTestProperties(testAssembly, testClassName, testMethod);
+            return TestAutomationExclusions.From(runnerInstance.TestMethod).ApplyTo(testOptimization.TestManagementFeature.GetTestProperties(testAssembly, testClassName, testMethod));
         }
 
         return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
