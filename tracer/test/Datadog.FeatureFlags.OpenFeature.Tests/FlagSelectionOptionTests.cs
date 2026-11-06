@@ -18,7 +18,7 @@ public class FlagSelectionOptionTests
     [Fact]
     public void TheConstructorHandsACopyOfTheSelectionToTheTracer()
     {
-        var tags = new List<string> { "team:payments", "mobile" };
+        var tags = new List<string> { "checkout", "mobile" };
         string[] keyPatterns = ["checkout.*"];
         var options = new DatadogProviderOptions { FlagSelection = new FlagSelection { Tags = tags, KeyPatterns = keyPatterns } };
         var bridge = new BridgeRecorder();
@@ -30,7 +30,7 @@ public class FlagSelectionOptionTests
         options.FlagSelection = null;
 
         bridge.Calls.Should().ContainSingle();
-        bridge.Calls[0].Tags.Should().Equal("team:payments", "mobile");
+        bridge.Calls[0].Tags.Should().Equal("checkout", "mobile");
         bridge.Calls[0].KeyPatterns.Should().Equal("checkout.*");
         bridge.Calls[0].KeyPatterns.Should().NotBeSameAs(keyPatterns);
     }

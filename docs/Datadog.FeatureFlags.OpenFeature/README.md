@@ -84,7 +84,7 @@ var provider = new DatadogProvider(new DatadogProviderOptions
 {
     FlagSelection = new FlagSelection
     {
-        Tags = ["team:payments"],
+        Tags = ["checkout"],
         KeyPatterns = ["checkout.*"],
     },
 });

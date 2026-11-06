@@ -1268,6 +1268,18 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void SetFlagSelection_WithRemoteConfig_WarnsForASelectionThatIsOnlyMalformed()
+    {
+        var collection = new NameValueCollection { [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = "remote_config" };
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(new TracerSettings(new NameValueConfigurationSource(collection)), new MockRcmSubscriptionManager(), logger: logger.Object, flagSelectionDiagnostics: NewDiagnostics());
+
+        module.SetFlagSelection([null], null);
+
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.RemoteConfigWarning);
+    }
+
+    [Fact]
     public void SetFlagSelection_WhenTheSelectionIsInvalid_LogsNotSentOncePerProviderAndCountsOnce()
     {
         var metrics = new Mock<IMetricsTelemetryCollector>();

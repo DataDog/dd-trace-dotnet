@@ -186,7 +186,7 @@ public class FlagSelectionTests
     [InlineData("mobile", "mobile")]
     [InlineData("-._~", "-._~")]
     [InlineData("AZaz09", "AZaz09")]
-    [InlineData("team:payments", "team%3Apayments")]
+    [InlineData("region:eu", "region%3Aeu")]
     [InlineData("a b", "a%20b")]
     [InlineData("100%", "100%25")]
     [InlineData("a+b", "a%2Bb")]
