@@ -41,6 +41,10 @@ public class TestAutomationExclusionsTests
         effective.Quarantined.Should().Be(quarantined && !preventSuppression);
         effective.Disabled.Should().Be(disabled && !preventSuppression);
         effective.AttemptToFix.Should().Be(attemptToFix && !noRetry);
+        var tags = new TestSpanTags { IsQuarantined = quarantined ? "true" : null, IsDisabled = disabled ? "true" : null, IsAttemptToFix = attemptToFix ? "true" : null };
+        new TestAutomationExclusions(preventSuppression, noRetry).ApplyTo(tags);
+        tags.ShouldMaskTestManagementOutcome().Should().Be(!preventSuppression && (quarantined || disabled || (attemptToFix && !noRetry)));
+
         assigned.Quarantined.Should().Be(quarantined);
         assigned.Disabled.Should().Be(disabled);
         assigned.AttemptToFix.Should().Be(attemptToFix);

@@ -48,6 +48,9 @@ internal static class Common
     internal static bool IsAttemptToFix(TestSpanTags? tags)
         => tags?.AutomationExclusions.NoAutoRetry != true && tags?.IsAttemptToFix == "true";
 
+    internal static bool ShouldMaskTestManagementOutcome(this TestSpanTags? tags)
+        => tags?.AutomationExclusions.PreventFailureSuppression != true && (IsFailureSuppressed(tags) || IsAttemptToFix(tags));
+
     internal static bool IsDisabledByTestManagement(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
         => testManagementProperties is { Disabled: true, AttemptToFix: false };
 

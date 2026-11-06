@@ -405,7 +405,7 @@ internal sealed class MsTestExecution
             }
 
             var tags = completed.Test.GetTags();
-            if (tags?.AutomationExclusions.PreventFailureSuppression == true || (!Common.IsFailureSuppressed(tags) && !Common.IsAttemptToFix(tags)))
+            if (!tags.ShouldMaskTestManagementOutcome())
             {
                 continue;
             }
