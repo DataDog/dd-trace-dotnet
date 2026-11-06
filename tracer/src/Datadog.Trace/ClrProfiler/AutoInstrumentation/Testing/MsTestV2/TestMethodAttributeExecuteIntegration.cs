@@ -202,7 +202,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: execution is { HasNativeRetry: true, IsNativeRetry: true }, testMethodState.Test.StartTime);
                 if (test?.GetTags() is { } testTags)
                 {
-                    if (!testTags.AutomationExclusions.NoAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+                    if (testTags.AutomationExclusions.AllowAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
                         isEfdTest = isEfdTest || testTags.TestIsNew == "true";
                         if (isEfdTest && duration.TotalMinutes >= 5)
@@ -219,7 +219,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
                         // Check if this test will have EFD/ATF retries (based on tags)
-                        var testIsEfd = !testTags.AutomationExclusions.NoAutoRetry && testTags.TestIsNew == "true";
+                        var testIsEfd = testTags.AutomationExclusions.AllowAutoRetry && testTags.TestIsNew == "true";
                         var testIsAtf = Common.IsAttemptToFix(testTags);
 
                         var retryState = new RetryState
@@ -286,7 +286,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         var testOptimization = TestOptimization.Instance;
         var testMethod = testMethodState.TestMethod;
         var exclusions = TestAutomationExclusions.From(testMethod.MethodInfo);
-        if (exclusions.NoAutoRetry)
+        if (!exclusions.AllowAutoRetry)
         {
             return returnValueList;
         }
@@ -720,7 +720,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             // Initial execution - it's final if no retries will happen
             // For EFD/ATF, retries will always happen
             // For ATR, retries happen only if test fails and ATR is enabled
-            var atrEnabled = !testTags.AutomationExclusions.NoAutoRetry && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+            var atrEnabled = testTags.AutomationExclusions.AllowAutoRetry && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
             var willHaveAtrRetries = atrEnabled && testStatus == TestStatus.Fail;
             isFinalExecution = !retryState.RetriesUnconditionally && !willHaveAtrRetries;
         }
