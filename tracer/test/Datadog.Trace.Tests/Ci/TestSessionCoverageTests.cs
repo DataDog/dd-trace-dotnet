@@ -28,6 +28,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.Ci;
 
@@ -683,6 +684,79 @@ public class TestSessionCoverageTests
         }
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void CoverageIpcWaitIncludesMessagesProcessedBeforeWaiting(int messageCount)
+    {
+        var session = CreateSessionWithSkippableFeature(Mock.Of<ITestOptimizationSkippableFeature>());
+        try
+        {
+            var message = new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, 80, true, 5, 4, resultId: "duplicate-result");
+            InvokeIpcMessageReceived(session, message);
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
+            Action wait = () => coverageMessages.WaitForMessages(TimeSpan.Zero, messageCount);
+
+            // Neither earlier coverage nor unrelated messages satisfy this operation's wait.
+            wait.Should().Throw<XunitException>();
+            InvokeIpcMessageReceived(session, new SetSessionTagMessage("non-coverage-message", "received"));
+            wait.Should().Throw<XunitException>();
+
+            for (var i = 0; i < messageCount; i++)
+            {
+                InvokeIpcMessageReceived(session, message);
+                if (i + 1 < messageCount)
+                {
+                    wait.Should().Throw<XunitException>();
+                }
+            }
+
+            // All callbacks have completed, so no further message or timeout is needed.
+            coverageMessages.WaitForMessages(TimeSpan.Zero, messageCount);
+            session.PublishCodeCoverage();
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+        }
+        finally
+        {
+            CloseAndReset(session);
+        }
+    }
+
+    [Fact]
+    public void CoverageIpcWaitRequiresTheCallbackToFinishProcessing()
+    {
+        var session = CreateSessionWithSkippableFeature(Mock.Of<ITestOptimizationSkippableFeature>());
+        try
+        {
+            session.EnableIpcServer().Should().BeTrue();
+            using var client = new IpcClient($"session_{session.Tags.SessionId}");
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
+            var resultIdsLockField = typeof(TestSession).GetField("_coverageResultIdsLock", BindingFlags.Instance | BindingFlags.NonPublic)
+                                 ?? throw new MissingFieldException(nameof(TestSession), "_coverageResultIdsLock");
+            var resultIdsLock = resultIdsLockField.GetValue(session)
+                            ?? throw new InvalidOperationException("The session's coverage result lock must be initialized.");
+
+            // Hold the real callback between receiving the message and recording coverage.
+            lock (resultIdsLock)
+            {
+                SendIpcMessage(client, new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, 80, true, 5, 4, resultId: "blocked-result"));
+                SpinWait.SpinUntil(() => GetPrivateField(session, "_coverageIpcMessageCount") == 1, TimeSpan.FromSeconds(5)).Should().BeTrue();
+                session.HasCodeCoverageResults.Should().BeFalse();
+
+                Action wait = () => coverageMessages.WaitForMessages(TimeSpan.Zero);
+                wait.Should().Throw<XunitException>().WithMessage("*active callbacks: 1*");
+            }
+
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
+            session.PublishCodeCoverage();
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+        }
+        finally
+        {
+            CloseAndReset(session);
+        }
+    }
+
     [Fact]
     public void ClosePublishesCoverageReceivedThroughRealIpcBeforeFinalPublish()
     {
@@ -690,11 +764,12 @@ public class TestSessionCoverageTests
         try
         {
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
 
             using var client = new IpcClient($"session_{session.Tags.SessionId}");
             SendCoverageMessage(client, 80, backfilled: true, executableLines: 5, coveredLines: 4);
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
@@ -779,6 +854,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
             NormalizeDirectorySeparators(Environment.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory)).Should().Be(NormalizeDirectorySeparators(workingDirectory));
 
             File.WriteAllText(coverageFile, coverageXml);
@@ -788,7 +864,7 @@ public class TestSessionCoverageTests
 
             DotnetCommon.TryProcessInjectedSessionCoverletCollectorXmlReports().Should().BeTrue();
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -885,6 +961,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
 
             File.WriteAllText(firstCoverageFile, firstCoverageXml);
             File.SetLastWriteTimeUtc(firstCoverageFile, DateTime.UtcNow);
@@ -898,7 +975,7 @@ public class TestSessionCoverageTests
             persistedResult.Percentage.Should().Be(50);
             persistedResult.SupersededResultIds.Should().HaveCount(2);
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -1119,6 +1196,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
 
             File.WriteAllText(coverageFile, coverageXml);
             File.SetLastWriteTimeUtc(coverageFile, DateTime.UtcNow);
@@ -1126,7 +1204,7 @@ public class TestSessionCoverageTests
             DotnetCommon.TryProcessInjectedSessionCoverletCollectorXmlReports().Should().BeTrue();
             DotnetCommon.TryProcessInjectedSessionCoverletCollectorXmlReports().Should().BeTrue();
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5), messageCount: 2);
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -1215,6 +1293,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
             DotnetCommon.CreateSession().Should().BeNull();
             File.Exists(Path.Combine(Environment.CurrentDirectory, "coverage.rsp")).Should().BeFalse();
             Environment.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory).Should().Be(workingDirectory);
@@ -1226,7 +1305,7 @@ public class TestSessionCoverageTests
             CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out var persistedResults).Should().BeTrue();
             persistedResults.Should().ContainSingle(result => result.Source == CodeCoverageReportSource.CoverletXmlFallback && result.Percentage == 50);
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -1342,6 +1421,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
             DotnetCommon.CreateSession().Should().BeNull();
 
             File.WriteAllText(coverageFile, coverageXml);
@@ -1349,7 +1429,7 @@ public class TestSessionCoverageTests
 
             DotnetCommon.FinalizeSession(null, 0, null);
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -1632,6 +1712,7 @@ public class TestSessionCoverageTests
 
             session = CreateSession(propagateEnvironmentVariables: true, workingDirectory: workingDirectory);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
 
             File.WriteAllText(coverageFile, coverageXml);
             File.SetLastWriteTimeUtc(coverageFile, DateTime.UtcNow);
@@ -1644,7 +1725,7 @@ public class TestSessionCoverageTests
             persistedResult.Source.Should().Be(CodeCoverageReportSource.CoverletXmlFallback);
             persistedResult.Percentage.Should().Be(50);
 
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5), messageCount: 2);
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
@@ -2919,6 +3000,7 @@ public class TestSessionCoverageTests
         try
         {
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
             client = new IpcClient($"session_{session.Tags.SessionId}");
             CoverageBackfillDataStore.RecordCoverageIpcResult(
                 TestOptimization.Instance,
@@ -2936,7 +3018,7 @@ public class TestSessionCoverageTests
                 new SessionCodeCoverageReferenceMessage(
                     CodeCoverageReportSource.Coverlet,
                     "coverlet-reference"));
-            session.DrainIpcMessages(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromMilliseconds(250));
             session.Close(TestStatus.Pass);
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
