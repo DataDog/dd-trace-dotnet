@@ -54,7 +54,7 @@ internal sealed class ImpactedTestsModule
 
         // Get the base commit SHA
         var baseCommitSha = environmentValues.PrBaseCommit ?? string.Empty;
-        var workspacePath = environmentValues.WorkspacePath ?? string.Empty;
+        var workspacePath = environmentValues.SourceRoot ?? environmentValues.WorkspacePath ?? string.Empty;
         FileCoverageInfo[] modifiedFiles = [];
 
         // Check if the base commit SHA is available

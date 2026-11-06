@@ -201,9 +201,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void DetectsImpactedFilesInDetachedCheckout(bool hasBaseCommit)
+        [CombinatorialData]
+        public void DetectsImpactedFilesInDetachedCheckout(bool hasBaseCommit, bool differentWorkspace)
         {
             using var checkout = new GitCheckout();
             const string commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08";
@@ -216,7 +215,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             reset!.ExitCode.Should().Be(0, reset.Error);
             File.AppendAllText(Path.Combine(checkout.Root, "README.md"), "\nChanged in the checkout\n");
             GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var gitInfo).Should().BeTrue();
-            var values = new ImpactedEnvironmentValues(checkout.Root, hasBaseCommit ? baseCommit : null, gitInfo);
+            var workspace = differentWorkspace ? checkout.Root + "-provider" : checkout.Root;
+            var values = new ImpactedEnvironmentValues(workspace, hasBaseCommit ? baseCommit : null, gitInfo);
             values.Branch.Should().BeNull();
 
             var impacted = ImpactedTestsModule.CreateInstance(values, "main");
@@ -225,6 +225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             impacted.CurrentCommitSha.Should().Be(commit);
             impacted.ModifiedFiles.Should().NotBeEmpty();
             values.Branch.Should().BeNull();
+            values.WorkspacePath.Should().Be(workspace);
         }
 
         [SkippableFact]
