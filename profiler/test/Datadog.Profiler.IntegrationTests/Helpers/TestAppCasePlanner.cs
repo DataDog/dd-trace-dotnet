@@ -86,7 +86,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 selected = exact.Where(framework => framework != TestFramework.None);
                 if (hasRange)
                 {
-                    selected = selected.Where(framework => InRange(framework, minimum, maximum));
+                    // A range adds versioned frameworks. It never adds net48; an explicit net48 entry stays.
+                    var ranged = TestFrameworkInfo.VersionOrder.Where(framework => InRange(framework, minimum, maximum));
+                    selected = selected.Where(framework => InRange(framework, minimum, maximum)).Concat(ranged);
                 }
             }
             else if (hasRange)
