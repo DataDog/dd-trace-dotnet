@@ -2787,6 +2787,91 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
+    [Theory]
+    [InlineData(nameof(ProtectedTest), true, false, true, false, true, "Failed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), true, true, false, false, true, "Failed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), true, true, true, false, true, "Failed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), true, true, true, true, false, "Failed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), true, true, true, true, true, "Passed", 3, "attempt_to_fix")]
+    [InlineData(nameof(OrdinaryTest), true, true, true, false, true, "Passed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), false, false, true, false, true, "Passed", 2, "atr")]
+    [InlineData(nameof(ProtectedTest), false, true, true, false, true, "Passed", 2, "efd")]
+    [InlineData(nameof(ExcludedTest), true, true, true, false, true, "Failed", 1, null)]
+    public void NUnitAttemptToFixTakesPriorityOverOtherRetries(string methodName, bool attemptToFix, bool efd, bool atr, bool initialPasses, bool retryPasses, string expectedStatus, int expectedExecutions, string expectedRetryReason)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(3);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, attemptToFix));
+        var earlyFlake = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlake.Setup(x => x.Enabled).Returns(efd);
+        earlyFlake.Setup(x => x.EarlyFlakeDetectionSettings).Returns(new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(true, new TestOptimizationClient.SlowTestRetriesSettingsResponse(2, null, null, null), 100));
+        var known = new Mock<ITestOptimizationKnownTestsFeature>();
+        known.Setup(x => x.Enabled).Returns(true);
+        var settings = CreateSettings((ConfigurationKeys.CIVisibility.FlakyRetryEnabled, atr ? "true" : "false"), (ConfigurationKeys.CIVisibility.FlakyRetryCount, "2"));
+        var optimization = CreateTestOptimization(settings, Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        optimization.Setup(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlake.Object);
+        optimization.Setup(x => x.KnownTestsFeature).Returns(known.Object);
+        optimization.Setup(x => x.FlakyRetryFeature).Returns(TestOptimizationFlakyRetryFeature.Create(settings, CreateRemoteSettingsResponse(false)));
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        var executions = new List<Test>();
+        try
+        {
+            var assembly = new NUnitTestStub(method, "Annotations", [], testType: "Assembly");
+            var fixture = new NUnitTestStub(method, "Fixture", [], testType: "TestFixture", parent: assembly);
+            var currentTest = new NUnitTestStub(method, methodName, [], parent: fixture) { Id = Guid.NewGuid().ToString() };
+            currentTest.ResultFactory = () => CreateResult(NUnitTestStatus.Passed).Object;
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameNUnit, "3.0.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            NUnitIntegration.SetTestModuleTo(assembly, module);
+            NUnitIntegration.SetTestSuiteTo(fixture, suite);
+            var context = new NUnitContextStub { CurrentTest = currentTest, CurrentResult = currentTest.MakeTestResult() };
+            var command = new Mock<NUnitCommand>();
+            command.Setup(x => x.Execute(It.IsAny<NUnitContext>())).Returns<NUnitContext>(executionContext =>
+            {
+                var passes = executions.Count == 0 ? initialPasses : retryPasses;
+                executions.Add(NUnitIntegration.GetOrCreateTest(executionContext.CurrentTest, executions.Count));
+                return CreateResult(passes ? NUnitTestStatus.Passed : NUnitTestStatus.Failed).Object;
+            });
+
+            var returned = (NUnitTestResult)new NUnitTestCommand(command.Object).Execute(context);
+
+            returned.ResultState.Status.ToString().Should().Be(expectedStatus);
+            context.CurrentResult.Should().BeSameAs(returned);
+            executions.Should().HaveCount(expectedExecutions);
+            executions.Last().GetTags().TestRetryReason.Should().Be(expectedRetryReason);
+            executions.Last().GetTags().FinalStatus.Should().Be(attemptToFix && methodName != nameof(ExcludedTest) && (!initialPasses || !retryPasses) ? TestTags.StatusFail : expectedStatus == "Passed" ? TestTags.StatusPass : TestTags.StatusFail);
+            if (attemptToFix && expectedExecutions > 1)
+            {
+                executions.Last().GetTags().AttemptToFixPassed.Should().Be(initialPasses && retryPasses ? "true" : "false");
+            }
+
+            Mock<NUnitTestResult> CreateResult(NUnitTestStatus status)
+            {
+                var result = CreateNUnitResult(currentTest, status);
+                result.Setup(x => x.Instance).Returns(result.Object);
+                result.Setup(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()))
+                      .Callback<NUnitResultState, string, string>((state, _, _) => result.Setup(x => x.ResultState).Returns(state));
+                return result;
+            }
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+            GC.KeepAlive(executions);
+        }
+    }
+
     // Without native retries, MSTest receives the first result unless an attempt passed, so masking only changes the
     // last attempt. With native retries, masking changes the selected result instead.
     [Theory]
@@ -3179,10 +3264,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public NUnitTest Parent => _parent;
 
+        public Func<NUnitTestResult> ResultFactory { get; set; }
+
         public NUnitTestResult MakeTestResult()
-        {
-            throw new NotImplementedException();
-        }
+            => ResultFactory?.Invoke() ?? throw new NotImplementedException();
 
         public ref TReturn GetInternalDuckTypedInstance<TReturn>()
         {

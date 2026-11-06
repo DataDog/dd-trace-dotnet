@@ -78,8 +78,13 @@ internal sealed class TestOptimizationTestCommand
                            atrHasBudget;
         var atfWillRetry = exclusions.AllowAutoRetry && !isSkippedOrInconclusive && testManagementProperties is { AttemptToFix: true };
 
-        // Apply retries
-        if (efdWillRetry)
+        // Attempt to Fix takes priority over EFD and ATR, including failure aggregation and completion tags.
+        if (atfWillRetry)
+        {
+            // testManagementProperties is validated non-null by the atfWillRetry pattern match above
+            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result, preserveFailure: !exclusions.AllowFailureSuppression);
+        }
+        else if (efdWillRetry)
         {
             result = DoRetries(new EarlyFlakeDetectionRetryBehavior(duration), context, result);
         }
@@ -95,11 +100,6 @@ internal sealed class TestOptimizationTestCommand
             }
 
             result = DoRetries(new FlakyRetryBehavior(testOptimization, duration), context, result);
-        }
-        else if (atfWillRetry)
-        {
-            // testManagementProperties is validated non-null by the atfWillRetry pattern match above
-            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result, preserveFailure: !exclusions.AllowFailureSuppression);
         }
 
         // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
