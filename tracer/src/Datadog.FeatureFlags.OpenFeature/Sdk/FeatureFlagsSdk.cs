@@ -94,6 +94,17 @@ internal static class FeatureFlagsSdk
     {
     }
 
+    // Hands a provider's flag selection to the tracer, which claims it for the process. Returns false
+    // with a tracer that predates flag selection, which then loads every flag.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool SetFlagSelection(string[]? tags, string[]? keyPatterns) => false;
+
+    // Releases the claim SetFlagSelection made, once the provider is shut down or disposed.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void ReleaseFlagSelection()
+    {
+    }
+
     /// <summary>Gets a value indicating whether the tracer supports <see cref="EvaluateDeferred"/> and <see cref="CommitExposure"/>.</summary>
     /// <returns> True when the tracer intercepts both </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]

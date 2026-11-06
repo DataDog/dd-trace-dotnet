@@ -42,7 +42,7 @@ public class CanonicalFixtureTests
 
         foreach (var resource in resources)
         {
-            var cases = JsonLinq.JArray.Parse(ReadResource(resource));
+            var cases = (JsonLinq.JArray)ParseFixture(ReadResource(resource));
             Assert.NotEmpty(cases);
             for (var index = 0; index < cases.Count; index++)
             {
@@ -59,7 +59,7 @@ public class CanonicalFixtureTests
     public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync)
     {
         Assert.False(string.IsNullOrEmpty(description));
-        var testCase = JsonLinq.JObject.Parse(json);
+        var testCase = (JsonLinq.JObject)ParseFixture(json);
         var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, Configuration);
         using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
             new EvaluationAdapter(evaluator.Evaluate(
@@ -167,6 +167,13 @@ public class CanonicalFixtureTests
         };
         Assert.Equal(expectedError, actual.ErrorType);
         Assert.Equal(errorCode, actual.ErrorMessage);
+    }
+
+    // Timestamps in fixture attributes are strings, as the other SDKs read them, not dates.
+    private static JsonLinq.JToken ParseFixture(string json)
+    {
+        using var reader = new Json.JsonTextReader(new StringReader(json)) { DateParseHandling = Json.DateParseHandling.None };
+        return JsonLinq.JToken.Load(reader);
     }
 
     private static string ReadResource(string name)

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.FeatureFlags.Agentless;
 
 namespace Datadog.Trace.FeatureFlags;
 
@@ -15,7 +16,19 @@ namespace Datadog.Trace.FeatureFlags;
 internal interface IFeatureFlagsDeliverySource : IDisposable
 {
     /// <summary>
+    /// Gets a value indicating whether the current request leaves out the flag selection because the
+    /// request URL would be too long with it.
+    /// </summary>
+    bool OmitsFlagSelection { get; }
+
+    /// <summary>
     /// Starts requesting configuration. Idempotent.
     /// </summary>
     void Start();
+
+    /// <summary>
+    /// Requests configuration for a newly claimed flag selection, from the next request on.
+    /// </summary>
+    /// <param name="selection">The claimed selection.</param>
+    void UpdateFlagSelection(FlagSelection selection);
 }

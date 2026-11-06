@@ -19,6 +19,7 @@ using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -57,11 +58,16 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private readonly HashSet<string> _loggedFailureCategories = new();
 
     private readonly IDisposable? _environmentSubscription;
+    private readonly FlagSelectionDiagnostics _flagSelectionDiagnostics;
 
-    // Written by the settings-change callback, read by the poll loop. The URI is stored rather than
-    // the environment it carries, so it is only built when the environment changes. The environment
-    // the URI sends travels with it, so a response is reported against the environment its own
-    // request used, even when the setting changes while that request is in flight.
+    // Serializes the rebuilds of the request target: the environment changes on a settings callback,
+    // and the flag selection on a provider's construction.
+    private readonly object _requestTargetLock = new();
+
+    // Written when the environment or the flag selection changes, read by the poll loop. The URI is
+    // stored rather than what it carries, so it is only built when one of them changes. What the URI
+    // sends travels with it, so a response is reported against its own request, even when a setting
+    // changes while that request is in flight.
     private RequestTarget _requestTarget;
 
     // Only ever touched from the poll loop.
@@ -81,14 +87,17 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         string? environment = null,
         TracerSettings.SettingsManager? settingsManager = null,
         Func<TimeSpan, Task>? waitAsync = null,
-        IDatadogLogger? logger = null)
+        IDatadogLogger? logger = null,
+        FlagSelection? flagSelection = null,
+        FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
     {
         _log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
+        _flagSelectionDiagnostics = flagSelectionDiagnostics ?? FlagSelectionDiagnostics.Shared;
         _endpoint = endpoint;
         _requestFactory = requestFactory;
         _pollInterval = pollInterval;
         _applyConfiguration = applyConfiguration;
-        _requestTarget = new RequestTarget(endpoint, environment);
+        _requestTarget = new RequestTarget(endpoint, environment, flagSelection ?? FlagSelection.AllFlags);
         _waitAsync = waitAsync ?? Task.Delay;
 
         // Subscribed last, so every field the callback touches is already set. The environment is
@@ -103,6 +112,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         });
     }
 
+    public bool OmitsFlagSelection => Volatile.Read(ref _requestTarget).SelectionOmitted;
+
     /// <summary>
     /// Creates the source, or returns <c>null</c> when it cannot be operated: a base URL that is
     /// not a URL, or the managed endpoint without an API key. Polling anyway would only produce
@@ -112,7 +123,9 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         FeatureFlagsSettings settings,
         TracerSettings.SettingsManager manager,
         Func<ServerConfiguration, bool> applyConfiguration,
-        IDatadogLogger? logger = null)
+        IDatadogLogger? logger = null,
+        FlagSelection? flagSelection = null,
+        FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
     {
         var log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
 
@@ -141,7 +154,9 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             applyConfiguration,
             manager.InitialMutableSettings.Environment,
             manager,
-            logger: log);
+            logger: log,
+            flagSelection: flagSelection,
+            flagSelectionDiagnostics: flagSelectionDiagnostics);
     }
 
     /// <summary>
@@ -155,13 +170,48 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         // alone, so comparing that is enough. A configured base URL never sends an environment, so
         // it never gets past this check.
         var requested = _endpoint.RequestEnvironment(environment);
-        if (string.Equals(Volatile.Read(ref _requestTarget).Environment, requested, StringComparison.Ordinal))
+        RequestTarget previous;
+        RequestTarget next;
+        lock (_requestTargetLock)
         {
-            return;
+            previous = _requestTarget;
+            if (string.Equals(previous.Environment, requested, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            next = new RequestTarget(_endpoint, environment, previous.Selection);
+            Volatile.Write(ref _requestTarget, next);
         }
 
-        Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, environment));
         _log.Debug<string>("Feature Flags: agentless configuration source now requests env={RequestedEnvironment}", requested ?? "none");
+
+        // A longer environment can push the selection over the URL limit while the source runs. Before
+        // the source starts, the module's activation reports it instead.
+        if (next.SelectionOmitted && !previous.SelectionOmitted && Volatile.Read(ref _started) != 0)
+        {
+            _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+        }
+    }
+
+    /// <summary>
+    /// Records a newly claimed flag selection, picked up by the poll loop on its next request. A
+    /// different URI also drops the ETag, which identifies the previous selection's configuration.
+    /// </summary>
+    public void UpdateFlagSelection(FlagSelection selection)
+    {
+        lock (_requestTargetLock)
+        {
+            var current = _requestTarget;
+            if (current.Selection.Equals(selection))
+            {
+                return;
+            }
+
+            Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, current.ConfiguredEnvironment, selection));
+        }
+
+        _log.Debug("Feature Flags: agentless configuration source now requests a different flag selection");
     }
 
     /// <summary>
@@ -366,9 +416,16 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // string. A payload that does not parse is reported, not thrown: it is not retryable.
             ServerConfiguration? configuration = null;
             string? parseError = null;
+            MetricTags.FlagSelectionIgnoredReason? ignoredSelection = null;
 
             if (response.StatusCode == 200)
             {
+                // Only a response to a request that carried the selection can say it was ignored.
+                if (target.SelectionSent)
+                {
+                    ignoredSelection = FlagSelectionDiagnostics.ParseIgnoredReason(response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName));
+                }
+
                 using var stream = await response.GetStreamAsync().ConfigureAwait(false);
 
                 using var decompressed =
@@ -391,11 +448,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 }
             }
 
-            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null, requestedEnvironment: target.Environment);
+            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null, requestedEnvironment: target.Environment, ignoredSelection);
         }
         catch (Exception ex)
         {
-            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex, requestedEnvironment: target.Environment);
+            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex, requestedEnvironment: target.Environment, ignoredSelection: null);
         }
     }
 
@@ -448,6 +505,12 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         // answer 304, pinning the process to stale configuration with no way back.
         var newEtag = result.ETag?.Trim();
         _etag = StringUtil.IsNullOrEmpty(newEtag) ? null : newEtag;
+
+        // Reported once the configuration is applied, so "Loaded the full flag configuration" is true.
+        if (result.IgnoredSelection is { } ignoredReason)
+        {
+            _flagSelectionDiagnostics.ReportIgnored(_log, ignoredReason);
+        }
 
         // The payload's environment is reported next to the requested one, because a mismatch
         // between DD_ENV and where the flags are configured is a common reason nothing resolves.
@@ -568,7 +631,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             failure);
     }
 
-    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? requestedEnvironment)
+    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? requestedEnvironment, MetricTags.FlagSelectionIgnoredReason? ignoredSelection)
     {
         public int? StatusCode { get; } = statusCode;
 
@@ -585,16 +648,39 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         /// it sent none.
         /// </summary>
         public string? RequestedEnvironment { get; } = requestedEnvironment;
+
+        /// <summary>
+        /// Gets why the server ignored the flag selection the request sent, or <c>null</c> when it
+        /// did not, or when the request sent none.
+        /// </summary>
+        public MetricTags.FlagSelectionIgnoredReason? IgnoredSelection { get; } = ignoredSelection;
     }
 
     /// <summary>
-    /// The URI requested for an environment, and the environment it sends. Immutable, so the poll
-    /// loop reads both from a single reference.
+    /// The URI requested for an environment and a flag selection, and what it sends. Immutable, so
+    /// the poll loop reads all of it from a single reference.
     /// </summary>
-    private sealed class RequestTarget(AgentlessEndpoint endpoint, string? environment)
+    private sealed class RequestTarget
     {
-        public Uri Uri { get; } = endpoint.BuildRequestUri(environment);
+        public RequestTarget(AgentlessEndpoint endpoint, string? environment, FlagSelection selection)
+        {
+            ConfiguredEnvironment = environment;
+            Environment = endpoint.RequestEnvironment(environment);
+            Selection = selection;
+            Uri = endpoint.BuildRequestUri(environment, selection, out var selectionOmitted);
+            SelectionOmitted = selectionOmitted;
+        }
 
-        public string? Environment { get; } = endpoint.RequestEnvironment(environment);
+        public Uri Uri { get; }
+
+        public string? ConfiguredEnvironment { get; }
+
+        public string? Environment { get; }
+
+        public FlagSelection Selection { get; }
+
+        public bool SelectionOmitted { get; }
+
+        public bool SelectionSent => Selection.HasValues && !SelectionOmitted;
     }
 }

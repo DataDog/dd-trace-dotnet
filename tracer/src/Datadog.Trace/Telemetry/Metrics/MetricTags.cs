@@ -48,6 +48,24 @@ internal static class MetricTags
         [Description("reason:invalid")] Invalid,
     }
 
+    internal enum FlagSelectionDroppedReason
+    {
+        [Description("reason:malformed_selection")] MalformedSelection,
+        [Description("reason:too_many_values")] TooManyValues,
+        [Description("reason:invalid_key_pattern")] InvalidKeyPattern,
+        [Description("reason:invalid_tag")] InvalidTag,
+    }
+
+    internal enum FlagSelectionIgnoredReason
+    {
+        [Description("reason:malformed_selection")] MalformedSelection,
+        [Description("reason:too_many_values")] TooManyValues,
+        [Description("reason:invalid_key_pattern")] InvalidKeyPattern,
+        [Description("reason:invalid_tag")] InvalidTag,
+        [Description("reason:tag_load_failed")] TagLoadFailed,
+        [Description("reason:unknown")] Unknown,
+    }
+
     internal enum LogLevel
     {
         [Description("level:debug")] Debug,

@@ -30,6 +30,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
@@ -42,12 +43,19 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
+using DroppedReason = Datadog.Trace.Telemetry.Metrics.MetricTags.FlagSelectionDroppedReason;
 using FeatureFlagsValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    private const string AgentlessBody = """
+        { "data": { "type": "universal-flag-configuration",
+                    "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                    "environment": { "name": "production" }, "flags": {} } } }
+        """;
+
     [Fact]
     public async Task AgentlessModuleUsesSharedDiscoveryForEventDelivery()
     {
@@ -1141,6 +1149,234 @@ public class FeatureFlagsModuleTests
         formatter.Verify(x => x.Format(It.IsAny<LogEvent>(), It.IsAny<TextWriter>()), Times.AtLeastOnce);
     }
 
+    [Fact]
+    public async Task SetFlagSelection_BeforeActivation_IsSentOnTheFirstRequest()
+    {
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: AgentlessBody));
+        AgentlessEndpoint.TryCreate("datadoghq.com", null, out var endpoint, out _).Should().BeTrue();
+        using var module = CreateModule(
+            CreateAgentlessSettings(),
+            new MockRcmSubscriptionManager(),
+            m => new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), m.ApplyConfiguration, waitAsync: _ => new TaskCompletionSource<bool>().Task, flagSelection: m.ClaimedFlagSelection),
+            flagSelectionDiagnostics: NewDiagnostics());
+
+        module.SetFlagSelection([" mobile", "beta"], ["checkout.*"]);
+        module.Activate();
+
+        (await Task.WhenAny(module.FirstConfigReceived, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(module.FirstConfigReceived);
+        factory.RequestsSent[0].Endpoint.Query.Should().Be("?selected_flag_tags=beta&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+    }
+
+    [Fact]
+    public void SetFlagSelection_WhenALaterProviderDiffers_WarnsOnceAndKeepsTheFirstSelection()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(["beta"], null);
+        module.SetFlagSelection(null, null);
+        module.SetFlagSelection(["mobile", " mobile"], []);
+
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.DifferentSelectionWarning);
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.Create(["mobile"], null));
+    }
+
+    [Fact]
+    public void SetFlagSelection_AProviderWithoutAnOptionClaimsEveryFlag()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(null, null);
+        module.SetFlagSelection(["mobile"], null);
+
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.AllFlags);
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.DifferentSelectionWarning);
+    }
+
+    [Fact]
+    public void ReleaseFlagSelection_AfterTheLastProviderShutsDown_TheNextClaimIsRequested()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, logger.Object, NewDiagnostics());
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(["mobile"], null);
+        module.Activate();
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+
+        FlagSelectionTests.Warnings(logger).Should().Equal([FlagSelectionDiagnostics.DifferentSelectionWarning], "one provider still holds the claim");
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.Create(["mobile"], null));
+
+        module.ReleaseFlagSelection();
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.Create(["beta"], null));
+        source.Updates.Should().Equal(FlagSelection.Create(["beta"], null));
+        FlagSelectionTests.Warnings(logger).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void ReleaseFlagSelection_WithoutAClaim_DoesNothing()
+    {
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, flagSelectionDiagnostics: NewDiagnostics());
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(["beta"], null);
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.Create(["mobile"], null), "the second provider still holds its claim");
+    }
+
+    [Theory]
+    [InlineData("remote_config", null)]
+    [InlineData(null, "true")] // the legacy key maps to the Remote Config source
+    public void SetFlagSelection_WithRemoteConfig_WarnsOncePerProcessWhenASelectionIsSet(string? source, string? legacyProviderEnabled)
+    {
+        var collection = new NameValueCollection();
+        if (source is not null)
+        {
+            collection[ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = source;
+        }
+
+        if (legacyProviderEnabled is not null)
+        {
+            collection[ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled] = legacyProviderEnabled;
+        }
+
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(new TracerSettings(new NameValueConfigurationSource(collection)), new MockRcmSubscriptionManager(), logger: logger.Object, flagSelectionDiagnostics: NewDiagnostics());
+        module.Settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
+
+        module.SetFlagSelection(null, null);
+        module.SetFlagSelection([" "], null);
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
+
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(["mobile", null], null);
+        module.SetFlagSelection(["beta"], null);
+
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.RemoteConfigWarning);
+        FlagSelectionTests.Errors(logger).Should().BeEmpty("no selection is sent in this mode, so none is dropped");
+    }
+
+    [Fact]
+    public void SetFlagSelection_WithRemoteConfig_WarnsForASelectionThatIsOnlyMalformed()
+    {
+        var collection = new NameValueCollection { [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = "remote_config" };
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(new TracerSettings(new NameValueConfigurationSource(collection)), new MockRcmSubscriptionManager(), logger: logger.Object, flagSelectionDiagnostics: NewDiagnostics());
+
+        module.SetFlagSelection([null], null);
+
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.RemoteConfigWarning);
+    }
+
+    [Fact]
+    public void SetFlagSelection_WhenTheSelectionIsInvalid_LogsNotSentOncePerProviderAndCountsOnce()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, new FlagSelectionDiagnostics(metrics.Object));
+        var tooMany = Enumerable.Range(0, 32).Select(i => $"tag-{i}").ToArray();
+
+        module.SetFlagSelection(tooMany, null);
+        module.Activate();
+        module.SetFlagSelection(Enumerable.Reverse(tooMany).ToArray(), null);
+        module.SetFlagSelection(tooMany.Concat(["one-more"]).ToArray(), null);
+
+        var notSent = FlagSelectionDiagnostics.TooManyValuesNotSent;
+        FlagSelectionTests.Errors(logger).Should().Equal([notSent, notSent], "an equal selection is dropped for its provider too, and a different one is warned about instead");
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.DifferentSelectionWarning);
+        metrics.Verify(m => m.RecordCountFlagSelectionDropped(DroppedReason.TooManyValues, 1), Times.Once);
+    }
+
+    [Fact]
+    public void Activate_WhenTheRequestUrlWouldBeTooLong_LogsNotSentForEachProviderWithTheSelection()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        var source = new FakeDeliverySource { OmitsFlagSelection = true };
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, logger.Object, new FlagSelectionDiagnostics(metrics.Object));
+
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection([" mobile"], null);
+        module.SetFlagSelection(["beta"], null);
+        FlagSelectionTests.Errors(logger).Should().BeEmpty("the request URL is only known once the source exists");
+
+        module.Activate();
+        module.Activate();
+        FlagSelectionTests.Errors(logger).Should().HaveCount(2, "two providers were constructed with the selection");
+
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(["beta"], null);
+
+        var notSent = FlagSelectionDiagnostics.UrlLimitNotSent;
+        FlagSelectionTests.Errors(logger).Should().Equal(notSent, notSent, notSent);
+        metrics.Verify(m => m.RecordCountFlagSelectionDropped(DroppedReason.TooManyValues, 1), Times.Once);
+    }
+
+    [Fact]
+    public void SetFlagSelection_WithAnEmptySelection_LogsNothing()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, new FlagSelectionDiagnostics(metrics.Object));
+
+        module.SetFlagSelection([string.Empty, " \u3000"], [" "]);
+        module.Activate();
+
+        module.ClaimedFlagSelection.Should().Be(FlagSelection.AllFlags);
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
+        metrics.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void SetFlagSelection_NeverLogsTheSelectedValues()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource { OmitsFlagSelection = true }, logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(["secret-tag", new string('s', 201)], ["secret-pattern"]);
+        module.Activate();
+        module.SetFlagSelection(["secret-other"], null);
+
+        logger.Invocations.SelectMany(i => i.Arguments).OfType<string>().Should().NotContain(a => a.Contains("secret") || a.Contains("sss"));
+        logger.Invocations.SelectMany(i => i.Arguments).OfType<object?[]>().SelectMany(a => a).OfType<string>().Should().NotContain(a => a.Contains("secret"));
+    }
+
+    [Fact]
+    public void FlagSelection_NeverThrows()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.ErrorSkipTelemetry(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).Throws<InvalidOperationException>();
+        logger.Setup(l => l.Warning(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).Throws<InvalidOperationException>();
+        var diagnostics = NewDiagnostics();
+        var remoteConfig = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object, flagSelectionDiagnostics: diagnostics);
+        var agentless = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource { ThrowOnUpdate = true }, logger.Object, diagnostics);
+        agentless.Activate();
+
+        foreach (var target in new[] { remoteConfig, agentless })
+        {
+            target.Invoking(m => m.SetFlagSelection(["mobile", null], ["\uD800"])).Should().NotThrow();
+            target.Invoking(m => m.SetFlagSelection(["mobile"], null)).Should().NotThrow();
+            target.Invoking(m => m.ReleaseFlagSelection()).Should().NotThrow();
+            target.Dispose();
+            target.Invoking(m => m.SetFlagSelection(["beta"], null)).Should().NotThrow();
+            target.Invoking(m => m.ReleaseFlagSelection()).Should().NotThrow();
+        }
+    }
+
+    private static FlagSelectionDiagnostics NewDiagnostics() => new(new Mock<IMetricsTelemetryCollector>().Object);
+
     // Creates the module for settings that enable Feature Flags, and returns it as non-nullable so
     // tests can use it directly. Throwing rather than asserting keeps the compiler's nullable analysis
     // satisfied without a null-forgiving operator.
@@ -1148,8 +1384,9 @@ public class FeatureFlagsModuleTests
         TracerSettings settings,
         IRcmSubscriptionManager rcmSubscriptionManager,
         Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
-        IDatadogLogger? logger = null)
-        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory, logger: logger)
+        IDatadogLogger? logger = null,
+        FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
+        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory, logger: logger, flagSelectionDiagnostics: flagSelectionDiagnostics)
         ?? throw new InvalidOperationException("Feature Flags are enabled, but no module was created.");
 
     private static Mock<IDatadogLogger> CreateDebugLogger()
@@ -1270,7 +1507,23 @@ public class FeatureFlagsModuleTests
 
         public int Disposed => Volatile.Read(ref _disposed);
 
+        public bool OmitsFlagSelection { get; set; }
+
+        public bool ThrowOnUpdate { get; set; }
+
+        public List<FlagSelection> Updates { get; } = [];
+
         public void Start() => Interlocked.Increment(ref _started);
+
+        public void UpdateFlagSelection(FlagSelection selection)
+        {
+            if (ThrowOnUpdate)
+            {
+                throw new InvalidOperationException("source failed");
+            }
+
+            Updates.Add(selection);
+        }
 
         public void Dispose() => Interlocked.Increment(ref _disposed);
     }

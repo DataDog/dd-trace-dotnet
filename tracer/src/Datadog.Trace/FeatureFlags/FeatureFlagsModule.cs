@@ -68,6 +68,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?> _agentlessSourceFactory;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
+        private readonly FlagSelectionDiagnostics _flagSelectionDiagnostics;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -98,22 +99,30 @@ namespace Datadog.Trace.FeatureFlags
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
+        private FlagSelection _claimedFlagSelection = FlagSelection.AllFlags;
+        private int _flagSelectionClaims;
+
+        // Providers whose selection equals the claimed one, constructed before the source existed:
+        // whether the request URL is too long with it is only known once the source is created.
+        private int _flagSelectionClaimsBeforeSource;
 
         internal FeatureFlagsModule(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
             IDiscoveryService? discoveryService = null,
-            IDatadogLogger? logger = null)
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
         {
             _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+            _flagSelectionDiagnostics = flagSelectionDiagnostics ?? FlagSelectionDiagnostics.Shared;
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _tracerSettings = settings;
             _agentlessSourceFactory = agentlessSourceFactory
-                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration, module._log));
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration, module._log, module._claimedFlagSelection, module._flagSelectionDiagnostics));
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
 
@@ -142,12 +151,26 @@ namespace Datadog.Trace.FeatureFlags
 
         internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
 
+        /// <summary>Gets the flag selection the agentless source requests.</summary>
+        [TestingAndPrivateOnly]
+        internal FlagSelection ClaimedFlagSelection
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _claimedFlagSelection;
+                }
+            }
+        }
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
             IDiscoveryService? discoveryService = null,
-            IDatadogLogger? logger = null)
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
@@ -166,7 +189,7 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger, flagSelectionDiagnostics);
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
@@ -260,6 +283,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             IFeatureFlagsDeliverySource? sourceToStart = null;
+            int claimsBeforeSource;
 
             lock (_stateLock)
             {
@@ -267,6 +291,9 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     return;
                 }
+
+                claimsBeforeSource = _flagSelectionClaimsBeforeSource;
+                _flagSelectionClaimsBeforeSource = 0;
 
                 SubscribeToEvaluationDelivery();
                 Volatile.Write(ref _activated, true);
@@ -288,6 +315,14 @@ namespace Datadog.Trace.FeatureFlags
                         sourceToStart = source;
                         _deliveryStarted = true;
                         break;
+                }
+            }
+
+            if (sourceToStart?.OmitsFlagSelection == true)
+            {
+                for (var i = 0; i < claimsBeforeSource; i++)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
                 }
             }
 
@@ -392,6 +427,91 @@ namespace Datadog.Trace.FeatureFlags
                 _log.Warning<double>(
                     "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
                     _settings.InitializationTimeout.TotalMilliseconds);
+            }
+        }
+
+        /// <summary>
+        /// Claims the flag selection a provider was constructed with, or every flag when it has none.
+        /// One agentless source serves every provider in the process, so a provider constructed while
+        /// another one holds the claim uses the claimed selection.
+        /// Called from the provider's constructor rather than from its initialization, because an
+        /// evaluation before initialization also activates delivery.
+        /// </summary>
+        internal void SetFlagSelection(string?[]? tags, string?[]? keyPatterns)
+        {
+            try
+            {
+                var selection = FlagSelection.Create(tags, keyPatterns);
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig)
+                {
+                    if (selection.IsSet)
+                    {
+                        _flagSelectionDiagnostics.WarnRemoteConfig(_log);
+                    }
+
+                    return;
+                }
+
+                FlagSelection claimed;
+                IFeatureFlagsDeliverySource? source;
+                lock (_stateLock)
+                {
+                    if (_disposed)
+                    {
+                        return;
+                    }
+
+                    if (_flagSelectionClaims++ == 0)
+                    {
+                        _claimedFlagSelection = selection;
+                        _flagSelectionClaimsBeforeSource = 0;
+
+                        // Under the lock, so a concurrent activation cannot start the source with the previous claim.
+                        _agentlessSource?.UpdateFlagSelection(selection);
+                    }
+
+                    claimed = _claimedFlagSelection;
+                    source = _agentlessSource;
+                    if (source is null && selection.Equals(claimed))
+                    {
+                        _flagSelectionClaimsBeforeSource++;
+                    }
+                }
+
+                if (!selection.Equals(claimed))
+                {
+                    _flagSelectionDiagnostics.WarnDifferentSelection(_log);
+                    return;
+                }
+
+                // Logged for every provider whose selection is not sent.
+                if (claimed.DropReason is { } reason)
+                {
+                    _flagSelectionDiagnostics.ReportDropped(_log, reason);
+                }
+                else if (source?.OmitsFlagSelection == true)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Feature Flags: the flag selection could not be applied");
+            }
+        }
+
+        /// <summary>
+        /// Releases a claim when its provider shuts down. Once none is left, the next provider
+        /// constructed claims its own selection.
+        /// </summary>
+        internal void ReleaseFlagSelection()
+        {
+            lock (_stateLock)
+            {
+                if (_flagSelectionClaims > 0)
+                {
+                    _flagSelectionClaims--;
+                }
             }
         }
 

@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -25,6 +26,8 @@ using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Moq;
 using Xunit;
+
+using IgnoredReason = Datadog.Trace.Telemetry.Metrics.MetricTags.FlagSelectionIgnoredReason;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -37,6 +40,8 @@ public class AgentlessConfigurationSourceTests
         """;
 
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
+
+    private static readonly FlagSelection Mobile = FlagSelection.Create(["mobile"], null);
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -370,11 +375,238 @@ public class AgentlessConfigurationSourceTests
               .And.Contain("http://localhost").And.Contain("after 3 attempt(s)");
     }
 
+    [Fact]
+    public async Task SendsTheFlagSelection()
+    {
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, [], environment: "production", selection: FlagSelection.Create(["mobile"], ["checkout.*"]));
+
+        await source.PollAsync();
+
+        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+        source.OmitsFlagSelection.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LeavesOutASelectionThatWouldMakeTheRequestUrlTooLong()
+    {
+        var selection = AgentlessEndpointTests.SelectionForUrlLength(CreateEndpoint(), null, 8193);
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, [], selection: selection);
+
+        await source.PollAsync();
+
+        source.OmitsFlagSelection.Should().BeTrue();
+        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl));
+    }
+
+    [Fact]
+    public async Task KeepsTheSelectionWhenTheEnvironmentChanges()
+    {
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, [], environment: "production", selection: Mobile);
+
+        source.UpdateEnvironment("staging");
+        await source.PollAsync();
+
+        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?dd_env=staging&selected_flag_tags=mobile");
+    }
+
+    [Fact]
+    public async Task RequestsANewlyClaimedSelectionWithoutTheOldEtag()
+    {
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } }));
+        using var source = CreateSource(factory, []);
+        await source.PollAsync();
+
+        source.UpdateFlagSelection(Mobile);
+        await source.PollAsync();
+
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=mobile");
+        factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match", "the ETag identifies the configuration of a different selection");
+    }
+
+    [Fact]
+    public async Task KeepsTheEtagWhenAClaimRequestsTheSameSelection()
+    {
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } }));
+        using var source = CreateSource(factory, [], selection: Mobile);
+        await source.PollAsync();
+
+        source.UpdateFlagSelection(FlagSelection.Create([" mobile", "mobile"], []));
+        await source.PollAsync();
+
+        factory.RequestsSent[1].Endpoint.Should().Be(factory.RequestsSent[0].Endpoint);
+        factory.RequestsSent[1].ExtraHeaders["If-None-Match"].Should().Be("\"ufc-v1\"");
+    }
+
+    [Fact]
+    public async Task ReportsAnIgnoredSelectionOnceThePayloadIsApplied()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        var reportedAtEachApply = new List<int>();
+        Func<Uri, TestApiRequest> ignoredResponse = uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader("tag_load_failed"));
+        var factory = new TestRequestFactory(ignoredResponse, ignoredResponse);
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            _ =>
+            {
+                reportedAtEachApply.Add(FlagSelectionTests.Errors(logger).Count);
+                return true;
+            },
+            waitAsync: NoWait,
+            logger: logger.Object,
+            flagSelection: Mobile,
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(metrics.Object));
+
+        await source.PollAsync();
+        await source.PollAsync();
+
+        // Nothing is reported before the first configuration is applied, and the second response, which
+        // says the same, is not reported again.
+        reportedAtEachApply.Should().Equal(0, 1);
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.TagLoadFailedIgnored);
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.TagLoadFailed, 1), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("unexpected_reason")]
+    [InlineData("too_many_values ")]
+    [InlineData("too_many_values, invalid_tag")]
+    [InlineData("a-reason-that-is-longer-than-32-bytes")]
+    public async Task ReportsAnUnrecognizedIgnoredReasonAsUnknown(string header)
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader(header)));
+        using var source = CreateSource(factory, [], logger: logger.Object, selection: Mobile, diagnostics: new FlagSelectionDiagnostics(metrics.Object));
+
+        await source.PollAsync();
+
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UnknownIgnored);
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.Unknown, 1), Times.Once);
+        LoggedValues(logger).OfType<string>().Should().NotContain(v => v.Contains(header));
+    }
+
+    [Fact]
+    public async Task TreatsAnEmptyIgnoredHeaderAsAbsent()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader(string.Empty)));
+        using var source = CreateSource(factory, [], logger: logger.Object, selection: Mobile, diagnostics: new FlagSelectionDiagnostics(metrics.Object));
+
+        await source.PollAsync();
+
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(It.IsAny<IgnoredReason>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(304)]
+    [InlineData(400)]
+    [InlineData(500)]
+    public async Task ReadsTheIgnoredHeaderOnlyOnA200(int statusCode)
+    {
+        var readHeaders = new List<string>();
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new HeaderRecordingApiRequest(uri, statusCode, IgnoredHeader("invalid_tag"), readHeaders));
+        using var source = CreateSource(factory, [], logger: logger.Object, selection: Mobile, diagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        await source.PollAsync();
+
+        readHeaders.Should().NotContain(FlagSelectionDiagnostics.IgnoredHeaderName);
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public async Task DoesNotReadTheIgnoredHeaderWhenNoSelectionWasSent(bool omittedForLength)
+    {
+        var readHeaders = new List<string>();
+        var logger = new Mock<IDatadogLogger>();
+        var selection = omittedForLength ? AgentlessEndpointTests.SelectionForUrlLength(CreateEndpoint(), null, 8193) : FlagSelection.AllFlags;
+        var factory = new TestRequestFactory(uri => new HeaderRecordingApiRequest(uri, 200, IgnoredHeader("invalid_tag"), readHeaders));
+        using var source = CreateSource(factory, [], logger: logger.Object, selection: selection, diagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        await source.PollAsync();
+
+        readHeaders.Should().Contain("ETag").And.NotContain(FlagSelectionDiagnostics.IgnoredHeaderName);
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DoesNotReportAnIgnoredSelectionWhenThePayloadIsNotApplied()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader("invalid_tag")));
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            _ => false,
+            waitAsync: NoWait,
+            logger: logger.Object,
+            flagSelection: Mobile,
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        await source.PollAsync();
+
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ReportsTheUrlLimitOnceWhenAnEnvironmentChangeMakesTheRequestTooLong()
+    {
+        var endpoint = CreateEndpoint();
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, statusCode: 304));
+        var polled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var source = new AgentlessConfigurationSource(
+            endpoint,
+            factory,
+            TimeSpan.FromSeconds(30),
+            _ => true,
+            environment: "a",
+            waitAsync: _ =>
+            {
+                polled.TrySetResult(true);
+                return new TaskCompletionSource<bool>().Task;
+            },
+            logger: logger.Object,
+            flagSelection: AgentlessEndpointTests.SelectionForUrlLength(endpoint, "a", 8192 - 50),
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        // Before the source starts, the module reports what activation finds.
+        source.UpdateEnvironment(new string('b', 100));
+        source.UpdateEnvironment("a");
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+
+        source.Start();
+        (await Task.WhenAny(polled.Task, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(polled.Task);
+        source.OmitsFlagSelection.Should().BeFalse();
+
+        source.UpdateEnvironment(new string('b', 100));
+        source.UpdateEnvironment(new string('c', 100));
+
+        source.OmitsFlagSelection.Should().BeTrue();
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UrlLimitNotSent);
+    }
+
+    private static Dictionary<string, string> IgnoredHeader(string value) => new() { { FlagSelectionDiagnostics.IgnoredHeaderName, value } };
+
     private static AgentlessConfigurationSource CreateSource(
         TestRequestFactory factory,
         List<ServerConfiguration> applied,
         string? environment = null,
-        IDatadogLogger? logger = null)
+        IDatadogLogger? logger = null,
+        FlagSelection? selection = null,
+        FlagSelectionDiagnostics? diagnostics = null)
         => new(
             CreateEndpoint(),
             factory,
@@ -386,7 +618,9 @@ public class AgentlessConfigurationSourceTests
             },
             environment,
             waitAsync: NoWait,
-            logger: logger);
+            logger: logger,
+            flagSelection: selection,
+            flagSelectionDiagnostics: diagnostics ?? new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
 
     private static Mock<IDatadogLogger> CreateDebugLogger()
     {
@@ -466,6 +700,38 @@ public class AgentlessConfigurationSourceTests
             compressed.Position = 0;
             return Task.FromResult<Stream>(compressed);
         }
+    }
+
+    // Records every response header the source reads.
+    private class HeaderRecordingApiRequest(Uri endpoint, int statusCode, Dictionary<string, string> headers, List<string> readHeaders)
+        : TestApiRequest(endpoint, statusCode, Body, responseHeaders: headers)
+    {
+        public override async Task<IApiResponse> GetAsync() => new HeaderRecordingApiResponse(await base.GetAsync(), readHeaders);
+    }
+
+    private class HeaderRecordingApiResponse(IApiResponse inner, List<string> readHeaders) : IApiResponse
+    {
+        public int StatusCode => inner.StatusCode;
+
+        public long ContentLength => inner.ContentLength;
+
+        public string? ContentTypeHeader => inner.ContentTypeHeader;
+
+        public string? ContentEncodingHeader => inner.ContentEncodingHeader;
+
+        public void Dispose() => inner.Dispose();
+
+        public string? GetHeader(string headerName)
+        {
+            readHeaders.Add(headerName);
+            return inner.GetHeader(headerName);
+        }
+
+        public Encoding GetCharsetEncoding() => inner.GetCharsetEncoding();
+
+        public ContentEncodingType GetContentEncodingType() => inner.GetContentEncodingType();
+
+        public Task<Stream> GetStreamAsync() => inner.GetStreamAsync();
     }
 
     private class EnvironmentChangingApiRequest(Uri endpoint, string body) : TestApiRequest(endpoint, responseContent: body)

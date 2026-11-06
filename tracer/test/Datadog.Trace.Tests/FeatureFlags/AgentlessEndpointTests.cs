@@ -6,6 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Datadog.Trace.FeatureFlags.Agentless;
 using FluentAssertions;
 using Xunit;
@@ -15,6 +18,7 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class AgentlessEndpointTests
 {
     private const string DefaultPath = "/api/v2/feature-flagging/config/rules-based/server";
+    private const string ManagedUrl = "https://ufc-server.ff-cdn.datadoghq.com" + DefaultPath;
 
     [Theory]
     [InlineData("datadoghq.com", "https://ufc-server.ff-cdn.datadoghq.com" + DefaultPath)]
@@ -162,6 +166,156 @@ public class AgentlessEndpointTests
             .Should().BeFalse();
         error.Should().NotContain("user");
         error.Should().NotContain("pass");
+    }
+
+    [Fact]
+    public void WithoutASelectionTheRequestUriIsUnchanged()
+    {
+        var endpoint = Create("datadoghq.com");
+
+        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out var omitted).Should().Be(endpoint.BuildRequestUri("production"));
+        omitted.Should().BeFalse();
+        endpoint.BuildRequestUri(null, FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+    }
+
+    [Fact]
+    public void ASelectionThatCannotBeSentLeavesTheRequestUriUnchanged()
+    {
+        var endpoint = Create("datadoghq.com");
+
+        endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile", null], null), out var omitted)
+                .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production");
+        omitted.Should().BeFalse("the selection was dropped before the URL was built");
+    }
+
+    [Fact]
+    public void AppendsTheSelectionAfterDdEnvWithTagsFirst()
+        => Create("datadoghq.com").BuildRequestUri("production", FlagSelection.Create(["mobile"], ["checkout.*"]), out _)
+                                  .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+
+    [Theory]
+    [InlineData("https://flags.example.com/ufc", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?selected_flag_tags=mobile")]
+    public void MergesTheSelectionIntoACustomEndpointQuery(string baseUrl, string expected)
+    {
+        var endpoint = Create("datadoghq.com", baseUrl);
+
+        endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile"], null), out _).AbsoluteUri.Should().Be(expected);
+        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+    }
+
+    [Theory]
+    [InlineData(" ", "%20")]
+    [InlineData("%", "%25")]
+    [InlineData("%2a", "%252a")]
+    [InlineData("+", "%2B")]
+    [InlineData("&", "%26")]
+    [InlineData("=", "%3D")]
+    [InlineData("/", "%2F")]
+    [InlineData("?", "%3F")]
+    [InlineData("#", "%23")]
+    [InlineData("!", "%21")]
+    [InlineData("'", "%27")]
+    [InlineData("(", "%28")]
+    [InlineData(")", "%29")]
+    [InlineData("*", "%2A")]
+    [InlineData("~", "~")]
+    [InlineData("\u00E9", "%C3%A9")]
+    [InlineData("\U0001F600", "%F0%9F%98%80")]
+    // The endpoint compares the encoded bytes, so System.Uri must neither unescape nor re-escape them
+    // on any runtime, in what the request sends (PathAndQuery) or in what the limit measures (AbsoluteUri).
+    public void SystemUriKeepsThePercentEncoding(string character, string encoded)
+    {
+        var value = "v" + character + "v";
+        var expectedQuery = "?selected_flag_tags=v" + encoded + "v&selected_flag_key_patterns=v" + encoded + "v";
+
+        var uri = Create("datadoghq.com").BuildRequestUri(null, FlagSelection.Create([value], [value]), out _);
+
+        uri.AbsoluteUri.Should().Be(ManagedUrl + expectedQuery);
+        uri.PathAndQuery.Should().Be(DefaultPath + expectedQuery);
+        uri.Query.Should().Be(expectedQuery);
+        new Uri(uri.AbsoluteUri).AbsoluteUri.Should().Be(ManagedUrl + expectedQuery);
+    }
+
+    [Theory]
+    [InlineData("production")]
+    [InlineData(null)]
+    public void SendsTheSelectionWhenTheWholeRequestUrlIsExactly8192Bytes(string? env)
+    {
+        var endpoint = Create("datadoghq.com");
+
+        var uri = endpoint.BuildRequestUri(env, SelectionForUrlLength(endpoint, env, 8192), out var omitted);
+
+        omitted.Should().BeFalse();
+        Encoding.UTF8.GetByteCount(uri.AbsoluteUri).Should().Be(8192);
+    }
+
+    [Theory]
+    [InlineData("production")]
+    [InlineData(null)]
+    public void LeavesOutTheSelectionWhenTheWholeRequestUrlWouldBe8193Bytes(string? env)
+    {
+        var endpoint = Create("datadoghq.com");
+
+        var uri = endpoint.BuildRequestUri(env, SelectionForUrlLength(endpoint, env, 8193), out var omitted);
+
+        omitted.Should().BeTrue();
+        uri.Should().Be(endpoint.BuildRequestUri(env));
+    }
+
+    [Fact]
+    public void MeasuresTheRequestUrlAfterPercentEncoding()
+    {
+        // 31 tags of 200 UTF-8 bytes each pass the value limits, but encode to 596 bytes each.
+        var tags = Enumerable.Range(0, FlagSelection.MaxValues).Select(i => i.ToString("D2") + new string('\u00E9', 99)).ToArray();
+        var selection = FlagSelection.Create(tags, null);
+        selection.HasValues.Should().BeTrue();
+
+        Create("datadoghq.com").BuildRequestUri(null, selection, out var omitted);
+
+        omitted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CountsACustomEndpointQueryTowardTheLimit()
+    {
+        var selection = FlagSelection.Create(["mobile"], null);
+
+        Create("datadoghq.com", "https://flags.example.com/ufc?token=abc").BuildRequestUri(null, selection, out var shortOmitted);
+        Create("datadoghq.com", "https://flags.example.com/ufc?token=" + new string('a', 8150)).BuildRequestUri(null, selection, out var longOmitted);
+
+        shortOmitted.Should().BeFalse();
+        longOmitted.Should().BeTrue();
+    }
+
+    // A selection whose request URL is exactly urlLength bytes: 31 tags of 200 bytes, then key
+    // patterns of up to 200 bytes, all ASCII so each value encodes to itself.
+    internal static FlagSelection SelectionForUrlLength(AgentlessEndpoint endpoint, string? env, int urlLength)
+    {
+        const int TagOverhead = 20; // "&selected_flag_tags="
+        const int KeyPatternOverhead = 28; // "&selected_flag_key_patterns="
+
+        var tags = Enumerable.Range(0, FlagSelection.MaxValues).Select(i => Value(i, FlagSelection.MaxValueBytes)).ToArray();
+        var remaining = urlLength - endpoint.BuildRequestUri(env).AbsoluteUri.Length - (tags.Length * (TagOverhead + FlagSelection.MaxValueBytes));
+        var keyPatterns = new List<string>();
+        while (remaining - KeyPatternOverhead > FlagSelection.MaxValueBytes)
+        {
+            keyPatterns.Add(Value(keyPatterns.Count, FlagSelection.MaxValueBytes));
+            remaining -= KeyPatternOverhead + FlagSelection.MaxValueBytes;
+        }
+
+        if (remaining - KeyPatternOverhead < 3)
+        {
+            throw new InvalidOperationException("The requested URL length cannot be reached with this layout.");
+        }
+
+        keyPatterns.Add(Value(keyPatterns.Count, remaining - KeyPatternOverhead));
+        return FlagSelection.Create(tags, keyPatterns.ToArray());
+
+        static string Value(int index, int length) => index.ToString("D2") + new string('x', length - 2);
     }
 
     // Builds an endpoint that is expected to be valid, and returns it as non-nullable so the
