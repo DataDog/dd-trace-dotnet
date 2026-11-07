@@ -37,6 +37,11 @@ internal sealed class GitInfo : IGitInfo
     public string? Branch { get; internal set; }
 
     /// <summary>
+    /// Gets or sets the tag pointing at the checked-out commit.
+    /// </summary>
+    public string? Tag { get; internal set; }
+
+    /// <summary>
     /// Gets or sets Commit
     /// </summary>
     public string? Commit { get; internal set; }
@@ -122,7 +127,7 @@ internal sealed class GitInfo : IGitInfo
     public static IGitInfo GetCurrent()
     {
         List<string>? errors = null;
-        List<string> searchPaths = new();
+        List<string> searchPaths = new() { Environment.CurrentDirectory };
 
         var baseDirectory = AppContext.BaseDirectory;
         if (!baseDirectory.Contains("/dotnet/sdk") && !string.IsNullOrWhiteSpace(RuntimeFolder) && !baseDirectory.Contains(RuntimeFolder))
@@ -132,8 +137,6 @@ internal sealed class GitInfo : IGitInfo
                 searchPaths.Add(baseDirectory);
             }
         }
-
-        searchPaths.Add(Environment.CurrentDirectory);
 
         DirectoryInfo? gitDirectory = null;
         foreach (var sp in searchPaths)

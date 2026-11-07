@@ -30,6 +30,11 @@ internal interface IGitInfo
     string? Branch { get; }
 
     /// <summary>
+    /// Gets the tag pointing at the checked-out commit.
+    /// </summary>
+    string? Tag { get; }
+
+    /// <summary>
     /// Gets Commit
     /// </summary>
     string? Commit { get; }

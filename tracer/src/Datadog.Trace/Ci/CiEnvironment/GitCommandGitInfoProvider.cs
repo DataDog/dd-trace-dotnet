@@ -7,7 +7,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -62,10 +61,23 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 localGitInfo.Errors.Add($"Error getting branch name: {branchOutput?.Error}");
             }
 
+            if (StringUtil.IsNullOrEmpty(localGitInfo.Branch))
+            {
+                var tagOutput = GitCommandHelper.RunGitCommand(
+                    localGitInfo.SourceRoot,
+                    "tag --no-column --points-at HEAD",
+                    MetricTags.CIVisibilityCommands.GetBranch);
+                if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
+                {
+                    var tag = tagOutput.Output.AsSpan().Trim();
+                    localGitInfo.Tag = tag.IsEmpty || tag.IndexOfAny('\r', '\n') >= 0 ? null : tag.ToString();
+                }
+            }
+
             // Get the remaining data from the log -1
             var gitLogOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
-                """log -1 --pretty='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""",
+                "-c log.showSignature=false log -1 --pretty=" + GitCommandHelper.CommitFormat,
                 MetricTags.CIVisibilityCommands.Fetch);
             if (gitLogOutput?.ExitCode != 0)
             {
@@ -73,44 +85,20 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
-            if (gitLogDataArray.Length < 8)
+            if (GitCommandHelper.ParseCommitData(gitLogOutput.Output) is not { } commitData)
             {
-                localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
+                localGitInfo.Errors.Add("Error parsing git log commit data");
                 return false;
             }
 
-            // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
-            {
-                localGitInfo.Errors.Add("Error parsing author date from git log output");
-                return false;
-            }
-
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
-            {
-                localGitInfo.Errors.Add("Error parsing committer date from git log output");
-                return false;
-            }
-
-            // Populate the localGitData struct with the parsed information
-            localGitInfo.Commit = gitLogDataArray[0];
-            localGitInfo.AuthorDate = DateTimeOffset.FromUnixTimeSeconds(authorUnixDate);
-            localGitInfo.AuthorName = gitLogDataArray[2];
-            localGitInfo.AuthorEmail = gitLogDataArray[3];
-            localGitInfo.CommitterDate = DateTimeOffset.FromUnixTimeSeconds(committerUnixDate);
-            localGitInfo.CommitterName = gitLogDataArray[5];
-            localGitInfo.CommitterEmail = gitLogDataArray[6];
-            localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
-            if (localGitInfo.Commit.StartsWith("'"))
-            {
-                localGitInfo.Commit = localGitInfo.Commit.Substring(1);
-            }
-
-            if (localGitInfo.Message.EndsWith("'"))
-            {
-                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
-            }
+            localGitInfo.Commit = commitData.CommitSha;
+            localGitInfo.AuthorDate = commitData.AuthorDate;
+            localGitInfo.AuthorName = commitData.AuthorName;
+            localGitInfo.AuthorEmail = commitData.AuthorEmail;
+            localGitInfo.CommitterDate = commitData.CommitterDate;
+            localGitInfo.CommitterName = commitData.CommitterName;
+            localGitInfo.CommitterEmail = commitData.CommitterEmail;
+            localGitInfo.Message = commitData.CommitMessage;
         }
         catch (Exception ex)
         {

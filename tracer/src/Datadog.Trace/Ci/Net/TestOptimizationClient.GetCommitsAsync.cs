@@ -27,7 +27,7 @@ internal sealed partial class TestOptimizationClient
 
     public async Task<SearchCommitResponse> GetCommitsAsync()
     {
-        var localCommits = GitCommandHelper.GetLocalCommits(_workingDirectory);
+        var localCommits = GitCommandHelper.GetLocalCommits(_workingDirectory, _commitSha);
         if (localCommits.Length == 0)
         {
             Log.Debug("TestOptimizationClient: Local commits not found. (since 1 month ago)");
