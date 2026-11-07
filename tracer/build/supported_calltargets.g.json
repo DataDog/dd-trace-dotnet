@@ -4779,7 +4779,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4809,7 +4809,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4830,7 +4830,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4887,7 +4887,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
@@ -4907,7 +4907,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4937,7 +4937,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4963,7 +4963,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
@@ -14617,6 +14617,28 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CanDeferExposures",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanDeferExposuresIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "CanEnqueueEVP",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -14631,6 +14653,52 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CanEnqueueEVPWithFeatures",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CommitExposure",
+    "TargetReturnType": "System.Int32",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCommitExposureIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -14670,6 +14738,38 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "EnqueueEVPWithFeatures",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.String",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPWithFeaturesIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "Evaluate",
     "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
     "TargetParameterTypes": [
@@ -14690,6 +14790,34 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "EvaluateDeferred",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.FeatureFlags.ValueType",
+      "System.Object",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateDeferredIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

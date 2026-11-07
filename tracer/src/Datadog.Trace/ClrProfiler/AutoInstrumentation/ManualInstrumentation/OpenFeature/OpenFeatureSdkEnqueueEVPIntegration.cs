@@ -43,7 +43,7 @@ public sealed class OpenFeatureSdkEnqueueEVPIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static void Enqueue(FlagEvaluationWriter? writer, string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
+    internal static void Enqueue(FlagEvaluationWriter? writer, string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags, IReadOnlyDictionary<string, object?>? features = null)
     {
         if (writer is null)
         {
@@ -55,7 +55,7 @@ public sealed class OpenFeatureSdkEnqueueEVPIntegration
             // Constructor owns a bounded detached copy only with consent. Snapshot failures
             // become a context omission, retaining the otherwise valid evaluation.
             var consent = (flags & FlagEvaluationBridge.ObserveFullEvaluationData) != 0;
-            var observation = new FlagEvalEvent(flagKey, variant, allocationKey, targetingKey, evalTimeMs, attrs, errorCode, consent);
+            var observation = new FlagEvalEvent(flagKey, variant, allocationKey, targetingKey, evalTimeMs, attrs, errorCode, consent, features);
             writer.TryEnqueue(observation, flags & ~FlagEvaluationBridge.ObserveFullEvaluationData);
         }
         catch (Exception)

@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
 
             var headers = new KeyValuePair<string, string>[headerCount];
             headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
-            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.SemanticVersion);
             headers[2] = new(HttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
             headers[3] = new(TelemetryConstants.SessionIdHeader, sessionId);
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Telemetry
 
             var headers = new KeyValuePair<string, string>[headerCount];
             headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
-            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.SemanticVersion);
             headers[2] = new(HttpHeaderNames.TracingEnabled, "false");
             headers[3] = new(TelemetryConstants.ApiKeyHeader, settings.ApiKey);
             headers[4] = new(TelemetryConstants.SessionIdHeader, sessionId);
@@ -88,14 +88,14 @@ namespace Datadog.Trace.Telemetry
             if (rootSessionId != sessionId)
             {
                 return $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
-                    $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+                    $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.SemanticVersion}" + DatadogHttpValues.CrLf +
                     $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf +
                     $"{TelemetryConstants.SessionIdHeader}: {sessionId}" + DatadogHttpValues.CrLf +
                     $"{TelemetryConstants.RootSessionIdHeader}: {rootSessionId}" + DatadogHttpValues.CrLf;
             }
 
             return $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
-                $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+                $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.SemanticVersion}" + DatadogHttpValues.CrLf +
                 $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf +
                 $"{TelemetryConstants.SessionIdHeader}: {sessionId}" + DatadogHttpValues.CrLf;
         }

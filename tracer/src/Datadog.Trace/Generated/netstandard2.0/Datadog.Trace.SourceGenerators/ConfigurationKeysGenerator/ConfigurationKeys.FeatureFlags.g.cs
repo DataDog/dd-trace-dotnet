@@ -86,6 +86,17 @@ internal static partial class ConfigurationKeys
         public const string FeatureFlagsEnabled = "DD_FEATURE_FLAGS_ENABLED";
 
         /// <summary>
+        /// Configuration key for sending feature flag exposures to Datadog.
+        /// Default value is <c>true</c> (enabled).
+        /// When <c>false</c>, the SDK sends no exposure events to Datadog. The exposure cache still
+        /// records, and exposure hooks registered by the application still receive every evaluation
+        /// with the same deduplication verdicts.
+        /// This stops exposures only; flag evaluation events are controlled by
+        /// <see cref="ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled"/>.
+        /// </summary>
+        public const string ExposuresDatadogLoggingEnabled = "DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED";
+
+        /// <summary>
         /// Enables Feature Flags flagevaluation track EVP events through the configured Datadog Agent.
         /// Default value is <c>true</c> (enabled). Disabling this does not disable flag evaluation,
         /// configuration fetching, experiment exposures, or span enrichment.

@@ -148,6 +148,104 @@ public class UfcConfigurationParserTests
         configuration!.Environment!.Name.Should().Be("123");
     }
 
+    [Fact]
+    public void ParsesSplitFeaturesFromEnvelope()
+    {
+        var body = """
+            {
+              "data": {
+                "type": "universal-flag-configuration",
+                "attributes": {
+                  "format": "SERVER",
+                  "createdAt": "2025-01-01T00:00:00Z",
+                  "environment": {
+                    "name": "production"
+                  },
+                  "flags": {
+                    "test-flag": {
+                      "key": "test-flag",
+                      "enabled": true,
+                      "variationType": "STRING",
+                      "allocations": [
+                        {
+                          "key": "alloc",
+                          "splits": [
+                            {
+                              "variationKey": "on",
+                              "shards": [],
+                              "features": [
+                                {
+                                  "key": "holdout.key",
+                                  "value": "06ad",
+                                  "destinations": [
+                                    "HOOK"
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+        Parse(body, out var configuration, out _).Should().BeTrue();
+
+        var split = configuration!.Flags!["test-flag"].Allocations![0].Splits![0];
+        split.Features.Should().ContainSingle();
+        split.Features![0].Key.Should().Be("holdout.key");
+        split.Features[0].Value.Should().Be("06ad");
+        split.Features[0].Destinations.Should().Equal("HOOK");
+    }
+
+    [Fact]
+    public void AMalformedFeaturesFieldDoesNotRejectTheEnvelope()
+    {
+        var body = """
+            {
+              "data": {
+                "type": "universal-flag-configuration",
+                "attributes": {
+                  "format": "SERVER",
+                  "createdAt": "2025-01-01T00:00:00Z",
+                  "environment": {
+                    "name": "production"
+                  },
+                  "flags": {
+                    "test-flag": {
+                      "key": "test-flag",
+                      "enabled": true,
+                      "variationType": "STRING",
+                      "allocations": [
+                        {
+                          "key": "alloc",
+                          "splits": [
+                            {
+                              "variationKey": "on",
+                              "shards": [],
+                              "features": "garbage"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+        Parse(body, out var configuration, out _).Should().BeTrue();
+
+        var split = configuration!.Flags!["test-flag"].Allocations![0].Splits![0];
+        split.Features.Should().BeNull();
+        split.VariationKey.Should().Be("on");
+    }
+
     // The parser reads the response stream directly, so a body under test is handed to it as a reader.
     private static bool Parse(string? body, out ServerConfiguration? configuration, out string? error)
     {
