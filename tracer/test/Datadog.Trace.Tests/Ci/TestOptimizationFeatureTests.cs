@@ -26,8 +26,10 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
@@ -64,6 +66,148 @@ namespace Datadog.Trace.Tests.Ci;
     ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder)]
 public class TestOptimizationFeatureTests : SettingsTestsBase
 {
+    [Theory]
+    [InlineData("legacy", 1)]
+    [InlineData("single", 1)]
+    [InlineData("multiple", 2)]
+    [InlineData("empty", 1)]
+    [InlineData("invalid", 0)]
+    [InlineData("missing-tests", 0)]
+    [InlineData("missing-tests-first", 0)]
+    [InlineData("missing-tests-final", 0)]
+    [InlineData("missing-page-info", 0)]
+    [InlineData("malformed", 0)]
+    [InlineData("network-error", 0)]
+    [InlineData("invalid-continuation", 0)]
+    [InlineData("missing-cursor", 0)]
+    [InlineData("retry", 1)]
+    [InlineData("limit", 0)]
+    public async Task KnownTestsPaginationMetricsReflectCompletedFetches(string scenario, int expectedPages)
+    {
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-known-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var originalCollector = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            const string tests = "\"tests\":{\"module\":{\"suite\":[\"test\"]}}";
+            const string nextPage = "\"page_info\":{\"cursor\":\"next\",\"has_next\":true}";
+            const string lastPage = "\"page_info\":{\"has_next\":false}";
+            string[] bodies = scenario switch
+            {
+                "legacy" => [$"{{\"data\":{{\"attributes\":{{{tests}}}}}}}"],
+                "single" or "retry" => [$"{{\"data\":{{\"attributes\":{{{tests},{lastPage}}}}}}}"],
+                "empty" => ["{\"data\":{\"attributes\":{\"tests\":{}}}}"],
+                "invalid" => ["{}"],
+                "missing-tests" => ["{\"data\":{\"attributes\":{}}}"],
+                "missing-tests-first" => [$"{{\"data\":{{\"attributes\":{{{nextPage}}}}}}}", $"{{\"data\":{{\"attributes\":{{{tests},{lastPage}}}}}}}"],
+                "missing-tests-final" => [$"{{\"data\":{{\"attributes\":{{{tests},{nextPage}}}}}}}", $"{{\"data\":{{\"attributes\":{{{lastPage}}}}}}}"],
+                "malformed" => ["invalid-json"],
+                "network-error" => ["{}"],
+                "limit" => [$"{{\"data\":{{\"attributes\":{{{tests},{nextPage}}}}}}}"],
+                "missing-page-info" => [$"{{\"data\":{{\"attributes\":{{{tests},{nextPage}}}}}}}", $"{{\"data\":{{\"attributes\":{{{tests}}}}}}}"],
+                "invalid-continuation" => [$"{{\"data\":{{\"attributes\":{{{tests},{nextPage}}}}}}}", "{}"],
+                "missing-cursor" => [$"{{\"data\":{{\"attributes\":{{{tests},\"page_info\":{{\"has_next\":true}}}}}}}}"],
+                _ => [$"{{\"data\":{{\"attributes\":{{{tests},{nextPage}}}}}}}", $"{{\"data\":{{\"attributes\":{{\"tests\":{{}},{lastPage}}}}}}}"]
+            };
+            var requestCount = 0;
+            var pageIndex = 0;
+            var requestBodies = new List<string>();
+            var request = new Mock<IApiRequest>();
+            request.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()))
+                   .Callback<ArraySegment<byte>, string>((body, _) => requestBodies.Add(Encoding.UTF8.GetString(body.Array, body.Offset, body.Count)))
+                   .Returns(() =>
+                    {
+                        requestCount++;
+                        if (scenario == "network-error")
+                        {
+                            throw new FileNotFoundException("Test transport failure");
+                        }
+
+                        var apiResponse = new Mock<IApiResponse>();
+                        var isRetry = scenario == "retry" && requestCount == 1;
+                        apiResponse.Setup(x => x.StatusCode).Returns(isRetry ? 500 : 200);
+                        var body = isRetry ? "{}" : bodies[scenario == "limit" ? 0 : pageIndex++];
+                        apiResponse.Setup(x => x.GetStreamAsync()).ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes(body)));
+                        return Task.FromResult(apiResponse.Object);
+                    });
+            var factory = new Mock<IApiRequestFactory>();
+            factory.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns<string>(path => new Uri("http://localhost/" + path));
+            factory.Setup(x => x.Create(It.IsAny<Uri>())).Returns(request.Object);
+            var management = new Mock<ITestOptimizationTracerManagement>();
+            management.Setup(x => x.EventPlatformProxySupport).Returns(EventPlatformProxySupport.V4);
+            management.Setup(x => x.GetRequestFactory(It.IsAny<TracerSettings>(), It.IsAny<TimeSpan>())).Returns(factory.Object);
+            var optimization = CreateTestOptimization(CreateSettings(), workspacePath);
+            optimization.Setup(x => x.TracerManagement).Returns(management.Object);
+
+            TestOptimizationClient.KnownTestsResponse response = default;
+            var exception = await Record.ExceptionAsync(async () => response = await TestOptimizationClient.Create(workspacePath, optimization.Object).GetKnownTestsAsync());
+            if (scenario == "malformed")
+            {
+                exception.Should().BeOfType<JsonReaderException>();
+            }
+            else if (scenario == "network-error")
+            {
+                exception.Should().BeOfType<FileNotFoundException>();
+            }
+            else
+            {
+                exception.Should().BeNull();
+            }
+
+            collector.AggregateMetrics();
+            var metrics = collector.GetMetrics();
+            metrics.Distributions.Should().NotBeNull();
+            var distributions = metrics.Distributions;
+            var pageMetrics = distributions.Where(x => x.Metric == "known_tests.pages_fetched").ToArray();
+            if (expectedPages == 0)
+            {
+                if (scenario is "limit" or "missing-tests-first" or "missing-tests-final")
+                {
+                    response.Tests.Should().NotBeNull();
+                }
+                else
+                {
+                    response.Tests.Should().BeNull();
+                }
+
+                pageMetrics.Should().BeEmpty();
+                distributions.Should().NotContain(x => x.Metric == "known_tests.total_fetch_ms" || x.Metric == "known_tests.total_request_ms");
+            }
+            else
+            {
+                response.Tests.Should().NotBeNull();
+                pageMetrics.Should().ContainSingle().Which.Points.Should().Equal(expectedPages);
+                var fetch = distributions.Should().ContainSingle(x => x.Metric == "known_tests.total_fetch_ms").Which;
+                var totalRequest = distributions.Should().ContainSingle(x => x.Metric == "known_tests.total_request_ms").Which;
+                var requests = distributions.Should().ContainSingle(x => x.Metric == "known_tests.request_ms").Which;
+                requests.Points.Should().HaveCount(requestCount);
+                totalRequest.Points.Should().ContainSingle().Which.Should().Be(requests.Points.Sum());
+                fetch.Points.Should().ContainSingle().Which.Should().BeGreaterThanOrEqualTo(totalRequest.Points.Single());
+                pageMetrics.Single().Namespace.Should().Be("civisibility");
+                if (scenario == "multiple")
+                {
+                    response.Tests["module"]["suite"].Should().Equal("test");
+                    JObject.Parse(requestBodies[1])["data"]["attributes"]["page_info"]["page_state"].Value<string>().Should().Be("next");
+                }
+
+                if (scenario == "retry")
+                {
+                    requestCount.Should().Be(2);
+                    fetch.Points.Single().Should().BeGreaterThan(totalRequest.Points.Single());
+                }
+            }
+
+            requestCount.Should().Be(scenario == "limit" ? 10_000 : bodies.Length + (scenario == "retry" ? 1 : 0));
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(originalCollector);
+            await collector.DisposeAsync();
+            Directory.Delete(workspacePath, recursive: true);
+        }
+    }
+
     [Fact]
     public void InvalidKnownTestsResponseDisablesKnownTestsAndEarlyFlakeDetection()
     {

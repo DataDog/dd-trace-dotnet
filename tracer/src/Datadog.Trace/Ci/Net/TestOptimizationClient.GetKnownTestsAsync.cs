@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -42,8 +43,13 @@ internal sealed partial class TestOptimizationClient
         // An explicit empty "tests": {} payload keeps known-tests enabled, so we must
         // preserve that distinction from an invalid or missing known-tests response.
         var sawExplicitTestsPayload = false;
+        var allPagesHaveTests = true;
+        var totalRequestMs = 0.0;
+        var callbacks = new KnownTestsCallbacks(totalMs => totalRequestMs += totalMs);
+        var fetchStopwatch = Stopwatch.StartNew();
         string? pageState = null;
         var pageNumber = 0;
+        var hasMorePages = false;
 
         do
         {
@@ -61,7 +67,7 @@ internal sealed partial class TestOptimizationClient
             string? queryResponse;
             try
             {
-                queryResponse = await SendJsonRequestAsync<KnownTestsCallbacks>(_knownTestsUrl, jsonQuery).ConfigureAwait(false);
+                queryResponse = await SendJsonRequestAsync(_knownTestsUrl, jsonQuery, callbacks).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -94,6 +100,7 @@ internal sealed partial class TestOptimizationClient
                 return default;
             }
 
+            allPagesHaveTests &= page.Tests is not null;
             if (page.Tests is not null)
             {
                 sawExplicitTestsPayload = true;
@@ -110,7 +117,8 @@ internal sealed partial class TestOptimizationClient
                 break;
             }
 
-            if (!pageInfo.Value.HasNext)
+            hasMorePages = pageInfo.Value.HasNext;
+            if (!hasMorePages)
             {
                 break;
             }
@@ -125,6 +133,8 @@ internal sealed partial class TestOptimizationClient
             pageState = cursor;
         }
         while (pageNumber < MaxKnownTestsPages);
+
+        fetchStopwatch.Stop();
 
         if (pageNumber >= MaxKnownTestsPages)
         {
@@ -155,6 +165,15 @@ internal sealed partial class TestOptimizationClient
         }
 
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseTests(testsCount);
+        // Partial or invalid responses are not successful fetches. Preserve the existing
+        // response/fallback behavior without recording misleading completion metrics.
+        if (allPagesHaveTests && !hasMorePages)
+        {
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsPagesFetched(pageNumber);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsTotalFetchMs(fetchStopwatch.Elapsed.TotalMilliseconds);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsTotalRequestMs(totalRequestMs);
+        }
+
         return finalResponse;
     }
 
@@ -210,6 +229,13 @@ internal sealed partial class TestOptimizationClient
 
     private readonly struct KnownTestsCallbacks : ICallbacks
     {
+        private readonly Action<double> _onAfterSend;
+
+        public KnownTestsCallbacks(Action<double> onAfterSend)
+        {
+            _onAfterSend = onAfterSend;
+        }
+
         public void OnBeforeSend()
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
@@ -231,6 +257,9 @@ internal sealed partial class TestOptimizationClient
 
         public void OnAfterSend(double totalMs)
         {
+            // The transport invokes this once per attempt, including retries. Backoff
+            // and page parsing belong only to the overall fetch duration.
+            _onAfterSend(totalMs);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsRequestMs(totalMs);
         }
     }
