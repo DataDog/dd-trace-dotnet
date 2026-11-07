@@ -187,7 +187,8 @@ public sealed partial class DatadogProvider
     }
 
     // Adds API ExposureHooks, which miss sync evaluations otherwise (no client). They go first because hooks run last
-    // first, so their finally stage runs after the provider's commit. Other API hooks would run without their before stage.
+    // first, so their finally stage runs after the provider's commit. Other API hooks stay out: they would run without
+    // their before stage, and could block on async work.
     private static IReadOnlyList<Hook> WithApiExposureHooks(IImmutableList<Hook> providerHooks)
     {
         // Api.GetHooks() allocates; skip it until an ExposureHook exists.

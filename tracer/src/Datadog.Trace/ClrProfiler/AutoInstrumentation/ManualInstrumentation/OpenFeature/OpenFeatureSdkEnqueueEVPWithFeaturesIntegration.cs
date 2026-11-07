@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
@@ -45,7 +46,7 @@ public sealed class OpenFeatureSdkEnqueueEVPWithFeaturesIntegration
         return CallTargetState.GetDefault();
     }
 
-    // Takes the writer, so tests need no global tracer.
+    [TestingAndPrivateOnly]
     internal static void Enqueue<TFlagKey, TVariant, TAllocationKey, TTargetingKey, TEvalTimeMs, TErrorCode, TAttrs, TFeatures, TFlags>(FlagEvaluationWriter? writer, TFlagKey flagKey, TVariant variant, TAllocationKey allocationKey, TTargetingKey targetingKey, TEvalTimeMs evalTimeMs, TErrorCode errorCode, TAttrs attrs, TFeatures features, TFlags flags)
         => OpenFeatureSdkEnqueueEVPIntegration.Enqueue(
             writer,

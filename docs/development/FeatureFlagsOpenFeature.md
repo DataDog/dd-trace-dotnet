@@ -14,7 +14,8 @@ The built-in hooks and `ExposureHook` currently complete synchronously. The help
 incomplete hook tasks, so future provider hooks must avoid capturing a caller's
 synchronization context. The synchronous path also runs API-registered `ExposureHook`s,
 first in the list, so their Finally stage runs after the provider's commit. It runs no
-Before hooks and no other API or client hooks. Callers supply the complete context.
+Before hooks and no other API or client hooks: those would run without their Before
+stage and could block on async work. Callers supply the complete context.
 The normal asynchronous client continues to own its hook lifecycle, avoiding
 duplicate metrics and span enrichment.
 

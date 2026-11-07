@@ -25,8 +25,8 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// exposure decision. Register it with <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only
 /// an API hook also gets evaluations from the experimental synchronous methods.
 /// The callback runs for every evaluation, including errors and repeats; use
-/// <see cref="ExposureEvaluation.ShouldSend"/> to keep new or changed exposures. With the provider
-/// registered directly and a client, these are the exposures sent to Datadog while
+/// <see cref="ExposureEvaluation.ShouldSend"/> to keep new or changed exposures. When the provider is
+/// registered directly and you evaluate through a client, these are the exposures sent to Datadog while
 /// <c>DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED</c> is on, and the same decision with it
 /// off. Inside <c>MultiProvider</c>, the exposure is recorded before the client's <c>after</c> hooks,
 /// so an evaluation that one of them fails can still be sent.

@@ -217,7 +217,10 @@ internal static class FeatureFlagsSdk
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
         => GetResult(metadata)?.EvaluatedContext;
 
-    /// <summary>The state recorded beside a result, or null. One lookup serves all <see cref="ExposureHook"/> reads.</summary>
+    /// <summary>
+    /// The state recorded beside a result, or null. One lookup serves all <see cref="ExposureHook"/> reads
+    /// (each lookup locks on .NET Framework).
+    /// </summary>
     internal static ResultState? GetResult(ImmutableMetadata? metadata)
         => metadata is not null && Results.TryGetValue(metadata, out var state) ? state : null;
 

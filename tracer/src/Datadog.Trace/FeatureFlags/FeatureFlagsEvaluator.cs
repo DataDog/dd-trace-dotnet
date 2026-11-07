@@ -51,6 +51,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
 
+        [TestingOnly]
         public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
             : this(onExposureEvent, config, spanEnrichmentEnabled, isExposed: null)
         {
@@ -842,7 +843,7 @@ namespace Datadog.Trace.FeatureFlags
             return value switch
             {
                 bool b => b ? "true" : "false",
-                // "G17" round-trips through the string metadata, also on .NET Framework ("R" does not).
+                // "G17" round-trips through the string metadata, also on .NET Framework ("R" may not).
                 double d => d.ToString("G17", CultureInfo.InvariantCulture),
                 _ => (string)value,
             };
