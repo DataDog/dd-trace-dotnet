@@ -166,19 +166,19 @@ namespace Datadog.Trace.Util
                     return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
                 }
 
-                if (!processStartInfo.UseShellExecute)
+                if (standardOutput is not null && standardError is not null)
                 {
-                    outputStringBuilder.Append(standardOutput!.ReadToEnd());
-                    errorStringBuilder.Append(standardError!.ReadToEnd());
+                    outputStringBuilder.Append(standardOutput.ReadToEnd());
+                    errorStringBuilder.Append(standardError.ReadToEnd());
                 }
 
                 Thread.Sleep(15);
             }
 
-            if (!processStartInfo.UseShellExecute)
+            if (standardOutput is not null && standardError is not null)
             {
-                outputStringBuilder.Append(standardOutput!.ReadToEnd());
-                errorStringBuilder.Append(standardError!.ReadToEnd());
+                outputStringBuilder.Append(standardOutput.ReadToEnd());
+                errorStringBuilder.Append(standardError.ReadToEnd());
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);

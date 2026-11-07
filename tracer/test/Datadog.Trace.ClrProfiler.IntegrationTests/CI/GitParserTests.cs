@@ -317,9 +317,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var before = Directory.GetFiles("/proc/self/fd").Length;
                 for (var i = 0; i < 20; i++)
                 {
-                    var output = GitCommandHelper.RunGitCommand(checkout.Root, arguments, MetricTags.CIVisibilityCommands.GetHead, input, useCache: false);
-                    output.Should().NotBeNull();
-                    output!.ExitCode.Should().Be(exitCode);
+                    var output = GitCommandHelper.RunGitCommand(checkout.Root, arguments, MetricTags.CIVisibilityCommands.GetHead, input, useCache: false)
+                              ?? throw new InvalidOperationException("Git command did not start.");
+                    output.ExitCode.Should().Be(exitCode);
                 }
 
                 Directory.GetFiles("/proc/self/fd").Length.Should().BeLessOrEqualTo(before + 4, "Git command pipes must close without waiting for garbage collection");
