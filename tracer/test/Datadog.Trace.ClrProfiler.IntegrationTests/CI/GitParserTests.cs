@@ -318,7 +318,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 return output.Output.Trim();
             }
 
-            var tree = Run("hash-object -t tree -w --stdin", string.Empty);
+            var blob = Run("hash-object -w --stdin", "sample content");
+            var subtree = Run("mktree", $"100644 blob {blob}\tdeadbeef.txt\n");
+            var tree = Run("mktree", $"040000 tree {subtree}\tcafe\n");
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var parent = recentParent ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp - 60} +0000\ncommitter Test <test@example.com> {timestamp - 60} +0000\n\nparent\n") : null;
             var parentLine = parent is null ? string.Empty : $"parent {parent}\n";
@@ -393,7 +395,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 File.WriteAllBytes(packFile, pack.ToArray());
                 Run($"index-pack \"{packFile}\"");
                 var objects = Run($"verify-pack -v \"{Path.ChangeExtension(packFile, "idx")}\"");
-                objects.Should().Contain(selected + " commit ").And.NotContain(head + " commit ");
+                objects.Should().Contain(selected + " commit ")
+                       .And.Contain(tree + " tree ")
+                       .And.Contain(subtree + " tree ")
+                       .And.NotContain(blob + " blob ")
+                       .And.NotContain(head + " commit ");
                 if (parent is not null && remoteAvailable)
                 {
                     searches[searches.Count - 1].Should().Contain(parent);

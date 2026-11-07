@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 // ReSharper disable ConvertToPrimaryConstructor
 // ReSharper disable NotAccessedField.Local
@@ -82,11 +83,11 @@ internal sealed partial class TestOptimizationClient
                 var depth = isShallow ? "--shallow-since=\"1 month ago\"" : string.Empty;
 
                 Log.Information("TestOptimizationClient: Refetching Git data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch {depth} --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                var gitUnshallowOutput = FetchRepositoryHistory($"{depth} --update-shallow --recurse-submodules=no {originName} {head}");
 
                 if (targetedRecovery && isShallow && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
-                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --depth=1 --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                    gitUnshallowOutput = FetchRepositoryHistory($"--depth=1 --update-shallow --recurse-submodules=no {originName} {head}");
                 }
 
                 if (recoverSelected && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
@@ -109,7 +110,7 @@ internal sealed partial class TestOptimizationClient
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                    gitUnshallowOutput = FetchRepositoryHistory($"--shallow-since=\"1 month ago\" --update-shallow --recurse-submodules=no {originName} {head}");
                 }
 
                 if (!targetedRecovery && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
@@ -123,7 +124,7 @@ internal sealed partial class TestOptimizationClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                    FetchRepositoryHistory($"--shallow-since=\"1 month ago\" --update-shallow --recurse-submodules=no {originName}");
                 }
             }
         }
@@ -139,5 +140,18 @@ internal sealed partial class TestOptimizationClient
         }
 
         return await SendPackFilesAsync(commitsData.LocalCommits[0], commitsData.MissingCommits, commitsData.RemoteCommits).ConfigureAwait(false);
+    }
+
+    private ProcessHelpers.CommandOutput? FetchRepositoryHistory(string arguments)
+    {
+        var output = GitCommandHelper.RunGitCommand(_workingDirectory, "fetch --filter=\"blob:none\" " + arguments, MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+        if (output is { ExitCode: not 0 } &&
+            output.Error.IndexOf("--filter can only be used when extensions.partialClone is set", StringComparison.Ordinal) >= 0)
+        {
+            // Older Git cannot filter a fetch into an ordinary clone. Uploaded packs still exclude blobs.
+            return GitCommandHelper.RunGitCommand(_workingDirectory, "fetch " + arguments, MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+        }
+
+        return output;
     }
 }

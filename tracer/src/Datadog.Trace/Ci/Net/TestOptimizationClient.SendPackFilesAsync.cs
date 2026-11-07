@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -132,7 +131,7 @@ internal sealed partial class TestOptimizationClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
+        var getObjectsArguments = "rev-list --objects --filter=blob:none --since=\"1 month ago\" --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
         var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects, useCache: false);
         if (getObjectsCommand is null || getObjectsCommand.ExitCode != 0)
         {
@@ -145,7 +144,7 @@ internal sealed partial class TestOptimizationClient
         {
             var selectedObjects = GitCommandHelper.RunGitCommand(
                 _workingDirectory,
-                "rev-list --objects --no-object-names --filter=blob:none --no-walk=unsorted " + commitSha,
+                "rev-list --objects --filter=blob:none --no-walk=unsorted " + commitSha,
                 MetricTags.CIVisibilityCommands.GetObjects,
                 useCache: false);
             if (selectedObjects is null || selectedObjects.ExitCode != 0)
@@ -156,14 +155,16 @@ internal sealed partial class TestOptimizationClient
             objectsOutput += "\n" + selectedObjects.Output;
         }
 
-        // Sanitize object IDs before passing them to pack-objects.
-        var matches = ShaRegex.Matches(objectsOutput);
-        var lstObjectsSha = new List<string>(matches.Count);
-        foreach (Match? match in matches)
+        // Older Git versions include paths after the object ID; never pass path fragments to pack-objects.
+        var objectLines = objectsOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var lstObjectsSha = new List<string>(objectLines.Length);
+        foreach (var objectLine in objectLines)
         {
-            if (match is not null)
+            var pathSeparator = objectLine.IndexOf(' ');
+            var objectSha = pathSeparator < 0 ? objectLine : objectLine.Substring(0, pathSeparator);
+            if (GitCommandHelper.IsValidCommitSha(objectSha))
             {
-                lstObjectsSha.Add(match.Value);
+                lstObjectsSha.Add(objectSha);
             }
         }
 
