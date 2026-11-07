@@ -287,7 +287,13 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             CommitterDate = null;
         }
 
-        Branch = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitBranch, Branch);
+        if (GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitBranch, null) is { } branchOverride)
+        {
+            var branchAndTag = CleanBranchValue(branchOverride);
+            Branch = branchAndTag.Item1;
+            Tag = branchAndTag.Item2 ?? Tag;
+        }
+
         Tag = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitTag, Tag);
         Message = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitMessage, Message);
         AuthorName = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorName, AuthorName);

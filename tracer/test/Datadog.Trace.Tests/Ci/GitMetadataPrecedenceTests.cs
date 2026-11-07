@@ -118,6 +118,32 @@ public class GitMetadataPrecedenceTests
         values.PrBaseBranch.Should().Be("main");
     }
 
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData("explicit-tag", false)]
+    [InlineData("explicit-tag", true)]
+    public void ExplicitTagRefOverridesAnInferredCheckoutTag(string? tag, bool overrideSameSha)
+    {
+        var variables = new Dictionary<string, string> { ["DD_GIT_BRANCH"] = "refs/tags/branch-tag" };
+        if (tag is not null)
+        {
+            variables["DD_GIT_TAG"] = tag;
+        }
+
+        if (overrideSameSha)
+        {
+            variables["DD_GIT_COMMIT_SHA"] = new string('a', 40);
+        }
+
+        var values = new TestValues(variables);
+        values.Load(new GitInfo { Commit = new string('a', 40), Tag = "local-tag" });
+
+        values.Commit.Should().Be(new string('a', 40));
+        values.Tag.Should().Be(tag ?? "branch-tag");
+        values.Branch.Should().BeNull();
+    }
+
     private sealed class TestValues(Dictionary<string, string> variables) : CIEnvironmentValues<DictionaryValuesProvider>(new DictionaryValuesProvider(variables))
     {
         public string ProviderBranch { get; set; } = "provider-branch";
