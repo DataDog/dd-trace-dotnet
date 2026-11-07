@@ -119,11 +119,8 @@ public class GitMetadataPrecedenceTests
     }
 
     [Theory]
-    [InlineData(null, false)]
-    [InlineData(null, true)]
-    [InlineData("explicit-tag", false)]
-    [InlineData("explicit-tag", true)]
-    public void ExplicitTagRefOverridesAnInferredCheckoutTag(string? tag, bool overrideSameSha)
+    [CombinatorialData]
+    public void ExplicitTagRefOverridesAnInferredCheckoutTag([CombinatorialValues(null, "explicit-tag")] string? tag, bool overrideSameSha)
     {
         var variables = new Dictionary<string, string> { ["DD_GIT_BRANCH"] = "refs/tags/branch-tag" };
         if (tag is not null)
