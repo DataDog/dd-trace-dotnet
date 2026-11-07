@@ -303,6 +303,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
+        [InlineData("--version", null, 0)]
+        [InlineData("hash-object --stdin", "sample content", 0)]
+        [InlineData("--shepherd-invalid-option", null, 129)]
+        public void GitCommandsCloseRedirectedStreams(string arguments, string input, int exitCode)
+        {
+            Skip.If(!Directory.Exists("/proc/self/fd"), "Requires Linux file descriptor accounting.");
+            using var checkout = new GitCheckout();
+            GitCommandHelper.RunGitCommand(checkout.Root, arguments, MetricTags.CIVisibilityCommands.GetHead, input, useCache: false).Should().NotBeNull();
+            Skip.If(!GC.TryStartNoGCRegion(128 * 1024 * 1024), "Requires a no-GC region to verify deterministic stream disposal.");
+            try
+            {
+                var before = Directory.GetFiles("/proc/self/fd").Length;
+                for (var i = 0; i < 20; i++)
+                {
+                    var output = GitCommandHelper.RunGitCommand(checkout.Root, arguments, MetricTags.CIVisibilityCommands.GetHead, input, useCache: false);
+                    output.Should().NotBeNull();
+                    output!.ExitCode.Should().Be(exitCode);
+                }
+
+                Directory.GetFiles("/proc/self/fd").Length.Should().BeLessOrEqualTo(before + 4, "Git command pipes must close without waiting for garbage collection");
+            }
+            finally
+            {
+                GC.EndNoGCRegion();
+            }
+        }
+
+        [SkippableTheory]
         [CombinatorialData]
         public async Task RecoversSelectedHistoryBeforeUploading(
             bool remoteAvailable,

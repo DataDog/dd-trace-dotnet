@@ -152,6 +152,9 @@ namespace Datadog.Trace.Util
                 processInfo.StandardInput.Close();
             }
 
+            // Process.Dispose leaves synchronously accessed redirected streams open.
+            using var standardOutput = processStartInfo.UseShellExecute ? null : processInfo.StandardOutput;
+            using var standardError = processStartInfo.UseShellExecute ? null : processInfo.StandardError;
             var outputStringBuilder = new StringBuilder();
             var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
@@ -165,8 +168,8 @@ namespace Datadog.Trace.Util
 
                 if (!processStartInfo.UseShellExecute)
                 {
-                    outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                    errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                    outputStringBuilder.Append(standardOutput!.ReadToEnd());
+                    errorStringBuilder.Append(standardError!.ReadToEnd());
                 }
 
                 Thread.Sleep(15);
@@ -174,8 +177,8 @@ namespace Datadog.Trace.Util
 
             if (!processStartInfo.UseShellExecute)
             {
-                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                outputStringBuilder.Append(standardOutput!.ReadToEnd());
+                errorStringBuilder.Append(standardError!.ReadToEnd());
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
