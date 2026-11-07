@@ -11,6 +11,13 @@
     <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
   </PropertyGroup>
 
+  <!-- Opt-in second build with the async methods compiled as .NET 11 runtime-async, output side by side with the default build -->
+  <PropertyGroup Condition="'$(DD_RuntimeAsync)'=='true'">
+    <ArtifactsPivots>$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_runtime_async</ArtifactsPivots>
+    <Features>$(Features);runtime-async=on</Features>
+    <DefineConstants>$(DefineConstants);RUNTIME_ASYNC_BUILD</DefineConstants>
+  </PropertyGroup>
+
   <!-- System.Memory / System.Threading.Tasks.Extensions are needed on net4x for Span<T> / ValueTask;
        on netcoreapp2.1+ they ship with the BCL. -->
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">

@@ -4,6 +4,7 @@
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "module_metadata.h"
+#include "runtime_async.h"
 #include "signature_builder.h"
 
 namespace trace
@@ -400,10 +401,14 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
 
     // For instrumenting static methods in value types, see if we can get the TypeRef for the type.
     // If so, include add a local variable with the value type in the signature.
+    // A runtime-async instance method in a value type needs the same local, to hold a copy of `this`:
+    // `this` is a byref there, and a byref is not preserved across a suspension, so the epilog cannot
+    // reload it with ldarg.0 after the body has awaited.
     bool isValueType = caller->type.valueType;
     bool isStaticValueType = isValueType && !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) && GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
+    const bool hasValueTypeLocal = isStaticValueType || IsRuntimeAsyncValueTypeInstanceMethod(caller);
 
-    ULONG newLocalsCount = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
+    ULONG newLocalsCount = variableNumber + additionalLocalsCount + (hasValueTypeLocal ? 1 : 0);
 
     // Gets the static value type buffer and size
     unsigned staticValueTypeTypeRefBuffer;
@@ -505,8 +510,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignature.Append(&callTargetReturnBuffer, callTargetReturnSize);
     }
 
-    // Static method in a ValueType
-    if (isStaticValueType)
+    // Static method in a ValueType, or a copy of `this` for a runtime-async instance method in one
+    if (hasValueTypeLocal)
     {
         newSignature.Append(ELEMENT_TYPE_VALUETYPE);
         newSignature.Append(&staticValueTypeTypeRefBuffer, staticValueTypeTypeRefSize);
@@ -534,7 +539,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetReturnToken = callTargetReturn;
 
     const auto sizeOfOtherIndexes = additionalLocalIndices.size();
-    auto indexStart = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
+    auto indexStart = variableNumber + additionalLocalsCount + (hasValueTypeLocal ? 1 : 0);
 
     if (returnSignatureType != nullptr)
     {
@@ -548,7 +553,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionIndex = newLocalsCount - indexStart--;
     *callTargetReturnIndex = newLocalsCount - indexStart--;
 
-    if (isStaticValueType)
+    if (hasValueTypeLocal)
     {
         *staticValueTypeIndex = newLocalsCount - indexStart--;
     }
@@ -839,6 +844,14 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
 
     isValueType = cType->valueType;
     return cType->id;
+}
+
+bool CallTargetTokens::IsRuntimeAsyncValueTypeInstanceMethod(FunctionInfo* caller)
+{
+    bool isValueType = caller->type.valueType;
+    return isValueType && !caller->type.isGeneric && IsMiAsync(caller->method_impl_flags) &&
+           (caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) &&
+           GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
 }
 
 
