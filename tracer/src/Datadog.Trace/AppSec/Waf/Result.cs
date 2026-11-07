@@ -114,22 +114,22 @@ namespace Datadog.Trace.AppSec.Waf
         public bool HasKeep { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds
+        /// Gets the total runtime of the non-RASP runs of the request so far, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntime { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds with parameter passing to the waf
+        /// Gets the total runtime of the non-RASP runs of the request so far, including the bindings, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds for RASP calls
+        /// Gets the total runtime of the RASP runs of the request so far, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeRasp { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds with parameter passing to the waf for RASP calls
+        /// Gets the total runtime of the RASP runs of the request so far, including the bindings, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
 

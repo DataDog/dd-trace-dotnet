@@ -44,7 +44,7 @@ internal sealed partial class MetricsTelemetryCollector
         lock (aggregated)
         {
             metricData = GetMetricData(aggregated.PublicApiCounts, aggregated.Count, aggregated.CountShared, aggregated.Gauge);
-            distributionData = GetDistributionData(aggregated.DistributionShared);
+            distributionData = GetDistributionData(aggregated.Distribution, aggregated.DistributionShared);
         }
 
         return new(metricData, distributionData);
@@ -67,6 +67,7 @@ internal sealed partial class MetricsTelemetryCollector
             AggregateMetric(buffer.Count, timestamp, aggregated.Count);
             AggregateMetric(buffer.CountShared, timestamp, aggregated.CountShared);
             AggregateMetric(buffer.Gauge, timestamp, aggregated.Gauge);
+            AggregateDistribution(buffer.Distribution, aggregated.Distribution);
             AggregateDistribution(buffer.DistributionShared, aggregated.DistributionShared);
         }
 
@@ -116,17 +117,23 @@ internal sealed partial class MetricsTelemetryCollector
         return data;
     }
 
-    private List<DistributionMetricData>? GetDistributionData(AggregatedDistribution[] distributionshared)
+    private List<DistributionMetricData>? GetDistributionData(AggregatedDistribution[] distribution, AggregatedDistribution[] distributionshared)
     {
+        var distributionLength = distribution.Count(x => x.HasValues);
         var distributionsharedLength = distributionshared.Count(x => x.HasValues);
 
-        var totalLength = 0 + distributionsharedLength;
+        var totalLength = 0 + distributionLength + distributionsharedLength;
         if (totalLength == 0)
         {
             return null;
         }
 
         var data = new List<DistributionMetricData>(totalLength);
+
+        if (distributionLength > 0)
+        {
+            AddDistributionData(distribution, data, DistributionEntryCounts, GetDistributionDetails);
+        }
 
         if (distributionsharedLength > 0)
         {
@@ -154,6 +161,12 @@ internal sealed partial class MetricsTelemetryCollector
         return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
     }
 
+    private static MetricDetails GetDistributionDetails(int i)
+    {
+        var metric = (Distribution)i;
+        return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
+    }
+
     private static MetricDetails GetDistributionSharedDetails(int i)
     {
         var metric = (DistributionShared)i;
@@ -166,6 +179,7 @@ internal sealed partial class MetricsTelemetryCollector
         public readonly AggregatedMetric[] Count;
         public readonly AggregatedMetric[] CountShared;
         public readonly AggregatedMetric[] Gauge;
+        public readonly AggregatedDistribution[] Distribution;
         public readonly AggregatedDistribution[] DistributionShared;
 
         public AggregatedMetrics()
@@ -174,6 +188,7 @@ internal sealed partial class MetricsTelemetryCollector
             Count = GetCountBuffer();
             CountShared = GetCountSharedBuffer();
             Gauge = GetGaugeBuffer();
+            Distribution = GetDistributionBuffer();
             DistributionShared = GetDistributionSharedBuffer();
         }
     }
@@ -184,6 +199,7 @@ internal sealed partial class MetricsTelemetryCollector
         public readonly int[] Count;
         public readonly int[] CountShared;
         public readonly int[] Gauge;
+        public readonly BoundedConcurrentQueue<double>[] Distribution;
         public readonly BoundedConcurrentQueue<double>[] DistributionShared;
 
         public MetricBuffer()
@@ -192,6 +208,13 @@ internal sealed partial class MetricsTelemetryCollector
             Count = new int[CountLength];
             CountShared = new int[CountSharedLength];
             Gauge = new int[GaugeLength];
+            Distribution = new BoundedConcurrentQueue<double>[DistributionLength];
+
+            for (var i = Distribution.Length - 1; i >= 0; i--)
+            {
+                Distribution[i] = new BoundedConcurrentQueue<double>(queueLimit: 1000);
+            }
+
             DistributionShared = new BoundedConcurrentQueue<double>[DistributionSharedLength];
 
             for (var i = DistributionShared.Length - 1; i >= 0; i--)
@@ -221,6 +244,11 @@ internal sealed partial class MetricsTelemetryCollector
             for (var i = 0; i < Gauge.Length; i++)
             {
                 Gauge[i] = 0;
+            }
+
+            for (var i = 0; i < Distribution.Length; i++)
+            {
+                while (Distribution[i].TryDequeue(out _)) { }
             }
 
             for (var i = 0; i < DistributionShared.Length; i++)
