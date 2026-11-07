@@ -27,8 +27,11 @@ namespace Datadog.Trace.ClrProfiler
         internal static bool IsInstrumentedAssembly(string assemblyName)
             => assemblyName.StartsWith("AerospikeClient,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Amazon.Lambda.RuntimeSupport,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("amqmdnetstd,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Couchbase.NetClient,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("coverlet.core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("dotnet,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Elasticsearch.Net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Google.Protobuf,", StringComparison.Ordinal)
             || assemblyName.StartsWith("GraphQL,", StringComparison.Ordinal)
@@ -39,14 +42,17 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Hangfire.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
             || assemblyName.StartsWith("HotChocolate.Types,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("MSTest.TestFramework,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("MSTestAdapter.PlatformServices,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MSTest.TestFramework,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MSTestAdapter.PlatformServices,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MySql.Data,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MySqlConnector,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("netstandard,", StringComparison.Ordinal)
             || assemblyName.StartsWith("NLog,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Npgsql,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Ocelot,", StringComparison.Ordinal)
             || assemblyName.StartsWith("OpenTelemetry,", StringComparison.Ordinal)
             || assemblyName.StartsWith("OpenTelemetry.Api,", StringComparison.Ordinal)
@@ -59,19 +65,13 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
             || assemblyName.StartsWith("StackExchange.Redis.StrongName,", StringComparison.Ordinal)
             || assemblyName.StartsWith("System,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("WebDriver,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("Yarp.ReverseProxy,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("amqmdnetstd,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("coverlet.core,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("dotnet,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("netstandard,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
             || assemblyName.StartsWith("vstest.console,", StringComparison.Ordinal)
             || assemblyName.StartsWith("vstest.console.arm64,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("WebDriver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.desktop,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.dotnet,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("xunit.v3.core,", StringComparison.Ordinal);
+            || assemblyName.StartsWith("xunit.v3.core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Yarp.ReverseProxy,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
@@ -317,7 +317,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.CtorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.CtorUseDefaultSourcesIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.FromDefaultSourcesIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.PopulateDictionaryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.AgentUriGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.AnalyticsEnabledGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.CustomSamplingRulesGetIntegration"
@@ -339,6 +338,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.StatsComputationEnabledGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.TraceEnabledGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.TracerMetricsEnabledGetIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.PopulateDictionaryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.DiagnosticSourceEnabledSetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams.DataStreamsTrackTransactionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions.SpanExtensionsSetTraceSamplingPriorityIntegration"
@@ -355,23 +355,23 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.ConfigureIntegration_Pre3_7"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.StartSpanIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.ForceFlushAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetActiveScopeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetDefaultServiceNameIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetAutomaticTracerInstanceIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetUpdatedImmutableTracerSettingsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.StartActiveImplementationIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.StartActiveOperationNameIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.StartActiveSpanCreationSettingsIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetActiveScopeIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetDefaultServiceNameIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenTracing.OpenTracingTracerFactoryCreateTracerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenTracing.OpenTracingTracerFactoryWrapTracerIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ProcessHelpersStartWithDoNotTraceIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ManagedVanguardStopIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.CoverageGetCoverageResultIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.CoverageGetCoverageResultIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommand5ctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandRunIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ManagedVanguardStopIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ExecutorExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ExecutorGetArgumentProcessorsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestOnRunCompletionIntegration"
@@ -402,10 +402,10 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.GrpcProtocolHelpersBuildHttpErrorResponseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.HttpContextServerCallContextLogCallEndIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DefaultCallInvokerInstrumentation"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.AsyncCallServerSendInitialMetadataAsyncInstrumentation"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.AsyncCallServerSendStatusFromServerAsyncInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.AsyncCallHandleFinishedInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.AsyncCallHandleUnaryResponseInstrumentation"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.AsyncCallServerSendInitialMetadataAsyncInstrumentation"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.AsyncCallServerSendStatusFromServerAsyncInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.MetadataArraySafeHandleCreateInstrumentation"
@@ -447,6 +447,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler.WinHttpHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.YarpForwarderHttpClientFactoryIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.HttpMessageHandler,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq.GetIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq.PutIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.IbmMq,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.LoggerFactoryConstructorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.LoggerFactoryConstructorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.LoggerFactoryConstructorNet7Integration"
@@ -457,9 +460,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration_930_940"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.ILogger,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq.GetIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq.PutIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.IbmMq,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCommitAllIntegration"
@@ -509,28 +509,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.MongoDb,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoExecuteClassCleanupAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodInfoGetRetryAttributeIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteAsyncIntegrationV4_4"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV3_9"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV4_3"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TypeCacheGetTestMethodInfoIntegrationV3_9"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TypeCacheGetTestMethodInfoIntegrationV4"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_3_3"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_4"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesIntegrationV4"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesAsyncIntegrationV4_4"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.RunTestsWithSourcesSendSessionEndIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_Purge_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration"
+                    => Datadog.Trace.Configuration.IntegrationId.Msmq,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.RunTestsWithSourcesSendSessionEndIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoExecuteAssemblyCleanupIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyCleanupIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration"
@@ -578,11 +561,28 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoExecuteClassCleanupAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodInfoGetRetryAttributeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteAsyncIntegrationV4_4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV3_9"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV4_3"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TypeCacheGetTestMethodInfoIntegrationV3_9"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TypeCacheGetTestMethodInfoIntegrationV4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_3_3"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesIntegrationV4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesAsyncIntegrationV4_4"
                     => Datadog.Trace.Configuration.IntegrationId.MsTestV2,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_Purge_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration"
-                    => Datadog.Trace.Configuration.IntegrationId.Msmq,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LoggingConfigurationFileLoaderLoadInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryActivateLoggingConfigurationInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryBuildLoggerConfiguration"
@@ -591,6 +591,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV4"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV5"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.ReaderCloseNpgsqlIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Npgsql,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSetSkippedResultIntegration"
@@ -601,8 +603,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.ReaderCloseNpgsqlIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.Npgsql,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkAccumulateSpanEnrichmentIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanDeferExposuresIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPIntegration"
@@ -622,11 +622,11 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.OpenFeature,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_RemoveBaggageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageItemsIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
@@ -730,6 +730,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_GetResponse_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.WebRequest_GetResponseAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.WebRequest,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html.HtmlStringIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Xss,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration"
@@ -752,18 +754,24 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestClassRunnerRunV3_4XIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestOutputHelperQueueTestOutputV3_4XIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestRunnerBaseRunV3_4XIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestRunnerV3_4XIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestRunnerBaseRunV3_4XIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X.XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"
                     => Datadog.Trace.Configuration.IntegrationId.XUnit,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html.HtmlStringIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.Xss,
 
                 // adonet integrations
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"
@@ -785,14 +793,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
@@ -991,9 +991,14 @@ namespace Datadog.Trace.ClrProfiler
         {
             return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
             {
-                { Key: "System.Data", Value: "System.Data.Common.DbCommand" }
+                { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
+                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
+                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
+                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
+                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
                     or { Key: "System.Data", Value: "System.Data.Common.DbCommand" }
                     or { Key: "System.Data", Value: "System.Data.Common.DbCommand" }
+                    or { Key: "System.Data", Value: "System.Data.Common.DbCommand" }
                     or { Key: "System.Data", Value: "System.Data.Common.DbDataReader" }
                     or { Key: "System.Data", Value: "System.Data.Common.DbDataReader" }
                     or { Key: "System.Data", Value: "System.Data.Common.DbDataReader" }
@@ -1012,11 +1017,6 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "System.Data.Common", Value: "System.Data.Common.DbDataReader" }
                     or { Key: "System.Data.Common", Value: "System.Data.Common.DbDataReader" }
                     or { Key: "System.Data.Common", Value: "System.Data.Common.DbDataReader" }
-                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
-                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
-                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
-                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
-                    or { Key: "netstandard", Value: "System.Data.Common.DbDataReader" }
                     => Datadog.Trace.Configuration.IntegrationId.AdoNet,
                     { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlCommand" }

@@ -18,6 +18,12 @@ internal static partial class ConfigurationKeys
     internal static class Telemetry
     {
         /// <summary>
+        /// Internal env var for propagating the root session ID to child processes.
+        /// Set automatically by the tracer at init time; not user-configurable.
+        /// </summary>
+        public const string RootSessionId = "_DD_ROOT_DOTNET_SESSION_ID";
+
+        /// <summary>
         /// SSI variable that provides a unique identifier for the instrumentation installation.
         /// Used for tracking and correlation purposes in telemetry.
         /// </summary>
@@ -36,18 +42,18 @@ internal static partial class ConfigurationKeys
         public const string InstrumentationInstallType = "DD_INSTRUMENTATION_INSTALL_TYPE";
 
         /// <summary>
-        /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
-        /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
-        /// available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
-        /// </summary>
-        public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
-
-        /// <summary>
         /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
         /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
         /// is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
         /// </summary>
         public const string AgentProxyEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
+
+        /// <summary>
+        /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
+        /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
+        /// available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
+        /// </summary>
+        public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
 
         /// <summary>
         /// Configuration key to allow telemetry compression.
@@ -105,11 +111,5 @@ internal static partial class ConfigurationKeys
         /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
         /// </summary>
         public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
-
-        /// <summary>
-        /// Internal env var for propagating the root session ID to child processes.
-        /// Set automatically by the tracer at init time; not user-configurable.
-        /// </summary>
-        public const string RootSessionId = "_DD_ROOT_DOTNET_SESSION_ID";
     }
 }

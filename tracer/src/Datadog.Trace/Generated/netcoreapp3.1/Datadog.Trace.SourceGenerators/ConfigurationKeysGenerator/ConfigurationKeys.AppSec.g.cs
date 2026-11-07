@@ -58,6 +58,11 @@ internal static partial class ConfigurationKeys
         public const string AgenticOnboarding = "DD_APPSEC_AGENTIC_ONBOARDING";
 
         /// <summary>
+        /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
+        /// </summary>
+        public const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
+
+        /// <summary>
         /// Deprecate. Automatic tracking of user events mode. Values can be disabled, safe or extended.
         /// This config is in the process of being deprecated. Please use DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE
         /// instead.
@@ -67,11 +72,6 @@ internal static partial class ConfigurationKeys
         /// extended = ident
         /// </summary>
         public const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
-
-        /// <summary>
-        /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
-        /// </summary>
-        public const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
 
         /// <summary>
         /// Configuration key for limiting the size of the request body being parsed. Default value is 10_000_000.
@@ -114,11 +114,6 @@ internal static partial class ConfigurationKeys
         public const string KeepTraces = "DD_APPSEC_KEEP_TRACES";
 
         /// <summary>
-        /// with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
-        /// </summary>
-        public const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
-
-        /// <summary>
         /// with a default value of 32, defines the maximum depth of a stack trace to be reported due to RASP events. O for unlimited.
         /// </summary>
         public const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
@@ -127,6 +122,11 @@ internal static partial class ConfigurationKeys
         /// with a default value of 75, defines the percentage of frames taken from the top of the stack when trimming. Min 0, Max 100
         /// </summary>
         public const string MaxStackTraceDepthTopPercent = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
+
+        /// <summary>
+        /// with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
+        /// </summary>
+        public const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
 
         /// <summary>
         /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious

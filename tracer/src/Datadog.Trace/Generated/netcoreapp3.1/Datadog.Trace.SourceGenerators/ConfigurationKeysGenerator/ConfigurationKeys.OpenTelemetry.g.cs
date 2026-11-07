@@ -163,23 +163,14 @@ internal static partial class ConfigurationKeys
         public const string ExporterOtlpTracesTimeoutMs = "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT";
 
         /// <summary>
-        /// Datadog SDKs that support OTLP log export should default to otlp; all others should default to None/null
-        /// </summary>
-        public const string LogsExporter = "OTEL_LOGS_EXPORTER";
-
-        /// <summary>
         /// Configuration key to set the log level.
         /// </summary>
         public const string LogLevel = "OTEL_LOG_LEVEL";
 
         /// <summary>
-        /// Configuration key to set the exporter for metrics.
-        /// We only recognize the values of 'otlp' and 'none', a value of
-        /// 'none' disables the emission of metrics which is the
-        /// equivalent of setting <see cref="ConfigurationKeys.RuntimeMetricsEnabled"/>
-        /// to false.
+        /// Datadog SDKs that support OTLP log export should default to otlp; all others should default to None/null
         /// </summary>
-        public const string MetricsExporter = "OTEL_METRICS_EXPORTER";
+        public const string LogsExporter = "OTEL_LOGS_EXPORTER";
 
         /// <summary>
         /// Configuration key to set the export interval for metrics in milliseconds.
@@ -196,6 +187,15 @@ internal static partial class ConfigurationKeys
         /// This deviates from OpenTelemetry specification default of 30000ms (30s).
         /// </summary>
         public const string MetricExportTimeoutMs = "OTEL_METRIC_EXPORT_TIMEOUT";
+
+        /// <summary>
+        /// Configuration key to set the exporter for metrics.
+        /// We only recognize the values of 'otlp' and 'none', a value of
+        /// 'none' disables the emission of metrics which is the
+        /// equivalent of setting <see cref="ConfigurationKeys.RuntimeMetricsEnabled"/>
+        /// to false.
+        /// </summary>
+        public const string MetricsExporter = "OTEL_METRICS_EXPORTER";
 
         /// <summary>
         /// Configuration key for a list of tracing propagators.
