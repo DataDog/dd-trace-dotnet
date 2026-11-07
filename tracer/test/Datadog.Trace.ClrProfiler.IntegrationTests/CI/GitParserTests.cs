@@ -301,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [CombinatorialData]
         public async Task RecoversSelectedHistoryBeforeUploading(
             bool remoteAvailable,
-            [CombinatorialValues("shallow-ancestor", "shallow-unrelated", "full-unrelated")] string checkoutMode,
+            [CombinatorialValues("shallow-ancestor", "shallow-unrelated", "full-unrelated", "shallow-boundary")] string checkoutMode,
             bool recentParent)
         {
             using var remote = new GitCheckout();
@@ -319,9 +319,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var parentLine = parent is null ? string.Empty : $"parent {parent}\n";
             var selectedTime = recentParent ? timestamp - 30 : 1;
             var selected = Run("hash-object -t commit -w --stdin", $"tree {tree}\n{parentLine}author Test <test@example.com> {selectedTime} +0000\ncommitter Test <test@example.com> {selectedTime} +0000\n\nselected\n");
-            var unrelated = checkoutMode != "shallow-ancestor";
+            var boundary = checkoutMode == "shallow-boundary";
+            var unrelated = checkoutMode is "shallow-unrelated" or "full-unrelated";
             var root = unrelated ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nother root\n") : selected;
-            var middle = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {root}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nmiddle\n");
+            var middle = boundary ? selected : Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {root}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nmiddle\n");
             var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {middle}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
             Run("update-ref refs/heads/juan-fernandez/shallow-tip " + head);
             Run("update-ref refs/heads/juan-fernandez/selected " + selected);
@@ -333,7 +334,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Run($"-C \"{checkout}\" remote set-url origin \"{Path.Combine(remote.Root, "unavailable")}\"");
             }
 
-            GitCommandHelper.GetLocalCommits(checkout, selected).Should().BeEmpty();
+            if (boundary)
+            {
+                GitCommandHelper.GetLocalCommits(checkout, selected).Should().ContainSingle().Which.Should().Be(selected);
+            }
+            else
+            {
+                GitCommandHelper.GetLocalCommits(checkout, selected).Should().BeEmpty();
+            }
+
             var values = CIEnvironmentValues.Create(new Dictionary<string, string> { [ConfigurationKeys.CIVisibility.GitCommitSha] = selected });
             values.GitSearchFolder = checkout;
             var response = new Mock<IApiResponse>();
@@ -364,10 +373,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var bytes = await TestOptimizationClient.Create(checkout, optimization.Object).UploadRepositoryChangesAsync();
 
-            if (remoteAvailable)
+            if (remoteAvailable || boundary)
             {
                 bytes.Should().BeGreaterThan(0);
-                searches.Should().ContainSingle().Which.Should().Contain(selected).And.NotContain(head);
+                searches.Should().HaveCount(boundary ? 2 : 1);
+                searches[searches.Count - 1].Should().Contain(selected).And.NotContain(head);
                 var parts = uploads.Should().ContainSingle().Which;
                 var pushedSha = parts.Should().ContainSingle(part => part.Name == "pushedSha").Which.ContentInBytes
                              ?? throw new InvalidOperationException("The selected SHA was not uploaded.");
@@ -379,9 +389,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Run($"index-pack \"{packFile}\"");
                 var objects = Run($"verify-pack -v \"{Path.ChangeExtension(packFile, "idx")}\"");
                 objects.Should().Contain(selected + " commit ").And.NotContain(head + " commit ");
-                if (parent is not null)
+                if (parent is not null && remoteAvailable)
                 {
-                    searches[0].Should().Contain(parent);
+                    searches[searches.Count - 1].Should().Contain(parent);
                     objects.Should().Contain(parent + " commit ");
                 }
             }

@@ -44,7 +44,8 @@ internal sealed partial class TestOptimizationClient
         try
         {
             var isShallow = GitCommandHelper.IsShallowCloneRepository(_workingDirectory);
-            var recoverSelected = !initialCommitData.HasCommits && GitCommandHelper.IsValidCommitSha(_commitSha);
+            var selectedShaIsValid = GitCommandHelper.IsValidCommitSha(_commitSha);
+            var recoverSelected = !initialCommitData.HasCommits && selectedShaIsValid;
             if (!isShallow && !recoverSelected)
             {
                 if (!initialCommitData.HasCommits)
@@ -59,8 +60,9 @@ internal sealed partial class TestOptimizationClient
 
             Log.Debug("TestOptimizationClient: Fetching repository history...");
 
-            // Ordinary shallow recovery only needs to deepen checkout history when it has a single commit.
-            var gitShallowLogOutput = recoverSelected ? null : GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
+            // Check the selected root; another checkout commit can have a different shallow boundary.
+            var historyRoot = selectedShaIsValid ? _commitSha : "HEAD";
+            var gitShallowLogOutput = recoverSelected ? null : GitCommandHelper.RunGitCommand(_workingDirectory, $"log --format=oneline -n 2 {historyRoot} --", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
             if (!recoverSelected && gitShallowLogOutput is null)
             {
                 Log.Warning("TestOptimizationClient: 'git log --format=oneline -n 2' command is null");
@@ -74,13 +76,15 @@ internal sealed partial class TestOptimizationClient
 
                 // git rev-parse HEAD
                 var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
-                var head = recoverSelected ? _commitSha : headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var checkoutHead = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var head = selectedShaIsValid ? _commitSha : checkoutHead;
+                var targetedRecovery = recoverSelected || !string.Equals(head, checkoutHead, StringComparison.OrdinalIgnoreCase);
                 var depth = isShallow ? "--shallow-since=\"1 month ago\"" : string.Empty;
 
                 Log.Information("TestOptimizationClient: Refetching Git data for {OriginName}|{Head}", originName, head);
                 var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch {depth} --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
 
-                if (recoverSelected && isShallow && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
+                if (targetedRecovery && isShallow && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
                     gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --depth=1 --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
                 }
@@ -90,7 +94,7 @@ internal sealed partial class TestOptimizationClient
                     return 0;
                 }
 
-                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                if (!targetedRecovery && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
                     // ***
                     // The previous command has a drawback: if the local HEAD is a commit that has not been pushed to the remote, it will fail.
@@ -108,7 +112,7 @@ internal sealed partial class TestOptimizationClient
                     gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
                 }
 
-                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                if (!targetedRecovery && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
                     // ***
                     // It could be that the CI is working on a detached HEAD or maybe branch tracking hasn’t been set up.
