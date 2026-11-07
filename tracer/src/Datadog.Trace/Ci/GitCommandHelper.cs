@@ -598,7 +598,7 @@ internal static class GitCommandHelper
 
             // 3. Get commit details via `git show`
             Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
-            var showArgs = "show --no-show-signature -s --format=" + CommitFormat + " " + commitSha + " --";
+            var showArgs = "-c log.showSignature=false show -s --format=" + CommitFormat + " " + commitSha + " --";
             var showOutput = RunGitCommand(
                 workingDirectory,
                 showArgs,

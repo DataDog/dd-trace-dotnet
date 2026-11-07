@@ -69,15 +69,15 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                     MetricTags.CIVisibilityCommands.GetBranch);
                 if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
                 {
-                    var tags = tagOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-                    localGitInfo.Tag = tags.Length == 1 ? tags[0] : null;
+                    var tag = tagOutput.Output.AsSpan().Trim();
+                    localGitInfo.Tag = tag.IsEmpty || tag.IndexOfAny('\r', '\n') >= 0 ? null : tag.ToString();
                 }
             }
 
             // Get the remaining data from the log -1
             var gitLogOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
-                "log --no-show-signature -1 --pretty=" + GitCommandHelper.CommitFormat,
+                "-c log.showSignature=false log -1 --pretty=" + GitCommandHelper.CommitFormat,
                 MetricTags.CIVisibilityCommands.Fetch);
             if (gitLogOutput?.ExitCode != 0)
             {

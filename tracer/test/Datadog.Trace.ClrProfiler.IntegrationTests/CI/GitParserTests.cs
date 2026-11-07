@@ -245,8 +245,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             values.WorkspacePath.Should().Be(workspace);
         }
 
-        [SkippableFact]
-        public void PreservesAuthorSeparatorsAndTrailingMessageQuotes()
+        [SkippableTheory]
+        [CombinatorialData]
+        public void PreservesAuthorSeparatorsAndTrailingMessageQuotes(bool showSignature)
         {
             using var checkout = new GitCheckout();
             var treeOutput = GitCommandHelper.RunGitCommand(checkout.Root, "rev-parse HEAD^{tree}", MetricTags.CIVisibilityCommands.GetHead)
@@ -254,12 +255,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             treeOutput.ExitCode.Should().Be(0, treeOutput.Error);
             var tree = treeOutput.Output.Trim();
             var message = "Update [\"a\",\"b\"]'";
-            var content = $"tree {tree}\nauthor Author|,|Name <author@example.com> 1 +0000\ncommitter Committer <committer@example.com> 2 +0000\n\n{message}\n";
+            var signature = showSignature ? "gpgsig -----BEGIN PGP SIGNATURE-----\n invalid\n -----END PGP SIGNATURE-----\n" : string.Empty;
+            var content = $"tree {tree}\nauthor Author|,|Name <author@example.com> 1 +0000\ncommitter Committer <committer@example.com> 2 +0000\n{signature}\n{message}\n";
             var objectOutput = GitCommandHelper.RunGitCommand(checkout.Root, "hash-object -t commit -w --stdin", MetricTags.CIVisibilityCommands.GetHead, input: content, useCache: false)
                             ?? throw new InvalidOperationException("Git object creation did not start.");
             objectOutput.ExitCode.Should().Be(0, objectOutput.Error);
             var sha = objectOutput.Output.Trim();
             File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), sha + "\n");
+            var configOutput = GitCommandHelper.RunGitCommand(checkout.Root, $"config log.showSignature {showSignature.ToString().ToLowerInvariant()}", MetricTags.CIVisibilityCommands.GetHead)
+                            ?? throw new InvalidOperationException("Git configuration did not start.");
+            configOutput.ExitCode.Should().Be(0, configOutput.Error);
 
             if (!GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info))
             {
@@ -324,11 +329,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var root = unrelated ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nother root\n") : selected;
             var middle = boundary ? selected : Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {root}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nmiddle\n");
             var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {middle}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
-            Run("update-ref refs/heads/juan-fernandez/shallow-tip " + head);
-            Run("update-ref refs/heads/juan-fernandez/selected " + selected);
+            Run("update-ref refs/heads/test/shallow-tip " + head);
+            Run("update-ref refs/heads/test/selected " + selected);
             var checkout = Path.Combine(remote.Root, "shallow");
             var depth = checkoutMode == "full-unrelated" ? string.Empty : "--depth=2";
-            Run($"clone {depth} --single-branch --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
+            Run($"clone {depth} --single-branch --no-local --branch test/shallow-tip \"{remote.Root}\" \"{checkout}\"");
             if (!remoteAvailable)
             {
                 Run($"-C \"{checkout}\" remote set-url origin \"{Path.Combine(remote.Root, "unavailable")}\"");

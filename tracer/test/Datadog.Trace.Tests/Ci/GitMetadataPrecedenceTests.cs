@@ -141,6 +141,26 @@ public class GitMetadataPrecedenceTests
         values.Branch.Should().BeNull();
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void NormalizesAcceptedShaBeforeSelectingCommitDetails(bool sameCommit, bool explicitDetails)
+    {
+        var selected = new string(sameCommit ? 'a' : 'c', 40);
+        var variables = new Dictionary<string, string> { ["DD_GIT_COMMIT_SHA"] = "\r\n " + selected + "\t" };
+        if (explicitDetails)
+        {
+            variables["DD_GIT_TAG"] = "explicit-tag";
+            variables["DD_GIT_COMMIT_MESSAGE"] = "explicit-message";
+        }
+
+        var values = new TestValues(variables);
+        values.Load(new GitInfo { Commit = new string('a', 40), Tag = "local-tag", Message = "local-message" });
+
+        values.Commit.Should().Be(selected);
+        values.Tag.Should().Be(explicitDetails ? "explicit-tag" : sameCommit ? "local-tag" : null);
+        values.Message.Should().Be(explicitDetails ? "explicit-message" : sameCommit ? "local-message" : null);
+    }
+
     private sealed class TestValues(Dictionary<string, string> variables) : CIEnvironmentValues<DictionaryValuesProvider>(new DictionaryValuesProvider(variables))
     {
         public string ProviderBranch { get; set; } = "provider-branch";

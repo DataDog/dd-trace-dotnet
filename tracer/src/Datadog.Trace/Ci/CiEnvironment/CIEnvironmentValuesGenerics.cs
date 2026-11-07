@@ -274,6 +274,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If not set use the default value
                 return false;
             });
+        Commit = Commit?.Trim();
         if (!string.Equals(collectedCommit, Commit, StringComparison.OrdinalIgnoreCase))
         {
             Branch = CleanBranchValue(Branch).Item1;
