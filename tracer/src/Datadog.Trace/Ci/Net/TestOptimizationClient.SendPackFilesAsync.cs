@@ -156,12 +156,12 @@ internal sealed partial class TestOptimizationClient
         }
 
         // Older Git versions include paths after the object ID; never pass path fragments to pack-objects.
-        var objectLines = objectsOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-        var lstObjectsSha = new List<string>(objectLines.Length);
-        foreach (var objectLine in objectLines)
+        var lstObjectsSha = new List<string>();
+        foreach (var objectLine in objectsOutput.SplitIntoSpans('\n'))
         {
-            var pathSeparator = objectLine.IndexOf(' ');
-            var objectSha = pathSeparator < 0 ? objectLine : objectLine.Substring(0, pathSeparator);
+            var objectId = objectLine.AsSpan().TrimEnd('\r');
+            var pathSeparator = objectId.IndexOf(' ');
+            var objectSha = (pathSeparator < 0 ? objectId : objectId.Slice(0, pathSeparator)).ToString();
             if (GitCommandHelper.IsValidCommitSha(objectSha))
             {
                 lstObjectsSha.Add(objectSha);
