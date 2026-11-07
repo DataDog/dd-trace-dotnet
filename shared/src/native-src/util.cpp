@@ -285,8 +285,12 @@ namespace shared
         UUID uuid;
         UuidCreate(&uuid);
 
-        unsigned char* str;
-        UuidToStringA(&uuid, &str);
+        unsigned char* str = nullptr;
+        if (UuidToStringA(&uuid, &str) != RPC_S_OK)
+        {
+            // str is left untouched on failure, so there is nothing to free
+            return GenerateUuidV4();
+        }
 
         std::string s((char*) str);
 
