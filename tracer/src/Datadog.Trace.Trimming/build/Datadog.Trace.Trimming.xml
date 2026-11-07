@@ -1171,7 +1171,10 @@
       <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
       <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
       <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonReaderOptions" />
+      <type fullname="System.Text.Json.JsonTokenType" />
       <type fullname="System.Text.Json.JsonValueKind" />
+      <type fullname="System.Text.Json.Utf8JsonReader" />
    </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />
