@@ -23,7 +23,7 @@ internal sealed partial class TestOptimizationClient
         // Let's first try get the commit data from local and remote
         var initialCommitData = await GetCommitsAsync().ConfigureAwait(false);
 
-        // Missing local history may be recovered from a shallow checkout below.
+        // Missing selected history may be recovered from the configured remote below.
         if (!initialCommitData.IsOk && initialCommitData.HasCommits)
         {
             return 0;
@@ -44,7 +44,8 @@ internal sealed partial class TestOptimizationClient
         try
         {
             var isShallow = GitCommandHelper.IsShallowCloneRepository(_workingDirectory);
-            if (!isShallow)
+            var recoverSelected = !initialCommitData.HasCommits && GitCommandHelper.IsValidCommitSha(_commitSha);
+            if (!isShallow && !recoverSelected)
             {
                 if (!initialCommitData.HasCommits)
                 {
@@ -56,29 +57,33 @@ internal sealed partial class TestOptimizationClient
                 return await SendPackFilesAsync(initialCommitData.LocalCommits[0], initialCommitData.MissingCommits, initialCommitData.RemoteCommits).ConfigureAwait(false);
             }
 
-            Log.Debug("TestOptimizationClient: Unshallowing the repository...");
+            Log.Debug("TestOptimizationClient: Fetching repository history...");
 
-            // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
-            if (gitShallowLogOutput is null)
+            // Ordinary shallow recovery only needs to deepen checkout history when it has a single commit.
+            var gitShallowLogOutput = recoverSelected ? null : GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
+            if (!recoverSelected && gitShallowLogOutput is null)
             {
                 Log.Warning("TestOptimizationClient: 'git log --format=oneline -n 2' command is null");
                 return 0;
             }
 
-            var shallowLogArray = gitShallowLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
-            if (shallowLogArray.Length == 1 || !initialCommitData.HasCommits)
+            var shallowLogArray = gitShallowLogOutput?.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries) ?? [];
+            if (shallowLogArray.Length == 1 || recoverSelected)
             {
                 var originName = GitCommandHelper.GetRemoteName(_workingDirectory);
 
                 // git rev-parse HEAD
                 var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
-                var recoverSelected = !initialCommitData.HasCommits && GitCommandHelper.IsValidCommitSha(_commitSha);
                 var head = recoverSelected ? _commitSha : headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
-                var depth = recoverSelected ? "--depth=1" : "--shallow-since=\"1 month ago\"";
+                var depth = isShallow ? "--shallow-since=\"1 month ago\"" : string.Empty;
 
-                Log.Information("TestOptimizationClient: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
+                Log.Information("TestOptimizationClient: Refetching Git data for {OriginName}|{Head}", originName, head);
                 var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch {depth} --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+
+                if (recoverSelected && isShallow && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
+                {
+                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --depth=1 --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                }
 
                 if (recoverSelected && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {

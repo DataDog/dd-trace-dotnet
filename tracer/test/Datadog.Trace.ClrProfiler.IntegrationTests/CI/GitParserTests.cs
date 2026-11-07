@@ -299,7 +299,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         [SkippableTheory]
         [CombinatorialData]
-        public async Task RecoversTheSelectedCommitBeforeUploadingAShallowCheckout(bool remoteAvailable, bool unrelated)
+        public async Task RecoversSelectedHistoryBeforeUploading(
+            bool remoteAvailable,
+            [CombinatorialValues("shallow-ancestor", "shallow-unrelated", "full-unrelated")] string checkoutMode,
+            bool recentParent)
         {
             using var remote = new GitCheckout();
             string Run(string arguments, string input = null)
@@ -312,13 +315,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var tree = Run("hash-object -t tree -w --stdin", string.Empty);
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var selected = Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nselected\n");
+            var parent = recentParent ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp - 60} +0000\ncommitter Test <test@example.com> {timestamp - 60} +0000\n\nparent\n") : null;
+            var parentLine = parent is null ? string.Empty : $"parent {parent}\n";
+            var selectedTime = recentParent ? timestamp - 30 : 1;
+            var selected = Run("hash-object -t commit -w --stdin", $"tree {tree}\n{parentLine}author Test <test@example.com> {selectedTime} +0000\ncommitter Test <test@example.com> {selectedTime} +0000\n\nselected\n");
+            var unrelated = checkoutMode != "shallow-ancestor";
             var root = unrelated ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nother root\n") : selected;
             var middle = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {root}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nmiddle\n");
             var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {middle}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
             Run("update-ref refs/heads/juan-fernandez/shallow-tip " + head);
+            Run("update-ref refs/heads/juan-fernandez/selected " + selected);
             var checkout = Path.Combine(remote.Root, "shallow");
-            Run($"clone --depth=2 --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
+            var depth = checkoutMode == "full-unrelated" ? string.Empty : "--depth=2";
+            Run($"clone {depth} --single-branch --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
             if (!remoteAvailable)
             {
                 Run($"-C \"{checkout}\" remote set-url origin \"{Path.Combine(remote.Root, "unavailable")}\"");
@@ -370,6 +379,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Run($"index-pack \"{packFile}\"");
                 var objects = Run($"verify-pack -v \"{Path.ChangeExtension(packFile, "idx")}\"");
                 objects.Should().Contain(selected + " commit ").And.NotContain(head + " commit ");
+                if (parent is not null)
+                {
+                    searches[0].Should().Contain(parent);
+                    objects.Should().Contain(parent + " commit ");
+                }
             }
             else
             {
