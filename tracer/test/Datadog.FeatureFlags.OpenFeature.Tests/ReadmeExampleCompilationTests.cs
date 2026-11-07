@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -29,7 +30,7 @@ public class ReadmeExampleCompilationTests
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
                          .Select(path => MetadataReference.CreateFromFile(path));
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp12);
-        var sources = new[] { CSharpSyntaxTree.ParseText(example.Groups[1].Value, parseOptions) }.ToList();
+        List<SyntaxTree> sources = [CSharpSyntaxTree.ParseText(example.Groups[1].Value, parseOptions)];
         if (typeof(object).Assembly.GetType("System.Runtime.CompilerServices.IsExternalInit") is null)
         {
             // Records need this type, which .NET Core 3.1 lacks; applications targeting it add the same polyfill.

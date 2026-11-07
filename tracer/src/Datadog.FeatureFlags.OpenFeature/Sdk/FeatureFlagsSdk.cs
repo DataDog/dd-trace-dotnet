@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.SourceGenerators;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -38,7 +39,8 @@ internal static class FeatureFlagsSdk
 
     internal static bool ExposureHookCreated => _exposureHookCreated;
 
-    // Tests only: covers the state before any ExposureHook exists, which the process-wide flag otherwise hides.
+    // Covers the state before any ExposureHook exists, which the process-wide flag otherwise hides.
+    [TestingOnly]
     internal static bool ExposureHookCreatedForTests
     {
         get => _exposureHookCreated;
@@ -203,6 +205,7 @@ internal static class FeatureFlagsSdk
     /// <see cref="ExposureHook"/>. OpenFeature metadata has no enumeration API, so the provider
     /// records the typed map beside the result it built; the entry dies with the result.
     /// </summary>
+    [TestingOnly]
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
         => GetResult(metadata)?.HookFeatures;
 
@@ -211,6 +214,7 @@ internal static class FeatureFlagsSdk
         => GetResult(metadata)?.EvaluationFeatures;
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
+    [TestingOnly]
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
         => GetResult(metadata)?.EvaluatedContext;
 

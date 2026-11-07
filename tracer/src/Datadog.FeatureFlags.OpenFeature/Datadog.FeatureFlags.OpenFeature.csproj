@@ -35,6 +35,8 @@
     <Compile Include="..\Datadog.Trace\FeatureFlags\FlagEvaluation\FlagEvaluationBridge.cs" Link="Sdk\FlagEvaluationBridge.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="Sdk\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="Sdk\ValueType.cs" />
+    <Compile Include="..\Datadog.Trace\Util\TestingAndPrivateOnlyAttribute.cs" Link="Sdk\TestingAndPrivateOnlyAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\Util\TestingOnlyAttribute.cs" Link="Sdk\TestingOnlyAttribute.cs" />
   </ItemGroup>
 
   <ItemGroup>
