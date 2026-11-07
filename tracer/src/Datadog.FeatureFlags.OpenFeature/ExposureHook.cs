@@ -21,17 +21,15 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// An OpenFeature hook that hands each completed flag evaluation to a callback, with the Datadog
 /// exposure decision, so an application can record exposures in its own data store.
 /// <para>
-/// The provider also puts the exposure data in the flag metadata, so any OpenFeature hook can read
-/// it; this hook reads it for you and uses the final exposure decision. Register it with
-/// <c>OpenFeature.Api.Instance.AddHooks</c> or on a client; only a hook added with
-/// <c>Api.Instance.AddHooks</c> also receives evaluations from the experimental synchronous methods.
-/// The callback runs for every evaluation,
-/// including errors and repeats; use <see cref="ExposureEvaluation.ShouldSend"/> to keep the new
-/// or changed exposures. When the provider is registered directly with OpenFeature and evaluated
-/// through a client, these are exactly the exposures it sends to Datadog while
+/// The flag metadata also carries the exposure data; this hook reads it and applies the final
+/// exposure decision. Register it with <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only
+/// an API hook also gets evaluations from the experimental synchronous methods.
+/// The callback runs for every evaluation, including errors and repeats; use
+/// <see cref="ExposureEvaluation.ShouldSend"/> to keep new or changed exposures. With the provider
+/// registered directly and a client, these are the exposures sent to Datadog while
 /// <c>DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED</c> is on, and the same decision with it
-/// off. Inside OpenFeature's <c>MultiProvider</c>, the exposure is recorded before the client's
-/// <c>after</c> hooks run, so an evaluation that one of them fails can still have been sent.
+/// off. Inside <c>MultiProvider</c>, the exposure is recorded before the client's <c>after</c> hooks,
+/// so an evaluation that one of them fails can still be sent.
 /// </para>
 /// </summary>
 public sealed class ExposureHook : Hook
@@ -44,8 +42,7 @@ public sealed class ExposureHook : Hook
     /// <param name="onEvaluation">Called for every completed evaluation, on the evaluation thread.</param>
     /// <param name="logger">
     /// Receives a warning for the first callback exception and debug entries for later ones. Without
-    /// a logger, only the first one is written, to <see cref="System.Diagnostics.Trace"/>. They never
-    /// affect the evaluation.
+    /// a logger, only the first goes to <see cref="System.Diagnostics.Trace"/>. They never affect the evaluation.
     /// </param>
     public ExposureHook(Action<ExposureEvaluation> onEvaluation, ILogger? logger = null)
     {
@@ -92,8 +89,7 @@ public sealed class ExposureHook : Hook
             }
             else
             {
-                // Without a logger, later failures are not written: formatting each exception on the
-                // evaluation thread would cost every evaluation of a callback that keeps failing.
+                // Without a logger, skip: formatting every exception would slow each evaluation.
                 _logger?.LogDebug(ex, "Exposure callback failed");
             }
         }

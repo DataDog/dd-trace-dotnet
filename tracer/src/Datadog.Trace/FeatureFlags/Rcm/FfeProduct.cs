@@ -59,8 +59,7 @@ internal sealed class FfeProduct
                         ffeConfig.Path.Path,
                         ffeConfig.Version,
                         ffeConfig.Length);
-                    // Strings stay strings, as in the agentless parser: with default date parsing, an ISO 8601
-                    // string (a flag value or a split feature) becomes a DateTime and loses its original text.
+                    // Keep date-like strings as text, as the agentless parser does.
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None);
                     if (serverConfigFile.TypedFile is null)
                     {

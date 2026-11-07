@@ -12,9 +12,8 @@ using Datadog.Trace.FeatureFlags.Exposure.Model;
 namespace Datadog.Trace.FeatureFlags
 {
     /// <summary>
-    /// Metadata of an evaluation whose exposure waits for the commit. The provider hands this instance
-    /// back to commit, so the exposure travels with it: no side table, and the commit still finds it
-    /// after <c>Tracer.Configure</c> replaced the module.
+    /// Evaluation metadata that carries a pending exposure until the provider commits it. No side table,
+    /// so the commit still works after <c>Tracer.Configure</c> replaces the module.
     /// </summary>
     internal sealed class DeferredExposureMetadata : Dictionary<string, string>
     {
@@ -42,7 +41,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             exposure = _exposure;
-            // Releases the subject's context attributes with the commit, not with the metadata.
+            // Free the context attributes now, not with the metadata.
             _exposure = default;
             return true;
         }

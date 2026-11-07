@@ -248,14 +248,12 @@ internal sealed class ExposureApi : IDisposable
     }
 
     /// <summary>
-    /// Tells whether this exposure is already recorded, without recording it: the advisory answer
-    /// stamped on a deferred evaluation. Null once exposure reporting has stopped.
+    /// Tells whether this exposure is already recorded, without recording it. Null once exposure
+    /// reporting stops.
     /// </summary>
     public bool? IsExposed(in ExposureEvent exposure)
-        // Deliberate exception to COR-2.3 (advisory read): every deferred doLog evaluation peeks, so this takes only
-        // the cache's own lock, as the Java SDK does, and not _lifecycleLock as well. Dispose never touches the
-        // cache, so a peek that overlaps Dispose can still answer from a valid cache; the answer is advisory, and
-        // the commit that follows records nothing once reporting has stopped.
+        // No _lifecycleLock (COR-2.3 exception, as in Java): every deferred doLog evaluation peeks. Safe because
+        // Dispose never touches the cache, the answer is advisory, and a commit records nothing after shutdown.
         => Volatile.Read(ref _disposed) ? null : _exposureCache.Contains(exposure);
 
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)

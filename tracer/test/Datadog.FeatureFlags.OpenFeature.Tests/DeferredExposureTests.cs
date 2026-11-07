@@ -146,9 +146,8 @@ public class DeferredExposureTests
     [InlineData("true", true, false, true)]
     public async Task WithoutDeferralTheStampedVerdictDecidesEvenWhenTheResultHasSideState(string stamped, bool withFeature, bool expectedShouldSend, bool expectedCacheHit)
     {
-        // An older tracer: it recorded the exposure during evaluation and stamped the verdict. The ExposureHook
-        // below makes the provider record the evaluated context in a side-table entry that owes no commit; a
-        // HOOK feature adds the same kind of entry.
+        // An older tracer stamped the verdict during evaluation. The ExposureHook and the HOOK feature each make
+        // a side-table entry that owes no commit.
         var metadata = new Dictionary<string, string>
         {
             [FeatureFlagMetadataKeys.AllocationKey] = "alloc",

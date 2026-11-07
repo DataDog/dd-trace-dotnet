@@ -7,8 +7,7 @@ using Xunit;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
-// API hooks and the provider's static flags are process-wide, and synchronous evaluations run API ExposureHooks,
-// so tests that change them run alone.
+// API hooks and the provider's static flags are process-wide; tests that change them run alone.
 [CollectionDefinition(nameof(OpenFeatureApiHooksCollection), DisableParallelization = true)]
 public class OpenFeatureApiHooksCollection
 {

@@ -26,9 +26,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as bool. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/>, then any <see cref="ExposureHook"/>
-    /// registered on the OpenFeature API, and returns after they complete. Other hooks registered on the
-    /// OpenFeature API or a client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveBooleanValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -44,9 +43,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as double. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/>, then any <see cref="ExposureHook"/>
-    /// registered on the OpenFeature API, and returns after they complete. Other hooks registered on the
-    /// OpenFeature API or a client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveDoubleValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -62,9 +60,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as int. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/>, then any <see cref="ExposureHook"/>
-    /// registered on the OpenFeature API, and returns after they complete. Other hooks registered on the
-    /// OpenFeature API or a client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveIntegerValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -80,9 +77,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as string. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/>, then any <see cref="ExposureHook"/>
-    /// registered on the OpenFeature API, and returns after they complete. Other hooks registered on the
-    /// OpenFeature API or a client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveStringValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -98,9 +94,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as Value. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/>, then any <see cref="ExposureHook"/>
-    /// registered on the OpenFeature API, and returns after they complete. Other hooks registered on the
-    /// OpenFeature API or a client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveStructureValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -115,8 +110,7 @@ public sealed partial class DatadogProvider
 
     // FeatureClient runs these hooks around the async methods. The sync methods bypass the client, so they run the
     // client's post-resolution stages here, in its order (last hook first) and with its failure handling, and return
-    // only after every hook completes. Before hooks are skipped because they can change the context, which these
-    // methods take as given.
+    // only after every hook completes. Before hooks are skipped: they could change the given context.
     internal static ResolutionDetails<T> RunPostResolutionHooks<T>(IReadOnlyList<Hook> hooks, HookContext<T> context, ResolutionDetails<T> resolution)
     {
         if (hooks.Count == 0)
@@ -192,13 +186,11 @@ public sealed partial class DatadogProvider
         }
     }
 
-    // An ExposureHook registered on the API would miss these evaluations, because they have no client. It goes
-    // ahead of the provider's hooks, which run last hook first, so its finally stage runs after the commit, as on
-    // a client. Other API hooks are left out: they would run without their before stage, and could block on
-    // asynchronous work.
+    // Adds API ExposureHooks, which miss sync evaluations otherwise (no client). They go first because hooks run last
+    // first, so their finally stage runs after the provider's commit. Other API hooks would run without their before stage.
     private static IReadOnlyList<Hook> WithApiExposureHooks(IImmutableList<Hook> providerHooks)
     {
-        // Api.GetHooks() allocates on every call. No ExposureHook can be registered before one is constructed.
+        // Api.GetHooks() allocates; skip it until an ExposureHook exists.
         if (!FeatureFlagsSdk.ExposureHookCreated)
         {
             return providerHooks;

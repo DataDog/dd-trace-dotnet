@@ -43,8 +43,7 @@ public sealed class ExposureEvaluation
         Context = context;
         Features = result?.HookFeatures ?? EmptyFeatures;
         SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
-        // A deferred exposure is decided by its commit, never by the advisory stamp; otherwise the tracer
-        // recorded the exposure during evaluation and stamped that verdict.
+        // A deferred exposure uses the committed verdict, not the advisory stamp; otherwise use the stamp.
         _cacheHit = result is not null && result.TryGetCommittedVerdict(out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
@@ -64,8 +63,8 @@ public sealed class ExposureEvaluation
     public EvaluationContext? Context { get; }
 
     /// <summary>
-    /// Gets the serial id of the selected split, which identifies the split in Datadog, or null when the
-    /// split has none or the tracer does not report it. Serial ids are unsigned 32-bit values.
+    /// Gets the selected split's serial id in Datadog (an unsigned 32-bit value), or null when the split
+    /// has none or the tracer does not report it.
     /// </summary>
     public long? SplitSerialId { get; }
 

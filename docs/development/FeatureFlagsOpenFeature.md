@@ -12,11 +12,10 @@ running. Each hook completes before resolution returns.
 
 The built-in hooks and `ExposureHook` currently complete synchronously. The helper also waits for
 incomplete hook tasks, so future provider hooks must avoid capturing a caller's
-synchronization context. The synchronous path also runs any `ExposureHook` registered
-on the OpenFeature API, placed so that its Finally stage runs after the provider's
-commit, as on a client. It runs no Before hooks and no other API or client hooks: those
-would run without their Before stage, and an application hook could block on
-asynchronous work. Callers supply the complete context. The normal asynchronous client continues to own its hook lifecycle, avoiding
+synchronization context. The synchronous path also runs API-registered `ExposureHook`s,
+first in the list, so their Finally stage runs after the provider's commit. It runs no
+Before hooks and no other API or client hooks. Callers supply the complete context.
+The normal asynchronous client continues to own its hook lifecycle, avoiding
 duplicate metrics and span enrichment.
 
 EVP captures the targeting key and consented, bounded attributes in provider

@@ -139,9 +139,8 @@ internal sealed class FeatureListJsonConverter : JsonConverter<List<Feature>?>
             case JsonToken.Boolean:
                 return (bool)reader.Value!;
             case JsonToken.Date:
-                // Both delivery paths read with DateParseHandling.None, so this is only a fallback for a reader
-                // that parses dates: format the value back as a round-trip string, the same instant, though not
-                // always the same text.
+                // Fallback only: both delivery paths use DateParseHandling.None. A round-trip string keeps the
+                // instant, not always the text.
                 return reader.Value switch
                 {
                     DateTimeOffset offset => offset.ToString("o", CultureInfo.InvariantCulture),

@@ -15,7 +15,7 @@ internal sealed class ExposureCache
 {
     private readonly int _capacity;
 
-    // Each subject keeps its node in the LRU list, so a repeat moves that node in O(1) instead of searching the list.
+    // Maps each subject to its LRU node, so a repeat moves in O(1).
     private readonly Dictionary<Key, LinkedListNode<Entry>> _cache;
     private readonly LinkedList<Entry> _lruList;
 
@@ -51,7 +51,7 @@ internal sealed class ExposureCache
             var entry = new Entry(key, new Value(exposureEvent));
             if (_cache.Count >= _capacity && _lruList.Last is { } evicted)
             {
-                // Reuses the evicted node, so a full cache does not leave a long-lived node behind per new subject.
+                // Reuse the evicted node, so a full cache allocates no node.
                 _cache.Remove(evicted.Value.Key);
                 _lruList.RemoveLast();
                 evicted.Value = entry;
@@ -65,10 +65,7 @@ internal sealed class ExposureCache
         }
     }
 
-    /// <summary>
-    /// Peeks without refreshing the LRU order: true when this exact exposure (allocation, variant and
-    /// serial id) is already recorded for the subject.
-    /// </summary>
+    /// <summary>True when the subject has this exact exposure recorded. Does not change the LRU order.</summary>
     public bool Contains(ExposureEvent exposureEvent)
     {
         lock (_cache)
@@ -77,7 +74,7 @@ internal sealed class ExposureCache
         }
     }
 
-    // Value's equality, field by field, without allocating a Value to compare.
+    // Same as Value equality, without allocating a Value.
     private static bool Matches(Value recorded, in ExposureEvent exposureEvent)
         => recorded.Variant == exposureEvent.Variant.Key
            && recorded.Allocation == exposureEvent.Allocation.Key

@@ -44,8 +44,8 @@ public class FfeProductTests
     [InlineData("2026-11-02T00:00:00")]
     public void UpdateFromRcm_KeepsDateLikeStringsAsConfigured(string text)
     {
-        // Default Newtonsoft date parsing turns these into dates before the model sees them, and converts an
-        // offset to the host's time zone; the agentless parser keeps them as strings.
+        // Default Newtonsoft date parsing turns these into dates, in the host's time zone for offsets. The
+        // agentless parser keeps them as strings.
         var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
         var product = new FfeProduct(configurations => delivered = configurations);
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");

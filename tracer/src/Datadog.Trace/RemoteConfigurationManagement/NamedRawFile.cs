@@ -23,11 +23,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public byte[] RawFile { get; }
 
-        /// <summary>Deserializes the file.</summary>
-        /// <typeparam name="T">The type to read.</typeparam>
-        /// <param name="dateParseHandling">How date-like strings are read; <see cref="DateParseHandling.None"/> keeps them as strings.</param>
-        /// <returns>The file path and its deserialized content.</returns>
-        public NamedTypedFile<T?> Deserialize<T>(DateParseHandling dateParseHandling = DateParseHandling.DateTime)
+        public NamedTypedFile<T?> Deserialize<T>() => Deserialize<T>(DateParseHandling.DateTime);
+
+        public NamedTypedFile<T?> Deserialize<T>(DateParseHandling dateParseHandling)
         {
             using var stream = new MemoryStream(RawFile);
             using var streamReader = new StreamReader(stream);
@@ -37,7 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 DateParseHandling = dateParseHandling,
             };
 
-            // The default serializer sets no DateParseHandling of its own, so the reader's setting applies.
+            // CreateDefault() leaves DateParseHandling unset, so the reader's value applies.
             return new NamedTypedFile<T?>(Path.Path, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
         }
     }

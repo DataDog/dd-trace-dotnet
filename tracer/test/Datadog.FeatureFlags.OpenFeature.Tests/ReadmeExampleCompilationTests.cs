@@ -33,7 +33,7 @@ public class ReadmeExampleCompilationTests
         List<SyntaxTree> sources = [CSharpSyntaxTree.ParseText(example.Groups[1].Value, parseOptions)];
         if (typeof(object).Assembly.GetType("System.Runtime.CompilerServices.IsExternalInit") is null)
         {
-            // Records need this type, which .NET Core 3.1 lacks; applications targeting it add the same polyfill.
+            // Records need this type, which .NET Core 3.1 lacks; apps on it add the same polyfill.
             sources.Add(CSharpSyntaxTree.ParseText("namespace System.Runtime.CompilerServices { internal static class IsExternalInit { } }", parseOptions));
         }
 

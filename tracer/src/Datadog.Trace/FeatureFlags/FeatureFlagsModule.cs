@@ -29,7 +29,7 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsModule : IDisposable
     {
-        // Deferred exposures created without any commit before this one-time warning is written.
+        // Deferred exposures in a row without a commit before the one-time warning.
         private const int UncommittedExposureWarningThreshold = 1_000;
 
         // Static, so the warning that debug logs include raw evaluation data is written once per
@@ -83,9 +83,8 @@ namespace Datadog.Trace.FeatureFlags
         private long _configGeneration;
         private long _handlerDeliveredGeneration;
 
-        // Deferred exposures are sent only from the provider's OpenFeature hooks. When those hooks never
-        // run, for example under a wrapper provider that does not return them, every exposure stays
-        // pending and nothing else reports it.
+        // Only the provider's hooks commit deferred exposures. These detect hooks that never run, for
+        // example under a wrapper that drops them.
         private int _exposuresDeferredSinceCommit;
         private int _uncommittedExposuresWarned;
 
@@ -897,7 +896,7 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
         {
-            // The provider's hooks are running.
+            // A commit proves the provider's hooks run.
             Volatile.Write(ref _exposuresDeferredSinceCommit, 0);
             if (evaluationMetadata is not DeferredExposureMetadata deferred
                 || !deferred.TryTakePendingExposure(out var pending))
@@ -914,7 +913,7 @@ namespace Datadog.Trace.FeatureFlags
             };
         }
 
-        // Never creates the exposure API: until a commit creates it, nothing is recorded.
+        // Never creates the exposure API; without it, nothing is recorded yet.
         private bool? IsExposed(in ExposureEvent exposure)
             => Volatile.Read(ref _exposureApi) is { } exposureApi ? exposureApi.IsExposed(in exposure)
                : Volatile.Read(ref _disposed) ? null
@@ -922,7 +921,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private void WarnIfExposuresStayUncommitted()
         {
-            // After the warning, evaluations stop writing the shared counter.
+            // After the warning, stop writing the shared counter.
             if (Volatile.Read(ref _uncommittedExposuresWarned) != 0)
             {
                 return;

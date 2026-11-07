@@ -41,8 +41,7 @@ internal sealed class ExposureCommitHook : Hook
         }
         catch (Exception ex)
         {
-            // Exposure reporting must never change the application's evaluation. The first failure is
-            // written, because the exposure it dropped is reported nowhere else.
+            // Exposure reporting must never change the application's evaluation. Write only the first failure.
             if (Interlocked.Exchange(ref _commitFailed, 1) == 0)
             {
                 System.Diagnostics.Trace.TraceWarning($"Datadog feature flag exposure commit failed; the exposure was not sent, and later failures are not logged: {ex}");

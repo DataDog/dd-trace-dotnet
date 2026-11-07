@@ -74,6 +74,9 @@ Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/
 
 ## Exposures in your own data store
 
+<!-- Maintainers: we plan to move the exposure sections, from here to "Stop sending exposures to
+Datadog", to the public Datadog docs. Then we will remove them from this README and link to the docs. -->
+
 The provider sends exposures to Datadog. It also puts exposure data and the selected split's
 features into the flag metadata, so any OpenFeature hook can record exposures in your own data
 store (see [Flag metadata](#flag-metadata)).

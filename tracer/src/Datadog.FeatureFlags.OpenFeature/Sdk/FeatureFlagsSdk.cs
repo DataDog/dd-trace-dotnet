@@ -31,15 +31,14 @@ internal static class FeatureFlagsSdk
     private static readonly object BoxedTrue = true;
     private static readonly object BoxedFalse = false;
 
-    // Set once an ExposureHook exists: only that hook reads the evaluated context, so until then
-    // exposures skip the side table for it.
+    // Set by the first ExposureHook. Until then, skip work that only ExposureHook needs.
     private static volatile bool _exposureHookCreated;
 
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
 
     internal static bool ExposureHookCreated => _exposureHookCreated;
 
-    // Covers the state before any ExposureHook exists, which the process-wide flag otherwise hides.
+    // Lets tests reset the process-wide flag.
     [TestingOnly]
     internal static bool ExposureHookCreatedForTests
     {
@@ -163,7 +162,7 @@ internal static class FeatureFlagsSdk
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
         // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
-        // Only ExposureHook reads it, and only for exposures, so it shares the result's single side-table entry.
+        // Only ExposureHook reads it, and only for exposures.
         if (_exposureHookCreated && context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
         {
             Results.GetValue(metadata, static _ => new ResultState(null, null, null)).EvaluatedContext = context;
@@ -174,7 +173,7 @@ internal static class FeatureFlagsSdk
 
     internal static void OnExposureHookCreated()
     {
-        // Every Resolve reads the flag, so it is written once, not on every ExposureHook construction.
+        // Write once: every Resolve reads this flag.
         if (!_exposureHookCreated)
         {
             _exposureHookCreated = true;
@@ -218,10 +217,7 @@ internal static class FeatureFlagsSdk
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
         => GetResult(metadata)?.EvaluatedContext;
 
-    /// <summary>
-    /// The state the provider recorded beside a result, or null when it recorded none. One lookup gives
-    /// <see cref="ExposureHook"/> everything it reads; on .NET Framework each lookup takes the table's lock.
-    /// </summary>
+    /// <summary>The state recorded beside a result, or null. One lookup serves all <see cref="ExposureHook"/> reads.</summary>
     internal static ResultState? GetResult(ImmutableMetadata? metadata)
         => metadata is not null && Results.TryGetValue(metadata, out var state) ? state : null;
 
@@ -373,7 +369,7 @@ internal static class FeatureFlagsSdk
 
     /// <summary>The selected split's serial id, or null when the metadata has none.</summary>
     internal static long? GetSplitSerialId(ImmutableMetadata? metadata)
-        // ConvertMetadataValue keeps the uint32 serial id's bits in an int; read them back as unsigned.
+        // The int holds the uint32 bits.
         => metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } serialBits ? unchecked((uint)serialBits) : null;
 
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
@@ -500,15 +496,14 @@ internal static class FeatureFlagsSdk
 
         internal IReadOnlyDictionary<string, object?>? EvaluationFeatures { get; } = evaluationFeatures;
 
-        // Set at creation: the committed verdict, not the advisory stamp, decides this result.
+        // True when the commit, not the advisory stamp, decides this result.
         internal bool OwesCommit { get; } = pendingExposure is not null;
 
         internal EvaluationContext? EvaluatedContext { get; set; }
 
         /// <summary>
-        /// Gets the committed verdict when this result had a deferred exposure to commit: false for a new
-        /// exposure, true for a repeat, null when nothing was recorded. Returns false when no commit was owed,
-        /// so the caller reads the verdict the tracer stamped during evaluation.
+        /// Gets the committed verdict: false for new, true for repeat, null when not recorded. Returns false
+        /// when the result owed no commit; the caller then uses the stamp.
         /// </summary>
         internal bool TryGetCommittedVerdict(out bool? verdict)
         {

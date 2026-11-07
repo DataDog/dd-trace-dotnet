@@ -211,6 +211,32 @@ public class FlagEvaluationBridgeTests
     }
 
     [Fact]
+    public async Task EnqueueWithFeaturesKeepsAttributesAndFeaturesApart()
+    {
+        // Attributes without consent are never sent, so a swap with the features would leak them.
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var bodies = new ConcurrentQueue<string>();
+        var writer = Writer(bodies, collector);
+        try
+        {
+            IReadOnlyDictionary<string, object?> attrs = new Dictionary<string, object?> { ["email"] = "attr-canary@example.test" };
+            IReadOnlyDictionary<string, object?> features = new Dictionary<string, object?> { ["holdout.key"] = "h1" };
+
+            OpenFeatureSdkEnqueueEVPWithFeaturesIntegration.Enqueue(writer, "flag", "on", "allocation", "subject", 1790000000000L, (string?)null, attrs, features, 0);
+            await writer.FlushAsync();
+
+            var body = bodies.Should().ContainSingle().Subject;
+            body.Should().NotContain("attr-canary");
+            JObject.Parse(body)["flagEvaluations"]![0]!["features"]!["holdout.key"]!.Value<string>().Should().Be("h1");
+        }
+        finally
+        {
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            await collector.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public void EnqueueWithFeaturesSlowPathCastsEveryArgumentWithoutAHookError()
     {
         // OnMethodBegin turns any exception into a hook error, so a wrong cast is visible only there.
