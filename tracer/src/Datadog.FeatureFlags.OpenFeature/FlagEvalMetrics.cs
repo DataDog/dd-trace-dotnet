@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Datadog.Trace.FeatureFlags;
 
 namespace Datadog.FeatureFlags.OpenFeature;
 
@@ -30,7 +31,7 @@ internal sealed class FlagEvalMetrics : IDisposable
     internal const string TagErrorType = "error.type";
     internal const string TagAllocationKey = "feature_flag.result.allocation_key";
 
-    internal const string MetadataAllocationKey = "__dd_allocation_key";
+    internal const string MetadataAllocationKey = FeatureFlagMetadataKeys.AllocationKey;
 
     private readonly Meter _meter;
     private readonly Counter<long> _counter;

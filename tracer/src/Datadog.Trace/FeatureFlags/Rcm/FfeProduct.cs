@@ -12,6 +12,7 @@ using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags.Rcm;
@@ -58,7 +59,8 @@ internal sealed class FfeProduct
                         ffeConfig.Path.Path,
                         ffeConfig.Version,
                         ffeConfig.Length);
-                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
+                    // Keep date-like strings as text, as the agentless parser does.
+                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None);
                     if (serverConfigFile.TypedFile is null)
                     {
                         // Not acknowledged either, so the file is not reported as applied anywhere.

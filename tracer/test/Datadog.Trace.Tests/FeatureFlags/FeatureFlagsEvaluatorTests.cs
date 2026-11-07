@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -851,6 +852,35 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
         Assert.Null(result.Error);
+    }
+
+    [Theory]
+    [InlineData(0.1)]
+    [InlineData(1.0 / 3)]
+    public void NumberFeaturesRoundTripThroughTheMetadata(double value)
+    {
+        var features = new List<Feature> { new("ratio", value, new List<string> { "HOOK", "EVALUATION" }) };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        var metadata = evaluator.Evaluate("features-flag", ValueType.String, "default", new EvaluationContext("user")).FlagMetadata!;
+
+        double.Parse(metadata["__dd_feature.ratio"], NumberStyles.Float, CultureInfo.InvariantCulture).Should().Be(value);
+        double.Parse(metadata["__dd_evaluation_feature.ratio"], NumberStyles.Float, CultureInfo.InvariantCulture).Should().Be(value);
+    }
+
+    [Fact]
+    public void UnknownDestinationWarningsStopAtTheCap()
+    {
+        var features = Enumerable.Range(0, 100)
+                                 .Select(i => new Feature($"f{i}", "value", new List<string> { $"CAP_TEST_DESTINATION_{i}" }))
+                                 .ToList();
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        evaluator.Evaluate("features-flag", ValueType.String, "default", new EvaluationContext("user"));
+
+        var counted = FeatureFlagsEvaluator.WarnedDestinationCount;
+        FeatureFlagsEvaluator.WarnedDestinationEntries.Should().Be(counted);
+        counted.Should().BeInRange(64, 64 + System.Environment.ProcessorCount, "racing first warnings can pass the cap by at most one per thread");
     }
 
     private static FeatureFlagsEvaluator.ReportExposureDelegate RecordExposures(List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events)

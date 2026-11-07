@@ -10,6 +10,11 @@
     <ProjectReference Include="../../src/Datadog.FeatureFlags.OpenFeature/Datadog.FeatureFlags.OpenFeature.csproj" />
     <ProjectReference Include="../../src/Datadog.Trace/Datadog.Trace.csproj" Aliases="Tracer" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <!-- The provider builds against OpenFeature 2.3.0; net9.0 runs the same tests on a newer OpenFeature,
+         whose hook order and metadata pass-through the deferred exposure commit relies on. -->
+    <PackageReference Include="OpenFeature" Version="2.14.1" />
+  </ItemGroup>
   <ItemGroup>
     <!-- Link the canonical snapshot already used by FeatureFlagsEvaluatorTests; do not copy it. -->
     <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/ufc-config.json" LogicalName="Fixtures.ufc-config.json" />
