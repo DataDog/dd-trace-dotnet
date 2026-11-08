@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
@@ -25,8 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
         {
             if (EnvironmentHelper.IsAlpine)
             {
-                // skip the test on Alpine for now: "This test is skipped on Alpine for now. TODO: fix stackwalking issue on alpine."
-                return;
+                throw new SkipTestException("This test is skipped on Alpine until the stack walking issue is fixed.");
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");

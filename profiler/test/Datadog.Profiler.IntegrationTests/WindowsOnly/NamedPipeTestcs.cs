@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
         //       the ETW support is disabled in the tests for .NET Framework.
 
-        [Flaky("Named pipes seem to be flaky in CI")]
+        [Flaky("Named pipes seem to be flaky in CI", RetryCount)]
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
@@ -44,7 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
-            runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
+            runner.RunAndCheck(errorExceptions);
         }
 
         [TestAppFact("Samples.Computer01")]
