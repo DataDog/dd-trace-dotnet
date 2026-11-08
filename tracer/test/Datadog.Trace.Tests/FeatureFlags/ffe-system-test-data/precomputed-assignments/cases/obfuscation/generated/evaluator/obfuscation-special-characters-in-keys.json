@@ -1,0 +1,127 @@
+{
+  "name": "obfuscation-special-characters-in-keys",
+  "description": "Generated obfuscated companion: Flag keys contain dots, hyphens, and underscores. SDK must handle these without mangling the key during lookup or emission.",
+  "context": {
+    "targetingKey": "special-key-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "5ed289266d5a488851241b3122aab121698b75a75da9fb687c671d606a099d99": {
+            "allocationKey": "alloc-dot",
+            "variationKey": "on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "a5bcd95f28f8cf915795582c1edd5b263d2f42cd8a513eb6d69aeef26c39ead0": {
+            "allocationKey": "alloc-hyphen",
+            "variationKey": "active",
+            "variationType": "string",
+            "variationValue": "yes",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "e4fb9f7c538eac04c76c225b60d43a48b5f514a112a148d95d25754ad14cc8a8": {
+            "allocationKey": "alloc-underscore",
+            "variationKey": "v2-val",
+            "variationType": "integer",
+            "variationValue": 100,
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "dfd73ab3f42a47bd441de225f613432120e3eb38a6f00a21cb19a45a9de23c70": {
+            "allocationKey": "alloc-mixed",
+            "variationKey": "mixed-val",
+            "variationType": "float",
+            "variationValue": 2.718,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "com.example.feature.enabled",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "on"
+      }
+    },
+    {
+      "flag": "my-team--feature-toggle",
+      "variationType": "string",
+      "defaultValue": "no",
+      "expectedResult": {
+        "value": "yes",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "active"
+      }
+    },
+    {
+      "flag": "legacy_flag_name_v2",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 100,
+        "reason": "DEFAULT",
+        "errorCode": null,
+        "variantKey": "v2-val"
+      }
+    },
+    {
+      "flag": "mix.ed-key_style.v1",
+      "variationType": "float",
+      "defaultValue": 0.0,
+      "expectedResult": {
+        "value": 2.718,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "mixed-val"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 4
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 4
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "android",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}

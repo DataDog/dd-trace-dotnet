@@ -1,0 +1,259 @@
+{
+  "name": "obfuscation-keys",
+  "description": "obfuscation keys.",
+  "context": {
+    "targetingKey": "fixture-subject",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "9817872c144b018abd77e3915bd77e2c27f4f534dccff8ffaca27361e3a5e1ee": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-0",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "adca75d2141c51b0c0f084c1058edfb8e6e763f91aaf54ca06326d9847bd9586": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-1",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "b1a5f851cc82a3fdf03a461d72a2241584dcf455df1d384e02a937901b3bc80b": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-2",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "3bfa8c3c17c1b61035b98ecf14007cdf5cba5ce61a48e8cfb65f8106541892d3": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-3",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "1e8b7ec5e8028a1ec96b38dd37f6ccea041c0a90358904af40ac5810c23c8765": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-4",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "94b611e0d3b26b52f6ad66013d1c72f8a92ea109390049759e75d3c8d3aa4dab": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-5",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "bac134d201be5e7f28fc7019248f0809c2a013b137e866446ee71add2bc344c7": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-6",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "072d985b427f536ad0a11b2d4c5e0f7e6f0ff6d23e779e082f75599ce3fe3eba": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "string",
+            "variationValue": "value-7",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "flag",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-0",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "Flag",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-1",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": " flag ",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-2",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "caf\u00e9",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-3",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "cafe\u0301",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-4",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "\ud83d\udeb2/\u65d7",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-5",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "a\u0000b",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-6",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "value-7",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "9817872c144b018abd77e3915bd77e2c27f4f534dccff8ffaca27361e3a5e1ee",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "fallback",
+        "reason": "ERROR",
+        "errorCode": "FLAG_NOT_FOUND",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1,
+        "flag": {
+          "key": "flag"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "Flag"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": " flag "
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "caf\u00e9"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "cafe\u0301"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "\ud83d\udeb2/\u65d7"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "a\u0000b"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": ""
+        }
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 9
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "android",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    }
+  ]
+}

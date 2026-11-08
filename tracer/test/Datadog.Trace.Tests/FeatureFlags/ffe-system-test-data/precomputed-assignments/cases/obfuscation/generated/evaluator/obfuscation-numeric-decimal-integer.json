@@ -1,0 +1,506 @@
+{
+  "name": "obfuscation-numeric-decimal-integer",
+  "description": "Generated obfuscated companion: Exact original-value Integer reads, rounded fractional Double reads, and range rejection survive caching.",
+  "context": {
+    "targetingKey": "fixture-subject",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "bddd309e37dc139a619f8462b00bf8c06ee0d0374480577ee730dd326273a854": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1.20000000000000001,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "6302058db808f41842729e01d1bf4a93e154bed094c7f40bddfec81cfc9dac3d": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1.00000000000000001,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "6ebdf7e0d68f12baa53f5aa781c3208af6220453a1102c7e1b067462631a5b15": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1.00000000000000001,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "9db8c418e203825e3e669c6f4ccf253012f88883a92dba2e74f5f66f6d905ee9": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 4503599627370497.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "5402822670a559407a74e519d884ab68e9bf3c8333ca48c9796c32f1b9985419": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 4503599627370497.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "bb9e0426d2cb9cd6bffbeb73f64356ccb5474e8406b492ac97a60d495c7aeb26": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 9007199254740993.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "1b60a6e0a0fdcce4aaf1bccf57d86c0df1148a97a029e043d76f8947eb38762b": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 9007199254740993.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "ce4b4417d9c1a8af068640325064a37de221e83b9bd70a6e7ed3909781e2b764": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 9007199254740993,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "a6fb31b5d33413363a857b23ab6d441123b2dcb20f3844039473b0a8a0326acd": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1e-400,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "32e894504a432076acee0526876de94b12022f76f08656b047bd637acf212083": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1e-400,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "a1e6b551217a818f8362d88e0f47cb4087dd85b1af41bed8f49b88823b0f167c": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "integer",
+            "variationValue": 1e400,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "decimal-rounding",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": 1.2,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "near-one-integer",
+      "variationType": "integer",
+      "defaultValue": -99,
+      "expectedResult": {
+        "value": -99,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      },
+      "_include": [
+        {
+          "platform": "ios",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "android",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "flutter",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "unity",
+          "reason": "Requires a separate Integer getter."
+        }
+      ]
+    },
+    {
+      "flag": "near-one-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": 1.0,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "large-fraction-integer",
+      "variationType": "integer",
+      "defaultValue": -99,
+      "expectedResult": {
+        "value": -99,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      },
+      "_include": [
+        {
+          "platform": "ios",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "android",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "flutter",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "unity",
+          "reason": "Requires a separate Integer getter."
+        }
+      ]
+    },
+    {
+      "flag": "large-fraction-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": 4503599627370498.0,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "larger-fraction-integer",
+      "variationType": "integer",
+      "defaultValue": -99,
+      "expectedResult": {
+        "value": -99,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      },
+      "_include": [
+        {
+          "platform": "ios",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "android",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "flutter",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "unity",
+          "reason": "Requires a separate Integer getter."
+        }
+      ]
+    },
+    {
+      "flag": "larger-fraction-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": 9007199254740994.0,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant"
+      }
+    },
+    {
+      "flag": "inexact-whole-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": -99.5,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "underflow-integer",
+      "variationType": "integer",
+      "defaultValue": -99,
+      "expectedResult": {
+        "value": -99,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      },
+      "_include": [
+        {
+          "platform": "ios",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "android",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "flutter",
+          "reason": "Requires a separate Integer getter."
+        },
+        {
+          "platform": "unity",
+          "reason": "Requires a separate Integer getter."
+        }
+      ]
+    },
+    {
+      "flag": "underflow-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": -99.5,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "overflow-double",
+      "variationType": "float",
+      "defaultValue": -99.5,
+      "expectedResult": {
+        "value": -99.5,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1,
+        "flag": {
+          "key": "decimal-rounding"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "near-one-double"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "large-fraction-double"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "larger-fraction-double"
+        }
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1,
+        "flag": {
+          "key": "decimal-rounding"
+        },
+        "evaluation_count": 1
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "near-one-integer"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true,
+        "_include": [
+          {
+            "platform": "ios",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "android",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "flutter",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "unity",
+            "reason": "Requires a separate Integer getter."
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "near-one-double"
+        },
+        "evaluation_count": 1
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "large-fraction-integer"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true,
+        "_include": [
+          {
+            "platform": "ios",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "android",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "flutter",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "unity",
+            "reason": "Requires a separate Integer getter."
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "large-fraction-double"
+        },
+        "evaluation_count": 1
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "larger-fraction-integer"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true,
+        "_include": [
+          {
+            "platform": "ios",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "android",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "flutter",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "unity",
+            "reason": "Requires a separate Integer getter."
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "larger-fraction-double"
+        },
+        "evaluation_count": 1
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "inexact-whole-double"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "underflow-integer"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true,
+        "_include": [
+          {
+            "platform": "ios",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "android",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "flutter",
+            "reason": "Requires a separate Integer getter."
+          },
+          {
+            "platform": "unity",
+            "reason": "Requires a separate Integer getter."
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "underflow-double"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "overflow-double"
+        },
+        "evaluation_count": 1,
+        "runtime_default_used": true
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "android",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "obfuscation-integer-precision-native-only",
+  "description": "Generated obfuscated companion: Validates that SDKs with 64-bit integer flag evaluation preserve values outside JavaScript's safe integer range (Number.MAX_SAFE_INTEGER = 2^53-1).",
+  "context": {
+    "targetingKey": "precomputed-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "60c239d3d5039428009ffc2a7918ccbd9c6485ee75e7d3130b148103d3e784ae": {
+            "allocationKey": "allocation-a",
+            "variationKey": "large",
+            "variationType": "integer",
+            "variationValue": 9007199254740993,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.large-int",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 9007199254740993,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "large"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}
