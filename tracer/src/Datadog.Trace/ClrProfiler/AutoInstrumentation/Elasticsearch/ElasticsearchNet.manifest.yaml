@@ -1,0 +1,11 @@
+_v: 1
+name: ElasticsearchNet
+display_name: Elasticsearch.Net
+description: Instruments Elasticsearch client operations performed through Elasticsearch.Net.
+packages:
+- name: Elasticsearch.Net
+category:
+- db.client
+systems:
+- elasticsearch
+creation_date: '2018-10-09'
