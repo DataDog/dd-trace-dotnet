@@ -23,48 +23,19 @@ public class MockLambdaExtension : IDisposable
 
     public MockLambdaExtension(bool shouldSendContext, int port = 9004, ITestOutputHelper? output = null)
     {
-        // try up to 5 times to acquire the port before giving up
-        var retries = 5;
         ShouldSendContext = shouldSendContext;
         Output = output;
-        while (true)
-        {
-            // seems like we can't reuse a listener if it fails to start,
-            // so create a new listener each time we retry
-            var listener = new HttpListener();
-            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-            listener.Prefixes.Add($"http://localhost:{port}/");
-            listener.Prefixes.Add($"http://integrationtests:{port}/");
-
-            try
+        _listener = TcpPortProvider.StartHttpListener(
+            p => new[]
             {
-                listener.Start();
-
-                // successfully listening
-                Port = port;
-                _listener = listener;
-
-                _listenerTask = HandleHttpRequests();
-
-                return;
-            }
-            catch (HttpListenerException) when (retries > 0)
-            {
-                // only catch the exception if there are retries left
-                retries--;
-            }
-            catch
-            {
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
-                throw;
-            }
-
-            // always close listener if exception is thrown,
-            // whether it was caught or not
-            listener.Close();
-        }
+                $"http://127.0.0.1:{p}/",
+                $"http://localhost:{p}/",
+                $"http://integrationtests:{p}/",
+            },
+            out var boundPort,
+            port);
+        Port = boundPort;
+        _listenerTask = HandleHttpRequests();
     }
 
     /// <summary>
