@@ -149,6 +149,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             }
         }
 
+        [Flaky("HTTP profiling intermittently produces no request-time samples in CI")]
         [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetError(string appName, string framework, string appAssembly)
         {

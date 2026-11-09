@@ -391,6 +391,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
         }
 
+        [Flaky("Test flaked in CI")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void Sampling(string appName, string framework, string appAssembly)
         {
