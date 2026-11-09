@@ -42,6 +42,15 @@ internal static class Common
         };
     }
 
+    internal static bool IsFailureSuppressed(TestSpanTags? tags)
+        => tags?.AutomationExclusions.AllowFailureSuppression != false && (tags?.IsQuarantined == "true" || tags?.IsDisabled == "true");
+
+    internal static bool IsAttemptToFix(TestSpanTags? tags)
+        => tags?.AutomationExclusions.AllowAutoRetry != false && tags?.IsAttemptToFix == "true";
+
+    internal static bool ShouldMaskTestManagementOutcome(this TestSpanTags? tags)
+        => tags?.AutomationExclusions.AllowFailureSuppression != false && (IsFailureSuppressed(tags) || IsAttemptToFix(tags));
+
     internal static bool IsDisabledByTestManagement(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
         => testManagementProperties is { Disabled: true, AttemptToFix: false };
 
@@ -401,7 +410,10 @@ internal static class Common
             {
                 if (isRetry)
                 {
-                    ApplyRetryTags(testTags, isRetry, TestRetryMode.EarlyFlakeDetection);
+                    if (testTags.AutomationExclusions.AllowAutoRetry)
+                    {
+                        ApplyRetryTags(testTags, isRetry, TestRetryMode.EarlyFlakeDetection);
+                    }
                 }
                 else
                 {
@@ -420,7 +432,7 @@ internal static class Common
     internal static bool SetFlakyRetryTags(Test test, bool isRetry)
     {
         var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
-        if (flakyRetryFeature && isRetry)
+        if (flakyRetryFeature && isRetry && test.GetTags().AutomationExclusions.AllowAutoRetry)
         {
             ApplyRetryTags(test.GetTags(), isRetry, TestRetryMode.AutomaticTestRetry);
         }
@@ -452,13 +464,13 @@ internal static class Common
             {
                 Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
                 testTags.IsAttemptToFix = "true";
-                if (isRetry)
+                if (isRetry && testTags.AutomationExclusions.AllowAutoRetry)
                 {
                     ApplyRetryTags(testTags, isRetry, TestRetryMode.AttemptToFix);
                 }
             }
 
-            return testManagementProperties;
+            return TestAutomationExclusions.From(testTags).ApplyTo(testManagementProperties);
         }
 
         return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
@@ -487,7 +499,7 @@ internal static class Common
     /// <summary>
     /// Calculates the final status for a test based on execution results and test management tags.
     /// Priority order (first match wins):
-    /// 1. Quarantined/disabled -> skip (always mask to skip)
+    /// 1. Unprotected quarantined/disabled -> skip (mask to skip)
     /// 2. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
     /// 3. Any execution passed -> pass
     /// 4. Skip/inconclusive AND no pass -> skip
@@ -500,15 +512,15 @@ internal static class Common
     /// <returns>The final status string: "pass", "fail", or "skip".</returns>
     internal static string CalculateFinalStatus(bool anyExecutionPassed, bool anyExecutionFailed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
     {
-        // Priority 1: Quarantined/disabled tests always mask to skip
-        if (testTags?.IsQuarantined == "true" || testTags?.IsDisabled == "true")
+        // Priority 1: Unprotected quarantined/disabled tests mask to skip
+        if (IsFailureSuppressed(testTags))
         {
             return TestTags.StatusSkip;
         }
 
         // Priority 2: For ATF tests, any failure means fix didn't work (test is still flaky)
         // This must be checked BEFORE anyPassed for ATF tests
-        if (testTags?.IsAttemptToFix == "true" && anyExecutionFailed)
+        if (IsAttemptToFix(testTags) && anyExecutionFailed)
         {
             return TestTags.StatusFail;
         }
