@@ -25,6 +25,7 @@ public class MockLambdaExtension : IDisposable
     {
         ShouldSendContext = shouldSendContext;
         Output = output;
+        // Docker Lambda tests hard-code 9003/9004/9006, so retries must stay on the requested port.
         _listener = TcpPortProvider.StartHttpListener(
             p => new[]
             {
@@ -33,7 +34,8 @@ public class MockLambdaExtension : IDisposable
                 $"http://integrationtests:{p}/",
             },
             out var boundPort,
-            port);
+            port,
+            keepInitialPort: true);
         Port = boundPort;
         _listenerTask = HandleHttpRequests();
     }

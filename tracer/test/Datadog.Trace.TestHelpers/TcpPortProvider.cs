@@ -40,16 +40,18 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="port">The port successfully bound by the listener.</param>
         /// <param name="initialPort">Optional first port to try before allocating a new one.</param>
         /// <param name="maxAttempts">Maximum bind attempts before rethrowing.</param>
+        /// <param name="keepInitialPort">When true, every retry rebinds the requested port instead of choosing a new one.</param>
         /// <returns>The started listener.</returns>
         public static HttpListener StartHttpListener(
             Func<int, IEnumerable<string>> prefixesForPort,
             out int port,
             int? initialPort = null,
-            int maxAttempts = 5)
+            int maxAttempts = 5,
+            bool keepInitialPort = false)
         {
             for (var attempt = 1; ; attempt++)
             {
-                port = attempt == 1 && initialPort.HasValue ? initialPort.Value : GetOpenPort();
+                port = (keepInitialPort || attempt == 1) && initialPort.HasValue ? initialPort.Value : GetOpenPort();
                 var listener = new HttpListener();
                 foreach (var prefix in prefixesForPort(port))
                 {
