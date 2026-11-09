@@ -71,8 +71,6 @@ partial class Build
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
 
-    string FullVersion => ProjectInfo.SemanticVersion;
-
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
@@ -390,6 +388,7 @@ partial class Build
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
+            Console.WriteLine("::set-output name=version_suffix::" + VersionSuffix);
             Console.WriteLine("::set-output name=lib_waf_version::" + LibDdwafVersion);
 
             var rulesPath = Solution.GetProject(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
@@ -434,6 +433,7 @@ partial class Build
             Console.WriteLine("::set-output name=full_version::" + nextVersion);
             Console.WriteLine("::set-output name=previous_version::" + Version);
             Console.WriteLine("::set-output name=isprerelease::false");
+            Console.WriteLine("::set-output name=version_suffix::");
         });
 
     Target VerifyChangedFilesFromVersionBump => _ => _
@@ -580,6 +580,7 @@ partial class Build
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
             const string serverless = "Serverless";
+            const string featureFlags = "Feature Flags";
             const string dsm = "Data Streams Monitoring";
 
             var nextVersion = FullVersion;
@@ -672,6 +673,7 @@ partial class Build
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
                     { "area:serverless", serverless },
+                    { "area:ffe", featureFlags },
                     { "area:data-streams-monitoring", dsm },
                 };
 
@@ -718,8 +720,9 @@ partial class Build
                 profiler => 3,
                 debugger => 4,
                 serverless => 5,
-                fixes => 6,
-                _ => 7
+                featureFlags => 6,
+                fixes => 7,
+                _ => 8
             };
         });
 

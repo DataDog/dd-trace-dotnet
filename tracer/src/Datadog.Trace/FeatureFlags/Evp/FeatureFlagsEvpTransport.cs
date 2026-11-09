@@ -171,7 +171,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     [
         new(TelemetryConstants.ApiKeyHeader, apiKey),
         new(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin),
-        new(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion),
+        new(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion),
         new(HttpHeaderNames.TracingEnabled, "false"),
     ];
 

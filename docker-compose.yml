@@ -331,7 +331,6 @@ services:
       - kafka-zookeeper
     ports:
       - "9092:9092"
-      - "9101:9101"
     restart: unless-stopped
     environment:
       KAFKA_BROKER_ID: 1
@@ -346,6 +345,7 @@ services:
       KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # Keep JMX internal: Couchbase's host-networked indexer uses host port 9101.
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-broker:29092
