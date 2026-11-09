@@ -850,8 +850,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         lstExceptions.Add(testFailureException);
                     }
 
+                    // When preserving failures, a failure always wins, but a pass can still replace a skipped or inconclusive result.
                     var replacesFinalResult = preserveFailure
-                                                  ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail
+                                                  ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && (GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail || testResult.Outcome == UnitTestOutcome.Passed)
                                                   : testResult.Outcome == UnitTestOutcome.Passed;
                     if (resultsCount++ == 0 || replacesFinalResult)
                     {
