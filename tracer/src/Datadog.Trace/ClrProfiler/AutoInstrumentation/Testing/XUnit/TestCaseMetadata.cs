@@ -39,7 +39,7 @@ internal class TestCaseMetadata
     /// <summary>
     /// Gets a value indicating whether an Attempt to Fix test must fail even if another attempt passed.
     /// </summary>
-    public bool HasFailedAttemptToFix => IsAttemptToFix && (InitialExecutionFailed || !AllAttemptsPassed);
+    public bool ShouldReportAttemptToFixFailure => IsAttemptToFix && (InitialExecutionFailed || !AllAttemptsPassed);
 
     public bool IsRetry { get; set; }
 

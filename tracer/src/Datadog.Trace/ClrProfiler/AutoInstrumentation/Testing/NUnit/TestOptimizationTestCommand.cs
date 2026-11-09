@@ -69,18 +69,22 @@ internal sealed class TestOptimizationTestCommand
 
         // Determine if retries will happen (used for final_status decision)
         var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-        var isAttemptToFix = !exclusions.NoAutoRetry && testManagementProperties is { AttemptToFix: true };
-        var efdWillRetry = !isAttemptToFix && !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
+        var isAttemptToFix = exclusions.AllowAutoRetry && testManagementProperties is { AttemptToFix: true };
+        var efdWillRetry = !isAttemptToFix && exclusions.AllowAutoRetry && !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
         var atrRemainingBudget = testOptimization.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
         // -1 = uninitialized → assume retries possible; 0 = exhausted → no retries
         var atrHasBudget = atrRemainingBudget != 0;
-        var atrWillRetry = !isAttemptToFix && !exclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
+        var atrWillRetry = !isAttemptToFix && exclusions.AllowAutoRetry && resultStatus == TestStatus.Failed &&
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
         var atfWillRetry = isAttemptToFix && !isSkippedOrInconclusive && resultStatus != TestStatus.Failed;
 
-        // Apply retries
-        if (efdWillRetry)
+        // Attempt to Fix takes priority over EFD and ATR, including failure aggregation and completion tags.
+        if (atfWillRetry)
+        {
+            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization), context, result, preserveFailure: true);
+        }
+        else if (efdWillRetry)
         {
             result = DoRetries(new EarlyFlakeDetectionRetryBehavior(duration), context, result);
         }
@@ -96,10 +100,6 @@ internal sealed class TestOptimizationTestCommand
             }
 
             result = DoRetries(new FlakyRetryBehavior(testOptimization, duration), context, result);
-        }
-        else if (atfWillRetry)
-        {
-            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization), context, result, keepFailure: true);
         }
 
         // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
@@ -121,11 +121,11 @@ internal sealed class TestOptimizationTestCommand
 
     internal static bool IsEarlyFlakeDetectionSlowAbort(TestSpanTags testTags, TimeSpan duration)
         => duration.TotalMinutes >= 5 &&
-           !testTags.AutomationExclusions.NoAutoRetry &&
+           testTags.AutomationExclusions.AllowAutoRetry &&
            TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
            testTags.TestIsNew == "true";
 
-    private static void AgregateResults(ITestResult result, ITestResult retryResult, bool keepFailure)
+    private static void AgregateResults(ITestResult result, ITestResult retryResult, bool preserveFailure)
     {
         result.Duration += retryResult.Duration;
         result.StartTime = result.StartTime < retryResult.StartTime ? result.StartTime : retryResult.StartTime;
@@ -144,7 +144,7 @@ internal sealed class TestOptimizationTestCommand
         }
 
         var resultState = result.ResultState?.Status != TestStatus.Passed ? retryResult.ResultState : result.ResultState;
-        if (keepFailure)
+        if (preserveFailure)
         {
             resultState = result.ResultState?.Status == TestStatus.Failed ? result.ResultState
                         : retryResult.ResultState?.Status == TestStatus.Failed ? retryResult.ResultState
@@ -257,9 +257,9 @@ internal sealed class TestOptimizationTestCommand
             {
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
                 var isAttemptToFix = Common.IsAttemptToFix(testTags);
-                var efdWillRetry = !isAttemptToFix && !testTags.AutomationExclusions.NoAutoRetry && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
+                var efdWillRetry = !isAttemptToFix && testTags.AutomationExclusions.AllowAutoRetry && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
                 var atrRemainingBudget = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
-                var atrWillRetry = !isAttemptToFix && !testTags.AutomationExclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
+                var atrWillRetry = !isAttemptToFix && testTags.AutomationExclusions.AllowAutoRetry && resultStatus == TestStatus.Failed &&
                                    TestOptimization.Instance.FlakyRetryFeature?.Enabled == true &&
                                    atrRemainingBudget != 0;
                 var atfWillRetry = isAttemptToFix && resultStatus != TestStatus.Failed;
@@ -332,7 +332,7 @@ internal sealed class TestOptimizationTestCommand
         return testResult;
     }
 
-    private ITestResult DoRetries<TBehavior>(in TBehavior behavior, ITestExecutionContext context, ITestResult result, bool keepFailure = false)
+    private ITestResult DoRetries<TBehavior>(in TBehavior behavior, ITestExecutionContext context, ITestResult result, bool preserveFailure = false)
         where TBehavior : struct, IRetryBehavior
     {
         var executionNumber = 1;
@@ -360,7 +360,7 @@ internal sealed class TestOptimizationTestCommand
             retryState.IsLastRetry = remainingRetries == 0;
             var retryResult = ExecuteTest(context, executionNumber++, ref retryState, out _, out _);
             Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
-            AgregateResults(result, retryResult, keepFailure);
+            AgregateResults(result, retryResult, preserveFailure);
             if (!behavior.ShouldRetry(result))
             {
                 Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", behavior.RetryMode, retryNumber);

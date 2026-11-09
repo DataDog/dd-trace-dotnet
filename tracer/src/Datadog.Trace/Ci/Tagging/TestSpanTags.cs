@@ -184,7 +184,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
         get => _automationExclusionTags?.Declarations ?? default;
         set
         {
-            if (value.PreventFailureSuppression || value.NoAutoRetry || _automationExclusionTags is not null)
+            if (!value.AllowFailureSuppression || !value.AllowAutoRetry || _automationExclusionTags is not null)
             {
                 (_automationExclusionTags ??= new()).Declarations = value;
             }
@@ -197,7 +197,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
 
         public string? NoAutoRetry { get; set; }
 
-        // Span tags are mutable telemetry; only attribute metadata can change execution policy.
+        // Execution policy captured from method attributes, independent of mutable span tags.
         public TestAutomationExclusions Declarations { get; set; }
     }
 }

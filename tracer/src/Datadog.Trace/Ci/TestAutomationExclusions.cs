@@ -16,15 +16,18 @@ internal readonly struct TestAutomationExclusions
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestAutomationExclusions>();
 
+    private readonly bool _preventFailureSuppression;
+    private readonly bool _noAutoRetry;
+
     internal TestAutomationExclusions(bool preventFailureSuppression, bool noAutoRetry)
     {
-        PreventFailureSuppression = preventFailureSuppression;
-        NoAutoRetry = noAutoRetry;
+        _preventFailureSuppression = preventFailureSuppression;
+        _noAutoRetry = noAutoRetry;
     }
 
-    internal bool PreventFailureSuppression { get; }
+    internal bool AllowFailureSuppression => !_preventFailureSuppression;
 
-    internal bool NoAutoRetry { get; }
+    internal bool AllowAutoRetry => !_noAutoRetry;
 
     internal static TestAutomationExclusions From(MethodInfo? method)
     {
@@ -50,6 +53,9 @@ internal readonly struct TestAutomationExclusions
             Log.Debug(ex, "Unable to read test automation exclusion metadata, reading the attribute instances instead.");
             try
             {
+                // Match by name because the manual and tracer assemblies define distinct attribute types.
+                // IsDefined with the tracer type would miss the manual assembly; retain this fallback
+                // when metadata inspection fails while resolving unrelated attribute dependencies.
                 foreach (var attribute in method.GetCustomAttributes(inherit: false))
                 {
                     Read(attribute.GetType(), ref preventFailureSuppression, ref noAutoRetry);
@@ -73,23 +79,23 @@ internal readonly struct TestAutomationExclusions
     internal void ApplyTo(TestSpanTags tags)
     {
         tags.AutomationExclusions = this;
-        tags.PreventFailureSuppression = PreventFailureSuppression ? "true" : null;
-        tags.NoAutoRetry = NoAutoRetry ? "true" : null;
+        tags.PreventFailureSuppression = !AllowFailureSuppression ? "true" : null;
+        tags.NoAutoRetry = !AllowAutoRetry ? "true" : null;
     }
 
     internal TestOptimizationClient.TestManagementResponseTestPropertiesAttributes ApplyTo(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes assigned)
-        => PreventFailureSuppression || NoAutoRetry
-            ? new(assigned.Quarantined && !PreventFailureSuppression, assigned.Disabled && !PreventFailureSuppression, assigned.AttemptToFix && !NoAutoRetry)
+        => !AllowFailureSuppression || !AllowAutoRetry
+            ? new(assigned.Quarantined && AllowFailureSuppression, assigned.Disabled && AllowFailureSuppression, assigned.AttemptToFix && AllowAutoRetry)
             : assigned;
 
     private static void Read(Type attributeType, ref bool preventFailureSuppression, ref bool noAutoRetry)
     {
         switch (attributeType.FullName)
         {
-            case "Datadog.Trace.Ci.PreventFailureSuppressionAttribute":
+            case $"Datadog.Trace.Ci.{nameof(PreventFailureSuppressionAttribute)}":
                 preventFailureSuppression = true;
                 break;
-            case "Datadog.Trace.Ci.NoAutoRetryAttribute":
+            case $"Datadog.Trace.Ci.{nameof(NoAutoRetryAttribute)}":
                 noAutoRetry = true;
                 break;
         }

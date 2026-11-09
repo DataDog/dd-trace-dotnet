@@ -95,7 +95,7 @@ internal static class XUnitRetryCoordinator
                     {
                         runSummary.HideQuarantinedOrDisabledResult();
                     }
-                    else if (testCaseMetadata.HasFailedAttemptToFix)
+                    else if (testCaseMetadata.ShouldReportAttemptToFixFailure)
                     {
                         runSummary.ReportFailedResult();
                     }

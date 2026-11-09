@@ -203,7 +203,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: execution is { HasNativeRetry: true, IsNativeRetry: true }, testMethodState.Test.StartTime);
                 if (test?.GetTags() is { } testTags)
                 {
-                    if (!testTags.AutomationExclusions.NoAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+                    if (testTags.AutomationExclusions.AllowAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
                         isEfdTest = isEfdTest || testTags.TestIsNew == "true";
                         if (isEfdTest && duration.TotalMinutes >= 5)
@@ -220,7 +220,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
                         // Check if this test will have EFD/ATF retries (based on tags)
-                        var testIsEfd = !testTags.AutomationExclusions.NoAutoRetry && testTags.TestIsNew == "true";
+                        var testIsEfd = testTags.AutomationExclusions.AllowAutoRetry && testTags.TestIsNew == "true";
                         var testIsAtf = Common.IsAttemptToFix(testTags);
 
                         var retryState = new RetryState
@@ -287,7 +287,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     {
         var testOptimization = TestOptimization.Instance;
         var testMethod = testMethodState.TestMethod;
-        if (TestAutomationExclusions.From(testMethod.MethodInfo).NoAutoRetry)
+        if (!TestAutomationExclusions.From(testMethod.MethodInfo).AllowAutoRetry)
         {
             return returnValueList;
         }
@@ -341,7 +341,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
 
                 // Calculate final results
-                returnValueList = GetFinalResults(results, keepFailure: attempt.IsAttemptToFix);
+                returnValueList = GetFinalResults(results, preserveFailure: attempt.IsAttemptToFix);
             }
         }
         else if (testOptimization.FlakyRetryFeature?.Enabled == true && attempt.ResultStatus == TestStatus.Fail)
@@ -617,7 +617,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             if (execution is not { HasNativeRetry: true } && TestOptimization.Instance.TestManagementFeature?.Enabled == true)
             {
-                shouldMaskOutcome = Common.IsFailureSuppressed(testTags);
+                shouldMaskOutcome = testTags.ShouldMaskTestManagementOutcome();
             }
 
             switch (testStatus)
@@ -728,7 +728,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             // Initial execution - it's final if no retries will happen
             // For EFD/ATF, retries will always happen
             // For ATR, retries happen only if test fails and ATR is enabled
-            var atrEnabled = !testTags.AutomationExclusions.NoAutoRetry && !Common.IsAttemptToFix(testTags) && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+            var atrEnabled = testTags.AutomationExclusions.AllowAutoRetry && !Common.IsAttemptToFix(testTags) && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
             var willHaveAtrRetries = atrEnabled && testStatus == TestStatus.Fail;
             isFinalExecution = retryState.AttemptToFixFailed || (!retryState.RetriesUnconditionally && !willHaveAtrRetries);
         }
@@ -807,7 +807,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         return false;
     }
 
-    private static IList GetFinalResults(List<IList> executionStatuses, bool keepFailure = false)
+    private static IList GetFinalResults(List<IList> executionStatuses, bool preserveFailure = false)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
@@ -850,7 +850,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         lstExceptions.Add(testFailureException);
                     }
 
-                    var replacesFinalResult = keepFailure
+                    var replacesFinalResult = preserveFailure
                                                   ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail
                                                   : testResult.Outcome == UnitTestOutcome.Passed;
                     if (resultsCount++ == 0 || replacesFinalResult)

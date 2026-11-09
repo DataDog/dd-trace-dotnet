@@ -426,7 +426,7 @@ internal sealed class MsTestExecution
             }
 
             var tags = completed.Test.GetTags();
-            if (!Common.IsFailureSuppressed(tags))
+            if (!tags.ShouldMaskTestManagementOutcome())
             {
                 continue;
             }
