@@ -27,15 +27,21 @@ internal static class WafAttributeRedaction
     /// </summary>
     internal static string RemoveUrlSecrets(string url)
     {
+        var authorityStart = url.StartsWith("//", StringComparison.Ordinal) ? 2 : url.IndexOf("://", StringComparison.Ordinal) is var schemeEnd and >= 0 ? schemeEnd + 3 : -1;
+
+        // the encoder truncates long strings, which may cut the authority before its '@' and leave a credential prefix
+        if (authorityStart >= 0 && url.Length >= WafConstants.MaxStringLength && url.IndexOfAny(Separators.UrlAuthorityOrQueryEnd, authorityStart) < 0)
+        {
+            return url.Substring(0, authorityStart);
+        }
+
         if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
             return uri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
         }
 
-        var authorityStart = url.StartsWith("//", StringComparison.Ordinal) ? 2 : url.IndexOf("://", StringComparison.Ordinal) is var schemeEnd and >= 0 ? schemeEnd + 3 : -1;
         if (authorityStart >= 0)
         {
-            // the user-info ends at the last '@' before the path: a password may contain '?' or '#'
             var authorityEnd = url.IndexOfAny(Separators.UrlAuthorityEnd, authorityStart);
             if (authorityEnd < 0)
             {
@@ -45,6 +51,13 @@ internal static class WafAttributeRedaction
             var userInfoEnd = authorityEnd > authorityStart ? url.LastIndexOf('@', authorityEnd - 1, authorityEnd - authorityStart) : -1;
             if (userInfoEnd >= 0)
             {
+                // a '?' or '#' before the '@' is either a raw one in a password or a query/fragment holding an '@':
+                // neither reading is safe to keep, so drop the authority and everything after it
+                if (url.IndexOfAny(Separators.QueryOrFragment, authorityStart, userInfoEnd - authorityStart) >= 0)
+                {
+                    return url.Substring(0, authorityStart);
+                }
+
                 url = url.Remove(authorityStart, userInfoEnd + 1 - authorityStart);
             }
         }

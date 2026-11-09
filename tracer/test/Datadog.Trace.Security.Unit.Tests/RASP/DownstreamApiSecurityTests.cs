@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
@@ -128,8 +129,10 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     [InlineData("https://user:pass@api.example.com:8443/files?a=1", "https://api.example.com:8443/files")]
     [InlineData("https://user@api.example.com", "https://api.example.com/")]
     [InlineData("http://api.example.com?key=1", "http://api.example.com/")]
-    [InlineData("https://user:p#ss@api.example.com/files", "https://api.example.com/files")]
-    [InlineData("https://user:p?ss@api.example.com/files", "https://api.example.com/files")]
+    [InlineData("https://user:p#ss@api.example.com/files", "https://")]
+    [InlineData("https://user:p?ss@api.example.com/files", "https://")]
+    [InlineData("//api.example.com?next=user@example.net", "//")]
+    [InlineData("//api.example.com#user@example.net", "//")]
     [InlineData("https://api.example.com/path/with@sign", "https://api.example.com/path/with@sign")]
     [InlineData("https://[::1]:8080/files?a=1", "https://[::1]:8080/files")]
     [InlineData("//user:pass@api.example.com/next?a=1", "//api.example.com/next")]
@@ -139,6 +142,28 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     public void GivenAUrl_WhenItIsRedacted_ThenUserInfoQueryAndFragmentAreRemoved(string url, string expected)
     {
         WafAttributeRedaction.RemoveUrlSecrets(url).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("https://user:")]
+    [InlineData("https://user")]
+    [InlineData("//user:")]
+    public void GivenAUrlTruncatedInsideItsAuthority_WhenItIsRedacted_ThenTheAuthorityIsDropped(string prefix)
+    {
+        // the encoder truncates strings to MaxStringLength, which may cut a long user-info before its '@'
+        var url = prefix + new string('a', WafConstants.MaxStringLength - prefix.Length);
+
+        var redacted = WafAttributeRedaction.RemoveUrlSecrets(url);
+
+        redacted.Should().Be(prefix.Substring(0, prefix.IndexOf("//", StringComparison.Ordinal) + 2));
+    }
+
+    [Fact]
+    public void GivenALongUrlWithAPath_WhenItIsRedacted_ThenTheHostIsKept()
+    {
+        var url = "https://user:pass@api.example.com/files?token=" + new string('a', WafConstants.MaxStringLength);
+
+        WafAttributeRedaction.RemoveUrlSecrets(url.Substring(0, WafConstants.MaxStringLength)).Should().Be("https://api.example.com/files");
     }
 
     [Theory]
