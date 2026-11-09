@@ -70,7 +70,7 @@ jobs:
         run: .\tracer\build.ps1 UpdateVersion
         env:
           NewVersion: ${{ steps.versions.outputs.version }}
-          NewIsPrerelease: ${{ steps.versions.outputs.isprerelease }}
+          NewVersionSuffix: ${{ steps.versions.outputs.version_suffix }}
 
       - name: "Verify Changes"
         id: changes

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
@@ -23,4 +24,9 @@ internal sealed class Split
     // Binds from "serialId" via Newtonsoft's default case-insensitive matching (like the other
     // properties here), so no explicit [JsonProperty] is needed.
     public long? SerialId { get; set; }
+
+    // Optional, and parsed leniently: a malformed list or entry is dropped rather than rejecting
+    // the flag, because features never change which variation a subject gets.
+    [JsonConverter(typeof(FeatureListJsonConverter))]
+    public List<Feature>? Features { get; set; }
 }

@@ -18,6 +18,7 @@
 /.gitlab/                                 @DataDog/apm-dotnet
 /.llm-validation/                         @DataDog/apm-dotnet
 /.nuke/                                   @DataDog/apm-dotnet
+/.pi/                                     @DataDog/apm-dotnet
 /.vscode/                                 @DataDog/apm-dotnet
 /build/                                   @DataDog/apm-dotnet
 /docker/                                  @DataDog/apm-dotnet

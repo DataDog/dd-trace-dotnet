@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
+using static Datadog.Trace.Tests.CallTarget.ContinuationGeneratorTestHelpers;
 
 namespace Datadog.Trace.Tests.CallTarget
 {
@@ -272,37 +273,131 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
-        internal class CustomException : Exception
+        [Fact]
+        public async Task SuccessGenericKnownTypeAlreadyCompletedTest()
         {
-            public CustomException(string message)
-                : base(message)
+            var tcg = new TaskContinuationGenerator<IntegrationWithKnownType, TaskContinuationGeneratorTests, Task<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, Task.FromResult("ReturnValue"), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            var previousTask = alreadyCompleted ? Task.FromResult("ReturnValue") : tcs.Task;
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult("ReturnValue");
+
+            // An integration failing must not change what the instrumented method returns
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationNoResultTest(bool alreadyCompleted)
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            var previousTask = alreadyCompleted ? Task.CompletedTask : tcs.Task;
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult(true);
+
+            // An integration failing must not reach the instrumented method's caller
+            await cTask;
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void ThrowingContinuationWithoutTaskTest(bool hasResult, bool targetThrew)
+        {
+            // The target threw, or returned a null task, so the continuation runs synchronously
+            var state = CallTargetState.GetDefault();
+            var exception = targetThrew ? new CustomException("Internal Test Exception") : null;
+            if (hasResult)
             {
+                var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task<string>, string>();
+                Assert.Null(tcg.SetContinuation(this, null, exception, in state));
+            }
+            else
+            {
+                var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task>();
+                Assert.Null(tcg.SetContinuation(this, null, exception, in state));
             }
         }
 
-        internal class CustomCancellationException : OperationCanceledException
+        [Theory]
+        [CombinatorialData]
+        public void BubbleUpExceptionWithoutTaskReachesTheCallerTest(bool hasResult, bool targetThrew)
         {
-            public CustomCancellationException(CancellationToken token)
-                : base(token)
-            {
-            }
+            var state = CallTargetState.GetDefault();
+            var exception = targetThrew ? new CustomException("Internal Test Exception") : null;
+            var ex = Assert.Throws<InvalidOperationException>(
+                () =>
+                {
+                    if (hasResult)
+                    {
+                        new TaskContinuationGenerator<IntegrationThatBubblesUp, TaskContinuationGeneratorTests, Task<string>, string>().SetContinuation(this, null, exception, in state);
+                    }
+                    else
+                    {
+                        new TaskContinuationGenerator<IntegrationThatBubblesUp, TaskContinuationGeneratorTests, Task>().SetContinuation(this, null, exception, in state);
+                    }
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
         }
 
-        internal class CustomSynchronizationContext : SynchronizationContext
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
         {
-            private readonly TaskCompletionSource<bool> _tcs = new();
-
-            public Task Task => _tcs.Task;
-
-            public override void Post(SendOrPostCallback d, object state)
+            // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application
+            var tcg = new TaskContinuationGenerator<IntegrationThatBubblesUp, TaskContinuationGeneratorTests, Task<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            if (alreadyCompleted)
             {
-                _tcs.TrySetResult(true);
+                Complete(tcs, faulted);
             }
 
-            public override void Send(SendOrPostCallback d, object state)
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, tcs.Task, null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerNoResultTest(bool alreadyCompleted, bool faulted)
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationThatBubblesUp, TaskContinuationGeneratorTests, Task>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            if (alreadyCompleted)
             {
-                _tcs.TrySetResult(true);
+                Complete(tcs, faulted);
             }
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, tcs.Task, null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
         }
 
         internal class PreserveContextTests
@@ -339,6 +434,22 @@ namespace Datadog.Trace.Tests.CallTarget
             public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue + "[Modified]";
+            }
+        }
+
+        internal class IntegrationThatThrows
+        {
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                throw new CustomException("Integration Exception");
+            }
+        }
+
+        internal class IntegrationThatBubblesUp
+        {
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                throw new InvalidOperationException("Blocked", new BubbleUpException());
             }
         }
     }

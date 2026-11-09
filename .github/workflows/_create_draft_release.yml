@@ -111,6 +111,16 @@ jobs:
         id: versions
         run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
+      - name: "Verify this is not a dev build"
+        env:
+          FULL_VERSION: ${{ steps.versions.outputs.full_version }}
+          VERSION_SUFFIX: ${{ steps.versions.outputs.version_suffix }}
+        run: |
+          if [ -n "$VERSION_SUFFIX" ] && [ "$VERSION_SUFFIX" != "-prerelease" ]; then
+            echo "::error::Refusing to release $FULL_VERSION: only an empty or '-prerelease' version suffix can be released"
+            exit 1
+          fi
+
       - name: "Download build assets from Azure Pipelines"
         id: assets
         run: ./tracer/build.sh DownloadReleaseArtifacts

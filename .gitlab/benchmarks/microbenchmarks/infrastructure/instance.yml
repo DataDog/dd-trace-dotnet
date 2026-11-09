@@ -96,15 +96,32 @@ run_benchmarks:
         return
     }
 
-    # Clone dd-trace-dotnet to get the bp-runner config
-    $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
+    # Fetch the pipeline commit to get the matching bp-runner config, even if its branch was deleted
+    $commitSha = $env:CI_COMMIT_SHA
+    if (-not $commitSha) {
+        throw "CI_COMMIT_SHA is required to fetch the bp-runner config."
+    }
     $repoDir = "C:\app\dd-trace-dotnet-config"
 
-    Write-Output "Cloning dd-trace-dotnet (branch: $branch) to get bp-runner config..."
-    if ($env:GITHUB_TOKEN) {
-        git clone -b $branch --single-branch --depth 1 "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/dd-trace-dotnet.git" $repoDir
+    Write-Output "Fetching dd-trace-dotnet (commit: $commitSha) to get bp-runner config..."
+    git init $repoDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to initialize the bp-runner config repository."
+    }
+
+    $repoUrl = if ($env:GITHUB_TOKEN) {
+        "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/dd-trace-dotnet.git"
     } else {
-        git clone -b $branch --single-branch --depth 1 "https://github.com/DataDog/dd-trace-dotnet.git" $repoDir
+        "https://github.com/DataDog/dd-trace-dotnet.git"
+    }
+    git -C $repoDir fetch --depth 1 $repoUrl $commitSha
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to fetch bp-runner config at commit $commitSha."
+    }
+
+    git -C $repoDir checkout --detach FETCH_HEAD
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to check out bp-runner config at commit $commitSha."
     }
 
     # Run bp-runner with the benchmark config

@@ -17,10 +17,15 @@ internal readonly record struct ExposureEvent(
     Flag Flag,
     Variant Variant,
     Subject Subject,
-    long? SerialId = null)
+    long? SerialId = null,
+    IReadOnlyDictionary<string, object>? Features = null)
 {
     // The serializer includes nulls globally, but the intake reads an absent serial id and an
     // explicit null differently. A JsonProperty named argument cannot do this: the enum lives in
     // this assembly, which AttributeTests forbids.
     public bool ShouldSerializeSerialId() => SerialId.HasValue;
+
+    // Same reasoning as the serial id: an absent features object and an explicit null are read
+    // differently by the intake.
+    public bool ShouldSerializeFeatures() => Features is { Count: > 0 };
 }
