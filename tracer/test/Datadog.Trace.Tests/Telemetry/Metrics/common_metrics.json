@@ -945,28 +945,6 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "rasp.duration": {
-      "tags": [
-        "waf_version",
-        "event_rules_version"
-      ],
-      "metric_type": "distribution",
-      "data_type": "requests",
-      "description": "Total WAF duration in RASP calls",
-      "send_to_user": false,
-      "user_tags": []
-    },
-    "rasp.duration_ext": {
-      "tags": [
-        "waf_version",
-        "event_rules_version"
-      ],
-      "metric_type": "distribution",
-      "data_type": "requests",
-      "description": "Total WAF duration in RASP calls, including bindings",
-      "send_to_user": false,
-      "user_tags": []
-    },
     "rasp.error": {
       "tags": [
         "waf_version",

@@ -10,7 +10,6 @@ using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -113,25 +112,6 @@ internal sealed class Context : IContext
         if (addresses.TryGetValue(AddressesConstants.UserSessionId, out address))
         {
             _userEventsState.SessionId = new(address.ToString(), fromSdk);
-        }
-    }
-
-    [TestingAndPrivateOnly]
-    internal void RecordDurationTelemetry(IMetricsTelemetryCollector metrics)
-    {
-        lock (_sync)
-        {
-            if (_wafRuntimeWithBindings > 0)
-            {
-                metrics.RecordDistributionWafDuration(_wafRuntime);
-                metrics.RecordDistributionWafDurationExt(_wafRuntimeWithBindings);
-            }
-
-            if (_raspRuntimeWithBindings > 0)
-            {
-                metrics.RecordDistributionRaspDuration(_raspRuntime);
-                metrics.RecordDistributionRaspDurationExt(_raspRuntimeWithBindings);
-            }
         }
     }
 
@@ -304,12 +284,6 @@ internal sealed class Context : IContext
             }
 
             _disposed = true;
-
-            // one point per request: the context lives as long as its request
-            if (disposing)
-            {
-                RecordDurationTelemetry(TelemetryFactory.Metrics);
-            }
 
             // destroy the consumer of our input buffers first: the context reads the memory owned by
             // _encodeResults, which is why that one is released last

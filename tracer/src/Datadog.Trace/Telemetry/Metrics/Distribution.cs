@@ -3,41 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.SourceGenerators;
-using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
-
-namespace Datadog.Trace.Telemetry.Metrics;
-
-[SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
-[SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]
-[TelemetryMetricType(TelemetryMetricType.Distribution)]
-internal enum Distribution
-{
-#region AppSec Namespace
-
-    /// <summary>
-    /// The total time spent in the WAF by the non-RASP runs of a request, in microseconds, as reported by the WAF
-    /// </summary>
-    [TelemetryMetric("waf.duration", isCommon: true, NS.ASM)] WafDuration,
-
-    /// <summary>
-    /// The total time spent by the non-RASP runs of a request, including the bindings, in microseconds
-    /// </summary>
-    [TelemetryMetric("waf.duration_ext", isCommon: true, NS.ASM)] WafDurationExt,
-
-    /// <summary>
-    /// The total time spent in the WAF by the RASP runs of a request, in microseconds, as reported by the WAF
-    /// </summary>
-    [TelemetryMetric("rasp.duration", isCommon: true, NS.ASM)] RaspDuration,
-
-    /// <summary>
-    /// The total time spent by the RASP runs of a request, including the bindings, in microseconds
-    /// </summary>
-    [TelemetryMetric("rasp.duration_ext", isCommon: true, NS.ASM)] RaspDurationExt,
-#endregion
-
+// #nullable enable
+// using System.Diagnostics.CodeAnalysis;
+// using Datadog.Trace.SourceGenerators;
+// using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
+//
+// namespace Datadog.Trace.Telemetry.Metrics;
+//
+// [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
+// [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]
+// [TelemetryMetricType(TelemetryMetricType.Distribution)]
+// TODO: IF YOU UNCOMMENT THIS DISTRIBUTION, YOU MUST RE-ADD SUPPORT FOR IT IN MetricsTelemetryCollector
+// internal enum Distribution
+// {
 // // These metrics are all desirable, but are not feasible until the API accepts dd-sketches for distributions
 // // #region Tracers Namespace
 // //
@@ -120,4 +98,4 @@ internal enum Distribution
 // //     /// </summary>
 // //     [TelemetryMetric("direct_log_api.ms", isCommon: false)] DirectLogApiRequestsMs,
 // // #endregion
-}
+// }
