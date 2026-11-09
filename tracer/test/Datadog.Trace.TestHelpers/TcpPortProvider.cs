@@ -15,6 +15,37 @@ namespace Datadog.Trace.TestHelpers
     /// </summary>
     public static class TcpPortProvider
     {
+        /// <summary>
+        /// Starts an HTTP listener, retrying with a fresh listener and port if a port is taken before binding.
+        /// The caller owns the returned listener and must dispose it.
+        /// </summary>
+        /// <param name="baseUrl">The loopback URL successfully bound by the listener.</param>
+        /// <returns>The started listener.</returns>
+        public static HttpListener StartHttpListenerOnFreePort(out string baseUrl)
+        {
+            const int MaxAttempts = 5;
+            for (var attempt = 1; ; attempt++)
+            {
+                baseUrl = $"http://127.0.0.1:{GetOpenPort()}/";
+                var listener = new HttpListener();
+                listener.Prefixes.Add(baseUrl);
+                try
+                {
+                    listener.Start();
+                    return listener;
+                }
+                catch (HttpListenerException)
+                {
+                    // A listener cannot be reused after a failed Start().
+                    listener.Close();
+                    if (attempt == MaxAttempts)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
         public static int GetOpenPort()
         {
             TcpListener tcpListener = null;
