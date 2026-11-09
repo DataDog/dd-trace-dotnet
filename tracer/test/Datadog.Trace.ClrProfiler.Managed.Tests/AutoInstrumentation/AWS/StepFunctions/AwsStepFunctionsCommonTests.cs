@@ -45,6 +45,9 @@ public class AwsStepFunctionsCommonTests
     // Version-qualified state machine ARN.
     [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine:1", "MyStateMachine")]
     [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine:10", "MyStateMachine")]
+    // An empty qualifier does not change the state machine name.
+    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine:", "MyStateMachine")]
+    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:1:", "1")]
     // Alias-qualified state machine ARN.
     [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine:PROD", "MyStateMachine")]
     // Distributed Map state label-qualified state machine ARN.
