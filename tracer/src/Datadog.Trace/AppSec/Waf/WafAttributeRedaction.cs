@@ -27,15 +27,16 @@ internal static class WafAttributeRedaction
     /// Removes the user-info, query and fragment of a URL, which may be relative (e.g. a Location header).
     /// When the user-info can't be told apart from the rest of the authority, everything from the authority on is dropped.
     /// </summary>
-    internal static string RemoveUrlSecrets(string url)
+    internal static string RemoveUrlSecrets(string rawUrl)
     {
+        var url = Normalize(rawUrl);
         var authorityStart = GetAuthorityStart(url);
         if (authorityStart >= 0)
         {
             var authorityEnd = url.IndexOfAny(Separators.UrlAuthorityEnd, authorityStart);
             if (authorityEnd < 0)
             {
-                if (MayBeTruncated(url))
+                if (MayBeTruncated(rawUrl))
                 {
                     return url.Substring(0, authorityStart);
                 }
@@ -67,8 +68,34 @@ internal static class WafAttributeRedaction
     }
 
     /// <summary>
+    /// Strips what browsers ignore before parsing a URL (WHATWG): leading and trailing C0 controls and spaces,
+    /// and tabs and newlines anywhere, so they can't hide the scheme or the authority.
+    /// </summary>
+    private static string Normalize(string url)
+    {
+        var start = 0;
+        var end = url.Length;
+        while (start < end && url[start] <= ' ')
+        {
+            start++;
+        }
+
+        while (end > start && url[end - 1] <= ' ')
+        {
+            end--;
+        }
+
+        if (start > 0 || end < url.Length)
+        {
+            url = url.Substring(start, end - start);
+        }
+
+        return url.IndexOfAny(Separators.TabOrNewLine) < 0 ? url : url.Replace("\t", string.Empty).Replace("\n", string.Empty).Replace("\r", string.Empty);
+    }
+
+    /// <summary>
     /// Returns the index the authority starts at, or -1 for a URL without one.
-    /// Like browsers (WHATWG), it accepts '\' for '/', and for http(s) any run of slashes, tabs and newlines, even none.
+    /// Like browsers (WHATWG), it accepts '\' for '/', and for special schemes (http, https, ws, wss, ftp) any run of slashes, even none.
     /// Other schemes and scheme-relative URLs need at least two slashes.
     /// </summary>
     private static int GetAuthorityStart(string url)
@@ -80,7 +107,7 @@ internal static class WafAttributeRedaction
         }
 
         var start = schemeEnd > 0 && schemeEnd < url.Length && url[schemeEnd] == ':' ? schemeEnd + 1 : 0;
-        if (start > 0 && IsHttpScheme(url, schemeEnd))
+        if (start > 0 && IsSpecialScheme(url, schemeEnd))
         {
             return SkipSlashes(url, start);
         }
@@ -90,7 +117,7 @@ internal static class WafAttributeRedaction
 
     private static int SkipSlashes(string url, int index)
     {
-        while (index < url.Length && (IsSlash(url[index]) || url[index] is '\t' or '\n' or '\r'))
+        while (index < url.Length && IsSlash(url[index]))
         {
             index++;
         }
@@ -98,9 +125,11 @@ internal static class WafAttributeRedaction
         return index;
     }
 
-    private static bool IsHttpScheme(string url, int schemeEnd)
-        => (schemeEnd == 4 || (schemeEnd == 5 && url[4] is 's' or 'S'))
-        && string.Compare(url, 0, "http", 0, 4, StringComparison.OrdinalIgnoreCase) == 0;
+    private static bool IsSpecialScheme(string url, int schemeEnd)
+        => IsScheme(url, schemeEnd, "http") || IsScheme(url, schemeEnd, "https") || IsScheme(url, schemeEnd, "ws") || IsScheme(url, schemeEnd, "wss") || IsScheme(url, schemeEnd, "ftp");
+
+    private static bool IsScheme(string url, int schemeEnd, string scheme)
+        => schemeEnd == scheme.Length && string.Compare(url, 0, scheme, 0, scheme.Length, StringComparison.OrdinalIgnoreCase) == 0;
 
     private static bool IsSchemeChar(char c, bool first)
         => char.IsAsciiLetter(c) || (!first && (char.IsAsciiDigit(c) || c is '+' or '-' or '.'));
@@ -113,5 +142,5 @@ internal static class WafAttributeRedaction
     /// </summary>
     private static bool MayBeTruncated(string url)
         => url.Length >= WafConstants.MaxStringLength
-        || (url.Length * 3 >= WafConstants.MaxStringLength && Encoding.UTF8.GetByteCount(url) >= WafConstants.MaxStringLength);
+        || (Encoding.UTF8.GetMaxByteCount(url.Length) >= WafConstants.MaxStringLength && Encoding.UTF8.GetByteCount(url) >= WafConstants.MaxStringLength);
 }
