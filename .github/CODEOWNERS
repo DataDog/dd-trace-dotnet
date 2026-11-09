@@ -375,3 +375,6 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/*Ci* @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/CrankImporterCommandTests.cs @DataDog/apm-lang-platform-dotnet @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/coverage.*.xml @DataDog/apm-lang-platform-dotnet @DataDog/ci-app-libraries-dotnet
+
+# Instrumentation manifests (keep after directory ownership rules)
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/**/*.manifest.yaml @DataDog/apm-idm-dotnet
