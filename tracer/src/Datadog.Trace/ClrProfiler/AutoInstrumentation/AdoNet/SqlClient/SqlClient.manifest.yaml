@@ -1,0 +1,13 @@
+_v: 1
+name: SqlClient
+display_name: Microsoft SQL Server
+description: Instruments Microsoft SQL Server provider implementations' ADO.NET command execution for tracing, Database Monitoring
+  context propagation, and SQL-injection analysis.
+packages:
+- name: Microsoft.Data.SqlClient
+- name: System.Data.SqlClient
+category:
+- db.client
+systems:
+- microsoft.sql_server
+creation_date: '2018-09-10'

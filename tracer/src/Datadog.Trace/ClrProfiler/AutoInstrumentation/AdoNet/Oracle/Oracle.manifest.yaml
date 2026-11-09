@@ -1,0 +1,13 @@
+_v: 1
+name: Oracle
+display_name: Oracle
+description: Instruments Oracle Database queries issued through provider-specific ADO.NET command implementations, with optional
+  Database Monitoring propagation and IAST database-value tracking.
+packages:
+- name: Oracle.ManagedDataAccess
+- name: Oracle.ManagedDataAccess.Core
+category:
+- db.client
+systems:
+- oracle.db
+creation_date: '2021-02-17'

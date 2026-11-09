@@ -1,0 +1,11 @@
+_v: 1
+name: Couchbase
+display_name: Couchbase
+description: Instruments Couchbase database operations in the Couchbase .NET client.
+packages:
+- name: CouchbaseNetClient
+category:
+- db.client
+systems:
+- couchbase
+creation_date: '2021-11-17'

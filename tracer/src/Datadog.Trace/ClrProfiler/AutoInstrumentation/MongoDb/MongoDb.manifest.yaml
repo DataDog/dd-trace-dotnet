@@ -1,0 +1,13 @@
+_v: 1
+name: MongoDb
+display_name: MongoDB
+description: Instruments MongoDB client database operations and detects MongoDB NoSQL injection in BSON parsing when IAST
+  is enabled.
+packages:
+- name: MongoDB.Driver
+- name: MongoDB.Driver.Core
+category:
+- db.client
+systems:
+- mongodb
+creation_date: '2019-01-14'
