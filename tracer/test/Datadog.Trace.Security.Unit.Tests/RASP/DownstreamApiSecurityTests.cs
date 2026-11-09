@@ -155,7 +155,6 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     [InlineData("https://user:", (char)0xE4, WafConstants.MaxStringLength * 2 / 3)]
     public void GivenAUrlTruncatedInsideItsAuthority_WhenItIsRedacted_ThenTheAuthorityIsDropped(string prefix, char filler, int length)
     {
-        // the encoder truncates strings to MaxStringLength chars or UTF-8 bytes, which may cut a long user-info before its '@'
         var url = (prefix + new string(filler, length)).Substring(0, length);
 
         var redacted = WafAttributeRedaction.RemoveUrlSecrets(url);
@@ -169,6 +168,18 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
         var url = "https://user:pass@api.example.com/files?token=" + new string('a', WafConstants.MaxStringLength);
 
         WafAttributeRedaction.RemoveUrlSecrets(url.Substring(0, WafConstants.MaxStringLength)).Should().Be("https://api.example.com/files");
+    }
+
+    [Theory]
+    [InlineData("https:///user:pass@api.example.com/files")]
+    [InlineData("https:/user:pass@api.example.com/files")]
+    [InlineData("https:user:pass@api.example.com/files")]
+    [InlineData("HTTPS:\\\\\\user:pass@api.example.com/files")]
+    [InlineData("http:\t//user:pass@api.example.com/files")]
+    [InlineData("///user:pass@api.example.com/files")]
+    public void GivenAUrlWithUnusualSlashes_WhenItIsRedacted_ThenTheUserInfoIsRemoved(string url)
+    {
+        WafAttributeRedaction.RemoveUrlSecrets(url).Should().NotContain("user").And.NotContain("pass").And.Contain("api.example.com");
     }
 
     [Theory]

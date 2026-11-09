@@ -35,7 +35,6 @@ internal static class WafAttributeRedaction
             var authorityEnd = url.IndexOfAny(Separators.UrlAuthorityEnd, authorityStart);
             if (authorityEnd < 0)
             {
-                // the encoder truncates long strings, which may cut the authority before (or inside) its user-info
                 if (MayBeTruncated(url))
                 {
                     return url.Substring(0, authorityStart);
@@ -68,8 +67,9 @@ internal static class WafAttributeRedaction
     }
 
     /// <summary>
-    /// Returns the index the authority starts at, after "scheme://" or a leading "//", or -1 for a URL without one.
-    /// Browsers accept '\' in place of '/' there (WHATWG), so both are recognized.
+    /// Returns the index the authority starts at, or -1 for a URL without one.
+    /// Like browsers (WHATWG), it accepts '\' for '/', and for http(s) any run of slashes, tabs and newlines, even none.
+    /// Other schemes and scheme-relative URLs need at least two slashes.
     /// </summary>
     private static int GetAuthorityStart(string url)
     {
@@ -80,16 +80,36 @@ internal static class WafAttributeRedaction
         }
 
         var start = schemeEnd > 0 && schemeEnd < url.Length && url[schemeEnd] == ':' ? schemeEnd + 1 : 0;
-        return start + 1 < url.Length && IsSlash(url[start]) && IsSlash(url[start + 1]) ? start + 2 : -1;
+        if (start > 0 && IsHttpScheme(url, schemeEnd))
+        {
+            return SkipSlashes(url, start);
+        }
+
+        return start + 1 < url.Length && IsSlash(url[start]) && IsSlash(url[start + 1]) ? SkipSlashes(url, start) : -1;
     }
 
+    private static int SkipSlashes(string url, int index)
+    {
+        while (index < url.Length && (IsSlash(url[index]) || url[index] is '\t' or '\n' or '\r'))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static bool IsHttpScheme(string url, int schemeEnd)
+        => (schemeEnd == 4 || (schemeEnd == 5 && url[4] is 's' or 'S'))
+        && string.Compare(url, 0, "http", 0, 4, StringComparison.OrdinalIgnoreCase) == 0;
+
     private static bool IsSchemeChar(char c, bool first)
-        => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') || (!first && c is (>= '0' and <= '9') or '+' or '-' or '.');
+        => char.IsAsciiLetter(c) || (!first && (char.IsAsciiDigit(c) || c is '+' or '-' or '.'));
 
     private static bool IsSlash(char c) => c is '/' or '\\';
 
     /// <summary>
     /// Whether the encoder may have cut the string at <see cref="WafConstants.MaxStringLength"/>, counted in chars or in UTF-8 bytes.
+    /// A cut inside the authority may leave the start of the user-info with no '@' to mark where it ends.
     /// </summary>
     private static bool MayBeTruncated(string url)
         => url.Length >= WafConstants.MaxStringLength
