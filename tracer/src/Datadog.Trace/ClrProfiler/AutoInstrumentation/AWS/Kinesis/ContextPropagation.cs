@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     // payload was parsed to json.
                     if (payloadSize != 0 && payloadSize > MaxDsmHeaderSize)
                     {
-                        dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
+                        dataStreamsManager.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, adapter);
                     }
 
                     propagatedContext = adapter.GetDictionary();

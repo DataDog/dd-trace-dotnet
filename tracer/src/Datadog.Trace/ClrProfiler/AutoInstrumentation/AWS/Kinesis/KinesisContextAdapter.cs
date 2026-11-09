@@ -5,17 +5,15 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
-    internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
+    internal struct KinesisContextAdapter : IHeadersCollection
     {
         private Dictionary<string, List<string>> headers = new Dictionary<string, List<string>>();
 
@@ -59,22 +57,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public void Remove(string name)
         {
             headers.Remove(name);
-        }
-
-        public byte[] TryGetLastBytes(string name)
-        {
-            if (headers.TryGetValue(name, out var value))
-            {
-                var last = value[value.Count - 1];
-                return name == DataStreamsPropagationHeaders.PropagationKeyBase64 ? Encoding.UTF8.GetBytes(last) : Convert.FromBase64String(last);
-            }
-
-            return [];
-        }
-
-        public void Add(string name, byte[] value)
-        {
-            Add(name, name == DataStreamsPropagationHeaders.PropagationKeyBase64 ? Encoding.UTF8.GetString(value) : Convert.ToBase64String(value));
         }
     }
 }
