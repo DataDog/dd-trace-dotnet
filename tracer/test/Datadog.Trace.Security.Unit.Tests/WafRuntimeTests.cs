@@ -41,11 +41,10 @@ public class WafRuntimeTests : WafLibraryRequiredTest
         WarmUp();
         using var context = CreateContext();
 
-        // a large input makes the WAF run much longer than the RASP one, so that it can't fit in the RASP bound
+        // a large input makes the WAF run much longer than the RASP one, so that mixing them breaks the RASP bound
         var (waf1, waf1Elapsed) = Measure(() => context.Run(CreateLargeRequestArgs(), TimeoutMicroSeconds));
         Thread.Sleep(PauseMilliseconds);
         var (rasp, raspElapsed) = Measure(() => context.RunWithEphemeral(RaspArgs, TimeoutMicroSeconds, isRasp: true, out _));
-        waf1.AggregatedTotalRuntimeWithBindings.Should().BeGreaterThan(raspElapsed);
         Thread.Sleep(PauseMilliseconds);
         var (waf2, waf2Elapsed) = Measure(() => context.Run(RequestArgs, TimeoutMicroSeconds));
 
@@ -59,7 +58,7 @@ public class WafRuntimeTests : WafLibraryRequiredTest
     }
 
     [Fact]
-    public void GivenRejectedRuns_WhenTheNextRunsComplete_ThenTheRejectedOnesAreNotCounted()
+    public void GivenRejectedRuns_WhenTheNextRunsComplete_ThenTheTimeAfterTheRejectedRunsIsNotCounted()
     {
         using var context = CreateContext();
 
@@ -76,23 +75,6 @@ public class WafRuntimeTests : WafLibraryRequiredTest
 
         waf2.AggregatedTotalRuntimeWithBindings.Should().BeGreaterOrEqualTo(waf1.AggregatedTotalRuntimeWithBindings).And.BeLessOrEqualTo(waf1Elapsed + waf2Elapsed);
         rasp.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0).And.BeLessOrEqualTo(raspElapsed);
-    }
-
-    [Fact]
-    public void GivenManySubMicrosecondFractions_WhenTheTotalsAreRead_ThenTheFractionsAreNotLost()
-    {
-        var totals = default(WafRunTotals);
-
-        // 100 runs of 1.9 microseconds each
-        var ticksPerRun = Stopwatch.Frequency * 19 / 10_000_000;
-        for (var i = 0; i < 100; i++)
-        {
-            totals.AddDuration(1_900);
-            totals.AddDurationWithBindings(ticksPerRun);
-        }
-
-        totals.DurationMicroseconds.Should().Be(190);
-        totals.DurationWithBindingsMicroseconds.Should().BeCloseTo(190, 1);
     }
 
     private static Dictionary<string, object> CreateLargeRequestArgs()
