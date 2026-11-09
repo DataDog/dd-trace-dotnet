@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf;
@@ -24,27 +25,22 @@ internal static class WafAttributeRedaction
 
     /// <summary>
     /// Removes the user-info, query and fragment of a URL, which may be relative (e.g. a Location header).
+    /// When the user-info can't be told apart from the rest of the authority, everything from the authority on is dropped.
     /// </summary>
     internal static string RemoveUrlSecrets(string url)
     {
-        var authorityStart = url.StartsWith("//", StringComparison.Ordinal) ? 2 : url.IndexOf("://", StringComparison.Ordinal) is var schemeEnd and >= 0 ? schemeEnd + 3 : -1;
-
-        // the encoder truncates long strings, which may cut the authority before its '@' and leave a credential prefix
-        if (authorityStart >= 0 && url.Length >= WafConstants.MaxStringLength && url.IndexOfAny(Separators.UrlAuthorityOrQueryEnd, authorityStart) < 0)
-        {
-            return url.Substring(0, authorityStart);
-        }
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-        {
-            return uri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
-        }
-
+        var authorityStart = GetAuthorityStart(url);
         if (authorityStart >= 0)
         {
             var authorityEnd = url.IndexOfAny(Separators.UrlAuthorityEnd, authorityStart);
             if (authorityEnd < 0)
             {
+                // the encoder truncates long strings, which may cut the authority before (or inside) its user-info
+                if (MayBeTruncated(url))
+                {
+                    return url.Substring(0, authorityStart);
+                }
+
                 authorityEnd = url.Length;
             }
 
@@ -62,7 +58,40 @@ internal static class WafAttributeRedaction
             }
         }
 
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            return uri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
+        }
+
         var end = url.IndexOfAny(Separators.QueryOrFragment);
         return end < 0 ? url : url.Substring(0, end);
     }
+
+    /// <summary>
+    /// Returns the index the authority starts at, after "scheme://" or a leading "//", or -1 for a URL without one.
+    /// Browsers accept '\' in place of '/' there (WHATWG), so both are recognized.
+    /// </summary>
+    private static int GetAuthorityStart(string url)
+    {
+        var schemeEnd = 0;
+        while (schemeEnd < url.Length && IsSchemeChar(url[schemeEnd], first: schemeEnd == 0))
+        {
+            schemeEnd++;
+        }
+
+        var start = schemeEnd > 0 && schemeEnd < url.Length && url[schemeEnd] == ':' ? schemeEnd + 1 : 0;
+        return start + 1 < url.Length && IsSlash(url[start]) && IsSlash(url[start + 1]) ? start + 2 : -1;
+    }
+
+    private static bool IsSchemeChar(char c, bool first)
+        => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') || (!first && c is (>= '0' and <= '9') or '+' or '-' or '.');
+
+    private static bool IsSlash(char c) => c is '/' or '\\';
+
+    /// <summary>
+    /// Whether the encoder may have cut the string at <see cref="WafConstants.MaxStringLength"/>, counted in chars or in UTF-8 bytes.
+    /// </summary>
+    private static bool MayBeTruncated(string url)
+        => url.Length >= WafConstants.MaxStringLength
+        || (url.Length * 3 >= WafConstants.MaxStringLength && Encoding.UTF8.GetByteCount(url) >= WafConstants.MaxStringLength);
 }

@@ -133,6 +133,9 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     [InlineData("https://user:p?ss@api.example.com/files", "https://")]
     [InlineData("//api.example.com?next=user@example.net", "//")]
     [InlineData("//api.example.com#user@example.net", "//")]
+    [InlineData("https://user:1234?ss@api.example.com/files", "https://")]
+    [InlineData("\\\\user:pass@api.example.com/next?a=1", "\\\\api.example.com/next")]
+    [InlineData("/login?next=https://user:pass@x.example.com", "/login")]
     [InlineData("https://api.example.com/path/with@sign", "https://api.example.com/path/with@sign")]
     [InlineData("https://[::1]:8080/files?a=1", "https://[::1]:8080/files")]
     [InlineData("//user:pass@api.example.com/next?a=1", "//api.example.com/next")]
@@ -145,13 +148,15 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("https://user:")]
-    [InlineData("https://user")]
-    [InlineData("//user:")]
-    public void GivenAUrlTruncatedInsideItsAuthority_WhenItIsRedacted_ThenTheAuthorityIsDropped(string prefix)
+    [InlineData("https://user:", 'a', WafConstants.MaxStringLength)]
+    [InlineData("https://user:p?ss", 'a', WafConstants.MaxStringLength)]
+    [InlineData("https://user:pa@ss", 'a', WafConstants.MaxStringLength)]
+    [InlineData("//user:", 'a', WafConstants.MaxStringLength)]
+    [InlineData("https://user:", (char)0xE4, WafConstants.MaxStringLength * 2 / 3)]
+    public void GivenAUrlTruncatedInsideItsAuthority_WhenItIsRedacted_ThenTheAuthorityIsDropped(string prefix, char filler, int length)
     {
-        // the encoder truncates strings to MaxStringLength, which may cut a long user-info before its '@'
-        var url = prefix + new string('a', WafConstants.MaxStringLength - prefix.Length);
+        // the encoder truncates strings to MaxStringLength chars or UTF-8 bytes, which may cut a long user-info before its '@'
+        var url = (prefix + new string(filler, length)).Substring(0, length);
 
         var redacted = WafAttributeRedaction.RemoveUrlSecrets(url);
 

@@ -18,5 +18,4 @@ internal static class Separators
     public static readonly char[] EqualsSign = ['='];
     public static readonly char[] QueryOrFragment = ['?', '#'];
     public static readonly char[] UrlAuthorityEnd = ['/', '\\'];
-    public static readonly char[] UrlAuthorityOrQueryEnd = ['/', '\\', '?', '#'];
 }
