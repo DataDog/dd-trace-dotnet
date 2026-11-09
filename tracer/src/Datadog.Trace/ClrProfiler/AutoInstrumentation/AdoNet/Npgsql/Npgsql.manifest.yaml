@@ -1,8 +1,8 @@
 _v: 1
 name: Npgsql
 display_name: Npgsql
-description: Instruments Npgsql command execution as PostgreSQL queries, with Database Monitoring trace-context comment injection,
-  Application Security and IAST SQL-injection checks, and IAST tracking of values read through its data reader.
+description: Instruments Npgsql's ADO.NET command methods as PostgreSQL queries, with Database Monitoring trace-context comment
+  injection, Application Security and IAST SQL-injection checks, and IAST tracking of values read through its data reader.
 packages:
 - name: Npgsql
 category:
