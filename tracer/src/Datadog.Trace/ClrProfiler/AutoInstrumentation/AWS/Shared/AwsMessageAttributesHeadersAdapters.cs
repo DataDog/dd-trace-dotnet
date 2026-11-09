@@ -53,9 +53,14 @@ internal static class AwsMessageAttributesHeadersAdapters
                .Append(value: '"')
                .Append(key)
                .Append("\":\"")
-               .Append(key == DataStreamsPropagationHeaders.PropagationKeyBase64 ? StringEncoding.UTF8.GetString(value) : Convert.ToBase64String(value))
+               .Append(ToJsonSafeString(key, value))
                .Append("\",");
         }
+
+        private static string ToJsonSafeString(string key, byte[] value)
+            => key == DataStreamsPropagationHeaders.PropagationKeyBase64
+                   ? Encoding.UTF8.GetString(value)
+                   : Convert.ToBase64String(value);
     }
 
     /// <summary>
