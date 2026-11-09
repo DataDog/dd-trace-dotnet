@@ -12,7 +12,13 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal sealed class Result : IResult
     {
-        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false, bool truncated = false)
+        /// <param name="returnStruct">the WAF result to decode</param>
+        /// <param name="returnCode">the WAF return code</param>
+        /// <param name="totals">the totals of the runs of the same scope of the request, which already include this
+        /// run's wall clock; the duration reported by the WAF for this run is added to them</param>
+        /// <param name="isRasp">whether the run is a RASP run</param>
+        /// <param name="truncated">whether the input was truncated</param>
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref WafRunTotals totals, bool isRasp = false, bool truncated = false)
         {
             ReturnCode = returnCode;
 
@@ -24,9 +30,9 @@ namespace Datadog.Trace.AppSec.Waf
             returnValues.TryGetValue("actions", out var actionsObj);
             returnValues.TryGetValue("attributes", out var attributesObj);
 
-            if (durationObj is ulong durationNanos and > 0)
+            if (durationObj is ulong durationNanos)
             {
-                aggregatedTotalRuntime += durationNanos / 1000; // Convert from nanoseconds to microseconds
+                totals.AddDuration(durationNanos);
             }
 
             Actions = (Dictionary<string, object?>?)actionsObj;
@@ -80,13 +86,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (isRasp)
             {
-                AggregatedTotalRuntimeRasp = aggregatedTotalRuntime;
-                AggregatedTotalRuntimeWithBindingsRasp = aggregatedTotalRuntimeWithBindings;
+                AggregatedTotalRuntimeRasp = totals.DurationMicroseconds;
+                AggregatedTotalRuntimeWithBindingsRasp = totals.DurationWithBindingsMicroseconds;
             }
             else
             {
-                AggregatedTotalRuntime = aggregatedTotalRuntime;
-                AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+                AggregatedTotalRuntime = totals.DurationMicroseconds;
+                AggregatedTotalRuntimeWithBindings = totals.DurationWithBindingsMicroseconds;
             }
 
             if (timeoutObj is bool timeoutValue and true)

@@ -12,7 +12,6 @@ using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf;
@@ -38,11 +37,9 @@ internal sealed class Context : IContext
 
     private bool _disposed;
 
-    // per-request runtimes in microseconds, tracked separately for WAF and RASP runs
-    private ulong _wafRuntime;
-    private ulong _wafRuntimeWithBindings;
-    private ulong _raspRuntime;
-    private ulong _raspRuntimeWithBindings;
+    // per-request totals, tracked separately for WAF and RASP runs
+    private WafRunTotals _wafTotals;
+    private WafRunTotals _raspTotals;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
     private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -244,17 +241,9 @@ internal sealed class Context : IContext
                 code = _waf.ContextEval(_contextHandle, &argsValue, ref retNative, timeoutMicroSeconds);
             }
 
-            var runtimeWithBindings = (ulong)(StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp() - start) * 1000);
-            if (isRasp)
-            {
-                _raspRuntimeWithBindings += runtimeWithBindings;
-                result = new Result(ref retNative, code, ref _raspRuntime, _raspRuntimeWithBindings, isRasp, truncated);
-            }
-            else
-            {
-                _wafRuntimeWithBindings += runtimeWithBindings;
-                result = new Result(ref retNative, code, ref _wafRuntime, _wafRuntimeWithBindings, isRasp, truncated);
-            }
+            ref var totals = ref isRasp ? ref _raspTotals : ref _wafTotals;
+            totals.AddDurationWithBindings(Stopwatch.GetTimestamp() - start);
+            result = new Result(ref retNative, code, ref totals, isRasp, truncated);
         }
 
         outcome = WafOutcome.Success;
