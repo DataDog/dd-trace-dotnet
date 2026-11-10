@@ -75,6 +75,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // Replaced by the poll loop before each poll.
     private TaskCompletionSource<bool> _flagSelectionChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    // Set when a new flag selection is claimed, so the next request goes out without the ETag even when
+    // its URI is unchanged, as it is for a selection that is dropped or too long to send. The provider
+    // that claimed it waits for a configuration delivered for its claim, which a 304 never applies.
+    private int _requestUnconditionally;
+
     // Only ever touched from the poll loop.
     private bool _hasApplied;
     private bool _malformedPayloadLogged;
@@ -200,8 +205,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// Records a newly claimed flag selection, picked up by the poll loop on its next request. A
-    /// different URI also drops the ETag, which identifies the previous selection's configuration.
+    /// Records a newly claimed flag selection, picked up by the poll loop on its next request, which
+    /// goes out at once and without the ETag, since that identifies the previous selection's configuration.
     /// </summary>
     public void UpdateFlagSelection(FlagSelection selection)
     {
@@ -216,6 +221,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, current.ConfiguredEnvironment, selection));
         }
 
+        Volatile.Write(ref _requestUnconditionally, 1);
         Volatile.Read(ref _flagSelectionChanged).TrySetResult(true);
         _log.Debug("Feature Flags: agentless configuration source now requests a different flag selection");
     }
@@ -407,7 +413,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // An ETag only identifies the configuration served for the URI it came from. Sending it
             // against a different environment would earn a 304 and pin the process to the previous
             // environment's flags, with no way back.
-            if (_etagUri is not null && uri != _etagUri)
+            var newClaim = Interlocked.Exchange(ref _requestUnconditionally, 0) != 0;
+            if (newClaim || (_etagUri is not null && uri != _etagUri))
             {
                 _etag = null;
             }

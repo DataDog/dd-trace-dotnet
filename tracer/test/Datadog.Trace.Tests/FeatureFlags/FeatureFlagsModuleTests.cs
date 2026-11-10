@@ -1262,6 +1262,31 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public async Task SetFlagSelection_WithADroppedSelectionAfterAnUnfilteredLoad_BecomesReady()
+    {
+        // A dropped selection sends no selection, so the request URI is the one the unfiltered load
+        // used, and a request with its ETag would only ever earn a 304.
+        Func<Uri, TestApiRequest> response = uri => new ConditionalRequest(uri, AgentlessBody, "\"ufc-v1\"");
+        var factory = new TestRequestFactory(response, response, response);
+        AgentlessEndpoint.TryCreate("datadoghq.com", null, out var endpoint, out _).Should().BeTrue();
+        using var module = CreateModule(
+            CreateAgentlessSettings(),
+            new MockRcmSubscriptionManager(),
+            m => new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), m.ApplyAgentlessConfiguration, waitAsync: _ => new TaskCompletionSource<bool>().Task, flagSelection: m.ClaimedFlagSelection),
+            flagSelectionDiagnostics: NewDiagnostics());
+        module.SetFlagSelection(null, null);
+        module.Activate();
+        (await Task.WhenAny(module.FirstConfigReceived, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(module.FirstConfigReceived);
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection([new string('a', 201)], null);
+
+        (await Task.WhenAny(module.FirstConfigReceived, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(module.FirstConfigReceived);
+        factory.RequestsSent[1].Endpoint.Should().Be(factory.RequestsSent[0].Endpoint);
+        factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
+    }
+
+    [Fact]
     public async Task InitializeAsync_AfterTheLastReleaseWithADifferentSelection_TimesOutOnThePreviousConfiguration()
     {
         var logger = new Mock<IDatadogLogger>();
@@ -1577,6 +1602,14 @@ public class FeatureFlagsModuleTests
                 return "counted";
             }
         }
+    }
+
+    // Answers 304 to a request that sends the ETag, as the endpoint does when the configuration is unchanged.
+    private sealed class ConditionalRequest(Uri endpoint, string body, string etag)
+        : TestApiRequest(endpoint, responseContent: body, responseHeaders: new() { { "ETag", etag } })
+    {
+        public override Task<IApiResponse> GetAsync()
+            => ExtraHeaders.ContainsKey("If-None-Match") ? new TestApiRequest(Endpoint, statusCode: 304).GetAsync() : base.GetAsync();
     }
 
     // Records what the module does with a delivery source, which the real one cannot report without

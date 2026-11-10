@@ -428,6 +428,24 @@ public class AgentlessConfigurationSourceTests
     }
 
     [Fact]
+    public async Task RequestsANewlyClaimedSelectionWithoutTheEtagWhenTheUriIsUnchanged()
+    {
+        Func<Uri, TestApiRequest> response = uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } });
+        var factory = new TestRequestFactory(response, response, response);
+        using var source = CreateSource(factory, []);
+        await source.PollAsync();
+
+        // Dropped for a tag over 200 bytes, so nothing is sent and the URI stays the same.
+        source.UpdateFlagSelection(FlagSelection.Create([new string('a', 201)], null));
+        await source.PollAsync();
+        await source.PollAsync();
+
+        factory.RequestsSent[1].Endpoint.Should().Be(factory.RequestsSent[0].Endpoint);
+        factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
+        factory.RequestsSent[2].ExtraHeaders.Should().ContainKey("If-None-Match", "only the request after the claim goes out without it");
+    }
+
+    [Fact]
     public async Task KeepsTheEtagWhenAClaimRequestsTheSameSelection()
     {
         var factory = new TestRequestFactory(
