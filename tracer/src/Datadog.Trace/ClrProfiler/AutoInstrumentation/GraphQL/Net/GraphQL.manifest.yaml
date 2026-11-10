@@ -1,0 +1,11 @@
+_v: 1
+name: GraphQL
+display_name: GraphQL
+description: Instruments server-side validation and execution of GraphQL query, mutation, and subscription operations.
+packages:
+- name: GraphQL
+- name: GraphQL.SystemReactive
+category:
+- graphql.server
+systems: []
+creation_date: '2021-02-26'

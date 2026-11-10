@@ -1,0 +1,10 @@
+_v: 1
+name: Process
+display_name: Process
+description: Instruments System.Diagnostics.Process.Start calls that launch commands, emitting command-execution spans with
+  optional command details and command-injection security checks.
+packages: []
+category:
+- task.execution
+systems: []
+creation_date: '2022-09-12'

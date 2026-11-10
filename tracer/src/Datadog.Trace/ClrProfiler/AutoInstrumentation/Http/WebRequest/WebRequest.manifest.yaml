@@ -1,0 +1,11 @@
+_v: 1
+name: WebRequest
+display_name: WebRequest
+description: Instruments outbound HTTP requests made through System.Net.WebRequest and HttpWebRequest, propagating trace context
+  and recording HTTP client spans.
+packages:
+- name: System.Net.Requests
+category:
+- http.client
+systems: []
+creation_date: '2019-03-04'

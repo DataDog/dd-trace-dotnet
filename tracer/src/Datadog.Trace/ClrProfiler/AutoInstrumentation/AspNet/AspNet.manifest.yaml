@@ -1,0 +1,10 @@
+_v: 1
+name: AspNet
+display_name: ASP.NET
+description: Instruments inbound ASP.NET HTTP requests and, when enabled, creates inferred proxy spans and performs Application
+  Security and IAST request/response analysis.
+packages: []
+category:
+- http.server
+systems: []
+creation_date: '2019-03-07'

@@ -1,0 +1,11 @@
+_v: 1
+name: Log4Net
+display_name: Log4Net
+description: Instruments Log4Net application log emission by enriching log records with trace-correlation and service metadata
+  and, when enabled, directly submitting them.
+packages:
+- name: log4net
+category:
+- log.emission
+systems: []
+creation_date: '2019-06-19'
