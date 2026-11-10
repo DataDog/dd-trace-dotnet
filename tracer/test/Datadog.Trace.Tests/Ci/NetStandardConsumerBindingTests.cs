@@ -148,7 +148,7 @@ public class NetStandardConsumerBindingTests
                 var targetKind = GetTypeKind(target.Reader, typeDef);
                 if (compileTimeKind != targetKind)
                 {
-                    violations.Add($"Type '{typeName}' is a {targetKind}, not a {compileTimeKind}");
+                    violations.Add($"Type '{typeName}' changed from {compileTimeKind} to {targetKind}");
                 }
 
                 var compileTimeConstraints = GetConstraints(compileTime.Reader, compileTime.Reader.GetTypeDefinition(compileTimeTypeDef).GetGenericParameters());
@@ -243,6 +243,32 @@ public class NetStandardConsumerBindingTests
                         }
                     }
                 }
+
+                // 4. Overrides of Datadog.Trace base methods: if the base method is no longer virtual, or is sealed, the
+                // override either fails to load or silently stops being called
+                if (GetDatadogTraceType(reader, typeDef.BaseType) is not { } baseClassName
+                 || !target.Types.TryGetValue(baseClassName, out var targetBaseClass)
+                 || !compileTime.Types.TryGetValue(baseClassName, out var compileTimeBaseClass))
+                {
+                    continue;
+                }
+
+                foreach (var methodHandle in typeDef.GetMethods())
+                {
+                    var method = reader.GetMethodDefinition(methodHandle);
+                    if ((method.Attributes & MethodAttributes.Virtual) == 0 || (method.Attributes & MethodAttributes.NewSlot) != 0)
+                    {
+                        continue;
+                    }
+
+                    var name = reader.GetString(method.Name);
+                    var signature = Signatures.Of(method.DecodeSignature(SignatureProvider.Instance, null));
+                    if (FindMember(compileTime.Reader, compileTimeBaseClass, name, signature) is { IsOverridable: true }
+                     && FindMember(target.Reader, targetBaseClass, name, signature) is not { IsOverridable: true })
+                    {
+                        violations.Add($"Type '{Names.Of(reader, handle)}' overrides '{baseClassName}::{name}' with signature '{signature}', which can no longer be overridden");
+                    }
+                }
             }
 
             return new CheckResult(typeReferenceCount, memberReferenceCount, violations);
@@ -250,11 +276,13 @@ public class NetStandardConsumerBindingTests
 
         /// <summary>
         /// Finds a method or field by name and signature on the type or its base types within the same assembly.
+        /// Constructors aren't inherited, so they're only looked up on the type itself.
         /// </summary>
         /// <returns><c>null</c> if not found</returns>
         private static MemberMatch? FindMember(MetadataReader reader, TypeDefinitionHandle typeHandle, string name, string signature)
         {
-            for (TypeDefinitionHandle? current = typeHandle; current is { } handle; current = GetBaseTypeDefinition(reader, handle))
+            var isConstructor = name is ".ctor" or ".cctor";
+            for (TypeDefinitionHandle? current = typeHandle; current is { } handle; current = isConstructor ? null : GetBaseTypeDefinition(reader, handle))
             {
                 var typeDef = reader.GetTypeDefinition(handle);
                 foreach (var methodHandle in typeDef.GetMethods())
@@ -269,7 +297,8 @@ public class NetStandardConsumerBindingTests
                             MethodAttributes.Family or MethodAttributes.FamANDAssem => 1,
                             _ => 0,
                         };
-                        return new MemberMatch(access, (method.Attributes & MethodAttributes.Static) != 0, GetConstraints(reader, method.GetGenericParameters()));
+                        var isOverridable = (method.Attributes & MethodAttributes.Virtual) != 0 && (method.Attributes & MethodAttributes.Final) == 0;
+                        return new MemberMatch(access, (method.Attributes & MethodAttributes.Static) != 0, isOverridable, GetConstraints(reader, method.GetGenericParameters()));
                     }
                 }
 
@@ -285,7 +314,7 @@ public class NetStandardConsumerBindingTests
                             FieldAttributes.Family or FieldAttributes.FamANDAssem => 1,
                             _ => 0,
                         };
-                        return new MemberMatch(access, (field.Attributes & FieldAttributes.Static) != 0, []);
+                        return new MemberMatch(access, (field.Attributes & FieldAttributes.Static) != 0, IsOverridable: false, []);
                     }
                 }
             }
@@ -310,19 +339,20 @@ public class NetStandardConsumerBindingTests
 
                 foreach (var constraintHandle in parameter.GetConstraints())
                 {
-                    var type = reader.GetGenericParameterConstraint(constraintHandle).Type;
-                    var typeName = type.Kind switch
-                    {
-                        HandleKind.TypeDefinition => SignatureProvider.Instance.GetTypeFromDefinition(reader, (TypeDefinitionHandle)type, 0),
-                        HandleKind.TypeReference => SignatureProvider.Instance.GetTypeFromReference(reader, (TypeReferenceHandle)type, 0),
-                        _ => SignatureProvider.Instance.GetTypeFromSpecification(reader, null, (TypeSpecificationHandle)type, 0),
-                    };
-                    constraints.Add($"{parameter.Index}: {typeName}");
+                    constraints.Add($"{parameter.Index}: {RenderType(reader, reader.GetGenericParameterConstraint(constraintHandle).Type)}");
                 }
             }
 
             return constraints;
         }
+
+        private static string RenderType(MetadataReader reader, EntityHandle type)
+            => type.Kind switch
+            {
+                HandleKind.TypeDefinition => SignatureProvider.Instance.GetTypeFromDefinition(reader, (TypeDefinitionHandle)type, 0),
+                HandleKind.TypeReference => SignatureProvider.Instance.GetTypeFromReference(reader, (TypeReferenceHandle)type, 0),
+                _ => SignatureProvider.Instance.GetTypeFromSpecification(reader, null, (TypeSpecificationHandle)type, 0),
+            };
 
         private static HashSet<string> GetInternalsVisibleTo(MetadataReader reader)
         {
@@ -387,9 +417,24 @@ public class NetStandardConsumerBindingTests
             return baseName switch
             {
                 "System.ValueType" => "struct",
-                "System.Enum" => "enum",
+                "System.Enum" => $"enum of {GetEnumUnderlyingType(reader, typeDef)}", // consumers inline enum constants as the underlying type
                 _ => "class",
             };
+        }
+
+        private static string? GetEnumUnderlyingType(MetadataReader reader, TypeDefinition typeDef)
+        {
+            foreach (var fieldHandle in typeDef.GetFields())
+            {
+                var field = reader.GetFieldDefinition(fieldHandle);
+                if ((field.Attributes & FieldAttributes.Static) == 0)
+                {
+                    // The only instance field of an enum is value__, which has the underlying type
+                    return field.DecodeSignature(SignatureProvider.Instance, null);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -430,11 +475,32 @@ public class NetStandardConsumerBindingTests
         /// <summary>
         /// Gets the abstract methods (as "name signature") that a type deriving from the given type must implement:
         /// abstract methods on the type or its base types within the same assembly that no more-derived type overrides.
+        /// For an interface, this includes the members of the interfaces it inherits, because an implementing type
+        /// compiled before the interface inherited them won't implement them. Inherited interfaces from other
+        /// assemblies are included as "interface Name", as their members aren't available here.
         /// </summary>
         private static HashSet<string> GetUnimplementedAbstractMembers(MetadataReader reader, TypeDefinitionHandle typeHandle)
         {
             var implemented = new HashSet<string>(StringComparer.Ordinal);
             var unimplemented = new HashSet<string>(StringComparer.Ordinal);
+            var typeDefinition = reader.GetTypeDefinition(typeHandle);
+            if ((typeDefinition.Attributes & TypeAttributes.Interface) != 0)
+            {
+                // C# lists every inherited interface (including indirect ones) on the interface itself
+                foreach (var interfaceImplementation in typeDefinition.GetInterfaceImplementations())
+                {
+                    var inherited = GetGenericTypeOrSelf(reader, reader.GetInterfaceImplementation(interfaceImplementation).Interface);
+                    if (inherited.Kind == HandleKind.TypeDefinition)
+                    {
+                        unimplemented.UnionWith(GetUnimplementedAbstractMembers(reader, (TypeDefinitionHandle)inherited));
+                    }
+                    else
+                    {
+                        unimplemented.Add($"interface {RenderType(reader, inherited)}");
+                    }
+                }
+            }
+
             for (TypeDefinitionHandle? current = typeHandle; current is { } handle; current = GetBaseTypeDefinition(reader, handle))
             {
                 var typeDef = reader.GetTypeDefinition(handle);
@@ -523,7 +589,7 @@ public class NetStandardConsumerBindingTests
     private sealed record CheckResult(int TypeReferenceCount, int MemberReferenceCount, List<string> Violations);
 
     // Access: 2 = accessible from anywhere, 1 = only from derived types, 0 = private (as for AccessLevel)
-    private sealed record MemberMatch(int Access, bool IsStatic, HashSet<string> Constraints);
+    private sealed record MemberMatch(int Access, bool IsStatic, bool IsOverridable, HashSet<string> Constraints);
 
     private sealed class LoadedAssembly : IDisposable
     {
