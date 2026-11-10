@@ -792,6 +792,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void IsDataStreamsLegacyEncodingBehaviorEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.LegacyEncodingBehaviorEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsLegacyEncodingBehaviorEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData("1", true)]
         [InlineData("0", false)]
         [InlineData(null, false)]

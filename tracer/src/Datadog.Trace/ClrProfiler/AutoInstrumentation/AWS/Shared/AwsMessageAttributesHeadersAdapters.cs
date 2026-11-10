@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 
 internal static class AwsMessageAttributesHeadersAdapters
 {
-    public static IBinaryHeadersCollection GetInjectionAdapter(StringBuilder carrier)
+    public static IBinaryHeadersCollection GetInjectionAdapter(StringBuilder carrier, bool legacyEncodingBehaviorEnabled)
     {
-        return new StringBuilderJsonAdapter(carrier);
+        return new StringBuilderJsonAdapter(carrier, legacyEncodingBehaviorEnabled);
     }
 
     public static IBinaryHeadersCollection GetExtractionAdapter(IDictionary? messageAttributes)
@@ -36,10 +36,12 @@ internal static class AwsMessageAttributesHeadersAdapters
     private readonly struct StringBuilderJsonAdapter : IBinaryHeadersCollection
     {
         private readonly StringBuilder _carrier;
+        private readonly bool _legacyEncodingBehaviorEnabled;
 
-        public StringBuilderJsonAdapter(StringBuilder carrier)
+        public StringBuilderJsonAdapter(StringBuilder carrier, bool legacyEncodingBehaviorEnabled)
         {
             _carrier = carrier;
+            _legacyEncodingBehaviorEnabled = legacyEncodingBehaviorEnabled;
         }
 
         public byte[] TryGetLastBytes(string name)
@@ -57,8 +59,8 @@ internal static class AwsMessageAttributesHeadersAdapters
                .Append("\",");
         }
 
-        private static string ToJsonSafeString(string key, byte[] value)
-            => key == DataStreamsPropagationHeaders.PropagationKeyBase64
+        private string ToJsonSafeString(string key, byte[] value)
+            => key == DataStreamsPropagationHeaders.PropagationKeyBase64 && !_legacyEncodingBehaviorEnabled
                    ? Encoding.UTF8.GetString(value)
                    : Convert.ToBase64String(value);
     }

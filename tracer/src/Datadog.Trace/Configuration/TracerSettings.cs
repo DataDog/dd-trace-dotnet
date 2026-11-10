@@ -539,6 +539,10 @@ namespace Datadog.Trace.Configuration
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
                                                .AsBool(!IsDataStreamsMonitoringInDefaultState);
 
+            IsDataStreamsLegacyEncodingBehaviorEnabled = config
+                                                        .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyEncodingBehaviorEnabled)
+                                                        .AsBool(false);
+
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
@@ -1325,6 +1329,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
         internal bool IsDataStreamsLegacyHeadersEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether SQS and SNS producers double Base64 encode the Data Streams pathway context.
+        /// </summary>
+        internal bool IsDataStreamsLegacyEncodingBehaviorEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the rare sampler is enabled or not.
