@@ -6,9 +6,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Sources;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
+using static Datadog.Trace.Tests.CallTarget.ContinuationGeneratorTestHelpers;
 
 namespace Datadog.Trace.Tests.CallTarget
 {
@@ -275,37 +277,155 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
-        internal class CustomException : Exception
+        [Fact]
+        public async Task SuccessGenericKnownTypeAlreadyCompletedTest()
         {
-            public CustomException(string message)
-                : base(message)
+            var tcg = new ValueTaskContinuationGenerator<IntegrationWithKnownType, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, new ValueTask<string>("ReturnValue"), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            var previousTask = alreadyCompleted ? new ValueTask<string>("ReturnValue") : new ValueTask<string>(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult("ReturnValue");
+
+            // An integration failing must not change what the instrumented method returns
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationNoResultTest(bool alreadyCompleted)
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            var previousTask = alreadyCompleted ? default : new ValueTask(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult(true);
+
+            // An integration failing must not reach the instrumented method's caller
+            await cTask;
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void ThrowingContinuationWhenTargetThrowsTest(bool hasResult)
+        {
+            // The target threw, so the continuation runs synchronously
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            if (hasResult)
             {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+                tcg.SetContinuation(this, default, exception, in state);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask>();
+                tcg.SetContinuation(this, default, exception, in state);
             }
         }
 
-        internal class CustomCancellationException : OperationCanceledException
+        [Theory]
+        [CombinatorialData]
+        public void BubbleUpExceptionWhenTargetThrowsReachesTheCallerTest(bool hasResult)
         {
-            public CustomCancellationException(CancellationToken token)
-                : base(token)
-            {
-            }
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            var ex = Assert.Throws<InvalidOperationException>(
+                () =>
+                {
+                    if (hasResult)
+                    {
+                        new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>().SetContinuation(this, default, exception, in state);
+                    }
+                    else
+                    {
+                        new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask>().SetContinuation(this, default, exception, in state);
+                    }
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
         }
 
-        internal class CustomSynchronizationContext : SynchronizationContext
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
         {
-            private readonly TaskCompletionSource<bool> _tcs = new();
-
-            public Task Task => _tcs.Task;
-
-            public override void Post(SendOrPostCallback d, object state)
+            // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            if (alreadyCompleted)
             {
-                _tcs.TrySetResult(true);
+                Complete(tcs, faulted);
             }
 
-            public override void Send(SendOrPostCallback d, object state)
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask<string>(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerNoResultTest(bool alreadyCompleted, bool faulted)
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            if (alreadyCompleted)
             {
-                _tcs.TrySetResult(true);
+                Complete(tcs, faulted);
             }
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task CompletedValueTaskIsOnlyConsumedOnceTest(bool integrationThrows)
+        {
+            // A ValueTask backed by an IValueTaskSource may only be consumed once,
+            // so after reading its result we must never hand the original back to the caller
+            ContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTask<string>> tcg;
+            if (integrationThrows)
+            {
+                tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            }
+            else
+            {
+                // Returns the original value unchanged
+                tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            }
+
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, new ValueTask<string>(new SingleUseValueTaskSource("ReturnValue"), 0), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
         }
 
         internal class PreserveContextTests
@@ -343,6 +463,49 @@ namespace Datadog.Trace.Tests.CallTarget
             {
                 return returnValue + "[Modified]";
             }
+        }
+
+        internal class IntegrationThatThrows
+        {
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                throw new CustomException("Integration Exception");
+            }
+        }
+
+        internal class IntegrationThatBubblesUp
+        {
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                throw new InvalidOperationException("Blocked", new BubbleUpException());
+            }
+        }
+
+        internal class SingleUseValueTaskSource : IValueTaskSource<string>
+        {
+            private readonly string _result;
+            private bool _consumed;
+
+            public SingleUseValueTaskSource(string result)
+            {
+                _result = result;
+            }
+
+            public ValueTaskSourceStatus GetStatus(short token) => ValueTaskSourceStatus.Succeeded;
+
+            public string GetResult(short token)
+            {
+                if (_consumed)
+                {
+                    throw new InvalidOperationException("The ValueTask result was already consumed");
+                }
+
+                _consumed = true;
+                return _result;
+            }
+
+            public void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+                => throw new NotSupportedException("The source is always completed");
         }
     }
 }

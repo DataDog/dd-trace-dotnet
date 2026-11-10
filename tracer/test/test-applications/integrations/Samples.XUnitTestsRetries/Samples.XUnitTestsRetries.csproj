@@ -22,6 +22,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The multi-package sample builds do not build Datadog.Trace.Manual, so compile the attributes it ships. -->
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\NoAutoRetryAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\PreventFailureSuppressionAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
     <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
     <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->

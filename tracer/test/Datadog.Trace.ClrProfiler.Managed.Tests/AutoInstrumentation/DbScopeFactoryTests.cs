@@ -16,6 +16,7 @@ using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -57,6 +58,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 // "Oracle.ManagedDataAccess.Client.OracleCommand",
                 // "Oracle.DataAccess.Client.OracleCommand",
             };
+
+        public static IEnumerable<object[]> GetOracleStoredProcedureData()
+            => from commandType in new[] { typeof(Oracle.ManagedDataAccess.Client.OracleCommand), typeof(Oracle.DataAccess.Client.OracleCommand) }
+               from mode in new[] { "disabled", "service", "dynamic_service", "full" }
+               from injectStoredProcedure in new[] { false, true }
+               select new object[] { commandType, mode, injectStoredProcedure };
 
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in (IEnumerable<object[]>)GetDbmCommands()
@@ -345,6 +352,89 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 // should not have injected data - command text should not change
                 command.CommandText.Should().Be(DbmCommandText);
             }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetOracleStoredProcedureData))]
+        public async Task CreateDbCommandScope_OracleStoredProcedureServiceComment(Type commandType, string dbmMode, bool injectStoredProcedure)
+        {
+            using var command = (DbCommand)Activator.CreateInstance(commandType)!;
+            const string procedureName = "MySchema.MyPackage.MyProcedure";
+            command.CommandText = procedureName;
+            command.CommandType = CommandType.StoredProcedure;
+            var parameters = new[]
+            {
+                new MockDbParameter { ParameterName = "return_value", Direction = ParameterDirection.ReturnValue, Value = 0 },
+                new MockDbParameter { ParameterName = "input", Direction = ParameterDirection.Input, Value = 1 },
+                new MockDbParameter { ParameterName = "output", Direction = ParameterDirection.Output, Value = 2 },
+                new MockDbParameter { ParameterName = "in_out", Direction = ParameterDirection.InputOutput, Value = 3 },
+            };
+            command.Parameters.AddRange(parameters);
+
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.ServiceName, "Test.Service" },
+                { ConfigurationKeys.PropagateProcessTags, "false" },
+                { ConfigurationKeys.DbmPropagationMode, dbmMode },
+                { ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, injectStoredProcedure.ToString() },
+            });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+            // .NET Framework never comments Oracle stored procedures, to keep ODP.NET implicit REF CURSOR bindings working.
+            var expectedInjection = (dbmMode is "service" or "dynamic_service") && DatabaseMonitoringPropagator.OracleStoredProcedureCommentsSupported;
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+                scope.Span.ResourceName.Should().Be(procedureName);
+                scope.Span.GetTag(Tags.DbmTraceInjected).Should().BeNull();
+                command.CommandText.Should().Be(expectedInjection
+                                                   ? $"/*dddbs='{scope.Span.ServiceName}',ddps='Test.Service'*/ {procedureName}"
+                                                   : procedureName);
+
+                // Nested instrumented overloads must not inject another comment or create another SQL span.
+                using var nested = CreateDbCommandScope(tracer, command);
+                nested.Should().BeNull();
+            }
+
+            var injectedCommandText = command.CommandText;
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+                scope.Span.GetTag(Tags.DbmTraceInjected).Should().BeNull();
+            }
+
+            command.CommandText.Should().Be(injectedCommandText, "reused commands need only one service comment");
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.Parameters.Cast<DbParameter>().Should().Equal(parameters);
+            parameters.Select(p => p.ParameterName).Should().Equal("return_value", "input", "output", "in_out");
+            parameters.Select(p => p.Direction).Should().Equal(ParameterDirection.ReturnValue, ParameterDirection.Input, ParameterDirection.Output, ParameterDirection.InputOutput);
+            parameters.Select(p => p.Value).Should().Equal(0, 1, 2, 3);
+        }
+
+        [Theory]
+        [InlineData("Oracle", "service")]
+        [InlineData("Oracle", "dynamic_service")]
+        [InlineData("AdoNet", "service")]
+        [InlineData("AdoNet", "dynamic_service")]
+        public async Task CreateDbCommandScope_OracleStoredProcedureDoesNotInjectWhenIntegrationDisabled(string disabledIntegration, string dbmMode)
+        {
+            using var command = new Oracle.ManagedDataAccess.Client.OracleCommand
+            {
+                CommandText = "MyPackage.MyProcedure",
+                CommandType = CommandType.StoredProcedure,
+            };
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.DbmPropagationMode, dbmMode },
+                { string.Format(IntegrationSettings.IntegrationEnabledKey, disabledIntegration), "false" },
+            });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+
+            scope.Should().BeNull();
+            command.CommandText.Should().Be("MyPackage.MyProcedure");
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
         }
 
         [Theory]
