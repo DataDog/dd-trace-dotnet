@@ -729,7 +729,7 @@ public class StatsdManagerTests
 
             var tasks = new[]
             {
-                Task.Run(() =>
+                Task.Factory.StartNew(() =>
                 {
                     // Update the environment continuously
                     var counter = 0;
@@ -741,9 +741,9 @@ public class StatsdManagerTests
                                 useDefaultSources: true),
                             NullConfigurationTelemetry.Instance);
                     }
-                }),
+                }, TaskCreationOptions.LongRunning),
 
-                Task.Run(() =>
+                Task.Factory.StartNew(() =>
                 {
                     while (!cts.Token.IsCancellationRequested)
                     {
@@ -757,7 +757,7 @@ public class StatsdManagerTests
                             }
                         }
                     }
-                })
+                }, TaskCreationOptions.LongRunning)
             };
 
             await Task.Delay(500);
