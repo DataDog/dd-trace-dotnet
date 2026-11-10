@@ -355,7 +355,7 @@ internal sealed partial class SecurityReporter
     {
         // We don't want to fill the spans with not useful data, so we only send it when RASP has been used
         // We report always, even if there is no match
-        if (result.AggregatedTotalRuntimeRasp > 0)
+        if (result.AggregatedTotalRuntimeWithBindingsRasp > 0)
         {
             localRootSpan.Context.TraceContext.AppSecRequestContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
         }

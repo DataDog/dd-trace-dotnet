@@ -27,6 +27,7 @@ public class AutomationExclusionsTestSuite
     [PreventFailureSuppression]
     public void ProtectedFlakyFailure()
     {
-        Assert.True(Interlocked.Increment(ref _protectedFlakyFailureExecutions) > 1);
+        // Passes only on the first attempt, so Attempt to Fix must stop after the failing second attempt.
+        Assert.True(Interlocked.Increment(ref _protectedFlakyFailureExecutions) == 1);
     }
 }

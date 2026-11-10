@@ -6,9 +6,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -124,19 +125,6 @@ namespace Datadog.Profiler.SmokeTests
             return agent;
         }
 
-        private static bool SkipError(string line, string[] errorExceptions)
-        {
-            foreach (var errorException in errorExceptions)
-            {
-                if (line.Contains(errorException))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private void RunChecks(MockDatadogAgent agent, string[] errorExceptions)
         {
             CheckLogFiles(agent.ProfiledProcessId, errorExceptions);
@@ -146,28 +134,20 @@ namespace Datadog.Profiler.SmokeTests
 
         private void CheckLogFiles(int profiledProcessId, string[] errorExceptions)
         {
-            CheckLogFiles($"DD-DotNet-Profiler-Native*-{profiledProcessId}.log", errorExceptions);
-            CheckNoLogFiles("DD-DotNet-Profiler-Managed*.*");
-            CheckNoLogFiles("DD-DotNet-Common-ManagedLoader*.*");
-        }
+            var logs = ProfilerLogSet.Read(EnvironmentHelper.LogDir);
 
-        private void CheckNoLogFiles(string filePattern)
-        {
-            var files = Directory.EnumerateFiles(EnvironmentHelper.LogDir, filePattern, SearchOption.AllDirectories).ToList();
+            logs.NativeProfiler
+                .Matching($"DD-DotNet-Profiler-Native*-{profiledProcessId}.log")
+                .Should()
+                .NotContainErrors(errorExceptions);
 
-            Assert.Empty(files);
-        }
+            logs.Matching(ProfilerLogSet.ManagedProfilerPattern)
+                .Should()
+                .NotContainFiles();
 
-        private void CheckLogFiles(string filePattern, string[] errorExceptions)
-        {
-            var files = Directory.EnumerateFiles(EnvironmentHelper.LogDir, filePattern, SearchOption.AllDirectories).ToList();
-
-            Assert.NotEmpty(files);
-
-            foreach (var logFile in files)
-            {
-                Assert.False(LogFileContainsErrorMessage(logFile, errorExceptions), $"Found error message in the log file {logFile}");
-            }
+            logs.ManagedLoader
+                .Should()
+                .NotContainFiles();
         }
 
         private void CheckPprofFiles()
@@ -179,31 +159,6 @@ namespace Datadog.Profiler.SmokeTests
         private void CheckAgent(MockDatadogAgent agent)
         {
             Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
-        }
-
-        private bool LogFileContainsErrorMessage(string logFile, string[] errorExceptions)
-        {
-            var errorLinePattern = new Regex(@"\| error \|", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-            using var file = File.OpenRead(logFile);
-            using var reader = new StreamReader(file);
-            while (!reader.EndOfStream)
-            {
-                var line = reader.ReadLine();
-
-                if (line != null && errorLinePattern.IsMatch(line))
-                {
-                    if ((errorExceptions != null) && SkipError(line, errorExceptions))
-                    {
-                        continue;
-                    }
-
-                    _output.WriteLine(line);
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

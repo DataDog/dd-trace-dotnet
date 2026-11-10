@@ -280,8 +280,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                         """),
                     1,
-                    38,
-                    40,
+                    20,
+                    22,
                     "quarantined_tests");
             }
         }

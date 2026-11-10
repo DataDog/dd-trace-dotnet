@@ -324,8 +324,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var encoder = new Encoder();
             using var encodedResult = encoder.Encode(returnValues, applySafetyLimits: true);
             var nativeResult = encodedResult.ResultDdwafObject;
-            ulong duration = 0;
-            return new Result(ref nativeResult, returnCode, ref duration, 0);
+            var totals = default(WafRunTotals);
+            return new Result(ref nativeResult, returnCode, ref totals);
         }
 
         private static SecurityInstanceOverride OverrideSecurityInstance()

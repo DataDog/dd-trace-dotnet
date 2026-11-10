@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Tagging;
 
 #nullable enable
@@ -15,10 +16,11 @@ internal sealed class RaspMetricsHelper
     private uint _raspRuleEval;
     private bool _raspTimeout;
 
-    public void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
+    // the totals are running totals of the request, which can be reported out of order
+    public void AddRaspSpanMetrics(ulong totalDuration, ulong totalDurationWithBindings, bool timeout)
     {
-        _raspWafDuration += duration;
-        _raspWafAndBindingsDuration += durationWithBindings;
+        _raspWafDuration = Math.Max(_raspWafDuration, totalDuration);
+        _raspWafAndBindingsDuration = Math.Max(_raspWafAndBindingsDuration, totalDurationWithBindings);
 
         if (timeout)
         {

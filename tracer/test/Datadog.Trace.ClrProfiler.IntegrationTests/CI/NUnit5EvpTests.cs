@@ -97,8 +97,9 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
         var properties = attemptToFix ? """{"quarantined":true,"attempt_to_fix":true}""" : """{"quarantined":true}""";
         const string Filter = "FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent|FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase";
 
-        // Attempt to fix runs each of the three test management tests twice.
+        // Attempt to fix runs the test management tests twice, but stops at the first failure.
         var executions = attemptToFix ? 2 : 1;
+        const int FailedExecutions = 1;
 
         // The adapter receives no individual results from the blocked fixture or from quarantined prerequisites, so it reports exit code zero.
         await ExecuteTestAsync(
@@ -110,7 +111,7 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
                     attemptToFix ? "dependencies_with_attempt_to_fix" : "dependencies_with_quarantine",
                     new MockData(GetSettingsJson("false", "false", "true", attemptToFix ? "2" : "0"), string.Empty, TestManagementJson.Replace("PROPERTIES", properties)),
                     expectedExitCode: 0,
-                    expectedSpans: 3 + (3 * executions),
+                    expectedSpans: 3 + (2 * executions) + FailedExecutions,
                     useSnapshot: false,
                     (in ExecutionData data) =>
                     {
@@ -118,7 +119,7 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
                         foreach (var name in new[] { "PassedPrerequisite", "WarningBeforeFailure", "Failed" })
                         {
                             var testExecutions = tests.Where(t => t.Meta[TestTags.Name] == name).ToArray();
-                            testExecutions.Should().HaveCount(executions);
+                            testExecutions.Should().HaveCount(name == "Failed" ? FailedExecutions : executions);
                             testExecutions.Should().OnlyContain(t => t.Meta[TestTags.TestIsQuarantined] == "true");
                             testExecutions.Should().OnlyContain(t => !attemptToFix || t.Meta[TestTags.TestIsAttemptToFix] == "true");
                         }

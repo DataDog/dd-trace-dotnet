@@ -273,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                         """),
                     1,
-                    ExpectedTestCount + 9 + 9,
+                    ExpectedTestCount,
                     "quarantined_and_disabled");
             }
         }
