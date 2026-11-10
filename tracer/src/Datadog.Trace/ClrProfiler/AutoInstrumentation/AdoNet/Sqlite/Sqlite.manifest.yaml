@@ -2,7 +2,7 @@ _v: 1
 name: Sqlite
 display_name: SQLite
 description: Instruments ADO.NET command execution on Microsoft.Data.Sqlite and System.Data.SQLite provider implementations,
-  with SQL injection protection and database-value taint tracking.
+  with SQL-query RASP checks and IAST data tracking.
 packages:
 - name: Microsoft.Data.Sqlite
 - name: Microsoft.Data.Sqlite.Core

@@ -1,7 +1,7 @@
 _v: 1
 name: ServiceStackRedis
 display_name: ServiceStack.Redis
-description: Instruments Redis commands issued through ServiceStack.Redis.
+description: Instruments Redis commands issued through the ServiceStack.Redis RedisNativeClient.
 packages:
 - name: ServiceStack.Redis
 category:
