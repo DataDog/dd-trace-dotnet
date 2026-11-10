@@ -363,10 +363,10 @@ public class AgentlessConfigurationSourceTests
         {
             [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl] = url,
         }));
-        using var configuredSource = AgentlessConfigurationSource.Create(settings.FeatureFlags, settings.Manager, _ => true, logger);
+        using var configuredSource = AgentlessConfigurationSource.Create(settings.FeatureFlags, settings.Manager, (_, _) => ConfigurationApplyResult.Applied, logger);
         AgentlessEndpoint.TryCreate(null, url, out var endpoint, out _).Should().BeTrue();
         var factory = new TestRequestFactory(_ => throw new IOException("connection reset"));
-        using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), _ => true, waitAsync: NoWait, logger: logger);
+        using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), (_, _) => ConfigurationApplyResult.Applied, waitAsync: NoWait, logger: logger);
 
         await source.PollAsync();
 
@@ -454,10 +454,10 @@ public class AgentlessConfigurationSourceTests
             CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
-            _ =>
+            (_, _) =>
             {
                 reportedAtEachApply.Add(FlagSelectionTests.Errors(logger).Count);
-                return true;
+                return ConfigurationApplyResult.Applied;
             },
             waitAsync: NoWait,
             logger: logger.Object,
@@ -549,7 +549,7 @@ public class AgentlessConfigurationSourceTests
             CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
-            _ => false,
+            (_, _) => ConfigurationApplyResult.Failed,
             waitAsync: NoWait,
             logger: logger.Object,
             flagSelection: Mobile,
@@ -571,7 +571,7 @@ public class AgentlessConfigurationSourceTests
             endpoint,
             factory,
             TimeSpan.FromSeconds(30),
-            _ => true,
+            (_, _) => ConfigurationApplyResult.Applied,
             environment: "a",
             waitAsync: _ =>
             {
@@ -598,6 +598,117 @@ public class AgentlessConfigurationSourceTests
         FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UrlLimitNotSent);
     }
 
+    [Fact]
+    public async Task RequestsANewlyClaimedSelectionWithoutWaitingForThePollInterval()
+    {
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, statusCode: 304),
+            uri => new TestApiRequest(uri, statusCode: 304));
+        var waited = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            (_, _) => ConfigurationApplyResult.Applied,
+            waitAsync: _ =>
+            {
+                waited.TrySetResult(true);
+                return new TaskCompletionSource<bool>().Task;
+            },
+            flagSelection: Mobile,
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        source.Start();
+        (await Task.WhenAny(waited.Task, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(waited.Task);
+
+        source.UpdateFlagSelection(FlagSelection.Create(["beta"], null));
+
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (factory.RequestsSent.Count < 2 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
+
+        factory.RequestsSent.Should().HaveCount(2, "the poll interval never elapses in this test");
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=beta");
+    }
+
+    [Fact]
+    public async Task ASupersededResponseLeavesTheEtagAndReportsNothing()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        Func<Uri, TestApiRequest> response = uri => new TestApiRequest(
+            uri,
+            responseContent: Body,
+            responseHeaders: new() { { "ETag", "\"ufc-v1\"" }, { FlagSelectionDiagnostics.IgnoredHeaderName, "tag_load_failed" } });
+        var factory = new TestRequestFactory(response, response);
+        var requested = new List<FlagSelection>();
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            (_, selection) =>
+            {
+                requested.Add(selection);
+                return ConfigurationApplyResult.Superseded;
+            },
+            waitAsync: NoWait,
+            logger: logger.Object,
+            flagSelection: Mobile,
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        await source.PollAsync();
+        await source.PollAsync();
+
+        requested.Should().Equal(Mobile, Mobile);
+        factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
+        FlagSelectionTests.Errors(logger).Should().BeEmpty();
+        logger.Invocations.Should().NotContain(i => i.Method.Name == nameof(IDatadogLogger.Warning));
+    }
+
+    [Fact]
+    public async Task FailureLogsNeverIncludeTheSelectedValues()
+    {
+        var lines = new List<string>();
+        var sink = new Mock<ILogEventSink>();
+        sink.Setup(x => x.Emit(It.IsAny<LogEvent>())).Callback<LogEvent>(e => lines.Add(e.RenderMessage() + e.Exception));
+        using var serilog = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink.Object).CreateLogger();
+        var logger = new DatadogSerilogLogger(serilog, new NullLogRateLimiter(), null);
+
+        // The .NET Framework transport names the request URI when a request times out.
+        var factory = new TestRequestFactory(
+            uri => throw new OperationCanceledException($"The request to {uri} timed out after 5000ms.", new IOException($"Failed to read {uri.PathAndQuery}")));
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            (_, _) => ConfigurationApplyResult.Applied,
+            waitAsync: NoWait,
+            logger: logger,
+            flagSelection: FlagSelection.Create(["secret team"], ["secret-*"]),
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        await source.PollAsync();
+
+        var output = string.Join("\n", lines);
+        output.Should().Contain("OperationCanceledException: The request to https://").And.Contain("after 3 attempt(s)");
+        output.Should().NotContain("secret").And.NotContain("selected_flag");
+    }
+
+    [Theory]
+    [InlineData("https://ff-cdn.datadoghq.com/rules?selected_flag_tags=secret%20team&selected_flag_key_patterns=secret-%2A")]
+    [InlineData("http://user:token@proxy.internal:8080/flags?sig=abc&selected_flag_tags=secret")]
+    public void RedactUri_RemovesTheQueryInEveryFormATransportPrints(string url)
+    {
+        var uri = new Uri(url);
+        var message = $"a {uri} b {uri.AbsoluteUri} c {uri.OriginalString} d {uri.PathAndQuery} e {Uri.UnescapeDataString(uri.PathAndQuery)}";
+
+        var redacted = AgentlessConfigurationSource.RedactUri(message, uri);
+
+        redacted.Should().NotContain("secret").And.NotContain("token").And.NotContain("sig=");
+        redacted.Should().Contain(AgentlessConfigurationSource.RedactedOrigin(uri));
+    }
+
     private static Dictionary<string, string> IgnoredHeader(string value) => new() { { FlagSelectionDiagnostics.IgnoredHeaderName, value } };
 
     private static AgentlessConfigurationSource CreateSource(
@@ -611,10 +722,10 @@ public class AgentlessConfigurationSourceTests
             CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
-            configuration =>
+            (configuration, _) =>
             {
                 applied.Add(configuration);
-                return true;
+                return ConfigurationApplyResult.Applied;
             },
             environment,
             waitAsync: NoWait,

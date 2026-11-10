@@ -47,7 +47,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private readonly IApiRequestFactory _requestFactory;
     private readonly AgentlessEndpoint _endpoint;
     private readonly TimeSpan _pollInterval;
-    private readonly Func<ServerConfiguration, bool> _applyConfiguration;
+    private readonly Func<ServerConfiguration, FlagSelection, ConfigurationApplyResult> _applyConfiguration;
     private readonly Func<TimeSpan, Task> _waitAsync;
 
     // Not a CancellationTokenSource: cancellation throws, and an exception on the shutdown path can
@@ -70,6 +70,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // changes while that request is in flight.
     private RequestTarget _requestTarget;
 
+    // Completed when a new flag selection is claimed, so the poll loop requests it at once instead of
+    // after the poll interval: the provider that claimed it is waiting for that configuration.
+    // Replaced by the poll loop before each poll.
+    private TaskCompletionSource<bool> _flagSelectionChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     // Only ever touched from the poll loop.
     private bool _hasApplied;
     private bool _malformedPayloadLogged;
@@ -83,7 +88,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         AgentlessEndpoint endpoint,
         IApiRequestFactory requestFactory,
         TimeSpan pollInterval,
-        Func<ServerConfiguration, bool> applyConfiguration,
+        Func<ServerConfiguration, FlagSelection, ConfigurationApplyResult> applyConfiguration,
         string? environment = null,
         TracerSettings.SettingsManager? settingsManager = null,
         Func<TimeSpan, Task>? waitAsync = null,
@@ -122,7 +127,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     public static AgentlessConfigurationSource? Create(
         FeatureFlagsSettings settings,
         TracerSettings.SettingsManager manager,
-        Func<ServerConfiguration, bool> applyConfiguration,
+        Func<ServerConfiguration, FlagSelection, ConfigurationApplyResult> applyConfiguration,
         IDatadogLogger? logger = null,
         FlagSelection? flagSelection = null,
         FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
@@ -211,6 +216,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, current.ConfiguredEnvironment, selection));
         }
 
+        Volatile.Read(ref _flagSelectionChanged).TrySetResult(true);
         _log.Debug("Feature Flags: agentless configuration source now requests a different flag selection");
     }
 
@@ -348,6 +354,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         while (!_shutdown.Task.IsCompleted)
         {
+            // Replaced before the poll reads its target, so a selection claimed during the poll ends the
+            // wait below, and the next poll requests it.
+            var flagSelectionChanged = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Volatile.Write(ref _flagSelectionChanged, flagSelectionChanged);
+
             try
             {
                 await PollAsync().ConfigureAwait(false);
@@ -358,7 +369,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             }
 
             // Fixed delay after completion, so polls never overlap.
-            await WaitAsync(_pollInterval).ConfigureAwait(false);
+            await Task.WhenAny(_waitAsync(_pollInterval), _shutdown.Task, flagSelectionChanged.Task).ConfigureAwait(false);
         }
 
         _log.Debug("AgentlessConfigurationSource::RunAsync -> Exit");
@@ -448,11 +459,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 }
             }
 
-            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null, requestedEnvironment: target.Environment, ignoredSelection);
+            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null, errorDescription: null, requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: ignoredSelection);
         }
         catch (Exception ex)
         {
-            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex, requestedEnvironment: target.Environment, ignoredSelection: null);
+            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex, errorDescription: DescribeError(ex, target.Uri), requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: null);
         }
     }
 
@@ -486,7 +497,15 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             return;
         }
 
-        if (!_applyConfiguration(configuration))
+        var applyResult = _applyConfiguration(configuration, result.RequestedSelection);
+        if (applyResult == ConfigurationApplyResult.Superseded)
+        {
+            // The source already requests the claimed selection, and the ETag of this response
+            // identifies the previous one, so it is left as it is.
+            return;
+        }
+
+        if (applyResult != ConfigurationApplyResult.Applied)
         {
             if (!_applyFailureLogged)
             {
@@ -549,6 +568,36 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     internal static string RedactedOrigin(Uri uri) => $"{uri.Scheme}://{uri.Authority}";
 
     /// <summary>
+    /// Replaces <paramref name="requestUri"/> in <paramref name="message"/> with its origin, in each form
+    /// a transport may print it, and then its query alone, in case the message names only the path.
+    /// </summary>
+    internal static string RedactUri(string message, Uri requestUri)
+    {
+        var origin = RedactedOrigin(requestUri);
+        var redacted = message;
+        foreach (var form in new[] { requestUri.OriginalString, requestUri.AbsoluteUri, requestUri.ToString() })
+        {
+            if (form.Length > 0)
+            {
+                redacted = redacted.Replace(form, origin);
+            }
+        }
+
+        var query = requestUri.Query;
+        if (query.Length > 1)
+        {
+            redacted = redacted.Replace(query, "?<redacted>");
+            var unescapedQuery = Uri.UnescapeDataString(query);
+            if (unescapedQuery != query)
+            {
+                redacted = redacted.Replace(unescapedQuery, "?<redacted>");
+            }
+        }
+
+        return redacted;
+    }
+
+    /// <summary>
     /// Logs the outcome of a single attempt, at debug level, so a customer can tell a DNS failure from
     /// a refused connection, a rejected credential, or a configuration that has not changed. The
     /// warnings below fire once per category, so this is the only place every attempt is visible.
@@ -567,33 +616,32 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 _log.Debug<int, int>("Feature Flags: agentless configuration poll attempt {Attempt}/{MaxAttempts} returned HTTP 304 (unchanged)", attempt, MaxAttempts);
                 break;
             case null:
-                _log.Debug<int, int, string>("Feature Flags: agentless configuration poll attempt {Attempt}/{MaxAttempts} failed: {Error}", attempt, MaxAttempts, DescribeError(result.Error));
+                _log.Debug<int, int, string>("Feature Flags: agentless configuration poll attempt {Attempt}/{MaxAttempts} failed: {Error}", attempt, MaxAttempts, result.ErrorDescription ?? "request was not sent");
                 break;
             default:
                 // The response body is not logged: an error page can echo the request back.
                 _log.Debug<int, int, int>("Feature Flags: agentless configuration poll attempt {Attempt}/{MaxAttempts} returned HTTP {StatusCode}", attempt, MaxAttempts, result.StatusCode.Value);
                 break;
         }
+    }
 
-        // The innermost exception is what names the transport failure, such as a SocketException for
-        // a DNS failure or a refused connection, rather than the generic wrapper around it.
-        static string DescribeError(Exception? error)
+    /// <summary>
+    /// Describes a failed request by the outermost exception and the innermost one, which is what
+    /// names the transport failure, such as a SocketException for a DNS failure or a refused
+    /// connection. The request URI is redacted from the messages: on .NET Framework a timeout names
+    /// it, and its query carries the flag selection, which is never logged.
+    /// </summary>
+    internal static string DescribeError(Exception error, Uri requestUri)
+    {
+        var inner = error;
+        while (inner.InnerException is not null)
         {
-            if (error is null)
-            {
-                return "request was not sent";
-            }
-
-            var inner = error;
-            while (inner.InnerException is not null)
-            {
-                inner = inner.InnerException;
-            }
-
-            return ReferenceEquals(inner, error)
-                       ? $"{error.GetType().Name}: {error.Message}"
-                       : $"{error.GetType().Name}: {error.Message} ({inner.GetType().Name}: {inner.Message})";
+            inner = inner.InnerException;
         }
+
+        return ReferenceEquals(inner, error)
+                   ? $"{error.GetType().Name}: {RedactUri(error.Message, requestUri)}"
+                   : $"{error.GetType().Name}: {RedactUri(error.Message, requestUri)} ({inner.GetType().Name}: {RedactUri(inner.Message, requestUri)})";
     }
 
     /// <summary>
@@ -614,24 +662,23 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             return;
         }
 
-        // An HTTP status when the endpoint answered. When it did not, the exception is logged with the
-        // line, so only its type is named here.
+        // An HTTP status when the endpoint answered. When it did not, the exception is described rather
+        // than logged, because its message can carry the request URI, and with it the flag selection.
         var failure = result.StatusCode switch
         {
             401 or 403 => $"HTTP {result.StatusCode}; verify endpoint authentication",
             not null => $"HTTP {result.StatusCode}",
-            _ => result.Error?.GetType().Name ?? "request was not sent",
+            _ => result.ErrorDescription ?? "request was not sent",
         };
 
         _log.Warning<string, int, string>(
-            result.Error,
             "Feature Flags agentless request to {Origin} failed after {Attempts} attempt(s): {Failure}. See https://docs.datadoghq.com/feature_flags/",
             RedactedOrigin(_endpoint.Uri),
             attempts,
             failure);
     }
 
-    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? requestedEnvironment, MetricTags.FlagSelectionIgnoredReason? ignoredSelection)
+    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? errorDescription, string? requestedEnvironment, FlagSelection requestedSelection, MetricTags.FlagSelectionIgnoredReason? ignoredSelection)
     {
         public int? StatusCode { get; } = statusCode;
 
@@ -642,6 +689,17 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         public string? ParseError { get; } = parseError;
 
         public Exception? Error { get; } = error;
+
+        /// <summary>
+        /// Gets <see cref="Error"/> described with the request URI redacted, or <c>null</c> when the
+        /// request did not fail.
+        /// </summary>
+        public string? ErrorDescription { get; } = errorDescription;
+
+        /// <summary>
+        /// Gets the flag selection the request was made for, whether or not it fit in the URL.
+        /// </summary>
+        public FlagSelection RequestedSelection { get; } = requestedSelection;
 
         /// <summary>
         /// Gets the environment the request sent as <c>dd_env</c>, normalized, or <c>null</c> when

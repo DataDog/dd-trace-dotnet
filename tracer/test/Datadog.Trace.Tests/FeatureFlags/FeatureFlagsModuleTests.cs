@@ -1120,7 +1120,7 @@ public class FeatureFlagsModuleTests
         {
             AgentlessEndpoint.TryCreate(null, "http://localhost/config", out var endpoint, out _).Should().BeTrue();
             var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: "{\"data\":{\"type\":\"universal-flag-configuration\",\"attributes\":" + json + "}}"));
-            using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), module.ApplyConfiguration, logger: logger);
+            using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), module.ApplyAgentlessConfiguration, logger: logger);
             await source.PollAsync();
         }
         else
@@ -1157,7 +1157,7 @@ public class FeatureFlagsModuleTests
         using var module = CreateModule(
             CreateAgentlessSettings(),
             new MockRcmSubscriptionManager(),
-            m => new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), m.ApplyConfiguration, waitAsync: _ => new TaskCompletionSource<bool>().Task, flagSelection: m.ClaimedFlagSelection),
+            m => new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), m.ApplyAgentlessConfiguration, waitAsync: _ => new TaskCompletionSource<bool>().Task, flagSelection: m.ClaimedFlagSelection),
             flagSelectionDiagnostics: NewDiagnostics());
 
         module.SetFlagSelection([" mobile", "beta"], ["checkout.*"]);
@@ -1233,6 +1233,89 @@ public class FeatureFlagsModuleTests
         module.SetFlagSelection(["beta"], null);
 
         module.ClaimedFlagSelection.Should().Be(FlagSelection.Create(["mobile"], null), "the second provider still holds its claim");
+    }
+
+    [Fact]
+    public void SetFlagSelection_AfterTheLastReleaseWithADifferentSelection_WaitsForItsOwnConfiguration()
+    {
+        var mobile = FlagSelection.Create(["mobile"], null);
+        var beta = FlagSelection.Create(["beta"], null);
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, flagSelectionDiagnostics: NewDiagnostics());
+        module.SetFlagSelection(["mobile"], null);
+        module.Activate();
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), mobile).Should().Be(ConfigurationApplyResult.Applied);
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse("the held configuration was loaded for the released selection");
+        source.Updates.Should().Equal(beta);
+
+        // A response to a request made before the claim still names the released selection.
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), mobile).Should().Be(ConfigurationApplyResult.Superseded);
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
+
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), beta).Should().Be(ConfigurationApplyResult.Applied);
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AfterTheLastReleaseWithADifferentSelection_TimesOutOnThePreviousConfiguration()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var settings = CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
+            (ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs, "1"));
+        using var module = CreateModule(settings, new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, NewDiagnostics());
+        module.SetFlagSelection(["mobile"], null);
+        module.Activate();
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), FlagSelection.Create(["mobile"], null));
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+
+        await module.InitializeAsync(CancellationToken.None);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
+        LoggedTemplates(logger).Should().Contain(t => t.Contains("configuration loaded for the previous flag selection"));
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-1", new Dictionary<string, object?> { ["plan"] = "premium" })
+              .Value.Should().Be(true, "the previous configuration is kept until the claimed selection's arrives");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SetFlagSelection_AfterTheLastReleaseWithTheSameSelection_StaysReady(bool withSelection)
+    {
+        string[]? tags = withSelection ? ["mobile"] : null;
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, flagSelectionDiagnostics: NewDiagnostics());
+        module.SetFlagSelection(tags, null);
+        module.Activate();
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), FlagSelection.Create(tags, null)).Should().Be(ConfigurationApplyResult.Applied);
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(tags is null ? null : [" " + tags[0]], []);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+        var initialization = module.InitializeAsync(CancellationToken.None);
+        initialization.IsCompleted.Should().BeTrue();
+        await initialization;
+    }
+
+    [Fact]
+    public void SetFlagSelection_WithADifferentSelectionBeforeAnyConfiguration_DoesNotResetReadiness()
+    {
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), flagSelectionDiagnostics: NewDiagnostics());
+        module.SetFlagSelection(["mobile"], null);
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+        module.Activate();
+
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), FlagSelection.Create(["beta"], null)).Should().Be(ConfigurationApplyResult.Applied);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
     }
 
     [Theory]
