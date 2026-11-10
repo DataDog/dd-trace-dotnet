@@ -15,11 +15,7 @@ setup:
     - CLAUDE.md
     - AGENTS.md
   directories:
-    - .claude/skills/add-lint-rule
-    - .claude/skills/analyze-azdo-build
-    - .claude/skills/azure-functions
-    - .claude/skills/bump-libdatadog
-    - .claude/skills/sdk-review
+    - .claude/skills
 
 default_level: gate
 presets:
