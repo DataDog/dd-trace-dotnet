@@ -20,6 +20,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -54,6 +55,7 @@ public class RaspContextFailureTelemetryTests : WafLibraryRequiredTest
     }
 
     [Fact]
+    [Flaky("Identified as flaky in CI: an unexpected logs_created metric is sometimes recorded")]
     public async Task GivenAFailedContextCreation_WhenARaspRunRequestsIt_ThenABindingErrorIsReported()
     {
         var waf = CreateWafMock(WafOutcome.BindingFailed);

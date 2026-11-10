@@ -202,7 +202,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: execution is { HasNativeRetry: true, IsNativeRetry: true }, testMethodState.Test.StartTime);
                 if (test?.GetTags() is { } testTags)
                 {
-                    if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+                    if (testTags.AutomationExclusions.AllowAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
                         isEfdTest = isEfdTest || testTags.TestIsNew == "true";
                         if (isEfdTest && duration.TotalMinutes >= 5)
@@ -213,14 +213,14 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
                     if (testOptimization.TestManagementFeature?.Enabled == true)
                     {
-                        isAttemptToFix = isAttemptToFix || testTags.IsAttemptToFix == "true";
+                        isAttemptToFix = isAttemptToFix || Common.IsAttemptToFix(testTags);
                     }
 
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
                         // Check if this test will have EFD/ATF retries (based on tags)
-                        var testIsEfd = testTags.TestIsNew == "true";
-                        var testIsAtf = testTags.IsAttemptToFix == "true";
+                        var testIsEfd = testTags.AutomationExclusions.AllowAutoRetry && testTags.TestIsNew == "true";
+                        var testIsAtf = Common.IsAttemptToFix(testTags);
 
                         var retryState = new RetryState
                         {
@@ -285,6 +285,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     {
         var testOptimization = TestOptimization.Instance;
         var testMethod = testMethodState.TestMethod;
+        var exclusions = TestAutomationExclusions.From(testMethod.MethodInfo);
+        if (!exclusions.AllowAutoRetry)
+        {
+            return returnValueList;
+        }
+
         if ((attempt.IsEfdTest || attempt.IsAttemptToFix) && attempt.AllowRetries)
         {
             var remainingRetries = 0;
@@ -324,7 +330,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
 
                 // Calculate final results
-                returnValueList = GetFinalResults(results);
+                returnValueList = GetFinalResults(results, keepFailure: attempt.IsAttemptToFix && !exclusions.AllowFailureSuppression);
             }
         }
         else if (testOptimization.FlakyRetryFeature?.Enabled == true && attempt.ResultStatus == TestStatus.Fail)
@@ -594,12 +600,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             if (execution is not { HasNativeRetry: true } && TestOptimization.Instance.TestManagementFeature?.Enabled == true && testTags is not null)
             {
-                var isQuarantined = testTags.IsQuarantined == "true";
-                var isAttemptToFix = testTags.IsAttemptToFix == "true";
-                var isDisabled = testTags.IsDisabled == "true";
+                var isQuarantined = testTags.AutomationExclusions.AllowFailureSuppression && testTags.IsQuarantined == "true";
+                var isAttemptToFix = testTags.AutomationExclusions.AllowFailureSuppression && Common.IsAttemptToFix(testTags);
+                var isDisabled = testTags.AutomationExclusions.AllowFailureSuppression && testTags.IsDisabled == "true";
 
-                // Only mask outcome on final execution for ATF
-                // Quarantined and disabled tests always mask outcome
+                // Only mask outcome on final execution for ATF.
+                // Failure protection applies independently of retry eligibility.
                 if (isQuarantined || isDisabled || (isAttemptToFix && (retryState.IsLastRetry || (!retryState.IsARetry && !retryState.RetriesUnconditionally))))
                 {
                     shouldMaskOutcome = true;
@@ -714,7 +720,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             // Initial execution - it's final if no retries will happen
             // For EFD/ATF, retries will always happen
             // For ATR, retries happen only if test fails and ATR is enabled
-            var atrEnabled = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+            var atrEnabled = testTags.AutomationExclusions.AllowAutoRetry && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
             var willHaveAtrRetries = atrEnabled && testStatus == TestStatus.Fail;
             isFinalExecution = !retryState.RetriesUnconditionally && !willHaveAtrRetries;
         }
@@ -775,7 +781,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
     }
 
-    private static IList GetFinalResults(List<IList> executionStatuses)
+    private static IList GetFinalResults(List<IList> executionStatuses, bool keepFailure = false)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
@@ -818,7 +824,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         lstExceptions.Add(testFailureException);
                     }
 
-                    if (resultsCount++ == 0 || testResult.Outcome == UnitTestOutcome.Passed)
+                    var replacesFinalResult = keepFailure
+                                                  ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail
+                                                  : testResult.Outcome == UnitTestOutcome.Passed;
+                    if (resultsCount++ == 0 || replacesFinalResult)
                     {
                         finalResult = testResult;
                     }
