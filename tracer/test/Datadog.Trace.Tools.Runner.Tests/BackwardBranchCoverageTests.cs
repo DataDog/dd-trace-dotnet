@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Coverage;
@@ -12,26 +12,39 @@ using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Coverage.Collector;
 using FluentAssertions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Xunit;
-using MethodAttributes = Mono.Cecil.MethodAttributes;
-using ParameterAttributes = Mono.Cecil.ParameterAttributes;
-using TypeAttributes = Mono.Cecil.TypeAttributes;
+using CecilAssemblyDefinition = Mono.Cecil.AssemblyDefinition;
+using CecilReaderParameters = Mono.Cecil.ReaderParameters;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 [Collection(nameof(CoverageReporterHandlerCollection))]
 public class BackwardBranchCoverageTests
 {
-    private const int LoopLine = 42;
-
     // F# compiles `let rec loop n = ...` without other visible sequence points into a loop that branches back to the
-    // first instruction, which is also the method's only visible sequence point.
+    // first instruction, which is also the method's only visible sequence point. In C#, an optimized build where
+    // everything but the loop's first statement is hidden produces the same shape.
+    private const string FixtureSource = """
+        public static class BackwardBranchFixture
+        {
+            public static int Loop(int value)
+        #line hidden
+            {
+        #line default
+            start: value--;
+        #line hidden
+                if (value != 0) goto start;
+                return value;
+            }
+        }
+        """;
+
+    private static readonly int LoopLine = FixtureSource.Split('\n').ToList().FindIndex(line => line.Contains("start: value--;")) + 1;
+
     [Theory]
-    [InlineData("LineExecution")]
-    [InlineData("LineCallCount")]
-    public void SingleSequencePointLoopToFirstInstructionCanExecuteAndRecordCoverage(string coverageMode)
+    [CombinatorialData]
+    public void SingleSequencePointLoopToFirstInstructionCanExecuteAndRecordCoverage(
+        [CombinatorialValues("LineExecution", "LineCallCount")] string coverageMode)
     {
         var directory = Path.Combine(Path.GetTempPath(), "coverage-backward-branch-" + Path.GetRandomFileName());
         Directory.CreateDirectory(directory);
@@ -39,7 +52,8 @@ public class BackwardBranchCoverageTests
         var previousHandler = CoverageReporter.Handler;
         try
         {
-            WriteFixture(path);
+            TestAssemblyCompiler.CompileCSharp(path, optimize: true, ("BackwardBranchFixture.cs", FixtureSource));
+            AssertFixtureLoopsBackToItsOnlySequencePoint(path);
             RuntimeHelpers.PrepareMethod(GetLoop(Assembly.Load(File.ReadAllBytes(path))).MethodHandle);
 
             var settings = new CoverageSettings(null, string.Empty);
@@ -75,37 +89,17 @@ public class BackwardBranchCoverageTests
     private static MethodInfo GetLoop(Assembly assembly)
         => assembly.GetType("BackwardBranchFixture", throwOnError: true)!.GetMethod("Loop", BindingFlags.Static | BindingFlags.Public)!;
 
-    private static void WriteFixture(string path)
+    // The fix only matters for this shape; fail loudly if a compiler change stops producing it.
+    private static void AssertFixtureLoopsBackToItsOnlySequencePoint(string assemblyPath)
     {
-        File.Copy("CoverageRewriterAssembly.dll", path);
-        File.Copy("CoverageRewriterAssembly.pdb", Path.ChangeExtension(path, ".pdb"));
-        using var assembly = AssemblyDefinition.ReadAssembly(path, new ReaderParameters { ReadSymbols = true, InMemory = true });
-        var module = assembly.MainModule;
-        var type = new TypeDefinition(string.Empty, "BackwardBranchFixture", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class, module.TypeSystem.Object);
-        module.Types.Add(type);
+        using var assembly = CecilAssemblyDefinition.ReadAssembly(assemblyPath, new CecilReaderParameters { ReadSymbols = true, InMemory = true });
+        var loop = assembly.MainModule.GetType("BackwardBranchFixture").Methods.Single(method => method.Name == "Loop");
+        var firstInstruction = loop.Body.Instructions[0];
 
-        // static int Loop(int value) { L0: value--; if (value != 0) goto L0; return value; }
-        var loop = new MethodDefinition("Loop", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, module.TypeSystem.Int32);
-        loop.Parameters.Add(new ParameterDefinition("value", ParameterAttributes.None, module.TypeSystem.Int32));
-        type.Methods.Add(loop);
-        var il = loop.Body.GetILProcessor();
-        var start = il.Create(OpCodes.Ldarg_0);
-        il.Append(start);
-        il.Emit(OpCodes.Ldc_I4_1);
-        il.Emit(OpCodes.Sub);
-        il.Emit(OpCodes.Starg, loop.Parameters[0]);
-        il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Brtrue, start);
-        il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Ret);
-        loop.DebugInformation.SequencePoints.Add(new SequencePoint(start, new Document("BackwardBranchFixture.fs"))
-        {
-            StartLine = LoopLine,
-            EndLine = LoopLine,
-            StartColumn = 1,
-            EndColumn = 40,
-        });
-
-        AssemblyProcessor.WriteTargetAssembly(assembly, path, strongNameKeyBlob: null);
+        loop.DebugInformation.SequencePoints.Where(sequencePoint => !sequencePoint.IsHidden)
+            .Should().ContainSingle()
+            .Which.Offset.Should().Be(firstInstruction.Offset);
+        loop.Body.HasExceptionHandlers.Should().BeFalse();
+        loop.Body.Instructions.Should().Contain(instruction => instruction.Operand == firstInstruction);
     }
 }
