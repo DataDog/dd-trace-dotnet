@@ -100,7 +100,7 @@ By default, `dotnet publish` copies the files for every supported platform and r
 
 | Property | Description |
 |----------|-------------|
-| `DatadogPlatforms` | **Required.** One or more of `win-x64`, `win-x86`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `osx-x64`, `osx-arm64`, separated by `;`. Use the `linux-musl-*` values for Alpine Linux. |
+| `DatadogPlatforms` | When set, attempts to strip unused binaries. One or more of `win-x64`, `win-x86`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `osx-x64`, `osx-arm64`, separated by `;`. Use the `linux-musl-*` values for Alpine Linux. |
 | `DatadogRuntimes` | Optional. One or more target frameworks for the runtime(s) the application runs on, for example `net48` or `net6.0;net8.0`, separated by `;`. Defaults to the target framework being published. |
 
 Nothing is inferred from the runtime identifier or target framework. If a platform or runtime is missing from these properties, automatic instrumentation will not work there. In particular, if the application can roll forward to a newer .NET version than it targets (for example, by setting `RollForward`), include that version in `DatadogRuntimes`.
