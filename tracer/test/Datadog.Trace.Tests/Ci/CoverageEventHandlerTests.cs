@@ -178,7 +178,7 @@ public class CoverageEventHandlerTests
             handler.EndSession(handle);
 
             module.FilesLines.Should().Be(IntPtr.Zero);
-            ModuleValue.IsPooledContextBuffer(pointer).Should().BeTrue();
+            ModuleValue.ContextBuffers.Contains(pointer).Should().BeTrue();
             resumeFrame.Set();
             await frame;
         }
@@ -202,8 +202,10 @@ public class CoverageEventHandlerTests
 
             var pointer = (byte*)CoverageReporter<ClosedGlobalMetadata>.GetFileCounter(0);
             pointer[0] = 1;
+            var nextPointer = (byte*)CoverageReporter<ClosedGlobalMetadata>.GetFileCounter(0);
 
-            handler.IncompleteReasons.Should().Equal(GlobalCoverageFailureReason.ProbeDataIncomplete);
+            ((IntPtr)nextPointer).Should().Be((IntPtr)pointer, "every failed probe of a module shares its discard buffer");
+            handler.IncompleteReasons.Should().Equal(GlobalCoverageFailureReason.ProbeDataIncomplete, GlobalCoverageFailureReason.ProbeDataIncomplete);
         }
         finally
         {
