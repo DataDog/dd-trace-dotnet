@@ -4,32 +4,49 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Coverage.Collector;
 using FluentAssertions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
-using FieldAttributes = Mono.Cecil.FieldAttributes;
-using MethodAttributes = Mono.Cecil.MethodAttributes;
-using TypeAttributes = Mono.Cecil.TypeAttributes;
+using CecilAssemblyDefinition = Mono.Cecil.AssemblyDefinition;
+using CecilReaderParameters = Mono.Cecil.ReaderParameters;
+using ExceptionHandlerType = Mono.Cecil.Cil.ExceptionHandlerType;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 [Collection(nameof(FinalizerCoverageCollection))]
 public class FinalizerCoverageTests
 {
-    private const int FinalizerLine = 42;
+    // Compiled when the test runs so it follows what the C# compiler emits: the finalizer becomes
+    // `try { body } finally { base.Finalize(); }` and its only visible sequence point is the try entry.
+    private const string FixtureSource = """
+        public class FinalizerFixture
+        {
+            public static int CleanupCount;
+
+            ~FinalizerFixture() => CleanupCount++;
+        }
+        """;
+
+    private static readonly int FinalizerLine = FixtureSource.Split('\n').ToList().FindIndex(line => line.Contains("~FinalizerFixture()")) + 1;
 
     [Theory]
-    [InlineData("LineExecution")]
-    [InlineData("LineCallCount")]
-    public void SingleSequencePointFinalizerCanExecuteAndRecordCoverage(string coverageMode)
+    [CombinatorialData]
+    public void ExpressionBodiedFinalizerCanExecuteAndRecordCoverage(
+        bool optimize,
+        [CombinatorialValues("LineExecution", "LineCallCount")] string coverageMode)
     {
         var directory = Path.Combine(Path.GetTempPath(), "coverage-finalizer-" + Path.GetRandomFileName());
         Directory.CreateDirectory(directory);
@@ -37,7 +54,8 @@ public class FinalizerCoverageTests
         var previousHandler = CoverageReporter.Handler;
         try
         {
-            WriteFixture(path);
+            CompileFixture(path, optimize);
+            AssertFixtureNeedsTheCountersLocal(path);
             var original = Assembly.Load(File.ReadAllBytes(path));
             RuntimeHelpers.PrepareMethod(GetFinalizer(original).MethodHandle);
 
@@ -79,59 +97,42 @@ public class FinalizerCoverageTests
         => assembly.GetType("FinalizerFixture", throwOnError: true)!.GetMethod(
             "Finalize", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)!;
 
-    private static void WriteFixture(string path)
+    // The fix only matters for this shape; fail loudly if a compiler change stops producing it.
+    private static void AssertFixtureNeedsTheCountersLocal(string assemblyPath)
     {
-        File.Copy("CoverageRewriterAssembly.dll", path);
-        File.Copy("CoverageRewriterAssembly.pdb", Path.ChangeExtension(path, ".pdb"));
-        using var assembly = AssemblyDefinition.ReadAssembly(
-            path, new ReaderParameters { ReadSymbols = true, InMemory = true });
-        var module = assembly.MainModule;
-        var type = new TypeDefinition(string.Empty, "FinalizerFixture", TypeAttributes.Public | TypeAttributes.Class, module.TypeSystem.Object);
-        module.Types.Add(type);
-        var count = new FieldDefinition("CleanupCount", FieldAttributes.Public | FieldAttributes.Static, module.TypeSystem.Int32);
-        type.Fields.Add(count);
+        using var assembly = CecilAssemblyDefinition.ReadAssembly(assemblyPath, new CecilReaderParameters { ReadSymbols = true, InMemory = true });
+        var finalizer = assembly.MainModule.GetType("FinalizerFixture").Methods.Single(method => method.Name == "Finalize");
+        var firstInstruction = finalizer.Body.Instructions[0];
 
-        var constructor = new MethodDefinition(
-            ".ctor",
-            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-            module.TypeSystem.Void);
-        type.Methods.Add(constructor);
-        var constructorIl = constructor.Body.GetILProcessor();
-        constructorIl.Emit(OpCodes.Ldarg_0);
-        constructorIl.Emit(OpCodes.Call, module.ImportReference(typeof(object).GetConstructor(Type.EmptyTypes)!));
-        constructorIl.Emit(OpCodes.Ret);
+        finalizer.DebugInformation.SequencePoints.Where(sequencePoint => !sequencePoint.IsHidden)
+                 .Should().ContainSingle()
+                 .Which.Offset.Should().Be(firstInstruction.Offset);
+        finalizer.Body.ExceptionHandlers
+                 .Should().ContainSingle(handler => handler.HandlerType == ExceptionHandlerType.Finally && handler.TryStart == firstInstruction);
+    }
 
-        var finalizer = new MethodDefinition("Finalize", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, module.TypeSystem.Void);
-        type.Methods.Add(finalizer);
-        var il = finalizer.Body.GetILProcessor();
-        var start = il.Create(OpCodes.Ldsfld, count);
-        var handlerStart = il.Create(OpCodes.Ldarg_0);
-        var end = il.Create(OpCodes.Ret);
-        il.Append(start);
-        il.Emit(OpCodes.Ldc_I4_1);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stsfld, count);
-        il.Emit(OpCodes.Leave, end);
-        il.Append(handlerStart);
-        il.Emit(OpCodes.Call, module.ImportReference(typeof(object).GetMethod("Finalize", BindingFlags.Instance | BindingFlags.NonPublic)!));
-        il.Emit(OpCodes.Endfinally);
-        il.Append(end);
-        finalizer.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally)
-        {
-            TryStart = start,
-            TryEnd = handlerStart,
-            HandlerStart = handlerStart,
-            HandlerEnd = end,
-        });
+    private static void CompileFixture(string assemblyPath, bool optimize)
+    {
+        var compilation = CSharpCompilation.Create(
+            Path.GetFileNameWithoutExtension(assemblyPath),
+            [CSharpSyntaxTree.ParseText(SourceText.From(FixtureSource, Encoding.UTF8), path: "FinalizerFixture.cs")],
+            GetFrameworkReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimizationLevel: optimize ? OptimizationLevel.Release : OptimizationLevel.Debug));
 
-        // Expression-bodied finalizers have one visible point at the try entry.
-        finalizer.DebugInformation.SequencePoints.Add(new SequencePoint(start, new Document("FinalizerFixture.cs"))
-        {
-            StartLine = FinalizerLine,
-            EndLine = FinalizerLine,
-            StartColumn = 1,
-            EndColumn = 40,
-        });
-        AssemblyProcessor.WriteTargetAssembly(assembly, path, strongNameKeyBlob: null);
+        var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+        using var peStream = File.Create(assemblyPath);
+        using var pdbStream = File.Create(pdbPath);
+        var result = compilation.Emit(peStream, pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: pdbPath));
+        result.Success.Should().BeTrue(string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
+    }
+
+    private static IEnumerable<MetadataReference> GetFrameworkReferences()
+    {
+        var frameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+        return ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+              .Split(Path.PathSeparator)
+              .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                             string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
+              .Select(path => MetadataReference.CreateFromFile(path));
     }
 }
