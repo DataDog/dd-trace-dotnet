@@ -1,7 +1,8 @@
 _v: 1
 name: CosmosDb
 display_name: Azure Cosmos DB
-description: Instruments Azure Cosmos DB queries and CRUD operations made with the Microsoft.Azure.Cosmos client.
+description: Instruments Azure Cosmos DB query iteration, reads, and mutations through the dedicated Microsoft.Azure.Cosmos
+  client.
 packages:
 - name: Microsoft.Azure.Cosmos
 category:

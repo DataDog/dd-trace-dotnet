@@ -1,7 +1,7 @@
 _v: 1
 name: ElasticsearchNet
 display_name: Elasticsearch.Net
-description: Instruments Elasticsearch client operations performed through Elasticsearch.Net.
+description: Instruments Elasticsearch .NET client document, search, index, cluster, and administrative requests.
 packages:
 - name: Elasticsearch.Net
 category:
