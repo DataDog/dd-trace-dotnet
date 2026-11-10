@@ -1,0 +1,13 @@
+_v: 1
+name: RabbitMQ
+display_name: RabbitMQ
+description: Instruments RabbitMQ.Client message publication and consumption plus exchange and queue management, with trace-context
+  propagation and optional Data Streams checkpoints.
+packages:
+- name: RabbitMQ.Client
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- rabbitmq
+creation_date: '2020-12-18'

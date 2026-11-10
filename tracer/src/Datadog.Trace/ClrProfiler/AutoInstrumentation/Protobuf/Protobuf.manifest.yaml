@@ -1,0 +1,11 @@
+_v: 1
+name: Protobuf
+display_name: Google Protobuf
+description: When Data Streams schema extraction is enabled, instruments supported Google Protobuf message serialization and
+  deserialization to enrich active spans with schema metadata and rate-limited schema definitions.
+packages:
+- name: Google.Protobuf
+category:
+- serialization
+systems: []
+creation_date: '2025-02-07'

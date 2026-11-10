@@ -1,0 +1,14 @@
+_v: 1
+name: AzureEventGrid
+display_name: Azure Event Grid
+description: Instruments Azure Event Grid event publishing through Azure SDK publisher and sender clients and event consumption
+  through Azure Functions Event Grid triggers.
+packages:
+- name: Azure.Messaging.EventGrid
+- name: Azure.Messaging.EventGrid.Namespaces
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- eventgrid
+creation_date: '2026-10-20'

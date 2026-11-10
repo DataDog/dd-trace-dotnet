@@ -1,0 +1,10 @@
+_v: 1
+name: Quartz
+display_name: Quartz.NET
+description: Instruments Quartz.NET job scheduling, job execution, vetoing, and job-store operations.
+packages:
+- name: Quartz
+category:
+- task.execution
+systems: []
+creation_date: '2025-10-03'
