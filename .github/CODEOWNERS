@@ -377,4 +377,4 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/coverage.*.xml @DataDog/apm-lang-platform-dotnet @DataDog/ci-app-libraries-dotnet
 
 # Instrumentation manifests
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/**/*.manifest.yaml @DataDog/apm-idm-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/**/*.manifest.yaml @DataDog/apm-idm
