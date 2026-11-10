@@ -103,6 +103,9 @@ await OpenFeature.Api.Instance.SetProviderAsync(provider);
 - The selection is copied when the provider is constructed. The first provider constructed in a
   process decides the selection for every provider in it, until all of them have been shut down
   or disposed; a later provider with a different selection logs a warning and uses the first one.
+  To change the selection, shut down or dispose every existing provider before you construct the
+  new one. OpenFeature constructs a replacement provider before it shuts down the old one, so
+  swapping providers keeps the first selection.
 - The selection applies to the default agentless configuration source. With the Remote Config
   source, every flag loads and a warning is logged.
 - This needs tracer 3.58.0 or later. With an older tracer, the selection is not sent and every flag
