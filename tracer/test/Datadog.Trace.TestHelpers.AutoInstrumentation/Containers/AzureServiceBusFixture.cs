@@ -52,7 +52,7 @@ public class AzureServiceBusFixture : ContainerFixture
                                    Wait.ForUnixContainer()
                                        .UntilMessageIsLogged(
                                             "SQL Server is now ready for client connections",
-                                            strategy => strategy.WithTimeout(TimeSpan.FromMinutes(2))))
+                                            strategy => strategy.WithTimeout(TimeSpan.FromMinutes(5))))
                               .Build();
 
         var configPath = Path.Combine(TestHelpers.EnvironmentTools.GetSolutionDirectory(), "docker", "servicebus-emulator-config.json");
