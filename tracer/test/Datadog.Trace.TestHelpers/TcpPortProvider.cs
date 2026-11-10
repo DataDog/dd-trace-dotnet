@@ -26,7 +26,7 @@ namespace Datadog.Trace.TestHelpers
         public static HttpListener StartHttpListenerOnFreePort(out string baseUrl)
         {
             var listener = StartHttpListener(
-                port => new[] { $"http://127.0.0.1:{port}/" },
+                port => [$"http://127.0.0.1:{port}/"],
                 out var port);
             baseUrl = $"http://127.0.0.1:{port}/";
             return listener;

@@ -129,11 +129,11 @@ namespace Datadog.Profiler.IntegrationTests
             private void Initialize(int retries)
             {
                 _listener = TcpPortProvider.StartHttpListener(
-                    port => new[]
-                    {
+                    port =>
+                    [
                         $"http://127.0.0.1:{port}/",
                         $"http://localhost:{port}/",
-                    },
+                    ],
                     out var boundPort,
                     maxAttempts: retries);
                 Port = boundPort;

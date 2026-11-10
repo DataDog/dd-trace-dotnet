@@ -1183,11 +1183,11 @@ namespace Datadog.Trace.TestHelpers
                     _listener = TcpPortProvider.StartHttpListener(
                         p =>
                         {
-                            var prefixes = new List<string>
-                            {
+                            List<string> prefixes =
+                            [
                                 $"http://127.0.0.1:{p}/",
                                 $"http://localhost:{p}/",
-                            };
+                            ];
 
                             var containerHostname = EnvironmentHelpers.GetEnvironmentVariable("CONTAINER_HOSTNAME");
                             if (containerHostname != null)

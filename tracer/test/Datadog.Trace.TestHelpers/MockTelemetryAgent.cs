@@ -34,11 +34,11 @@ namespace Datadog.Trace.TestHelpers
         public MockTelemetryAgent(int port = 8524, int retries = 5)
         {
             _listener = TcpPortProvider.StartHttpListener(
-                p => new[]
-                {
+                p =>
+                [
                     $"http://127.0.0.1:{p}/",
                     $"http://localhost:{p}/",
-                },
+                ],
                 out var boundPort,
                 port,
                 retries);

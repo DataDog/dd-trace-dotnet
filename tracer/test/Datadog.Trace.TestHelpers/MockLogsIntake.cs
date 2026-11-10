@@ -32,15 +32,15 @@ namespace Datadog.Trace.TestHelpers
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _listener = TcpPortProvider.StartHttpListener(
-                port => new[]
-                {
+                port =>
+                [
                     $"http://127.0.0.1:{port}/",
                     $"http://localhost:{port}/",
                     $"http://127.0.0.1:{port}/v1/input/",
                     $"http://localhost:{port}/v1/input/",
                     $"http://127.0.0.1:{port}/api/v2/logs/",
                     $"http://localhost:{port}/api/v2/logs/",
-                },
+                ],
                 out var boundPort,
                 initialPort,
                 retries);
