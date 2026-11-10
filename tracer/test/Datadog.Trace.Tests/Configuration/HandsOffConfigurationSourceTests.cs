@@ -20,7 +20,7 @@ public class HandsOffConfigurationSourceTests
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().BeNull();
         result.ErrorMessage.Should().NotBeNull();
-        result.ErrorMessage.Should().Be("apm_configuration_default: invalid type: string \"DD_TRACE_DEBUG': true, DD_ENV: \", expected struct ConfigMap(HashMap<String, String>) at line 3 column 3");
+        result.ErrorMessage.Should().Be("apm_configuration_default: invalid type: string \"DD_TRACE_DEBUG': true, DD_ENV: \", expected a string-to-string map at line 3 column 3");
     }
 
     [Fact]
