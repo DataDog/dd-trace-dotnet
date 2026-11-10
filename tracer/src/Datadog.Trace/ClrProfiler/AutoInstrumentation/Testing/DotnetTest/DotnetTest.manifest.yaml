@@ -1,0 +1,11 @@
+_v: 1
+name: DotnetTest
+display_name: dotnet test
+description: Instruments dotnet test and VSTest runs with CI Visibility test sessions and optional code coverage collection.
+packages:
+- name: coverlet.collector
+- name: coverlet.msbuild
+category:
+- test.execution
+systems: []
+creation_date: '2024-04-30'

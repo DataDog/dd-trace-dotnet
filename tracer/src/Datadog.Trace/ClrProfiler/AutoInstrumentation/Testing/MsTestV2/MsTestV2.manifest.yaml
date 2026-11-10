@@ -1,0 +1,13 @@
+_v: 1
+name: MsTestV2
+display_name: MSTest V2
+description: Instruments MSTest V2 test execution and lifecycle hooks, emitting CI Visibility telemetry for test modules,
+  suites, and individual test outcomes, including skips and retries.
+packages:
+- name: MSTest.TestAdapter
+- name: MSTest.TestFramework
+- name: Microsoft.VisualStudio.TestPlatform
+category:
+- test.execution
+systems: []
+creation_date: '2021-02-02'

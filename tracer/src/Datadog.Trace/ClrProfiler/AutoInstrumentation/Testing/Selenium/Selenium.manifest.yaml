@@ -1,0 +1,11 @@
+_v: 1
+name: Selenium
+display_name: Selenium
+description: Instruments Selenium WebDriver browser-test navigation to inject CI Visibility test context, tag the active test
+  with browser metadata, and flush browser RUM sessions.
+packages:
+- name: Selenium.WebDriver
+category:
+- other
+systems: []
+creation_date: '2024-05-01'
