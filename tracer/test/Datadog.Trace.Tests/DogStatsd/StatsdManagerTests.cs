@@ -729,35 +729,39 @@ public class StatsdManagerTests
 
             var tasks = new[]
             {
-                Task.Factory.StartNew(() =>
-                {
-                    // Update the environment continuously
-                    var counter = 0;
-                    while (!cts.Token.IsCancellationRequested)
+                Task.Factory.StartNew(
+                    () =>
                     {
-                        tracerSettings.Manager.UpdateManualConfigurationSettings(
-                            new ManualInstrumentationConfigurationSource(
-                                new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
-                                useDefaultSources: true),
-                            NullConfigurationTelemetry.Instance);
-                    }
-                }, TaskCreationOptions.LongRunning),
-
-                Task.Factory.StartNew(() =>
-                {
-                    while (!cts.Token.IsCancellationRequested)
-                    {
-                        using var lease = manager.TryGetClientLease();
-                        if (lease.Client != null)
+                        // Update the environment continuously
+                        var counter = 0;
+                        while (!cts.Token.IsCancellationRequested)
                         {
-                            // Check if client is disposed WHILE we hold the lease
-                            if (((MockStatsdClient)lease.Client).DisposeCount > 0)
+                            tracerSettings.Manager.UpdateManualConfigurationSettings(
+                                new ManualInstrumentationConfigurationSource(
+                                    new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
+                                    useDefaultSources: true),
+                                NullConfigurationTelemetry.Instance);
+                        }
+                    },
+                    TaskCreationOptions.LongRunning),
+
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            using var lease = manager.TryGetClientLease();
+                            if (lease.Client != null)
                             {
-                                Interlocked.Increment(ref disposedClientReturned);
+                                // Check if client is disposed WHILE we hold the lease
+                                if (((MockStatsdClient)lease.Client).DisposeCount > 0)
+                                {
+                                    Interlocked.Increment(ref disposedClientReturned);
+                                }
                             }
                         }
-                    }
-                }, TaskCreationOptions.LongRunning)
+                    },
+                    TaskCreationOptions.LongRunning)
             };
 
             await Task.Delay(500);
