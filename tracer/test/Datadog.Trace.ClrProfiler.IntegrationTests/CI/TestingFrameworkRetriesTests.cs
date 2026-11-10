@@ -132,7 +132,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                 arguments: GetTestFilterArguments($"{AutomationExclusionsSuite}.{testName}")));
     }
 
-    // Failure protection must keep a failed Attempt to Fix blocking even when a later attempt passes.
+    // The sample passes and then fails: Attempt to Fix stops there, and the earlier pass must not hide the failure.
     public virtual async Task ProtectedAttemptToFixFailure(string packageVersion)
     {
         const string testName = "ProtectedFlakyFailure";
@@ -147,7 +147,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                 nameof(ProtectedAttemptToFixFailure),
                 new MockData(GetSettingsJson("false", "false", "true", "3"), string.Empty, managementTests),
                 expectedExitCode: 1,
-                expectedSpans: 3,
+                expectedSpans: 2,
                 useSnapshot: false,
                 validateAction: (in ExecutionData data) =>
                 {
@@ -155,7 +155,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                     data.Tests.Should().OnlyContain(test => test.Meta[TestTags.TestIsAttemptToFix] == "true");
                     data.Tests.Should().OnlyContain(test => test.Meta[TestTags.TestPreventFailureSuppression] == "true");
                     data.Tests.Count(test => test.Meta[TestTags.Status] == TestTags.StatusFail).Should().Be(1);
-                    data.Tests.Count(test => test.Meta[TestTags.Status] == TestTags.StatusPass).Should().Be(2);
+                    data.Tests.Count(test => test.Meta[TestTags.Status] == TestTags.StatusPass).Should().Be(1);
 
                     var finalExecution = data.Tests.Should().ContainSingle(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Subject;
                     finalExecution.Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusFail);

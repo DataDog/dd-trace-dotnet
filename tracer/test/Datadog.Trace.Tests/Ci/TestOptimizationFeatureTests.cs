@@ -2040,26 +2040,18 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void NUnitAttemptToFixDoesNotHidePassingPrerequisiteResult(bool quarantined, bool disabled)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NUnitAttemptToFixStopsAtTheFirstFailureAndKeepsTheResult(bool failed)
     {
-        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
-        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
-        var prerequisite = new NUnitTestStub(method, "prerequisite", [], parent: fixture);
-        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
-        fixture.Tests = new[] { prerequisite, dependent };
-        var properties = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(quarantined, disabled, attemptToFix: true);
-        var behavior = new NUnitAttemptToFixRetryBehavior(CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory()).Object, properties);
-        var prerequisiteResult = CreateNUnitResult(prerequisite, NUnitTestStatus.Passed);
-        var dependentResult = CreateNUnitResult(dependent, NUnitTestStatus.Passed);
-        var ignoredState = dependentResult.Object.ResultState.StaticIgnored;
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static);
+        var test = new NUnitTestStub(method, "test", []);
+        var behavior = new NUnitAttemptToFixRetryBehavior(CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory()).Object);
+        var result = CreateNUnitResult(test, failed ? NUnitTestStatus.Failed : NUnitTestStatus.Passed);
 
-        behavior.ResultChanges(prerequisiteResult.Object);
-        behavior.ResultChanges(dependentResult.Object);
-
-        prerequisiteResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        dependentResult.Verify(x => x.SetResult(ignoredState, It.IsAny<string>(), string.Empty), Times.Once);
+        behavior.ShouldRetry(result.Object).Should().Be(!failed);
+        behavior.ResultChanges(result.Object).Should().BeSameAs(result.Object);
+        result.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -2788,12 +2780,12 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Theory]
-    [InlineData(nameof(ProtectedTest), true, false, true, false, true, "Failed", 3, "attempt_to_fix")]
-    [InlineData(nameof(ProtectedTest), true, true, false, false, true, "Failed", 3, "attempt_to_fix")]
-    [InlineData(nameof(ProtectedTest), true, true, true, false, true, "Failed", 3, "attempt_to_fix")]
-    [InlineData(nameof(ProtectedTest), true, true, true, true, false, "Failed", 3, "attempt_to_fix")]
+    [InlineData(nameof(ProtectedTest), true, false, true, false, true, "Failed", 1, null)]
+    [InlineData(nameof(ProtectedTest), true, true, false, false, true, "Failed", 1, null)]
+    [InlineData(nameof(ProtectedTest), true, true, true, false, true, "Failed", 1, null)]
+    [InlineData(nameof(ProtectedTest), true, true, true, true, false, "Failed", 2, "attempt_to_fix")]
     [InlineData(nameof(ProtectedTest), true, true, true, true, true, "Passed", 3, "attempt_to_fix")]
-    [InlineData(nameof(OrdinaryTest), true, true, true, false, true, "Passed", 3, "attempt_to_fix")]
+    [InlineData(nameof(OrdinaryTest), true, true, true, false, true, "Failed", 1, null)]
     [InlineData(nameof(ProtectedTest), false, false, true, false, true, "Passed", 2, "atr")]
     [InlineData(nameof(ProtectedTest), false, true, true, false, true, "Passed", 2, "efd")]
     [InlineData(nameof(ExcludedTest), true, true, true, false, true, "Failed", 1, null)]
@@ -2872,27 +2864,25 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
-    // Without native retries, MSTest receives the first result unless an attempt passed, so masking only changes the
-    // last attempt. With native retries, masking changes the selected result instead.
+    // Every case is also quarantined: Attempt to Fix failures are never suppressed and stop further Datadog retries.
     [Theory]
-    [InlineData(false, false, false, false, "Failed", "Ignored")]
-    [InlineData(false, true, false, false, "Failed", "Failed")]
-    [InlineData(false, false, false, true, "Failed", "Ignored")]
-    [InlineData(false, true, false, true, "Failed", "Passed")]
-    [InlineData(true, false, false, false, "Ignored", "Failed")]
-    [InlineData(true, true, false, false, "Failed", "Failed")]
-    [InlineData(true, true, false, true, "Failed", "Passed")]
-    [InlineData(true, true, true, false, "Passed", null)]
-    public async Task MsTestAttemptToFixRetainsRetriesAndHonorsFailureProtection(bool nativeRetry, bool preventSuppression, bool nativeRecovers, bool retryPasses, string expectedFrameworkOutcome, string expectedRetryOutcome)
+    [InlineData(nameof(OrdinaryTest), false, false, false, "Failed", 0)]
+    [InlineData(nameof(ProtectedTest), false, false, false, "Failed", 0)]
+    [InlineData(nameof(OrdinaryTest), false, false, true, "Failed", 1)]
+    [InlineData(nameof(ProtectedTest), false, false, true, "Failed", 1)]
+    [InlineData(nameof(OrdinaryTest), true, false, false, "Failed", 0)]
+    [InlineData(nameof(ProtectedTest), true, false, false, "Failed", 0)]
+    [InlineData(nameof(OrdinaryTest), true, true, false, "Failed", 0)]
+    [InlineData(nameof(ExcludedTest), true, true, false, "Passed", 0)]
+    public async Task MsTestAttemptToFixNeverSuppressesFailuresAndStopsAtTheFirstOne(string methodName, bool nativeRetry, bool nativeRecovers, bool initialPasses, string expectedFrameworkOutcome, int expectedDatadogRetries)
     {
-        var methodName = nativeRecovers ? nameof(ExcludedTest) : preventSuppression ? nameof(ProtectedTest) : nameof(OrdinaryTest);
         var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
         method.Should().NotBeNull();
         var management = new Mock<ITestOptimizationTestManagementFeature>();
         management.Setup(x => x.Enabled).Returns(true);
-        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(2);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(3);
         management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, true));
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(true, false, true));
         var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
         optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
         TestOptimization.Instance = optimization.Object;
@@ -2904,7 +2894,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
             suite = module.GetOrCreateSuite("Fixture");
-            var testMethod = new MsTestMethodStub(method, [], methodName) { RetryAttribute = nativeRetry ? new object() : null, RetryPasses = retryPasses };
+            var testMethod = new MsTestMethodStub(method, [], methodName) { RetryAttribute = nativeRetry ? new object() : null };
             if (nativeRetry)
             {
                 execution = new MsTestExecution(CallTargetState.GetDefault(), parent: null);
@@ -2913,15 +2903,16 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             }
 
             object[] results = null;
+            Test lastTest = null;
             for (var i = 0; i < (nativeRetry ? 2 : 1); i++)
             {
                 execution?.StartNativeAttempt();
-                var test = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: i > 0);
-                test.Should().NotBeNull();
-                test.GetTags().IsAttemptToFix.Should().Be("true");
-                Common.IsAttemptToFix(test.GetTags()).Should().Be(!nativeRecovers);
-                var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, test, execution, retryContext: null);
-                object[] attemptResults = [nativeRecovers && i > 0 ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub()];
+                lastTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: i > 0);
+                lastTest.Should().NotBeNull();
+                lastTest.GetTags().IsAttemptToFix.Should().Be("true");
+                var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, lastTest, execution, retryContext: null);
+                var passes = initialPasses || (nativeRecovers && i > 0);
+                object[] attemptResults = [passes ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub()];
                 results = await TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(new object(), attemptResults, exception: null, new CallTargetState(null, state));
             }
 
@@ -2931,20 +2922,112 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
                 execution.CloseTests();
             }
 
-            testMethod.InvokeCount.Should().Be(nativeRecovers ? 0 : 1);
+            testMethod.InvokeCount.Should().Be(expectedDatadogRetries);
             var selected = results.Should().ContainSingle().Subject.Should().BeOfType<MsTestResultStub>().Subject;
             selected.Outcome.ToString().Should().Be(expectedFrameworkOutcome);
             (selected.TestFailureException is not null).Should().Be(expectedFrameworkOutcome == "Failed");
-            var retryOutcome = testMethod.LastResult?.Outcome.ToString();
-            retryOutcome.Should().Be(expectedRetryOutcome);
-            if (expectedRetryOutcome is not null)
-            {
-                testMethod.RetryTest.GetTags().FinalStatus.Should().Be(TestTags.StatusFail);
-            }
+
+            var finalTags = (testMethod.RetryTest ?? lastTest).GetTags();
+            finalTags.FinalStatus.Should().Be(expectedFrameworkOutcome == "Failed" ? TestTags.StatusFail : TestTags.StatusPass);
+            finalTags.AttemptToFixPassed.Should().Be(expectedFrameworkOutcome == "Failed" ? "false" : null);
+            finalTags.HasFailedAllRetries.Should().BeNull();
         }
         finally
         {
             execution?.CloseTests();
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public async Task MsTestAttemptToFixLetsAPassReplaceAnInconclusiveResult()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(OrdinaryTest), BindingFlags.NonPublic | BindingFlags.Static);
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(2);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, true));
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        try
+        {
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            var testMethod = new MsTestMethodStub(method, [], nameof(OrdinaryTest)) { RetriesPass = true };
+            var test = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false);
+            var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, test, execution: null, retryContext: null);
+
+            // The passing row allows the shared retry loop to run, and the inconclusive row passes on its retry.
+            object[] attemptResults =
+            [
+                new MsTestResultStub { Outcome = UnitTestOutcome.Inconclusive, TestFailureException = null },
+                new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null }
+            ];
+
+            var results = await TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(new object(), attemptResults, exception: null, new CallTargetState(null, state));
+
+            testMethod.InvokeCount.Should().Be(1);
+            results.Should().HaveCount(2);
+            ((MsTestResultStub)results[0]).Outcome.Should().Be(UnitTestOutcome.Passed);
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public async Task MsTestAttemptToFixUsesItsOwnRetryCountForNewTests()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(OrdinaryTest), BindingFlags.NonPublic | BindingFlags.Static);
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(2);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, true));
+        var earlyFlake = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlake.Setup(x => x.Enabled).Returns(true);
+        earlyFlake.Setup(x => x.EarlyFlakeDetectionSettings).Returns(new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(true, new TestOptimizationClient.SlowTestRetriesSettingsResponse(fiveSeconds: 6, tenSeconds: null, thirtySeconds: null, fiveMinutes: null), 100));
+        var known = new Mock<ITestOptimizationKnownTestsFeature>();
+        known.Setup(x => x.Enabled).Returns(true);
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        optimization.Setup(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlake.Object);
+        optimization.Setup(x => x.KnownTestsFeature).Returns(known.Object);
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        try
+        {
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            var testMethod = new MsTestMethodStub(method, [], nameof(OrdinaryTest)) { RetriesPass = true };
+            var test = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false);
+            test.GetTags().TestIsNew.Should().Be("true");
+            var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, test, execution: null, retryContext: null);
+            object[] attemptResults = [new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null }];
+
+            await TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(new object(), attemptResults, exception: null, new CallTargetState(null, state));
+
+            testMethod.InvokeCount.Should().Be(1);
+            testMethod.RetryTest.GetTags().TestRetryReason.Should().Be(TestTags.TestRetryReasonAttemptToFix);
+        }
+        finally
+        {
             suite?.Close();
             module?.Close();
             TestModule.Current = previousModule;
@@ -3153,7 +3236,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public MsTestResultStub LastResult { get; private set; }
 
-        public bool RetryPasses { get; set; }
+        public bool RetriesPass { get; set; }
 
         public Test RetryTest { get; private set; }
 
@@ -3163,7 +3246,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             InvokeCount++;
             RetryTest = Test.Current;
-            return LastResult = RetryPasses ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub();
+            return LastResult = RetriesPass ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub();
         }
 
         public void SetArguments(object[] arguments)
