@@ -659,8 +659,8 @@ namespace Datadog.Trace.Tests.Agent
             var result = aggregator.ProcessTrace(ref traceChunk);
             result.Should().Be(TraceKeepState.AggregateAndExport);
             traceChunk.Count.Should().Be(1);
-            // normalized
-            span.ServiceName.Should().NotBeEmpty();
+            // Normalization belongs to the writer, before stats processing.
+            span.ServiceName.Should().BeEmpty();
             // obfuscated
             traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
         }

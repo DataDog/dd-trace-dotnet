@@ -41,9 +41,69 @@ namespace Datadog.Trace.Tests.Agent
             _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
 
+        public static IEnumerable<object[]> NormalizationCases()
+        {
+            foreach (var encoding in new[] { "DatadogV0_4", "OtlpProtobuf", "OtlpJson" })
+            {
+                yield return [encoding, null, true, "AggregateAndExport"];
+                yield return [encoding, false, true, "AggregateAndExport"];
+                yield return [encoding, true, false, "AggregateAndExport"];
+                yield return [encoding, true, true, "Rejected"];
+                yield return [encoding, true, true, "AggregateOnly"];
+                yield return [encoding, true, true, "AggregateAndExport"];
+            }
+        }
+
         public Task InitializeAsync() => Task.CompletedTask;
 
         public Task DisposeAsync() => _agentWriter.FlushAndCloseAsync();
+
+        [Theory]
+        [MemberData(nameof(NormalizationCases))]
+        public async Task Normalization_PrecedesStatsProcessing_OnlyWhenEnabled(
+            string encoding,
+            bool? canComputeStats,
+            bool apmTracingEnabled,
+            string outcome)
+        {
+            var api = new Mock<IApi>();
+            api.SetupGet(x => x.TracesEncoding).Returns(Enum.Parse<TracesEncoding>(encoding));
+            var stats = new Mock<IStatsAggregator>();
+            stats.SetupGet(x => x.CanComputeStats).Returns(canComputeStats);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
+            var span = new Span(new SpanContext(null, traceContext, "MixedCase-Service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            span.Finish();
+            var normalizedBeforeProcessing = false;
+            var processedBeforeAggregation = false;
+            stats.Setup(x => x.ProcessTrace(ref It.Ref<SpanCollection>.IsAny))
+                 .Callback(() => normalizedBeforeProcessing = span.ServiceName == "mixedcase-service")
+                 .Returns(Enum.Parse<TraceKeepState>(outcome));
+            stats.Setup(x => x.AddRange(in It.Ref<SpanCollection>.IsAny))
+                 .Callback(() => processedBeforeAggregation = normalizedBeforeProcessing);
+            var agent = new AgentWriter(api.Object, stats.Object, TestStatsdManager.NoOp, automaticFlush: false, apmTracingEnabled: apmTracingEnabled);
+
+            try
+            {
+                agent.WriteTrace(new SpanCollection([span]));
+                await agent.FlushTracesAsync();
+
+                var shouldProcess = apmTracingEnabled && canComputeStats == true;
+                normalizedBeforeProcessing.Should().Be(shouldProcess);
+                span.ServiceName.Should().Be(shouldProcess ? "mixedcase-service" : "MixedCase-Service");
+                stats.Verify(x => x.ProcessTrace(ref It.Ref<SpanCollection>.IsAny), shouldProcess ? Times.Once() : Times.Never());
+                var shouldAggregate = shouldProcess && outcome != "Rejected";
+                processedBeforeAggregation.Should().Be(shouldAggregate);
+                stats.Verify(x => x.AddRange(in It.Ref<SpanCollection>.IsAny), shouldAggregate ? Times.Once() : Times.Never());
+                var shouldExport = !shouldProcess || outcome == "AggregateAndExport";
+                api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), shouldExport ? Times.Once() : Times.Never());
+            }
+            finally
+            {
+                await agent.FlushAndCloseAsync();
+            }
+        }
 
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()

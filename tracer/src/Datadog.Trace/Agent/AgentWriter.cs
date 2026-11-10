@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -49,6 +50,7 @@ namespace Datadog.Trace.Agent
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
         private readonly IStatsAggregator _statsAggregator;
+        private readonly NormalizerTraceProcessor _normalizerProcessor = new();
 
         private readonly bool _apmTracingEnabled;
 
@@ -542,6 +544,19 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        private SpanCollection NormalizeTrace(in SpanCollection trace)
+        {
+            try
+            {
+                return _normalizerProcessor.Process(in trace);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
+                return trace;
+            }
+        }
+
         /// <summary>
         /// Serializes a trace chunk into the active buffer. Not thread safe: it mutates
         /// <see cref="_temporaryBuffer"/> and swaps <see cref="_activeBuffer"/>, so it must only
@@ -571,7 +586,13 @@ namespace Datadog.Trace.Agent
 
             int? chunkSamplingPriority = null;
             var chunk = spans;
-            if (CanComputeStats)
+            var canComputeStats = CanComputeStats;
+            if (canComputeStats)
+            {
+                chunk = NormalizeTrace(in chunk);
+            }
+
+            if (canComputeStats)
             {
                 var keepState = _statsAggregator.ProcessTrace(ref chunk);
 
