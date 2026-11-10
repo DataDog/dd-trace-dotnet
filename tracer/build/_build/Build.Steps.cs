@@ -2754,10 +2754,6 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
-               // With the .NET 11 RC SDK, a .NET 11 process and a .NET 8-10 process sharing the CircularChannel named mutex
-               // corrupt its ownership record (dotnet/runtime#134491), so ReleaseMutex can fail after a successful wait.
-               // Remove this once we build with .NET 11 GA.
-               new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
