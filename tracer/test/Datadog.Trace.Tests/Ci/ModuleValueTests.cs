@@ -30,7 +30,7 @@ public class ModuleValueTests
 
         value.FilesLines.Should().Be(IntPtr.Zero);
         value.AllocatedByteLength.Should().Be(0);
-        ModuleValue.ContextBuffers.Contains(buffer).Should().BeTrue();
+        ModuleValue.ByteCounterContextBuffers.Contains(buffer).Should().BeTrue();
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class ModuleValueTests
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        ModuleValue.ContextBuffers.Contains(buffer).Should().BeTrue();
+        ModuleValue.ByteCounterContextBuffers.Contains(buffer).Should().BeTrue();
     }
 
     [Fact]
@@ -53,7 +53,21 @@ public class ModuleValueTests
         value.Dispose();
 
         value.FilesLines.Should().Be(IntPtr.Zero);
-        ModuleValue.ContextBuffers.Contains(buffer).Should().BeFalse();
+        ModuleValue.ByteCounterContextBuffers.Contains(buffer).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContextBuffersAreNotReusedAcrossCounterWidths()
+    {
+        var lineCallCount = CreateModuleValue(ModuleValue.BufferKind.Context, coverageMode: 1);
+        var released = lineCallCount.FilesLines;
+        lineCallCount.Dispose();
+
+        using var lineExecution = CreateModuleValue(ModuleValue.BufferKind.Context, coverageMode: 0);
+
+        lineExecution.FilesLines.Should().NotBe(released);
+        ModuleValue.IntCounterContextBuffers.Contains(released).Should().BeTrue();
+        ModuleValue.ByteCounterContextBuffers.Contains(released).Should().BeFalse();
     }
 
     [Theory]
@@ -76,10 +90,14 @@ public class ModuleValueTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static IntPtr CreateAndAbandonContextBuffer() => CreateModuleValue(ModuleValue.BufferKind.Context).FilesLines;
 
-    private static ModuleValue CreateModuleValue(ModuleValue.BufferKind bufferKind)
-        => new(
-            new TestModuleCoverageMetadata(BufferSize, 0, [new FileCoverageMetadata("/src/module-value.cs", 0, BufferSize, new byte[3])]),
+    // Both modes use the same raw buffer size here, so only the counter width tells the buffers apart.
+    private static ModuleValue CreateModuleValue(ModuleValue.BufferKind bufferKind, int coverageMode = 0)
+    {
+        var lines = coverageMode == 0 ? BufferSize : BufferSize / sizeof(int);
+        return new(
+            new TestModuleCoverageMetadata(lines, coverageMode, [new FileCoverageMetadata("/src/module-value.cs", 0, lines, new byte[(lines + 7) / 8])]),
             typeof(ModuleValueTests).Module,
             BufferSize,
             bufferKind);
+    }
 }

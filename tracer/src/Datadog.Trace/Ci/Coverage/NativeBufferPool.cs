@@ -21,7 +21,9 @@ namespace Datadog.Trace.Ci.Coverage;
 /// and such a frame can outlive the owner that releases the buffer (for example, while the method runs code inside
 /// <see cref="ExecutionContext.Run"/> with another context when its test session ends). Because returned buffers are
 /// only ever handed out again as coverage counters, a late write through a stale pointer lands in coverage-owned
-/// memory and can at most mark a line in a later owner, instead of corrupting freed native memory.
+/// memory instead of corrupting freed native memory. Use one pool per counter layout: then a late write can only add
+/// to a later owner's counters (apart from the existing wraparound of 32-bit call counts), while a write of a different
+/// width could also clear the counters next to it.
 /// The pool holds at most the peak number of buffers of each size that were rented at the same time.
 /// </summary>
 internal sealed class NativeBufferPool

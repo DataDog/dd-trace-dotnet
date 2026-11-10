@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
@@ -39,10 +40,6 @@ public static class CoverageReporter<TMeta>
             Metadata = new TMeta();
             Module = typeof(TMeta).Module;
             ModuleMemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
-
-            // Allocated up front when possible because the probe failures it absorbs include failing to allocate a
-            // counters buffer. A failure here must not fail the type initializer, so it is retried on first use.
-            _discardedCounters = TryAllocateDiscardedCounters();
         }
         catch
         {
@@ -50,6 +47,9 @@ public static class CoverageReporter<TMeta>
             throw;
         }
     }
+
+    [TestingOnly]
+    internal static bool HasDiscardedCounters => Volatile.Read(ref _discardedCounters) != IntPtr.Zero;
 
     /// <summary>
     /// Gets the coverage counter for the file
@@ -85,6 +85,7 @@ public static class CoverageReporter<TMeta>
         }
     }
 
+    // Allocated on the first probe failure only, so successful runs don't keep a second counters buffer per module.
     private static IntPtr GetDiscardedCounters()
     {
         var discardedCounters = Volatile.Read(ref _discardedCounters);

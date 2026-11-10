@@ -178,7 +178,7 @@ public class CoverageEventHandlerTests
             handler.EndSession(handle);
 
             module.FilesLines.Should().Be(IntPtr.Zero);
-            ModuleValue.ContextBuffers.Contains(pointer).Should().BeTrue();
+            ModuleValue.ByteCounterContextBuffers.Contains(pointer).Should().BeTrue();
             resumeFrame.Set();
             await frame;
         }
@@ -199,13 +199,36 @@ public class CoverageEventHandlerTests
         {
             // Without a session the probe uses the global container; closing it makes acquiring the counters fail.
             handler.GlobalContainer.TryCloseAndGetModules(out _).Should().BeTrue();
+            CoverageReporter<ClosedGlobalMetadata>.HasDiscardedCounters.Should().BeFalse();
 
             var pointer = (byte*)CoverageReporter<ClosedGlobalMetadata>.GetFileCounter(0);
             pointer[0] = 1;
             var nextPointer = (byte*)CoverageReporter<ClosedGlobalMetadata>.GetFileCounter(0);
 
+            CoverageReporter<ClosedGlobalMetadata>.HasDiscardedCounters.Should().BeTrue();
             ((IntPtr)nextPointer).Should().Be((IntPtr)pointer, "every failed probe of a module shares its discard buffer");
             handler.IncompleteReasons.Should().Equal(GlobalCoverageFailureReason.ProbeDataIncomplete, GlobalCoverageFailureReason.ProbeDataIncomplete);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
+    public unsafe void SuccessfulProbesDoNotAllocateDiscardedCounters()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new DefaultCoverageEventHandler();
+        CoverageReporter.Handler = handler;
+        try
+        {
+            var handle = handler.StartSession("xunit");
+            var pointer = (byte*)CoverageReporter<SuccessfulProbeMetadata>.GetFileCounter(0);
+            pointer[0] = 1;
+            handler.EndSession(handle);
+
+            CoverageReporter<SuccessfulProbeMetadata>.HasDiscardedCounters.Should().BeFalse();
         }
         finally
         {
@@ -412,6 +435,14 @@ public class CoverageEventHandlerTests
     {
         public NestedFlowMetadata()
             : base(1, 0, [new FileCoverageMetadata("/src/nested.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class SuccessfulProbeMetadata : TestModuleCoverageMetadata
+    {
+        public SuccessfulProbeMetadata()
+            : base(1, 0, [new FileCoverageMetadata("/src/successful.cs", 0, 1, [0x80])])
         {
         }
     }
