@@ -20,7 +20,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
         [CustomAssertion]
         public AndConstraint<ProfilerLogGroupAssertions> ContainLine(string expected)
         {
-            RequireFiles();
+            if (!RequireFiles())
+            {
+                return new AndConstraint<ProfilerLogGroupAssertions>(this);
+            }
+
             var matches = _subject.LinesContaining(expected);
             AssertThat(
                 matches.Count > 0,
@@ -32,7 +36,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
         [CustomAssertion]
         public AndConstraint<ProfilerLogGroupAssertions> NotContainLine(string unexpected)
         {
-            RequireFiles();
+            if (!RequireFiles())
+            {
+                return new AndConstraint<ProfilerLogGroupAssertions>(this);
+            }
+
             var matches = _subject.LinesContaining(unexpected);
             AssertThat(
                 matches.Count == 0,
@@ -44,7 +52,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
         [CustomAssertion]
         public AndConstraint<ProfilerLogGroupAssertions> NotContainErrors(params string[] allowedErrors)
         {
-            RequireFiles();
+            if (!RequireFiles())
+            {
+                return new AndConstraint<ProfilerLogGroupAssertions>(this);
+            }
+
             var matches = _subject.ErrorLines(allowedErrors);
             AssertThat(
                 matches.Count == 0,
@@ -83,17 +95,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
                 .FailWith("{0}", message);
         }
 
-        private void RequireFiles()
+        private bool RequireFiles()
         {
             if (_subject is null)
             {
                 AssertThat(false, "Expected profiler logs, but the log group was <null>.");
-                return;
+                return false;
+            }
+
+            if (_subject.Files.Count > 0)
+            {
+                return true;
             }
 
             AssertThat(
-                _subject.Files.Count > 0,
+                false,
                 $"no file found for {_subject.Pattern} in {_subject.Directory}");
+            return false;
         }
     }
 }

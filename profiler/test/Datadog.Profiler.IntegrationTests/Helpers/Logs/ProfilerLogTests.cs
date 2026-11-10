@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Sdk;
 
@@ -94,6 +95,34 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
 
             logs.NativeProfiler.Files.Should().HaveCount(2);
             logs.NativeProfiler.Should().ContainLine("Configuration: DD_PROFILING_LOCK_ENABLED");
+        }
+
+        [Fact]
+        public void NullGroup_InsideAssertionScope_RecordsOneFailureAndStops()
+        {
+            ProfilerLogGroup group = null;
+
+            AssertSingleScopeFailure(() => group.Should().ContainLine("Configuration: DD_PROFILING_LOCK_ENABLED"), "the log group was <null>");
+            AssertSingleScopeFailure(() => group.Should().NotContainLine("Configuration: DD_PROFILING_LOCK_ENABLED"), "the log group was <null>");
+            AssertSingleScopeFailure(() => group.Should().NotContainErrors(), "the log group was <null>");
+            AssertSingleScopeFailure(() => group.Should().ContainFiles(), "the log group was <null>");
+            AssertSingleScopeFailure(() => group.Should().NotContainFiles(), "the log group was <null>");
+        }
+
+        [Fact]
+        public void EmptyGroup_InsideAssertionScope_RecordsOnlyTheMissingFile()
+        {
+            var empty = ProfilerLogSet.Read(_directory).NativeProfiler;
+            var missingFile = $"no file found for {ProfilerLogSet.NativeProfilerPattern} in {_directory}";
+
+            AssertSingleScopeFailure(
+                () => empty.Should().ContainLine("Configuration: DD_PROFILING_LOCK_ENABLED"),
+                missingFile,
+                "no line matched");
+            AssertSingleScopeFailure(() => empty.Should().NotContainLine("Configuration: DD_PROFILING_LOCK_ENABLED"), missingFile);
+            AssertSingleScopeFailure(() => empty.Should().NotContainErrors(), missingFile);
+            AssertSingleScopeFailure(() => empty.Should().ContainFiles(), missingFile);
+            CollectScopeFailures(() => empty.Should().NotContainFiles()).Should().BeEmpty();
         }
 
         [Fact]
@@ -256,6 +285,25 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
         {
             var exception = Assert.Throws<XunitException>(action);
             return exception.Message;
+        }
+
+        private static void AssertSingleScopeFailure(Action action, string expected, string absent = null)
+        {
+            var failure = CollectScopeFailures(action).Should().ContainSingle().Subject;
+            failure.Should().Contain(expected);
+            if (absent is not null)
+            {
+                failure.Should().NotContain(absent);
+            }
+        }
+
+        private static string[] CollectScopeFailures(Action action)
+        {
+            using (var scope = new AssertionScope())
+            {
+                action();
+                return scope.Discard();
+            }
         }
 
         private void Write(string relativePath, params string[] lines)
