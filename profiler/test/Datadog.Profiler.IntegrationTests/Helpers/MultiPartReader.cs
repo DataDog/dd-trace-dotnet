@@ -20,10 +20,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private const string ContentTypePrefix = "multipart/form-data";
         private const string ContentTypeBoundary = "boundary=";
         private const int MaxBodyBytes = 1024 * 1024 * 2;
-        private const int NewLibeBytesSize = 2;
 
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
-        private readonly byte[] MinusBytes = Encoding.ASCII.GetBytes("-");
         private readonly byte[] NewLineBytes = { 0x0d, 0x0a };
 #pragma warning restore SA1306 // Field names should begin with lower-case letter
 
@@ -32,8 +30,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly List<MultiPartPart> _files;
 
         private byte[] _buffer;
-        private byte[] _boundaryBytes;
-        private int _boundarySize;
+        private byte[] _delimiterBytes;
+        private byte[] _separatorBytes;
 
         private MultiPartReader(string contentType, Encoding encoding)
         {
@@ -127,15 +125,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         //  content-disposition: form-data; name="auto.pprof"; filename="auto.pprof"\r\n
         //  \r\n
         //  ...
-        //  \r\n--boundary\r\n
-        //  content-type: application/octet-stream\r\n
-        //  content-disposition: form-data; name="metrics.json"; filename="metrics.json"\r\n
-        //  \r\n
-        //  ...
         //  \r\n--boundary--
         //
         // Since .pprof are binary files, it is needed to parse the body as binary
         // The .json file encoding is given by the request ContentEncoding
+        //
+        // A delimiter is "\r\n--boundary" followed by "\r\n" or "--". The boundary token
+        // found anywhere else (for example inside a binary payload) is part of the payload.
         private bool Parse(byte[] body)
         {
             _buffer = body;
@@ -147,21 +143,39 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 return false;
             }
 
-            _boundaryBytes = _encoding.GetBytes(boundary);
-            _boundarySize = _boundaryBytes.Length;
+            _delimiterBytes = _encoding.GetBytes(boundary);
+            _separatorBytes = new byte[NewLineBytes.Length + _delimiterBytes.Length];
+            NewLineBytes.CopyTo(_separatorBytes, 0);
+            _delimiterBytes.CopyTo(_separatorBytes, NewLineBytes.Length);
+
+            // the body starts with the first delimiter
+            if (!_buffer.AsSpan().StartsWith(_delimiterBytes))
+            {
+                return false;
+            }
+
+            int pos = _delimiterBytes.Length;
 
             // iterate on each file
-            int pos = 0;
             while (true)
             {
-                // skip boundary
-                pos = IndexAfterBoundary(pos);
-                if (pos == -1)
+                // the delimiter is followed by "--" (last one) or by a new line
+                if (pos + 2 > _buffer.Length)
                 {
                     return false;
                 }
 
-                pos += NewLibeBytesSize;
+                if (_buffer[pos] == (byte)'-' && _buffer[pos + 1] == (byte)'-')
+                {
+                    return true;
+                }
+
+                if (!IsNewLine(pos))
+                {
+                    return false;
+                }
+
+                pos += NewLineBytes.Length;
 
                 pos = ReadHeaders(pos, out var contentType, out var name, out var filename);
                 if (pos == -1)
@@ -169,57 +183,66 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     return false;
                 }
 
-                // file bytes start from pos
-
-                // look for the next one (or final boundary followed by --)
-                var next = IndexAfterBoundary(pos);
+                // file bytes start from pos: look for the next delimiter
+                var next = IndexOfDelimiter(pos);
                 if (next == -1)
                 {
                     return false;
                 }
 
-                var size = next - pos - _boundarySize - NewLineBytes.Length;
-                var bytes = new byte[size];
-                Buffer.BlockCopy(_buffer, pos, bytes, 0, size);
+                var bytes = _buffer.AsSpan(pos, next - pos).ToArray();
                 _files.Add(new MultiPartPart(contentType, name, filename, bytes, _encoding));
 
-                // check for the last file
-                if ((_buffer[next] == MinusBytes[0]) && (_buffer[next + 1] == MinusBytes[0]))
-                {
-                    return true;
-                }
+                pos = next + _separatorBytes.Length;
             }
         }
 
-        // return the position in _buffer AFTER the given array of bytes
-        private int IndexAfter(int pos, byte[] bytes, int size)
+        private bool IsNewLine(int pos)
         {
-            int current = 0;
-            while (pos < _buffer.Length)
+            return pos + NewLineBytes.Length <= _buffer.Length &&
+                   _buffer[pos] == NewLineBytes[0] &&
+                   _buffer[pos + 1] == NewLineBytes[1];
+        }
+
+        // return the position of the new line that starts the next delimiter, or -1.
+        // The delimiter must be followed by a new line or by "--".
+        private int IndexOfDelimiter(int pos)
+        {
+            while (pos <= _buffer.Length)
             {
-                if (_buffer[pos] == bytes[current])
+                var index = _buffer.AsSpan(pos).IndexOf(_separatorBytes);
+                if (index == -1)
                 {
-                    current++;
-
-                    if (current == size)
-                    {
-                        return pos + 1;
-                    }
-                }
-                else
-                {
-                    current = 0;
+                    return -1;
                 }
 
-                pos++;
+                var start = pos + index;
+                var after = start + _separatorBytes.Length;
+                if (IsNewLine(after) ||
+                    (after + 2 <= _buffer.Length && _buffer[after] == (byte)'-' && _buffer[after + 1] == (byte)'-'))
+                {
+                    return start;
+                }
+
+                // the token is part of the payload
+                pos = start + 1;
             }
 
             return -1;
         }
 
-        private int IndexAfterBoundary(int pos)
+        // return the position of the first new line at or after pos, or -1
+        private int IndexOfNewLine(int pos)
         {
-            return IndexAfter(pos, _boundaryBytes, _boundarySize);
+            for (; pos + NewLineBytes.Length <= _buffer.Length; pos++)
+            {
+                if (IsNewLine(pos))
+                {
+                    return pos;
+                }
+            }
+
+            return -1;
         }
 
         private int ReadHeaders(int pos, out string contentType, out string name, out string filename)
@@ -230,14 +253,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             while (true)
             {
-                var next = IndexAfter(pos, NewLineBytes, NewLineBytes.Length);
-                if (next == -1)
+                var end = IndexOfNewLine(pos);
+                if (end == -1)
                 {
                     return -1;
                 }
 
-                var line = _encoding.GetString(_buffer, pos, next - pos - NewLineBytes.Length);
-                pos = next;
+                var line = _encoding.GetString(_buffer, pos, end - pos);
+                pos = end + NewLineBytes.Length;
 
                 // blank line ends the headers and the payload starts immediately after it
                 if (string.IsNullOrEmpty(line))

@@ -105,6 +105,64 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             upload.Should().BeNull();
         }
 
+        [Fact]
+        public void TryParse_BoundaryTokenInPayload_KeepsItInThePart()
+        {
+            // token at the start of the payload, token without new line before it,
+            // and token followed by other characters
+            var payload = Encoding.ASCII.GetBytes("--" + Boundary + "\r\n--" + Boundary + "x\r\n--" + Boundary + "-x");
+            using var body = new MemoryStream();
+            WritePart(body, first: true, "application/octet-stream", "first", "first.bin", payload);
+            WritePart(body, first: false, "application/octet-stream", "second", "second.bin", PprofBytes);
+            WriteAscii(body, "\r\n--" + Boundary + "--");
+
+            var parsed = MultiPartReader.TryParse(ContentType(), body.ToArray(), Encoding.UTF8, out var upload);
+
+            parsed.Should().BeTrue();
+            upload.Files.Should().HaveCount(2);
+            upload.TryGetFile("first.bin", out var first).Should().BeTrue();
+            first.ReadBytes().Should().Equal(payload);
+            upload.TryGetFile("second.bin", out var second).Should().BeTrue();
+            second.ReadBytes().Should().Equal(PprofBytes);
+        }
+
+        [Theory]
+        [InlineData("\r\n--" + Boundary)]
+        [InlineData("\r\n--" + Boundary + "-")]
+        [InlineData("\r\n--" + Boundary + "\r")]
+        [InlineData("\r\n--" + Boundary + "x")]
+        [InlineData("\r\n--uHO")]
+        [InlineData("")]
+        public void TryParse_TruncatedClosingDelimiter_ReturnsFalse(string ending)
+        {
+            using var body = new MemoryStream();
+            WritePart(body, first: true, "application/octet-stream", "auto.pprof", "auto.pprof", PprofBytes);
+            WriteAscii(body, ending);
+
+            var parsed = MultiPartReader.TryParse(ContentType(), body.ToArray(), Encoding.UTF8, out var upload);
+
+            parsed.Should().BeFalse();
+            upload.Should().BeNull();
+        }
+
+        [Fact]
+        public void TryParse_EmptyPart_ReturnsEmptyContent()
+        {
+            using var body = new MemoryStream();
+            WritePart(body, first: true, "application/octet-stream", "empty", "empty.bin", System.Array.Empty<byte>());
+            WritePart(body, first: false, "application/octet-stream", "auto.pprof", "auto.pprof", PprofBytes);
+            WriteAscii(body, "\r\n--" + Boundary + "--");
+
+            var parsed = MultiPartReader.TryParse(ContentType(), body.ToArray(), Encoding.UTF8, out var upload);
+
+            parsed.Should().BeTrue();
+            upload.Files.Should().HaveCount(2);
+            upload.TryGetFile("empty.bin", out var empty).Should().BeTrue();
+            empty.ReadBytes().Should().BeEmpty();
+            upload.TryGetFile("auto.pprof", out var pprof).Should().BeTrue();
+            pprof.ReadBytes().Should().Equal(PprofBytes);
+        }
+
         private static string ContentType()
         {
             return "multipart/form-data; boundary=" + Boundary;
