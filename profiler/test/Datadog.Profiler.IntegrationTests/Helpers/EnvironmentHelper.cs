@@ -174,13 +174,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetProfilerNativeLibraryPath();
             var tracerPath = GetTracerNativeLibraryPath();
+            var architecture = GetArchitectureSubfolder(IsAlpine);
 
-            var loaderConfigFilePath = GetLoaderConfigFilePath();
-            using var sw = new StreamWriter(loaderConfigFilePath);
-
-            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
-            return loaderConfigFilePath;
+            return WriteLoaderConfigFile(
+                $"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{architecture};{profilerPath}",
+                $"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{architecture};{tracerPath}");
         }
 
         internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
@@ -450,21 +448,37 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
         }
 
-        private string GetLoaderConfigFilePath()
+        private string WriteLoaderConfigFile(string profilerLine, string tracerLine)
         {
             // Leave the file in the per-test output directory so CI uploads it with the logs.
             // A test that starts several processes needs a distinct file for each one.
+            // CreateNew reserves the name before the write, so concurrent launches cannot share a path.
             Directory.CreateDirectory(_testOutputPath);
 
-            var path = Path.Combine(_testOutputPath, "loader.conf");
-            var index = 2;
-            while (File.Exists(path))
+            for (var index = 1; ; index++)
             {
-                path = Path.Combine(_testOutputPath, $"loader-{index}.conf");
-                index++;
-            }
+                var fileName = index == 1 ? "loader.conf" : $"loader-{index}.conf";
+                var path = Path.Combine(_testOutputPath, fileName);
 
-            return path;
+                FileStream stream;
+                try
+                {
+                    stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                }
+                catch (IOException) when (File.Exists(path))
+                {
+                    continue;
+                }
+
+                using (stream)
+                {
+                    using var writer = new StreamWriter(stream);
+                    writer.WriteLine(profilerLine);
+                    writer.WriteLine(tracerLine);
+                }
+
+                return path;
+            }
         }
 
         private bool IsCoreClr()
