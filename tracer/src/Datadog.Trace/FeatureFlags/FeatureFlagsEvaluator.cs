@@ -14,7 +14,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -53,7 +52,6 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IDatadogLogger _log;
-        private readonly Lazy<int>? _maxDependencyDepth;
         private readonly HashSet<string>? _dependentFlagKeys;
 
         public FeatureFlagsEvaluator(
@@ -67,9 +65,6 @@ namespace Datadog.Trace.FeatureFlags
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             _log = logger ?? Log;
             _dependentFlagKeys = GetDependentFlagKeys(config);
-            _maxDependencyDepth = config is null
-                                      ? null
-                                      : new Lazy<int>(() => ParseMaxDependencyDepth(config, _log), LazyThreadSafetyMode.ExecutionAndPublication);
             if (_config is null)
             {
                 _log.Debug("Creating Evaluator without config");
@@ -88,8 +83,6 @@ namespace Datadog.Trace.FeatureFlags
         /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
         /// </summary>
         internal ServerConfiguration? Configuration => _config;
-
-        private int MaxDependencyDepth => _maxDependencyDepth?.Value ?? DefaultMaxDependencyDepth;
 
         // Opt-in requires prerequisite evaluation, error propagation, and exposure reporting.
         internal static IReadOnlyCollection<string> GetCapabilities() => SupportedCapabilities;
@@ -276,7 +269,8 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 var now = DateTime.UtcNow;
-                session = new DependencyEvaluationSession(this, config, flagKey, context, now, consent, collectDependencyEvaluations);
+                var maxDependencyDepth = ParseMaxDependencyDepth(config, _log);
+                session = new DependencyEvaluationSession(this, config, flagKey, context, now, consent, collectDependencyEvaluations, maxDependencyDepth);
                 var evaluation = EvaluateFlag(flagKey, resultType, defaultValue, context, session, now, consent);
                 return session.Complete(evaluation);
             }
@@ -610,7 +604,15 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (Exception ex)
             {
-                log.Error(ex, "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10");
+                try
+                {
+                    log.Warning(ex, "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10");
+                }
+                catch
+                {
+                    // Diagnostics must not affect flag evaluation.
+                }
+
                 return DefaultMaxDependencyDepth;
             }
         }
@@ -1178,6 +1180,7 @@ namespace Datadog.Trace.FeatureFlags
             private readonly string _rootFlagKey;
             private readonly string? _targetingKey;
             private readonly bool _includeContext;
+            private readonly int _maxDependencyDepth;
             private HashSet<string>? _exposureKeys;
             private List<ExposureCandidate>? _exposures;
             private Dictionary<string, MemoizedDependency>? _memo;
@@ -1188,7 +1191,6 @@ namespace Datadog.Trace.FeatureFlags
             private IReadOnlyDictionary<string, object?>? _contextAttributes;
             private ContextOmissionReason _contextOmissions;
             private bool _contextSnapshotted;
-            private int? _maxDepth;
 
             public DependencyEvaluationSession(
                 FeatureFlagsEvaluator owner,
@@ -1197,7 +1199,8 @@ namespace Datadog.Trace.FeatureFlags
                 EvaluationContext? context,
                 DateTime evaluationTime,
                 string consent,
-                bool collectDependencyEvaluations)
+                bool collectDependencyEvaluations,
+                int maxDependencyDepth)
             {
                 _owner = owner;
                 _config = config;
@@ -1208,6 +1211,7 @@ namespace Datadog.Trace.FeatureFlags
                 _rootFlagKey = rootFlagKey;
                 _targetingKey = context?.TargetingKey;
                 _includeContext = collectDependencyEvaluations && consent == "true";
+                _maxDependencyDepth = maxDependencyDepth;
             }
 
             public ExposureCheckpoint Checkpoint()
@@ -1241,9 +1245,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 var depth = frames.Count + 1;
-                var maxDepth = _maxDepth ??= _owner.MaxDependencyDepth;
-
-                if (depth > maxDepth)
+                if (depth > _maxDependencyDepth)
                 {
                     if (!memo.ContainsKey(flagKey) && !active.Contains(flagKey))
                     {
@@ -1260,7 +1262,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (memo.TryGetValue(flagKey, out var memoized))
                 {
-                    if (depth + memoized.DescendantDepth > maxDepth)
+                    if (depth + memoized.DescendantDepth > _maxDependencyDepth)
                     {
                         throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded", flagKey);
                     }

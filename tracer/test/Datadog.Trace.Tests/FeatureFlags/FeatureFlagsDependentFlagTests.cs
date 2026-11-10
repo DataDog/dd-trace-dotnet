@@ -420,7 +420,7 @@ public class FeatureFlagsDependentFlagTests
 
         (result.Reason == EvaluationReason.Error).Should().Be(expectError);
         trace.DependencyEvaluations.Should().ContainSingle();
-        logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error)).Should().Be(expectLog ? 1 : 0);
+        logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(expectLog ? 1 : 0);
     }
 
     [Fact]
@@ -570,7 +570,24 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Fact]
-    public void MalformedAndThrowingEvaluatorOptionsLogAndFallBackLazily()
+    public void MaximumDepthIsResolvedForEachRootEvaluation()
+    {
+        var config = Configuration(
+            DependentFlag("root", Allocation("root", [Dependency("middle", "on")], "on")),
+            DependentFlag("middle", Allocation("middle", [Dependency("leaf", "on")], "on")),
+            StaticFlag("leaf", "on"));
+        config.EvaluatorParams = new EvaluatorParams { MaxDependencyDepth = 1 };
+        var evaluator = Evaluator(config);
+
+        evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Reason.Should().Be(EvaluationReason.Error);
+
+        config.EvaluatorParams.MaxDependencyDepth = 2;
+
+        evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
+    }
+
+    [Fact]
+    public void MalformedAndThrowingEvaluatorOptionsWarnOncePerRootAndFallBackLazily()
     {
         var options = new EvaluatorParams?[]
         {
@@ -584,17 +601,36 @@ public class FeatureFlagsDependentFlagTests
             var logger = new Mock<IDatadogLogger>();
             var config = Configuration(
                 StaticFlag("ordinary", "ordinary"),
-                StaticFlag("dependency", "on"),
-                DependentFlag("root", Allocation("root", [Dependency("dependency", "on")], "on")));
+                StaticFlag("left", "on"),
+                StaticFlag("right", "on"),
+                DependentFlag("root", Allocation("root", [Dependency("left", "on"), Dependency("right", "on")], "on")));
             config.EvaluatorParams = option;
             var evaluator = new FeatureFlagsEvaluator(null, config, logger: logger.Object);
 
             evaluator.Evaluate("ordinary", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("ordinary");
-            logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
+            logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning));
             evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
             evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
-            logger.Invocations.Should().ContainSingle(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
+            logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(2);
         }
+    }
+
+    [Fact]
+    public void EvaluatorOptionWarningFailureDoesNotAffectEvaluation()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(x => x.Warning(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
+              .Throws(new InvalidOperationException("logging failed"));
+        var config = Configuration(
+            StaticFlag("dependency", "on"),
+            DependentFlag("root", Allocation("root", [Dependency("dependency", "on")], "on")));
+        config.EvaluatorParams = new EvaluatorParams { MaxDependencyDepth = "invalid" };
+
+        var result = new FeatureFlagsEvaluator(null, config, logger: logger.Object)
+                    .Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        result.Value.Should().Be("on");
+        result.Reason.Should().NotBe(EvaluationReason.Error);
     }
 
     [Fact]
