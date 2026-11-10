@@ -106,6 +106,17 @@ public class NetStandardConsumerBindingTests
             var typeReferenceCount = 0;
             var memberReferenceCount = 0;
 
+            // 0. Internal members are only accessible if the target build grants InternalsVisibleTo to the consumer
+            var consumerName = reader.GetString(reader.GetAssemblyDefinition().Name);
+            var targetFriends = GetInternalsVisibleTo(target.Reader);
+            foreach (var friend in GetInternalsVisibleTo(compileTime.Reader))
+            {
+                if (friend.Split(',')[0].Trim() == consumerName && !targetFriends.Contains(friend))
+                {
+                    violations.Add($"InternalsVisibleTo(\"{friend}\") is missing");
+                }
+            }
+
             // 1. Type references (including vendored polyfills such as [Datadog.Trace]System.Span`1)
             foreach (var handle in reader.TypeReferences)
             {
@@ -114,14 +125,8 @@ public class NetStandardConsumerBindingTests
                     continue;
                 }
 
+                // Attribute types are checked too: they can also be used in IL (e.g. typeof(AvoidCoverageAttribute))
                 var typeName = Names.Of(reader, handle);
-                if (IsAttribute(compileTime, typeName))
-                {
-                    // Custom attributes are only resolved via reflection, so they can't fail to bind at runtime.
-                    // Known gap: typeof(SomeDatadogAttribute) in IL would still fail, but that's very unlikely here.
-                    continue;
-                }
-
                 typeReferenceCount++;
                 if (!target.Types.TryGetValue(typeName, out var typeDef))
                 {
@@ -145,13 +150,19 @@ public class NetStandardConsumerBindingTests
                 {
                     violations.Add($"Type '{typeName}' is a {targetKind}, not a {compileTimeKind}");
                 }
+
+                var compileTimeConstraints = GetConstraints(compileTime.Reader, compileTime.Reader.GetTypeDefinition(compileTimeTypeDef).GetGenericParameters());
+                if (!compileTimeConstraints.IsSupersetOf(GetConstraints(target.Reader, target.Reader.GetTypeDefinition(typeDef).GetGenericParameters())))
+                {
+                    violations.Add($"Type '{typeName}' has additional generic constraints");
+                }
             }
 
             // 2. Method and field references on Datadog.Trace types, matched on their full signature
             foreach (var handle in reader.MemberReferences)
             {
                 var memberRef = reader.GetMemberReference(handle);
-                if (GetDatadogTraceType(reader, memberRef.Parent) is not { } typeName || IsAttribute(compileTime, typeName))
+                if (GetDatadogTraceType(reader, memberRef.Parent) is not { } typeName)
                 {
                     continue;
                 }
@@ -169,15 +180,33 @@ public class NetStandardConsumerBindingTests
                     continue;
                 }
 
-                var targetAccess = FindMember(target.Reader, typeDef, name, signature);
-                if (targetAccess is null)
+                if (FindMember(target.Reader, typeDef, name, signature) is not { } targetMember)
                 {
                     violations.Add($"Member {description} does not exist");
+                    continue;
                 }
-                else if (compileTime.Types.TryGetValue(typeName, out var compileTimeTypeDef)
-                      && targetAccess < FindMember(compileTime.Reader, compileTimeTypeDef, name, signature))
+
+                if (!compileTime.Types.TryGetValue(typeName, out var compileTimeTypeDef)
+                 || FindMember(compileTime.Reader, compileTimeTypeDef, name, signature) is not { } compileTimeMember)
+                {
+                    continue;
+                }
+
+                if (targetMember.Access < compileTimeMember.Access)
                 {
                     violations.Add($"Member {description} is less accessible");
+                }
+
+                if (targetMember.IsStatic != compileTimeMember.IsStatic)
+                {
+                    // Field signatures don't encode static-ness, but ldfld/ldsfld can't bind to the other kind
+                    violations.Add($"Member {description} is {(targetMember.IsStatic ? "static" : "an instance member")}");
+                }
+
+                if (!compileTimeMember.Constraints.IsSupersetOf(targetMember.Constraints))
+                {
+                    // Type arguments that satisfied the compile-time constraints may not satisfy the extra ones
+                    violations.Add($"Member {description} has additional generic constraints");
                 }
             }
 
@@ -222,8 +251,8 @@ public class NetStandardConsumerBindingTests
         /// <summary>
         /// Finds a method or field by name and signature on the type or its base types within the same assembly.
         /// </summary>
-        /// <returns><c>null</c> if not found, otherwise its <see cref="AccessLevel(TypeAttributes)"/></returns>
-        private static int? FindMember(MetadataReader reader, TypeDefinitionHandle typeHandle, string name, string signature)
+        /// <returns><c>null</c> if not found</returns>
+        private static MemberMatch? FindMember(MetadataReader reader, TypeDefinitionHandle typeHandle, string name, string signature)
         {
             for (TypeDefinitionHandle? current = typeHandle; current is { } handle; current = GetBaseTypeDefinition(reader, handle))
             {
@@ -234,12 +263,13 @@ public class NetStandardConsumerBindingTests
                     if (reader.StringComparer.Equals(method.Name, name)
                      && Signatures.Of(method.DecodeSignature(SignatureProvider.Instance, null)) == signature)
                     {
-                        return (method.Attributes & MethodAttributes.MemberAccessMask) switch
+                        var access = (method.Attributes & MethodAttributes.MemberAccessMask) switch
                         {
                             MethodAttributes.Public or MethodAttributes.Assembly or MethodAttributes.FamORAssem => 2,
                             MethodAttributes.Family or MethodAttributes.FamANDAssem => 1,
                             _ => 0,
                         };
+                        return new MemberMatch(access, (method.Attributes & MethodAttributes.Static) != 0, GetConstraints(reader, method.GetGenericParameters()));
                     }
                 }
 
@@ -249,17 +279,83 @@ public class NetStandardConsumerBindingTests
                     if (reader.StringComparer.Equals(field.Name, name)
                      && field.DecodeSignature(SignatureProvider.Instance, null) == signature)
                     {
-                        return (field.Attributes & FieldAttributes.FieldAccessMask) switch
+                        var access = (field.Attributes & FieldAttributes.FieldAccessMask) switch
                         {
                             FieldAttributes.Public or FieldAttributes.Assembly or FieldAttributes.FamORAssem => 2,
                             FieldAttributes.Family or FieldAttributes.FamANDAssem => 1,
                             _ => 0,
                         };
+                        return new MemberMatch(access, (field.Attributes & FieldAttributes.Static) != 0, []);
                     }
                 }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the generic constraints as "index: constraint" strings, e.g. "0: ReferenceTypeConstraint" or "0: System.IDisposable"
+        /// </summary>
+        private static HashSet<string> GetConstraints(MetadataReader reader, GenericParameterHandleCollection parameters)
+        {
+            var constraints = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var parameterHandle in parameters)
+            {
+                var parameter = reader.GetGenericParameter(parameterHandle);
+                var special = parameter.Attributes & GenericParameterAttributes.SpecialConstraintMask;
+                if (special != 0)
+                {
+                    constraints.Add($"{parameter.Index}: {special}");
+                }
+
+                foreach (var constraintHandle in parameter.GetConstraints())
+                {
+                    var type = reader.GetGenericParameterConstraint(constraintHandle).Type;
+                    var typeName = type.Kind switch
+                    {
+                        HandleKind.TypeDefinition => SignatureProvider.Instance.GetTypeFromDefinition(reader, (TypeDefinitionHandle)type, 0),
+                        HandleKind.TypeReference => SignatureProvider.Instance.GetTypeFromReference(reader, (TypeReferenceHandle)type, 0),
+                        _ => SignatureProvider.Instance.GetTypeFromSpecification(reader, null, (TypeSpecificationHandle)type, 0),
+                    };
+                    constraints.Add($"{parameter.Index}: {typeName}");
+                }
+            }
+
+            return constraints;
+        }
+
+        private static HashSet<string> GetInternalsVisibleTo(MetadataReader reader)
+        {
+            var friends = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var attributeHandle in reader.GetAssemblyDefinition().GetCustomAttributes())
+            {
+                var attribute = reader.GetCustomAttribute(attributeHandle);
+                var attributeType = attribute.Constructor.Kind switch
+                {
+                    HandleKind.MemberReference => reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Parent,
+                    HandleKind.MethodDefinition => reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor).GetDeclaringType(),
+                    _ => default,
+                };
+
+                var attributeTypeName = attributeType.Kind switch
+                {
+                    HandleKind.TypeReference => Names.Of(reader, (TypeReferenceHandle)attributeType),
+                    HandleKind.TypeDefinition => Names.Of(reader, (TypeDefinitionHandle)attributeType),
+                    _ => null,
+                };
+
+                if (attributeTypeName == "System.Runtime.CompilerServices.InternalsVisibleToAttribute")
+                {
+                    var value = reader.GetBlobReader(attribute.Value);
+                    value.ReadUInt16(); // prolog
+                    if (value.ReadSerializedString() is { } friend)
+                    {
+                        friends.Add(friend);
+                    }
+                }
+            }
+
+            return friends;
         }
 
         /// <summary>
@@ -360,35 +456,6 @@ public class NetStandardConsumerBindingTests
             return unimplemented;
         }
 
-        private static bool IsAttribute(LoadedAssembly assembly, string typeName)
-        {
-            var reader = assembly.Reader;
-            if (!assembly.Types.TryGetValue(typeName, out var handle))
-            {
-                return false;
-            }
-
-            while (true)
-            {
-                var baseType = reader.GetTypeDefinition(handle).BaseType;
-                if (baseType.IsNil)
-                {
-                    return false;
-                }
-
-                switch (baseType.Kind)
-                {
-                    case HandleKind.TypeDefinition:
-                        handle = (TypeDefinitionHandle)baseType;
-                        continue;
-                    case HandleKind.TypeReference:
-                        return Names.Of(reader, (TypeReferenceHandle)baseType) == "System.Attribute";
-                    default:
-                        return false;
-                }
-            }
-        }
-
         /// <summary>
         /// Gets the name of the Datadog.Trace type referenced by a TypeRef, or by a generic instantiation TypeSpec
         /// </summary>
@@ -454,6 +521,9 @@ public class NetStandardConsumerBindingTests
     }
 
     private sealed record CheckResult(int TypeReferenceCount, int MemberReferenceCount, List<string> Violations);
+
+    // Access: 2 = accessible from anywhere, 1 = only from derived types, 0 = private (as for AccessLevel)
+    private sealed record MemberMatch(int Access, bool IsStatic, HashSet<string> Constraints);
 
     private sealed class LoadedAssembly : IDisposable
     {
