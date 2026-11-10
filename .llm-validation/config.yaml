@@ -23,8 +23,7 @@ setup:
 
 default_level: gate
 presets:
-  # Three guidance cases, four skill workflows, and two general-language controls.
-  # sdk-review is included in the setup inventory but has no dedicated case yet.
+  # Three guidance cases, five skill workflows, and two general-language controls.
   # This is a calibration subset, not full-suite coverage or proof of individual skill benefit.
   setup-calibration:
     cases:
@@ -37,6 +36,7 @@ presets:
       - dotnet-tracer-add-lint-rule-018
       - dotnet-tracer-azdo-span-count-019
       - dotnet-tracer-azure-functions-local-package-020
+      - dotnet-tracer-sdk-review-response-metadata-022
     runs: 3
   gate:
     cases:

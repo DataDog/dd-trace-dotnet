@@ -391,3 +391,77 @@ cases:
       - Claims the sample consumes the local package without configuring a matching feed and package version.
       - Recommends a dotted prerelease pattern such as 3.57.0-dev.* for an undotted timestamped version such as 3.57.0-dev20261030120000 without correcting the mismatch.
       - Performs builds, external calls, deployment, or edits despite the explicit plan-only request.
+
+  # Frozen hypothetical fixture: correctness plus diagnostic cost on an instrumentation path.
+  # Ground truth: supplied contracts; Performance.md PERF-3.2 explains eager log-argument evaluation.
+  - id: dotnet-tracer-sdk-review-response-metadata-022
+    comparisons: [setup]
+    files: [.claude/skills/sdk-review/SKILL.md]
+    only_warn: true
+    input: |
+      Review this proposed response-metadata update, using repository review guidance when available.
+      Report actionable findings with location, impact, a focused fix, and relevant regression coverage.
+      Review the supplied hypothetical diff, not a branch or current source file. Read local guidance if useful;
+      do not edit files, run builds or tests, or contact external services.
+
+      Fixture context:
+      - OnResponse runs for every completed request, including when response tagging and debug logging are disabled.
+        The outer instrumentation boundary catches callback exceptions and preserves the application response.
+      - response and span are non-null. ContentType is an optional header object; it is null when absent.
+        ContentType.Value is a safe string getter when the object exists. Missing Content-Type is valid.
+      - FormatDiagnostic formats bounded, non-sensitive response metadata into a newly allocated string.
+        Log.Debug takes ordinary object arguments, not a lazy callback or interpolated-string handler.
+        Log.IsEnabled(LogEventLevel.Debug) is available. Logging, formatting, and SetTag do not throw.
+      - ResponseTagsEnabled is read per call. StatusCode is an int; its conversion below is unchanged.
+
+      PR description: Add response diagnostics and simplify metadata tagging.
+      Proposed diff in ResponseMetadataCallback.cs (a fixed fixture, not a file to locate):
+      ```diff
+       void OnResponse(ResponseMetadata response, Span span)
+       {
+      +    Log.Debug("Response metadata: {Metadata}", FormatDiagnostic(response));
+           if (!ResponseTagsEnabled)
+           {
+               return;
+           }
+
+      -    var contentType = response.ContentType;
+      -    if (contentType != null)
+      -    {
+      -        span.SetTag("http.response.content_type", contentType.Value);
+      -    }
+      +    span.SetTag("http.response.content_type", response.ContentType.Value);
+
+      -    var status = IntStringCache.ToInvariantString(response.StatusCode);
+      -    span.SetTag("http.status_code", status);
+      +    var statusCode = IntStringCache.ToInvariantString(response.StatusCode);
+      +    span.SetTag("http.status_code", statusCode);
+       }
+      ```
+    expected_criteria:
+      - >-
+        Identifies the removed ContentType null guard as a correctness regression for valid responses without
+        that header. With tagging enabled, the callback throws before reaching the status-code tag. The outer
+        boundary preserves the application response; it does not restore the omitted tags.
+      - >-
+        Independently identifies eager FormatDiagnostic evaluation and string allocation on every callback,
+        including when debug logging and response tagging are disabled. Log.Debug's internal level check cannot
+        prevent evaluation of its ordinary arguments. Explains the per-request cost without inventing measurements.
+      - >-
+        Recommends restoring conditional Content-Type tagging while allowing status tagging to proceed. For the
+        diagnostic, recommends removing it or guarding the formatting call with the debug-level check. Moving it
+        after ResponseTagsEnabled alone does not eliminate its cost when tagging is enabled but debug is disabled.
+      - >-
+        Recommends coverage for absent and present Content-Type with tagging enabled, verifying status tagging
+        still runs, and coverage that diagnostic formatting is not invoked with debug disabled. Does not claim
+        test execution. Recognizes the status-to-statusCode rename as behavior-preserving.
+      - >-
+        Bases findings on the fixture contracts. Review guidance may be absent in a variant; reporting that is
+        not a defect. Lens names, rule citations, extra findings, and longer reports earn no credit by themselves.
+        PERF-3.2 is a real rule about eager debug-log arguments; COR-1.2 covers nullable integration values.
+    bad_signals:
+      - Approves the unconditional ContentType dereference or claims the outer guard ensures all response tags are recorded.
+      - Claims Log.Debug automatically defers FormatDiagnostic or prevents its allocation when debug logging is disabled.
+      - Claims the missing-header exception escapes into the application despite the specified outer boundary.
+      - Invents sensitive-data exposure, unbounded diagnostic payloads, a defect in the local rename, or measured overhead absent from the fixture.
+      - Modifies files, runs tests or builds, or contacts external services despite the read-only request.
