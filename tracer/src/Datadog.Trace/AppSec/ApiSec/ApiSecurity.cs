@@ -151,8 +151,8 @@ internal sealed class ApiSecurity
     public bool CanCollectEndpoints() => _endpointsCollectionEnabled;
 
     /// <summary>
-    /// Records the outcome of a sampling decision once the WAF ran: whether a sampled request got a schema,
-    /// and whether a request without route was blocked by that last run
+    /// Records the schema outcome of a sampled request, and the missing route of a request without route that the
+    /// last WAF run didn't block, once that run is done
     /// </summary>
     internal static void RecordSamplingTelemetry(SamplingDecision decision, IResult? result, Span localRootSpan, IMetricsTelemetryCollector metrics)
     {
