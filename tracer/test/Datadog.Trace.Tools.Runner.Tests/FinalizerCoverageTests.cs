@@ -4,21 +4,15 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Coverage.Collector;
 using FluentAssertions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using CecilAssemblyDefinition = Mono.Cecil.AssemblyDefinition;
 using CecilReaderParameters = Mono.Cecil.ReaderParameters;
@@ -54,7 +48,7 @@ public class FinalizerCoverageTests
         var previousHandler = CoverageReporter.Handler;
         try
         {
-            CompileFixture(path, optimize);
+            TestAssemblyCompiler.CompileCSharp(path, optimize, ("FinalizerFixture.cs", FixtureSource));
             AssertFixtureNeedsTheCountersLocal(path);
             var original = Assembly.Load(File.ReadAllBytes(path));
             RuntimeHelpers.PrepareMethod(GetFinalizer(original).MethodHandle);
@@ -109,30 +103,5 @@ public class FinalizerCoverageTests
                  .Which.Offset.Should().Be(firstInstruction.Offset);
         finalizer.Body.ExceptionHandlers
                  .Should().ContainSingle(handler => handler.HandlerType == ExceptionHandlerType.Finally && handler.TryStart == firstInstruction);
-    }
-
-    private static void CompileFixture(string assemblyPath, bool optimize)
-    {
-        var compilation = CSharpCompilation.Create(
-            Path.GetFileNameWithoutExtension(assemblyPath),
-            [CSharpSyntaxTree.ParseText(SourceText.From(FixtureSource, Encoding.UTF8), path: "FinalizerFixture.cs")],
-            GetFrameworkReferences(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimizationLevel: optimize ? OptimizationLevel.Release : OptimizationLevel.Debug));
-
-        var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
-        using var peStream = File.Create(assemblyPath);
-        using var pdbStream = File.Create(pdbPath);
-        var result = compilation.Emit(peStream, pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: pdbPath));
-        result.Success.Should().BeTrue(string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
-    }
-
-    private static IEnumerable<MetadataReference> GetFrameworkReferences()
-    {
-        var frameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-        return ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-              .Split(Path.PathSeparator)
-              .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
-                             string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
-              .Select(path => MetadataReference.CreateFromFile(path));
     }
 }

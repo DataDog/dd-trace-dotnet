@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
@@ -19,9 +18,6 @@ using Datadog.Trace.Coverage.Collector;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Xunit;
 using CecilAssemblyDefinition = Mono.Cecil.AssemblyDefinition;
@@ -452,26 +448,14 @@ public class CoverageRewriterCorpusTests
 
         private static void Compile(string language, bool optimize, (string Path, string Text)[] sources, string assemblyPath)
         {
-            var optimizationLevel = optimize ? OptimizationLevel.Release : OptimizationLevel.Debug;
-            var compilation = language == LanguageNames.CSharp
-                ? (Compilation)CSharpCompilation.Create(
-                    "CoverageCorpus",
-                    sources.Select(s => CSharpSyntaxTree.ParseText(SourceText.From(s.Text, Encoding.UTF8), new CSharpParseOptions(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest), s.Path)),
-                    GetFrameworkReferences(),
-                    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimizationLevel: optimizationLevel, allowUnsafe: true))
-                : VisualBasicCompilation.Create(
-                    "CoverageCorpus",
-                    sources.Select(s => VisualBasicSyntaxTree.ParseText(SourceText.From(s.Text, Encoding.UTF8), GetVisualBasicParseOptions(), s.Path)),
-                    GetFrameworkReferences(),
-                    new VisualBasicCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimizationLevel: optimizationLevel));
-
-            using var peStream = File.Create(assemblyPath);
-            using var pdbStream = File.Create(Path.ChangeExtension(assemblyPath, ".pdb"));
-            var result = compilation.Emit(
-                peStream,
-                pdbStream,
-                options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: Path.ChangeExtension(assemblyPath, ".pdb")));
-            result.Success.Should().BeTrue(string.Join(Environment.NewLine, result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
+            if (language == LanguageNames.CSharp)
+            {
+                TestAssemblyCompiler.CompileCSharp(assemblyPath, optimize, sources);
+            }
+            else
+            {
+                TestAssemblyCompiler.CompileVisualBasic(assemblyPath, optimize, GetVisualBasicParseOptions(), sources);
+            }
         }
 
         private static VisualBasicParseOptions GetVisualBasicParseOptions()
@@ -482,16 +466,6 @@ public class CoverageRewriterCorpusTests
 #else
             return new VisualBasicParseOptions(preprocessorSymbols: [new KeyValuePair<string, object>("HasProjectData", true)]);
 #endif
-        }
-
-        private static IEnumerable<MetadataReference> GetFrameworkReferences()
-        {
-            var frameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-            return ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-                  .Split(Path.PathSeparator)
-                  .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
-                                 string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
-                  .Select(path => MetadataReference.CreateFromFile(path));
         }
 
         private static Dictionary<string, HashSet<int>> ReadExecutableLines(string assemblyPath)
