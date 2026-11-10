@@ -70,7 +70,18 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
         {
             if (exception != null || returnValue == null)
             {
-                _continuation(instance, default, exception, in state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    _continuation(instance, default, exception, in state);
+                }
+                catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                }
+
                 return returnValue;
             }
 
@@ -78,9 +89,25 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             if (previousValueTask.IsCompletedSuccessfully)
             {
                 // ok all good, just run synchronously
+                // Reading Result consumes the ValueTask (it may be backed by a pooled IValueTaskSource),
+                // so from here on we must always return a new ValueTask, never the original one.
                 var unwrappedResult = previousValueTask.Result;
-                _continuation(instance, unwrappedResult, exception, in state);
-                return ValueTaskActivator<TReturn, TResult?>.CreateInstance(unwrappedResult);
+                TResult? continuationResult;
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    continuationResult = _continuation(instance, unwrappedResult, exception, in state);
+                }
+                catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+                {
+                    // If the continuation throws, the caller still gets the original result
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                    continuationResult = unwrappedResult;
+                }
+
+                return ValueTaskActivator<TReturn, TResult?>.CreateInstance(continuationResult);
             }
 
             // uh oh, need to extract the task, await it, run the continuation
@@ -99,7 +126,6 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
 
             TResult? taskResult = default;
             Exception? exception = null;
-            TResult? continuationResult = default;
 
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
@@ -122,14 +148,16 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 }
             }
 
+            // If the continuation throws, the caller still gets the original result
+            TResult? continuationResult = taskResult;
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 continuationResult = _continuation(target, taskResult, exception, in state);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }
@@ -212,15 +240,16 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 }
             }
 
-            TResult? continuationResult = default;
+            // If the continuation throws, the caller still gets the original result
+            TResult? continuationResult = taskResult;
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 continuationResult = await _asyncContinuation(target, taskResult, exception, in state).ConfigureAwait(_preserveContext);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }

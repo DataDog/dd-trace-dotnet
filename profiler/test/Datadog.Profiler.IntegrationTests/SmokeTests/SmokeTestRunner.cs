@@ -44,6 +44,29 @@ namespace Datadog.Profiler.SmokeTests
             _output = _testApplicationRunner.XUnitLogger;
         }
 
+        public SmokeTestRunner(
+            TestAppContext context,
+            ITestOutputHelper output,
+            TransportType transportType = TransportType.Http)
+            : this(context, commandLine: null, output: output, transportType: transportType)
+        {
+        }
+
+        public SmokeTestRunner(
+            TestAppContext context,
+            string commandLine,
+            ITestOutputHelper output,
+            TransportType transportType = TransportType.Http)
+            : this(
+                context.Application.FolderName,
+                TestFrameworkInfo.ToMoniker(context.Framework),
+                context.Application.AssemblyName,
+                commandLine,
+                output,
+                transportType)
+        {
+        }
+
         public int MinimumExpectedNbPprofFiles { get; set; } = 2;
 
         public ITestOutputHelper XUnitLogger => _output;

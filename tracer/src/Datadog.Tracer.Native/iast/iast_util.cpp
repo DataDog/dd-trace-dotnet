@@ -182,14 +182,16 @@ namespace iast
     }
     std::string GetDatadogVersion()
     {
-        return PROFILER_VERSION;
+        // The numeric version rather than the semver PROFILER_VERSION, because callers parse it with
+        // GetVersionInfo() to filter aspects and to build the Datadog.Trace assembly reference
+        return DD_THREE_PART_VERSION_STR;
     }
     WSTRING GetDatadogVersionW()
     {
         static shared::WSTRING version = EmptyWStr;
         if (version == EmptyWStr)
         {
-            version = ToWSTRING(PROFILER_VERSION);
+            version = ToWSTRING(DD_THREE_PART_VERSION_STR);
         }
         return version;
     }

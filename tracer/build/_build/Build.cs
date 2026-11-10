@@ -67,17 +67,23 @@ partial class Build : NukeBuild
     [Parameter("The current latest tracer version")]
     const int LatestMajorVersion = 3;
 
-    [Parameter("The current version of the source and build")]
-    readonly string Version = "3.57.0";
+    /// <summary>Gets the version being built, read from version.props. Three parts, numeric only.</summary>
+    string Version => ProjectInfo.Version;
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = false;
+    /// <summary>Gets the semver prerelease suffix of the version being built, including its leading '-', or empty for a release.</summary>
+    string VersionSuffix => ProjectInfo.VersionSuffix;
+
+    /// <summary>Gets a value indicating whether this version is a prerelease, which per semver means it has any suffix.</summary>
+    bool IsPrerelease => VersionSuffix.Length > 0;
+
+    /// <summary>Gets the semantic version being built: <see cref="Version"/> plus <see cref="VersionSuffix"/>.</summary>
+    string FullVersion => ProjectInfo.SemanticVersion;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
-    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
-    readonly bool? NewIsPrerelease;
+    [Parameter("The new version suffix to set, with or without its leading '-'. For UpdateVersion, 'prerelease' or empty (the default). For SetDevVersionSuffix, any identifier, which is prefixed with 'dev.'")]
+    readonly string NewVersionSuffix;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
@@ -119,6 +125,15 @@ partial class Build : NukeBuild
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
 
+    string CppCheckVersionDefines
+    {
+        get
+        {
+            var version = new System.Version(Version);
+            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build} -DDD_VERSION_SUFFIX={VersionSuffix}";
+        }
+    }
+
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
@@ -139,6 +154,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"FullVersion: {FullVersion}");
                             Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");

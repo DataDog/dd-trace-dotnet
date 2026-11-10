@@ -43,6 +43,12 @@ std::chrono::milliseconds const Configuration::DefaultLibrariesInfoCacheStartTim
 #else
     2s;
 #endif
+std::chrono::milliseconds const Configuration::DefaultWatcherStartTimeout =
+#if defined(DD_SANITIZERS)
+    10s;
+#else
+    2s;
+#endif
 
 Configuration::Configuration()
 {
@@ -136,6 +142,7 @@ Configuration::Configuration()
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
     _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
     _librariesInfoCacheStartTimeout = ExtractLibrariesInfoCacheStartTimeout();
+    _watcherStartTimeout = ExtractWatcherStartTimeout();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -1009,6 +1016,28 @@ std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() con
     return _librariesInfoCacheStartTimeout;
 }
 
+std::chrono::milliseconds Configuration::ExtractWatcherStartTimeout() const
+{
+    // Unlike the other start timeouts, 0 is a valid value here: it means "do not wait for the watcher
+    // thread", which makes StackSamplerLoopManager fail to start. That is how the integration tests reach
+    // the delayed-start failure path deterministically (see SCP-1413). Negative values are not meaningful.
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::WatcherStartTimeout, DefaultWatcherStartTimeout);
+    if (timeout < 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::WatcherStartTimeout,
+                  " env var must not be negative but is set to '", timeout,
+                  "' - '", DefaultWatcherStartTimeout, "' is used instead");
+        return DefaultWatcherStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetWatcherStartTimeout() const
+{
+    return _watcherStartTimeout;
+}
+
 int32_t Configuration::ExtractHeapHandleLimit() const
 {
     // default handle count limit is 4096; could be changed via env vars from 1024 to 16000
@@ -1026,14 +1055,14 @@ uint32_t Configuration::GetHeapHandleLimit() const
 
 uint32_t Configuration::ExtractReferenceTreeFormat() const
 {
-    // The format is a bitfield combining ReferenceTreeFormat_Binary (1) and ReferenceTreeFormat_Json (2).
-    // Only 1 (Binary), 2 (Json) and 3 (Binary + Json) are valid; anything else falls back to the
-    // default binary format.
+    // At least one output format bit must be set. Benchmark diagnostics may be combined with either
+    // output format, but is not valid on its own.
     constexpr uint32_t defaultFormat = ReferenceTreeFormat_Binary;
-    constexpr uint32_t validMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t outputMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t validMask = outputMask | ReferenceTreeFormat_BenchmarkDiagnostics;
 
     uint32_t format = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, defaultFormat);
-    if (format == 0 || (format & ~validMask) != 0)
+    if ((format & outputMask) == 0 || (format & ~validMask) != 0)
     {
         return defaultFormat;
     }

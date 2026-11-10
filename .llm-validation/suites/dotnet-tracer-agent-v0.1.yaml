@@ -25,7 +25,7 @@ cases:
         Mentions a valid instrumentation generator entry point: ./tracer/build.ps1 RunInstrumentationGenerator (GUI),
         RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
         via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd (Nuke wrapper), or
-        dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- generate <dll> --type <type> --method <method> (direct CLI).
+        dotnet run --project tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- generate <dll> --type <type> --method <method> (direct CLI).
         The wrapper in tracer/build/_build/Build.Utilities.cs maps its flags to the direct CLI arguments;
         --output-path maps to --output. Both accept --overload-index <n>. For parameter types, the wrapper splits
         --parameter-types "<type1> <type2>"; the direct CLI requires separate arguments: --parameter-types <type1> <type2>.

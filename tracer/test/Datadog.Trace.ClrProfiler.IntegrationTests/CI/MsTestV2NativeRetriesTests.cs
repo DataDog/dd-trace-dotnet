@@ -309,16 +309,16 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     [InlineData("efd", "AlwaysFails", 5, "fail", 3)]
     [InlineData("efd_faulty", "AlwaysFails", 3, "fail", 3)]
     [InlineData("efd_and_atr", "AlwaysFails", 5, "fail", 3)]
-    [InlineData("attempt_to_fix", "AlwaysFails", 5, "fail", 3)]
+    [InlineData("attempt_to_fix", "AlwaysFails", 3, "fail", 3)]
     [InlineData("attempt_to_fix", "PassesImmediately", 3, "pass", 1)]
-    [InlineData("attempt_to_fix", "PassesOnThirdAttempt", 5, "fail", 3)]
+    [InlineData("attempt_to_fix", "PassesOnThirdAttempt", 3, "fail", 3)]
     [InlineData("quarantined", "AlwaysFails", 3, "skip", 3)]
     [InlineData("disabled", "AlwaysFails", 0, "skip", 3)]
     [InlineData("itr", "AlwaysFails", 0, "skip", 3)]
     [InlineData("itr_row", "ParameterizedRetry", 2, "pass", 2)]
     [InlineData("efd", "InitiallyPassesWithFreshInstances", 3, "pass", 1)]
     [InlineData("efd", "CustomPolicySelectsEarlierAttempt", 5, "pass", 3)]
-    [InlineData("attempt_to_fix", "CustomPolicySelectsEarlierAttempt", 5, "fail", 3)]
+    [InlineData("attempt_to_fix", "CustomPolicySelectsEarlierAttempt", 3, "fail", 3)]
     public async Task NativeRetriesRespectTestOptimizationPolicies(string feature, string name, int expectedAttempts, string expectedFinalStatus, int expectedNativeAttempts)
     {
         EnvironmentHelper.EnableDefaultTransport();
@@ -415,7 +415,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
         try
         {
-            using var result = await RunMSTestAsync(agent, $"FullyQualifiedName~{name}", isEfd && expectedFinalStatus == TestTags.StatusFail ? FailedTestExitCode : 0);
+            using var result = await RunMSTestAsync(agent, $"FullyQualifiedName~{name}", (isEfd || feature == "attempt_to_fix") && expectedFinalStatus == TestTags.StatusFail ? FailedTestExitCode : 0);
             File.ReadAllLines(attemptsFile).Should().HaveCount(expectedAttempts);
             if (skipOneRow)
             {
@@ -437,7 +437,10 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
             if (name == "CustomPolicySelectsEarlierAttempt")
             {
-                tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusPass);
+                string[] expectedStatuses = feature == "attempt_to_fix"
+                                                ? [TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail]
+                                                : [TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusPass];
+                tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(expectedStatuses);
             }
 
             if (isEfd || feature == "attempt_to_fix")

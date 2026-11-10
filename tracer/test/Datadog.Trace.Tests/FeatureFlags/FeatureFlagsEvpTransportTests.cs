@@ -678,12 +678,12 @@ public class FeatureFlagsEvpTransportTests
         directHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
         directHeaders.Should().Contain(TelemetryConstants.ApiKeyHeader, "test-api-key");
         directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         directHeaders.Should().NotContainKey(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader);
 
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader, FeatureFlagsEvpHeaderHelper.EvpSubdomain);
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         localHeaders.Should().NotContainKey(TelemetryConstants.ApiKeyHeader);
         localHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
     }
@@ -1083,7 +1083,7 @@ public class FeatureFlagsEvpTransportTests
         endpoint.Should().Be(new Uri("https://event-platform-intake.mock-intake.invalid/api/v2/exposures"));
         headers.Should().Contain("DD-API-KEY", "test-api-key");
         headers.Should().Contain("DD-EVP-ORIGIN", "dd-trace-dotnet");
-        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion);
+        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.SemanticVersion);
         headers.Should().Contain("x-datadog-tracing-enabled", "false");
         headers.Should().NotContainKey("X-Datadog-EVP-Subdomain");
     }

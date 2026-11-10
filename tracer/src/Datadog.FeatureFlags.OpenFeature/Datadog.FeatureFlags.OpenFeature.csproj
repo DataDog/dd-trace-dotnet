@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="Sdk\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\ExposureCommitResult.cs" Link="Sdk\ExposureCommitResult.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureFlagMetadataKeys.cs" Link="Sdk\FeatureFlagMetadataKeys.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FlagEvaluation\ContextOmissionReason.cs" Link="Sdk\ContextOmissionReason.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FlagEvaluation\FlagEvaluationBridge.cs" Link="Sdk\FlagEvaluationBridge.cs" />
@@ -39,6 +40,7 @@
   <ItemGroup>
      <!-- If you update this version, be sure to update the TargetFrameworks element above-->
     <PackageReference Include="OpenFeature" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">

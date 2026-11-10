@@ -61,9 +61,11 @@ END
 #endif    // not APSTUDIO_INVOKED
 
 // ------- version info -------------------------------------------------------
+#include "../../../../shared/src/native-src/dd_version.h"
+
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION             3,57,0,0
-PRODUCTVERSION          3,57,0,0
+FILEVERSION             DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
+PRODUCTVERSION          DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
 FILEFLAGSMASK           VS_FF_PRERELEASE
 FILEOS                  VOS_NT
 FILETYPE                VFT_DLL
@@ -74,12 +76,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Continuous Profiler for .NET Applications"
-            VALUE "FileVersion", "3.57.0.0"
+            VALUE "FileVersion", DD_FOUR_PART_VERSION_STR
             VALUE "InternalName", "Native Profiler Engine"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Profiler.Native.dll"
             VALUE "ProductName", "Continuous Profiler for .NET Applications"
-            VALUE "ProductVersion", "3.57.0.0"
+            VALUE "ProductVersion", DD_FOUR_PART_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

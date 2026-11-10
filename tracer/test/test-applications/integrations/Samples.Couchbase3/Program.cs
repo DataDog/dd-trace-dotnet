@@ -45,7 +45,7 @@ namespace Samples.Couchbase3
             // get a bucket reference
             var bucket = await cluster.BucketAsync("default");
 
-            // get a user-defined collection reference
+            // get a collection reference
 #if COUCHBASE_3_0
             var collection = bucket.DefaultCollection();
 #else
@@ -83,9 +83,6 @@ namespace Samples.Couchbase3
             return 0;
         }
 
-        private static string Host()
-        {
-            return Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "localhost";
-        }
+        private static string Host() => Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "localhost";
     }
 }

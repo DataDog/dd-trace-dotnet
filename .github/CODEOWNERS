@@ -18,6 +18,7 @@
 /.gitlab/                                 @DataDog/apm-dotnet
 /.llm-validation/                         @DataDog/apm-dotnet
 /.nuke/                                   @DataDog/apm-dotnet
+/.pi/                                     @DataDog/apm-dotnet
 /.vscode/                                 @DataDog/apm-dotnet
 /build/                                   @DataDog/apm-dotnet
 /docker/                                  @DataDog/apm-dotnet
@@ -82,7 +83,10 @@ tracer/                                   @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Proxy/                 @DataDog/apm-serverless
 /tracer/src/Datadog.Trace/Serverless/                                            @DataDog/apm-serverless
 
-## Serverless (AWS Lambda)
+## Serverless (AWS)
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                    @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/Tagging/Aws*Tags.cs                                    @DataDog/apm-serverless
+/tracer/test/test-applications/integrations/Samples.AWS.*/                       @DataDog/apm-serverless
 /tracer/src/**/*Lambda*                                                         @DataDog/apm-serverless
 /tracer/test/**/*Lambda*                                                        @DataDog/apm-serverless
 /tracer/build/_build/docker/serverless.lambda.dockerfile                        @DataDog/apm-serverless
@@ -324,6 +328,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 ## Shared ownership conventions
 /tracer/test/**/AutoInstrumentation/                                  @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
+/tracer/test/**/AutoInstrumentation/AWS/                              @DataDog/apm-serverless
 /tracer/test/**/CI/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/**/Ci/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.*Tests/DataStreamsMonitoring/              @DataDog/data-streams-monitoring

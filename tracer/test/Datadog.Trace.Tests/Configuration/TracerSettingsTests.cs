@@ -11,6 +11,8 @@ using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -18,6 +20,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -343,6 +346,31 @@ namespace Datadog.Trace.Tests.Configuration
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
         }
 
+        [Theory]
+        // OTEL_SDK_DISABLED=true disables runtime metrics, even when DD_RUNTIME_METRICS_ENABLED=true
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("invalid")]
+        [InlineData("true")]
+        [InlineData("1")]
+        [InlineData("false")]
+        public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            using var scope = new AssertionScope();
+            settings.RuntimeMetricsEnabled.Should().BeFalse();
+            settings.OtlpRuntimeMetricsEnabled.Should().BeFalse();
+            telemetry.GetQueueForTesting()
+                     .Should()
+                     .Contain(e => e.Key == ConfigurationKeys.RuntimeMetricsEnabled && e.Origin == ConfigurationOrigins.Calculated && e.BoolValue == false);
+        }
+
 #if NET6_0_OR_GREATER
         [Fact]
         public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
@@ -619,6 +647,11 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, "true", false)]
         [InlineData(null, null, "uses_default_value", false)]
         [InlineData("", "", null, false)]
+        // OTEL_SDK_DISABLED=true takes precedence over DD_TRACE_OTEL_ENABLED
+        [InlineData("1", "0", "true", false)]
+        [InlineData("true", null, "TRUE", false)]
+        [InlineData(null, "1", "True", false)]
+        [InlineData("1", null, "false", true)]
         public void IsActivityListenerEnabled(string value, string fallbackValue, string otelValue, bool expected)
         {
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
@@ -631,13 +664,92 @@ namespace Datadog.Trace.Tests.Configuration
             settings.IsActivityListenerEnabled.Should().Be(expected);
             Count? metric = (value ?? fallbackValue, otelValue?.ToLower()) switch
             {
-                (null, "true") => null,
+                (_, "true") => null,
                 (null, _) => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
 
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.SdkDisabled.ToLowerInvariant(), ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled.ToLowerInvariant());
+        }
+
+        [Theory]
+        [InlineData("true", true)]
+        [InlineData("TRUE", true)]
+        [InlineData("True", true)]
+        [InlineData("false", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        [InlineData("1", false)]
+        public void OtelSdkDisabled_DisablesOpenTelemetryMode(string otelSdkDisabled, bool expectedDisabled)
+        {
+            // Every signal is opted in through its own setting, as an operator auto-install would do
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, otelSdkDisabled),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true"),
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            var expectedEnabled = !expectedDisabled;
+            using var scope = new AssertionScope();
+            settings.IsActivityListenerEnabled.Should().Be(expectedEnabled);
+            settings.OpenTelemetryMetricsEnabled.Should().Be(expectedEnabled);
+            settings.OpenTelemetryLogsEnabled.Should().Be(expectedEnabled);
+            settings.OtelTracesSpanMetricsEnabled.Should().Be(expectedEnabled);
+            // The exporter doesn't depend on OTEL_SDK_DISABLED: no OTLP traces are sent because tracing is disabled
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedEnabled);
+#if NET6_0_OR_GREATER
+            settings.OtlpMetricsExportEnabled.Should().Be(expectedEnabled);
+            settings.RuntimeMetricsEnabled.Should().Be(expectedEnabled);
+#endif
+#if NETCOREAPP3_1_OR_GREATER
+            settings.OtlpLogsExportEnabled.Should().Be(expectedEnabled);
+#endif
+
+            // Telemetry reports the effective value of each setting turned off by OTEL_SDK_DISABLED
+            string[] disabledKeys =
+            [
+                ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
+                ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                ConfigurationKeys.TraceEnabled,
+                ConfigurationKeys.RuntimeMetricsEnabled,
+            ];
+
+            var entries = telemetry.GetQueueForTesting().ToList();
+            foreach (var key in disabledKeys)
+            {
+                entries.Any(e => e.Key == key && e is { Origin: ConfigurationOrigins.Calculated, BoolValue: false })
+                       .Should()
+                       .Be(expectedDisabled, $"{key} should only be recorded as disabled when OTEL_SDK_DISABLED=true");
+            }
+        }
+
+        [Fact]
+        public void OtelSdkDisabled_ResolvesTheSameValueAcrossCompositeSources()
+        {
+            // The composite source skips the invalid OTEL_SDK_DISABLED in the first source and falls back to "true" in the second.
+            // It keeps the invalid DD_TRACE_ENABLED, which doesn't override OTEL_SDK_DISABLED.
+            var source = new CompositeConfigurationSource(
+            [
+                CreateConfigurationSource(
+                    (ConfigurationKeys.OpenTelemetry.SdkDisabled, "invalid"),
+                    (ConfigurationKeys.TraceEnabled, "invalid")),
+                CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true")),
+            ]);
+
+            var settings = new TracerSettings(source);
+
+            // Both TracerSettings and MutableSettings resolve OTEL_SDK_DISABLED=true
+            using var scope = new AssertionScope();
+            settings.IsActivityListenerEnabled.Should().BeFalse();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -650,6 +762,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
         [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext", "baggage" })]
         [InlineData(null, null, null, ",", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "jaeger", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "tracecontext,baggage,jaeger,xray", new[] { "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
+        [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, null, "  b3 , , XRay , ", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "typo", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, " , ", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "NONE,typo", new[] { "NONE" })]
+        [InlineData(null, null, "tracecontext", "typo", new[] { "tracecontext" })]
+        [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
@@ -669,14 +792,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 settings.PropagationStyleInject.Should().BeEquivalentTo(expected);
 
-                Count? metric = (value ?? legacyValue ?? fallbackValue, otelValue) switch
-                {
-                    (null, ",") => Count.OpenTelemetryConfigInvalid,
-                    (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
-                    _ => null,
-                };
-
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(GetExpectedOtelPropagationMetrics(value ?? legacyValue ?? fallbackValue, otelValue));
             }
         }
 
@@ -690,6 +806,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
         [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext", "baggage" })]
         [InlineData(null, null, null, ",", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "jaeger", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "tracecontext,baggage,jaeger,xray", new[] { "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
+        [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, null, "  b3 , , XRay , ", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "typo", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, " , ", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "NONE,typo", new[] { "NONE" })]
+        [InlineData(null, null, "tracecontext", "typo", new[] { "tracecontext" })]
+        [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
@@ -709,15 +836,71 @@ namespace Datadog.Trace.Tests.Configuration
 
                 settings.PropagationStyleExtract.Should().BeEquivalentTo(expected);
 
-                Count? metric = (value ?? legacyValue ?? fallbackValue, otelValue) switch
-                {
-                    (null, ",") => Count.OpenTelemetryConfigInvalid,
-                    (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
-                    _ => null,
-                };
-
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(GetExpectedOtelPropagationMetrics(value ?? legacyValue ?? fallbackValue, otelValue));
             }
+        }
+
+        [Theory]
+        // Values with no supported propagator are reported as invalid instead
+        [InlineData(null, "not-a-propagator", null)]
+        [InlineData(null, "jaeger,ottrace", null)]
+        [InlineData(null, "tracecontext,baggage,Jaeger,b3,XRay", "Jaeger,XRay")]
+        [InlineData(null, "tracecontext,none", null)]
+        [InlineData(null, "tracecontext,baggage", null)]
+        [InlineData("tracecontext", "tracecontext,jaeger", "jaeger")]
+        public void PropagationStyleUnsupportedOtelPropagatorsWarning(string fallbackValue, string otelValue, string expectedWarningValue)
+        {
+            var source = CreateConfigurationSource(
+                ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
+                (ConfigurationKeys.OpenTelemetry.Propagators, otelValue));
+
+            ShouldWarnAboutUnsupportedOtelPropagators(source, expectedWarningValue);
+        }
+
+        [Fact]
+        public void PropagationStyleUnsupportedOtelPropagatorsWarningUsesSelectedSource()
+        {
+            // The highest-priority source has no supported propagator, so the lower-priority one is used
+            var source = new CompositeConfigurationSource
+            {
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, "jaeger" } }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, "tracecontext,xray" } }),
+            };
+
+            var settings = ShouldWarnAboutUnsupportedOtelPropagators(source, "xray");
+
+            settings.PropagationStyleInject.Should().BeEquivalentTo("tracecontext");
+            settings.PropagationStyleExtract.Should().BeEquivalentTo("tracecontext");
+        }
+
+        [Theory]
+        [InlineData("jaeger")]
+        [InlineData("jaeger,xray")]
+        public void PropagationStyleInvalidOtelPropagatorsWarnOnceThroughCompositeSource(string otelValue)
+        {
+            var source = new CompositeConfigurationSource
+            {
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, otelValue } }),
+            };
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            settings.PropagationStyleInject.Should().BeEquivalentTo("Datadog", "tracecontext", "baggage");
+            settings.PropagationStyleExtract.Should().BeEquivalentTo("Datadog", "tracecontext", "baggage");
+
+            var log = new Mock<IDatadogLogger>();
+            errorLog.Clone().ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
+            log.Verify(
+                l => l.Warning(
+                    "OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.",
+                    ConfigurationKeys.OpenTelemetry.Propagators,
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                Times.Once());
+            errorLog.ShouldHaveExpectedOtelMetric(
+                Count.OpenTelemetryConfigInvalid,
+                ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(),
+                "dd_trace_propagation_style");
         }
 
         [Theory]
@@ -1135,6 +1318,21 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, true, true)] // semantics mode exports traces over OTLP by default
+        [InlineData(null, false, false)]
+        [InlineData("none", true, false)]
+        public void OtelTracesSpanMetricsEnabled_AutoEnabledWithOtelSemanticsEnabled(string tracesExporter, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.OtelTracesSpanMetricsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default
@@ -1172,53 +1370,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, OtlpProtocol.Grpc)]
-        [InlineData("invalid", null, OtlpProtocol.Grpc)]
-        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
-        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
-        public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, metricsProtocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpMetricsProtocol.Should().Be((OtlpProtocol)expected);
-        }
-
-        [Theory]
-        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
-        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
-        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
-        public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsInput));
-            var telemetry = new ConfigurationTelemetry();
-            var settings = new TracerSettings(source, telemetry, new());
-
-            var baseEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            var metricsEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
-            metricsEndpointEntries[0].StringValue.Should().Be(metricsOutput);
-            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
-            settings.OtlpMetricsEndpoint.ToString().Should().Be(metricsOutput);
-        }
-
-        [Theory]
         [InlineData("DELTA", OtlpTemporalityPreference.Delta)]
         [InlineData("cumulative", OtlpTemporalityPreference.Cumulative)]
         [InlineData("loWmemOry", OtlpTemporalityPreference.LowMemory)]
@@ -1252,53 +1403,6 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", value));
             var settings = new TracerSettings(source);
             settings.PartialFlushMinSpans.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData(null, null, OtlpProtocol.Grpc)]
-        [InlineData("invalid", null, OtlpProtocol.Grpc)]
-        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
-        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
-        public void OtlpLogsProtocolFallbacks(string logsProtocol, string generalProtocol, object expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, logsProtocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpLogsProtocol.Should().Be((OtlpProtocol)expected);
-        }
-
-        [Theory]
-        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
-        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/logs")]
-        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/logs")]
-        public void OtlpLogsEndpoint(string protocol, string baseInput, string baseOutput, string logsInput, string logsOutput)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, logsInput));
-            var telemetry = new ConfigurationTelemetry();
-            var settings = new TracerSettings(source, telemetry, new());
-
-            var baseEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            var logsEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
-            logsEndpointEntries[0].StringValue.Should().Be(logsOutput);
-            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
-            settings.OtlpLogsEndpoint.ToString().Should().Be(logsOutput);
         }
 
         [Theory]
@@ -1365,6 +1469,57 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ExperimentalFeaturesEnabled.Should().BeEquivalentTo(expected);
+        }
+
+        private static IEnumerable<(Count? Metric, string OtelSetting, string DdSetting)> GetExpectedOtelPropagationMetrics(string ddValue, string otelValue)
+        {
+            var otelSetting = ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant();
+            var ddSetting = "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant();
+
+            if (otelValue is null)
+            {
+                yield break;
+            }
+
+            var propagators = otelValue.Split(',')
+                                       .Select(s => s.Trim())
+                                       .Where(s => s.Length > 0)
+                                       .ToArray();
+            var hasSupportedPropagator = propagators.Any(IsSupportedOtelPropagator);
+
+            if (ddValue is not null && hasSupportedPropagator)
+            {
+                yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
+            }
+
+            if (propagators.Length == 0 || !propagators.All(IsSupportedOtelPropagator))
+            {
+                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
+            }
+
+            static bool IsSupportedOtelPropagator(string propagator)
+                => SpanContextPropagatorFactory.GetPropagator(propagator) is not null
+                || string.Equals(propagator, "none", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static TracerSettings ShouldWarnAboutUnsupportedOtelPropagators(IConfigurationSource source, string expectedWarningValue)
+        {
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            var log = new Mock<IDatadogLogger>();
+            errorLog.ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
+
+            log.Verify(
+                l => l.Warning(
+                    It.Is<string>(s => s.Contains("unsupported values")),
+                    ConfigurationKeys.OpenTelemetry.Propagators,
+                    It.Is<string>(v => expectedWarningValue == null || v == expectedWarningValue),
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                expectedWarningValue is null ? Times.Never() : Times.Once());
+
+            return settings;
         }
     }
 }

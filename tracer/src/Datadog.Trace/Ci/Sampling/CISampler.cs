@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Sampling
             return new SamplingDecision(SamplingPriorityValues.UserKeep, mechanism: null, rate: null, limiterRate: null);
         }
 
-        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, double> sampleRates)
         {
         }
     }

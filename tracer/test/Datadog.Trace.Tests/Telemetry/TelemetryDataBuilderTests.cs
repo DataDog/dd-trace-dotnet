@@ -28,7 +28,7 @@ public class TelemetryDataBuilderTests
             serviceName: "Test Service",
             env: "integration-ci",
             serviceVersion: "1.0.0",
-            tracerVersion: TracerConstants.AssemblyVersion,
+            tracerVersion: TracerConstants.SemanticVersion,
             languageName: "dotnet",
             languageVersion: FrameworkDescription.Instance.ProductVersion,
             runtimeName: FrameworkDescription.Instance.Name,

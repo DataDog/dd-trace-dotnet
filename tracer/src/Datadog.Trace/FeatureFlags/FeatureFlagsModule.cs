@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -69,6 +70,10 @@ namespace Datadog.Trace.FeatureFlags
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
+        // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
+        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<ExposureEvent>> _deferredExposures = new();
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -420,6 +425,10 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false);
+
+        // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -439,7 +448,14 @@ namespace Datadog.Trace.FeatureFlags
                 return notReady;
             }
 
-            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            var context = new EvaluationContext(targetingKey, attributes);
+            var evaluation = deferExposure
+                                 ? evaluator.EvaluateWithDeferredExposure(flagKey, resultType, defaultValue, context)
+                                 : evaluator.Evaluate(flagKey, resultType, defaultValue, context);
+            if (evaluation.PendingExposure is { } pending && evaluation.FlagMetadata is { } metadata)
+            {
+                _deferredExposures.Add(metadata, new StrongBox<ExposureEvent>(pending));
+            }
 
             LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
 
@@ -866,18 +882,40 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void ReportExposure(in ExposureEvent exposure)
+        /// <summary>
+        /// Records and sends the exposure deferred by an evaluation, once that evaluation has completed
+        /// without an error. Returns one of the <see cref="ExposureCommitResult"/> values; a second
+        /// commit for the same evaluation finds nothing pending.
+        /// </summary>
+        internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
+        {
+            if (evaluationMetadata is null
+                || !_deferredExposures.TryGetValue(evaluationMetadata, out var pending)
+                || !_deferredExposures.Remove(evaluationMetadata))
+            {
+                return ExposureCommitResult.NothingPending;
+            }
+
+            return ReportExposure(pending.Value) switch
+            {
+                ExposureRecordResult.New => ExposureCommitResult.New,
+                ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
+                // Reporting has stopped, so nothing was recorded and there is no verdict to give.
+                _ => ExposureCommitResult.NothingPending,
+            };
+        }
+
+        private ExposureRecordResult ReportExposure(in ExposureEvent exposure)
         {
             // Nothing would ever dispose an API created after disposal, leaving its send loop running
             // for the rest of the process, so exposures are dropped from that point on.
             if (GetExposureApi() is { } exposureApi)
             {
-                exposureApi.SendExposure(exposure);
+                return exposureApi.SendExposure(exposure);
             }
-            else
-            {
-                _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
-            }
+
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+            return ExposureRecordResult.NotRecorded;
         }
 
         // Created on first use because most applications never evaluate a flag, and under the lock

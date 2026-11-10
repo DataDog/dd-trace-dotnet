@@ -430,7 +430,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                     }
                     """),
                 1,
-                34,
+                16,
                 "quarantined_and_disabled");
         }
     }
@@ -634,7 +634,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                 // CI Library Language
-                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                 // Check Session data
                 AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
