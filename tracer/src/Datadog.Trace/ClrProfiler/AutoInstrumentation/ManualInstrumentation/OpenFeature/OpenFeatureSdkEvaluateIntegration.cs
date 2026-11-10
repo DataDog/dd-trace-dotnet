@@ -42,18 +42,21 @@ public sealed class OpenFeatureSdkEvaluateIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        var parameters = (State)state.State!;
+        return new CallTargetReturn<TReturn?>(Evaluate((State)state.State!, deferExposure: false).DuckCast<TReturn>());
+    }
+
+    internal static FeatureFlags.Evaluation? Evaluate(State parameters, bool deferExposure)
+    {
         var flags = TracerManager.Instance.FeatureFlags;
 
         // Fallback activation: if the user calls Evaluate without InitializeAsync (for example,
         // via the manual API or an older OpenFeature package), start delivery on first evaluation.
         flags?.Activate();
 
-        var res = flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes);
-        return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
+        return flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes, deferExposure);
     }
 
-    private sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)
+    internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)
     {
     }
 }

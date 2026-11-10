@@ -202,6 +202,16 @@ internal static class TestTags
     public const string TestIsAttemptToFix = "test.test_management.is_attempt_to_fix";
 
     /// <summary>
+    /// The test declaration prevents Datadog failure suppression.
+    /// </summary>
+    public const string TestPreventFailureSuppression = "test.test_management.prevent_failure_suppression";
+
+    /// <summary>
+    /// The test declaration excludes Datadog automatic retries.
+    /// </summary>
+    public const string TestNoAutoRetry = "test.test_management.no_auto_retry";
+
+    /// <summary>
     /// Test has failed all retries flag
     /// </summary>
     public const string TestHasFailedAllRetries = "test.has_failed_all_retries";

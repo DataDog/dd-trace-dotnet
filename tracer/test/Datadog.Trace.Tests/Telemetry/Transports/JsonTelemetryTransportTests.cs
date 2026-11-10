@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
         [CombinatorialData]
         public async Task ShouldContainRequiredHeaders(bool debugEnabled, [CombinatorialValues("", "gzip")] string compression, bool agentless)
         {
-            var containerMetadata = new ContainerMetadata("my-container-id", "my-entity-id");
+            var containerMetadata = new ContainerMetadata("my-container-id", "my-entity-id", "it-false,cn-my-container,pu-my-pod-uid");
 
             // set up the response returned by the request
             var fakeResponse = new TestApiResponse(statusCode: 200, body: null, contentType: null);
@@ -75,6 +75,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 { "DD-Telemetry-Request-Type", "my-request-type" },
                 { "Datadog-Container-ID", "my-container-id" },
                 { "Datadog-Entity-ID", "my-entity-id" },
+                { "Datadog-External-Env", "it-false,cn-my-container,pu-my-pod-uid" },
             };
             if (debugEnabled)
             {

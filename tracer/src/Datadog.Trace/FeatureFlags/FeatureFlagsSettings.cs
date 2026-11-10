@@ -96,6 +96,12 @@ internal sealed class FeatureFlagsSettings
                                  .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
                                  .AsBool(true);
 
+        // Read once, like the other delivery settings: when false, exposures stop going to Datadog
+        // but the exposure cache and customer exposure hooks keep working.
+        ExposuresDatadogLoggingEnabled = config
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.ExposuresDatadogLoggingEnabled)
+                                       .AsBool(true);
+
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
                                 .AsRedactedString();
@@ -143,6 +149,13 @@ internal sealed class FeatureFlagsSettings
     /// Independent of flag evaluation, configuration fetching, exposures, and span enrichment.
     /// </summary>
     public bool EvaluationEventsEnabled { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether exposure events are sent to Datadog. When false, exposures
+    /// are not sent to Datadog, but the exposure cache still records and customer exposure hooks
+    /// still receive every evaluation.
+    /// </summary>
+    public bool ExposuresDatadogLoggingEnabled { get; }
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.

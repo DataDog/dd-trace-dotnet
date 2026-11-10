@@ -12,7 +12,13 @@ namespace PrepareRelease
 {
     public abstract class SetAllVersions
     {
-        protected SetAllVersions(string tracerDirectory, string tracerVersion, bool isPrerelease)
+        // A semver prerelease suffix: '-' then dot-separated identifiers of [0-9A-Za-z-], or empty for a release
+        private const string VersionSuffixPattern = @"-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*";
+        private const string VersionPropsPath = "build/_build/version.props";
+
+        private static readonly Regex VersionSuffixRegex = new($"^({VersionSuffixPattern})?$");
+
+        protected SetAllVersions(string tracerDirectory, string tracerVersion, string versionSuffix)
         {
             TracerDirectory = tracerDirectory;
 
@@ -24,7 +30,12 @@ namespace PrepareRelease
                 throw new ArgumentException($"Version must be a three-part numeric version (e.g. 3.58.0), but was '{tracerVersion}'", nameof(tracerVersion));
             }
 
-            IsPrerelease = isPrerelease;
+            if (!VersionSuffixRegex.IsMatch(versionSuffix))
+            {
+                throw new ArgumentException($"Version suffix must be empty or a semver prerelease suffix such as -prerelease, but was '{versionSuffix}'", nameof(versionSuffix));
+            }
+
+            VersionSuffix = versionSuffix;
         }
 
         /// <summary>
@@ -39,15 +50,15 @@ namespace PrepareRelease
         public Version TracerVersion { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the current tracer version is a prerelease.
+        /// Gets the semver prerelease suffix to write, including its leading '-', or empty for a release.
         /// </summary>
-        public bool IsPrerelease { get; }
+        public string VersionSuffix { get; }
 
         public abstract void Run();
 
         private string DatadogTraceBundleNugetDependencyVersionReplace(string text)
         {
-            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
+            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withSuffix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withSuffix: true)}\" />", RegexOptions.Singleline);
         }
 
         private void SynchronizeVersion(string path, Func<string, string> transform)
@@ -75,23 +86,25 @@ namespace PrepareRelease
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
-        private string VersionString(string split = ".", bool withPrereleasePostfix = false)
+        private string VersionString(string split = ".", bool withSuffix = false)
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
-
-            // this gets around a compiler warning about unreachable code below
-            var isPreRelease = IsPrerelease;
-
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (withPrereleasePostfix && isPreRelease)
-            {
-                newVersion = newVersion + "-prerelease";
-            }
-
-            return newVersion;
+            return withSuffix ? newVersion + VersionSuffix : newVersion;
         }
 
-        private string VersionPattern(string split = ".", bool withPrereleasePostfix = false)
+        private static string ReplaceElement(string text, string element, string value)
+        {
+            // version.props documents that each element appears exactly once, and is never mentioned in comments
+            var pattern = $"<{element}>[^<]*</{element}>";
+            if (!Regex.IsMatch(text, pattern))
+            {
+                throw new Exception($"Could not find <{element}> in version.props");
+            }
+
+            return Regex.Replace(text, pattern, $"<{element}>{value}</{element}>");
+        }
+
+        private string VersionPattern(string split = ".", bool withSuffix = false)
         {
             if (split == ".")
             {
@@ -100,9 +113,9 @@ namespace PrepareRelease
 
             var pattern = $@"\d+{split}\d+{split}\d+";
 
-            if (withPrereleasePostfix)
+            if (withSuffix)
             {
-                pattern = pattern + "(\\-prerelease)?";
+                pattern = pattern + $"({VersionSuffixPattern})?";
             }
 
             return pattern;
@@ -110,8 +123,8 @@ namespace PrepareRelease
 
         public class Samples : SetAllVersions
         {
-            public Samples(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Samples(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -167,8 +180,8 @@ namespace PrepareRelease
 
         public class Source : SetAllVersions
         {
-            public Source(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Source(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -181,26 +194,32 @@ namespace PrepareRelease
                 // Always changes, because UpdateVersion rejects a bump that does not change the
                 // version number.
                 SynchronizeVersion(
-                    "build/_build/version.props",
+                    VersionPropsPath,
                     text =>
                     {
                         text = ReplaceElement(text, "DD_VersionPrefix", VersionString());
-                        return ReplaceElement(text, "DD_IsPrerelease", IsPrerelease ? "true" : "false");
+                        return ReplaceElement(text, "DD_VersionSuffix", VersionSuffix);
                     });
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
             }
+        }
 
-            private static string ReplaceElement(string text, string element, string value)
+        /// <summary>
+        /// Rewrites only the version suffix in version.props, leaving the numeric version number alone.
+        /// Used to stamp a dev build.
+        /// </summary>
+        public class Suffix : SetAllVersions
+        {
+            public Suffix(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
-                // version.props documents that each element appears exactly once, and is never mentioned in comments
-                var pattern = $"<{element}>[^<]*</{element}>";
-                if (!Regex.IsMatch(text, pattern))
-                {
-                    throw new Exception($"Could not find <{element}> in version.props");
-                }
+            }
 
-                return Regex.Replace(text, pattern, $"<{element}>{value}</{element}>");
+            public override void Run()
+            {
+                SynchronizeVersion(VersionPropsPath, text => ReplaceElement(text, "DD_VersionSuffix", VersionSuffix));
+                Console.WriteLine($"Set the version suffix to '{VersionSuffix}', so the version is now {VersionString(withSuffix: true)}");
             }
         }
     }

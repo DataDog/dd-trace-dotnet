@@ -47,7 +47,17 @@ tags ProfileExporter::CommonTags = {
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
-    {"process_architecture", "x86"}
+    {"process_architecture", "x86"},
+#endif
+#if defined(__aarch64__) || defined(_M_ARM64)
+    {"cpu_arch", "arm64"},
+#elif defined(__x86_64__) || defined(_M_X64)
+    {"cpu_arch", "amd64"},
+#elif defined(__i386__) || defined(_M_IX86)
+    {"cpu_arch", "x86"},
+// Keep it for completeness
+#elif defined(__arm__) || defined(_M_ARM)
+    {"cpu_arch", "arm"}
 #endif
 };
 

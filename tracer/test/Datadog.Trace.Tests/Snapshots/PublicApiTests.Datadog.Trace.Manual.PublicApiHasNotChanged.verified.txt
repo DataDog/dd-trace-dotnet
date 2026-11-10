@@ -308,6 +308,16 @@ namespace Datadog.Trace.Ci
         void SetTag(string key, double? value);
         void SetTag(string key, string? value);
     }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=false, Inherited=false)]
+    public sealed class NoAutoRetryAttribute : System.Attribute
+    {
+        public NoAutoRetryAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=false, Inherited=false)]
+    public sealed class PreventFailureSuppressionAttribute : System.Attribute
+    {
+        public PreventFailureSuppressionAttribute() { }
+    }
     public static class TestExtensions
     {
         public static void AddBenchmarkData(this Datadog.Trace.Ci.ITest test, Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
