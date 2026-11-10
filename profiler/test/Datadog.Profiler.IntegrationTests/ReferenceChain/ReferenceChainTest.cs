@@ -171,20 +171,13 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             bool hasBinTree = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                var request = ctx.Value.Request;
-                if (!request.ContentType.StartsWith("multipart/form-data"))
+                if (!MultiPartReader.TryParse(ctx.Value.Request, out var upload))
                 {
                     return;
                 }
 
-                var mpReader = new MultiPartReader(request);
-                if (!mpReader.Parse())
-                {
-                    return;
-                }
-
-                hasJsonTree |= mpReader.Files.Any(f => f.FileName == "reference_tree.json");
-                hasBinTree |= mpReader.Files.Any(f => f.FileName == "reference_tree.bin");
+                hasJsonTree |= upload.ContainsFile("reference_tree.json");
+                hasBinTree |= upload.ContainsFile("reference_tree.bin");
             };
 
             runner.Run(agent);
@@ -896,24 +889,14 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
         private static bool HasReferenceTreeFile(HttpListenerRequest request, string expectedFileName)
         {
-            if (!request.ContentType.StartsWith("multipart/form-data"))
-            {
-                return false;
-            }
-
-            var mpReader = new MultiPartReader(request);
-            if (!mpReader.Parse())
-            {
-                return false;
-            }
-
-            return mpReader.Files.Any(f => f.FileName == expectedFileName);
+            return MultiPartReader.TryParse(request, out var upload)
+                && upload.ContainsFile(expectedFileName);
         }
 
         private static bool HasAnyReferenceTree(HttpListenerRequest request)
         {
-            return HasReferenceTreeFile(request, "reference_tree.json")
-                || HasReferenceTreeFile(request, "reference_tree.bin");
+            return MultiPartReader.TryParse(request, out var upload)
+                && (upload.ContainsFile("reference_tree.json") || upload.ContainsFile("reference_tree.bin"));
         }
 
         /// <summary>
@@ -1335,20 +1318,12 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             bool hasBothFiles = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                var request = ctx.Value.Request;
-                if (!request.ContentType.StartsWith("multipart/form-data"))
+                if (!MultiPartReader.TryParse(ctx.Value.Request, out var upload))
                 {
                     return;
                 }
 
-                var mpReader = new MultiPartReader(request);
-                if (!mpReader.Parse())
-                {
-                    return;
-                }
-
-                hasBothFiles |= mpReader.Files.Any(f => f.FileName == "histogram.json")
-                             && mpReader.Files.Any(f => f.FileName == treeFileName);
+                hasBothFiles |= upload.ContainsFile("histogram.json") && upload.ContainsFile(treeFileName);
             };
 
             runner.Run(agent);
