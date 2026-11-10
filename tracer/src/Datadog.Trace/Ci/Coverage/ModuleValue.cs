@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -37,7 +39,7 @@ internal sealed class ModuleValue : IDisposable
         var pointer = IntPtr.Zero;
         try
         {
-            pointer = Marshal.AllocHGlobal(fileLinesMemorySize);
+            pointer = bufferKind == BufferKind.Context ? ContextBufferPool.Rent(fileLinesMemorySize) : Marshal.AllocHGlobal(fileLinesMemorySize);
             unsafe
             {
                 Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)fileLinesMemorySize);
@@ -55,7 +57,7 @@ internal sealed class ModuleValue : IDisposable
         {
             if (pointer != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(pointer);
+                ReleaseNativeBuffer(pointer, fileLinesMemorySize, bufferKind);
             }
         }
     }
@@ -92,6 +94,21 @@ internal sealed class ModuleValue : IDisposable
         LogNativeMemoryDiagnostics(processId, BufferKind.GlobalFallback, GlobalFallbackBufferMetrics.GetSnapshot());
     }
 
+    [TestingOnly]
+    internal static bool IsPooledContextBuffer(IntPtr pointer) => ContextBufferPool.Contains(pointer);
+
+    private static void ReleaseNativeBuffer(IntPtr pointer, int byteLength, BufferKind bufferKind)
+    {
+        if (bufferKind == BufferKind.Context)
+        {
+            ContextBufferPool.Return(pointer, byteLength);
+        }
+        else
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
     private static NativeMemoryDebugMetrics GetMetrics(BufferKind bufferKind)
         => bufferKind == BufferKind.Context ? ContextBufferMetrics : GlobalFallbackBufferMetrics;
 
@@ -112,6 +129,11 @@ internal sealed class ModuleValue : IDisposable
                 diagnostics.AllocationCount,
                 diagnostics.FreeCount,
                 diagnostics.MaximumBufferBytes);
+            Log.Debug<int, long, long>(
+                "Global coverage native context-buffer pool diagnostics: pid={ProcessId}, pooledBuffers={PooledBuffers}, pooledBytes={PooledBytes}.",
+                processId,
+                ContextBufferPool.PooledBuffers,
+                ContextBufferPool.PooledBytes);
             return;
         }
 
@@ -142,7 +164,7 @@ internal sealed class ModuleValue : IDisposable
         if (filesLines != IntPtr.Zero)
         {
             var byteLength = Volatile.Read(ref _allocatedByteLength);
-            Marshal.FreeHGlobal(filesLines);
+            ReleaseNativeBuffer(filesLines, byteLength, _bufferKind);
             Volatile.Write(ref _allocatedByteLength, 0);
             if (_recordNativeMemoryDiagnostics)
             {
@@ -184,6 +206,70 @@ internal sealed class ModuleValue : IDisposable
         public long FreeCount { get; }
 
         public long MaximumBufferBytes { get; }
+    }
+
+    /// <summary>
+    /// Recycles context buffers instead of freeing them.
+    /// An instrumented method caches the raw counters pointer for its whole frame, and that frame can outlive the
+    /// ExecutionContext accounting that decides when a session buffer is released (for example, while the method is
+    /// inside <see cref="ExecutionContext.Run"/> with another context when the session ends). Keeping the memory owned
+    /// by coverage means such a late write can at most mark a line in a later session that reuses the buffer, instead
+    /// of writing into freed native memory. The pool holds at most the peak number of context buffers of each size
+    /// that were alive at the same time.
+    /// </summary>
+    private static class ContextBufferPool
+    {
+        private static readonly ConcurrentDictionary<int, ConcurrentStack<IntPtr>> Buffers = new();
+        private static long _pooledBuffers;
+        private static long _pooledBytes;
+
+        public static long PooledBuffers => Interlocked.Read(ref _pooledBuffers);
+
+        public static long PooledBytes => Interlocked.Read(ref _pooledBytes);
+
+        public static IntPtr Rent(int byteLength)
+        {
+            if (Buffers.TryGetValue(byteLength, out var buffers) && buffers.TryPop(out var pointer))
+            {
+                Interlocked.Decrement(ref _pooledBuffers);
+                Interlocked.Add(ref _pooledBytes, -byteLength);
+                return pointer;
+            }
+
+            return Marshal.AllocHGlobal(byteLength);
+        }
+
+        public static void Return(IntPtr pointer, int byteLength)
+        {
+            // Called from Dispose and the finalizer, so it must not throw.
+            try
+            {
+                Buffers.GetOrAdd(byteLength, static _ => new ConcurrentStack<IntPtr>()).Push(pointer);
+                Interlocked.Increment(ref _pooledBuffers);
+                Interlocked.Add(ref _pooledBytes, byteLength);
+            }
+            catch
+            {
+                // The pool bookkeeping could not be allocated. Keep the block allocated instead of freeing it:
+                // a frame may still write through its pointer.
+            }
+        }
+
+        public static bool Contains(IntPtr pointer)
+        {
+            foreach (var buffers in Buffers.Values)
+            {
+                foreach (var pooled in buffers)
+                {
+                    if (pooled == pointer)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 
     private sealed class NativeMemoryDebugMetrics

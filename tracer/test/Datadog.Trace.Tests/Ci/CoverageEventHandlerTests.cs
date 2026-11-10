@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,6 +130,80 @@ public class CoverageEventHandlerTests
             snapshot.MergedContextCount.Should().Be(1);
             snapshot.Model.Data.Should().Equal(100, 2, 2);
             snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.ExecutedBitmap.Should().Equal(0xc0);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
+    public async Task ReleasedBufferStaysOwnedByCoverageWhileAFrameRunsInAnotherExecutionContext()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new DefaultWithGlobalCoverageEventHandler();
+        CoverageReporter.Handler = handler;
+        var unrelatedContext = ExecutionContext.Capture()!;
+        using var insideUnrelatedContext = new ManualResetEventSlim();
+        using var resumeFrame = new ManualResetEventSlim();
+        var pointer = IntPtr.Zero;
+
+        try
+        {
+            var handle = handler.StartSession("xunit");
+            var frame = Task.Run(
+                () =>
+                {
+                    // An instrumented method caches the counters pointer when it starts...
+                    pointer = GetNestedFlowCounter();
+
+                    // ...then runs code under an ExecutionContext without the session, so the session's context
+                    // counts as inactive although this frame is still running.
+                    ExecutionContext.Run(
+                        unrelatedContext,
+                        _ =>
+                        {
+                            insideUnrelatedContext.Set();
+                            resumeFrame.Wait();
+                        },
+                        null);
+
+                    // The next probe of the same frame.
+                    WriteCounter(pointer, 0);
+                });
+
+            insideUnrelatedContext.Wait(TimeSpan.FromSeconds(30)).Should().BeTrue();
+            var module = handle.Context!.SnapshotModules().Should().ContainSingle().Subject;
+
+            handler.EndSession(handle);
+
+            module.FilesLines.Should().Be(IntPtr.Zero);
+            ModuleValue.IsPooledContextBuffer(pointer).Should().BeTrue();
+            resumeFrame.Set();
+            await frame;
+        }
+        finally
+        {
+            resumeFrame.Set();
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
+    public unsafe void ProbeAcquisitionFailureDoesNotThrowIntoInstrumentedCode()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new IncompleteCoverageRecordingHandler();
+        CoverageReporter.Handler = handler;
+        try
+        {
+            // Without a session the probe uses the global container; closing it makes acquiring the counters fail.
+            handler.GlobalContainer.TryCloseAndGetModules(out _).Should().BeTrue();
+
+            var pointer = (byte*)CoverageReporter<ClosedGlobalMetadata>.GetFileCounter(0);
+            pointer[0] = 1;
+
+            handler.IncompleteReasons.Should().Equal(GlobalCoverageFailureReason.ProbeDataIncomplete);
         }
         finally
         {
@@ -303,6 +378,9 @@ public class CoverageEventHandlerTests
     private static unsafe IntPtr GetDeferredFlowCounter()
         => (IntPtr)CoverageReporter<DeferredFlowMetadata>.GetFileCounter(0);
 
+    private static unsafe IntPtr GetNestedFlowCounter()
+        => (IntPtr)CoverageReporter<NestedFlowMetadata>.GetFileCounter(0);
+
     private static unsafe void WriteCounter(IntPtr pointer, int line)
         => ((byte*)pointer)[line] = 1;
 
@@ -326,5 +404,29 @@ public class CoverageEventHandlerTests
             : base(2, 0, [new FileCoverageMetadata("/src/deferred.cs", 0, 2, [0xc0])])
         {
         }
+    }
+
+    private sealed class NestedFlowMetadata : TestModuleCoverageMetadata
+    {
+        public NestedFlowMetadata()
+            : base(1, 0, [new FileCoverageMetadata("/src/nested.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class ClosedGlobalMetadata : TestModuleCoverageMetadata
+    {
+        public ClosedGlobalMetadata()
+            : base(1, 0, [new FileCoverageMetadata("/src/closed.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class IncompleteCoverageRecordingHandler : DefaultCoverageEventHandler
+    {
+        public List<GlobalCoverageFailureReason> IncompleteReasons { get; } = [];
+
+        protected override void MarkGlobalCoverageIncomplete(GlobalCoverageFailureReason reason)
+            => IncompleteReasons.Add(reason);
     }
 }

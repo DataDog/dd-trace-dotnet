@@ -229,8 +229,8 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NETCOREAPP3_1_OR_GREATER
-        // Use 256-bit (32-byte) vectors if available
-        if (Avx.IsSupported)
+        // Use 256-bit (32-byte) vectors if available. Integer bitwise operations on 256-bit vectors require AVX2.
+        if (Avx2.IsSupported)
         {
             // X86 SIMD operations
             for (; minSize - index >= 32; index += 32)
@@ -378,8 +378,8 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NETCOREAPP3_1_OR_GREATER
-        // Use 256-bit (32-byte) vectors if available
-        if (Avx.IsSupported)
+        // Use 256-bit (32-byte) vectors if available. Integer bitwise operations on 256-bit vectors require AVX2.
+        if (Avx2.IsSupported)
         {
             // X86 SIMD operations
             for (; minSize - index >= 32; index += 32)
@@ -519,7 +519,8 @@ internal readonly unsafe ref struct FileBitmap
 #endif
 
 #if NETCOREAPP3_1_OR_GREATER
-        if (Avx.IsSupported)
+        // Integer bitwise operations on 256-bit vectors require AVX2.
+        if (Avx2.IsSupported)
         {
             var allOnesVector = Vector256.Create((byte)0xFF); // Create a vector with all bits set to 1
             for (; size - index >= 32; index += 32)
@@ -670,14 +671,14 @@ internal readonly unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int line)
     {
-        // Check if the pointer is valid
-        if (_bitmap == null)
+        // Decrements the line number to align with zero-based index
+        var idx = (uint)line - 1;
+
+        // Lines outside the bitmap (including 0 and negative values, which wrap around) have no bit to set.
+        if (_bitmap == null || idx >= (uint)BitCount)
         {
             return;
         }
-
-        // Decrements the line number to align with zero-based index
-        var idx = (uint)line - 1;
 
         // Determines the byte index in the bitmap array by dividing the bit index by 8 (since there are 8 bits in a byte)
         // This effectively shifts the bit index right by 3 places, equivalent to dividing by 8 but faster.
@@ -703,14 +704,14 @@ internal readonly unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Get(int line)
     {
-        // Check if the pointer is valid
-        if (_bitmap == null)
+        // Decrements the line number to align with zero-based index
+        var idx = (uint)line - 1;
+
+        // Lines outside the bitmap (including 0 and negative values, which wrap around) are never set.
+        if (_bitmap == null || idx >= (uint)BitCount)
         {
             return false;
         }
-
-        // Decrements the line number to align with zero-based index
-        var idx = (uint)line - 1;
 
         // Determines the byte index in the bitmap array by dividing the bit index by 8 (since there are 8 bits in a byte)
         // This effectively shifts the bit index right by 3 places, equivalent to dividing by 8 but faster.

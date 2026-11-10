@@ -26,7 +26,7 @@ using ExceptionHandlerType = Mono.Cecil.Cil.ExceptionHandlerType;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
 
-[Collection(nameof(FinalizerCoverageCollection))]
+[Collection(nameof(CoverageReporterHandlerCollection))]
 public class FinalizerCoverageTests
 {
     // Compiled when the test runs so it follows what the C# compiler emits: the finalizer becomes

@@ -7,6 +7,8 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Util;
@@ -27,6 +29,7 @@ public static class CoverageReporter<TMeta>
     private static readonly TMeta Metadata;
     private static readonly Module Module;
     private static readonly int ModuleMemorySize;
+    private static IntPtr _discardedCounters;
     private static ModuleValue? _globalModuleValue;
 
     static CoverageReporter()
@@ -36,6 +39,10 @@ public static class CoverageReporter<TMeta>
             Metadata = new TMeta();
             Module = typeof(TMeta).Module;
             ModuleMemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
+
+            // Allocated up front when possible because the probe failures it absorbs include failing to allocate a
+            // counters buffer. A failure here must not fail the type initializer, so it is retried on first use.
+            _discardedCounters = TryAllocateDiscardedCounters();
         }
         catch
         {
@@ -64,8 +71,58 @@ public static class CoverageReporter<TMeta>
         }
         catch
         {
+            // Probes run inside customer code, including finalizers and type initializers, where an exception would
+            // crash the process or break the type. Coverage is already marked incomplete, so let the probe write into
+            // counters that are never reported instead.
             handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
-            throw;
+            var discardedCounters = GetDiscardedCounters();
+            if (discardedCounters == IntPtr.Zero)
+            {
+                throw;
+            }
+
+            return (byte*)discardedCounters + GetByteOffset(fileIndex);
+        }
+    }
+
+    private static IntPtr GetDiscardedCounters()
+    {
+        var discardedCounters = Volatile.Read(ref _discardedCounters);
+        if (discardedCounters != IntPtr.Zero)
+        {
+            return discardedCounters;
+        }
+
+        var allocated = TryAllocateDiscardedCounters();
+        if (allocated == IntPtr.Zero)
+        {
+            // Another thread may have published one in the meantime.
+            return Volatile.Read(ref _discardedCounters);
+        }
+
+        var published = Interlocked.CompareExchange(ref _discardedCounters, allocated, IntPtr.Zero);
+        if (published != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(allocated);
+            return published;
+        }
+
+        return allocated;
+    }
+
+    private static unsafe IntPtr TryAllocateDiscardedCounters()
+    {
+        // Never freed: probes may keep writing to it for the rest of the process.
+        var byteLength = Math.Max(ModuleMemorySize, 1);
+        try
+        {
+            var pointer = Marshal.AllocHGlobal(byteLength);
+            Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)byteLength);
+            return pointer;
+        }
+        catch
+        {
+            return IntPtr.Zero;
         }
     }
 
