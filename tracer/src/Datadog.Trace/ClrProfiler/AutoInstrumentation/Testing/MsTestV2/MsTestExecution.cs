@@ -362,6 +362,14 @@ internal sealed class MsTestExecution
             pendingTest.IsSelectedNativeResult = true;
         }
 
+        // Attempt to Fix stops at the first failure, even if a native retry recovered from it.
+        if (pendingTest is not null && Common.IsAttemptToFix(pendingTest.Test.GetTags()) && FindFailedAttempt(pendingTest.RowIndex) is { } failedAttempt)
+        {
+            originalResult.Outcome = failedAttempt.Result?.Outcome ?? UnitTestOutcome.Failed;
+            originalResult.TestFailureException = failedAttempt.Result?.TestFailureException;
+            return;
+        }
+
         var summary = attempt.Summary;
         summary.ResultStatus = TestMethodAttributeExecuteAsyncIntegration.GetStatusFromOutcome(originalResult.Outcome);
         summary.AllowRetries = summary.ResultStatus != TestStatus.Skip;
@@ -390,6 +398,19 @@ internal sealed class MsTestExecution
         }
 
         attempt.Results[resultIndex] = retryResults[0];
+    }
+
+    private PendingTest? FindFailedAttempt(int rowIndex)
+    {
+        foreach (var test in _pendingTests!)
+        {
+            if (test.RowIndex == rowIndex && test.Status == TestStatus.Fail)
+            {
+                return test;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -494,8 +515,8 @@ internal sealed class MsTestExecution
             tags.FinalStatus = isLastAttempt
                                    ? Common.CalculateFinalStatus(anyPassed, _anyFailed, _lastAttempt.Status == TestStatus.Skip, tags)
                                    : null;
-            tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed ? "true" : null;
-            if (Common.IsAttemptToFix(tags) && isLastAttempt && _executionCount > 1)
+            tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed && !Common.IsAttemptToFix(tags) ? "true" : null;
+            if (Common.IsAttemptToFix(tags) && isLastAttempt && (_executionCount > 1 || _anyFailed))
             {
                 tags.AttemptToFixPassed = _anyFailed ? "false" : "true";
             }
