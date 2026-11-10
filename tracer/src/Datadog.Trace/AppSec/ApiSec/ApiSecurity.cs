@@ -64,15 +64,15 @@ internal sealed class ApiSecurity
 
             if (_enabled && lastWafCall && (!_apmTracingEnabled || SamplingPriorityValues.IsKeep(samplingPriority)))
             {
-                var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetHttpMethod();
                 statusCode ??= localRootSpan.GetHttpStatusCode();
                 if (httpMethod == null || statusCode == null)
                 {
-                    Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
+                    Log.Debug("Unsupported groupkey for api security {Method}, {Status}", httpMethod, statusCode);
                     return SamplingDecision.Skip;
                 }
 
+                var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 if (httpRouteTag == null)
                 {
                     Log.Debug("No route for api security, {Method}, {Status}", httpMethod, statusCode);
