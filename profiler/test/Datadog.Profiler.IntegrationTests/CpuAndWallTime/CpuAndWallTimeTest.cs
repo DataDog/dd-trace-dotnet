@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -92,21 +93,18 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void CheckCpuDurationInSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.Cpu);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // Ensure that we don't count too much CPU like when that nano/milli sec bug was introduced
-            var cpuDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
+            var cpuDuration = run.Profiles.Sum(ProfileValue.CpuTime);
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
             // --> could be flacky otherwise
-            var totalDuration = runner.TotalTestDurationInMilliseconds * 1000000L;
+            var totalDuration = run.Duration.TotalMilliseconds * 1000000L;
             Assert.True(cpuDuration <= totalDuration);
 
-            var cpuSamples = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 1);
+            var cpuSamples = run.Profiles.Sum(ProfileValue.CpuSampleCount);
             cpuSamples.Should().BeGreaterThan(0);
         }
 
