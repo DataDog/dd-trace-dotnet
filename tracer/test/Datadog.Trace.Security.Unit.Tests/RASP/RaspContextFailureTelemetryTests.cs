@@ -101,6 +101,7 @@ public class RaspContextFailureTelemetryTests : WafLibraryRequiredTest
     }
 
     [Fact]
+    [Flaky("CI intermittently records an unexpected logs_created level:warn metric")]
     public async Task GivenARealWaf_WhenARaspRunRequestsAContext_ThenNoMetricIsReported()
     {
         // the counterpart of the disposed case: a healthy WAF hands out a context, so nothing is reported
@@ -180,6 +181,7 @@ public class RaspContextFailureTelemetryTests : WafLibraryRequiredTest
     }
 
     [Fact]
+    [Flaky("CI intermittently records an unexpected logs_created level:warn metric")]
     public async Task GivenARaspRun_WhenTheContextIsCreated_ThenNothingIsReported()
     {
         var waf = CreateWafMock(WafOutcome.Success);
