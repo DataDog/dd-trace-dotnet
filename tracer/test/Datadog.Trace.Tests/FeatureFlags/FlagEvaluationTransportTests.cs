@@ -177,13 +177,13 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
         var helper = FeatureFlagsEvpHeaderHelper.Instance;
         helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("X-Datadog-EVP-Subdomain", "event-platform-intake"));
         helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"));
-        helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion));
+        helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("DD-EVP-ORIGIN-VERSION", TracerConstants.SemanticVersion));
         var request = new HttpRequest("POST", "localhost", "/evp_proxy/v2/api/v2/flagevaluation", new HttpHeaders(), new BufferContent(new ArraySegment<byte>(new byte[] { 1 })));
         using var text = new StringWriter();
         await helper.WriteLeadingHeaders(request, text);
         text.ToString().Should().Contain("X-Datadog-EVP-Subdomain: event-platform-intake\r\n")
             .And.Contain("DD-EVP-ORIGIN: dd-trace-dotnet\r\n")
-            .And.Contain("DD-EVP-ORIGIN-VERSION: " + TracerConstants.ThreePartVersion + "\r\n")
+            .And.Contain("DD-EVP-ORIGIN-VERSION: " + TracerConstants.SemanticVersion + "\r\n")
             .And.NotContain("DD-API-KEY", "the event sender must not forward configuration-fetch credentials");
     }
 
@@ -205,7 +205,7 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
         received[0].Headers["Content-Type"].Should().Be("application/json");
         received[0].Headers["X-Datadog-EVP-Subdomain"].Should().Be("event-platform-intake");
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
-        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.ThreePartVersion);
+        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.SemanticVersion);
         received[0].Headers["DD-API-KEY"].Should().BeNull();
         received[0].Headers["Authorization"].Should().BeNull();
         received[0].BodyInJson.Should().Be("{\"events\":[]}");
@@ -218,10 +218,9 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
-        // Exercise both factory implementations; ApiWebRequestFactoryTests separately verifies
-        // the opt-in async deadline with HttpWebRequest.Timeout disabled.
+        // Exercise both factory implementations
         using var sender = useLegacyTransport
-                               ? CreateTransport(new ApiWebRequestFactory(agentUri, FeatureFlagsEvpHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5), enforceAsyncTimeout: true))
+                               ? CreateTransport(new ApiWebRequestFactory(agentUri, FeatureFlagsEvpHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5)))
                                : CreateTransport(CreateSettings(agentUri.ToString()));
         await AssertStalledAgentSendTimesOut(agent, sender);
     }
@@ -256,7 +255,7 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
         received.Should().ContainSingle();
         received[0].PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
-        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.ThreePartVersion);
+        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.SemanticVersion);
         received[0].BodyInJson.Should().Be("{}");
     }
 #endif
@@ -292,7 +291,7 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
         received.Should().ContainSingle();
         received[0].PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
-        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.ThreePartVersion);
+        received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.SemanticVersion);
         received[0].BodyInJson.Should().Be("{}");
     }
 

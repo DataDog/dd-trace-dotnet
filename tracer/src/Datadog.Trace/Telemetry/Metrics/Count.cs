@@ -266,6 +266,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
+    /// The number of errors the waf reported while loading a configuration, at init or on update
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafConfigAction>("waf.config_errors", isCommon: true, NS.ASM)] WafConfigErrors,
+
+    /// <summary>
     /// Requests analyzed by ddwaf
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,

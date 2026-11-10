@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Datadog.AutoInstrumentation.Generator.Cli/Datadog.AutoInstrumentation.Generator.Cli.csproj" />
+  <Project Path="Datadog.AutoInstrumentation.Generator.Core/Datadog.AutoInstrumentation.Generator.Core.csproj" />
+  <Project Path="Datadog.AutoInstrumentation.Generator/Datadog.AutoInstrumentation.Generator.csproj" />
+</Solution>

@@ -9,9 +9,9 @@ namespace Datadog.Trace.Sampling
 {
     internal sealed class GlobalSamplingRateRule : ISamplingRule
     {
-        private readonly float _globalRate;
+        private readonly double _globalRate;
 
-        public GlobalSamplingRateRule(float rate)
+        public GlobalSamplingRateRule(double rate)
         {
             _globalRate = rate;
         }
@@ -23,7 +23,7 @@ namespace Datadog.Trace.Sampling
 
         public bool IsMatch(Span span) => true;
 
-        public float GetSamplingRate(Span span)
+        public double GetSamplingRate(Span span)
         {
             return _globalRate;
         }

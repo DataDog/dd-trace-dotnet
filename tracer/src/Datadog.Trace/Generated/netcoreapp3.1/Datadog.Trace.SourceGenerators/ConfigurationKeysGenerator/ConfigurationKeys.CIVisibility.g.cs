@@ -85,6 +85,18 @@ internal static partial class ConfigurationKeys
         public const string DynamicInstrumentationEnabled = "DD_CIVISIBILITY_DI_ENABLED";
 
         /// <summary>
+        /// Configuration key for the dynamic automatic test retries counts: five comma-separated integers from 1 to 20, for first
+        /// executions of up to 5s, 10s, 30s, 5m, and longer. Defaults to the Early Flake Detection slow test retries.
+        /// </summary>
+        public const string DynamicFlakyRetryBuckets = "DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS";
+
+        /// <summary>
+        /// Configuration key for picking the automatic test retries count of each test from the duration of its first execution,
+        /// instead of <see cref="ConfigurationKeys.CIVisibility.FlakyRetryCount"/>.
+        /// </summary>
+        public const string DynamicFlakyRetryEnabled = "DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the early flake detection feature in CI Visibility
         /// </summary>
         public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";

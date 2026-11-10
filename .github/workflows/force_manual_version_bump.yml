@@ -20,7 +20,7 @@ jobs:
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       NewVersion: "${{ github.event.inputs.version }}"
-      NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
+      NewVersionSuffix: "${{ github.event.inputs.is_prerelease == 'true' && 'prerelease' || '' }}"
 
     steps:
       - name: Support longpaths

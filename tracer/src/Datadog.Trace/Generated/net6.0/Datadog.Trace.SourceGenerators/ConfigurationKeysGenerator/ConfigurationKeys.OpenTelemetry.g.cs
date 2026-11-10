@@ -32,7 +32,8 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
-        /// emitting only OpenTelemetry semantic-convention attributes.
+        /// emitting only OpenTelemetry semantic-convention attributes. Also makes 'otlp' the default value of
+        /// <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>.
         /// </summary>
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
@@ -150,7 +151,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol for traces export.
         /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-        /// Valid values: http/json, http/protobuf. Default: http/json
+        /// Valid values: http/json, http/protobuf. Default: http/protobuf
         /// </summary>
         public const string ExporterOtlpTracesProtocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL";
 
@@ -211,7 +212,11 @@ internal static partial class ConfigurationKeys
         public const string ResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES";
 
         /// <summary>
-        /// Configuration key for disabling the OpenTelemetry API's.
+        /// Configuration key for disabling OpenTelemetry mode for every signal.
+        /// When set to <c>true</c> (case-insensitive), the OpenTelemetry tracing and metrics APIs,
+        /// OTLP export of metrics and logs, and runtime metrics are disabled, even when their own settings enable them.
+        /// It also sets <see cref="ConfigurationKeys.TraceEnabled"/> to false, which stops all trace export,
+        /// unless that key is set. Other values have no effect.
         /// </summary>
         public const string SdkDisabled = "OTEL_SDK_DISABLED";
 
@@ -226,6 +231,7 @@ internal static partial class ConfigurationKeys
         /// the experimental export of traces using OTLP. The value 'none' disables
         /// the export of traces entirely, which is the equivalent of setting
         /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
+        /// When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
 

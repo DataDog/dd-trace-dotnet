@@ -114,7 +114,7 @@ namespace Datadog.Trace.IntegrationTests
                 { "Content-Type", "application/json" },
                 { "DD-Telemetry-Request-Type", "app-heartbeat" },
                 { "DD-Client-Library-Language", "dotnet" },
-                { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
+                { "DD-Client-Library-Version", TracerConstants.SemanticVersion },
             };
 
             // DD-Session-ID is always present and equals the runtime ID
@@ -131,6 +131,11 @@ namespace Datadog.Trace.IntegrationTests
             if (ContainerMetadata.Instance.EntityId is { } entityId)
             {
                 allExpected.Add(AgentHttpHeaderNames.EntityId, entityId);
+            }
+
+            if (ContainerMetadata.Instance.ExternalEnv is { } externalEnv)
+            {
+                allExpected.Add(AgentHttpHeaderNames.ExternalEnv, externalEnv);
             }
 
             if (agentless)
@@ -210,7 +215,7 @@ namespace Datadog.Trace.IntegrationTests
                     serviceName: "TelemetryTransportTests",
                     env: "TracerTelemetryTest",
                     serviceVersion: "123",
-                    tracerVersion: TracerConstants.AssemblyVersion,
+                    tracerVersion: TracerConstants.SemanticVersion,
                     languageName: "dotnet",
                     languageVersion: "1.2.3",
                     runtimeName: "dotnet",

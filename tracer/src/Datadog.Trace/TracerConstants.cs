@@ -11,9 +11,20 @@ namespace Datadog.Trace
     {
         public const string TelemetrySdkName = "datadog";
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.57.0.0";
-        public const string ThreePartVersion = "3.57.0";
 
-        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.57.0.0"u8;
+        /// <summary>
+        /// The four-part version of Datadog.Trace's strong name. It is the same for a prerelease and the release
+        /// with the same X.Y.Z, so don't report it: use <see cref="SemanticVersion"/> instead.
+        /// </summary>
+        public const string AssemblyVersion = ProjectInfo.AssemblyVersion;
+
+        /// <summary>
+        /// The version to report everywhere: X.Y.Z for releases, X.Y.Z-prerelease for prereleases.
+        /// Unlike <see cref="AssemblyVersion"/>, it distinguishes a prerelease from the release with the same X.Y.Z.
+        /// Instrumentation.cs compares it against the native tracer's PROFILER_VERSION to detect mismatches.
+        /// </summary>
+        public const string SemanticVersion = ProjectInfo.SemanticVersion;
+
+        public static ReadOnlySpan<byte> SemanticVersionBytes => ProjectInfo.SemanticVersionBytes;
     }
 }

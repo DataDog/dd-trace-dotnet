@@ -95,6 +95,7 @@ partial class Build
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath ToolsDirectory => TracerDirectory / "tools";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
@@ -537,8 +538,8 @@ partial class Build
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
         });
 
     Target CppCheckNativeSrc => _ => _
@@ -590,7 +591,6 @@ partial class Build
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
                 "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
@@ -1174,8 +1174,25 @@ partial class Build
 
             // Add the dd-dotnet scripts
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyDdDotnetScript(BundleHomeDirectory);
         });
+
+    private void CopyDdDotnetScript(AbsolutePath destination)
+    {
+        const string placeholder = "@DD_VERSION@";
+
+        // Copy first and rewrite in place, so the destination directory and executable bit are handled for us
+        CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", destination, FileExistsPolicy.Overwrite);
+        var script = destination / "dd-dotnet.sh";
+        var original = File.ReadAllText(script);
+        if (!original.Contains(placeholder))
+        {
+            throw new InvalidOperationException($"Expected to find the {placeholder} placeholder in {script}");
+        }
+
+        // Always LF: this is a shell script that ships to Linux.
+        File.WriteAllText(script, original.Replace(placeholder, FullVersion).Replace("\r\n", "\n"));
+    }
 
     Target CreateBenchmarkIntegrationHome => _ => _
         .Unlisted()
@@ -1236,12 +1253,18 @@ partial class Build
         .After(BuildDdDotnet)
         .Executes(() =>
         {
-            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            if (IsWin)
+            {
+                CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyDdDotnetScript(MonitoringHomeDirectory);
+            }
 
             if (IsLinux)
             {
-                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / "dd-dotnet.sh");
             }
         });
 
@@ -1276,7 +1299,6 @@ partial class Build
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
-        .Requires(() => Version)
         .Executes(() =>
         {
             var tar = Tar.Value;
@@ -1340,10 +1362,10 @@ partial class Build
 
                     var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
                     {
-                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
-                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
-                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{FullVersion}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{FullVersion}.{a.ToString().ToLower()}.tar.gz",
                     };
 
                     tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
@@ -1364,7 +1386,7 @@ partial class Build
                          name: "{packageName}"
                          arch: "{nFpmArch}"
                          platform: "linux"
-                         version: "{Version}"
+                         version: "{FullVersion}"
                          maintainer: "Datadog Packages <package@datadoghq.com>"
                          description: "Datadog APM client library for .NET"
                          vendor: "Datadog <package@datadoghq.com>"
@@ -1399,6 +1421,14 @@ partial class Build
                     // overwrites if it exists
                     File.WriteAllText(npfmConfig, yaml);
                     nfpm($"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
+
+                    // deb and rpm use `~` instead of `-` for a sem-ver prerelease, and nfpm puts it in the file name,
+                    // but we can't use that in the filename as it gets mangled by GitHub. The file itself has the
+                    // correct ~ embedded in the metadata though.
+                    foreach (var package in workingDirectory.GlobFiles($"*~*.{packageType}"))
+                    {
+                        MoveFile(package, workingDirectory / package.Name.Replace('~', '-'));
+                    }
                 }
             }
 
@@ -2533,6 +2563,8 @@ partial class Build
                 .SetToolInstallationPath(ToolInstallDirectory)
                 .SetSources(ToolSourceDirectory)
                 .SetProcessArgumentConfigurator(args => args.Add("--no-cache"))
+                // Explicit, because without a version dotnet tool install ignores prerelease packages
+                .SetVersion(FullVersion)
                 .SetPackageName("dd-trace"));
          });
 
@@ -2884,15 +2916,10 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
-               // TODO: for the CI Visibility team to fix. Under the .NET 11 SDK a sample process exits while
-               // holding the CircularChannel mutex. CircularChannel.Reader.InternalPollForMessage catches the
-               // resulting AbandonedMutexException and returns _without_ releasing - but an abandoned wait still
-               // acquires - so the channel is poisoned and every subsequent poll logs an error. The same
-               // WaitOne-outside-try shape in CircularChannel.Writer.TryWrite and the CircularChannel ctor lets
-               // the exception escape entirely, which produces the third pattern. The tests themselves pass.
-               new(@".*CircularChannel\.(Reader|Writer): Mutex was abandoned.*", RegexOptions.Compiled),
+               // With the .NET 11 RC SDK, a .NET 11 process and a .NET 8-10 process sharing the CircularChannel named mutex
+               // corrupt its ownership record (dotnet/runtime#134491), so ReleaseMutex can fail after a successful wait.
+               // Remove this once we build with .NET 11 GA.
                new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
-               new(@".*Error enabling IPC client and sending coverage data.*AbandonedMutexException.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),

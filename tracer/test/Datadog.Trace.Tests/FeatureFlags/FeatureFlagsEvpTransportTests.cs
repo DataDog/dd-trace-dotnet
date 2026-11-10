@@ -678,12 +678,12 @@ public class FeatureFlagsEvpTransportTests
         directHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
         directHeaders.Should().Contain(TelemetryConstants.ApiKeyHeader, "test-api-key");
         directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         directHeaders.Should().NotContainKey(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader);
 
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader, FeatureFlagsEvpHeaderHelper.EvpSubdomain);
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         localHeaders.Should().NotContainKey(TelemetryConstants.ApiKeyHeader);
         localHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
     }
@@ -719,6 +719,30 @@ public class FeatureFlagsEvpTransportTests
 
         send.IsCompleted.Should().BeTrue("there is no discovery loop or direct credential to wait for");
         await send;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NetworkFailureUsesInjectedLogger(bool useLocalRoute)
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var failure = new IOException("connection reset");
+        var local = CreateFactory("http://agent:8126/", uri => new ThrowingApiRequest(uri, failure));
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/", uri => new ThrowingApiRequest(uri, failure));
+        using var transport = new FeatureFlagsEvpTransport(
+            FeatureFlagsSource.Agentless,
+            local,
+            direct,
+            NullDiscoveryService.Instance,
+            initialLocalProxyEndpoint: useLocalRoute ? FeatureFlagsEvpTransport.EventPlatformProxyV4 : null,
+            logger: logger.Object);
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+
+        logger.Verify(l => l.ErrorSkipTelemetry(failure, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        (useLocalRoute ? local : direct).RequestsSent.Should().ContainSingle();
+        (useLocalRoute ? direct : local).RequestsSent.Should().BeEmpty();
     }
 
     [Theory]
@@ -1059,7 +1083,7 @@ public class FeatureFlagsEvpTransportTests
         endpoint.Should().Be(new Uri("https://event-platform-intake.mock-intake.invalid/api/v2/exposures"));
         headers.Should().Contain("DD-API-KEY", "test-api-key");
         headers.Should().Contain("DD-EVP-ORIGIN", "dd-trace-dotnet");
-        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion);
+        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.SemanticVersion);
         headers.Should().Contain("x-datadog-tracing-enabled", "false");
         headers.Should().NotContainKey("X-Datadog-EVP-Subdomain");
     }

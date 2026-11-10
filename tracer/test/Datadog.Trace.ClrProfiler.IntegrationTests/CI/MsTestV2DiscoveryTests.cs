@@ -14,7 +14,6 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
@@ -105,23 +104,11 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 
     private async Task RunDiscoveryScenario(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp, string additionalSample = null)
     {
-        if (expectedTests > 0 && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64 &&
-            EnvironmentHelper.GetTargetFramework() is "net8.0" or "net9.0" or "net10.0")
+        if (expectedTests > 0 && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
-            // VSTest in .NET 11 RC1/RC2 cannot share named mutexes with .NET 8-10 on Linux ARM64,
-            // so the testhost cannot initialize IPC. Even cases that do not assert "faulty" fail the log check.
+            // On Linux ARM64 the testhost cannot initialize IPC. Even cases that do not assert "faulty" fail the log check.
             // Empty runs do not create an IPC client; MTP uses the same runtime at both ends. Keep both enabled.
-            // Runtime bug: https://github.com/dotnet/runtime/issues/134491.
-            // Fixed for .NET 11 GA in https://github.com/dotnet/runtime/pull/134595.
-            // Remove this block after upgrading to GA and verifying these cases on Debian and Alpine ARM64.
-            // Check the selected SDK: the integration test's own runtime is not the VSTest runner's runtime.
-            var sdk = ProcessHelpers.RunCommand(new ProcessHelpers.Command(EnvironmentHelper.GetDotnetExe(), "--version", timeout: TimeSpan.FromSeconds(10)));
-            sdk.Should().NotBeNull();
-            sdk.ExitCode.Should().Be(0, sdk.Error);
-            var sdkVersion = sdk.Output.Trim();
-            Skip.If(
-                sdkVersion == "11.0.100-rc.1.26425.128" || sdkVersion == "11.0.100-rc.2.26504.105",
-                "Named mutex IPC is incompatible between .NET 11 RC1/RC2 and .NET 8-10 on Linux ARM64 (dotnet/runtime#134491). Re-enable with .NET 11 GA.");
+            SkipIfVSTestCannotShareNamedMutexes();
         }
 
         EnvironmentHelper.EnableDefaultTransport();

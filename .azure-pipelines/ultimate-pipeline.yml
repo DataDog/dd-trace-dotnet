@@ -35,6 +35,7 @@ pr:
       - .github/labeller.yml
       - .github/pull_request_template.md
       - .claude/
+      - .pi/
       - .devcontainer/
       - .vscode/
       - docs/
@@ -112,6 +113,8 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   TESTCONTAINERS_RYUK_DISABLED: true
+  # Keep synchronized with testcontainers-ryuk in docker-compose.yml and Testcontainers 4.14.0.
+  TESTCONTAINERS_RYUK_CONTAINER_IMAGE: 'testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0'
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
@@ -159,7 +162,6 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.57.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -1033,7 +1035,7 @@ stages:
     timeoutInMinutes: 90
     dependsOn: [ ]
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1054,7 +1056,7 @@ stages:
     timeoutInMinutes: 80
     dependsOn: [ ]
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1080,7 +1082,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
     - checkout: none
 
@@ -1386,7 +1388,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1463,7 +1465,7 @@ stages:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_macos_matrix'] ]
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1726,7 +1728,7 @@ stages:
     - job: macos
       timeoutInMinutes: 90
       pool:
-        vmImage: macos-14
+        vmImage: macos-15
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -2115,7 +2117,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-14
+      vmImage: macos-15
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -2462,6 +2464,7 @@ stages:
     variables:
       TestAllPackageVersions: true
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+      TESTCONTAINERS_RYUK_DISABLED: false
 
     pool:
       name: $(linuxX64Pool)
@@ -3565,6 +3568,8 @@ stages:
       timeoutInMinutes: 60 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
+      variables:
+        TESTCONTAINERS_RYUK_DISABLED: false
       workspace:
         clean: all
       pool:
@@ -5722,7 +5727,9 @@ stages:
 
         - script: |
             dotnet --info
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version $(ToolVersion)
+            TOOL_VERSION=$(basename $(smokeTestAppDir)/artifacts/dd-trace.*.nupkg | sed 's/^dd-trace\.//; s/\.nupkg$//')
+            echo "Installing dd-trace $TOOL_VERSION"
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version "$TOOL_VERSION"
           displayName: Install tracer
 
         - script: |

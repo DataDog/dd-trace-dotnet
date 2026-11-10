@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -21,12 +22,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(CouchbaseCollection.Name)]
     public class Couchbase3Tests : TracingIntegrationTest
     {
-        public Couchbase3Tests(ITestOutputHelper output)
+        private readonly CouchbaseFixture _couchbaseFixture;
+
+        public Couchbase3Tests(ITestOutputHelper output, CouchbaseFixture couchbaseFixture)
             : base("Couchbase3", output)
         {
+            _couchbaseFixture = couchbaseFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(couchbaseFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCouchbase(metadataSchemaVersion);
@@ -68,10 +74,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // this is a random id
                 settings.AddRegexScrubber(new Regex(@"couchbase.operation.key: {.*},"), "couchbase.operation.key: obfuscated,");
-                // normalise between running directly against localhost and against couchbase container
-                settings.AddSimpleScrubber("db.couchbase.seed.nodes: localhost", "db.couchbase.seed.nodes: couchbase");
-                settings.AddSimpleScrubber("out.host: localhost", "out.host: couchbase");
-                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: couchbase");
+                // Normalize the fixture's hostname for local and containerized runs.
+                settings.AddRegexScrubber(new Regex($@"db.couchbase.seed.nodes: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "db.couchbase.seed.nodes: couchbase");
+                settings.AddSimpleScrubber($"out.host: {_couchbaseFixture.Host}", "out.host: couchbase");
+                settings.AddRegexScrubber(new Regex($@"peer.service: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "peer.service: couchbase");
+                // .NET Framework exposes the async state machine instead of the original method signature.
+                settings.AddRegexScrubber(
+                    new Regex(@"at Couchbase\.Core\.ClusterNode\.(?:ExecuteOp\([^\r\n)]*\)|<ExecuteOp>d__\d+\.MoveNext\(\))"),
+                    "at Couchbase.Core.ClusterNode.ExecuteOp(...)");
 
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
 
@@ -99,32 +109,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static string GetVersionSuffix(string packageVersion)
         {
             var version = GetPackageVersion(packageVersion);
-            if (version < new Version("3.1.2"))
+            return version switch
             {
-                return "_3_0";
-            }
-
-            if (version < new Version("3.2.0"))
-            {
-                return "_3_1";
-            }
-
-            if (version < new Version("3.2.6"))
-            {
-                return "_3_2";
-            }
-
-            if (version < new Version("3.3.0"))
-            {
-                return "_3_2_6";
-            }
-
-            if (version <= new Version("3.4.0"))
-            {
-                return "_3_4";
-            }
-
-            return string.Empty;
+                _ when version < new Version("3.1.0") => "_3_0",
+                _ when version < new Version("3.1.3") => "_3_1",
+                _ when version < new Version("3.1.5") => "_3_1_3",
+                _ when version < new Version("3.2.0") => "_3_1_5",
+                _ when version < new Version("3.2.6") => "_3_2",
+                _ when version < new Version("3.2.9") => "_3_2_6",
+                _ when version < new Version("3.4.1") => "_3_2_9",
+                _ when version < new Version("3.8.0") => "_3_4_1",
+                _ when version < new Version("3.9.1") => "_3_8",
+                _ when version < new Version("3.9.4") => "_3_9_1",
+                _ => string.Empty
+            };
         }
 
         private static Version GetPackageVersion(string packageVersion)

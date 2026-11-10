@@ -4,6 +4,8 @@
 // </copyright>
 
 #nullable enable
+using System;
+
 namespace Datadog.Trace.Ci;
 
 internal interface ITestOptimizationFlakyRetryFeature : ITestOptimizationFeature
@@ -11,4 +13,10 @@ internal interface ITestOptimizationFlakyRetryFeature : ITestOptimizationFeature
     int FlakyRetryCount { get; }
 
     int TotalFlakyRetryCount { get; }
+
+    /// <summary>
+    /// Gets the number of retries for a failed test whose first execution took <paramref name="firstExecutionDuration"/>.
+    /// It is <see cref="FlakyRetryCount"/> unless DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED picks it from the duration.
+    /// </summary>
+    int GetFlakyRetryCount(TimeSpan firstExecutionDuration);
 }

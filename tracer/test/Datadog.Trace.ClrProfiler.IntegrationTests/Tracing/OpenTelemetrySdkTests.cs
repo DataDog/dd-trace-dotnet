@@ -398,6 +398,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var metricsData = await _otlpSession.WaitForMetricsAsync();
                 metricsData.Should().NotBeNullOrEmpty();
 
+                // OTel SDK 1.19.0 adds a resource schema URL. Normalize it only when present.
+                foreach (var schemaUrl in metricsData.SelectTokens("$..resource_metrics[*].schema_url"))
+                {
+                    schemaUrl.Replace("normalized-schema-url");
+                }
+
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
                     attribute["value"]!["string_value"] = "sdk-version";
@@ -425,7 +431,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = metricsData.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var suffix = GetSuffix(packageVersion);
+                var suffix = otelMetricsEnabled.Equals("true") && parsedVersion >= new Version("1.19.0")
+                                 ? "_1_19_0"
+                                 : GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
 
                 await Verifier.Verify(formattedJson, settings)
@@ -579,6 +587,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     timeUnixNano.Should().BeInRange(startTimeNanoseconds, endTimeNanoseconds);
                 });
 
+                // OTel SDK 1.19.0 adds a resource schema URL. Normalize it only when present.
+                foreach (var schemaUrl in logsData.SelectTokens("$..resource_logs[*].schema_url"))
+                {
+                    schemaUrl.Replace("normalized-schema-url");
+                }
+
                 foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
                     attribute["value"]!["string_value"] = "sdk-version";
@@ -665,7 +679,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = logsData.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var suffix = GetSuffix(packageVersion);
+                var suffix = otelLogsEnabled.Equals("true") && parsedVersion >= new Version("1.19.0")
+                                 ? "_1_19_0_OTEL"
+                                 : GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpLogs{suffix}";
 
                 await Verifier.Verify(formattedJson, settings)

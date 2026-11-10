@@ -29,6 +29,12 @@
   </PropertyGroup>
 
   <!-- Keep 4.4-only APIs out of the legacy package matrix, without conditional code in each scenario. -->
+  <ItemGroup>
+    <!-- The multi-package sample builds do not build Datadog.Trace.Manual, so compile the attributes it ships. -->
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\NoAutoRetryAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\PreventFailureSuppressionAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(IncludeNativeRetries)' != 'true'">
     <Compile Remove="NativeRetries/**/*.cs" />
   </ItemGroup>

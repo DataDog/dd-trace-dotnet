@@ -11,7 +11,7 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal sealed class FlagEvalEvent
 {
-    public FlagEvalEvent(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, IReadOnlyDictionary<string, object?>? contextAttrs, string? errorCode = null, bool observeFullEvaluationData = false)
+    public FlagEvalEvent(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, IReadOnlyDictionary<string, object?>? contextAttrs, string? errorCode = null, bool observeFullEvaluationData = false, IReadOnlyDictionary<string, object?>? features = null)
     {
         FlagKey = flagKey;
         Variant = variant;
@@ -24,6 +24,9 @@ internal sealed class FlagEvalEvent
             ContextOmissions = omissions;
         }
 
+        // Split features come from flag configuration, not from the evaluation context, so they are
+        // kept whatever the consent setting.
+        Features = FlagEvaluationContext.CopyFeatures(features);
         ErrorCode = errorCode;
         ObserveFullEvaluationData = observeFullEvaluationData;
     }
@@ -45,4 +48,6 @@ internal sealed class FlagEvalEvent
     public bool ObserveFullEvaluationData { get; }
 
     public ContextOmissionReason ContextOmissions { get; }
+
+    public Dictionary<string, object?>? Features { get; }
 }
