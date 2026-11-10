@@ -212,35 +212,17 @@ docker run --rm -it \
 Use `/sysroot/x86_64-glibc217` for x86_64. The toolchain also accepts
 `-DGLIBC217_SYSROOT=/path/to/sysroot` for direct CMake reproduction.
 
-Inside the container, first validate the archive and the standalone native
-dependency builds:
+Inside the container, check the mounted sysroot. The native build and the
+glibc validation are covered by the Nuke targets below:
 
 ```bash
 SYSROOT=/sysroot/aarch64-glibc217
-TOOLCHAIN=build/cmake/Glibc217.cmake.aarch64
 
 test -f "${SYSROOT}/usr/include/features.h"
 test ! -e "${SYSROOT}/usr/include/sys/single_threaded.h"
-
-rm -rf artifacts/glibc217-validation
-cmake \
-  -S . \
-  -B artifacts/glibc217-validation \
-  -DCMAKE_C_COMPILER=clang-16 \
-  -DCMAKE_CXX_COMPILER=clang++-16 \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN}" \
-  -DGLIBC217_SYSROOT="${SYSROOT}"
-
-cmake --build artifacts/glibc217-validation --parallel \
-  --target re2 libunwind Datadog.Trace.ClrProfiler.Native
-
-nm --with-symbol-versions -D \
-  artifacts/native-bin/Datadog.Trace.ClrProfiler.Native/Datadog.Trace.ClrProfiler.Native.so
 ```
 
-The CMake configure output must report that
-`sys/single_threaded.h` was **not** found. Running the compiler with `-E -v`
+Running the compiler with `-E -v`
 must show the Clang resource directory, Developer Toolset C++ directories, and
 `${SYSROOT}/usr/include`, but not Ubuntu `/usr/include`.
 
