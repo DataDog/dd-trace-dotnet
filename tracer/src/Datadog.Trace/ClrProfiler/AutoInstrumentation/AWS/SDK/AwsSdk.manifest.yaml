@@ -1,0 +1,12 @@
+_v: 1
+name: AwsSdk
+display_name: AWS SDK
+description: Instruments the AWS SDK shared request pipeline, enriching AWS service-client spans with request, response, region,
+  and peer-service metadata.
+packages:
+- name: AWSSDK.Core
+category:
+- other
+systems:
+- aws
+creation_date: '2021-06-08'

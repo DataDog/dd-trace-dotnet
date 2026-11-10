@@ -1,0 +1,13 @@
+_v: 1
+name: AwsSqs
+display_name: AWS SQS
+description: Instruments AWS SQS queue management and message send, receive, and deletion operations, propagating trace context
+  and emitting optional Data Streams monitoring checkpoints.
+packages:
+- name: AWSSDK.SQS
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- aws.sqs
+creation_date: '2021-06-08'

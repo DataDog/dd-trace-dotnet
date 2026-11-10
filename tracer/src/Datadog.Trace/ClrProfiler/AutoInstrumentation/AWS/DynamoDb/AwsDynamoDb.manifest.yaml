@@ -1,0 +1,11 @@
+_v: 1
+name: AwsDynamoDb
+display_name: AWS DynamoDB
+description: Instruments AWS DynamoDB client reads, scans, writes, updates, deletes, and batch item operations.
+packages:
+- name: AWSSDK.DynamoDBv2
+category:
+- db.client
+systems:
+- aws.dynamodb
+creation_date: '2023-10-03'

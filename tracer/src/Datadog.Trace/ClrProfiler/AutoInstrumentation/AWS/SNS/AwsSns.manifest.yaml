@@ -1,0 +1,12 @@
+_v: 1
+name: AwsSns
+display_name: AWS SNS
+description: Instruments AWS SNS single-message and batch publishing with trace-context propagation and optional Data Streams
+  producer checkpoints.
+packages:
+- name: AWSSDK.SimpleNotificationService
+category:
+- messaging.producer
+systems:
+- aws.sns
+creation_date: '2023-05-31'

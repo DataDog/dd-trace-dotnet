@@ -1,0 +1,12 @@
+_v: 1
+name: AwsEventBridge
+display_name: AWS EventBridge
+description: Instruments AWS EventBridge event publication through the AWSSDK.EventBridge PutEvents APIs, injecting trace
+  context and optionally recording Data Streams checkpoints.
+packages:
+- name: AWSSDK.EventBridge
+category:
+- messaging.producer
+systems:
+- aws.eventbridge
+creation_date: '2024-10-15'
