@@ -36,9 +36,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerStates();
             }
 
-            ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
-            var probesIds = methodMetadataInfo.ProbeIds;
-            var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
+            var probes = MethodMetadataCollection.Instance.Get(methodMetadataIndex).Probes;
+            var probesIds = probes.ProbeIds;
+            var probeMetadataIndices = probes.ProbeMetadataIndices;
             var states = InstrumentationAllocator.RentArray<MethodDebuggerState>(probesIds.Length);
 
             for (var stateIndex = 0; stateIndex < states.Length; stateIndex++)

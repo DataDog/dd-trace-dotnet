@@ -40,9 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return true;
             }
 
-            ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
-
-            var isDifferentVersion = methodMetadataInfo.InstrumentationVersion != instrumentationVersion;
+            var isDifferentVersion = MethodMetadataCollection.Instance.Get(methodMetadataIndex).Probes.InstrumentationVersion != instrumentationVersion;
 
             if (IsReEnter(ref state) && isDifferentVersion)
             {
