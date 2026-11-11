@@ -13,8 +13,9 @@ Expressions: (
 {
     string loopItem;
     IEnumerator<string> enumerator;
-    int index;
-    StringBuilder itemValues;
+    int index, index2;
+    StringBuilder itemValues, fieldValues;
+    FieldInfo[] fieldsArray;
     var this = (scopeMember.Value == null)
         ? default(DebuggerExpressionLanguageTests.TestStruct)
         : (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -42,49 +43,96 @@ Expressions: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.Collection == null)
-        ? "null"
-        : {
-            enumerator = this.Collection.GetEnumerator();
-            index = 0;
-            itemValues = new StringBuilder();
-            itemValues.Append("[");
-            while (true)
-            {
-                if (enumerator.MoveNext())
-                {
-                    string loopItem;
+    var $dd_el_result =
+    {
+        var dumpValue = (object)this.Collection;
 
-                    if (index < 3)
-                    {
-                        if (index > 0)
+        return (dumpValue == null)
+            ? "null"
+            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(List<string>))
+                ? "{redacted}"
+                : (dumpValue.GetType() == typeof(List<string>))
+                    ? {
+                        enumerator = ((List<string>)dumpValue).GetEnumerator();
+                        index = 0;
+                        itemValues = new StringBuilder();
+                        itemValues.Append("[");
+                        while (true)
                         {
-                            return itemValues.Append(", ");
+                            if (enumerator.MoveNext())
+                            {
+                                string loopItem;
+
+                                if (index < 3)
+                                {
+                                    if (index > 0)
+                                    {
+                                        return itemValues.Append(", ");
+                                    }
+
+                                    loopItem = enumerator.Current;
+                                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                                        loopItem,
+                                        typeof(string),
+                                        "",
+                                        1));
+                                    index++;
+                                }
+                                else
+                                {
+                                    itemValues.Append(", ...");
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        itemValues.Append("]");
+
+                        return itemValues.ToString();
+                    }
+                    : {
+                        fieldsArray = ProbeExpressionParser<string>
+                            .GetSafeFieldsForDump(
+                                dumpValue.GetType().GetFields(
+                                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                            .OrderBy(fieldInfo => fieldInfo.MetadataToken)
+                            .ToArray();
+                        fieldValues = new StringBuilder();
+                        index2 = 0;
+                        while (true)
+                        {
+                            if ((index2 < fieldsArray.Length) && (index2 < 5))
+                            {
+                                fieldValues.Append(
+                                    ProbeExpressionParser<string>.DumpObject(
+                                        ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index2], (object)dumpValue),
+                                        fieldsArray[index2].FieldType,
+                                        fieldsArray[index2].Name,
+                                        0));
+                                index2++;
+
+                                if ((index2 < fieldsArray.Length) && (index2 < 5))
+                                {
+                                    return fieldValues.Append(", ");
+                                }
+                            }
+                            else
+                            {
+                                if (index2 < fieldsArray.Length)
+                                {
+                                    return fieldValues.Append(", ...");
+                                }
+
+                                break;
+                            }
                         }
 
-                        loopItem = enumerator.Current;
-                        itemValues.Append(ProbeExpressionParser<string>.DumpObject(
-                            loopItem,
-                            typeof(string),
-                            "",
-                            1));
-                        index++;
-                    }
-                    else
-                    {
-                        itemValues.Append(", ...");
-                        break;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            itemValues.Append("]");
-
-            return itemValues.ToString();
-        };
+                        return fieldValues.ToString();
+                    };
+    };
 
     return $dd_el_result;
 }
