@@ -739,7 +739,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             // A redaction doesn't replace the message, because the template or capture already shows {redacted} in
             // its place. Any other error does, and so does a redaction in the condition or one with no template to
-            // render it, such as in a metric.
+            // render it, such as in a metric or a probe with only capture expressions.
             string? errorMessage = null;
             string? redactionMessage = null;
             if (_errors is not null)
