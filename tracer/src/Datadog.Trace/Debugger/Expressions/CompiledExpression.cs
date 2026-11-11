@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         /// <summary>
         /// Gets the compiled delegate. It is null for a literal and for an expression created with
-        /// <see cref="WithoutDelegate"/>, which has no value: callers report its <see cref="Errors"/> instead.
+        /// <see cref="WithoutDelegate"/>.
         /// </summary>
         internal CompiledExpressionDelegate<T>? BudgetedDelegate { get; }
 

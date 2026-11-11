@@ -754,6 +754,12 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
+            if (parser._hasRedaction && typeof(T).IsNumeric())
+            {
+                // A number computed from a redacted value, such as len(password), would be made up.
+                return CompiledExpression<T>.WithoutDelegate(expressionJson, parser._errors.ToArray());
+            }
+
             var expression = Expression.Lambda<CompiledExpressionDelegate<T>>(
                 parsedExpression.ExpressionBody,
                 parsedExpression.ThisParameterExpression,
@@ -778,9 +784,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (parser._hasRedaction && typeof(T).IsNumeric())
         {
-            // A number computed from a redacted value would be made up, such as len(password), and converting the
-            // {redacted} placeholder throws on every evaluation. If compiling failed, the default delegate would
-            // report a made-up 0. Either way, a metric reports its errors and no value.
+            // Parsing failed after the redaction: the default delegate would report a made-up 0.
             return CompiledExpression<T>.WithoutDelegate(expressionJson, compiledExpression.Errors);
         }
 
