@@ -621,8 +621,7 @@ internal partial class ProbeExpressionParser<T>
 
     // Wraps a check so it runs once per entry of its block: consumers are nested, and and/or short-circuits, so which
     // guard runs first isn't known at compile time. A redaction in the root block is reported through the evaluation
-    // budget. One in a predicate only makes that item not match, so any skips it, filter drops it and all is false. It
-    // marks the budget only so the evaluator can log the skip, and the store runs only when the item is redacted.
+    // budget. One in a predicate only makes that item not match, so any skips it, filter drops it and all is false.
     private BinaryExpression MemoizedRedactionCheck(RedactionGuardScope scope, Expression check)
     {
         var state = DeclareRedactionGuardVariable(scope, typeof(int), ProbeExpressionParserHelper.RedactionCheckStateVariableName);

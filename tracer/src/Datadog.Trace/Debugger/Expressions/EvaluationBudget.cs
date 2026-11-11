@@ -15,8 +15,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 // Besides the time budget, the budget carries two flags that runtime redaction guards set. Every compiled expression
 // already receives it by reference, so a flag costs a store only when a guard fires. A guard of a value that isn't read
 // from a predicate's item sets the redaction flag. A guard of an item only makes that item not match, so it sets the
-// skipped-item flag instead, which the evaluator reads after the expressions and after the capture expressions to log
-// the skip once per probe.
+// skipped-item flag instead, which the evaluator logs once per probe.
 internal struct EvaluationBudget
 {
     private const int OperationsBeforeTimeCheck = 32;
