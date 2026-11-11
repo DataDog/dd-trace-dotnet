@@ -128,6 +128,19 @@ partial class Build : NukeBuild
     string Glibc217SysrootCMakeArgs =>
         UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / $"Glibc217.cmake.{(IsArm64 ? "aarch64" : "x86_64")}"}" : "";
 
+    AbsolutePath GetUncompressedDdDotnetPath(string rid) => ArtifactsDirectory / "dd-dotnet-uncompressed" / rid / "dd-dotnet";
+
+    string DdDotnetRuntimeIdentifier =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "win-x64"
+            : (IsLinux, IsArm64) switch
+            {
+                (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
+                (false, false) => "osx-x64",
+                (false, true) => "osx-arm64",
+            };
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
@@ -447,27 +460,21 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             var framework = Framework ?? TargetFramework.NET10_0;
-
-            string rid;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                rid = "win-x64";
-            }
-            else
-            {
-                rid = (IsLinux, IsArm64) switch
-                {
-                    (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
-                    (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
-                    (false, false) => "osx-x64",
-                    (false, true) => "osx-arm64",
-                };
-            }
+            var rid = DdDotnetRuntimeIdentifier;
 
             // We don't want the symbols in MonitoringHome,
             // So we publish to a different folder than copy only the executable
             var publishFolder = ArtifactsDirectory / "dd-dotnet" / rid;
+
+            var useGlibc217Sysroot = UseGlibc217Sysroot && IsLinux && !IsAlpine;
+
+            // Must match the defaults in build/cmake/Glibc217.cmake.*, which NativeAOT publishing doesn't read.
+            AbsolutePath sysrootDirectory = (AbsolutePath)$"/sysroot/{(IsArm64 ? "aarch64" : "x86_64")}-glibc217";
+            AbsolutePath toolchainLibDirectory = sysrootDirectory / (IsArm64 ? "devtoolset10" : "devtoolset11") / "lib";
+            if (useGlibc217Sysroot)
+            {
+                Assert.DirectoryExists(toolchainLibDirectory, "The harvested glibc 2.17 sysroot is missing. It is provided by ubuntu.dockerfile.");
+            }
 
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
@@ -475,7 +482,12 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
-                .SetOutput(publishFolder));
+                .SetOutput(publishFolder)
+                .When(useGlibc217Sysroot, o => o
+                    .SetProperty("SysRoot", sysrootDirectory)
+                    .SetProperty("Glibc217ToolchainLibPath", toolchainLibDirectory)
+                    // Only the glibc 2.17 validation needs the decompressed copy; Alpine and ordinary publishes must not run upx -d.
+                    .SetProperty("UncompressedNativeBinaryPath", GetUncompressedDdDotnetPath(rid))));
 
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
             CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
