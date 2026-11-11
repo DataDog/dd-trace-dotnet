@@ -244,12 +244,12 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    // A predicate declares the variables of its own runtime-type guards, so a filter predicate compiled on its own
-    // doesn't close over the outer block. A predicate that is itself a redacted value, such as a member of a redacted
-    // item, never matches.
+    // A predicate declares the variables of the guards of values read from its item, so a capture filter predicate that
+    // reads only its item is compiled on its own. Those of values read from outside every item go to the root block. A
+    // predicate that is itself a redacted value, such as a member of a redacted item, never matches.
     private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture)
     {
-        var outerScope = EnterPredicateRedactionGuardScope();
+        var outerScope = EnterPredicateRedactionGuardScope(itParameter);
         try
         {
             var predicate = outsideFilterCapture
@@ -500,7 +500,7 @@ internal partial class ProbeExpressionParser<T>
 
             var item = CallGetItem(source, assignableFrom, lookupKey);
             DeriveRedactionGuard(item, source, indexOrKey, keyCheck);
-            return RedactByType(item, source, indexOrKey, CurrentRedactionGuardScope);
+            return RedactByType(item, source, indexOrKey);
         }
         catch (Exception e)
         {
@@ -691,7 +691,7 @@ internal partial class ProbeExpressionParser<T>
             return false;
         }
 
-        member = MemoizeGuardedMember(itParameter, propertyName, RedactByType(member, null, readerValue, CurrentRedactionGuardScope));
+        member = MemoizeGuardedMember(itParameter, propertyName, RedactByType(member, null, readerValue));
         return true;
     }
 

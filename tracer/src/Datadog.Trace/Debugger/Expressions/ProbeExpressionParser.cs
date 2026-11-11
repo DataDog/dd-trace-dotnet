@@ -366,12 +366,12 @@ internal partial class ProbeExpressionParser<T>
                             if (readerValue == Return)
                             {
                                 // Unlike `this`, @return is compiled with its declared type.
-                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Return), null, readerValue, RootRedactionGuardScope);
+                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Return), null, readerValue);
                             }
 
                             if (readerValue == Exceptions)
                             {
-                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Exception), null, readerValue, RootRedactionGuardScope);
+                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Exception), null, readerValue);
                             }
 
                             if (readerValue == Duration)
@@ -388,7 +388,7 @@ internal partial class ProbeExpressionParser<T>
                                     return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
                                 }
 
-                                return RedactByType(itParameter, null, readerValue, CurrentRedactionGuardScope);
+                                return RedactByType(itParameter, null, readerValue);
                             }
 
                             if (readerValue == Key)
