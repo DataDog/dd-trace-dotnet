@@ -321,24 +321,6 @@ public class FlagSelectionTests
             "FlagSelection differs from the flag selection already in use in this process. Using the first selection.");
     }
 
-    [Fact]
-    public void ReportingNeverThrows()
-    {
-        var metrics = new Mock<IMetricsTelemetryCollector>();
-        metrics.Setup(m => m.RecordCountFlagSelectionDropped(It.IsAny<DroppedReason>(), It.IsAny<int>())).Throws<InvalidOperationException>();
-        metrics.Setup(m => m.RecordCountFlagSelectionIgnored(It.IsAny<IgnoredReason>(), It.IsAny<int>())).Throws<InvalidOperationException>();
-        var log = new Mock<IDatadogLogger>();
-        log.Setup(l => l.ErrorSkipTelemetry(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).Throws<InvalidOperationException>();
-        log.Setup(l => l.Warning(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).Throws<InvalidOperationException>();
-        var diagnostics = new FlagSelectionDiagnostics(metrics.Object);
-
-        diagnostics.Invoking(d => d.ReportDropped(log.Object, DroppedReason.InvalidTag)).Should().NotThrow();
-        diagnostics.Invoking(d => d.ReportDroppedForUrlLimit(log.Object)).Should().NotThrow();
-        diagnostics.Invoking(d => d.ReportIgnored(log.Object, IgnoredReason.Unknown)).Should().NotThrow();
-        diagnostics.Invoking(d => d.WarnRemoteConfig(log.Object)).Should().NotThrow();
-        diagnostics.Invoking(d => d.WarnDifferentSelection(log.Object)).Should().NotThrow();
-    }
-
     internal static List<string> Errors(Mock<IDatadogLogger> log) => Messages(log, nameof(IDatadogLogger.ErrorSkipTelemetry));
 
     internal static List<string> Warnings(Mock<IDatadogLogger> log) => Messages(log, nameof(IDatadogLogger.Warning));

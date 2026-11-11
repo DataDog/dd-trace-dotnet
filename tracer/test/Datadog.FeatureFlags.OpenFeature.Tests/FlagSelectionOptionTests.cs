@@ -134,7 +134,7 @@ public class FlagSelectionOptionTests
 
         public int Releases { get; private set; }
 
-        public bool Set(string[]? tags, string[]? keyPatterns)
+        public bool Set(string?[]? tags, string?[]? keyPatterns)
         {
             Calls.Add((tags, keyPatterns));
             return true;

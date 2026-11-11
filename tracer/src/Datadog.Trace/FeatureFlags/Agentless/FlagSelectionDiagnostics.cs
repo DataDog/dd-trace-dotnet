@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -81,30 +80,28 @@ internal sealed class FlagSelectionDiagnostics
     // limits, which is not a tracer bug.
     internal void ReportDropped(IDatadogLogger log, MetricTags.FlagSelectionDroppedReason reason)
     {
-        Try(() =>
+        switch (reason)
         {
-            switch (reason)
-            {
-                case MetricTags.FlagSelectionDroppedReason.MalformedSelection:
-                    log.ErrorSkipTelemetry(MalformedSelectionNotSent);
-                    break;
-                case MetricTags.FlagSelectionDroppedReason.TooManyValues:
-                    log.ErrorSkipTelemetry(TooManyValuesNotSent);
-                    break;
-                case MetricTags.FlagSelectionDroppedReason.InvalidKeyPattern:
-                    log.ErrorSkipTelemetry(InvalidKeyPatternNotSent);
-                    break;
-                default:
-                    log.ErrorSkipTelemetry(InvalidTagNotSent);
-                    break;
-            }
-        });
+            case MetricTags.FlagSelectionDroppedReason.MalformedSelection:
+                log.ErrorSkipTelemetry(MalformedSelectionNotSent);
+                break;
+            case MetricTags.FlagSelectionDroppedReason.TooManyValues:
+                log.ErrorSkipTelemetry(TooManyValuesNotSent);
+                break;
+            case MetricTags.FlagSelectionDroppedReason.InvalidKeyPattern:
+                log.ErrorSkipTelemetry(InvalidKeyPatternNotSent);
+                break;
+            default:
+                log.ErrorSkipTelemetry(InvalidTagNotSent);
+                break;
+        }
+
         CountDropped(reason);
     }
 
     internal void ReportDroppedForUrlLimit(IDatadogLogger log)
     {
-        Try(() => log.ErrorSkipTelemetry(UrlLimitNotSent));
+        log.ErrorSkipTelemetry(UrlLimitNotSent);
         CountDropped(MetricTags.FlagSelectionDroppedReason.TooManyValues);
     }
 
@@ -115,38 +112,36 @@ internal sealed class FlagSelectionDiagnostics
             return;
         }
 
-        Try(() =>
+        switch (reason)
         {
-            switch (reason)
-            {
-                case MetricTags.FlagSelectionIgnoredReason.MalformedSelection:
-                    log.ErrorSkipTelemetry(MalformedSelectionIgnored);
-                    break;
-                case MetricTags.FlagSelectionIgnoredReason.TooManyValues:
-                    log.ErrorSkipTelemetry(TooManyValuesIgnored);
-                    break;
-                case MetricTags.FlagSelectionIgnoredReason.InvalidKeyPattern:
-                    log.ErrorSkipTelemetry(InvalidKeyPatternIgnored);
-                    break;
-                case MetricTags.FlagSelectionIgnoredReason.InvalidTag:
-                    log.ErrorSkipTelemetry(InvalidTagIgnored);
-                    break;
-                case MetricTags.FlagSelectionIgnoredReason.TagLoadFailed:
-                    log.ErrorSkipTelemetry(TagLoadFailedIgnored);
-                    break;
-                default:
-                    log.ErrorSkipTelemetry(UnknownIgnored);
-                    break;
-            }
-        });
-        Try(() => Metrics.RecordCountFlagSelectionIgnored(reason));
+            case MetricTags.FlagSelectionIgnoredReason.MalformedSelection:
+                log.ErrorSkipTelemetry(MalformedSelectionIgnored);
+                break;
+            case MetricTags.FlagSelectionIgnoredReason.TooManyValues:
+                log.ErrorSkipTelemetry(TooManyValuesIgnored);
+                break;
+            case MetricTags.FlagSelectionIgnoredReason.InvalidKeyPattern:
+                log.ErrorSkipTelemetry(InvalidKeyPatternIgnored);
+                break;
+            case MetricTags.FlagSelectionIgnoredReason.InvalidTag:
+                log.ErrorSkipTelemetry(InvalidTagIgnored);
+                break;
+            case MetricTags.FlagSelectionIgnoredReason.TagLoadFailed:
+                log.ErrorSkipTelemetry(TagLoadFailedIgnored);
+                break;
+            default:
+                log.ErrorSkipTelemetry(UnknownIgnored);
+                break;
+        }
+
+        Metrics.RecordCountFlagSelectionIgnored(reason);
     }
 
     internal void WarnRemoteConfig(IDatadogLogger log)
     {
         if (TryMark(ref _remoteConfigWarned, 0))
         {
-            Try(() => log.Warning(RemoteConfigWarning));
+            log.Warning(RemoteConfigWarning);
         }
     }
 
@@ -154,7 +149,7 @@ internal sealed class FlagSelectionDiagnostics
     {
         if (TryMark(ref _differentSelectionWarned, 0))
         {
-            Try(() => log.Warning(DifferentSelectionWarning));
+            log.Warning(DifferentSelectionWarning);
         }
     }
 
@@ -176,23 +171,11 @@ internal sealed class FlagSelectionDiagnostics
         }
     }
 
-    // A diagnostic must never change what the provider does.
-    private static void Try(Action report)
-    {
-        try
-        {
-            report();
-        }
-        catch (Exception)
-        {
-        }
-    }
-
     private void CountDropped(MetricTags.FlagSelectionDroppedReason reason)
     {
         if (TryMark(ref _droppedCounted, (int)reason))
         {
-            Try(() => Metrics.RecordCountFlagSelectionDropped(reason));
+            Metrics.RecordCountFlagSelectionDropped(reason);
         }
     }
 }

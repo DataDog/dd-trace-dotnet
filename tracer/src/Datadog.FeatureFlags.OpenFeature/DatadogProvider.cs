@@ -72,7 +72,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     }
 
     // Unit tests stand in for the tracer's flag selection entry points.
-    internal DatadogProvider(DatadogProviderOptions options, Func<string[]?, string[]?, bool> setFlagSelection, Action releaseFlagSelection)
+    internal DatadogProvider(DatadogProviderOptions options, Func<string?[]?, string?[]?, bool> setFlagSelection, Action releaseFlagSelection)
         : this(options, setFlagSelection, releaseFlagSelection, FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
     {
     }
@@ -93,7 +93,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         _evaluateDeferred = evaluateDeferred ?? throw new ArgumentNullException(nameof(evaluateDeferred));
     }
 
-    private DatadogProvider(DatadogProviderOptions options, Func<string[]?, string[]?, bool> setFlagSelection, Action releaseFlagSelection, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
+    private DatadogProvider(DatadogProviderOptions options, Func<string?[]?, string?[]?, bool> setFlagSelection, Action releaseFlagSelection, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
     {
         if (options is null)
         {

@@ -25,15 +25,6 @@ partial class Build
         "SOURCE.md",
     };
 
-    // The fixture repository's own documentation, at any depth: instructions for working in that
-    // repository, not fixtures, and an AGENTS.md would steer agents working in this one.
-    private static readonly HashSet<string> FfeFixtureDocumentationFiles = new(StringComparer.Ordinal)
-    {
-        "AGENTS.md",
-        "CONTRIBUTING.md",
-        "README.md",
-    };
-
     [Parameter("Branch, tag, or commit to copy from DataDog/ffe-system-test-data")]
     readonly string FfeFixtureRef = "main";
 
@@ -160,7 +151,10 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
 
         if (source is FileInfo file)
         {
-            if (FfeFixtureDocumentationFiles.Contains(file.Name))
+            // The fixture repository's own documentation, at any depth: instructions for working in that
+            // repository, not fixtures, and an AGENTS.md would steer agents working in this one.
+            var filesToExclude = new[] { "AGENTS.md", "CONTRIBUTING.md", "README.md" };
+            if (filesToExclude.Contains(file.Name))
             {
                 return;
             }
