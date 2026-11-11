@@ -690,7 +690,7 @@ public class AgentlessConfigurationSourceTests
         factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=beta");
     }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
     [Theory]
     [InlineData("too_many_values", "invalid_tag")]
     [InlineData("too_many_values", "too_many_values")]
@@ -845,7 +845,7 @@ public class AgentlessConfigurationSourceTests
 
     private static Task NoWait(TimeSpan delay) => Task.CompletedTask;
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
     private class HttpClientApiRequest(Uri endpoint, string body, params string[] ignoredHeaderValues) : TestApiRequest(endpoint)
     {
         public override Task<IApiResponse> GetAsync()
