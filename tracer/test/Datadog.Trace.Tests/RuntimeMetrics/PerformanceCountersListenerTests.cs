@@ -85,25 +85,18 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         }
 
         [Theory(Timeout = 30_000)]
-        [InlineData("Accès refusé.", true)]
-        [InlineData("Unexpected initialization failure", false)]
-        public async Task FailedInitializationLogsOnceAndDisablesCounterReads(string message, bool permissionsFailure)
+        [InlineData("Access to the registry key 'Global' is denied.", true, PerformanceCountersListener.InsufficientPermissionsMessageTemplate)]
+        [InlineData("Accès refusé.", true, "Error in performance counter initialization task")]
+        [InlineData("Unexpected initialization failure", false, "Error in performance counter initialization task")]
+        public async Task FailedInitializationLogsOnceAndDisablesCounterReads(string message, bool permissionsFailure, string expectedLogMessage)
         {
             var statsd = new Mock<IDogStatsd>(MockBehavior.Strict);
             var logger = new Mock<IDatadogLogger>(MockBehavior.Strict);
             var logged = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var exception = permissionsFailure ? (Exception)new UnauthorizedAccessException(message) : new InvalidOperationException(message);
 
-            if (permissionsFailure)
-            {
-                logger.Setup(l => l.Warning(exception, PerformanceCountersListener.InsufficientPermissionsMessageTemplate, It.IsAny<int>(), It.IsAny<string>()))
-                      .Callback(() => logged.SetResult(true));
-            }
-            else
-            {
-                logger.Setup(l => l.Error(exception, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
-                      .Callback(() => logged.SetResult(true));
-            }
+            logger.Setup(l => l.ErrorSkipTelemetry(It.IsAny<Exception>(), expectedLogMessage, It.IsAny<int>(), It.IsAny<string>()))
+                  .Callback(() => logged.SetResult(true));
 
             using var listener = new TestPerformanceCounterListener(new TestStatsdManager(statsd.Object), () => throw exception, logger.Object);
             Func<Task> initialize = listener.WaitForInitialization;
@@ -118,6 +111,8 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.VerifyNoOtherCalls();
             logger.VerifyAll();
             logger.Invocations.Should().ContainSingle();
+            logger.Invocations[0].Arguments[0].Should().BeOfType<AggregateException>()
+                  .Which.InnerExceptions.Should().ContainSingle().Which.Should().BeSameAs(exception);
         }
 
         private class TestPerformanceCounterListener : PerformanceCountersListener

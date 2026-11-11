@@ -24,7 +24,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string MemoryCategoryName = ".NET CLR Memory";
         private const string ThreadingCategoryName = ".NET CLR LocksAndThreads";
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
-        internal const string InsufficientPermissionsMessageTemplate = "The process does not have sufficient permissions to read performance counters. Some runtime metrics will be unavailable. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.";
+        internal const string InsufficientPermissionsMessageTemplate = "The process does not have sufficient permissions to read performance counters. Please refer to https://dtdg.co/net-runtime-metrics to learn how to grant those permissions.";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
 
@@ -71,14 +71,14 @@ namespace Datadog.Trace.RuntimeMetrics
             _initializationTask.ContinueWith(
                 t =>
                 {
-                    var exception = t.Exception.InnerException;
-                    if (exception is UnauthorizedAccessException)
+                    var exception = t.Exception;
+                    if (exception.InnerException is UnauthorizedAccessException ex && ex.Message.Contains("'Global'"))
                     {
-                        logger.Warning(exception, InsufficientPermissionsMessageTemplate);
+                        logger.ErrorSkipTelemetry(exception, InsufficientPermissionsMessageTemplate);
                     }
                     else
                     {
-                        logger.Error(exception, "Error in performance counter initialization task");
+                        logger.ErrorSkipTelemetry(exception, "Error in performance counter initialization task");
                     }
                 },
                 TaskContinuationOptions.OnlyOnFaulted);
