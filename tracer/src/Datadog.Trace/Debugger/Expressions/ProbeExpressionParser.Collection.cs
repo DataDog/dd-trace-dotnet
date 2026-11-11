@@ -953,8 +953,7 @@ internal partial class ProbeExpressionParser<T>
                 UnaryExpression unary => unary.Method is null && unary.Operand is not null && unary.Operand.Type.IsPrimitive && unary.Type.IsPrimitive,
                 BinaryExpression binary => binary.Method is null && binary.Conversion is null && binary.Left.Type.IsPrimitive && binary.Right.Type.IsPrimitive,
                 ConditionalExpression => true,
-                MemberExpression member => member.Expression is not null && member.Member.DeclaringType == typeof(string) && member.Member.Name == nameof(string.Length),
-                MethodCallExpression call => call.Method.DeclaringType == typeof(string) && call.Method.Name == nameof(string.Substring),
+                MethodCallExpression call => call.Method.DeclaringType == typeof(string) && call.Method.Name is nameof(string.Substring) or "get_Length",
                 _ => false
             };
         }

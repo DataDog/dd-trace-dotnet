@@ -2972,6 +2972,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpasswordx"",1,9]}]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""substring"":[""xxpasswordxx"",1,11]},1,9]}]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpasswordx"",1,{""len"":""abcdefghi""}]}]}")]
         [InlineData(@"{""len"":{""ref"":""password""}}")]
         public void ProbeExpressionEvaluator_TemplateRedaction_PreservesRenderedPlaceholderAndError(string json)
         {
@@ -3008,6 +3009,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpublicx"",1,7]}]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""substring"":[""xxpublicxx"",1,9]},1,7]}]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpublicx"",1,{""len"":""abcdefg""}]}]}")]
         public void ProbeExpressionParser_ConstantComputedKey_IsFoldedAndReturnsValue(string json)
         {
             var scopeMembers = CreateScopeMembers();
