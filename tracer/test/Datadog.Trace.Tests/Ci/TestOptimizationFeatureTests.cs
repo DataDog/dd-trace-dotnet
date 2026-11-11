@@ -993,8 +993,6 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     public void CommonShouldSkipFormatsArgumentsOnceAcrossNameLookupsAndHistoricalCandidates()
     {
         var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
-        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
-        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
         var method = ((Action<int>)SampleParameterizedItrTest).Method;
         const string testSuite = "Suite";
         var candidates = new List<SkippableTest>();
@@ -1006,17 +1004,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var argument = new CountingTestArgument();
         skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, method.Name, It.IsAny<string>())).Returns(new SkippableTestCollection(candidates));
         skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, "display-name", It.IsAny<string>())).Returns(new SkippableTestCollection(candidates));
-        TestOptimization.Instance = testOptimization.Object;
-        try
-        {
-            Common.ShouldSkip(testSuite, method.Name, [argument], method.GetParameters(), metadataTestName: "display-name").Should().BeFalse();
-            argument.ToStringCalls.Should().Be(1);
-        }
-        finally
-        {
-            TestOptimization.Instance = new TestOptimization();
-            TestOptimization.Instance.Reset();
-        }
+        Common.ShouldSkip(skippableFeature.Object, testSuite, method.Name, [argument], method.GetParameters(), out _, moduleName: null, metadataTestName: "display-name", includeMetadataTestNameInFingerprint: true, useParameterIndexForUnnamedParameters: false).Should().BeFalse();
+        argument.ToStringCalls.Should().Be(1);
     }
 
     [Theory]
@@ -1024,8 +1013,6 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     public void CommonShouldSkipPreservesCandidatePrecedenceWhenCoverageAllowsOrBlocksSkipping(bool methodMatches, bool coverageAllowsSkip)
     {
         var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
-        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
-        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
         var method = ((Action<int>)SampleParameterizedItrTest).Method;
         var methodCandidate = new SkippableTest(method.Name, "Suite", "{\"arguments\":{\"value\":\"" + (methodMatches ? "1" : "2") + "\"}}", configurations: null, missingLineCodeCoverage: true);
         var displayCandidate = new SkippableTest("row", "Suite", """{"arguments":{"value":"1"}}""", configurations: null, missingLineCodeCoverage: true);
@@ -1037,17 +1024,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(It.IsAny<SkippableTest>(), "Module", out reason)).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(expected, "Module", out reason)).Returns(coverageAllowsSkip);
-        TestOptimization.Instance = testOptimization.Object;
-        try
-        {
-            Common.ShouldSkip("Suite", method.Name, [1], method.GetParameters(), out var matched, "Module", metadataTestName: "row").Should().Be(coverageAllowsSkip);
-            matched.Should().Be(expected);
-        }
-        finally
-        {
-            TestOptimization.Instance = new TestOptimization();
-            TestOptimization.Instance.Reset();
-        }
+        Common.ShouldSkip(skippableFeature.Object, "Suite", method.Name, [1], method.GetParameters(), out var matched, "Module", metadataTestName: "row", includeMetadataTestNameInFingerprint: true, useParameterIndexForUnnamedParameters: false).Should().Be(coverageAllowsSkip);
+        matched.Should().Be(expected);
     }
 
     [Theory]
@@ -1116,19 +1094,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var displayCandidate = new SkippableTest("row", "Suite", """{"arguments":{"value":"1"}}""", configurations);
         var response = new TestOptimizationClient.SkippableTestsResponse("correlation", [candidate, displayCandidate]);
         var feature = TestOptimizationSkippableFeature.Create(settings, CreateRemoteSettingsResponse(testsSkippingEnabled: true), new TestOptimizationClientStub(skippableTestsResponse: response), testOptimization.Object);
-        testOptimization.Setup(x => x.SkippableFeature).Returns(feature);
-        TestOptimization.Instance = testOptimization.Object;
-        try
-        {
-            var method = ((Action<int>)SampleParameterizedItrTest).Method;
-            Common.ShouldSkip(suite, name, [argument], method.GetParameters(), out var matched, module).Should().Be(expected);
-            matched.Should().Be(expected ? name == "row" ? displayCandidate : candidate : null);
-        }
-        finally
-        {
-            TestOptimization.Instance = new TestOptimization();
-            TestOptimization.Instance.Reset();
-        }
+        var method = ((Action<int>)SampleParameterizedItrTest).Method;
+
+        Common.ShouldSkip(feature, suite, name, [argument], method.GetParameters(), out var matched, module, metadataTestName: null, includeMetadataTestNameInFingerprint: true, useParameterIndexForUnnamedParameters: false).Should().Be(expected);
+        matched.Should().Be(expected ? name == "row" ? displayCandidate : candidate : null);
     }
 
     [Fact]

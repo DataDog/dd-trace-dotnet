@@ -59,6 +59,8 @@ public class SkippableTestCollectionTests
     [InlineData("{\"arguments\":{\"value\":\"\"}}", null, false)]
     [InlineData("{\"arguments\":{\"value\":\"(null)\"}}", null, true)]
     [InlineData("{\"arguments\":{\"value\":\"one\",\"value\":\"two\"}}", "two", true)]
+    [InlineData("{\"arguments\":{\"value\":\"é😀\"}}", "é😀", true)]
+    [InlineData("{\"arguments\":{\"value\":\"é\"}}", "e\u0301", false)]
     public void MatchesArgumentNamesValuesAndCount(string parameters, object? argument, bool matches)
     {
         var tests = new SkippableTestCollection([Candidate(parameters)]);
@@ -89,6 +91,19 @@ public class SkippableTestCollectionTests
         Match(absent, ["extra"], []).Should().BeNull();
         Match(absent, [], null).Should().NotBeNull();
         Match(defaults, ["(default)"], null).Should().BeNull();
+        Match(defaults, ["(default)", "ignored"], OneParameter).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void MatchesFormattedArrayArguments()
+    {
+        var candidate = Candidate("""{"arguments":{"value":"[one, (null)]"}}""");
+        var tests = new SkippableTestCollection([candidate]);
+        object?[] matchingArgument = ["one", null];
+        object?[] differentArgument = ["two", null];
+
+        Match(tests, [matchingArgument], OneParameter).Should().Be(candidate);
+        Match(tests, [differentArgument], OneParameter).Should().BeNull();
     }
 
     [Theory]
@@ -377,6 +392,14 @@ public class SkippableTestCollectionTests
         view.Count.Should().Be(expected.Length);
         view.Should().Equal(expected);
         var enumeratedCount = 0;
+        foreach (var candidate in view)
+        {
+            candidate.Should().Be(expected[enumeratedCount]);
+            enumeratedCount++;
+        }
+
+        enumeratedCount.Should().Be(expected.Length);
+        enumeratedCount = 0;
         foreach (var candidate in (IEnumerable)view)
         {
             candidate.Should().Be(expected[enumeratedCount]);

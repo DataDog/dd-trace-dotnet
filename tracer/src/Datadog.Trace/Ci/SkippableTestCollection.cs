@@ -39,6 +39,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         _filterByModule = true;
     }
 
+    // Keep module views O(1) to create: matching does not need the filtered count.
     public int Count
     {
         get
@@ -85,19 +86,9 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         }
     }
 
-    public IEnumerator<SkippableTest> GetEnumerator()
-    {
-        if (_index is not null)
-        {
-            foreach (var candidate in _index.Candidates)
-            {
-                if (!_filterByModule || candidate.MatchesModuleScope(_moduleName))
-                {
-                    yield return candidate;
-                }
-            }
-        }
-    }
+    public Enumerator GetEnumerator() => new(this);
+
+    IEnumerator<SkippableTest> IEnumerable<SkippableTest>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -117,11 +108,54 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
     private static int HashArgument(string name, string value)
         => unchecked((StringComparer.Ordinal.GetHashCode(name) * 397) ^ StringComparer.Ordinal.GetHashCode(value));
 
+    public struct Enumerator : IEnumerator<SkippableTest>
+    {
+        private readonly SkippableTestCollection _collection;
+        private int _position;
+
+        internal Enumerator(SkippableTestCollection collection)
+        {
+            _collection = collection;
+            _position = -1;
+            Current = default;
+        }
+
+        public SkippableTest Current { readonly get; private set; }
+
+        readonly object IEnumerator.Current => Current;
+
+        public bool MoveNext()
+        {
+            if (_collection._index is { } index)
+            {
+                while (_position < index.Candidates.Length - 1)
+                {
+                    var candidate = index.Candidates[++_position];
+                    if (!_collection._filterByModule || candidate.MatchesModuleScope(_collection._moduleName))
+                    {
+                        Current = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            Current = default;
+            return false;
+        }
+
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+
+        public readonly void Dispose()
+        {
+        }
+    }
+
     /// <summary>
     /// Formats local arguments at most once, even when both the method name and display name are queried.
-    /// Dispose after the final lookup to clear and return the rented argument buffer.
+    /// Each synchronous lookup owns its query; pass it by ref rather than copying its rented buffer ownership.
+    /// Dispose after the final lookup to clear and return the buffer. Only the immutable index is shared between threads.
     /// </summary>
-    internal struct Query : IDisposable
+    internal ref struct Query
     {
         private readonly object[]? _arguments;
         private readonly ParameterInfo[]? _parameters;
@@ -131,6 +165,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         private string[]? _values;
         private string? _fingerprint;
         private int _argumentsHash;
+        private bool? _hasDuplicateParameterNames;
 
         public Query(object[]? arguments, ParameterInfo[]? parameters, string? metadataTestName, bool includeMetadataTestNameInFingerprint, bool useParameterIndexForUnnamedParameters)
         {
@@ -142,6 +177,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
             _values = null;
             _fingerprint = null;
             _argumentsHash = 0;
+            _hasDuplicateParameterNames = null;
         }
 
         public readonly bool HasNoArguments => _arguments is null || _arguments.Length == 0;
@@ -152,28 +188,31 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
 
         public readonly string? MetadataTestName => StringUtil.IsNullOrEmpty(_metadataTestName) ? null : _metadataTestName;
 
-        public readonly bool HasDuplicateParameterNames
+        public bool HasDuplicateParameterNames()
         {
-            get
+            if (_hasDuplicateParameterNames is { } hasDuplicates)
             {
-                if (_parameters is not { } parameters)
-                {
-                    return false;
-                }
+                return hasDuplicates;
+            }
 
+            // This compares the method's parameters, not the historical candidates. Cache across name lookups.
+            if (_parameters is { } parameters)
+            {
                 for (var i = 0; i < parameters.Length; i++)
                 {
                     for (var j = 0; j < i; j++)
                     {
                         if ((parameters[i].Name ?? string.Empty) == (parameters[j].Name ?? string.Empty))
                         {
+                            _hasDuplicateParameterNames = true;
                             return true;
                         }
                     }
                 }
-
-                return false;
             }
+
+            _hasDuplicateParameterNames = false;
+            return false;
         }
 
         public int GetArgumentsHash()
@@ -188,7 +227,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
             {
                 EnsureValues();
                 _fingerprint = Common.CreateTestParameters(
-                    _values,
+                    new ReadOnlySpan<object?>(_values, 0, ParameterCount),
                     _parameters,
                     _includeMetadataTestNameInFingerprint ? _metadataTestName : null,
                     _useParameterIndexForUnnamedParameters).GetFingerprint();
@@ -274,18 +313,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         }
     }
 
-    private readonly struct MatchKey(int argumentsHash, string? metadata, bool fingerprint) : IEquatable<MatchKey>
-    {
-        private readonly int _argumentsHash = argumentsHash;
-        private readonly string? _metadata = metadata;
-        private readonly bool _fingerprint = fingerprint;
-
-        public bool Equals(MatchKey other) => _argumentsHash == other._argumentsHash && _fingerprint == other._fingerprint && string.Equals(_metadata, other._metadata, StringComparison.Ordinal);
-
-        public override bool Equals(object? obj) => obj is MatchKey other && Equals(other);
-
-        public override int GetHashCode() => unchecked(((_argumentsHash * 397) ^ (_metadata?.GetHashCode() ?? 0)) * 397 ^ _fingerprint.GetHashCode());
-    }
+    private readonly record struct MatchKey(int ArgumentsHash, string? Metadata, bool Fingerprint);
 
     private readonly struct Entry(TestParameters? parameters, int next)
     {
@@ -322,7 +350,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
                 if (parameters?.TryGetFingerprint(out var fingerprint) == true)
                 {
                     _hasFingerprints = true;
-                    Add(new MatchKey(0, fingerprint, fingerprint: true), parameters, i);
+                    Add(new MatchKey(0, fingerprint, Fingerprint: true), parameters, i);
                 }
                 else if (TryGetKey(parameters, out var key))
                 {
@@ -344,7 +372,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         public bool TryMatch(ref Query query, bool filterByModule, string? moduleName, out SkippableTest candidate)
         {
             var first = Candidates.Length;
-            if (query.CanMatchArguments && query.HasDuplicateParameterNames)
+            if (query.CanMatchArguments && query.HasDuplicateParameterNames())
             {
                 // Unusual reflection metadata can repeat parameter names. Preserve the old dictionary lookup semantics.
                 for (var i = 0; i < first; i++)
@@ -373,7 +401,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
 
                 if (first != 0 && _hasFingerprints)
                 {
-                    Find(new MatchKey(0, query.GetFingerprint(), fingerprint: true), ref query, filterByModule, moduleName, ref first);
+                    Find(new MatchKey(0, query.GetFingerprint(), Fingerprint: true), ref query, filterByModule, moduleName, ref first);
                 }
 
                 for (var i = _unindexedHead; i >= 0 && i < first; i = _entries[i].Next)
@@ -414,7 +442,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
             }
 
             var name = (string?)metadata;
-            key = new MatchKey(hash, StringUtil.IsNullOrEmpty(name) ? null : name, fingerprint: false);
+            key = new MatchKey(hash, StringUtil.IsNullOrEmpty(name) ? null : name, Fingerprint: false);
             return true;
         }
 
@@ -426,10 +454,10 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
 
         private void FindArguments(int hash, ref Query query, bool filterByModule, string? moduleName, ref int first)
         {
-            Find(new MatchKey(hash, null, fingerprint: false), ref query, filterByModule, moduleName, ref first);
+            Find(new MatchKey(hash, null, Fingerprint: false), ref query, filterByModule, moduleName, ref first);
             if (first != 0 && query.MetadataTestName is { } metadata)
             {
-                Find(new MatchKey(hash, metadata, fingerprint: false), ref query, filterByModule, moduleName, ref first);
+                Find(new MatchKey(hash, metadata, Fingerprint: false), ref query, filterByModule, moduleName, ref first);
             }
         }
 

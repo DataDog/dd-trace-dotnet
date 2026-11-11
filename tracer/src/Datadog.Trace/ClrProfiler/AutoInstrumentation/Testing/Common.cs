@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
@@ -94,7 +95,7 @@ internal static class Common
         return paramValue.ToString() ?? "(null)";
     }
 
-    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
+    internal static TestParameters CreateTestParameters(ReadOnlySpan<object?> testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
     {
         var testParameters = new TestParameters
         {
@@ -115,7 +116,7 @@ internal static class Common
         for (var i = 0; i < methodParameters.Length; i++)
         {
             var key = methodParameters[i].Name ?? (useParameterIndexForUnnamedParameters ? i.ToString(CultureInfo.InvariantCulture) : string.Empty);
-            testParameters.Arguments[key] = testMethodArguments is not null && i < testMethodArguments.Length
+            testParameters.Arguments[key] = i < testMethodArguments.Length
                                                 ? GetParametersValueData(testMethodArguments[i])
                                                 : "(default)";
         }
@@ -130,7 +131,6 @@ internal static class Common
     {
         skippableTest = null;
         var currentContext = SynchronizationContext.Current;
-        var query = new SkippableTestCollection.Query(testMethodArguments, methodParameters, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
@@ -141,16 +141,31 @@ internal static class Common
             }
 
             moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+            return ShouldSkip(skippableFeature, testSuite, testName, testMethodArguments, methodParameters, out skippableTest, moduleName, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(currentContext);
+        }
+    }
+
+    [TestingAndPrivateOnly]
+    internal static bool ShouldSkip(ITestOptimizationSkippableFeature skippableFeature, string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName, string? metadataTestName, bool includeMetadataTestNameInFingerprint, bool useParameterIndexForUnnamedParameters)
+    {
+        skippableTest = null;
+        var query = new SkippableTestCollection.Query(testMethodArguments, methodParameters, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
+        try
+        {
             if (skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName).TryMatch(ref query, out var candidate))
             {
-                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+                return CanSkipForCoverage(skippableFeature, candidate, moduleName, out skippableTest);
             }
 
             if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
                 !metadataTestName!.Equals(testName, StringComparison.Ordinal) &&
                 skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName).TryMatch(ref query, out candidate))
             {
-                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+                return CanSkipForCoverage(skippableFeature, candidate, moduleName, out skippableTest);
             }
 
             return false;
@@ -158,22 +173,21 @@ internal static class Common
         finally
         {
             query.Dispose();
-            SynchronizationContext.SetSynchronizationContext(currentContext);
         }
     }
 
     /// <summary>
     /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
     /// </summary>
+    /// <param name="skippableFeature">Feature that supplied the matched candidate.</param>
     /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
     /// <param name="moduleName">Local test module or bundle that is about to skip the test.</param>
     /// <param name="matchedSkippableTest">Backend candidate matched to the current framework test.</param>
     /// <returns>True when the test can be skipped safely.</returns>
-    private static bool CanSkipForCoverage(SkippableTest skippableTest, string? moduleName, out SkippableTest? matchedSkippableTest)
+    private static bool CanSkipForCoverage(ITestOptimizationSkippableFeature skippableFeature, SkippableTest skippableTest, string? moduleName, out SkippableTest? matchedSkippableTest)
     {
         matchedSkippableTest = skippableTest;
-        var skippableFeature = TestOptimization.Instance.SkippableFeature;
-        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        if (!skippableFeature.IsCoverageBackfillRequired())
         {
             return true;
         }
