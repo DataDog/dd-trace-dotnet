@@ -239,7 +239,7 @@ internal partial class ProbeExpressionParser<T>
     {
         return Expression.Call(
             IsRedactedRuntimeValueMethod,
-            declaredType == typeof(object) ? read : Expression.Convert(read, typeof(object)),
+            AsObject(read),
             Expression.Constant(declaredType, typeof(Type)));
     }
 
