@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,80 +24,43 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { /*"net462", "net48",*/ "net6.0", "net7.0" })]
-        public void ShouldGetThreadLifetimeSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, /*TestFramework.Net48,*/ TestFramework.Net6, TestFramework.Net7)]
+        public void ShouldGetThreadLifetimeSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly(ProfilerFeature.Timeline);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-
-            // enable thread lifetime provider
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "1");
+            using var run = runner.Run();
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.True(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
+            Assert.True(run.UploadCount > 0);
+            Assert.True(run.Profiles.EveryProfileHasOnlyMatchingSamples(IsThreadLifetimeSample));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { /*"net462", "net48",*/ "net6.0", "net7.0" })]
-        public void ShouldNotGetThreadLifetimeSamplesByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, /*TestFramework.Net48,*/ TestFramework.Net6, TestFramework.Net7)]
+        public void ShouldNotGetThreadLifetimeSamplesByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly();
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            using var run = runner.Run();
 
-            // only thread lifetime profiler is enabled so should only see the corresponding samples
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.False(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.False(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
+            Assert.False(run.UploadCount > 0);
+            Assert.False(run.Profiles.EveryProfileHasOnlyMatchingSamples(IsThreadLifetimeSample));
         }
 
-        private bool CheckSamplesAreThreadTimeline(string directory)
+        private static bool IsThreadLifetimeSample(ProfileSample sample)
         {
-            var threadStartFrame = new StackFrame(ThreadStartFrame);
-            var threadStopFrame = new StackFrame(ThreadStopFrame);
-
-            int profileCount = 0;
-            foreach (var profile in SamplesHelper.GetProfiles(directory))
+            var events = sample.Labels.GetValues("event");
+            if (!events.Contains("thread start") && !events.Contains("thread stop"))
             {
-                int sampleCount = 0;
-                foreach (var sample in profile.Sample)
-                {
-                    if (!sample.Labels(profile)
-                               .Any(l =>
-                                    (l.Name == "event") &&
-                                    ((l.Value == "thread start") || (l.Value == "thread stop"))))
-                    {
-                        return false;
-                    }
-
-                    // check fake call stack
-                    var frames = sample.StackTrace(profile);
-                    if (frames.FramesCount != 1)
-                    {
-                        return false;
-                    }
-
-                    if (!(frames[0].Equals(threadStartFrame) || frames[0].Equals(threadStopFrame)))
-                    {
-                        return false;
-                    }
-
-                    sampleCount++;
-                }
-
-                if (sampleCount == 0)
-                {
-                    return false;
-                }
-
-                profileCount++;
+                return false;
             }
 
-            return (profileCount > 0);
+            // check fake call stack
+            var frames = sample.CallStack;
+            return frames.FramesCount == 1
+                && (frames[0].Equals(new StackFrame(ThreadStartFrame)) || frames[0].Equals(new StackFrame(ThreadStopFrame)));
         }
     }
 }

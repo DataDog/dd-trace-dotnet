@@ -25,39 +25,25 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
         public void CheckTimestampAsLabel(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: "--scenario 5");
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.LiveHeapProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "1");
+            // GC threads CPU time and thread lifetime are enabled by default
             // TODO: add any new profiler to ensure that all are setting timestamps as label
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Cpu,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.Allocations,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.LiveHeap,
+                ProfilerFeature.GarbageCollection,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline,
+                ProfilerFeature.TimestampsAsLabel);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.True(CheckTimestampsAsLabelForAllSamples(runner.Environment.PprofDir));
-        }
+            using var run = runner.Run();
 
-        private bool CheckTimestampsAsLabelForAllSamples(string directory)
-        {
-            foreach (var profile in SamplesHelper.GetProfiles(directory))
-            {
-                foreach (var sample in profile.Sample)
-                {
-                    if (!sample.Labels(profile).Any(l =>
-                        (l.Name == "end_timestamp_ns") ||
-                        // only the GC CPU sample does not have a timestamp label
-                        (l.Name == "gc_cpu_sample")))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            Assert.True(run.UploadCount > 0);
+            // only the GC CPU sample does not have a timestamp label
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")));
         }
     }
 }
