@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -69,7 +70,7 @@ namespace Datadog.Trace.Util
         /// <param name="sourceMethod">the method the state machine was generated from</param>
         /// <param name="isIterator">whether the state machine is an iterator, sync or async</param>
         /// <returns>whether <paramref name="method"/> belongs to a state machine whose source method was found</returns>
-        internal static bool TryGetStateMachineSourceMethod(MethodBase method, out MethodBase? sourceMethod, out bool isIterator)
+        internal static bool TryGetStateMachineSourceMethod(MethodBase method, [NotNullWhen(true)] out MethodBase? sourceMethod, out bool isIterator)
         {
             sourceMethod = null;
             isIterator = false;

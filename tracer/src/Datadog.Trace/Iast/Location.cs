@@ -114,8 +114,9 @@ internal readonly struct Location
         }
         catch (Exception ex)
         {
-            // reading the attributes of the customer's methods can fail when an assembly they reference is missing
-            Log.Warning(ex, "Could not resolve the source method of the state machine {Type}", method?.DeclaringType?.FullName);
+            // reading the attributes of the customer's methods can fail when an assembly they reference is missing,
+            // which happens again for every vulnerability raised there, so not worth more than a debug log
+            Log.Debug(ex, "Could not resolve the source method of the state machine {Type}", method?.DeclaringType?.FullName);
         }
 
         return method;

@@ -46,8 +46,8 @@ namespace Datadog.Trace.Debugger.Helpers
                     // If this is an iterator (sync or async), mark the iterator as changed, so it gets the + annotation
                     // of the original method. Non-iterator async state machines resolve directly to their builder methods
                     // so aren't marked as changed.
-                    mb = sourceMethod!;
-                    declaringType = sourceMethod!.DeclaringType;
+                    mb = sourceMethod;
+                    declaringType = sourceMethod.DeclaringType;
                     methodChanged = isIterator;
                 }
 

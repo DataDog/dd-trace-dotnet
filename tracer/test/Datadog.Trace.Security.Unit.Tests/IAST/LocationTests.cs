@@ -151,6 +151,24 @@ public class LocationTests
     }
 
     [Fact]
+    public async Task GivenAnAsyncMethodOfAGenericTypeOfAValueType_WhenCreatedFromItsFrame_TheSourceMethodIsReported()
+    {
+        var location = await GenericHolder<int>.GetLocationFromAsyncMethod();
+
+        location.Class.Should().Be(typeof(GenericHolder<>).FullName);
+        location.Method.Should().Be(nameof(GenericHolder<int>.GetLocationFromAsyncMethod));
+    }
+
+    [Fact]
+    public async Task GivenAGenericAsyncMethodOfAValueType_WhenCreatedFromItsFrame_TheSourceMethodIsReported()
+    {
+        var location = await GetLocationFromGenericAsyncMethod<int>();
+
+        location.Class.Should().Be(typeof(LocationTests).FullName);
+        location.Method.Should().Be(nameof(GetLocationFromGenericAsyncMethod));
+    }
+
+    [Fact]
     public async Task GivenAnAsyncMethod_WhenCreatedFromItsFrame_TheHashStillComesFromTheStateMachine()
     {
         var location = await GetLocationFromAsyncMethod();
@@ -172,6 +190,12 @@ public class LocationTests
     }
 
     private static async Task<Location> GetLocationFromAsyncMethod()
+    {
+        await Task.Yield();
+        return CreateLocationFromCaller();
+    }
+
+    private static async Task<Location> GetLocationFromGenericAsyncMethod<T>()
     {
         await Task.Yield();
         return CreateLocationFromCaller();
