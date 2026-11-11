@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 var newCapacity = Items.Length * 2;
                 if (newCapacity < min)
                 {
-                    newCapacity = min + 1;
+                    newCapacity = min;
                 }
 
                 Capacity = newCapacity;
@@ -97,14 +97,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void EnlargeCapacity(int index)
         {
-            if (index == Items.Length)
-            {
-                EnsureCapacity(index + 1);
-            }
-            else if (index > Items.Length)
-            {
-                EnsureCapacity(index);
-            }
+            EnsureCapacity(index + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
