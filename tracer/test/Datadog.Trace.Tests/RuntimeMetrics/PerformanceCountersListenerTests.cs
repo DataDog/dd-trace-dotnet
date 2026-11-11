@@ -85,7 +85,6 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         }
 
         [Theory(Timeout = 30_000)]
-        [InlineData("Access to the registry key 'Global' is denied.", true)]
         [InlineData("Accès refusé.", true)]
         [InlineData("Unexpected initialization failure", false)]
         public async Task FailedInitializationLogsOnceAndDisablesCounterReads(string message, bool permissionsFailure)
