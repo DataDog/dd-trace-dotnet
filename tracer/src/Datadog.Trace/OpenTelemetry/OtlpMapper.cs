@@ -26,15 +26,16 @@ internal static class OtlpMapper
 {
     internal delegate void KeyValueWriter<TState>(ref TState state, KeyValue keyValue);
 
-    public static void EmitResourceAttributesFromTraceChunk(in TraceChunkModel traceChunk, Action<KeyValue> writeKeyValue)
+    public static void EmitResourceAttributesFromTraceChunk(in TraceChunkModel traceChunk, Action<KeyValue> writeKeyValue, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         EmitResourceAttributesFromTraceChunk(
             in traceChunk,
             ref writeKeyValue,
-            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue),
+            resourceGlobalTags);
     }
 
-    public static void EmitResourceAttributesFromTraceChunk<TState>(in TraceChunkModel traceChunk, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static void EmitResourceAttributesFromTraceChunk<TState>(in TraceChunkModel traceChunk, ref TState state, KeyValueWriter<TState> writeKeyValue, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         writeKeyValue(ref state, new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
 
@@ -57,7 +58,7 @@ internal static class OtlpMapper
         // Write telemetry SDK attributes
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.language", TracerConstants.Language));
-        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.SemanticVersion));
 
         if (traceChunk.GitCommitSha is string gitCommitSha)
         {
@@ -78,6 +79,17 @@ internal static class OtlpMapper
         {
             writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));
         }
+
+        // Global tags (DD_TAGS, leftover OTEL_RESOURCE_ATTRIBUTES, or the remote config "tracing_tags" override)
+        // are written once on the resource. Span attributes with the same key and value are omitted (see TagWriter).
+        if (resourceGlobalTags is not null)
+        {
+            var attributes = resourceGlobalTags.Attributes;
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                writeKeyValue(ref state, new KeyValue(attributes[i].Key, attributes[i].Value));
+            }
+        }
     }
 
     public static bool IsHandledResourceAttribute(string tagKey)
@@ -91,16 +103,17 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
             ref writeKeyValue,
-            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue),
+            resourceGlobalTags);
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         int count = 0;
         int droppedAttributesCount = 0;
@@ -308,7 +321,7 @@ internal static class OtlpMapper
         // AAS tags need to be set on any span for the backend to properly handle the billing.
 
         // Write span tags
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled, resourceGlobalTags);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter, openTelemetrySemanticsEnabled);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
@@ -419,19 +432,21 @@ internal static class OtlpMapper
         private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
         private readonly bool _openTelemetrySemanticsEnabled;
+        private readonly OtlpResourceGlobalTags? _resourceGlobalTags;
 
         public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false, OtlpResourceGlobalTags? resourceGlobalTags = null)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
             _limit = limit;
             _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
+            _resourceGlobalTags = resourceGlobalTags;
 
             Count = count;
             DroppedCount = 0;
@@ -468,6 +483,15 @@ internal static class OtlpMapper
                     || key == "service.instance.id"
                     || key == Tags.InstrumentationName
                     || key == "http-client-handler-type"))
+            {
+                return;
+            }
+
+            // Global tags are written once as resource attributes. Skip the span attribute when the resource
+            // already carries the same key and value, before it counts against the attribute limit.
+            // A span-level override (different value) is kept. Only string tags are compared,
+            // so numeric tags keep their type on the span.
+            if (_resourceGlobalTags?.Contains(key, value) == true)
             {
                 return;
             }

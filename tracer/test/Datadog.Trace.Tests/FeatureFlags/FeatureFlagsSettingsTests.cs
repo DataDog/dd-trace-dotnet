@@ -41,6 +41,29 @@ public class FeatureFlagsSettingsTests
         settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
     }
 
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData("0", false)]
+    [InlineData("1", true)]
+    [InlineData("not-a-boolean", true)]
+    public void ExposuresDatadogLoggingDefaultsToEnabled(string? configured, bool expected)
+    {
+        var values = new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = "remote_config",
+        };
+        if (configured is not null)
+        {
+            values[ConfigurationKeys.FeatureFlags.ExposuresDatadogLoggingEnabled] = configured;
+        }
+
+        var settings = new FeatureFlagsSettings(new NameValueConfigurationSource(values), NullConfigurationTelemetry.Instance);
+        settings.ExposuresDatadogLoggingEnabled.Should().Be(expected);
+        settings.EvaluationEventsEnabled.Should().BeTrue("the switch stops exposures only");
+    }
+
     // The source-selection contract is shared across tracers, so these cases mirror the
     // system-tests parametric suite (tests/parametric/test_ffe/test_configuration_sources.py).
     // Where configuration would come from and whether Feature Flags run are asserted separately:

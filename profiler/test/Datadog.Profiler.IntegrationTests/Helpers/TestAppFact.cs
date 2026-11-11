@@ -18,10 +18,29 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Frameworks = frameworks;
         }
 
+        public TestAppFact(TestApplication application, params TestFramework[] frameworks)
+        {
+            IsTyped = true;
+            Application = application;
+            SelectedFrameworks = frameworks ?? [];
+        }
+
         public string AppAssembly { get; }
 
         public string AppName { get; set; }
 
         public string[] Frameworks { get; set; }
+
+        public bool IsTyped { get; }
+
+        public TestApplication Application { get; }
+
+        public TestFramework[] SelectedFrameworks { get; }
+
+        public TestFramework MinimumFramework { get; set; }
+
+        public TestFramework MaximumFramework { get; set; }
+
+        public TestFramework[] ExcludedFrameworks { get; set; }
     }
 }

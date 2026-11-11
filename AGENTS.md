@@ -120,7 +120,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 ## Coding Standards
 
 **C# style:**
-- See `.editorconfig` (auto-enforced)
+- See `.editorconfig` (auto-enforced).
 - Add missing `using` directives instead of fully-qualified type names.
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
@@ -273,6 +273,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
+- `docs/development/InferredProxyServices.md` — Inferred proxy spans (AWS API Gateway, Azure APIM, Azure Front Door)
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
 - `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading, customer-code execution, and redaction safety guide

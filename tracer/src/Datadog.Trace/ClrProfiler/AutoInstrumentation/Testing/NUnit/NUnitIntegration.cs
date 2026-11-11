@@ -367,6 +367,7 @@ internal static class NUnitIntegration
 
         var test = suite.CreateTest(testMethod.Name);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
         string? skipReason = skipReasonOverride;
 
         // Get test parameters

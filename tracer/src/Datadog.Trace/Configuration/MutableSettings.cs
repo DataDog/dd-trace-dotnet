@@ -960,17 +960,27 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
         gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
 
-        var otelTraceEnabled = config
-                              .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
-                              .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                         ? ParsingResult<bool>.Success(result: false)
-                                                         : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
-                                                           ? ParsingResult<bool>.Success(result: true)
-                                                           : ParsingResult<bool>.Failure());
-        var traceEnabled = config
-                          .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBoolResult()
-                          .OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
+        var otelTracesExporterResult = config
+                                      .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
+                                      .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                                 ? ParsingResult<bool>.Success(result: false)
+                                                                 : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
+                                                                   ? ParsingResult<bool>.Success(result: true)
+                                                                   : ParsingResult<bool>.Failure());
+        var traceEnabledResult = config
+                                .WithKeys(ConfigurationKeys.TraceEnabled)
+                                .AsBoolResult();
+        var traceEnabled = traceEnabledResult.OverrideWith(in otelTracesExporterResult, errorLog, defaultValue: true);
+
+        // Read OTEL_SDK_DISABLED from this snapshot's source rather than tracerSettings,
+        // so that settings created without default sources ignore it.
+        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
+        {
+            // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
+            // A valid DD_TRACE_ENABLED value overrides it, but an empty or invalid one doesn't.
+            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
+            traceEnabled = false;
+        }
 
         if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
         {

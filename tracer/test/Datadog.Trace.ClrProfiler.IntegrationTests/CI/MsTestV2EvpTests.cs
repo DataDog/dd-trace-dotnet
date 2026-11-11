@@ -280,8 +280,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                         """),
                     1,
-                    38,
-                    40,
+                    20,
+                    22,
                     "quarantined_tests");
             }
         }
@@ -633,7 +633,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                             // CI Library Language
-                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                             // Check Session data
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);

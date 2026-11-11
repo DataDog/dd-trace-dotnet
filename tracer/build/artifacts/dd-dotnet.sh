@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Substituted when this script is copied into the tracer home - see CopyDdDotnetScript in
-# tracer/build/_build/Build.Steps.cs. Only used to name the package the user should have
-# downloaded, in an error message.
 TRACER_VERSION="@DD_VERSION@"
 
 # Get the directory of the script

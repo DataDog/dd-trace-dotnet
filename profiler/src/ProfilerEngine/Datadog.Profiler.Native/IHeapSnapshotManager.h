@@ -11,8 +11,9 @@
 #include "IMemoryFootprintProvider.h"
 
 // Bitfield values for DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT
-constexpr uint32_t ReferenceTreeFormat_Binary = 1;  // bit 0
-constexpr uint32_t ReferenceTreeFormat_Json   = 2;  // bit 1
+constexpr uint32_t ReferenceTreeFormat_Binary               = 1;  // bit 0
+constexpr uint32_t ReferenceTreeFormat_Json                 = 2;  // bit 1
+constexpr uint32_t ReferenceTreeFormat_BenchmarkDiagnostics = 4;  // bit 2
 
 class IHeapSnapshotManager : public IMemoryFootprintProvider
 {

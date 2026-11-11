@@ -6,6 +6,7 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
@@ -41,7 +42,9 @@ internal class CheckProcessCommand : Command
         }
         catch (Exception ex)
         {
-            Utils.WriteError("Error while trying to fetch process information: " + ex.Message);
+            var errorCode = ex is Win32Exception win32Exception ? $" (native error code: {win32Exception.NativeErrorCode})" : string.Empty;
+            Utils.WriteError($"Error while trying to fetch process information{errorCode}: {ex.Message}");
+            Utils.WriteException(ex);
             Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
             context.ExitCode = 1;
             return;
