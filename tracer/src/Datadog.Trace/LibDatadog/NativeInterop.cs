@@ -19,35 +19,36 @@ internal static class NativeInterop
 
     internal static class Common
     {
-        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        // Cdecl: the exports are extern "C", while the DllImport default is stdcall on win-x86
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void Drop(ErrorHandle error);
 
-        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void DropError(ref Error errorHandle);
 
         /// <summary>
         /// Returns null if the url is invalid.
         /// </summary>
-        [DllImport(DllName, EntryPoint = "ddog_endpoint_from_url")]
+        [DllImport(DllName, EntryPoint = "ddog_endpoint_from_url", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr EndpointFromUrl(CharSlice url);
 
-        [DllImport(DllName, EntryPoint = "ddog_endpoint_set_timeout")]
+        [DllImport(DllName, EntryPoint = "ddog_endpoint_set_timeout", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void EndpointSetTimeout(IntPtr endpoint, ulong millis);
 
-        [DllImport(DllName, EntryPoint = "ddog_endpoint_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_endpoint_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void EndpointDrop(IntPtr endpoint);
 
-        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_new")]
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_new", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr CancellationTokenNew();
 
-        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_clone")]
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_clone", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr CancellationTokenClone(CancellationTokenHandle token);
 
-        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_cancel")]
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_cancel", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         internal static extern bool CancellationTokenCancel(CancellationTokenHandle token);
 
-        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void CancellationTokenDrop(IntPtr token);
     }
 
@@ -86,31 +87,31 @@ internal static class NativeInterop
 
     internal static class RemoteConfig
     {
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_new")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_new", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientNew(ref RcClientConfig config, IntPtr endpoint, out IntPtr client);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void ClientDrop(IntPtr client);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_rebind")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_rebind", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientRebind(RemoteConfigClientHandle client, ref RcTarget target, IntPtr endpoint);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_products")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_products", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientSetProducts(RemoteConfigClientHandle client, CharSlices products, ulong capabilities);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_extra_services")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_extra_services", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientSetExtraServices(RemoteConfigClientHandle client, CharSlices services);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_fetch")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_fetch", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientFetch(RemoteConfigClientHandle client, CancellationTokenHandle cancel, out RcChanges changes);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_apply_state")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_apply_state", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientSetApplyState(RemoteConfigClientHandle client, CharSlice path, uint state, CharSlice error);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_changes_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_changes_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void ChangesDrop(RcChanges changes);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_content_drop")]
+        [DllImport(DllName, EntryPoint = "ddog_rc_content_drop", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void ContentDrop(IntPtr owner);
     }
 }

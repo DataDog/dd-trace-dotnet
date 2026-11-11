@@ -8,7 +8,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -22,6 +21,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal sealed class RemoteConfigurationManager : IRemoteConfigurationManager
     {
+        private const int RustThreadStackSize = 2 * 1024 * 1024;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
 
         private readonly IDiscoveryService _discoveryService;
@@ -115,9 +116,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Start()
         {
-            // The libdatadog client blocks while polling, so poll on a dedicated thread
-            _ = Task.Factory.StartNew(PollLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
+            {
+                Log.Warning("Remote Configuration management polling is already started.");
+                return;
+            }
+
+            if (_clientFactory is null)
+            {
+                Log.Information("Remote Configuration is unavailable, as libdatadog is not available.");
+                return;
+            }
+
+            // The libdatadog client blocks while polling, and runs on the polling thread. A dedicated thread, with the stack
+            // size of Rust's own threads: the process default can be much smaller (256 KB in 32-bit IIS)
+            new Thread(PollLoopSafe, maxStackSize: RustThreadStackSize) { IsBackground = true, Name = "Datadog Remote Configuration" }.Start();
         }
 
         public void Dispose()
@@ -136,20 +149,22 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
+        private void PollLoopSafe()
+        {
+            try
+            {
+                PollLoop();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Remote Configuration management polling failed");
+            }
+        }
+
         private void PollLoop()
         {
-            if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
-            {
-                Log.Warning("Remote Configuration management polling is already started.");
-                return;
-            }
-
-            if (_clientFactory is null)
-            {
-                Log.Information("Remote Configuration is unavailable, as libdatadog is not available.");
-                return;
-            }
-
+            // Not started without one
+            var clientFactory = _clientFactory!;
             while (!_processExit.IsSet)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
@@ -159,7 +174,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     try
                     {
                         var tracer = EnrichTagsWithGitMetadata(Volatile.Read(ref _rcmTracer));
-                        if (!_subscriptionManager.Poll(_clientFactory, tracer, Volatile.Read(ref _endpoint), ExtraServicesProvider.Instance.GetExtraServices()))
+                        if (!_subscriptionManager.Poll(clientFactory, tracer, Volatile.Read(ref _endpoint), ExtraServicesProvider.Instance.GetExtraServices()))
                         {
                             return;
                         }
@@ -175,8 +190,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         }
 
         /// <summary>
-        /// Returns <paramref name="tracer"/> with the git metadata tags once available. A new instance, as the client
-        /// is only rebound for new ones.
+        /// Returns <paramref name="tracer"/> with the git metadata tags once available.
         /// </summary>
         private RcmClientTracer EnrichTagsWithGitMetadata(RcmClientTracer tracer)
         {

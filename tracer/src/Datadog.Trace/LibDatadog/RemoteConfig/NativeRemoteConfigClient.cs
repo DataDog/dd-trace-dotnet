@@ -61,6 +61,11 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
 
     public void SetProducts(ICollection<string> products, BigInteger capabilities)
     {
+        if (!(capabilities >> 64).IsZero)
+        {
+            Log.Warning("Remote configuration capabilities above bit 63 are not supported, so they are not advertised");
+        }
+
         using var strings = new NativeStrings();
         var result = NativeInterop.RemoteConfig.ClientSetProducts(_handle, strings.AddAll(products), (ulong)(capabilities & ulong.MaxValue));
         try
@@ -69,8 +74,8 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         }
         catch (LibDatadogException ex)
         {
-            // The supported products are subscribed to nevertheless
-            Log.Warning(ex, "Failed to subscribe to some remote configuration products");
+            // The supported products and capabilities are subscribed to nevertheless
+            Log.Warning(ex, "Failed to subscribe to some remote configuration products or capabilities");
         }
     }
 
@@ -104,34 +109,48 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
 
         var updated = new List<RemoteConfiguration>();
         var removed = new List<RemoteConfigurationPath>();
+        var count = (int)changes.Len;
+        // The contents of the changes from this index on are still owned here
+        var owned = 0;
         try
         {
-            for (var i = 0; i < (int)changes.Len; i++)
+            for (var i = 0; i < count; i++)
             {
                 var change = ((RcChange*)changes.Ptr)[i];
-                var path = RemoteConfigurationPath.FromPath(Encoding.UTF8.GetString((byte*)change.PathPtr, (int)change.PathLen));
-                if (change.Kind == RcChange.Remove)
+                owned = i + 1;
+                RemoteConfigurationContent? contents = null;
+                if (change.Kind != RcChange.Remove)
                 {
-                    removed.Add(path);
-                    continue;
+                    if (change.ContentsLen == 0)
+                    {
+                        NativeInterop.RemoteConfig.ContentDrop(change.ContentsOwner);
+                        contents = Array.Empty<byte>();
+                    }
+                    else
+                    {
+                        contents = new RemoteConfigurationContent(new RemoteConfigurationContentHandle(change.ContentsPtr, change.ContentsLen, change.ContentsOwner));
+                    }
                 }
 
-                RemoteConfigurationContent contents;
-                if (change.ContentsLen == 0)
+                var path = RemoteConfigurationPath.FromPath(Encoding.UTF8.GetString((byte*)change.PathPtr, (int)change.PathLen));
+                if (contents is null)
                 {
-                    NativeInterop.RemoteConfig.ContentDrop(change.ContentsOwner);
-                    contents = Array.Empty<byte>();
+                    removed.Add(path);
                 }
                 else
                 {
-                    contents = new RemoteConfigurationContent(new RemoteConfigurationContentHandle(change.ContentsPtr, change.ContentsLen, change.ContentsOwner));
+                    updated.Add(new RemoteConfiguration(path, contents, (long)change.Version));
                 }
-
-                updated.Add(new RemoteConfiguration(path, contents, (long)change.Version));
             }
         }
         finally
         {
+            // Only if the loop failed midway: nothing else releases these contents
+            for (var i = owned; i < count; i++)
+            {
+                NativeInterop.RemoteConfig.ContentDrop(((RcChange*)changes.Ptr)[i].ContentsOwner);
+            }
+
             NativeInterop.RemoteConfig.ChangesDrop(changes);
         }
 

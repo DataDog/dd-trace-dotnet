@@ -94,16 +94,86 @@ public class RcmSubscriptionManagerTests
     }
 
     [Fact]
-    public void Cancel_CancelsTheClient()
+    public void Cancel_CancelsTheClient_AndStopsPolling()
     {
         var manager = new RcmSubscriptionManager();
         var client = new FakeRemoteConfigClient();
-
-        manager.Cancel();
         Poll(manager, client);
+
         manager.Cancel();
 
         client.Cancelled.Should().BeTrue();
+        manager.Poll((_, _, _) => client, Tracer, Endpoint, []).Should().BeFalse();
+        client.Fetches.Should().Be(1);
+    }
+
+    [Fact]
+    public void Cancel_BeforeTheFirstPoll_NoClientIsCreated()
+    {
+        var manager = new RcmSubscriptionManager();
+        var created = 0;
+
+        manager.Cancel();
+
+        manager.Poll(
+                    (_, _, _) =>
+                    {
+                        created++;
+                        return new FakeRemoteConfigClient();
+                    },
+                    Tracer,
+                    Endpoint,
+                    [])
+               .Should()
+               .BeFalse();
+        created.Should().Be(0);
+    }
+
+    [Fact]
+    public void Cancel_DuringClientCreation_IsNotLost()
+    {
+        var manager = new RcmSubscriptionManager();
+        var client = new FakeRemoteConfigClient();
+        var cancelReturned = false;
+
+        manager.Poll(
+                    (_, _, _) =>
+                    {
+                        // Shutdown, on another thread, while the first poll creates the client: Cancel must not wait for the poll
+                        cancelReturned = Task.Run(manager.Cancel).Wait(TimeSpan.FromSeconds(10));
+                        return client;
+                    },
+                    Tracer,
+                    Endpoint,
+                    [])
+               .Should()
+               .BeFalse();
+
+        cancelReturned.Should().BeTrue();
+        client.Cancelled.Should().BeTrue();
+        client.Fetches.Should().Be(0);
+    }
+
+    [Fact]
+    public void Poll_EqualTargetAndEndpoint_DoNotRebind()
+    {
+        var manager = new RcmSubscriptionManager();
+        var client = new FakeRemoteConfigClient();
+        Poll(manager, client);
+
+        // New instances with the same values, as after any settings change
+        manager.Poll((_, _, _) => client, CreateTracer("service"), new RemoteConfigEndpoint(Endpoint.Url, TimeSpan.FromSeconds(1)), []).Should().BeTrue();
+        client.Rebinds.Should().BeEmpty();
+
+        var globalTags = new ReadOnlyDictionary<string, string>(new Dictionary<string, string> { ["team"] = "rc" });
+        var tagged = RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, globalTags, null);
+        manager.Poll((_, _, _) => client, tagged, Endpoint, []).Should().BeTrue();
+        var withProcessTags = RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, globalTags, ["entrypoint.name:app"]);
+        manager.Poll((_, _, _) => client, withProcessTags, Endpoint, []).Should().BeTrue();
+        var longerTimeout = new RemoteConfigEndpoint(Endpoint.Url, TimeSpan.FromSeconds(2));
+        manager.Poll((_, _, _) => client, withProcessTags, longerTimeout, []).Should().BeTrue();
+
+        client.Rebinds.Should().Equal((tagged, null), (withProcessTags, null), (withProcessTags, longerTimeout));
     }
 
     [Fact]
@@ -289,13 +359,19 @@ public class RcmSubscriptionManagerTests
 
         public bool Cancelled { get; private set; }
 
+        public int Fetches { get; private set; }
+
         public void SetProducts(ICollection<string> products, BigInteger capabilities) => ProductUpdates.Add((products.ToList(), capabilities));
 
         public void SetExtraServices(string[] services) => ExtraServices.Add(services);
 
         public void Rebind(RcmClientTracer target, RemoteConfigEndpoint endpoint) => Rebinds.Add((target, endpoint));
 
-        public RemoteConfigurationChanges Fetch() => _fetchException is null ? _changes : throw _fetchException;
+        public RemoteConfigurationChanges Fetch()
+        {
+            Fetches++;
+            return _fetchException is null ? _changes : throw _fetchException;
+        }
 
         public void SetApplyState(string path, ulong applyState, string error) => ApplyStates.Add((path, applyState, error));
 

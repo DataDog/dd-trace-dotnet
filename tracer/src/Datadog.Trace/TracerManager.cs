@@ -883,7 +883,16 @@ namespace Datadog.Trace
         private static Task RunShutdownTasksAsync(Exception ex)
         {
             // The remote configuration client outlives the tracer managers. Don't wait for a pending request, e.g. when the AppDomain is unloaded
-            RcmSubscriptionManager.Instance.Cancel();
+            try
+            {
+                RcmSubscriptionManager.Instance.Cancel();
+            }
+            catch (Exception cancelException)
+            {
+                // Must not prevent flushing the traces
+                Log.Error(cancelException, "Failed to cancel the remote configuration client on shutdown");
+            }
+
             return RunShutdownTasksAsync(_instance, _heartbeatTimer);
         }
 

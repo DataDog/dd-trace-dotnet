@@ -28,13 +28,18 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     // of a replaced and of the replacing tracer may poll concurrently
     private readonly object _pollLock = new();
 
+    // Publishes the client and cancels it as one step, so that a shutdown during the client creation isn't lost
+    private readonly object _cancellationLock = new();
+
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
 
     private BigInteger _capabilities;
 
-    // The client of the AppDomain, and what was last sent to it. Only accessed with _pollLock held, except for cancellation.
+    // The client of the AppDomain, and what was last sent to it. Only accessed with _pollLock held, except that _client
+    // and _isCancelled are also accessed by Cancel with only _cancellationLock held, and _isCancelled is read without lock.
     private IRemoteConfigClient? _client;
+    private bool _isCancelled;
     private RcmClientTracer? _clientTracer;
     private RemoteConfigEndpoint? _clientEndpoint;
     private string[]? _clientExtraServices;
@@ -164,6 +169,11 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         lock (_pollLock)
         {
+            if (Volatile.Read(ref _isCancelled))
+            {
+                return false;
+            }
+
             var client = _client;
             if (client is null)
             {
@@ -177,11 +187,24 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                     return false;
                 }
 
-                Volatile.Write(ref _client, client);
+                lock (_cancellationLock)
+                {
+                    _client = client;
+                    if (_isCancelled)
+                    {
+                        client.Cancel();
+                        return false;
+                    }
+                }
             }
-            else if (!ReferenceEquals(tracer, _clientTracer) || !ReferenceEquals(endpoint, _clientEndpoint))
+            else
             {
-                client.Rebind(tracer, ReferenceEquals(endpoint, _clientEndpoint) ? null : endpoint);
+                // A rebind starts a new client session, so only for an actual change, not for every settings update
+                var isSameEndpoint = IsSameEndpoint(endpoint, _clientEndpoint);
+                if (!isSameEndpoint || !IsSameTarget(tracer, _clientTracer))
+                {
+                    client.Rebind(tracer, isSameEndpoint ? null : endpoint);
+                }
             }
 
             _clientTracer = tracer;
@@ -199,7 +222,27 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    public void Cancel() => Volatile.Read(ref _client)?.Cancel();
+    public void Cancel()
+    {
+        lock (_cancellationLock)
+        {
+            _isCancelled = true;
+            _client?.Cancel();
+        }
+    }
+
+    private static bool IsSameTarget(RcmClientTracer tracer, RcmClientTracer? previous)
+        => ReferenceEquals(tracer, previous)
+        || (previous is not null
+         && tracer.Service == previous.Service
+         && tracer.Env == previous.Env
+         && tracer.AppVersion == previous.AppVersion
+         && tracer.Tags.SequenceEqual(previous.Tags)
+         && (tracer.ProcessTags ?? []).SequenceEqual(previous.ProcessTags ?? []));
+
+    private static bool IsSameEndpoint(RemoteConfigEndpoint endpoint, RemoteConfigEndpoint? previous)
+        => ReferenceEquals(endpoint, previous)
+        || (previous is not null && endpoint.Url == previous.Url && endpoint.TimeoutMs == previous.TimeoutMs);
 
     private void FetchAndDispatch(IRemoteConfigClient client)
     {
@@ -210,7 +253,15 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
         catch (Exception e)
         {
-            Log.Warning(e, "Error fetching remote configurations");
+            if (Volatile.Read(ref _isCancelled))
+            {
+                Log.Debug(e, "Remote configuration fetch cancelled on shutdown");
+            }
+            else
+            {
+                Log.Warning(e, "Error fetching remote configurations");
+            }
+
             return;
         }
 

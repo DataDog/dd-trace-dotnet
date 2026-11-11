@@ -27,7 +27,7 @@ internal interface IRcmSubscriptionManager
     /// All callers share one client, created with <paramref name="clientFactory"/> by the first poll, so that polling for
     /// another target (e.g. by the remote configuration manager of a tracer replaced by Tracer.Configure) only reports the differences.
     /// </summary>
-    /// <returns>False if the client could not be created.</returns>
+    /// <returns>False if polling should stop: the client could not be created, or was cancelled.</returns>
     bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices);
 
     /// <summary>
