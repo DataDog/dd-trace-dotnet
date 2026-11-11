@@ -48,6 +48,10 @@ internal partial class ProbeExpressionParser<T>
     private CaptureLimitInfo? _captureLimitInfo;
     private bool _hasRedaction;
 
+    // Sentinel node for a value redacted at compile time. IsRedactedValue compares it by reference, so a literal
+    // "{redacted}" string in an expression is never mistaken for it.
+    private ConstantExpression _redactedValue;
+
     static ProbeExpressionParser()
     {
         DefaultDelegate = DefaultValue;
@@ -147,6 +151,11 @@ internal partial class ProbeExpressionParser<T>
 
         Expression AsBoolean(Expression operand)
         {
+            if (IsRedactedValue(operand))
+            {
+                return Expression.Constant(false);
+            }
+
             return operand?.Type == ProbeExpressionParserHelper.UndefinedValueType
                        ? Expression.Constant(true)
                        : operand;
@@ -351,17 +360,17 @@ internal partial class ProbeExpressionParser<T>
 
                             if (readerValue == This)
                             {
-                                return GetParameterExpression(parameters, ScopeMemberKind.This);
+                                return RedactIfRedactedType(GetParameterExpression(parameters, ScopeMemberKind.This), null, readerValue);
                             }
 
                             if (readerValue == Return)
                             {
-                                return GetParameterExpression(parameters, ScopeMemberKind.Return);
+                                return RedactIfRedactedType(GetParameterExpression(parameters, ScopeMemberKind.Return), null, readerValue);
                             }
 
                             if (readerValue == Exceptions)
                             {
-                                return GetParameterExpression(parameters, ScopeMemberKind.Exception);
+                                return RedactIfRedactedType(GetParameterExpression(parameters, ScopeMemberKind.Exception), null, readerValue);
                             }
 
                             if (readerValue == Duration)
@@ -378,7 +387,7 @@ internal partial class ProbeExpressionParser<T>
                                     return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
                                 }
 
-                                return itParameter;
+                                return RedactIfRedactedType(itParameter, null, readerValue);
                             }
 
                             if (readerValue == Key)
@@ -391,7 +400,7 @@ internal partial class ProbeExpressionParser<T>
 
                                 if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Key), out var keyExpression))
                                 {
-                                    return keyExpression;
+                                    return RedactIfRedactedType(keyExpression, null, readerValue);
                                 }
 
                                 AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
@@ -408,7 +417,7 @@ internal partial class ProbeExpressionParser<T>
 
                                 if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Value), out var valueExpression))
                                 {
-                                    return valueExpression;
+                                    return RedactIfRedactedType(valueExpression, null, readerValue);
                                 }
 
                                 AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
@@ -652,6 +661,12 @@ internal partial class ProbeExpressionParser<T>
             // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would
             // run on the placeholder text and render made-up values, such as len(password) = 10.
             finalExpr = RedactedValue();
+        }
+
+        if (_hasRedaction && typeof(T) == typeof(bool))
+        {
+            // A condition that uses a redacted value is false. Its redaction error sets HasConditionError.
+            finalExpr = Expression.Constant(false);
         }
 
         finalExpr = HandleReturnType(finalExpr, scopeMembers);
