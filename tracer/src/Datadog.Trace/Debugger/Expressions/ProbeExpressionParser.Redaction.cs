@@ -17,9 +17,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 // expression depends on is redacted at runtime: a value under a sensitive dictionary key, or a value whose runtime type
 // is redacted. An operation over a guarded expression yields the redacted default when the check is true, and a member
 // or item read from it carries the check on. Every check runs once per entry of its block: the block of the innermost
-// predicate whose item the value is read from, or the root block for a value read from outside every item. A check of the
-// root block that redacts sets a flag on the evaluation budget that the evaluator reports. One of a predicate's block
-// makes that item not match without reporting it, and marks the budget so the evaluator can log the skip once per probe.
+// predicate whose item the value is read from, or the root block for a value read from outside every item.
 // Compile-time redaction (RedactedValue) is handled separately.
 internal partial class ProbeExpressionParser<T>
 {
