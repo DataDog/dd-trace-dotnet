@@ -737,8 +737,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             _errors = evaluationResult.Errors;
 
-            // A redaction doesn't replace the message, because the template already renders {redacted} in its
-            // place. Any other error does, and so does a redaction in the condition.
+            // A redaction doesn't replace the message, because the template or capture already shows {redacted} in
+            // its place. Any other error does, and so does a redaction in the condition.
             string? errorMessage = null;
             string? redactionMessage = null;
             if (_errors is not null)

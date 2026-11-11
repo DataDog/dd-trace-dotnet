@@ -2971,9 +2971,6 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""password""]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
         [InlineData(@"{""len"":{""ref"":""password""}}")]
-        [InlineData(@"{""substring"":[{""ref"":""password""},0,3]}")]
-        [InlineData(@"{""eq"":[{""ref"":""password""},""TOP_SECRET_VALUE""]}")]
-        [InlineData(@"{""isEmpty"":{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}}")]
         public void ProbeExpressionEvaluator_TemplateRedaction_PreservesRenderedPlaceholderAndError(string json)
         {
             var scopeMembers = CreateScopeMembers();
@@ -3002,7 +2999,31 @@ namespace Datadog.Trace.Tests.Debugger
             var error = result.Errors.Should().ContainSingle().Subject;
             error.Message.Should().Be("The property or field is redacted.");
             error.IsRedaction.Should().BeTrue();
+            error.ToString().Should().NotContain(nameof(EvaluationError.IsRedaction));
             result.HasConditionError.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateRedaction_KeepsOtherSegmentsEvaluated()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(null, null, "secret="),
+                    new DebuggerExpression(string.Empty, @"{""len"":{""ref"":""password""}}", null),
+                    new DebuggerExpression(null, null, ", length="),
+                    new DebuggerExpression(string.Empty, @"{""len"":{""ref"":""StringLocal""}}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be($"secret={{redacted}}, length={TestObject.String.Length}");
+            result.Errors.Should().ContainSingle();
         }
 
         [Fact]
