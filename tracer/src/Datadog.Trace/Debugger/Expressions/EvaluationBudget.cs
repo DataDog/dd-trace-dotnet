@@ -12,6 +12,8 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
+// Besides the time budget, the budget carries whether a runtime redaction guard redacted a value. Every compiled
+// expression already receives it by reference, so the flag costs a store only when a guard fires.
 internal struct EvaluationBudget
 {
     private const int OperationsBeforeTimeCheck = 32;
@@ -22,6 +24,8 @@ internal struct EvaluationBudget
     private long _deadlineOrRemainingStopwatchTicks;
     private int _operationsUntilTimeCheck;
     private EvaluationBudgetState _state;
+
+    private bool _hasRuntimeRedaction;
 
     private EvaluationBudget(long deadlineTimestamp)
     {
@@ -60,6 +64,11 @@ internal struct EvaluationBudget
     internal static void ThrowIfExceededImmediately(ref EvaluationBudget budget)
     {
         budget.ThrowIfExceededImmediately();
+    }
+
+    internal static void MarkRuntimeRedaction(ref EvaluationBudget budget)
+    {
+        budget._hasRuntimeRedaction = true;
     }
 
     private static long ToStopwatchTicks(int milliseconds)
@@ -145,6 +154,22 @@ internal struct EvaluationBudget
     internal void MarkTimedOut()
     {
         _state = EvaluationBudgetState.TimedOut;
+    }
+
+    internal void ClearRuntimeRedaction()
+    {
+        _hasRuntimeRedaction = false;
+    }
+
+    internal bool TakeRuntimeRedaction()
+    {
+        if (!_hasRuntimeRedaction)
+        {
+            return false;
+        }
+
+        _hasRuntimeRedaction = false;
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

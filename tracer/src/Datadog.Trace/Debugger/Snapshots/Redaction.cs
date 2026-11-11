@@ -118,6 +118,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private RedactionCache<string> _dataKeyCache = new(MaxCachedDataKeys);
 
+        private volatile bool _hasRedactedTypePrefixes;
+
         private Redaction()
         {
             _typeTrie = new Trie();
@@ -223,6 +225,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         [TestingOnly]
         internal int CachedDataKeysCount => Volatile.Read(ref _dataKeyCache).Count;
+
+        internal bool HasConfiguredRedactedTypes => _redactedTypes.Count > 0 || _hasRedactedTypePrefixes;
 
         internal static bool IsSafeToCallToString(Type? type)
         {
@@ -363,6 +367,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             return max;
         }
 
+        // A runtime type is closed, and no denied type is a generic definition, so a reference compare is enough.
+        private static bool IsDeniedRuntimeType(Type runtimeType)
+        {
+            foreach (var deniedType in DeniedTypes)
+            {
+                if (ReferenceEquals(deniedType, runtimeType))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         internal bool IsRedactedType(Type? type)
         {
             if (type is null)
@@ -388,6 +406,55 @@ namespace Datadog.Trace.Debugger.Snapshots
 #endif
 
             return redacted;
+        }
+
+        // A runtime type, from GetType(), is never Nullable. Without configured redacted types only a denied type is
+        // redacted, so the cache lookup is skipped.
+        internal bool IsRedactedRuntimeType(Type runtimeType)
+        {
+            return HasConfiguredRedactedTypes ? IsRedactedType(runtimeType) : IsDeniedRuntimeType(runtimeType);
+        }
+
+        // Whether a value of this declared type can have a redacted runtime type that the declared type doesn't show.
+        // Without configured redacted types only a denied type is redacted, so only its base types can hide one.
+        internal bool CanHaveRedactedRuntimeType(Type declaredType)
+        {
+            if (declaredType.IsValueType)
+            {
+                return false;
+            }
+
+            if (declaredType.IsArray)
+            {
+                // Arrays are sealed but covariant: a Base[] or object[] can hold a Secret[].
+                var elementType = declaredType.GetElementType();
+                while (elementType is { IsArray: true })
+                {
+                    elementType = elementType.GetElementType();
+                }
+
+                return HasConfiguredRedactedTypes && elementType is { IsValueType: false, IsSealed: false };
+            }
+
+            if (declaredType.IsSealed)
+            {
+                return false;
+            }
+
+            if (HasConfiguredRedactedTypes)
+            {
+                return true;
+            }
+
+            foreach (var deniedType in DeniedTypes)
+            {
+                if (declaredType.IsAssignableFrom(deniedType))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool CheckForRedactedType(Type type)
@@ -617,6 +684,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (type.EndsWith("*"))
                 {
+                    _hasRedactedTypePrefixes = true;
 #if NETCOREAPP3_1_OR_GREATER
                     _typeTrie.Insert(type[..^1]);
 #else

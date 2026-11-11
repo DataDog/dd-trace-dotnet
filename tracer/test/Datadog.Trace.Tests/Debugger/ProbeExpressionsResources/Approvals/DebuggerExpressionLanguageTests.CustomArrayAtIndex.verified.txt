@@ -52,7 +52,7 @@ Expressions: (
 
         return (dumpValue == null)
             ? "null"
-            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(
+            : ProbeExpressionParserHelper.IsRedactedRuntimeValue(
                 dumpValue,
                 typeof(DebuggerExpressionLanguageTests.TestStruct.NestedObject))
                 ? "{redacted}"

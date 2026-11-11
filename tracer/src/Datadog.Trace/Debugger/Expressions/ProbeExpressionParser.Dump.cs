@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
-    private const string RedactedValueDump = "{redacted}";
 
     // A type in CoreLib is never customer code, and a subclass of a type outside CoreLib is never in CoreLib.
     private static readonly Assembly CoreLibAssembly = typeof(object).Assembly;
@@ -71,18 +70,6 @@ internal partial class ProbeExpressionParser<T>
 
         var definition = type.GetGenericTypeDefinition();
         return definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>);
-    }
-
-    // The declared type was already checked, so only a different runtime type needs another lookup.
-    private static bool IsRedactedRuntimeValue(object value, Type declaredType)
-    {
-        if (value is null)
-        {
-            return false;
-        }
-
-        var runtimeType = value.GetType();
-        return runtimeType != declaredType && ShouldRedactValue(null, runtimeType);
     }
 
     // Only called when the declared type is safe to call ToString on. A value type or an exact match is
@@ -250,7 +237,7 @@ internal partial class ProbeExpressionParser<T>
         var value = Expression.Variable(typeof(object), "dumpValue");
         scopeMembers.Add(value);
         var isRedacted = Expression.Call(
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            IsRedactedRuntimeValueMethod,
             value,
             Expression.Constant(expression.Type, typeof(Type)));
 
@@ -259,7 +246,7 @@ internal partial class ProbeExpressionParser<T>
             Expression.Condition(
                 Expression.ReferenceEqual(value, Expression.Constant(null)),
                 nullDump,
-                Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dumpValue(value))));
+                Expression.Condition(isRedacted, Expression.Constant(RedactedPlaceholder), dumpValue(value))));
     }
 
     // Any runtime type that isAllowed rejects gets its fields dumped, the same output a root local of that type gets.
@@ -279,7 +266,7 @@ internal partial class ProbeExpressionParser<T>
         var assignValue = Expression.Assign(value, Expression.Convert(dictionary, typeof(object)));
         var isNull = Expression.ReferenceEqual(value, Expression.Constant(null));
         var isRedacted = Expression.Call(
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            IsRedactedRuntimeValueMethod,
             value,
             Expression.Constant(dictionary.Type, typeof(Type)));
         var isSupportedDictionary = Expression.Call(
@@ -299,7 +286,7 @@ internal partial class ProbeExpressionParser<T>
             Expression.Condition(
                 isNull,
                 Expression.Constant("null"),
-                Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dump)));
+                Expression.Condition(isRedacted, Expression.Constant(RedactedPlaceholder), dump)));
     }
 
     // DumpCollectionExpression takes the first generic argument as the item type, which is the key type for a
@@ -466,7 +453,7 @@ internal partial class ProbeExpressionParser<T>
         var hasName = !StringUtil.IsNullOrEmpty(name);
         if (ShouldRedactValue(name, type))
         {
-            return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+            return hasName ? $"{name}={RedactedPlaceholder}" : RedactedPlaceholder;
         }
 
         if (type == null)
@@ -483,9 +470,9 @@ internal partial class ProbeExpressionParser<T>
             (IsTypeSupportIndex(type, out var assignableFrom) || IsGenericDictionaryInterface(type)))
         {
             // The declared type may be an interface. Redact from the runtime type before enumerating.
-            if (IsRedactedRuntimeValue(value, type))
+            if (ProbeExpressionParserHelper.IsRedactedRuntimeValue(value, type))
             {
-                return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+                return hasName ? $"{name}={RedactedPlaceholder}" : RedactedPlaceholder;
             }
 
             return DumpCollection(value, isDictionary: assignableFrom is null || assignableFrom == typeof(IDictionary), name);
@@ -509,7 +496,7 @@ internal partial class ProbeExpressionParser<T>
             }
 
             // The declared type may be a non-sealed exception. Redact from the runtime type before reading the message.
-            return IsRedactedRuntimeValue(value, type) ? $"{name}{RedactedValueDump}" : DumpException(ex, name);
+            return ProbeExpressionParserHelper.IsRedactedRuntimeValue(value, type) ? $"{name}{RedactedPlaceholder}" : DumpException(ex, name);
         }
 
         return value is not null && Redaction.IsSafeToCallToString(type) && CanCallToStringOnRuntimeType(value, type) ?
@@ -559,7 +546,7 @@ internal partial class ProbeExpressionParser<T>
                         sb.Append('[');
                         sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
                         sb.Append(", ");
-                        sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                        sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedPlaceholder : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
                         sb.Append(']');
                     }
                     else

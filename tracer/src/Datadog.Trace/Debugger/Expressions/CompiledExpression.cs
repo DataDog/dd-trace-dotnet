@@ -22,6 +22,7 @@ namespace Datadog.Trace.Debugger.Expressions
             ParsedExpression = parsedExpression;
             RawExpression = rawExpression;
             Errors = errors;
+            HasNonRedactionError = ContainsNonRedactionError(errors);
         }
 
         /// <summary>
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal EvaluationError[]? Errors { get; }
 
+        internal bool HasNonRedactionError { get; }
+
         /// <summary>
         /// Creates an expression that is never evaluated. Because it has errors and no parsed expression, it is
         /// neither a literal nor an evaluable expression.
@@ -43,6 +46,24 @@ namespace Datadog.Trace.Debugger.Expressions
         internal static CompiledExpression<T> WithoutDelegate(string rawExpression, EvaluationError[] errors)
         {
             return new CompiledExpression<T>(null, null, rawExpression, errors);
+        }
+
+        private static bool ContainsNonRedactionError(EvaluationError[]? errors)
+        {
+            if (errors is null)
+            {
+                return false;
+            }
+
+            foreach (var error in errors)
+            {
+                if (!error.IsRedaction)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
