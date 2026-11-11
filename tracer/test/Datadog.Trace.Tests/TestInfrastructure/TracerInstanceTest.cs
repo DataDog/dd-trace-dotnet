@@ -104,6 +104,48 @@ namespace Datadog.Trace.Tests
             }
         }
 
+        [Fact]
+        public async Task ReplacingGlobalTracerManagerPreservesProcessRootAndWritesWithCurrentManager()
+        {
+            var agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = MockTracerAgent.Create(null, agentPort))
+            {
+                var oldSettings = TracerSettings.Create(
+                    new()
+                    {
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                    });
+                Tracer.Configure(oldSettings);
+
+                var oldManager = Tracer.Instance.TracerManager;
+                var rootScope = Tracer.Instance.StartActiveInternal("process-lifetime-root", parent: SpanContext.None);
+                var processRoot = new TestProcessLifetimeRootSpan(rootScope);
+                oldManager.InitializeProcessLifetimeRootSpan(() => processRoot);
+
+                var newSettings = TracerSettings.Create(
+                    new()
+                    {
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                    });
+                Tracer.Configure(newSettings);
+
+                var newManager = Tracer.Instance.TracerManager;
+                newManager.Should().NotBeSameAs(oldManager);
+                newManager.ActiveProcessLifetimeRootSpan.Should().BeSameAs(processRoot);
+
+                await newManager.ShutdownAsync();
+
+                var spans = await agent.WaitForSpansAsync(count: 1);
+                spans.Should().ContainSingle().Which.Name.Should().Be("process-lifetime-root");
+                processRoot.SpanContext.Should().BeNull();
+            }
+        }
+
         private class LockedTracer : Tracer
         {
             internal LockedTracer()
@@ -117,6 +159,22 @@ namespace Datadog.Trace.Tests
             public LockedTracerManager()
                 : base(new TracerSettings(), null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>(), Mock.Of<ISpanEventsManager>(), null, null)
             {
+            }
+        }
+
+        private sealed class TestProcessLifetimeRootSpan : IProcessLifetimeRootSpan
+        {
+            private readonly Scope _scope;
+            private bool _completed;
+
+            public TestProcessLifetimeRootSpan(Scope scope) => _scope = scope;
+
+            public SpanContext SpanContext => _completed ? null : _scope.Span.Context;
+
+            public void Complete(Exception exception)
+            {
+                _completed = true;
+                _scope.Dispose();
             }
         }
     }

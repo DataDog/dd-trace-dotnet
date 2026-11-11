@@ -18,7 +18,9 @@ namespace Datadog.Trace.Tests.Serverless;
     "FUNCTIONS_EXTENSION_VERSION",
     "DD_AZURE_APP_SERVICES",
     "DD_AAS_DOTNET_EXTENSION_VERSION",
-    "CONTAINER_APP_NAME")]
+    "CONTAINER_APP_NAME",
+    "CONTAINER_APP_JOB_NAME",
+    "CONTAINER_APP_JOB_EXECUTION_NAME")]
 public class AzureInfoTests
 {
     [Theory]
@@ -43,6 +45,23 @@ public class AzureInfoTests
         }
 
         new AzureInfo().IsAzureContainerApp.Should().Be(value);
+    }
+
+    [Theory]
+    [InlineData(null, null, false)]
+    [InlineData("job", null, false)]
+    [InlineData(null, "execution", false)]
+    [InlineData("job", "execution", true)]
+    public void IsContainerAppJob(string jobName, string executionName, bool expected)
+    {
+        Environment.SetEnvironmentVariable("CONTAINER_APP_JOB_NAME", jobName);
+        Environment.SetEnvironmentVariable("CONTAINER_APP_JOB_EXECUTION_NAME", executionName);
+
+        var azureInfo = new AzureInfo();
+
+        azureInfo.IsAzureContainerAppJob.Should().Be(expected);
+        azureInfo.AzureContainerAppJobName.Should().Be(jobName);
+        azureInfo.AzureContainerAppJobExecutionName.Should().Be(executionName);
     }
 
     [Theory]

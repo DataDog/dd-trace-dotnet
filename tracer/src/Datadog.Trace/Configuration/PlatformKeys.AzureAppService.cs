@@ -53,6 +53,17 @@ internal static partial class PlatformKeys
         internal const string ContainerAppName = "CONTAINER_APP_NAME";
 
         /// <summary>
+        /// The name of the Azure Container Apps Job.
+        /// Its presence, together with <see cref="ContainerAppJobExecutionName"/>, identifies a Job execution.
+        /// </summary>
+        internal const string ContainerAppJobName = "CONTAINER_APP_JOB_NAME";
+
+        /// <summary>
+        /// The name of the current Azure Container Apps Job execution.
+        /// </summary>
+        internal const string ContainerAppJobExecutionName = "CONTAINER_APP_JOB_EXECUTION_NAME";
+
+        /// <summary>
         /// Used to detect if running in Azure App Service (presence of this variable).
         /// </summary>
         internal const string RunFromZipKey = "APPSVC_RUN_ZIP";

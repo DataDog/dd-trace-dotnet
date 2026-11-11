@@ -19,6 +19,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -121,6 +122,7 @@ namespace Datadog.Trace
                 }
 
                 instance.TracerManager.Start();
+                ServerlessInitialization.Initialize(instance);
                 return instance;
             }
         }
@@ -201,6 +203,7 @@ namespace Datadog.Trace
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
+            ServerlessInitialization.Initialize(Tracer.Instance);
         }
 
         /// <summary>
@@ -217,6 +220,7 @@ namespace Datadog.Trace
             }
 
             instance?.TracerManager.Start();
+            ServerlessInitialization.Initialize(instance);
         }
 
         /// <summary>
@@ -305,7 +309,9 @@ namespace Datadog.Trace
         internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, string serviceNameSource = null)
         {
             // null parent means use the currently active span
-            parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
+            parent ??= DistributedTracer.Instance.GetSpanContext()
+                    ?? TracerManager.ScopeManager.Active?.Span?.Context
+                    ?? TracerManager.ProcessLifetimeRootSpanContext;
             string lastParentId = null;
             TraceContext traceContext;
 

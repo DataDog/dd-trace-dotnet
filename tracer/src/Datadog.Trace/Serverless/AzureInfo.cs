@@ -20,6 +20,7 @@ internal sealed class AzureInfo
 {
     private bool? _isAzureAppService;
     private bool? _isAzureContainerApp;
+    private bool? _isAzureContainerAppJob;
     private bool? _isAzureFunctions;
     private bool? _isUsingSiteExtension;
     private bool? _isIsolatedFunction;
@@ -47,6 +48,28 @@ internal sealed class AzureInfo
     /// </summary>
     internal bool IsAzureContainerApp =>
         _isAzureContainerApp ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.ContainerAppName);
+
+    /// <summary>
+    /// Gets a value indicating whether the current environment is an Azure Container Apps Job execution
+    /// by checking for both "CONTAINER_APP_JOB_NAME" and "CONTAINER_APP_JOB_EXECUTION_NAME".
+    /// The result is cached after the first evaluation.
+    /// </summary>
+    internal bool IsAzureContainerAppJob =>
+        _isAzureContainerAppJob ??=
+            EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.ContainerAppJobName) &&
+            EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.ContainerAppJobExecutionName);
+
+    /// <summary>
+    /// Gets the cached Azure Container Apps Job name.
+    /// </summary>
+    internal string? AzureContainerAppJobName
+        => field ??= EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppJobName, defaultValue: string.Empty);
+
+    /// <summary>
+    /// Gets the cached Azure Container Apps Job execution name.
+    /// </summary>
+    internal string? AzureContainerAppJobExecutionName
+        => field ??= EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppJobExecutionName, defaultValue: string.Empty);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure Functions

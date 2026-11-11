@@ -4,7 +4,10 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
@@ -54,6 +57,41 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
             distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<SpanContext>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public void DistributedContextTakesPrecedenceOverProcessLifetimeRoot()
+        {
+            var distributedTracer = new Mock<IDistributedTracer>();
+            var distributedContext = new SpanContext(123, 456, SamplingPriority.UserKeep);
+            var processRoot = new TestProcessLifetimeRootSpan(new SpanContext(789, 1011, SamplingPriority.UserKeep));
+            distributedTracer.Setup(t => t.GetSpanContext()).Returns(distributedContext);
+            distributedTracer.Setup(t => t.GetRuntimeId()).Returns(Guid.NewGuid().ToString());
+            Datadog.Trace.ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
+
+            var tracer = new Tracer(
+                new TracerSettings(),
+                Mock.Of<IAgentWriter>(),
+                Mock.Of<ITraceSampler>(),
+                scopeManager: null,
+                statsd: null);
+            tracer.TracerManager.InitializeProcessLifetimeRootSpan(() => processRoot);
+
+            using var scope = tracer.StartActiveInternal("distributed-child");
+
+            scope.Span.Context.ParentId.Should().Be(distributedContext.SpanId);
+            scope.Span.Context.TraceId128.Should().Be(distributedContext.TraceId128);
+        }
+
+        private sealed class TestProcessLifetimeRootSpan : IProcessLifetimeRootSpan
+        {
+            public TestProcessLifetimeRootSpan(SpanContext spanContext) => SpanContext = spanContext;
+
+            public SpanContext SpanContext { get; }
+
+            public void Complete(Exception exception)
+            {
+            }
         }
     }
 }

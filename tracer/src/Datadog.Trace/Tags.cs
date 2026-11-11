@@ -683,6 +683,16 @@ namespace Datadog.Trace
         internal const string AzureContainerAppFunctionBindingSource = "aca.function.binding";
 
         /// <summary>
+        /// The name of the Azure Container Apps Job.
+        /// </summary>
+        internal const string AzureContainerAppJobName = "aca.job.name";
+
+        /// <summary>
+        /// The name of the current Azure Container Apps Job execution.
+        /// </summary>
+        internal const string AzureContainerAppJobExecutionName = "aca.job.execution.name";
+
+        /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization
         /// using the value from <see cref="TraceContext.Origin"/>.
         /// </summary>

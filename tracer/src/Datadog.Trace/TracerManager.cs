@@ -63,6 +63,8 @@ namespace Datadog.Trace
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
         private volatile bool _isClosing;
+        private IProcessLifetimeRootSpan _processLifetimeRootSpan;
+        private int _processLifetimeRootSpanInitializationStarted;
 
         public TracerManager(
             TracerSettings settings,
@@ -198,6 +200,15 @@ namespace Datadog.Trace
         public ServiceRemappingHash ServiceRemappingHash { get; }
 
         /// <summary>
+        /// Gets the registered process-lifetime root span context, when one is active.
+        /// Used only as a fallback parent after distributed and active contexts have been checked.
+        /// </summary>
+        internal SpanContext ProcessLifetimeRootSpanContext => _processLifetimeRootSpan?.SpanContext;
+
+        [TestingOnly]
+        internal IProcessLifetimeRootSpan ActiveProcessLifetimeRootSpan => _processLifetimeRootSpan;
+
+        /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
         /// which use the global <see cref="TracerManager"/>
         /// </summary>
@@ -211,6 +222,15 @@ namespace Datadog.Trace
             {
                 oldManager = _instance;
                 newManager = CreateInitializedTracer(settings, factory);
+
+                // A registered root represents the process, not a configuration-manager instance.
+                // Preserve it when settings replace the global manager.
+                if (oldManager?._processLifetimeRootSpan is { } processLifetimeRootSpan)
+                {
+                    newManager._processLifetimeRootSpan = processLifetimeRootSpan;
+                    newManager._processLifetimeRootSpanInitializationStarted = oldManager._processLifetimeRootSpanInitializationStarted;
+                }
+
                 _instance = newManager;
                 _globalInstanceInitialized = true;
             }
@@ -252,12 +272,26 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Initializes at most one process-lifetime root span. The caller owns environment detection
+        /// and creation of the registered lifecycle.
+        /// </summary>
+        internal void InitializeProcessLifetimeRootSpan(Func<IProcessLifetimeRootSpan> factory)
+        {
+            if (Interlocked.Exchange(ref _processLifetimeRootSpanInitializationStarted, 1) != 0)
+            {
+                return;
+            }
+
+            _processLifetimeRootSpan = factory();
+        }
+
+        /// <summary>
         /// Internal for testing only.
         /// Run all the shutdown tasks for a standalone <see cref="TracerManager"/> instance,
         /// stopping the background processes.
         /// </summary>
         [TestingOnly]
-        internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
+        internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null, null);
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
@@ -877,9 +911,9 @@ namespace Datadog.Trace
             OtelProcessContextAnnouncer.Announce(tracerSettings);
         }
 
-        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
+        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer, ex);
 
-        private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
+        private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer, Exception shutdownException)
         {
             try
             {
@@ -895,6 +929,18 @@ namespace Datadog.Trace
 
                 if (instance is not null)
                 {
+                    // Complete registered process-lifetime work before closing the writer so its
+                    // final span is included in the existing flush. A feature failure must not
+                    // prevent the tracer's remaining shutdown work.
+                    try
+                    {
+                        instance._processLifetimeRootSpan?.Complete(shutdownException);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error completing process-lifetime tracing on shutdown.");
+                    }
+
                     instance._settingSubscription.Dispose();
                     Log.Debug("Disposing DynamicConfigurationManager");
                     instance.DynamicConfigurationManager.Dispose();
