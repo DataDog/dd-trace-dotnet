@@ -18,7 +18,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -33,6 +32,9 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 {
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
+
+    // The longest service the CDN attributes usage to.
+    private const int MaxServiceLength = 100;
 
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan FirstRetryMax = TimeSpan.FromSeconds(10);
@@ -184,7 +186,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// </summary>
     private static bool IsAttributableService(string service)
     {
-        if (service.Length is 0 or > 100 || !char.IsAsciiLetterOrDigit(service[0]))
+        if (service.Length is 0 or > MaxServiceLength || !char.IsAsciiLetterOrDigit(service[0]))
         {
             return false;
         }
@@ -199,6 +201,51 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Cleans up a service name for DD-Service the way the Node.js tracer does: lowercased, every
+    /// character other than <c>a-z 0-9 _ : . / -</c> replaced with <c>_</c>, the characters before
+    /// the first letter or digit removed, and cut to 100 characters. <c>My Service</c> becomes
+    /// <c>my_service</c>, the name APM shows. Can return an empty string.
+    /// </summary>
+    internal static string CleanUpService(string service)
+    {
+        // Only an ASCII letter or digit can start the cleaned-up name, so whatever comes before the
+        // first one is dropped.
+        var start = 0;
+        while (start < service.Length && !char.IsAsciiLetterOrDigit(service[start]))
+        {
+            start++;
+        }
+
+        var length = Math.Min(service.Length - start, MaxServiceLength);
+
+        // Most names need no change, so a copy is only made once a character has to be replaced.
+        char[]? cleaned = null;
+        for (var i = 0; i < length; i++)
+        {
+            var c = service[start + i];
+            var replacement = c switch
+            {
+                >= 'A' and <= 'Z' => (char)(c + ('a' - 'A')),
+                (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '.' or '/' or '-' => c,
+                _ => '_',
+            };
+
+            if (replacement != c)
+            {
+                cleaned ??= service.ToCharArray(start, length);
+                cleaned[i] = replacement;
+            }
+        }
+
+        if (cleaned is not null)
+        {
+            return new string(cleaned);
+        }
+
+        return start == 0 && length == service.Length ? service : service.Substring(start, length);
     }
 
     /// <summary>
@@ -218,15 +265,13 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         string? sent = null;
         if (!StringUtil.IsNullOrEmpty(service))
         {
-            // Cleaned up the way the Agent cleans up span service names, so the usage is attributed
-            // to the name APM shows (My Service as my_service) instead of being dropped by the CDN.
-            // Only the header value is cleaned up: the tracer's service stays as configured. An empty
-            // name never gets here, so the normalizer's unnamed-service placeholder is never sent.
-            var cleaned = NormalizerTraceProcessor.NormalizeService(service);
+            // Cleaned up, so the usage is attributed to the name APM shows (My Service as my_service)
+            // instead of being dropped by the CDN. Only the header value is cleaned up: the tracer's
+            // service stays as configured.
+            var cleaned = CleanUpService(service);
 
-            // The normalizer keeps non-ASCII letters and can leave nothing at all, so the result is
-            // checked against the CDN's format too. A value the CDN would drop is not sent. Besides
-            // being wasted, a non-ASCII header value can make the request fail, and with it every poll.
+            // Cleaning up leaves nothing at all when the name has no ASCII letter or digit, so the
+            // result is still checked against the CDN's format. A value the CDN would drop is not sent.
             if (IsAttributableService(cleaned))
             {
                 sent = cleaned;

@@ -21,7 +21,6 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -44,11 +43,11 @@ public class AgentlessConfigurationSourceTests
 
     private const string ServiceRejection = "DD-Service header not sent";
 
-    // Names already in the format the CDN attributes usage to, at its limits.
-    public static TheoryData<string> AttributableServices => new() { "a", "svc_name.v2:api/edge-1", "a" + new string('b', 99) };
+    // Names already in the format the CDN attributes usage to, at its limits. A leading digit is kept.
+    public static TheoryData<string> AttributableServices => new() { "a", "svc_name.v2:api/edge-1", "a" + new string('b', 99), "2fa-service" };
 
-    // Names the CDN would drop, and the name the Agent turns each into for APM. Default Web Site/Shop
-    // is the name inferred for an IIS application in the default site.
+    // Names the CDN would drop, and what is sent instead. Default Web Site/Shop is the name inferred
+    // for an IIS application in the default site.
     public static TheoryData<string, string> CleanedUpServices => new()
     {
         { "My Service", "my_service" },
@@ -57,10 +56,11 @@ public class AgentlessConfigurationSourceTests
         { "_svc", "svc" },
         { "bad\nvalue", "bad_value" },
         { "a" + new string('b', 100), "a" + new string('b', 99) },
+        { "caf\u00e9", "caf_" },
     };
 
-    // Names with nothing left the CDN accepts once cleaned up: non-ASCII letters are kept, and a
-    // name of underscores is left empty.
+    // Names with nothing left once cleaned up: every character becomes an underscore, and a name
+    // cannot start with one.
     public static TheoryData<string> UnattributableServices => new() { "支付", "___" };
 
     [Fact]
@@ -171,7 +171,7 @@ public class AgentlessConfigurationSourceTests
 
     [Theory]
     [MemberData(nameof(CleanedUpServices))]
-    public async Task CleansUpAServiceTheCdnWouldDropTheWayTheAgentDoesForApm(string service, string sent)
+    public async Task CleansUpAServiceTheCdnWouldDrop(string service, string sent)
     {
         var logger = CreateDebugLogger();
         var factory = new TestRequestFactory();
@@ -268,7 +268,7 @@ public class AgentlessConfigurationSourceTests
         // The name the tracer's spans use when DD_SERVICE is not set, cleaned up like any other.
         var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
         inferred.Should().NotBeNullOrEmpty();
-        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", NormalizerTraceProcessor.NormalizeService(inferred));
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", AgentlessConfigurationSource.CleanUpService(inferred));
     }
 
     [Fact]
