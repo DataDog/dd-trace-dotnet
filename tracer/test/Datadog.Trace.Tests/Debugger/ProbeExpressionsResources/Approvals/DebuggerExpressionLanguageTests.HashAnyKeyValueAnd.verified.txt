@@ -75,10 +75,14 @@ Expression: (
 
                 stringStringKeyValuePair = enumerator.Current;
 
-                if ((stringStringKeyValuePair.Key == "hello") &&
-                    (ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair.Key)
-                        ? false
-                        : stringStringKeyValuePair.Value == "world"))
+                if ({
+                        var $dd_el_redacted = 0;
+                        (stringStringKeyValuePair.Key == "hello") && (((($dd_el_redacted == 0)
+                            ? $dd_el_redacted = ProbeExpressionParser<bool>.IsRedactedStringKey(stringStringKeyValuePair.Key) ? 2 : 1
+                            : $dd_el_redacted) == 2)
+                            ? false
+                            : stringStringKeyValuePair.Value == "world");
+                    })
                 {
                     anyResult = true;
                     break;
