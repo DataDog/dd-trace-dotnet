@@ -46,7 +46,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
             run.Dispose();
             run.Dispose();
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+            // On Windows, a refused connection is only reported after about 2s of retries: use a longer timeout.
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var act = () => client.GetAsync($"http://127.0.0.1:{port}/");
             await act.Should().ThrowAsync<HttpRequestException>();
         }

@@ -144,6 +144,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             CustomEnvironmentVariables[key] = value;
         }
 
+        /// <summary>
+        /// Enables the listed features. Every other profiler data source is disabled.
+        /// Options that change how profiles are built (code hotspots, endpoint, ETW, managed activation,
+        /// managed code cache...) are set only when listed: their default depends on the platform
+        /// (for example the managed code cache is on by default on ARM64), so disabling them would change the test.
+        /// </summary>
         internal void EnableOnly(params ProfilerFeature[] features)
         {
             var enabled = new HashSet<ProfilerFeature>();
@@ -157,7 +163,36 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             foreach (ProfilerFeature feature in Enum.GetValues(typeof(ProfilerFeature)))
             {
-                SetVariable(VariableName(feature), enabled.Contains(feature) ? "1" : "0");
+                if (enabled.Contains(feature))
+                {
+                    SetVariable(VariableName(feature), "1");
+                }
+                else if (IsDataSource(feature))
+                {
+                    SetVariable(VariableName(feature), "0");
+                }
+            }
+        }
+
+        internal static bool IsDataSource(ProfilerFeature feature)
+        {
+            switch (feature)
+            {
+                case ProfilerFeature.Cpu:
+                case ProfilerFeature.WallTime:
+                case ProfilerFeature.Exceptions:
+                case ProfilerFeature.Allocations:
+                case ProfilerFeature.LockContention:
+                case ProfilerFeature.GarbageCollection:
+                case ProfilerFeature.LiveHeap:
+                case ProfilerFeature.Timeline:
+                case ProfilerFeature.Network:
+                case ProfilerFeature.GcThreadsCpuTime:
+                case ProfilerFeature.HeapSnapshot:
+                case ProfilerFeature.WaitHandleContention:
+                    return true;
+                default:
+                    return false;
             }
         }
 
