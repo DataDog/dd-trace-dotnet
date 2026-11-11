@@ -5288,8 +5288,11 @@ namespace Datadog.Trace.Tests.Debugger
 
                 var states = new GuardStateCounter(lambda.Body);
                 states.Visit(lambda.Body);
-                states.Root.Should().Be(1, "the check of the value read from outside the items is stored once per evaluation");
-                states.Nested.Should().Be(1, "the @it check is reset on every item");
+
+                // The check of the value read from outside the items is stored once per evaluation, and the @it check is
+                // reset on every item.
+                states.Root.Should().Be(1);
+                states.Nested.Should().Be(1);
             }
 
             [Theory]
