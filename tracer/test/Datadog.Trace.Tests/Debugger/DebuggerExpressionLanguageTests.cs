@@ -5662,26 +5662,47 @@ namespace Datadog.Trace.Tests.Debugger
             {
             }
 
-            // Counts distinct check nodes: a guard shared by nested operations is one node.
-            // Every memoized guard declares one check state variable. Counting the calls to IsRedactedRuntimeValue instead
-            // would also count the runtime type check that dumping a value does.
+            // Counts the runtime type checks that memoized guards run, which are the ones assigned to a check state variable:
+            // a guard shared by nested operations is one check. Dumping a value runs the same check outside a guard, and key
+            // guards run other checks.
             private sealed class RuntimeGuardCounter : System.Linq.Expressions.ExpressionVisitor
             {
-                private readonly HashSet<System.Linq.Expressions.ParameterExpression> _guards = [];
+                private readonly HashSet<System.Linq.Expressions.MethodCallExpression> _guards = [];
+                private bool _inCheck;
 
                 internal int Count => _guards.Count;
 
-                protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
+                protected override System.Linq.Expressions.Expression VisitBinary(System.Linq.Expressions.BinaryExpression node)
                 {
-                    foreach (var variable in node.Variables)
+                    if (node.NodeType != System.Linq.Expressions.ExpressionType.Assign ||
+                        node.Left is not System.Linq.Expressions.ParameterExpression { Name: var name } ||
+                        name != ProbeExpressionParserHelper.RedactionCheckStateVariableName)
                     {
-                        if (variable.Name == ProbeExpressionParserHelper.RedactionCheckStateVariableName)
-                        {
-                            _guards.Add(variable);
-                        }
+                        return base.VisitBinary(node);
                     }
 
-                    return base.VisitBlock(node);
+                    var wasInCheck = _inCheck;
+                    _inCheck = true;
+                    try
+                    {
+                        return base.VisitBinary(node);
+                    }
+                    finally
+                    {
+                        _inCheck = wasInCheck;
+                    }
+                }
+
+                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+                {
+                    if (_inCheck &&
+                        node.Method.DeclaringType == typeof(ProbeExpressionParserHelper) &&
+                        node.Method.Name == nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue))
+                    {
+                        _guards.Add(node);
+                    }
+
+                    return base.VisitMethodCall(node);
                 }
             }
 
@@ -6174,6 +6195,31 @@ namespace Datadog.Trace.Tests.Debugger
                 capture.Errors.Should().BeNullOrEmpty();
             }
 
+            [Fact]
+            public void ProbeExpressionEvaluator_UniqueRuntimeKeys_GrowTheDataKeyCacheAndNotTheIdentifierCache()
+            {
+                try
+                {
+                    Redaction.Instance.ResetInstance();
+                    var evaluator = _tests.CreateTemplateEvaluator(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]}", condition: null);
+                    evaluator.Evaluate(CreateScopeMembers("warm-up"));
+                    var keywords = Redaction.Instance.CachedKeywordsCount;
+                    var dataKeys = Redaction.Instance.CachedDataKeysCount;
+
+                    for (var i = 0; i < 10; i++)
+                    {
+                        evaluator.Evaluate(CreateScopeMembers($"unique-key-{i}"));
+                    }
+
+                    Redaction.Instance.CachedKeywordsCount.Should().Be(keywords);
+                    Redaction.Instance.CachedDataKeysCount.Should().Be(dataKeys + 10);
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
             [Theory]
             [MemberData(nameof(RuntimeKeyRedactedOperations))]
             public void ProbeExpressionParser_RuntimeKey_RedactsDerivedOperations(string json)
@@ -6394,7 +6440,9 @@ namespace Datadog.Trace.Tests.Debugger
                     var counter = KeyCheckCounter.Count(compiled.ParsedExpression);
                     counter.CallsTo(IsRedactedEntryKey).Should().Be(0);
                     counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
-                    counter.HasCheckState.Should().BeTrue("the key's runtime type is checked");
+
+                    // The key's runtime type is checked.
+                    counter.HasCheckState.Should().BeTrue();
                 }
                 finally
                 {
@@ -6562,7 +6610,7 @@ namespace Datadog.Trace.Tests.Debugger
                 var counter = KeyCheckCounter.Count(expression);
                 counter.CallsTo(IsRedactedStringKey).Should().Be(0);
                 counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
-                counter.HasCheckState.Should().BeFalse("no check is memoized");
+                counter.HasCheckState.Should().BeFalse();
             }
 
             private MethodScopeMembers CreateScopeMembers(string key = "public", string publicValue = "hello", IList<string> countedKeys = null)

@@ -72,7 +72,7 @@ internal partial class ProbeExpressionParser<T>
     [TestingAndPrivateOnly]
     internal static bool IsRedactedStringKey(string key)
     {
-        return Redaction.Instance.IsRedactedKeyword(key);
+        return Redaction.Instance.IsRedactedDataKey(key);
     }
 
     // An index key whose declared type doesn't decide its check, matched by name. Its runtime type isn't checked: an index
@@ -82,7 +82,7 @@ internal partial class ProbeExpressionParser<T>
     {
         if (key is string name)
         {
-            return Redaction.Instance.IsRedactedKeyword(name);
+            return Redaction.Instance.IsRedactedDataKey(name);
         }
 
         if (key is null)
@@ -90,15 +90,10 @@ internal partial class ProbeExpressionParser<T>
             return false;
         }
 
-        if (key is Enum)
-        {
-            return Redaction.Instance.IsRedactedKeyword(key.ToString());
-        }
-
         var type = key.GetType();
         return !IsUncheckedKeyType(type) &&
                Redaction.IsSafeToCallToString(type) &&
-               Redaction.Instance.IsRedactedKeyword(key.ToString());
+               Redaction.Instance.IsRedactedDataKey(key.ToString());
     }
 
     // The key of an iterated entry whose declared type doesn't decide its check. Nothing guards the key before the entry's
@@ -176,8 +171,13 @@ internal partial class ProbeExpressionParser<T>
             var values = Enum.GetValues(type);
             for (var i = 0; i < names.Length; i++)
             {
+                if (!Redaction.Instance.IsRedactedKeyword(names[i]))
+                {
+                    continue;
+                }
+
                 var value = values.GetValue(i);
-                if (Redaction.Instance.IsRedactedKeyword(names[i]) && redactedEnumValues?.Contains(value) != true)
+                if (redactedEnumValues?.Contains(value) != true)
                 {
                     (redactedEnumValues ??= []).Add(value);
                 }
@@ -213,7 +213,8 @@ internal partial class ProbeExpressionParser<T>
         {
             IndexKeyCheck.Keyword => Expression.Call(IsRedactedStringKeyMethod, key),
             IndexKeyCheck.EnumValue => RedactedEnumValueCheck(key, redactedEnumValues),
-            _ => Expression.Call(IsRedactedObjectKeyMethod, AsObject(key))
+            IndexKeyCheck.ObjectKey => Expression.Call(IsRedactedObjectKeyMethod, AsObject(key)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "A key with no check has nothing to check")
         };
     }
 
