@@ -36,23 +36,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
-        internal static bool TryGetAvailablePhysicalMemory(out ulong bytes)
-        {
-            var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
-            if (GlobalMemoryStatusEx(ref status))
-            {
-                bytes = status.ullAvailPhys;
-                return true;
-            }
-
-            var error = Marshal.GetLastWin32Error();
-            Log.Debug(
-                "GlobalMemoryStatusEx failed when getting available physical memory. ErrorCode={ErrorCode}",
-                property: error);
-            bytes = 0;
-            return false;
-        }
-
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private struct MEMORYSTATUSEX
         {

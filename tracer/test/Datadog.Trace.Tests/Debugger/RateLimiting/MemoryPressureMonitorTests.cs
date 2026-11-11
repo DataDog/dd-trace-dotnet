@@ -337,18 +337,6 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
             ratio.Should().BeInRange(0, 1);
         }
 
-        [Fact]
-        public void WindowsMemoryInfo_TryGetAvailablePhysicalMemory_ReturnsValidValue()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
-
-            WindowsMemoryInfo.TryGetAvailablePhysicalMemory(out var bytes).Should().BeTrue();
-            bytes.Should().BeGreaterThan(0);
-        }
-
         // Fakes are passed as production reader delegates (method groups), so no shared test-only interface is needed.
         private static MemoryPressureMonitor CreateMonitor(
             MemoryPressureConfig? config,

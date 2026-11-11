@@ -41,7 +41,7 @@ internal partial class ProbeExpressionParser<T>
             _ => null
         };
 
-        return Redaction.Instance.ShouldRedact(name, type, out _);
+        return Redaction.Instance.ShouldRedactDataKey(name, type, out _);
     }
 
     private static Expression RedactedDictionaryOperationDefault(Type type)
@@ -407,7 +407,7 @@ internal partial class ProbeExpressionParser<T>
                 indexOrKey is ConstantExpression expr &&
                 Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
             {
-                AddError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]", "The property or field is redacted.");
+                AddRedactionError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]");
                 return RedactedValue();
             }
 

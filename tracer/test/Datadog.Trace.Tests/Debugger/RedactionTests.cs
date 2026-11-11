@@ -5,7 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Security;
+using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 
@@ -16,6 +21,11 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class RedactionTests : IDisposable
     {
+        public RedactionTests()
+        {
+            Redaction.Instance.ResetInstance();
+        }
+
         public static IEnumerable<object[]> GetLongStringTestData()
         {
             var longKeyword = new string('x', 350) + "-api-key";
@@ -160,6 +170,31 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
+        [InlineData(256)] // Largest stack buffer
+        [InlineData(257)] // Smallest pooled buffer
+        public void IsRedactedKeyword_NormalizesAroundStackAllocLimit(int normalizedLength)
+        {
+            // Mixed case and separators force normalization, which must produce exactly the configured keyword.
+            var keyword = new StringBuilder(normalizedLength);
+            var name = new StringBuilder();
+            for (var i = 0; i < normalizedLength; i++)
+            {
+                var c = (char)('a' + (i % 26));
+                keyword.Append(c);
+                name.Append(i % 2 == 0 ? char.ToUpperInvariant(c) : c);
+                if (i % 10 == 0)
+                {
+                    name.Append('_');
+                }
+            }
+
+            Redaction.Instance.SetConfig([keyword.ToString()], [], []);
+
+            Redaction.Instance.IsRedactedKeyword(name.ToString()).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(name.ToString(1, name.Length - 1)).Should().BeFalse();
+        }
+
+        [Theory]
         [InlineData(typeof(string), false)]
         [InlineData(typeof(List<string>), false)]
         [InlineData(null, false)]
@@ -178,7 +213,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.SecureString", "Namespace.Sensitive*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
+            Redaction.Instance.IsRedactedType(typeof(SecureString)).Should().BeTrue();
         }
 
         [Fact]
@@ -217,7 +252,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
+            Redaction.Instance.IsRedactedType(typeof(SecureString)).Should().BeTrue();
         }
 
         [Fact]
@@ -245,6 +280,184 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(Redaction.Instance.IsRedactedKeyword("PASSWORD"));
             Assert.False(Redaction.Instance.IsRedactedKeyword("good-password"));
             Assert.False(Redaction.Instance.IsRedactedKeyword("GOOD-PASSWORD"));
+        }
+
+        [Fact]
+        public void IsRedactedKeyword_WhenCacheIsFull_StartsNewCache()
+        {
+            var redaction = Redaction.Instance;
+            for (var i = 0; i < Redaction.MaxCachedKeywords; i++)
+            {
+                redaction.IsRedactedKeyword("field" + i).Should().BeFalse();
+            }
+
+            redaction.CachedKeywordsCount.Should().Be(Redaction.MaxCachedKeywords);
+
+            redaction.IsRedactedKeyword("Pass_Word").Should().BeTrue();
+            redaction.CachedKeywordsCount.Should().Be(1);
+
+            redaction.IsRedactedKeyword("Pass_Word").Should().BeTrue();
+            redaction.IsRedactedKeyword("field0").Should().BeFalse();
+            redaction.ShouldRedact("x-api-key", typeof(string), out var reason).Should().BeTrue();
+            reason.Should().Be(RedactionReason.Identifier);
+            redaction.CachedKeywordsCount.Should().Be(3);
+        }
+
+        [Fact]
+        public void IsRedactedKeyword_LongName_IsCheckedButNotCached()
+        {
+            var redaction = Redaction.Instance;
+
+            redaction.IsRedactedKeyword("password" + new string('_', 600)).Should().BeTrue();
+            redaction.IsRedactedKeyword(new string('a', 600)).Should().BeFalse();
+            redaction.IsRedactedDataKey("Pass-Word" + new string('-', 600)).Should().BeTrue();
+            redaction.CachedKeywordsCount.Should().Be(0);
+            redaction.CachedDataKeysCount.Should().Be(0);
+        }
+
+        [Theory]
+        [InlineData(512, 1)]
+        [InlineData(513, 0)]
+        public void IsRedactedKeyword_NameLength_IsCachedOnlyUpToTheLimit(int length, int expectedCachedCount)
+        {
+            var redaction = Redaction.Instance;
+
+            redaction.IsRedactedKeyword(new string('a', length)).Should().BeFalse();
+
+            redaction.CachedKeywordsCount.Should().Be(expectedCachedCount);
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public void CacheHits_DoNotAllocate()
+        {
+            var redaction = Redaction.Instance;
+            const int Iterations = 1000;
+
+            // The first calls fill the caches. Only the following hits are measured.
+            for (var i = 0; i < 2; i++)
+            {
+                redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
+            }
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < Iterations; i++)
+            {
+                redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
+            }
+
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            allocated.Should().Be(0);
+        }
+#endif
+
+        [Fact]
+        public void SetConfig_IdentifierLongerThanStackBuffer_IsRedacted()
+        {
+            var identifier = new string('x', 600) + "-api-key";
+
+            Redaction.Instance.SetConfig([identifier], [], []);
+
+            Redaction.Instance.IsRedactedKeyword(identifier).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(identifier.ToUpperInvariant()).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(identifier + "x").Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsRedactedDataKey_UsesSeparateCache()
+        {
+            var redaction = Redaction.Instance;
+            redaction.IsRedactedKeyword("customerName").Should().BeFalse();
+
+            for (var i = 0; i < Redaction.MaxCachedDataKeys; i++)
+            {
+                redaction.IsRedactedDataKey("key" + i).Should().BeFalse();
+            }
+
+            redaction.CachedDataKeysCount.Should().Be(Redaction.MaxCachedDataKeys);
+            redaction.CachedKeywordsCount.Should().Be(1);
+
+            redaction.ShouldRedactDataKey("Pass_Word", typeof(string), out var reason).Should().BeTrue();
+            reason.Should().Be(RedactionReason.Identifier);
+            redaction.CachedDataKeysCount.Should().Be(1);
+            redaction.CachedKeywordsCount.Should().Be(1);
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public void IsRedactedType_CollectibleType_IsNotCached()
+        {
+            var redaction = Redaction.Instance;
+            redaction.SetConfig([], [], ["Collectible.SecretHolder"]);
+            var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("RedactionCollectibleTypeTests"), AssemblyBuilderAccess.RunAndCollect);
+            var type = assembly.DefineDynamicModule("Main").DefineType("Collectible.SecretHolder", TypeAttributes.Public).CreateType();
+
+            type.IsCollectible.Should().BeTrue();
+            redaction.IsRedactedType(type).Should().BeTrue();
+            redaction.IsRedactedType(type).Should().BeTrue();
+            redaction.CachedTypesCount.Should().Be(0);
+        }
+#endif
+
+        [Fact]
+        public void IsRedactedType_CachesResult()
+        {
+            var redaction = Redaction.Instance;
+
+            redaction.IsRedactedType(typeof(SecureString)).Should().BeTrue();
+            redaction.IsRedactedType(typeof(SecureString)).Should().BeTrue();
+            redaction.IsRedactedType(typeof(Uri)).Should().BeFalse();
+            redaction.CachedTypesCount.Should().Be(2);
+        }
+
+        [Fact]
+        public void SetConfig_ClearsCachedKeywordResults()
+        {
+            var redaction = Redaction.Instance;
+            redaction.IsRedactedKeyword("customerEmail").Should().BeFalse();
+            redaction.IsRedactedKeyword("password").Should().BeTrue();
+            redaction.IsRedactedDataKey("customerEmail").Should().BeFalse();
+            redaction.IsRedactedDataKey("password").Should().BeTrue();
+
+            redaction.SetConfig(["customer_email"], ["password"], []);
+
+            redaction.IsRedactedKeyword("customerEmail").Should().BeTrue();
+            redaction.IsRedactedKeyword("password").Should().BeFalse();
+            redaction.IsRedactedDataKey("customerEmail").Should().BeTrue();
+            redaction.IsRedactedDataKey("password").Should().BeFalse();
+        }
+
+        [Fact]
+        public void SetConfig_ClearsCachedTypeResults()
+        {
+            var redaction = Redaction.Instance;
+            redaction.IsRedactedType(typeof(Uri)).Should().BeFalse();
+            redaction.IsRedactedType(typeof(Version)).Should().BeFalse();
+
+            redaction.SetConfig([], [], ["System.Uri", "System.Version"]);
+
+            redaction.IsRedactedType(typeof(Uri)).Should().BeTrue();
+            redaction.IsRedactedType(typeof(Version)).Should().BeTrue();
+            redaction.ShouldRedact("endpoint", typeof(Uri), out var reason).Should().BeTrue();
+            reason.Should().Be(RedactionReason.Type);
+        }
+
+        [Fact]
+        public void ResetInstance_DropsConfiguredAndCachedResults()
+        {
+            Redaction.Instance.SetConfig(["customer_email"], [], ["System.Uri"]);
+            Redaction.Instance.IsRedactedKeyword("customerEmail").Should().BeTrue();
+            Redaction.Instance.IsRedactedType(typeof(Uri)).Should().BeTrue();
+
+            Redaction.Instance.ResetInstance();
+
+            Redaction.Instance.CachedKeywordsCount.Should().Be(0);
+            Redaction.Instance.CachedTypesCount.Should().Be(0);
+            Redaction.Instance.IsRedactedKeyword("customerEmail").Should().BeFalse();
+            Redaction.Instance.IsRedactedType(typeof(Uri)).Should().BeFalse();
         }
 
         [Theory]

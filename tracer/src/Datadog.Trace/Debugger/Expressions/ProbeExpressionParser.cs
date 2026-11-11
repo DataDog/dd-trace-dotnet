@@ -46,6 +46,7 @@ internal partial class ProbeExpressionParser<T>
     private ParameterExpression _evaluationBudgetParameterExpression;
     private ParserContext _parserContext;
     private CaptureLimitInfo? _captureLimitInfo;
+    private bool _hasRedaction;
 
     static ProbeExpressionParser()
     {
@@ -470,6 +471,18 @@ internal partial class ProbeExpressionParser<T>
         (_errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = expression, Message = error });
     }
 
+    private void AddRedactionError(string expression)
+    {
+        _hasRedaction = true;
+        (_errors ??= new List<EvaluationError>()).Add(
+            new EvaluationError
+            {
+                Expression = expression,
+                Message = "The property or field is redacted.",
+                IsRedaction = true
+            });
+    }
+
     private bool ConditionalRead(JsonTextReader reader, bool shouldAdvanceReader)
     {
         return !shouldAdvanceReader || reader.Read();
@@ -634,6 +647,13 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
+        if (_hasRedaction && (typeof(T) == typeof(string) || typeof(T) == typeof(object)))
+        {
+            // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would
+            // run on the placeholder text and render made-up values, such as len(password) = 10.
+            finalExpr = RedactedValue();
+        }
+
         finalExpr = HandleReturnType(finalExpr, scopeMembers);
         expressions.Add(finalExpr is not GotoExpression ? Expression.Assign(result, finalExpr) : finalExpr);
         expressions.Add(Expression.Label(ReturnTarget, result));
