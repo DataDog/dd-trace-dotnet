@@ -22,13 +22,11 @@ namespace Datadog.Profiler.IntegrationTests.Network
             _output = output;
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void CheckAllMetrics(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void CheckAllMetrics(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: All);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasMetrics = false;

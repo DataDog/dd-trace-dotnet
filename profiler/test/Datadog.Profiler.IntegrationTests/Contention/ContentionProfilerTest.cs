@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -41,101 +42,74 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         }
 
         // FIXME: .NET 10 skipping .NET 10 for now as ReaderWriterLockSlim is missing for some reason on Linux
-        [TestAppFact("Samples.WaitHandles", new[] { "net9.0" })]
-        public void ShouldGetWaitSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.WaitHandles, TestFramework.Net9)]
+        public void ShouldGetWaitSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--iterations 1");
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
-            // BUG: uncomment these lines to investigate missing root frame in contention but present in exception samples
-            // runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
-            // runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.WaitHandleContentionProfilingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: "--iterations 1");
+            // BUG: add ProfilerFeature.Exceptions and ProfilerFeature.WallTime to investigate missing root frame in contention but present in exception samples
+            runner.Environment.EnableOnly(ProfilerFeature.LockContention, ProfilerFeature.WaitHandleContention);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")));
 
-            // only contention profiler enabled so should only see the 2 contention related values per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
-            Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
-
-            AssertContainWait(runner.Environment.PprofDir);
+            AssertContainWait(run.Profiles);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
-        public void ShouldGetContentionSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void ShouldGetContentionSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: ScenarioContention);
+            runner.Environment.EnableOnly(ProfilerFeature.LockContention);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")));
 
-            // only contention profiler enabled so should only see the 2 related values per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
-            Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
-
-            if (framework == "net8.0")
+            if (app.Framework == TestFramework.Net8)
             {
-                AssertBlockingThreadLabel(runner.Environment.PprofDir);
+                AssertBlockingThreadLabel(run.Profiles);
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
-        public void ShouldContentionProfilerBeEnabledByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void ShouldContentionProfilerBeEnabledByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioContention);
+            runner.Environment.DisableAllExcept(ProfilerFeature.LockContention);
 
-            // disable default profilers except contention
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            using var run = runner.Run();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
+            Assert.NotEmpty(run.Profiles.Samples);
 
-            runner.Run(agent);
-
-            // only contention profiler enabled so should see 2 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
-            Assert.NotEqual(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
-
-            if (framework == "net8.0")
+            if (app.Framework == TestFramework.Net8)
             {
-                AssertBlockingThreadLabel(runner.Environment.PprofDir);
+                AssertBlockingThreadLabel(run.Profiles);
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
-        public void ExplicitlyDisableContentionProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void ExplicitlyDisableContentionProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioContention);
+            runner.Environment.EnableOnly(ProfilerFeature.WallTime);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            using var run = runner.Run();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
-
-            // only walltime profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void ShouldGetLockContentionSamplesViaEtw(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
+        public void ShouldGetLockContentionSamplesViaEtw(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutContention);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioWithoutContention);
             // allow agent proxy to send the recorded events
             runner.TestDurationInSeconds = 30;
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.LockContention);
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
@@ -157,43 +131,34 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             runner.Run(agent);
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            AssertContainLockContentionSamples(runner.Environment.PprofDir);
+            ProfileReader.Read(runner.Environment.PprofDir).WithNonZeroValue(ProfileValue.LockCount).Should().NotBeEmpty();
             Assert.True(eventsCount > 0);
         }
 
-        private static void AssertContainLockContentionSamples(string pprofDir)
+        private static void AssertBlockingThreadLabel(ProfileOutput profiles)
         {
-            var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count");
-            contentionSamples.Should().NotBeEmpty();
-        }
-
-        private static void AssertBlockingThreadLabel(string pprofDir)
-        {
-            var threadIds = SamplesHelper.GetThreadIds(pprofDir);
+            var threadIds = profiles.Samples.DistinctLabelValues("thread id").Select(int.Parse).ToList();
             // get samples with lock-count value set and blocking thread info
-            var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
-                .Where(e => e.Labels.Any(x => x.Name == "blocking thread id"));
+            var contentionSamples = profiles.WithNonZeroValue(ProfileValue.LockCount)
+                .Where(sample => sample.Labels.Has("blocking thread id"))
+                .ToList();
 
             contentionSamples.Should().NotBeEmpty();
 
-            foreach (var (_, labels, _) in contentionSamples)
+            foreach (var sample in contentionSamples)
             {
-                var blockingThreadIdLabel = labels.FirstOrDefault(l => l.Name == "blocking thread id");
-                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
-                threadIds.Should().Contain(int.Parse(blockingThreadIdLabel.Value), $"Unknown blocking thread id {blockingThreadIdLabel.Value}");
-
-                var blockingThreadNameLabel = labels.FirstOrDefault(l => l.Name == "blocking thread name");
-                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
-                blockingThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var blockingThreadId = sample.Labels.GetRequired("blocking thread id");
+                blockingThreadId.Should().NotBeNullOrWhiteSpace();
+                threadIds.Should().Contain(int.Parse(blockingThreadId), $"Unknown blocking thread id {blockingThreadId}");
             }
         }
 
-        private static void AssertContainWait(string pprofDir)
+        private static void AssertContainWait(ProfileOutput profiles)
         {
             // get samples with lock-count value set and Wait as contention type
-            var waitSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
-                .Where(e => e.Labels.Any(x => (x.Name == "contention type") && (x.Value == "Wait")));
-            Assert.True(waitSamples.Count() > 8);
+            var lockCountSamples = profiles.WithNonZeroValue(ProfileValue.LockCount);
+            var waitSamples = lockCountSamples.WithLabel("contention type", "Wait");
+            Assert.True(waitSamples.Count > 8);
 
             // check that we get samples 500+ ms for supported wait handles based on callstacks
             // |lm:Samples.WaitHandles |ns:Samples.WaitHandles |ct:Program |cg: |fn:AutoResetEventThread |fg: |sg:()
@@ -207,10 +172,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             // Duration bucket = +500 ms
 
             WaitHandleType waitTypes = WaitHandleType.None;
-            foreach (var (stackTrace, labels, _) in waitSamples
-                .Where(s => s.Labels.Any(l => (l.Value == "+500 ms") && (l.Name == "Duration bucket"))))
+            foreach (var sample in waitSamples.WithLabel("Duration bucket", "+500 ms"))
             {
-                var contentionTypeLabel = labels.FirstOrDefault(l => l.Name == "contention type");
+                var stackTrace = sample.CallStack;
                 stackTrace.FramesCount.Should().BeGreaterThan(0);
 
                 for (int currentFrame = 0; currentFrame < stackTrace.FramesCount; currentFrame++)
@@ -259,19 +223,15 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                 }
 
                 // check that we also have the wait label
-                var waitDurationLabel = labels.FirstOrDefault(l => l.Name == "Wait duration bucket");
-                waitDurationLabel.Name.Should().NotBeNull();
+                sample.Labels.Has("Wait duration bucket").Should().BeTrue();
             }
 
             waitTypes.Should().Be(WaitHandleType.All, "missing Wait events = " + GetMissingWaitType(waitTypes));
 
             // check that wait duration label should not be present for lock samples
-            var lockSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
-                .Where(e => e.Labels.Any(x => (x.Name == "contention type") && (x.Value == "Lock")));
-            foreach (var (_, labels, _) in lockSamples)
+            foreach (var sample in lockCountSamples.WithLabel("contention type", "Lock"))
             {
-                var waitDurationLabel = labels.FirstOrDefault(l => l.Name == "Wait duration bucket");
-                waitDurationLabel.Name.Should().BeNull();
+                sample.Labels.Has("Wait duration bucket").Should().BeFalse();
             }
         }
 
