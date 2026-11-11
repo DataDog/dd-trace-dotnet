@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
