@@ -28,7 +28,6 @@ public class RedactionBenchmark
     // More distinct keys than any redaction cache holds, so every lookup misses and the cache keeps resetting.
     private const int ChurnKeysCount = 4096;
 
-    private Redaction? _redaction;
     private string[] _names = [];
     private Type[] _types = [];
     private string[] _churnKeys = [];
@@ -36,7 +35,6 @@ public class RedactionBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-        _redaction = Redaction.Instance;
         _names = ["password", "userName", "Order_Id", "x-api-key", "count", "customerEmail", "_internalState", "SessionId"];
         _types = [typeof(string), typeof(int), typeof(List<string>), typeof(Guid?), typeof(DateTime), typeof(SecureString), typeof(Dictionary<string, object>), typeof(long)];
         if (_names.Length != NamesCount || _types.Length != NamesCount)
@@ -55,7 +53,7 @@ public class RedactionBenchmark
     [Benchmark(OperationsPerInvoke = NamesCount)]
     public int ShouldRedactHit()
     {
-        var redaction = _redaction!;
+        var redaction = Redaction.Instance;
         var names = _names;
         var types = _types;
         var redacted = 0;
@@ -73,7 +71,7 @@ public class RedactionBenchmark
     [Benchmark(OperationsPerInvoke = ChurnKeysCount)]
     public int ShouldRedactDataKeyMiss()
     {
-        var redaction = _redaction!;
+        var redaction = Redaction.Instance;
         var keys = _churnKeys;
         var redacted = 0;
         for (var i = 0; i < keys.Length; i++)

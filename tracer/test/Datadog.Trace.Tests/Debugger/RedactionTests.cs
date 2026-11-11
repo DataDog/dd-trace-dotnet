@@ -21,6 +21,11 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class RedactionTests : IDisposable
     {
+        public RedactionTests()
+        {
+            Redaction.Instance.ResetInstance();
+        }
+
         public static IEnumerable<object[]> GetLongStringTestData()
         {
             var longKeyword = new string('x', 350) + "-api-key";
@@ -280,7 +285,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void IsRedactedKeyword_WhenCacheIsFull_StartsNewCache()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
             for (var i = 0; i < Redaction.MaxCachedKeywords; i++)
             {
@@ -302,7 +306,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void IsRedactedKeyword_LongName_IsCheckedButNotCached()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
 
             redaction.IsRedactedKeyword("password" + new string('_', 600)).Should().BeTrue();
@@ -312,10 +315,48 @@ namespace Datadog.Trace.Tests.Debugger
             redaction.CachedDataKeysCount.Should().Be(0);
         }
 
+        [Theory]
+        [InlineData(512, 1)]
+        [InlineData(513, 0)]
+        public void IsRedactedKeyword_NameLength_IsCachedOnlyUpToTheLimit(int length, int expectedCachedCount)
+        {
+            var redaction = Redaction.Instance;
+
+            redaction.IsRedactedKeyword(new string('a', length)).Should().BeFalse();
+
+            redaction.CachedKeywordsCount.Should().Be(expectedCachedCount);
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public void CacheHits_DoNotAllocate()
+        {
+            var redaction = Redaction.Instance;
+            const int Iterations = 1000;
+
+            // The first calls fill the caches. Only the following hits are measured.
+            for (var i = 0; i < 2; i++)
+            {
+                redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
+            }
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < Iterations; i++)
+            {
+                redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
+            }
+
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            allocated.Should().Be(0);
+        }
+#endif
+
         [Fact]
         public void SetConfig_IdentifierLongerThanStackBuffer_IsRedacted()
         {
-            Redaction.Instance.ResetInstance();
             var identifier = new string('x', 600) + "-api-key";
 
             Redaction.Instance.SetConfig([identifier], [], []);
@@ -328,7 +369,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void IsRedactedDataKey_UsesSeparateCache()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
             redaction.IsRedactedKeyword("customerName").Should().BeFalse();
 
@@ -350,7 +390,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void IsRedactedType_CollectibleType_IsNotCached()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
             redaction.SetConfig([], [], ["Collectible.SecretHolder"]);
             var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("RedactionCollectibleTypeTests"), AssemblyBuilderAccess.RunAndCollect);
@@ -366,7 +405,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void IsRedactedType_CachesResult()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
 
             redaction.IsRedactedType(typeof(SecureString)).Should().BeTrue();
@@ -378,7 +416,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void SetConfig_ClearsCachedKeywordResults()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
             redaction.IsRedactedKeyword("customerEmail").Should().BeFalse();
             redaction.IsRedactedKeyword("password").Should().BeTrue();
@@ -396,7 +433,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void SetConfig_ClearsCachedTypeResults()
         {
-            Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
             redaction.IsRedactedType(typeof(Uri)).Should().BeFalse();
             redaction.IsRedactedType(typeof(Version)).Should().BeFalse();
@@ -412,7 +448,6 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void ResetInstance_DropsConfiguredAndCachedResults()
         {
-            Redaction.Instance.ResetInstance();
             Redaction.Instance.SetConfig(["customer_email"], [], ["System.Uri"]);
             Redaction.Instance.IsRedactedKeyword("customerEmail").Should().BeTrue();
             Redaction.Instance.IsRedactedType(typeof(Uri)).Should().BeTrue();
@@ -426,8 +461,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData("password", typeof(SecureString), RedactionReason.Identifier)]
-        [InlineData("no-password", typeof(SecureString), RedactionReason.Type)]
+        [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Identifier)]
+        [InlineData("no-password", typeof(System.Security.SecureString), RedactionReason.Type)]
         [InlineData("nullable-guid", typeof(Guid?), RedactionReason.Type)]
         [InlineData("api_key", typeof(string), RedactionReason.Identifier)]
         [InlineData("normal", typeof(string), RedactionReason.None)]

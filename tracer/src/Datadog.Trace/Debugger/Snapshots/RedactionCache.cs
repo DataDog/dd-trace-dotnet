@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 {
     /// <summary>
     /// Caches redaction results. Lookups are lock-free and allocation-free.
-    /// Nothing is evicted: once <see cref="Capacity"/> entries are stored, <see cref="TryAdd"/> returns false
+    /// Nothing is evicted: once <see cref="Capacity"/> entries are stored, <see cref="TryAdd"/> rejects new keys
     /// and the owner replaces the full instance with a new one.
     /// </summary>
     internal sealed class RedactionCache<TKey>
@@ -26,8 +26,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             Capacity = capacity;
 
-            // Pre-sized to avoid repeated growth. It can still grow before it is full when entries spread
-            // unevenly across lock stripes; growing blocks concurrent adds but not lookups.
+            // Pre-sized to avoid repeated growth.
             _entries = new ConcurrentDictionary<TKey, bool>(Environment.ProcessorCount, capacity);
         }
 
