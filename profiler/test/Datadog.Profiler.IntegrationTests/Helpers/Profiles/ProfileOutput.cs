@@ -46,5 +46,34 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         public ProfileSampleSet WithLabel(string name, string value) => Samples.WithLabel(name, value);
 
         public long Sum(ProfileValue value) => Samples.Sum(value);
+
+        /// <summary>
+        /// True when there is at least one profile, every profile has samples, and every sample matches.
+        /// </summary>
+        public bool EveryProfileHasOnlyMatchingSamples(Func<ProfileSample, bool> predicate)
+        {
+            if (Profiles.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var profile in Profiles)
+            {
+                if (profile.Samples.Count == 0)
+                {
+                    return false;
+                }
+
+                foreach (var sample in profile.Samples)
+                {
+                    if (!predicate(sample))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }

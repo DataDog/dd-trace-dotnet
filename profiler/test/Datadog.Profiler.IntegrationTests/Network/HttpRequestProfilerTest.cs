@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
@@ -32,202 +32,160 @@ namespace Datadog.Profiler.IntegrationTests.Network
             _output = output;
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net5.0", "net6.0" })]
-        public void ShouldNotGetHttpSamplesInOldRuntimeVersions(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, TestFramework.Net5, TestFramework.Net6)]
+        public void ShouldNotGetHttpSamplesInOldRuntimeVersions(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: All);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // HTTP events are not emitted in .NET 5 nor .NET 6
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
-            samples.Should().BeEmpty();
+            run.Profiles.Samples.Should().BeEmpty();
 
             // we should also get warnings in the log
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                                   .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var nbWarning = File.ReadLines(logFile)
-                .Count(l => (l.Contains("Outgoing HTTP profiling is disabled for .NET") && (l.Contains(": .NET 7 + is required."))));
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+            var nbWarning = run.Logs.NativeProfiler
+                .LinesContaining("Outgoing HTTP profiling is disabled for .NET")
+                .Count(match => match.Line.Contains(": .NET 7 + is required."));
 
             nbWarning.Should().Be(1);
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldNotGetHttpSamplesWhenDefaultSampling(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void ShouldNotGetHttpSamplesWhenDefaultSampling(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            // EnvironmentVariables.ForceHttpSamplingEnabled is not set --> need span + min duration to be sampled
+            var runner = app.CreateRunner(_output, commandLine: All);
+            // ProfilerFeature.ForceHttpSampling is not set --> need span + min duration to be sampled
+            runner.Environment.EnableOnly(ProfilerFeature.Network);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
-            samples.Should().BeEmpty();
+            run.Profiles.Samples.Should().BeEmpty();
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldGetHttpSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void ShouldGetHttpSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: All);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            // only network profiler enabled so should only see one value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
-            Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "request url"));
-            Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "response status code"));
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("request url")));
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("response status code")));
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldGetRedirect(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void ShouldGetRedirect(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Redirect);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Redirect);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // only network profiler enabled so should only see one value per sample
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "request-time");
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
+            var samples = run.Profiles.WithNonZeroValue(ProfileValue.RequestTime);
             samples.Should().NotBeEmpty();
 
-            foreach (var (stackTrace, labels, values) in samples)
+            foreach (var sample in samples)
             {
-                Assert.True(stackTrace.FramesCount > 0);
-                Assert.True(values.Length == 1);
+                Assert.True(sample.CallStack.FramesCount > 0);
 
-                var urlLabel = labels.FirstOrDefault(l => l.Name == "request url");
-                urlLabel.Name.Should().NotBeNullOrWhiteSpace();
-                urlLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var url = sample.Labels.GetRequired("request url");
+                url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
-                if (!urlLabel.Value.Contains("Maoni"))
+                if (!url.Contains("Maoni"))
                 {
                     continue;
                 }
 
                 // skip samples with errors (transient network failures to github.com in CI)
-                var errorLabel = labels.FirstOrDefault(l => l.Name == "response error");
-                if (errorLabel.Name is not null)
+                if (sample.Labels.Has("response error"))
                 {
                     continue;
                 }
 
-                var redirectLabel = labels.FirstOrDefault(l => l.Name == "redirect url");
-                redirectLabel.Name.Should().NotBeNullOrWhiteSpace();
+                var redirectUrl = sample.Labels.GetRequired("redirect url");
 
                 // in .NET 7, the redirect is detected but no redirected url is available
-                if (framework != "net7.0")
+                if (app.Framework != TestFramework.Net7)
                 {
-                    redirectLabel.Value.Should().NotBeNullOrWhiteSpace();
+                    redirectUrl.Should().NotBeNullOrWhiteSpace();
                 }
 
                 // request/response happens for all runtimes
-                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
-                requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
-                responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                responseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired("request.duration").Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired("response_content.duration").Should().NotBeNullOrWhiteSpace();
             }
         }
 
         [Flaky("HTTP profiling intermittently produces no request-time samples in CI")]
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldGetError(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void ShouldGetError(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Error);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Error);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // only network profiler enabled so should only see one value per sample
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "request-time");
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
+            var samples = run.Profiles.WithNonZeroValue(ProfileValue.RequestTime);
             samples.Should().NotBeEmpty();
-            foreach (var (stackTrace, labels, values) in samples)
+            foreach (var sample in samples)
             {
-                Assert.True(stackTrace.FramesCount > 0);
-                Assert.True(values.Length == 1);
+                Assert.True(sample.CallStack.FramesCount > 0);
 
-                var urlLabel = labels.FirstOrDefault(l => l.Name == "request url");
-                urlLabel.Name.Should().NotBeNullOrWhiteSpace();
-                urlLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var url = sample.Labels.GetRequired("request url");
+                url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
-                if (urlLabel.Value != "http://this.does.not.exist.com:80/sorry")
+                if (url != "http://this.does.not.exist.com:80/sorry")
                 {
                     continue;
                 }
 
-                var errorLabel = labels.FirstOrDefault(l => l.Name == "response error");
-                errorLabel.Name.Should().NotBeNullOrWhiteSpace();
-                errorLabel.Value.Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired("response error").Should().NotBeNullOrWhiteSpace();
 
-                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
-                requestDurationLabel.Name.Should().BeNullOrWhiteSpace();
-                requestDurationLabel.Value.Should().BeNullOrWhiteSpace();
-                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
-                responseDurationLabel.Name.Should().BeNullOrWhiteSpace();
-                responseDurationLabel.Value.Should().BeNullOrWhiteSpace();
+                sample.Labels.Has("request.duration").Should().BeFalse();
+                sample.Labels.Has("response_content.duration").Should().BeFalse();
             }
         }
 
         [Flaky("Test flaked in CI")]
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldGetDetails(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
+        public void ShouldGetDetails(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Blog);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Blog);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // only network profiler enabled so should only see one value per sample
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "request-time");
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
+            var samples = run.Profiles.WithNonZeroValue(ProfileValue.RequestTime);
             samples.Should().NotBeEmpty();
             int checkedSamples = 0;
-            foreach (var (stackTrace, labels, values) in samples)
+            foreach (var sample in samples)
             {
-                Assert.True(stackTrace.FramesCount > 0);
-                Assert.True(values.Length == 1);
+                Assert.True(sample.CallStack.FramesCount > 0);
 
-                var urlLabel = labels.FirstOrDefault(l => l.Name == "request url");
-                urlLabel.Name.Should().NotBeNullOrWhiteSpace();
-                urlLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var labels = sample.Labels;
+                var url = labels.GetRequired("request url");
+                url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
-                if (urlLabel.Value != "https://github.com:443/Maoni0")
+                if (url != "https://github.com:443/Maoni0")
                 {
                     continue;
                 }
 
                 // skip samples with errors (transient network failures to github.com in CI)
-                var errorLabel = labels.FirstOrDefault(l => l.Name == "response error");
-                if (errorLabel.Name is not null)
+                if (labels.Has("response error"))
                 {
                     continue;
                 }
@@ -235,109 +193,79 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 checkedSamples++;
 
                 // since there are 2 iterations, it is possible that low level connection has been cached for the second iteration and thus no labels are emitted
-                var dnsSuccessLabel = labels.FirstOrDefault(l => l.Name == "dns.success");
-                if (dnsSuccessLabel.Name is not null)
+                if (labels.Has("dns.success"))
                 {
-                    dnsSuccessLabel.Name.Should().NotBeNullOrWhiteSpace();
-                    Assert.True(dnsSuccessLabel.Value == "true");
+                    Assert.True(labels.GetRequired("dns.success") == "true");
 
-                    var dnsDurationLabel = labels.FirstOrDefault(l => l.Name == "dns.duration");
-                    dnsDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                    dnsDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired("dns.duration").Should().NotBeNullOrWhiteSpace();
 
                     // no socket duration on Linux
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        var socketDurationLabel = labels.FirstOrDefault(l => l.Name == "socket.duration");
-                        socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                        socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                        labels.GetRequired("socket.duration").Should().NotBeNullOrWhiteSpace();
                     }
 
-                    var securityDurationLabel = labels.FirstOrDefault(l => l.Name == "tls.duration");
-                    securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                    securityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                    var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
-                    requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                    requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired("tls.duration").Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired("request.duration").Should().NotBeNullOrWhiteSpace();
                 }
 
-                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
-                responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                responseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                var responseThreadIdLabel = labels.FirstOrDefault(l => l.Name == "response.thread_id");
-                responseThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
-                responseThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                var responseThreadNameLabel = labels.FirstOrDefault(l => l.Name == "response.thread_name");
-                responseThreadNameLabel.Name.Should().NotBeNullOrWhiteSpace();
-                responseThreadNameLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                var requestStatusCodeLabel = labels.FirstOrDefault(l => l.Name == "response status code");
-                requestStatusCodeLabel.Name.Should().NotBeNullOrWhiteSpace();
-                Assert.True(requestStatusCodeLabel.Value == "200");
+                labels.GetRequired("response_content.duration").Should().NotBeNullOrWhiteSpace();
+                labels.GetRequired("response.thread_id").Should().NotBeNullOrWhiteSpace();
+                labels.GetRequired("response.thread_name").Should().NotBeNullOrWhiteSpace();
+                Assert.True(labels.GetRequired("response status code") == "200");
             }
 
             Assert.True(checkedSamples > 0);
         }
 
         [Flaky("Test flaked in CI")]
-        [TestAppFact("Samples.HttpRequest", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void ShouldGetExactDurations(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.HttpRequest, MinimumFramework = TestFramework.Net7)]
+        public void ShouldGetExactDurations(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: RedirectTime);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: RedirectTime);
+            runner.Environment.EnableOnly(ProfilerFeature.Network, ProfilerFeature.ForceHttpSampling);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             var appListenerPort = runner.AppListenerPort;
 
             // only network profiler enabled so should only see one value per sample
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "request-time");
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
+            var samples = run.Profiles.WithNonZeroValue(ProfileValue.RequestTime);
             samples.Should().NotBeEmpty();
 
             int checkedSamples = 0;
 
             // should get 3x (2 redirections + 3 x 1000ms as request duration + 2000ms as response duration)
-            foreach (var (stackTrace, labels, values) in samples)
+            foreach (var sample in samples)
             {
-                Assert.True(stackTrace.FramesCount > 0);
-                Assert.True(values.Length == 1);
+                Assert.True(sample.CallStack.FramesCount > 0);
 
-                var urlLabel = labels.FirstOrDefault(l => l.Name == "request url");
-                urlLabel.Name.Should().NotBeNullOrWhiteSpace();
+                var labels = sample.Labels;
+                var url = labels.GetRequired("request url");
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
-                if (!urlLabel.Value.StartsWith(appListenerPort))
+                if (!url.StartsWith(appListenerPort))
                 {
                     continue;
                 }
 
                 checkedSamples++;
 
-                var redirectLabel = labels.FirstOrDefault(l => l.Name == "redirect url");
-                redirectLabel.Name.Should().NotBeNullOrWhiteSpace();
+                var redirectUrl = labels.GetRequired("redirect url");
 
                 // in .NET 7, the redirect is detected but no redirected url is available
-                if (framework != "net7.0")
+                if (app.Framework != TestFramework.Net7)
                 {
-                    redirectLabel.Value.Split('|').Length.Should().Be(2);
+                    redirectUrl.Split('|').Length.Should().Be(2);
                 }
 
-                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
-                requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-                Assert.True(double.TryParse(requestDurationLabel.Value, out double requestDuration));
+                var requestDurationLabel = labels.GetRequired("request.duration");
+                requestDurationLabel.Should().NotBeNullOrWhiteSpace();
+                Assert.True(double.TryParse(requestDurationLabel, out double requestDuration));
                 requestDuration.Should().BeGreaterOrEqualTo(3L * 900 * 1000000);  // avoid flaky test but should be larger than 3 x 1000ms
 
-                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
-                responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                Assert.True(double.TryParse(responseDurationLabel.Value, out double responseDuration));
+                Assert.True(double.TryParse(labels.GetRequired("response_content.duration"), out double responseDuration));
                 responseDuration.Should().BeGreaterOrEqualTo(1500L * 1000000);  // avoid flaky test but should be larger than 2000ms
             }
 

@@ -18,6 +18,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 
         public static PprofProfileAssertions Should(this PprofProfile profile) => new PprofProfileAssertions(profile);
 
+        public static ProfileOutputAssertions Should(this ProfileOutput output) => new ProfileOutputAssertions(output);
+
         public static ProfileLabelsAssertions Should(this ProfileLabels labels) => new ProfileLabelsAssertions(labels);
 
         private static void Check(bool condition, string message, string because, object[] becauseArgs)
@@ -143,6 +145,33 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 
                 Check(same, message, string.Empty, Array.Empty<object>());
                 return new AndConstraint<PprofProfileAssertions>(this);
+            }
+        }
+
+        internal sealed class ProfileOutputAssertions : ReferenceTypeAssertions<ProfileOutput, ProfileOutputAssertions>
+        {
+            public ProfileOutputAssertions(ProfileOutput subject)
+                : base(subject)
+            {
+            }
+
+            protected override string Identifier => "profile output";
+
+            /// <summary>
+            /// Checks the sample types of every profile. Passes when there is no profile.
+            /// </summary>
+            public AndConstraint<ProfileOutputAssertions> HaveSampleTypes(params ProfileValue[] expected)
+            {
+                Check(Subject is not null, "Expected a profile output but found null.", string.Empty, Array.Empty<object>());
+                if (Subject is not null)
+                {
+                    foreach (var profile in Subject.Profiles)
+                    {
+                        profile.Should().HaveSampleTypes(expected);
+                    }
+                }
+
+                return new AndConstraint<ProfileOutputAssertions>(this);
             }
         }
 
