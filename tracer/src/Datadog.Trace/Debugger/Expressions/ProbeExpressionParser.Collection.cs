@@ -93,6 +93,30 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
+    // Skips the predicate of an operation over a redacted value by its JSON structure. Parsing it would stop early
+    // at the first operator whose operand is the placeholder, and leave tokens for the enclosing operator to read.
+    private void SkipPredicateOfRedactedSource(JsonTextReader reader)
+    {
+        // The source leaves its closing tokens unread. Count the arrays they close, as ParseTree does.
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonToken.EndObject)
+            {
+                continue;
+            }
+
+            if (reader.TokenType == JsonToken.EndArray)
+            {
+                _arrayStack--;
+                continue;
+            }
+
+            break;
+        }
+
+        reader.Skip();
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -141,7 +165,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (IsRedactedValue(source))
             {
-                SkipPredicateOfRedactedSource(reader, parameters);
+                SkipPredicateOfRedactedSource(reader);
                 return Expression.Constant(false);
             }
 
@@ -153,6 +177,12 @@ internal partial class ProbeExpressionParser<T>
             var itParameterType = GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
             predicateExpression = ParseTree(reader, parameters, itParameter);
+
+            // A predicate that is itself a redacted value, such as a member of a redacted item, never matches.
+            if (IsRedactedValue(predicateExpression))
+            {
+                predicateExpression = Expression.Constant(false);
+            }
 
             return operation switch
             {
@@ -189,7 +219,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (IsRedactedValue(source))
             {
-                SkipPredicateOfRedactedSource(reader, parameters);
+                SkipPredicateOfRedactedSource(reader);
                 return source;
             }
 
@@ -203,6 +233,10 @@ internal partial class ProbeExpressionParser<T>
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
             var predicate = ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1);
+            if (IsRedactedValue(predicate))
+            {
+                predicate = Expression.Constant(false);
+            }
 
             var lambda = Expression.Lambda(predicate, itParameter);
             var isDictionary = source is FilterExpression filterSource
@@ -231,21 +265,6 @@ internal partial class ProbeExpressionParser<T>
         {
             _isBoundedFilterCapture = previousIsBoundedFilterCapture;
             _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
-        }
-    }
-
-    // Parses and drops the predicate of an operation over a redacted value, so the reader stays aligned and the
-    // predicate adds no errors about the placeholder that replaced the value.
-    private void SkipPredicateOfRedactedSource(JsonTextReader reader, List<ParameterExpression> parameters)
-    {
-        var errorCount = _errors?.Count ?? 0;
-        try
-        {
-            ParseTreeOutsideFilterCapture(reader, parameters, itParameter: null, deferredFilterSourceArrayStack: -1);
-        }
-        finally
-        {
-            _errors?.RemoveRange(errorCount, _errors.Count - errorCount);
         }
     }
 

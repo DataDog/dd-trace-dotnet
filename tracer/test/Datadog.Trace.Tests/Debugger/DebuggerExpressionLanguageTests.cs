@@ -4310,6 +4310,11 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""gt"":[{""getmember"":[{""ref"":""PiiLocal""},""Age""]},30]}")]
             [InlineData(@"{""not"":{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]}}")]
             [InlineData(@"{""and"":[{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]},true]}")]
+            [InlineData(@"{""and"":[{""any"":[{""ref"":""RedactedListLocal""},{""eq"":[""@it"",5]}]},{""eq"":[1,1]}]}")]
+            [InlineData(@"{""or"":[{""all"":[{""ref"":""RedactedListLocal""},{""eq"":[""@it"",5]}]},{""eq"":[1,1]}]}")]
+            [InlineData(@"{""eq"":[{""len"":{""filter"":[{""ref"":""RedactedListLocal""},{""eq"":[""@it"",5]}]}},3]}")]
+            [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""getmember"":[""@it"",""Enabled""]}]}")]
+            [InlineData(@"{""all"":[{""ref"":""PiiListLocal""},{""getmember"":[""@it"",""Enabled""]}]}")]
             public void ProbeExpressionEvaluator_TemplateOperationOnRedactedValue_KeepsTemplateAsMessage(string json)
             {
                 var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);

@@ -582,7 +582,8 @@ internal partial class ProbeExpressionParser<T>
         return _redactedValue is not null && ReferenceEquals(expression, _redactedValue);
     }
 
-    // Compile-time check: exact for root scope members (compiled per runtime type), declared type for anything read from them.
+    // Compile-time check: exact for this, arguments and locals (compiled per runtime type), declared type for anything
+    // read from them. @exception is declared as Exception.
     private Expression RedactIfRedactedType(Expression value, Expression source, string name)
     {
         if (!Redaction.Instance.IsRedactedType(value.Type))
