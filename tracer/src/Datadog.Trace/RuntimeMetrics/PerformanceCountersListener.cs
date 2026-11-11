@@ -52,11 +52,6 @@ namespace Datadog.Trace.RuntimeMetrics
         private Task _initializationTask;
 
         public PerformanceCountersListener(IStatsdManager statsd)
-            : this(statsd, Log)
-        {
-        }
-
-        internal PerformanceCountersListener(IStatsdManager statsd, IDatadogLogger logger)
         {
             // We assume this is always used by RuntimeMetricsWriter, and therefore we hae already called SetRequired()
             // If it's every used outside that context, we need to update to use SetRequired instead
@@ -74,11 +69,11 @@ namespace Datadog.Trace.RuntimeMetrics
                     var exception = t.Exception;
                     if (exception.InnerException is UnauthorizedAccessException ex && ex.Message.Contains("'Global'"))
                     {
-                        logger.ErrorSkipTelemetry(exception, InsufficientPermissionsMessageTemplate);
+                        Log.ErrorSkipTelemetry(exception, InsufficientPermissionsMessageTemplate);
                     }
                     else
                     {
-                        logger.ErrorSkipTelemetry(exception, "Error in performance counter initialization task");
+                        Log.ErrorSkipTelemetry(exception, "Error in performance counter initialization task");
                     }
                 },
                 TaskContinuationOptions.OnlyOnFaulted);
