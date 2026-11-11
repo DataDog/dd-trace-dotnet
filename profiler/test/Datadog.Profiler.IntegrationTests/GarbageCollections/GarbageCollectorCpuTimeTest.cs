@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
@@ -35,34 +36,29 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void CheckCpuTimeForGcThreadsIsEnabledByDefaultWithServerGC(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, MinimumFramework = TestFramework.Net6)]
+        public void CheckCpuTimeForGcThreadsIsEnabledByDefaultWithServerGC(TestAppContext app)
         {
             // Use the heavier allocation workload so the GC threads reliably accrue >= 1 ms of CPU
             // (the GC sample is only emitted above that threshold). The default server-GC config is
             // kept on purpose here, so no DOTNET_GCHeapCount/DATAS overrides are set.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocationsHeavy);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioAllocationsHeavy);
             // Enable GC Server
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().Contain(sample => IsGcCpuSample(sample) && sample.StackTrace.Equals(GcStack));
+            run.Profiles.Samples.Should().Contain(sample => IsGcCpuSample(sample) && sample.CallStack.Equals(GcStack));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void CheckCpuTimeForGcThreadsValueIsReported(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, MinimumFramework = TestFramework.Net6)]
+        public void CheckCpuTimeForGcThreadsValueIsReported(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocationsHeavy);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
-
+            var runner = app.CreateRunner(_output, commandLine: ScenarioAllocationsHeavy);
             // Enable walltime and check GC frame does not have a value for this column
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             // enable cputime profiler to ensure we get cpu time for GC threads
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.GcThreadsCpuTime, ProfilerFeature.WallTime, ProfilerFeature.Cpu);
             // Enable GC Server
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
             // Force several GC heaps (=> several ".NET Server GC" threads) and disable DATAS so
@@ -72,77 +68,64 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("DOTNET_GCHeapCount", "4");
             runner.Environment.SetVariable("DOTNET_GCDynamicAdaptationMode", "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should()
+            run.Profiles.Samples.Should()
                 // match the GC stacktrace and check that the waltime value is 0 and the cpu value is not 0
-                .Contain(sample => IsGcCpuSample(sample) && sample.Values[0] == 0 && sample.Values[1] != 0);
+                .Contain(sample => IsGcCpuSample(sample) && sample.Values.GetRequired(ProfileValue.WallTime) == 0 && sample.Values.GetRequired(ProfileValue.CpuTime) != 0);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void CheckNoGcSampleIfCpuProfilingIsDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, MinimumFramework = TestFramework.Net6)]
+        public void CheckNoGcSampleIfCpuProfilingIsDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
-
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
             // make sure walltime is activated to have samples
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.GcThreadsCpuTime, ProfilerFeature.WallTime);
             // cpu profiler is disabled to ensure:
             // - The app does not crash
             // - The GC sample is not present
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(GcStack));
+            run.Profiles.Samples.Should().NotContain(sample => sample.CallStack.Equals(GcStack));
         }
 
         [Flaky("Samples.Computer01 intermittently runs for too long or is lost in CI")]
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
-        public void CheckNoGcSampleIfWorkstationGC(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, MinimumFramework = TestFramework.Net6)]
+        public void CheckNoGcSampleIfWorkstationGC(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly(ProfilerFeature.GcThreadsCpuTime, ProfilerFeature.Cpu);
             // disable gc server
             runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
+            run.Profiles.Samples.Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1", "net48" })]
-        public void CheckFeatureIsDisabledIfUnsupportedDotnetVersions(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.NetCoreApp31, TestFramework.Net48)]
+        public void CheckFeatureIsDisabledIfUnsupportedDotnetVersions(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
-
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
             // make sure walltime is activated to have samples
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.GcThreadsCpuTime, ProfilerFeature.WallTime, ProfilerFeature.Cpu);
             // enable gc server
             runner.Environment.SetVariable("COMPlus_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
+            run.Profiles.Samples.Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
-        private static bool IsGcCpuSample((StackTrace StackTrace, PprofHelper.Label[] Labels, long[] Values) sample)
+        private static bool IsGcCpuSample(ProfileSample sample)
         {
-            return sample.StackTrace.Equals(GcStack) && sample.Labels.Any(label => label.Name == "gc_cpu_sample" && label.Value == "true");
+            return sample.CallStack.Equals(GcStack) && sample.Labels.GetValues("gc_cpu_sample").Contains("true");
         }
     }
 }

@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,56 +24,39 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
-        public void ShouldGetGarbageCollectionSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7)]
+        public void ShouldGetGarbageCollectionSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-
-            // enable GC profiler
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly(ProfilerFeature.GarbageCollection);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
+            Assert.True(CheckSamplesAreGC(run.Profiles));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
-        public void ShouldGetGarbageCollectionSamplesByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7)]
+        public void ShouldGetGarbageCollectionSamplesByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
 
-            // disable default profilers except GC
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            runner.Environment.DisableAllExcept(ProfilerFeature.GarbageCollection);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
+            Assert.True(CheckSamplesAreGC(run.Profiles));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void ShouldGetGarbageCollectionSamplesViaEtw(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
+        public void ShouldGetGarbageCollectionSamplesViaEtw(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioWithoutGC);
             // allow agent proxy to send the recorded events
             runner.TestDurationInSeconds = 30;
 
-            // disable default profilers except GC
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            runner.Environment.DisableAllExcept(ProfilerFeature.GarbageCollection);
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
@@ -95,60 +78,43 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(eventsCount > 0);
-            Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+            Assert.True(CheckSamplesAreGC(ProfileReader.Read(runner.Environment.PprofDir)));
             // TODO: it should be possible to ensure that 3 GCs per generations are seen in the .pprof files
         }
 
-        private bool CheckSamplesAreGC(string directory)
+        private static bool CheckSamplesAreGC(ProfileOutput profiles)
         {
             var rootFrame = new StackFrame(GcRootFrame);
 
-            int profileCount = 0;
-            foreach (var profile in SamplesHelper.GetProfiles(directory))
+            return profiles.AllSamplesMatch(sample => IsGcSample(sample, rootFrame));
+        }
+
+        private static bool IsGcSample(ProfileSample sample, StackFrame rootFrame)
+        {
+            if (!sample.Labels.Has("gc generation"))
             {
-                int sampleCount = 0;
-                foreach (var sample in profile.Sample)
-                {
-                    if (!sample.Labels(profile).Any(l => l.Name == "gc generation"))
-                    {
-                        return false;
-                    }
-
-                    // check fake call stack
-                    var frames = sample.StackTrace(profile);
-                    if (frames.FramesCount != 2)
-                    {
-                        return false;
-                    }
-
-                    if (!frames[0].Equals(rootFrame))
-                    {
-                        return false;
-                    }
-
-                    var generation = frames[1].Function;
-                    if (!generation.StartsWith("gen"))
-                    {
-                        return false;
-                    }
-
-                    if (!(generation.EndsWith("0") || generation.EndsWith("1") || generation.EndsWith("2")))
-                    {
-                        return false;
-                    }
-
-                    sampleCount++;
-                }
-
-                if (sampleCount == 0)
-                {
-                    return false;
-                }
-
-                profileCount++;
+                return false;
             }
 
-            return (profileCount > 0);
+            // check fake call stack
+            var frames = sample.CallStack;
+            if (frames.FramesCount != 2)
+            {
+                return false;
+            }
+
+            if (!frames[0].Equals(rootFrame))
+            {
+                return false;
+            }
+
+            var generation = frames[1].Function;
+            if (!generation.StartsWith("gen"))
+            {
+                return false;
+            }
+
+            return generation.EndsWith("0") || generation.EndsWith("1") || generation.EndsWith("2");
         }
     }
 }
