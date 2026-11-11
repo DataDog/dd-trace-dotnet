@@ -71,6 +71,28 @@ internal partial class ProbeExpressionParser<T>
                type == typeof(char);
     }
 
+    private static bool TryFoldStringKey(Expression key, out ConstantExpression constant)
+    {
+        constant = null;
+        try
+        {
+            var visitor = new FoldableKeyVisitor();
+            var body = visitor.Visit(key);
+            if (visitor.IsRejected)
+            {
+                return false;
+            }
+
+            constant = Expression.Constant(Expression.Lambda<Func<string>>(body).Compile()(), typeof(string));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e, "Could not fold a constant dictionary key, so it is evaluated at runtime");
+            return false;
+        }
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -403,12 +425,20 @@ internal partial class ProbeExpressionParser<T>
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
             }
 
-            if (indexOrKey.Type == typeof(string) &&
-                indexOrKey is ConstantExpression expr &&
-                Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
+            if (indexOrKey?.Type == typeof(string))
             {
-                AddRedactionError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]");
-                return RedactedValue();
+                // Fold string keys computed only from constants so they are redaction-checked like literal keys.
+                if (indexOrKey is not ConstantExpression && TryFoldStringKey(indexOrKey, out var foldedKey))
+                {
+                    indexOrKey = foldedKey;
+                }
+
+                if (indexOrKey is ConstantExpression expr &&
+                    Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
+                {
+                    AddRedactionError($"{source?.ToString() ?? "N/A"}[{indexOrKey.ToString()}]");
+                    return RedactedValue();
+                }
             }
 
             return CallGetItem(source, assignableFrom, indexOrKey);
@@ -882,6 +912,50 @@ internal partial class ProbeExpressionParser<T>
             }
 
             return node;
+        }
+    }
+
+    /// <summary>
+    /// Rejects every key that is not built from constants, and replaces the parser budget checks with
+    /// <see cref="Expression.Empty()"/>: the fold lambda has no budget parameter to pass them.
+    /// </summary>
+    private sealed class FoldableKeyVisitor : ExpressionVisitor
+    {
+        internal bool IsRejected { get; private set; }
+
+        public override Expression Visit(Expression node)
+        {
+            if (IsRejected || node is null)
+            {
+                return node;
+            }
+
+            if (node is MethodCallExpression call && (call.Method == ThrowIfExceededMethod || call.Method == ThrowIfExceededImmediatelyMethod))
+            {
+                return Expression.Empty();
+            }
+
+            if (!IsFoldable(node))
+            {
+                IsRejected = true;
+                return node;
+            }
+
+            return base.Visit(node);
+        }
+
+        private static bool IsFoldable(Expression node)
+        {
+            return node switch
+            {
+                ConstantExpression constant => constant.Value is null or string || constant.Value.GetType().IsPrimitive,
+                BlockExpression block => block.Variables.Count == 0,
+                UnaryExpression unary => unary.Method is null && unary.Operand is not null && unary.Operand.Type.IsPrimitive && unary.Type.IsPrimitive,
+                BinaryExpression binary => binary.Method is null && binary.Conversion is null && binary.Left.Type.IsPrimitive && binary.Right.Type.IsPrimitive,
+                ConditionalExpression => true,
+                MethodCallExpression call => call.Method.DeclaringType == typeof(string) && call.Method.Name is nameof(string.Substring) or "get_Length",
+                _ => false
+            };
         }
     }
 }
