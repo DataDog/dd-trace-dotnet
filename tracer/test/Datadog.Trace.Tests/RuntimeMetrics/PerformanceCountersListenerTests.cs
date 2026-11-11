@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -83,6 +84,43 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             barrier.SignalAndWait();
         }
 
+        [Theory(Timeout = 30_000)]
+        [InlineData("Access to the registry key 'Global' is denied.", true)]
+        [InlineData("Accès refusé.", true)]
+        [InlineData("Unexpected initialization failure", false)]
+        public async Task FailedInitializationLogsOnceAndDisablesCounterReads(string message, bool permissionsFailure)
+        {
+            var statsd = new Mock<IDogStatsd>(MockBehavior.Strict);
+            var logger = new Mock<IDatadogLogger>(MockBehavior.Strict);
+            var logged = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var exception = permissionsFailure ? (Exception)new UnauthorizedAccessException(message) : new InvalidOperationException(message);
+
+            if (permissionsFailure)
+            {
+                logger.Setup(l => l.Warning(exception, PerformanceCountersListener.InsufficientPermissionsMessageTemplate, It.IsAny<int>(), It.IsAny<string>()))
+                      .Callback(() => logged.SetResult(true));
+            }
+            else
+            {
+                logger.Setup(l => l.Error(exception, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
+                      .Callback(() => logged.SetResult(true));
+            }
+
+            using var listener = new TestPerformanceCounterListener(new TestStatsdManager(statsd.Object), () => throw exception, logger.Object);
+            Func<Task> initialize = listener.WaitForInitialization;
+
+            (await initialize.Should().ThrowAsync<Exception>()).Which.Should().BeSameAs(exception);
+            await logged.Task;
+
+            listener.WaitForInitialization().IsFaulted.Should().BeTrue();
+            listener.Refresh();
+            listener.Refresh();
+
+            statsd.VerifyNoOtherCalls();
+            logger.VerifyAll();
+            logger.Invocations.Should().ContainSingle();
+        }
+
         private class TestPerformanceCounterListener : PerformanceCountersListener
         {
             // The field needs to be volatile because it's used concurrently from two threads
@@ -90,6 +128,12 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             public TestPerformanceCounterListener(IStatsdManager statsd, Action callback)
                 : base(statsd)
+            {
+                _callback = callback;
+            }
+
+            public TestPerformanceCounterListener(IStatsdManager statsd, Action callback, IDatadogLogger logger)
+                : base(statsd, logger)
             {
                 _callback = callback;
             }
