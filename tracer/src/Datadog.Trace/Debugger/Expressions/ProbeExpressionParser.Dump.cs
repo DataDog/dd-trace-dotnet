@@ -70,7 +70,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var runtimeType = value.GetType();
-        return runtimeType != declaredType && ShouldRedactDumpValue(null, runtimeType);
+        return runtimeType != declaredType && ShouldRedactValue(null, runtimeType);
     }
 
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
@@ -132,7 +132,7 @@ internal partial class ProbeExpressionParser<T>
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
     {
         // The declared type may be an interface over a customer dictionary, a wrapper such as ReadOnlyDictionary,
-        // or a redacted type. Read the value once, redact from the runtime type, then enumerate only the
+        // or a redacted type. Copy the value to a variable, redact from the runtime type, then enumerate only the
         // dictionary types snapshot capture supports.
         var value = Expression.Variable(typeof(object), "dictionaryDumpValue");
         scopeMembers.Add(value);

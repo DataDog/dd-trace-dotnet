@@ -3586,39 +3586,20 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().BeNullOrEmpty();
         }
 
-        [Fact]
-        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindIDictionaryLocal()
+        [Theory]
+        [InlineData(@"{""ref"":""DumpHolderLocal""}", "customMap=")]
+        [InlineData(@"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}", "GetEnumeratorCallCount")]
+        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindIDictionaryField(string expression, string expectedFragment)
         {
-            var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("UnsafeDictionaryLocal", typeof(IDictionary), customDictionary, ScopeMemberKind.Local));
-
-            var evaluator = CreateEvaluator(
-                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""UnsafeDictionaryLocal""}", null)],
-                condition: null,
-                metric: null,
-                spanDecorations: null,
-                captureExpressions: null);
-
-            var result = evaluator.Evaluate(scopeMembers);
-
-            customDictionary.GetEnumeratorCallCount.Should().Be(0);
-            result.Template.Should().Contain("GetEnumeratorCallCount");
-            result.Template.Should().NotContain("[password,");
-            result.Template.Should().NotContain("[public,");
-            result.Errors.Should().BeNullOrEmpty();
-        }
-
-        [Fact]
-        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindIDictionaryField()
-        {
+            // With getmember the expression keeps the declared IDictionary type, so only the runtime check in
+            // DumpDictionaryExpression keeps the custom enumerator from running.
             var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
             var holder = new DumpCustomIDictionaryFieldHolder(customDictionary);
             var scopeMembers = CreateScopeMembers();
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
 
             var evaluator = CreateEvaluator(
-                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                templates: [new DebuggerExpression(string.Empty, expression, null)],
                 condition: null,
                 metric: null,
                 spanDecorations: null,
@@ -3627,9 +3608,28 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers);
 
             customDictionary.GetEnumeratorCallCount.Should().Be(0);
-            result.Template.Should().Contain("customMap=");
+            result.Template.Should().Contain(expectedFragment);
             result.Template.Should().NotContain("[password,");
             result.Template.Should().NotContain("[public,");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_NullDictionary_RendersNull()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("NullDictionaryLocal", typeof(Dictionary<string, string>), null, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""NullDictionaryLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("null");
             result.Errors.Should().BeNullOrEmpty();
         }
 
@@ -3706,38 +3706,6 @@ namespace Datadog.Trace.Tests.Debugger
             result.Template.Should().Contain("[password, {redacted}]");
             result.Template.Should().Contain("[public, hello]");
             result.Template.Should().NotContain("TOP_SECRET_VALUE");
-            result.Errors.Should().BeNullOrEmpty();
-        }
-
-        [Fact]
-        public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_DoesNotEnumerateCustomDictionary()
-        {
-            // getmember keeps the declared IDictionary type, so only the runtime check in DumpDictionaryExpression
-            // keeps the custom enumerator from running.
-            var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
-            var holder = new DumpCustomIDictionaryFieldHolder(customDictionary);
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
-
-            var evaluator = CreateEvaluator(
-                templates:
-                [
-                    new DebuggerExpression(
-                        string.Empty,
-                        @"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}",
-                        null)
-                ],
-                condition: null,
-                metric: null,
-                spanDecorations: null,
-                captureExpressions: null);
-
-            var result = evaluator.Evaluate(scopeMembers);
-
-            customDictionary.GetEnumeratorCallCount.Should().Be(0);
-            result.Template.Should().Contain("GetEnumeratorCallCount");
-            result.Template.Should().NotContain("[password,");
-            result.Template.Should().NotContain("[public,");
             result.Errors.Should().BeNullOrEmpty();
         }
 
