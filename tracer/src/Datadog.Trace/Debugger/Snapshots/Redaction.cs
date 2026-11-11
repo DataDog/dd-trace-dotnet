@@ -118,7 +118,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private RedactionCache<string> _dataKeyCache = new(MaxCachedDataKeys);
 
-        private bool _hasRedactedTypePrefixes;
+        private volatile bool _hasRedactedTypePrefixes;
 
         private Redaction()
         {
@@ -427,13 +427,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             if (declaredType.IsArray)
             {
                 // Arrays are sealed but covariant: a Base[] or object[] can hold a Secret[].
-                var elementType = declaredType.GetElementType()!;
-                while (elementType.IsArray)
+                var elementType = declaredType.GetElementType();
+                while (elementType is { IsArray: true })
                 {
-                    elementType = elementType.GetElementType()!;
+                    elementType = elementType.GetElementType();
                 }
 
-                return HasConfiguredRedactedTypes && !elementType.IsValueType && !elementType.IsSealed;
+                return HasConfiguredRedactedTypes && elementType is { IsValueType: false, IsSealed: false };
             }
 
             if (declaredType.IsSealed)

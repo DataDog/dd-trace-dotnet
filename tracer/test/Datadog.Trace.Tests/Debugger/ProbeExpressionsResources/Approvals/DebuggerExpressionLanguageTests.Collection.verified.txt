@@ -49,7 +49,7 @@ Expressions: (
 
         return (dumpValue == null)
             ? "null"
-            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(List<string>))
+            : ProbeExpressionParserHelper.IsRedactedRuntimeValue(dumpValue, typeof(List<string>))
                 ? "{redacted}"
                 : (dumpValue.GetType() == typeof(List<string>))
                     ? {

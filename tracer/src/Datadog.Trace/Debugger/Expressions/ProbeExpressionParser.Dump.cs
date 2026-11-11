@@ -72,18 +72,6 @@ internal partial class ProbeExpressionParser<T>
         return definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>);
     }
 
-    // The declared type was already checked, so only a different runtime type needs another lookup.
-    private static bool IsRedactedRuntimeValue(object value, Type declaredType)
-    {
-        if (value is null)
-        {
-            return false;
-        }
-
-        var runtimeType = value.GetType();
-        return runtimeType != declaredType && ShouldRedactValue(null, runtimeType);
-    }
-
     // Only called when the declared type is safe to call ToString on. A value type or an exact match is
     // decided by the declared type. No subclass of a non-sealed allowed type is allowed itself, so any
     // other runtime type is a subclass whose override must not run.
@@ -249,7 +237,7 @@ internal partial class ProbeExpressionParser<T>
         var value = Expression.Variable(typeof(object), "dumpValue");
         scopeMembers.Add(value);
         var isRedacted = Expression.Call(
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            IsRedactedRuntimeValueMethod,
             value,
             Expression.Constant(expression.Type, typeof(Type)));
 
@@ -278,7 +266,7 @@ internal partial class ProbeExpressionParser<T>
         var assignValue = Expression.Assign(value, Expression.Convert(dictionary, typeof(object)));
         var isNull = Expression.ReferenceEqual(value, Expression.Constant(null));
         var isRedacted = Expression.Call(
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            IsRedactedRuntimeValueMethod,
             value,
             Expression.Constant(dictionary.Type, typeof(Type)));
         var isSupportedDictionary = Expression.Call(
@@ -482,7 +470,7 @@ internal partial class ProbeExpressionParser<T>
             (IsTypeSupportIndex(type, out var assignableFrom) || IsGenericDictionaryInterface(type)))
         {
             // The declared type may be an interface. Redact from the runtime type before enumerating.
-            if (IsRedactedRuntimeValue(value, type))
+            if (ProbeExpressionParserHelper.IsRedactedRuntimeValue(value, type))
             {
                 return hasName ? $"{name}={RedactedPlaceholder}" : RedactedPlaceholder;
             }
@@ -508,7 +496,7 @@ internal partial class ProbeExpressionParser<T>
             }
 
             // The declared type may be a non-sealed exception. Redact from the runtime type before reading the message.
-            return IsRedactedRuntimeValue(value, type) ? $"{name}{RedactedPlaceholder}" : DumpException(ex, name);
+            return ProbeExpressionParserHelper.IsRedactedRuntimeValue(value, type) ? $"{name}{RedactedPlaceholder}" : DumpException(ex, name);
         }
 
         return value is not null && Redaction.IsSafeToCallToString(type) && CanCallToStringOnRuntimeType(value, type) ?

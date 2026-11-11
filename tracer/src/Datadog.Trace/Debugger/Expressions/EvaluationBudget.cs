@@ -12,10 +12,8 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-// Besides the time budget, the budget carries whether a runtime redaction guard redacted a value outside a predicate:
-// every compiled expression already receives it by reference, so the flag costs a store only when a guard fires. A
-// guard inside a predicate only makes that item not match, so it doesn't set the flag. The evaluator clears
-// it before each compiled expression and reads it after, so each redaction is reported for its own expression.
+// Besides the time budget, the budget carries whether a runtime redaction guard redacted a value. Every compiled
+// expression already receives it by reference, so the flag costs a store only when a guard fires.
 internal struct EvaluationBudget
 {
     private const int OperationsBeforeTimeCheck = 32;

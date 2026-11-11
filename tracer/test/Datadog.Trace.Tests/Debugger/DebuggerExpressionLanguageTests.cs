@@ -5170,8 +5170,10 @@ namespace Datadog.Trace.Tests.Debugger
 
                 var states = new GuardStateCounter(lambda.Body);
                 states.Visit(lambda.Body);
-                states.Root.Should().Be(1, "the @return check is stored once per evaluation");
-                states.Nested.Should().Be(1, "the @it check is reset on every item");
+
+                // The @return check is stored once per evaluation, and the @it check is reset on every item.
+                states.Root.Should().Be(1);
+                states.Nested.Should().Be(1);
             }
 
             [Theory]
@@ -5318,7 +5320,7 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Decorations[0].Value.Should().Be("public=PUBLIC_VALUE");
                 result.Decorations[0].Errors.Should().BeNullOrEmpty();
                 result.Decorations[1].TagName.Should().Be("second");
-                result.Decorations[1].Value.Should().Be("object={[hello, ], }, secret={redacted}");
+                result.Decorations[1].Value.Should().Be("object=dictionary={[hello, ]}, secret={redacted}");
                 result.Decorations[1].Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
                 result.Errors.Should().BeNullOrEmpty();
             }
@@ -5685,21 +5687,25 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             // Counts distinct check nodes: a guard shared by nested operations is one node.
+            // Every memoized guard declares one check state variable. Counting the calls to IsRedactedRuntimeValue instead
+            // would also count the runtime type check that dumping a value does.
             private sealed class RuntimeGuardCounter : System.Linq.Expressions.ExpressionVisitor
             {
-                private readonly HashSet<System.Linq.Expressions.MethodCallExpression> _guards = [];
+                private readonly HashSet<System.Linq.Expressions.ParameterExpression> _guards = [];
 
                 internal int Count => _guards.Count;
 
-                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+                protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
                 {
-                    if (node.Method.DeclaringType == typeof(ProbeExpressionParserHelper) &&
-                        node.Method.Name == nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue))
+                    foreach (var variable in node.Variables)
                     {
-                        _guards.Add(node);
+                        if (variable.Name == ProbeExpressionParserHelper.RedactionCheckStateVariableName)
+                        {
+                            _guards.Add(variable);
+                        }
                     }
 
-                    return base.VisitMethodCall(node);
+                    return base.VisitBlock(node);
                 }
             }
 
@@ -5745,9 +5751,22 @@ namespace Datadog.Trace.Tests.Debugger
         // These tests change the process-wide redaction config, so they run in the RedactionTests
         // collection, which doesn't run in parallel with other tests.
         [Collection(nameof(RedactionTests))]
-        public class RuntimeTypeRedactionTests
+        public class RuntimeTypeRedactionTests : IDisposable
         {
+            // The guard redacts the first operand before the index in the second one throws.
+            private const string RedactionThenIndexFailureJson = @"{""or"":[{""eq"":[{""getmember"":[{""ref"":""DumpHolderLocal""},""value""]},null]},{""eq"":[{""index"":[{""ref"":""ListLocal""},100]},""x""]}]}";
+
             private readonly DebuggerExpressionLanguageTests _tests = new();
+
+            public RuntimeTypeRedactionTests()
+            {
+                Redaction.Instance.ResetInstance();
+            }
+
+            public void Dispose()
+            {
+                Redaction.Instance.ResetInstance();
+            }
 
             [Fact]
             public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_RedactsConfiguredRuntimeType()
@@ -5758,39 +5777,28 @@ namespace Datadog.Trace.Tests.Debugger
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
 
-                try
-                {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { "System.Collections.Hashtable" });
+                ConfigureRedactedTypes("System.Collections.Hashtable");
 
-                    var evaluator = _tests.CreateEvaluator(
-                        templates:
-                        [
-                            new DebuggerExpression(
-                                string.Empty,
-                                @"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}",
-                                null)
-                        ],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
+                var evaluator = _tests.CreateEvaluator(
+                    templates:
+                    [
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}",
+                            null)
+                    ],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
 
-                    var result = evaluator.Evaluate(scopeMembers);
+                var result = evaluator.Evaluate(scopeMembers);
 
-                    result.Template.Should().Be("{redacted}");
-                    result.Template.Should().NotContain(publicValue);
-                    result.Template.Should().NotContain("TOP_SECRET_VALUE");
-                    result.Template.Should().NotContain("[public,");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                result.Template.Should().Be("{redacted}");
+                result.Template.Should().NotContain(publicValue);
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Template.Should().NotContain("[public,");
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
             }
 
             [Fact]
@@ -5801,39 +5809,28 @@ namespace Datadog.Trace.Tests.Debugger
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
 
-                try
-                {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { typeof(EnumeratorTrackingDictionary).FullName });
+                ConfigureRedactedTypes(typeof(EnumeratorTrackingDictionary).FullName);
 
-                    var evaluator = _tests.CreateEvaluator(
-                        templates:
-                        [
-                            new DebuggerExpression(
-                                string.Empty,
-                                @"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}",
-                                null)
-                        ],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
+                var evaluator = _tests.CreateEvaluator(
+                    templates:
+                    [
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}",
+                            null)
+                    ],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
 
-                    var result = evaluator.Evaluate(scopeMembers);
+                var result = evaluator.Evaluate(scopeMembers);
 
-                    customDictionary.GetEnumeratorCallCount.Should().Be(0);
-                    result.Template.Should().Be("{redacted}");
-                    result.Template.Should().NotContain("hello");
-                    result.Template.Should().NotContain("GetEnumeratorCallCount");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                customDictionary.GetEnumeratorCallCount.Should().Be(0);
+                result.Template.Should().Be("{redacted}");
+                result.Template.Should().NotContain("hello");
+                result.Template.Should().NotContain("GetEnumeratorCallCount");
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
             }
 
             [Fact]
@@ -5880,70 +5877,55 @@ namespace Datadog.Trace.Tests.Debugger
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
 
-                try
-                {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { "System.Collections.Hashtable" });
+                ConfigureRedactedTypes("System.Collections.Hashtable");
 
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
 
-                    var result = evaluator.Evaluate(scopeMembers);
+                var result = evaluator.Evaluate(scopeMembers);
 
-                    result.Template.Should().Contain("headers={redacted}");
-                    result.Template.Should().NotContain(publicValue);
-                    result.Template.Should().NotContain("TOP_SECRET_VALUE");
-                    result.Template.Should().NotContain("[public,");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                result.Template.Should().Contain("headers={redacted}");
+                result.Template.Should().NotContain(publicValue);
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Template.Should().NotContain("[public,");
+                result.Errors.Should().BeNullOrEmpty();
             }
 
             [Theory]
-            [InlineData("value", "{redacted}")]
-            [InlineData("items", "{redacted}")]
-            [InlineData("other", "_data=visible")]
-            [InlineData("error", "{redacted}")]
-            public void ProbeExpressionEvaluator_TemplateDump_GetMemberNonSealedField_RedactsConfiguredRuntimeType(string memberName, string expected)
+            [InlineData("value", "{redacted}", true)]
+            [InlineData("items", "{redacted}", true)]
+            [InlineData("other", "_data=visible", false)]
+            [InlineData("error", "{redacted}", true)]
+            public void ProbeExpressionEvaluator_TemplateDump_GetMemberNonSealedField_RedactsConfiguredRuntimeType(string memberName, string expected, bool isRedacted)
             {
                 // getmember keeps the declared type (object, IList<string>, Exception), so only the runtime
                 // type shows that the value is a redacted type.
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
 
-                try
+                ConfigureRedactedTypes(typeof(RedactedRuntimeTypeValue).FullName, typeof(List<string>).FullName, typeof(InvalidOperationException).FullName);
+
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be(expected);
+                if (isRedacted)
                 {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { typeof(RedactedRuntimeTypeValue).FullName, typeof(List<string>).FullName, typeof(InvalidOperationException).FullName });
-
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
-
-                    var result = evaluator.Evaluate(scopeMembers);
-
-                    result.Template.Should().Be(expected);
-                    result.Errors.Should().BeNullOrEmpty();
+                    result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
                 }
-                finally
+                else
                 {
-                    Redaction.Instance.ResetInstance();
+                    result.Errors.Should().BeNullOrEmpty();
                 }
             }
 
@@ -5953,31 +5935,99 @@ namespace Datadog.Trace.Tests.Debugger
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
 
-                try
-                {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { typeof(InvalidOperationException).FullName });
+                ConfigureRedactedTypes(typeof(InvalidOperationException).FullName);
 
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
 
-                    var result = evaluator.Evaluate(scopeMembers);
+                var result = evaluator.Evaluate(scopeMembers);
 
-                    result.Template.Should().EndWith(", error={redacted}");
-                    result.Template.Should().NotContain("TOP_SECRET_VALUE");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                result.Template.Should().EndWith(", error={redacted}");
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData("value")]
+            [InlineData("items")]
+            public void ProbeExpressionEvaluator_TemplateDump_GetMemberNullNonSealedField_RendersNull(string memberName)
+            {
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNullNonSealedFieldsHolder), new DumpNullNonSealedFieldsHolder(null, null, null), ScopeMemberKind.Local));
+                ConfigureRedactedTypes(typeof(RedactedRuntimeTypeValue).FullName, typeof(List<string>).FullName, typeof(InvalidOperationException).FullName);
+
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("null");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_ExceptionAfterRedaction_ReportsAFixedMessage()
+            {
+                var scopeMembers = CreateScopeMembersWithRedactedValue();
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, RedactionThenIndexFailureJson, null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                // The exception text can include a value, so it must not reach the errors.
+                result.Errors.Should().HaveCount(2);
+                result.Errors.Should().ContainSingle(error => error.IsRedaction);
+                result.Errors.Should().ContainSingle(error => !error.IsRedaction).Which.Message.Should().Be("The expression failed after a value it uses was redacted.");
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_SpanDecorationExceptionAfterRedaction_ReportsAFixedMessage()
+            {
+                var scopeMembers = CreateScopeMembersWithRedactedValue();
+                var evaluator = _tests.CreateEvaluator(
+                    templates: null,
+                    condition: null,
+                    metric: null,
+                    spanDecorations:
+                    [
+                        new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
+                            new DebuggerExpression(string.Empty, @"{""eq"":[1,1]}", null),
+                            [new KeyValuePair<string, DebuggerExpression?[]>("tag", [new DebuggerExpression(string.Empty, RedactionThenIndexFailureJson, null)])])
+                    ],
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                var errors = result.Decorations.Should().ContainSingle().Which.Errors;
+                errors.Should().HaveCount(2);
+                errors.Should().ContainSingle(error => error.IsRedaction);
+                errors.Should().ContainSingle(error => !error.IsRedaction).Which.Message.Should().Be("The expression failed after a value it uses was redacted.");
+            }
+
+            private static void ConfigureRedactedTypes(params string[] redactedTypes)
+            {
+                Redaction.Instance.SetConfig(new HashSet<string>(), new HashSet<string>(), [.. redactedTypes]);
+            }
+
+            private MethodScopeMembers CreateScopeMembersWithRedactedValue()
+            {
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("ListLocal", typeof(List<string>), new List<string> { "a" }, ScopeMemberKind.Local));
+                ConfigureRedactedTypes(typeof(RedactedRuntimeTypeValue).FullName);
+                return scopeMembers;
             }
         }
 
@@ -6280,6 +6330,22 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly object other = new VisibleRuntimeTypeValue("visible");
 
             private readonly Exception error = new InvalidOperationException("TOP_SECRET_VALUE");
+        }
+
+        private sealed class DumpNullNonSealedFieldsHolder
+        {
+            private readonly object value;
+
+            private readonly IList<string> items;
+
+            private readonly Exception error;
+
+            public DumpNullNonSealedFieldsHolder(object value, IList<string> items, Exception error)
+            {
+                this.value = value;
+                this.items = items;
+                this.error = error;
+            }
         }
 
         private sealed class DumpExceptionFieldsHolder

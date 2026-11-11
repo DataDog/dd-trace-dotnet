@@ -83,9 +83,9 @@ internal partial class ProbeExpressionParser<T>
 
     private bool TryGetRedactionGuard(Expression expression, out RedactionGuard guard)
     {
-        while (expression != null)
+        while (expression is not null)
         {
-            if (_redactionGuards != null && _redactionGuards.TryGetValue(expression, out guard))
+            if (_redactionGuards is not null && _redactionGuards.TryGetValue(expression, out guard))
             {
                 return true;
             }
@@ -136,12 +136,12 @@ internal partial class ProbeExpressionParser<T>
             return check;
         }
 
-        return check is null ? guard.Check : Expression.OrElse(check, guard.Check);
+        return check is null || ReferenceEquals(check, guard.Check) ? guard.Check : Expression.OrElse(check, guard.Check);
     }
 
     // A value read from guarded values without an operation, such as a member or an item, is only evaluated after their
     // checks, so it carries them on, before its own.
-    private void DeriveRedactionGuard(Expression derived, Expression source, Expression other = null)
+    private void DeriveRedactionGuard(Expression derived, Expression source, Expression other)
     {
         DeriveRedactionCheck(derived, CombineRedactionChecks(CombineRedactionChecks(null, source), other));
     }
@@ -189,7 +189,7 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression RedactOperationWithCheck(Expression check, Expression operation)
     {
-        if (check == null)
+        if (check is null)
         {
             return operation;
         }

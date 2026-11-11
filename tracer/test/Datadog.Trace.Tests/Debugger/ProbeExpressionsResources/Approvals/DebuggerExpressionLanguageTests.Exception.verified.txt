@@ -44,7 +44,7 @@ Expressions: (
 
         return (dumpValue == null)
             ? "System.Exception"
-            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(Exception))
+            : ProbeExpressionParserHelper.IsRedactedRuntimeValue(dumpValue, typeof(Exception))
                 ? "{redacted}"
                 : ProbeExpressionParser<string>.DumpException((Exception)dumpValue, null);
     };

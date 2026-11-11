@@ -21,6 +21,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal sealed class ProbeExpressionEvaluator
 {
     private const string RuntimeRedactionMessage = "A value used by the expression is redacted.";
+    private const string FailureAfterRedactionMessage = "The expression failed after a value it uses was redacted.";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
     private static readonly CompiledExpressionDelegate<bool> FalseDelegate = ReturnFalse;
@@ -155,8 +156,7 @@ internal sealed class ProbeExpressionEvaluator
     }
 
     // Every compiled expression runs through here. The runtime redaction flag is cleared before the call, so a redaction
-    // is attributed to the expression that made it, and reported into errors after it, like a redaction known at compile
-    // time.
+    // is attributed to its own expression, then reported into errors like a compile-time redaction.
     private static TResult InvokeAndReport<TResult>(
         CompiledExpressionDelegate<TResult> budgetedDelegate,
         string? rawExpression,
@@ -198,6 +198,14 @@ internal sealed class ProbeExpressionEvaluator
 
         (result.Errors ??= new List<EvaluationError>()).AddRange(errors);
         result.HasNonRedactionError |= compiledExpression.HasNonRedactionError;
+    }
+
+    // After a redaction the exception text may include the redacted value, so a fixed message replaces it.
+    private static string GetErrorMessage(Exception e, bool afterRedaction)
+    {
+        return e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage
+               : afterRedaction ? FailureAfterRedactionMessage
+               : e.Message;
     }
 
     private static void AddError(ref ExpressionEvaluationResult result, EvaluationError error)
@@ -484,6 +492,7 @@ internal sealed class ProbeExpressionEvaluator
                         var when = InvokeAndReport(whenDelegate, current.Key.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
                         if (isRedacted)
                         {
+                            Log.Debug("{Class}.{Method}: Skipping span decoration because the `when` expression used a redacted value. {Expression}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), current.Key.RawExpression);
                             continue;
                         }
 
@@ -569,9 +578,9 @@ internal sealed class ProbeExpressionEvaluator
                             }
                             catch (Exception e)
                             {
-                                var message = e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage : e.Message;
-                                (errors ??= new List<EvaluationError>()).Add(new() { Message = message, Expression = GetRelevantExpression(compiledExpression) });
-                                if (result.EvaluationBudget.TakeRuntimeRedaction())
+                                var afterRedaction = result.EvaluationBudget.TakeRuntimeRedaction();
+                                (errors ??= new List<EvaluationError>()).Add(new() { Message = GetErrorMessage(e, afterRedaction), Expression = GetRelevantExpression(compiledExpression) });
+                                if (afterRedaction)
                                 {
                                     ReportRuntimeRedaction(ref errors, compiledExpression.RawExpression);
                                 }
@@ -866,13 +875,14 @@ internal sealed class ProbeExpressionEvaluator
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
         // A guard that redacted a value before the exception is still reported.
-        if (result.EvaluationBudget.TakeRuntimeRedaction())
+        var afterRedaction = result.EvaluationBudget.TakeRuntimeRedaction();
+        if (afterRedaction)
         {
             ReportRuntimeRedaction(ref result.Errors, compiledExpression.RawExpression);
         }
 
         AddCompiledErrors(ref result, compiledExpression);
-        AddError(ref result, new EvaluationError { Expression = GetRelevantExpression(compiledExpression), Message = e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage : e.Message });
+        AddError(ref result, new EvaluationError { Expression = GetRelevantExpression(compiledExpression), Message = GetErrorMessage(e, afterRedaction) });
     }
 
     private EvaluationBudget CreateBudget()
