@@ -14,7 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
     public class EnableOnlyTests
     {
         [Fact]
-        public void EnableOnly_Cpu_SetsEveryProfilerToggle()
+        public void EnableOnly_Cpu_DisablesTheOtherDataSources()
         {
             var environment = new EnvironmentHelper("net8.0", enableTracer: false, enableProfiler: true);
             environment.EnableOnly(ProfilerFeature.Cpu);
@@ -30,26 +30,43 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
                 [EnvironmentVariables.LiveHeapProfilerEnabled] = "0",
                 [EnvironmentVariables.ThreadLifetimeEnabled] = "0",
                 [EnvironmentVariables.HttpProfilingEnabled] = "0",
-                [EnvironmentVariables.CodeHotSpotsEnable] = "0",
-                [EnvironmentVariables.EndpointProfilerEnabled] = "0",
-                [EnvironmentVariables.TimestampsAsLabelEnabled] = "0",
-                [EnvironmentVariables.DebugInfoEnabled] = "0",
                 [EnvironmentVariables.GcThreadsCpuTimeEnabled] = "0",
-                [EnvironmentVariables.EtwEnabled] = "0",
                 [EnvironmentVariables.HeapSnapshotEnabled] = "0",
-                [EnvironmentVariables.HeapSnapshotSkipTraversal] = "0",
                 [EnvironmentVariables.WaitHandleContentionProfilingEnabled] = "0",
-                [EnvironmentVariables.ForceHttpSamplingEnabled] = "0",
-                [EnvironmentVariables.ManagedActivationEnabled] = "0",
-                [EnvironmentVariables.UseManagedCodeCache] = "0",
-                [EnvironmentVariables.MemoryFootprintEnabled] = "0",
             };
 
-            Enum.GetValues(typeof(ProfilerFeature)).Length.Should().Be(expected.Count);
             foreach (var entry in expected)
             {
                 environment.CustomEnvironmentVariables[entry.Key].Should().Be(entry.Value, "variable {0}", entry.Key);
             }
+
+            // Options with a platform-dependent default (managed code cache is on by default on ARM64) are left alone.
+            var untouched = new[]
+            {
+                EnvironmentVariables.CodeHotSpotsEnable,
+                EnvironmentVariables.EndpointProfilerEnabled,
+                EnvironmentVariables.TimestampsAsLabelEnabled,
+                EnvironmentVariables.DebugInfoEnabled,
+                EnvironmentVariables.EtwEnabled,
+                EnvironmentVariables.HeapSnapshotSkipTraversal,
+                EnvironmentVariables.ForceHttpSamplingEnabled,
+                EnvironmentVariables.UseManagedCodeCache,
+                EnvironmentVariables.MemoryFootprintEnabled,
+            };
+
+            foreach (var name in untouched)
+            {
+                environment.CustomEnvironmentVariables.Should().NotContainKey(name);
+            }
+        }
+
+        [Fact]
+        public void EnableOnly_ConfigurationOption_IsSetWhenListed()
+        {
+            var environment = new EnvironmentHelper("net8.0", enableTracer: false, enableProfiler: true);
+            environment.EnableOnly(ProfilerFeature.Cpu, ProfilerFeature.ManagedCodeCache);
+
+            environment.CustomEnvironmentVariables[EnvironmentVariables.UseManagedCodeCache].Should().Be("1");
         }
 
         [Fact]
