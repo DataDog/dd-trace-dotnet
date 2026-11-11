@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
@@ -10,6 +12,48 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public class TcpPortProvider
     {
+        /// <summary>
+        /// Starts an HTTP listener with prefixes derived from the bound port, retrying with a fresh listener
+        /// and port if binding fails. The caller owns the returned listener and must dispose it.
+        /// </summary>
+        /// <param name="prefixesForPort">Builds the prefixes to register for a candidate port.</param>
+        /// <param name="port">The port successfully bound by the listener.</param>
+        /// <param name="initialPort">Optional first port to try before allocating a new one.</param>
+        /// <param name="maxAttempts">Maximum bind attempts before rethrowing.</param>
+        /// <returns>The started listener.</returns>
+        public static HttpListener StartHttpListener(
+            Func<int, IEnumerable<string>> prefixesForPort,
+            out int port,
+            int? initialPort = null,
+            int maxAttempts = 5)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                port = attempt == 1 && initialPort.HasValue ? initialPort.Value : GetOpenPort();
+                var listener = new HttpListener();
+                foreach (var prefix in prefixesForPort(port))
+                {
+                    listener.Prefixes.Add(prefix);
+                }
+
+                try
+                {
+                    listener.Start();
+                    return listener;
+                }
+                catch (Exception)
+                {
+                    // A listener cannot be reused after a failed Start().
+                    // HttpListener.Dispose() is explicit on .NET Framework.
+                    ((IDisposable)listener).Dispose();
+                    if (attempt >= maxAttempts)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
         public static int GetOpenPort()
         {
             TcpListener tcpListener = null;

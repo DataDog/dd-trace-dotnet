@@ -113,6 +113,7 @@ internal static class MsTestIntegration
 
         var test = startDate is null ? suite.CreateTest(testName) : suite.CreateTest(testName, startDate.Value);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -356,7 +357,7 @@ internal static class MsTestIntegration
         var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
         var testClass = testMethodInfo.TestClassName ?? string.Empty;
         var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
-        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
+        return TestAutomationExclusions.From(testMethodInfo.MethodInfo).ApplyTo(testManagementFeature.GetTestProperties(testModule, testClass, testMethod));
     }
 
     internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)

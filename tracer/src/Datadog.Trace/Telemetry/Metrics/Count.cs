@@ -326,6 +326,21 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<UserEventSdk>("sdk.event", isCommon: true, NS.ASM)] UserEventSdk,
 
+    /// <summary>
+    /// Counts the requests for which API Security could not get the route, so could not consider them for schema extraction
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.missing_route", isCommon: true, NS.ASM)] ApiSecMissingRoute,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which at least one schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.schema", isCommon: true, NS.ASM)] ApiSecRequestSchema,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which no schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.no_schema", isCommon: true, NS.ASM)] ApiSecRequestNoSchema,
+
 #endregion
 #region Iast Namespace
 

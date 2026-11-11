@@ -1178,48 +1178,36 @@ namespace Datadog.Trace.TestHelpers
                     listeners.Add($"Stats at port {StatsdPort}");
                 }
 
-                // try up to 5 consecutive ports before giving up
-                while (true)
+                try
                 {
-                    // seems like we can't reuse a listener if it fails to start,
-                    // so create a new listener each time we retry
-                    var listener = new HttpListener();
-                    listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                    listener.Prefixes.Add($"http://localhost:{port}/");
+                    _listener = TcpPortProvider.StartHttpListener(
+                        p =>
+                        {
+                            List<string> prefixes =
+                            [
+                                $"http://127.0.0.1:{p}/",
+                                $"http://localhost:{p}/",
+                            ];
 
-                    var containerHostname = EnvironmentHelpers.GetEnvironmentVariable("CONTAINER_HOSTNAME");
-                    if (containerHostname != null)
-                    {
-                        listener.Prefixes.Add($"{containerHostname}:{port}/");
-                    }
+                            var containerHostname = EnvironmentHelpers.GetEnvironmentVariable("CONTAINER_HOSTNAME");
+                            if (containerHostname != null)
+                            {
+                                prefixes.Add($"{containerHostname}:{p}/");
+                            }
 
-                    try
-                    {
-                        listener.Start();
+                            return prefixes;
+                        },
+                        out var boundPort,
+                        port,
+                        retries);
 
-                        // successfully listening
-                        Port = port.Value;
-                        _listener = listener;
-
-                        listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = HandleHttpRequests();
-
-                        return;
-                    }
-                    catch (HttpListenerException) when (retries > 0)
-                    {
-                        // only catch the exception if there are retries left
-                        port = TcpPortProvider.GetOpenPort();
-                        retries--;
-                    }
-                    finally
-                    {
-                        ListenerInfo = string.Join(", ", listeners);
-                    }
-
-                    // always close listener if exception is thrown,
-                    // whether it was caught or not
-                    listener.Close();
+                    Port = boundPort;
+                    listeners.Add($"Traces at port {Port}");
+                    _tracesListenerTask = HandleHttpRequests();
+                }
+                finally
+                {
+                    ListenerInfo = string.Join(", ", listeners);
                 }
             }
 

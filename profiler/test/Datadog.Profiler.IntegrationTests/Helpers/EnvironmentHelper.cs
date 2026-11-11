@@ -174,13 +174,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetProfilerNativeLibraryPath();
             var tracerPath = GetTracerNativeLibraryPath();
+            var architecture = GetArchitectureSubfolder(IsAlpine);
 
-            var loaderConfigFilePath = Path.GetTempFileName();
-            using var sw = new StreamWriter(loaderConfigFilePath);
-
-            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
-            return loaderConfigFilePath;
+            return WriteLoaderConfigFile(
+                $"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{architecture};{profilerPath}",
+                $"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{architecture};{tracerPath}");
         }
 
         internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
@@ -220,6 +218,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // Test machines are slow and loaded enough that the default 2s is not always enough to
             // populate the libraries cache, and the profiler silently falls back to slower unwinding.
             environmentVariables[EnvironmentVariables.LibrariesInfoCacheStartTimeout] = "10000";
+
+            // On x86 (WOW64) CI machines, the whole process can stall for a few seconds at startup, which makes
+            // the default 2s watcher start timeout expire and the profiler abort its initialization.
+            // Tests can still override it (e.g. "0" to force a start failure) via CustomEnvironmentVariables.
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+            {
+                environmentVariables[EnvironmentVariables.WatcherStartTimeout] = "10000";
+            }
 
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
@@ -440,6 +446,39 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var baseOutputDir = GetTestOutputPath();
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
+        }
+
+        private string WriteLoaderConfigFile(string profilerLine, string tracerLine)
+        {
+            // Leave the file in the per-test output directory so CI uploads it with the logs.
+            // A test that starts several processes needs a distinct file for each one.
+            // CreateNew reserves the name before the write, so concurrent launches cannot share a path.
+            Directory.CreateDirectory(_testOutputPath);
+
+            for (var index = 1; ; index++)
+            {
+                var fileName = index == 1 ? "loader.conf" : $"loader-{index}.conf";
+                var path = Path.Combine(_testOutputPath, fileName);
+
+                FileStream stream;
+                try
+                {
+                    stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                }
+                catch (IOException) when (File.Exists(path))
+                {
+                    continue;
+                }
+
+                using (stream)
+                {
+                    using var writer = new StreamWriter(stream, leaveOpen: true);
+                    writer.WriteLine(profilerLine);
+                    writer.WriteLine(tracerLine);
+                }
+
+                return path;
+            }
         }
 
         private bool IsCoreClr()

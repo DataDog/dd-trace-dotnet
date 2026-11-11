@@ -43,6 +43,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected virtual string[] QuarantineTestNames => ["AlwaysFails", "AlwaysPasses", "TrueAtLastRetry", "TrueAtThirdRetry"];
 
+    private string AutomationExclusionsSuite => $"{EnvironmentHelper.FullSampleName}.AutomationExclusionsTestSuite";
+
     public virtual async Task QuarantineWithAutomaticRetries(string packageVersion, bool quarantined, bool retriesEnabled, bool quarantineAlwaysFails)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, retriesEnabled ? "1" : "0");
@@ -51,28 +53,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         var testNames = QuarantineTestNames;
         var moduleName = EnvironmentHelper.FullSampleName;
         var suiteName = AlwaysFails.Substring(0, AlwaysFails.LastIndexOf('.'));
-        var managementTests = JsonConvert.SerializeObject(new
-        {
-            data = new
-            {
-                attributes = new
-                {
-                    modules = new Dictionary<string, object>
-                    {
-                        [moduleName] = new
-                        {
-                            suites = new Dictionary<string, object>
-                            {
-                                [suiteName] = new
-                                {
-                                    tests = testNames.ToDictionary(name => name, name => new { properties = new { quarantined = IsQuarantined(name) } })
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        var managementTests = GetManagementTestsJson(moduleName, suiteName, testNames.ToDictionary(name => name, name => (object)new { properties = new { quarantined = IsQuarantined(name) } }));
 
         await ExecuteTestAsync(
             packageVersion,
@@ -118,6 +99,72 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         bool IsQuarantined(string name) => quarantined && (name != "AlwaysFails" || quarantineAlwaysFails);
     }
 
+    public virtual async Task AutomationExclusions(string packageVersion, string testName, int expectedExecutions, string expectedFinalStatus, int expectedExitCode, string expectedTag)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryCount, "2");
+
+        var managementTests = GetManagementTestsJson(EnvironmentHelper.FullSampleName, AutomationExclusionsSuite, new Dictionary<string, object> { [testName] = new { properties = new { quarantined = true } } });
+
+        await ExecuteTestAsync(
+            packageVersion,
+            "evp_proxy/v4",
+            false,
+            new TestScenario(
+                GetType().Name,
+                nameof(AutomationExclusions),
+                new MockData(GetSettingsJson("false", "false", "true", "0", "true"), string.Empty, managementTests),
+                expectedExitCode: expectedExitCode,
+                expectedSpans: expectedExecutions,
+                useSnapshot: false,
+                validateAction: (in ExecutionData data) =>
+                {
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.Name] == testName);
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.TestIsQuarantined] == "true");
+                    data.Tests.Should().OnlyContain(test => test.Meta[expectedTag] == "true");
+                    data.Tests.Count(test => test.Meta.ContainsKey(TestTags.TestIsRetry)).Should().Be(expectedExecutions - 1);
+
+                    var finalExecution = data.Tests.Should().ContainSingle(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Subject;
+                    finalExecution.Meta[TestTags.TestFinalStatus].Should().Be(expectedFinalStatus);
+                },
+                useDotnetExec: UseDotnetExec,
+                arguments: GetTestFilterArguments($"{AutomationExclusionsSuite}.{testName}")));
+    }
+
+    // The sample passes and then fails: Attempt to Fix stops there, and the earlier pass must not hide the failure.
+    public virtual async Task ProtectedAttemptToFixFailure(string packageVersion)
+    {
+        const string testName = "ProtectedFlakyFailure";
+        var managementTests = GetManagementTestsJson(EnvironmentHelper.FullSampleName, AutomationExclusionsSuite, new Dictionary<string, object> { [testName] = new { properties = new { attempt_to_fix = true } } });
+
+        await ExecuteTestAsync(
+            packageVersion,
+            "evp_proxy/v4",
+            false,
+            new TestScenario(
+                GetType().Name,
+                nameof(ProtectedAttemptToFixFailure),
+                new MockData(GetSettingsJson("false", "false", "true", "3"), string.Empty, managementTests),
+                expectedExitCode: 1,
+                expectedSpans: 2,
+                useSnapshot: false,
+                validateAction: (in ExecutionData data) =>
+                {
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.Name] == testName);
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.TestIsAttemptToFix] == "true");
+                    data.Tests.Should().OnlyContain(test => test.Meta[TestTags.TestPreventFailureSuppression] == "true");
+                    data.Tests.Count(test => test.Meta[TestTags.Status] == TestTags.StatusFail).Should().Be(1);
+                    data.Tests.Count(test => test.Meta[TestTags.Status] == TestTags.StatusPass).Should().Be(1);
+
+                    var finalExecution = data.Tests.Should().ContainSingle(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Subject;
+                    finalExecution.Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusFail);
+                    finalExecution.Meta[TestTags.TestAttemptToFixPassed].Should().Be("false");
+                },
+                useDotnetExec: UseDotnetExec,
+                arguments: GetTestFilterArguments($"{AutomationExclusionsSuite}.{testName}")));
+    }
+
     public virtual Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
         => FlakyRetriesWithArguments(packageVersion, arguments: null);
 
@@ -143,6 +190,21 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             yield return [version[0], true, true, false];
         }
     }
+
+    protected static IEnumerable<object[]> GetAutomationExclusionData(IEnumerable<object[]> packageVersions)
+    {
+        foreach (var version in packageVersions)
+        {
+            // Failure protection keeps the failure blocking and still allows retries.
+            yield return [version[0], "ProtectedFailure", 3, TestTags.StatusFail, 1, TestTags.TestPreventFailureSuppression];
+
+            // Excluding retries keeps quarantine, so the single failure doesn't block.
+            yield return [version[0], "NoRetryFailure", 1, TestTags.StatusSkip, 0, TestTags.TestNoAutoRetry];
+        }
+    }
+
+    protected virtual string GetTestFilterArguments(string fullyQualifiedName)
+        => $"--TestCaseFilter:FullyQualifiedName~{fullyQualifiedName}";
 
     // The sample tests take under 5s, so the first bucket gives AlwaysFails four retries instead of the flat three.
     protected Task<List<MockCIVisibilityTest>> DynamicFlakyRetriesWithArguments(string packageVersion, string arguments)
@@ -215,7 +277,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                                           packageVersion: packageVersion,
                                           expectedExitCode: 1,
                                           useDotnetExec: UseDotnetExec,
-                                          arguments: arguments);
+                                          arguments: arguments ?? GetTestRunnerArguments(packageVersion, UseDotnetExec));
 
             // 1 Module
             testModules.Should().HaveCount(1);
@@ -250,6 +312,27 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
         return tests;
     }
+
+    private static string GetManagementTestsJson(string moduleName, string suiteName, Dictionary<string, object> tests)
+        => JsonConvert.SerializeObject(new
+        {
+            data = new
+            {
+                attributes = new
+                {
+                    modules = new Dictionary<string, object>
+                    {
+                        [moduleName] = new
+                        {
+                            suites = new Dictionary<string, object>
+                            {
+                                [suiteName] = new { tests }
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
     private static void CheckForEnoughNumberOfStackFrames(List<MockCIVisibilityTest> tests)
     {
