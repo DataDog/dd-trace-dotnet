@@ -262,7 +262,15 @@ namespace Datadog.Trace.DatabaseMonitoring
                             paramList.Append(", ");
                         }
 
-                        paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
+                        var parameterName = param.ParameterName;
+                        if (StringUtil.IsNullOrEmpty(parameterName))
+                        {
+                            return false;
+                        }
+
+                        // SqlClient accepts names without '@' for RPC, but both sides of the EXEC assignment need it.
+                        var parameterPrefix = parameterName[0] == '@' ? string.Empty : "@";
+                        paramList.Append(parameterPrefix).Append(parameterName).Append('=').Append(parameterPrefix).Append(parameterName);
                     }
                 }
 
