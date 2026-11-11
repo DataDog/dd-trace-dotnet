@@ -26,9 +26,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             Capacity = capacity;
 
-            // Pre-sized to avoid repeated growth from the default size. It can still grow before it is full
-            // when entries spread unevenly across lock stripes. Growing takes every lock, which blocks
-            // concurrent adds but not lookups.
+            // Pre-sized to avoid repeated growth. It can still grow before it is full when entries spread
+            // unevenly across lock stripes; growing blocks concurrent adds but not lookups.
             _entries = new ConcurrentDictionary<TKey, bool>(Environment.ProcessorCount, capacity);
         }
 
@@ -38,19 +37,12 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal bool TryGetValue(TKey key, out bool value) => _entries.TryGetValue(key, out value);
 
-        /// <returns>false if the cache is full; true if the key was added or is already present.</returns>
+        /// <returns>true if the key was added or is already present; false if the cache is full and doesn't hold the key.</returns>
         internal bool TryAdd(TKey key, bool value)
         {
-            if (Volatile.Read(ref _count) >= Capacity)
+            if (!TryReserveSlot())
             {
-                return false;
-            }
-
-            // Reserve a slot first so concurrent adds can never exceed the capacity.
-            if (Interlocked.Increment(ref _count) > Capacity)
-            {
-                Interlocked.Decrement(ref _count);
-                return false;
+                return _entries.ContainsKey(key);
             }
 
             if (!_entries.TryAdd(key, value))
@@ -59,6 +51,24 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return true;
+        }
+
+        // Reserving the slot before the add means concurrent adds can never exceed the capacity.
+        private bool TryReserveSlot()
+        {
+            // The plain read skips the contended increment once the cache is full.
+            if (Volatile.Read(ref _count) >= Capacity)
+            {
+                return false;
+            }
+
+            if (Interlocked.Increment(ref _count) <= Capacity)
+            {
+                return true;
+            }
+
+            Interlocked.Decrement(ref _count);
+            return false;
         }
     }
 }

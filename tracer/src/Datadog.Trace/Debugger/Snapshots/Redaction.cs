@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         [TestingAndPrivateOnly]
         internal const int MaxCachedDataKeys = 1024;
 
-        // Captured types are usually a few hundred per process; 2048 leaves headroom for about 100 KB.
+        // Captured types are usually a few hundred per process, so 2048 leaves ample headroom.
         private const int MaxCachedTypes = 2048;
 
         // Longer names are still checked but never cached, so large customer strings are not retained.
@@ -109,14 +109,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly HashSet<string> _redactKeywords;
 
         // Upper bound on the length of any keyword, so longer normalized names are rejected without allocating.
-        private int _maxKeywordLength;
+        private volatile int _maxKeywordLength;
 
         // Replaced, not cleared, by SetConfig so a lookup racing with it cannot store a stale result in the new cache.
-        private RedactionCache<Type> _typeCache;
+        private RedactionCache<Type> _typeCache = new(MaxCachedTypes);
 
-        private RedactionCache<string> _keywordCache;
+        private RedactionCache<string> _keywordCache = new(MaxCachedKeywords);
 
-        private RedactionCache<string> _dataKeyCache;
+        private RedactionCache<string> _dataKeyCache = new(MaxCachedDataKeys);
 
         private Redaction()
         {
@@ -211,9 +211,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                 "xsrftoken"
             ];
             _maxKeywordLength = GetMaxLength(_redactKeywords);
-            _typeCache = new(MaxCachedTypes);
-            _keywordCache = new(MaxCachedKeywords);
-            _dataKeyCache = new(MaxCachedDataKeys);
         }
 
         internal static Redaction Instance => _instnace;
@@ -340,7 +337,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
-            // Full: start over so new hot keys can be cached again. The compare-exchange keeps a cache installed by SetConfig.
+            // Full: start over so new hot keys can be cached again. Skip it if the cache was already replaced, by
+            // another thread or by SetConfig; the compare-exchange covers a replacement after this check.
+            if (!ReferenceEquals(Volatile.Read(ref field), cache))
+            {
+                return;
+            }
+
             var fresh = new RedactionCache<TKey>(cache.Capacity);
             fresh.TryAdd(key, value);
             Interlocked.CompareExchange(ref field, fresh, cache);
@@ -508,7 +511,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
                 finally
                 {
-                    ArrayPool<char>.Shared.Return(rented);
+                    ArrayPool<char>.Shared.Return(rented, clearArray: true);
                 }
             }
 

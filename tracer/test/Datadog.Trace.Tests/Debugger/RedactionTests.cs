@@ -208,7 +208,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.SecureString", "Namespace.Sensitive*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(SecureString)));
+            Redaction.Instance.IsRedactedType(typeof(SecureString)).Should().BeTrue();
         }
 
         [Fact]
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(SecureString)));
+            Redaction.Instance.IsRedactedType(typeof(SecureString)).Should().BeTrue();
         }
 
         [Fact]

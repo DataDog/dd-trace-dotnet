@@ -46,6 +46,20 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void TryAdd_AtCapacity_ReturnsTrueOnlyForAStoredKey()
+        {
+            var cache = new RedactionCache<string>(capacity: 1);
+            cache.TryAdd("a", true).Should().BeTrue();
+
+            cache.TryAdd("a", false).Should().BeTrue();
+            cache.TryAdd("b", true).Should().BeFalse();
+
+            cache.Count.Should().Be(1);
+            cache.TryGetValue("a", out var a).Should().BeTrue();
+            a.Should().BeTrue();
+        }
+
+        [Fact]
         public void TryAdd_Concurrent_NeverExceedsCapacity()
         {
             const int capacity = 100;
