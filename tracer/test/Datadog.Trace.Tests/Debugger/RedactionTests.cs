@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tests.Debugger
                 Redaction.Instance.SetConfig(new HashSet<string>(), new HashSet<string>(), new HashSet<string> { redactedType });
             }
 
-            Assert.Equal(expected, Redaction.Instance.CanHaveRedactedRuntimeType(declaredType));
+            Redaction.Instance.CanHaveRedactedRuntimeType(declaredType).Should().Be(expected);
         }
 
         [Theory]
@@ -241,7 +241,7 @@ namespace Datadog.Trace.Tests.Debugger
                 Redaction.Instance.SetConfig(new HashSet<string>(), new HashSet<string>(), new HashSet<string> { redactedType });
             }
 
-            Assert.Equal(expected, Redaction.Instance.IsRedactedRuntimeType(runtimeType));
+            Redaction.Instance.IsRedactedRuntimeType(runtimeType).Should().Be(expected);
         }
 
         [Fact]

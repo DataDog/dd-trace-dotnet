@@ -5840,32 +5840,20 @@ namespace Datadog.Trace.Tests.Debugger
                 var holder = new DumpIListFieldHolder(new List<string> { "TOP_SECRET_VALUE" });
                 var scopeMembers = _tests.CreateScopeMembers();
                 scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpIListFieldHolder), holder, ScopeMemberKind.Local));
+                ConfigureRedactedTypes(typeof(List<string>).FullName);
 
-                try
-                {
-                    Redaction.Instance.ResetInstance();
-                    Redaction.Instance.SetConfig(
-                        new HashSet<string>(),
-                        new HashSet<string>(),
-                        new HashSet<string> { typeof(List<string>).FullName });
+                var evaluator = _tests.CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
 
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
+                var result = evaluator.Evaluate(scopeMembers);
 
-                    var result = evaluator.Evaluate(scopeMembers);
-
-                    result.Template.Should().Contain("items={redacted}");
-                    result.Template.Should().NotContain("TOP_SECRET_VALUE");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                result.Template.Should().Contain("items={redacted}");
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Errors.Should().BeNullOrEmpty();
             }
 
             [Fact]
