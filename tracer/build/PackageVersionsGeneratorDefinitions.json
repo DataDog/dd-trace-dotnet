@@ -830,11 +830,12 @@
     "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
     "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
     "MinVersion": "8.0.0",
-    "MaxVersionExclusive": "11.0.0",
+    "MaxVersionExclusive": "12.0.0",
     "SpecificVersions": [
       "8.*.*",
       "9.*.*",
-      "10.*.*"
+      "10.*.*",
+      "11.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "9.0.0",
