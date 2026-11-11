@@ -33,7 +33,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
 
-    // The longest service the CDN attributes usage to.
+    // The CDN attributes usage only to a service of at most 100 characters. The Agent cuts a service
+    // to 100 bytes of UTF-8.
     private const int MaxServiceLength = 100;
 
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
@@ -67,12 +68,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // request used, even when the setting changes while that request is in flight.
     private RequestTarget _requestTarget;
 
-    // Written by the settings-change callback, read by the poll loop. Null when requests send no
-    // DD-Service header.
+    // The settings-change callback writes this value, and the poll loop reads it. It is null when
+    // requests send no DD-Service header.
     private string? _service;
 
-    // The setting _service was derived from. Only touched from the constructor and the
-    // settings-change callback.
+    // The setting that gives _service. Only the constructor and the settings-change callback use it.
     private string? _serviceSetting;
 
     // Only ever touched from the poll loop.
@@ -104,9 +104,9 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         _waitAsync = waitAsync ?? Task.Delay;
         UpdateService(service);
 
-        // Subscribed last, so every field the callback touches is already set. The environment and
-        // service are tracked rather than captured: customers can change both in code while the
-        // application runs. Flags are targeted per environment, and usage is attributed per service.
+        // The source subscribes last, so the callback finds every field set. Code can change the
+        // environment and the service while the application runs, so the source tracks both. The CDN
+        // targets flags per environment and attributes usage per service.
         _settingsSubscription = settingsManager?.SubscribeToChanges(changes =>
         {
             if (changes.UpdatedMutable is { } mutable)
@@ -181,8 +181,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// The CDN attributes a configuration request's usage to the service in its DD-Service header,
-    /// but only when the value matches <c>^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,99}$</c>, and drops any other.
+    /// Returns true when the CDN attributes usage to this DD-Service value. The CDN accepts only values
+    /// that match <c>^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,99}$</c>, and drops all other values.
     /// </summary>
     private static bool IsAttributableService(string service)
     {
@@ -204,57 +204,121 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// Cleans up a service name for DD-Service the way the Node.js tracer does: lowercased, every
-    /// character other than <c>a-z 0-9 _ : . / -</c> replaced with <c>_</c>, the characters before
-    /// the first letter or digit removed, and cut to 100 characters. <c>My Service</c> becomes
-    /// <c>my_service</c>, the name APM shows. Can return an empty string.
+    /// Returns the name APM shows for a service. <c>My Service</c> becomes <c>my_service</c>.
+    /// The result can be empty, or a name the CDN drops, such as <c>_svc</c> or <c>café-api</c>.
     /// </summary>
+    /// <remarks>
+    /// This is a port of <c>NormalizeService</c> in the current Agent (pkg/trace/traceutil/normalize).
+    /// <c>NormalizerTraceProcessor.NormalizeService</c> follows an older Agent. That version removes
+    /// the characters before the first letter, so it changes <c>_svc</c> to <c>svc</c> and
+    /// <c>2fa-service</c> to <c>fa-service</c>. APM does not show these names.
+    /// </remarks>
     internal static string CleanUpService(string service)
     {
-        // Only an ASCII letter or digit can start the cleaned-up name, so whatever comes before the
-        // first one is dropped.
-        var start = 0;
-        while (start < service.Length && !char.IsAsciiLetterOrDigit(service[start]))
-        {
-            start++;
-        }
-
-        var length = Math.Min(service.Length - start, MaxServiceLength);
-
-        // Most names need no change, so a copy is only made once a character has to be replaced.
+        // Most names do not change. The method copies the name only when the result stops being a
+        // prefix of it.
         char[]? cleaned = null;
-        for (var i = 0; i < length; i++)
+        var length = 0;
+        var bytes = 0;
+
+        // A run of replaced characters becomes one _ before the next kept character. At the end of
+        // the name, the run is removed.
+        var pending = false;
+
+        var i = 0;
+        while (i < service.Length)
         {
-            var c = service[start + i];
-            var replacement = c switch
+            var c = service[i];
+            var width = char.IsSurrogatePair(service, i) ? 2 : 1;
+
+            // The Agent first cuts the name to 100 bytes of UTF-8, and never splits a character.
+            // A lone surrogate is sent as U+FFFD, which has 3 bytes.
+            bytes += c switch
             {
-                >= 'A' and <= 'Z' => (char)(c + ('a' - 'A')),
-                (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '.' or '/' or '-' => c,
-                _ => '_',
+                < '\u0080' => 1,
+                < '\u0800' => 2,
+                _ => width == 2 ? 4 : 3,
             };
 
-            if (replacement != c)
+            if (bytes > MaxServiceLength)
             {
-                cleaned ??= service.ToCharArray(start, length);
-                cleaned[i] = replacement;
+                break;
             }
+
+            bool kept;
+            if (c < 0x80)
+            {
+                // Only ASCII letters are lowercased. The Agent also lowercases most other letters.
+                // That has no effect on the header, because the CDN drops every non-ASCII name.
+                if (c is >= 'A' and <= 'Z')
+                {
+                    c = (char)(c + ('a' - 'A'));
+                }
+
+                kept = c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or ':' or '.' or '/' or '-';
+            }
+            else
+            {
+                kept = char.IsLetter(service, i) || char.IsDigit(service, i);
+            }
+
+            if (kept)
+            {
+                if (pending)
+                {
+                    Append(service, ref cleaned, ref length, '_');
+                    pending = false;
+                }
+
+                Append(service, ref cleaned, ref length, c);
+                if (width == 2)
+                {
+                    Append(service, ref cleaned, ref length, service[i + 1]);
+                }
+            }
+            else
+            {
+                pending = true;
+            }
+
+            i += width;
         }
 
         if (cleaned is not null)
         {
-            return new string(cleaned);
+            return new string(cleaned, 0, length);
         }
 
-        return start == 0 && length == service.Length ? service : service.Substring(start, length);
+        return length == service.Length ? service : service.Substring(0, length);
+
+        // Adds a character to the result. While the result is a prefix of the name, it only counts
+        // the character. Each character of the result comes from at least one character of the name
+        // before the cut, so the result has at most MaxServiceLength characters.
+        static void Append(string service, ref char[]? cleaned, ref int length, char value)
+        {
+            if (cleaned is null)
+            {
+                if (length < service.Length && service[length] == value)
+                {
+                    length++;
+                    return;
+                }
+
+                cleaned = new char[Math.Min(service.Length, MaxServiceLength)];
+                service.CopyTo(0, cleaned, 0, length);
+            }
+
+            cleaned[length++] = value;
+        }
     }
 
     /// <summary>
-    /// Records the service to send as DD-Service. Picked up by the poll loop on its next request.
+    /// Sets the service to send as DD-Service. The poll loop uses it on its next request.
     /// </summary>
     private void UpdateService(string? service)
     {
-        // Every settings change lands here, so the service is only cleaned up, and a rejection
-        // reported, when the setting itself changes.
+        // Every settings change calls this method. It does work only when the service setting
+        // changes, so it logs a rejected name only once.
         if (string.Equals(_serviceSetting, service, StringComparison.Ordinal))
         {
             return;
@@ -265,20 +329,19 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         string? sent = null;
         if (!StringUtil.IsNullOrEmpty(service))
         {
-            // Cleaned up, so the usage is attributed to the name APM shows (My Service as my_service)
-            // instead of being dropped by the CDN. Only the header value is cleaned up: the tracer's
-            // service stays as configured.
-            var cleaned = CleanUpService(service);
+            // The header uses the name APM shows, so usage and APM name the same service. For
+            // example, My Service is sent as my_service. The tracer's own service does not change.
+            var shown = CleanUpService(service);
 
-            // Cleaning up leaves nothing at all when the name has no ASCII letter or digit, so the
-            // result is still checked against the CDN's format. A value the CDN would drop is not sent.
-            if (IsAttributableService(cleaned))
+            // The CDN drops some names that APM shows, such as _svc and café-api. The source does
+            // not send these names. It never sends a different name, because APM does not show it.
+            if (IsAttributableService(shown))
             {
-                sent = cleaned;
+                sent = shown;
             }
             else
             {
-                _log.Debug<string>("Feature Flags: service {Service} has nothing left the CDN can attribute usage to once cleaned up; DD-Service header not sent", service);
+                _log.Debug<string>("Feature Flags: the CDN does not accept {Service} as APM shows it; DD-Service header not sent", service);
             }
         }
 
@@ -476,8 +539,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
             var request = _requestFactory.Create(uri);
 
-            // Lets the CDN attribute this request's usage to the service. Read per request, like the
-            // target, because the service can be changed in code after startup too.
+            // The header lets the CDN attribute the usage of this request to the service. The source
+            // reads the service for each request, because code can change it after startup.
             if (Volatile.Read(ref _service) is { } service)
             {
                 request.AddHeader("DD-Service", service);
