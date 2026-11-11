@@ -13,9 +13,9 @@ USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2026/release-history#release-dates-and-build-numbers
 # You can grab the SHA for the downloaded file using (Get-FileHash -Algorithm SHA256 $out).Hash
-ENV VSBUILDTOOLS_VERSION="18.10.12210.168" \
-    VSBUILDTOOLS_SHA256="160F5E9C319E3408867CAE9DE83F5D8803BDF7C34FCC8463E8FC28286E49D99E" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/7437128c-6580-48ab-9c69-f7452be2ee7f/160f5e9c319e3408867cae9de83f5d8803bdf7c34fcc8463e8fc28286e49d99e/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="18.12.12405.243" \
+    VSBUILDTOOLS_SHA256="5E7C32E82C89B3D69A2C818F3B06679909729B05E94609E3367BBB554D627F55" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/4aa37a90-1dc9-4507-9e7b-49134341b6c4/5e7c32e82c89b3d69a2c818f3b06679909729b05e94609e3367bbb554d627f55/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
