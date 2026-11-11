@@ -44,7 +44,8 @@ public class TestAutomationExclusionsTests
         effective.AttemptToFix.Should().Be(attemptToFix && !noRetry);
         var tags = new TestSpanTags { IsQuarantined = quarantined ? "true" : null, IsDisabled = disabled ? "true" : null, IsAttemptToFix = attemptToFix ? "true" : null };
         new TestAutomationExclusions(preventSuppression, noRetry).ApplyTo(tags);
-        tags.ShouldMaskTestManagementOutcome().Should().Be(!preventSuppression && (quarantined || disabled || (attemptToFix && !noRetry)));
+        // Attempt to Fix never masks failures, even for quarantined or disabled tests.
+        tags.ShouldMaskTestManagementOutcome().Should().Be(!preventSuppression && (quarantined || disabled) && !(attemptToFix && !noRetry));
 
         assigned.Quarantined.Should().Be(quarantined);
         assigned.Disabled.Should().Be(disabled);
@@ -80,7 +81,7 @@ public class TestAutomationExclusionsTests
     }
 
     [Theory]
-    [InlineData(false, false, "skip")]
+    [InlineData(false, false, "fail")]
     [InlineData(false, true, "skip")]
     [InlineData(true, false, "fail")]
     [InlineData(true, true, "fail")]
@@ -112,12 +113,13 @@ public class TestAutomationExclusionsTests
         {
             PreventFailureSuppression = "true",
             NoAutoRetry = "true",
-            IsQuarantined = "true",
-            IsAttemptToFix = "true"
+            IsQuarantined = "true"
         };
         TestAutomationExclusions.From(tags).AllowFailureSuppression.Should().BeTrue();
         TestAutomationExclusions.From(tags).AllowAutoRetry.Should().BeTrue();
         Common.IsFailureSuppressed(tags).Should().BeTrue();
+
+        tags.IsAttemptToFix = "true";
         Common.IsAttemptToFix(tags).Should().BeTrue();
     }
 

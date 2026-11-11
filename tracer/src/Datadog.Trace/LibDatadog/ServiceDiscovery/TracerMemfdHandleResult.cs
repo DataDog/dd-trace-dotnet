@@ -11,7 +11,7 @@ namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 /// <summary>
 /// Do not change the values of this enum unless you really need to update the interop mapping.
-/// Libdatadog interop mapping of the generic type: https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/result.rs#L44
+/// Libdatadog interop mapping of the generic type: https://github.com/DataDog/libdatadog/blob/ef6371243c020319e74e8531035f0a5a2fcb8858/libdd-common-ffi/src/result.rs#L47
 /// Cf also ddog_Result_TracerMemfdHandle in common.h headers.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]

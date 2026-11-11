@@ -458,7 +458,11 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             VariableDefinition? countersVariable = null;
-                            if (instructionsWithValidSequencePoints.Count > 1 || instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
+                            // Exception regions require an empty stack at try entry. Keep the counter
+                            // in a local even when the method has only one visible sequence point.
+                            if (methodBody.HasExceptionHandlers ||
+                                instructionsWithValidSequencePoints.Count > 1 ||
+                                instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
                             {
                                 // Step 3 - Modify local var to add the Coverage counters instance.
                                 if (_coverageMode == CoverageMode.LineExecution)

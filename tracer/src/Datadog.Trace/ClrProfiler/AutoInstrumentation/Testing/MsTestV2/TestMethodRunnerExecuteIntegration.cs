@@ -65,7 +65,7 @@ public static class TestMethodRunnerExecuteIntegration
                     // Apply quarantine after conversion and retry aggregation so it cannot become an Error.
                     if (TestOptimization.Instance.TestManagementFeature?.Enabled == true &&
                         instance.TestMethodInfo is { } testMethod &&
-                        MsTestIntegration.GetTestProperties(testMethod) is { Quarantined: true } &&
+                        MsTestIntegration.GetTestProperties(testMethod) is { Quarantined: true, AttemptToFix: false } &&
                         unitTestResultObject.DuckCast<IUnitTestResult>() is { } adapterResult)
                     {
                         adapterResult.Outcome = UnitTestResultOutcome.Ignored;

@@ -90,7 +90,7 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
+            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
 
             // run the WAF and execute the results
             var outcome = WafOutcome.Success;
@@ -107,6 +107,7 @@ internal readonly partial struct SecurityCoordinator
 
             SetErrorInformation(isRasp, result);
             SecurityReporter.RecordWafTelemetry(result, isRasp);
+            ApiSecurity.RecordSamplingTelemetry(samplingDecision, result, _localRootSpan, TelemetryFactory.Metrics);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
