@@ -17,9 +17,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 // expression depends on is redacted at runtime: a value under a sensitive dictionary key, or a value whose runtime type
 // is redacted. An operation over a guarded expression yields the redacted default when the check is true, and a member
 // or item read from it carries the check on. Every check runs once per entry of its block: the block of the innermost
-// predicate whose item the value is read from, or the root block for a value read from outside every item. A check of the
-// root block that redacts sets a flag on the evaluation budget that the evaluator reports, and one of a predicate's block
-// only makes that item not match. Compile-time redaction (RedactedValue) is handled separately.
+// predicate whose item the value is read from, or the root block for a value read from outside every item.
+// Compile-time redaction (RedactedValue) is handled separately.
 internal partial class ProbeExpressionParser<T>
 {
     // States of a memoized check: the first guard to run stores the result, the others read it.
@@ -29,6 +28,7 @@ internal partial class ProbeExpressionParser<T>
 
     private static readonly MethodInfo IsRedactedRuntimeValueMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParserHelper), nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue), [typeof(object), typeof(Type)]);
     private static readonly MethodInfo MarkRuntimeRedactionMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.MarkRuntimeRedaction), [typeof(EvaluationBudget).MakeByRefType()]);
+    private static readonly MethodInfo MarkSkippedItemMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.MarkSkippedItem), [typeof(EvaluationBudget).MakeByRefType()]);
     private static readonly MethodInfo IsRedactedStringKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedStringKey), [typeof(string)]);
     private static readonly MethodInfo IsRedactedObjectKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedObjectKey), [typeof(object)]);
     private static readonly MethodInfo IsRedactedEntryKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedEntryKey), [typeof(object)]);
@@ -626,11 +626,9 @@ internal partial class ProbeExpressionParser<T>
     {
         var state = DeclareRedactionGuardVariable(scope, typeof(int), ProbeExpressionParserHelper.RedactionCheckStateVariableName);
         scope.Resets.Add(Expression.Assign(state, Expression.Constant(CheckPending)));
-        Expression redacted = Expression.Constant(CheckedRedacted);
-        if (scope.Parent is null)
-        {
-            redacted = Expression.Block(Expression.Call(MarkRuntimeRedactionMethod, _evaluationBudgetParameterExpression), redacted);
-        }
+        var redacted = Expression.Block(
+            Expression.Call(scope.Parent is null ? MarkRuntimeRedactionMethod : MarkSkippedItemMethod, _evaluationBudgetParameterExpression),
+            Expression.Constant(CheckedRedacted));
 
         return Expression.Equal(
             Expression.Condition(

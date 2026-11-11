@@ -12,8 +12,10 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-// Besides the time budget, the budget carries whether a runtime redaction guard redacted a value. Every compiled
-// expression already receives it by reference, so the flag costs a store only when a guard fires.
+// Besides the time budget, the budget carries two flags that runtime redaction guards set. Every compiled expression
+// already receives it by reference, so a flag costs a store only when a guard fires. A guard of a value that isn't read
+// from a predicate's item sets the redaction flag. A guard of an item only makes that item not match, so it sets the
+// skipped-item flag instead, which the evaluator logs once per probe.
 internal struct EvaluationBudget
 {
     private const int OperationsBeforeTimeCheck = 32;
@@ -26,6 +28,7 @@ internal struct EvaluationBudget
     private EvaluationBudgetState _state;
 
     private bool _hasRuntimeRedaction;
+    private bool _hasSkippedItem;
 
     private EvaluationBudget(long deadlineTimestamp)
     {
@@ -69,6 +72,11 @@ internal struct EvaluationBudget
     internal static void MarkRuntimeRedaction(ref EvaluationBudget budget)
     {
         budget._hasRuntimeRedaction = true;
+    }
+
+    internal static void MarkSkippedItem(ref EvaluationBudget budget)
+    {
+        budget._hasSkippedItem = true;
     }
 
     private static long ToStopwatchTicks(int milliseconds)
@@ -169,6 +177,17 @@ internal struct EvaluationBudget
         }
 
         _hasRuntimeRedaction = false;
+        return true;
+    }
+
+    internal bool TakeSkippedItem()
+    {
+        if (!_hasSkippedItem)
+        {
+            return false;
+        }
+
+        _hasSkippedItem = false;
         return true;
     }
 
