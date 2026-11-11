@@ -22,8 +22,8 @@ jobs:
   steps:
   - template: ensure-docker-ready.yml
 
-  # The Windows smoke test images are large, and the hosted agents have limited free disk space,
-  # so remove any pre-existing images and build cache to avoid "not enough space on the disk"
+  # Diagnostic only: the Windows smoke test images are large and builds have failed with
+  # "not enough space on the disk", so log what is already on the agent before any build
   - powershell: |
       # Prevent PowerShell from treating native command stderr as a terminating error
       $ErrorActionPreference = 'Continue'
@@ -32,19 +32,12 @@ jobs:
       if (-not $dockerRoot) { $dockerRoot = 'C:\' }
       $driveName = (Split-Path -Qualifier $dockerRoot).TrimEnd(':')
 
-      $before = (Get-PSDrive -Name $driveName).Free
-      Write-Host ("Free space on {0}: before cleanup: {1:N1} GB" -f $driveName, ($before / 1GB))
+      Write-Host ("Docker root: {0}" -f $dockerRoot)
+      Write-Host ("Free space on {0}: {1:N1} GB" -f $driveName, ((Get-PSDrive -Name $driveName).Free / 1GB))
       docker system df
-
-      docker system prune --all --force
-      if ($LASTEXITCODE -ne 0) {
-          Write-Host "##vso[task.logissue type=warning]docker system prune failed with exit code $LASTEXITCODE"
-      }
-
-      $after = (Get-PSDrive -Name $driveName).Free
-      Write-Host ("Free space on {0}: after cleanup: {1:N1} GB (reclaimed {2:N1} GB)" -f $driveName, ($after / 1GB), (($after - $before) / 1GB))
+      docker images --all --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}'
       exit 0
-    displayName: Free docker disk space
+    displayName: Log docker disk usage
 
   - template: clone-repo.yml
     parameters:
