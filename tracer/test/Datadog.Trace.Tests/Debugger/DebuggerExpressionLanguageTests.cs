@@ -3933,6 +3933,25 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_ArrayAndInterfaceFields_AreEnumerated()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("InterfaceHolderLocal", typeof(DumpCollectionInterfaceFieldsHolder), new DumpCollectionInterfaceFieldsHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""InterfaceHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("_array=[a, b, c, ...], _readOnlyList=[x, y], _genericDictionary={[k, v]}, _hashtable={[h, 1]}");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_ReflectionTypeLoadExceptionDoesNotReadLoaderExceptionMessages()
         {
             // On .NET Core, ReflectionTypeLoadException.Message reads each loader exception's Message.
@@ -5520,6 +5539,17 @@ namespace Datadog.Trace.Tests.Debugger
                 _map = map;
                 _missing = missing;
             }
+        }
+
+        private sealed class DumpCollectionInterfaceFieldsHolder
+        {
+            private readonly string[] _array = ["a", "b", "c", "d"];
+
+            private readonly IReadOnlyList<string> _readOnlyList = new List<string> { "x", "y" };
+
+            private readonly IDictionary<string, string> _genericDictionary = new Dictionary<string, string> { ["k"] = "v" };
+
+            private readonly Hashtable _hashtable = new Hashtable { ["h"] = "1" };
         }
 
         private sealed class AllowedRuntimeTypesHolder
