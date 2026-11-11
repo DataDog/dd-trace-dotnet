@@ -34,8 +34,10 @@ ARG DEVTOOLSET_VERSION
 RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
     && sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo \
     && sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo \
-    # glibc-devel provides linker scripts + *_nonshared.a that the plain glibc package doesn't ship
-    && yum install -y glibc glibc-devel glibc-headers \
+    # glibc-devel provides linker scripts + *_nonshared.a that the plain glibc package doesn't ship.
+    # kernel-headers is an explicit input because the exported /usr/include tree is part of
+    # the target SDK, even though glibc-headers currently depends on it.
+    && yum install -y glibc glibc-devel glibc-headers kernel-headers \
     # centos-release-scl adds a new repo file pointing at dead mirrors, so repeat the fixup
     && yum install -y centos-release-scl \
     # On aarch64, CentOS's SCLo channel was archived under a separate "altarch" tree at a
@@ -52,10 +54,11 @@ RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
     # against glibc 2.17; a modern host's copies reference symbols newer than 2.17
     && yum install -y devtoolset-${DEVTOOLSET_VERSION}-gcc-c++
 
-# Stage only the link-time glibc files (not the whole /lib64 or /usr/lib64 trees).
-# C headers are intentionally not harvested. The dynamic linker SONAME is arch-specific.
+# Stage a complete compile/link SDK without copying unrelated runtime files.
+# The dynamic linker SONAME is arch-specific.
 RUN set -eux; \
-    mkdir -p /harvest/lib64 /harvest/usr/lib64; \
+    mkdir -p /harvest/lib64 /harvest/usr/lib64 /harvest/usr; \
+    cp -a /usr/include /harvest/usr/; \
     ARCH="$(uname -m)"; \
     case "$ARCH" in \
         x86_64) INTERP=ld-linux-x86-64.so.2 ;; \
@@ -80,11 +83,10 @@ RUN set -eux; \
              crt1.o crti.o crtn.o Scrt1.o gcrt1.o Mcrt1.o; do \
         cp -a /usr/lib64/$f /harvest/usr/lib64/; \
     done; \
-    # On aarch64, libc.so's linker script GROUP() references the interpreter at
-    # /lib/ld-linux-aarch64.so.1 (not /lib64/...) even though the real file - like
-    # everything else here - lives in lib64. Make --sysroot resolve that path too.
-    # x86_64 doesn't need this: its GROUP() references /lib64/ld-linux-x86-64.so.2 directly.
-    if [ "$ARCH" = "aarch64" ]; then ln -s lib64 /harvest/lib; fi; \
+    # Provide canonical compiler search paths in addition to the CentOS lib64 layout.
+    # The aarch64 libc linker script also references /lib/ld-linux-aarch64.so.1.
+    ln -s lib64 /harvest/lib; \
+    ln -s lib64 /harvest/usr/lib; \
     # devtoolset libstdc++/libgcc archives and C++ headers. Output folder name
     # (devtoolset11, devtoolset10, ...) must match what Glibc217.cmake.* expects.
     DT_TRIPLE="${ARCH}-redhat-linux"; \
@@ -92,8 +94,9 @@ RUN set -eux; \
     DT_INC=/opt/rh/devtoolset-${DEVTOOLSET_VERSION}/root/usr/include/c++/${DEVTOOLSET_VERSION}; \
     DT_OUT=/harvest/devtoolset${DEVTOOLSET_VERSION}; \
     mkdir -p $DT_OUT/lib $DT_OUT/include; \
-    cp -a $DT_LIB/libstdc++.a $DT_LIB/libstdc++.so $DT_LIB/libgcc.a $DT_LIB/libgcc_s.so $DT_LIB/libgcc_eh.a $DT_OUT/lib/; \
-    cp -a $DT_INC $DT_OUT/include/${DEVTOOLSET_VERSION}
+    cp -a $DT_LIB/libstdc++.a $DT_LIB/libstdc++.so $DT_LIB/libgcc.a $DT_LIB/libgcc_s.so $DT_LIB/libgcc_eh.a $DT_LIB/crt*.o $DT_OUT/lib/; \
+    cp -a $DT_INC $DT_OUT/include/${DEVTOOLSET_VERSION}; \
+    rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /harvest/sysroot-packages.txt
 
 FROM scratch AS harvest
 # Export a flat layout so `docker build -o type=local,dest=<dir>` produces the structure
