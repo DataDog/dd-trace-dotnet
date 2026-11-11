@@ -3618,6 +3618,25 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_NullNonSealedAllowedType_RendersNull()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("NullUriLocal", typeof(Uri), null, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""NullUriLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("null");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_NullDictionary_RendersNull()
         {
             var scopeMembers = CreateScopeMembers();

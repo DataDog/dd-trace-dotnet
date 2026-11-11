@@ -93,8 +93,8 @@ internal partial class ProbeExpressionParser<T>
         return value.GetType() == declaredType || declaredType.IsValueType;
     }
 
-    // Message and StackTrace are virtual, so they are only called on a CoreLib exception whose Message doesn't
-    // format customer values.
+    // Message and StackTrace are virtual, so they are only called on a CoreLib exception other than the two above.
+    // AggregateException and ArgumentOutOfRangeException also format values in their Message and are still called.
     private static bool CanCallExceptionMembers(Type exceptionType)
     {
         return ReferenceEquals(exceptionType.Assembly, CoreLibAssembly) &&
@@ -178,7 +178,7 @@ internal partial class ProbeExpressionParser<T>
             // A type outside CoreLib has no subclass in CoreLib, so that check only runs for a non-sealed CoreLib type.
             if (isExactType && CanCallExceptionMembers(type))
             {
-                var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+                var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), [typeof(object[])]);
                 var exceptionAsString = Expression.Call(
                    stringConcat,
                    Expression.NewArrayInit(
