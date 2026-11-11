@@ -12,7 +12,6 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class EverGrowingCollectionTests
     {
-        // A new collection holds 16 items. The native side assigns indices, so a first hit can land past the end of the array.
         [Theory]
         [InlineData(15)]
         [InlineData(16)]
@@ -27,7 +26,11 @@ namespace Datadog.Trace.Tests.Debugger
 
             foreach (var index in indices)
             {
-                collection.TryCreateNonAsyncMethodMetadataIfNotExists(index, method.MethodHandle, method.DeclaringType.TypeHandle).Should().BeTrue();
+                collection.TryCreateNonAsyncMethodMetadataIfNotExists(index, method.MethodHandle, typeof(EverGrowingCollectionTests).TypeHandle).Should().BeTrue();
+            }
+
+            foreach (var index in indices)
+            {
                 collection.IndexExists(index).Should().BeTrue();
                 collection.Get(index).Method.Should().Be(method);
             }
