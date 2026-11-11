@@ -93,8 +93,9 @@ internal partial class ProbeExpressionParser<T>
         return value.GetType() == declaredType || declaredType.IsValueType;
     }
 
-    // Message and StackTrace are virtual, so they are only called on a CoreLib exception other than the two above.
-    // AggregateException and ArgumentOutOfRangeException also format values in their Message and are still called.
+    // Message and StackTrace are virtual, so they are only called on a CoreLib exception other than
+    // ReflectionTypeLoadException and SwitchExpressionException, whose Message formats values. AggregateException and
+    // ArgumentOutOfRangeException also format values in their Message and are still called.
     private static bool CanCallExceptionMembers(Type exceptionType)
     {
         return ReferenceEquals(exceptionType.Assembly, CoreLibAssembly) &&
@@ -175,26 +176,10 @@ internal partial class ProbeExpressionParser<T>
             var typeNameExpression = Expression.Constant(type.FullName, typeof(string));
 
             // Message and StackTrace are virtual, so DumpException calls them only when CanCallExceptionMembers allows it.
-            // A type outside CoreLib has no subclass in CoreLib, so that check only runs for a non-sealed CoreLib type.
-            if (isExactType && CanCallExceptionMembers(type))
-            {
-                var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), [typeof(object[])]);
-                var exceptionAsString = Expression.Call(
-                   stringConcat,
-                   Expression.NewArrayInit(
-                       typeof(string),
-                       typeNameExpression,
-                       Expression.Constant(", "),
-                       Expression.Property(expression, nameof(Exception.Message)),
-                       Expression.Constant(", "),
-                       Expression.Property(expression, nameof(Exception.StackTrace))));
-
-                return Expression.Condition(IsNullExpression(expression), typeNameExpression, exceptionAsString);
-            }
-
+            // A type outside CoreLib has no subclass in CoreLib, so it never needs that check.
             var dumpExceptionMethod = GetMethodByReflection(
                 typeof(ProbeExpressionParser<T>),
-                !isExactType && ReferenceEquals(type.Assembly, CoreLibAssembly) ? nameof(DumpException) : nameof(DumpExceptionMessageField),
+                ReferenceEquals(type.Assembly, CoreLibAssembly) ? nameof(DumpException) : nameof(DumpExceptionMessageField),
                 [typeof(Exception), typeof(string)]);
             Func<Expression, Expression> dumpException = exception => Expression.Call(
                 dumpExceptionMethod,
@@ -208,7 +193,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (IsDictionaryDumpType(type))
         {
-            return Expression.Condition(IsNullExpression(expression), Expression.Constant("null"), DumpDictionaryExpression(expression, scopeMembers));
+            return DumpDictionaryExpression(expression, scopeMembers);
         }
 
         if (type.IsArray)
