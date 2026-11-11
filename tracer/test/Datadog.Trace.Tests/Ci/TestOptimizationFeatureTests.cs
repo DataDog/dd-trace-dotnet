@@ -1568,9 +1568,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
         var value = new string('a', 6_000);
         const string DisplayName = "Custom display name";
-        var parameters = Common.CreateTestParameters([value], method.GetParameters(), metadataTestName: null, useParameterIndexForUnnamedParameters: true).ToJSON();
+        object[] arguments = [value];
+        var parameters = Common.CreateTestParameters(arguments, method.GetParameters(), metadataTestName: null, useParameterIndexForUnnamedParameters: true).ToJSON();
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
-        var testMethod = new MsTestMethodStub(method, [value], DisplayName);
+        var testMethod = new MsTestMethodStub(method, arguments, DisplayName);
 
         parameters.Should().Contain("_dd.parameters_fingerprint");
         skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));

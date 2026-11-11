@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
@@ -40,6 +41,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
     }
 
     // Keep module views O(1) to create: matching does not need the filtered count.
+    [TestingOnly]
     public int Count
     {
         get
@@ -67,6 +69,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
         }
     }
 
+    [TestingOnly]
     public SkippableTest this[int index]
     {
         get
