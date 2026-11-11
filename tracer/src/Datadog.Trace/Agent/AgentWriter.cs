@@ -50,7 +50,8 @@ namespace Datadog.Trace.Agent
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
         private readonly IStatsAggregator _statsAggregator;
-        private readonly NormalizerTraceProcessor? _otlpNormalizer;
+        private readonly NormalizerTraceProcessor _normalizerProcessor = new();
+        private readonly bool _isOtlp;
 
         private readonly bool _apmTracingEnabled;
 
@@ -121,9 +122,7 @@ namespace Datadog.Trace.Agent
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
             _api = api;
-            _otlpNormalizer = api.TracesEncoding is TracesEncoding.OtlpJson or TracesEncoding.OtlpProtobuf
-                                  ? new NormalizerTraceProcessor()
-                                  : null;
+            _isOtlp = api.TracesEncoding is TracesEncoding.OtlpJson or TracesEncoding.OtlpProtobuf;
             _statsd = statsd;
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
@@ -547,21 +546,17 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private TraceKeepState ProcessOtlpTrace(ref SpanCollection spans)
+        private SpanCollection NormalizeTrace(in SpanCollection trace)
         {
-            if (_otlpNormalizer is { } normalizer)
+            try
             {
-                try
-                {
-                    spans = normalizer.Process(in spans);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error executing normalizer trace processor");
-                }
+                return _normalizerProcessor.Process(in trace);
             }
-
-            return SamplingHelpers.IsKeptBySamplingPriority(in spans) ? TraceKeepState.AggregateAndExport : TraceKeepState.AggregateOnly;
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
+                return trace;
+            }
         }
 
         /// <summary>
@@ -594,9 +589,17 @@ namespace Datadog.Trace.Agent
             int? chunkSamplingPriority = null;
             var chunk = spans;
             var canComputeStats = CanComputeStats;
-            if (canComputeStats || (_apmTracingEnabled && _otlpNormalizer is not null))
+            var shouldProcessTrace = canComputeStats || (_apmTracingEnabled && _isOtlp);
+            if (shouldProcessTrace)
             {
-                var keepState = canComputeStats ? _statsAggregator.ProcessTrace(ref chunk) : ProcessOtlpTrace(ref chunk);
+                chunk = NormalizeTrace(in chunk);
+            }
+
+            if (shouldProcessTrace)
+            {
+                var keepState = canComputeStats
+                                    ? _statsAggregator.ProcessTrace(ref chunk)
+                                    : SamplingHelpers.IsKeptBySamplingPriority(in chunk) ? TraceKeepState.AggregateAndExport : TraceKeepState.AggregateOnly;
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
                 // and we can just stop before we go any further.

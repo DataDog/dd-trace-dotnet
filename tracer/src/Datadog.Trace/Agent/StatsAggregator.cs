@@ -70,7 +70,6 @@ namespace Datadog.Trace.Agent
 
         private readonly IApi _api;
         private readonly bool _isOtlp;
-        private readonly NormalizerTraceProcessor _normalizerProcessor;
         private readonly ObfuscatorTraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -109,7 +108,6 @@ namespace Datadog.Trace.Agent
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
-            _normalizerProcessor = new NormalizerTraceProcessor();
             _obfuscatorProcessor = new ObfuscatorTraceProcessor();
 
             _prioritySampler = new PrioritySampler();
@@ -237,7 +235,6 @@ namespace Datadog.Trace.Agent
         public TraceKeepState ProcessTrace(ref SpanCollection spans)
         {
             // Follow the same processing steps as the Go tracer
-            spans = NormalizeTrace(in spans);
             if (ShouldFilterTrace(in spans))
             {
                 return TraceKeepState.Rejected;
@@ -268,21 +265,6 @@ namespace Datadog.Trace.Agent
                 {
                     span.ResourceName = resource;
                 }
-            }
-        }
-
-        [TestingAndPrivateOnly]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal SpanCollection NormalizeTrace(in SpanCollection trace)
-        {
-            try
-            {
-                return _normalizerProcessor.Process(in trace);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error executing normalizer trace processor");
-                return trace;
             }
         }
 

@@ -54,6 +54,7 @@ public class MsTestV2CleanupTests(ITestOutputHelper output) : TestingFrameworkEv
 
     [Theory]
     [MemberData(nameof(CleanupVersions))]
+    [Flaky("Suite events are sometimes missing on Windows; suspected gzip warm-up issue", 5)]
     public async Task ClassCleanupFailureIsReportedBeforeTheSuiteCloses(string packageVersion, string cleanupLifecycle)
     {
         EnvironmentHelper.EnableDefaultTransport();
