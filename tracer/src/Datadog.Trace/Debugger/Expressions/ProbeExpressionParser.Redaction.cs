@@ -640,9 +640,8 @@ internal partial class ProbeExpressionParser<T>
             Expression.Constant(CheckedRedacted));
     }
 
-    // A value read from a parameter, such as @value, @key, @it.Name or this.Inner, is memoized in the block that holds the
-    // parameter's guard, so repeated reads share one guard. Values redacted at compile time are not, so each read still
-    // reports its redaction.
+    // A value read from a parameter, such as @value, @key, @it.Name or this.Inner, is memoized in the parameter's block, so
+    // repeated reads share one guard. Values redacted at compile time are not, so each read still reports its redaction.
     private bool TryGetGuardedMember(ParameterExpression source, string member, out Expression value)
     {
         value = null;
