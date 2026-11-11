@@ -472,7 +472,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
                 using (stream)
                 {
-                    using var writer = new StreamWriter(stream);
+                    using var writer = new StreamWriter(stream, leaveOpen: true);
                     writer.WriteLine(profilerLine);
                     writer.WriteLine(tracerLine);
                 }
