@@ -236,6 +236,7 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Dump.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.General.cs
+src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Redaction.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs
