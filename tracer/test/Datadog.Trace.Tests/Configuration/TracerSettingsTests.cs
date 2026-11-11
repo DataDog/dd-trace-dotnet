@@ -1319,12 +1319,8 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, true)]
-        [InlineData(null, false)]
-        [InlineData("none", true)]
-        [InlineData("otlp", true)]
-        [InlineData("otlp", false)]
-        public void OtelTracesSpanMetricsEnabled_DisabledByDefault(string tracesExporter, bool otelSemanticsEnabled)
+        [CombinatorialData]
+        public void OtelTracesSpanMetricsEnabled_DisabledByDefault([CombinatorialValues(null, "none", "otlp")] string tracesExporter, bool otelSemanticsEnabled)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
