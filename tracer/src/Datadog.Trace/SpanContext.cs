@@ -524,7 +524,7 @@ namespace Datadog.Trace
         /// <param name="payloadSizeBytes">Payload size in bytes</param>
         /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
         /// <param name="parent">The parent context, if known</param>
-        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
+        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, EdgeTags edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
         {
             if (manager != null)
             {

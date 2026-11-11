@@ -84,6 +84,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "operation.name",
                   "value": {
                     "stringValue": "HttpClientRequestAsync"
@@ -111,7 +117,8 @@
                   "key": "span.type",
                   "value": {}
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -123,6 +130,12 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
                 {
                   "key": "component",
                   "value": {
@@ -195,7 +208,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -279,7 +293,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -363,7 +378,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -447,7 +463,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -541,7 +558,8 @@
               "status": {
                 "message": "The HTTP response has status code 400.",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -625,7 +643,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -709,7 +728,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }

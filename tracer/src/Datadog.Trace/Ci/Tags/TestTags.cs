@@ -92,6 +92,21 @@ internal static class TestTags
     public const string SkipReason = "test.skip_reason";
 
     /// <summary>
+    /// Skip reason value for a test session that ran no tests
+    /// </summary>
+    public const string SkipReasonNoTestsExecuted = "No tests were executed";
+
+    /// <summary>
+    /// Reason why a test session ran no tests
+    /// </summary>
+    public const string SessionEmptyReason = "test.session.empty_reason";
+
+    /// <summary>
+    /// Session empty reason value when the test runner executed no tests
+    /// </summary>
+    public const string SessionEmptyReasonZeroTests = "zero_tests";
+
+    /// <summary>
     /// Test output message
     /// </summary>
     public const string Message = "test.message";
@@ -185,6 +200,16 @@ internal static class TestTags
     /// Test is attempt to fix flag
     /// </summary>
     public const string TestIsAttemptToFix = "test.test_management.is_attempt_to_fix";
+
+    /// <summary>
+    /// The test declaration prevents Datadog failure suppression.
+    /// </summary>
+    public const string TestPreventFailureSuppression = "test.test_management.prevent_failure_suppression";
+
+    /// <summary>
+    /// The test declaration excludes Datadog automatic retries.
+    /// </summary>
+    public const string TestNoAutoRetry = "test.test_management.no_auto_retry";
 
     /// <summary>
     /// Test has failed all retries flag

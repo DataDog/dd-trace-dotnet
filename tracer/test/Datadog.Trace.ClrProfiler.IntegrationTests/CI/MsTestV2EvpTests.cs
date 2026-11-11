@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 if (string.IsNullOrEmpty(packageVersion) ||
                     packageVersion == "2.2.10" ||
                     packageVersion == "3.11.1" ||
+                    packageVersion == "4.3.3" ||
                     packageVersion == "4.4.0")
                 {
                     yield return version.Concat("evp_proxy/v4", false);
@@ -279,8 +280,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                         """),
                     1,
-                    38,
-                    40,
+                    20,
+                    22,
                     "quarantined_tests");
             }
         }
@@ -632,7 +633,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                             // CI Library Language
-                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                             // Check Session data
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);

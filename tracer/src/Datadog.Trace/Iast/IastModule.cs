@@ -748,7 +748,7 @@ internal static partial class IastModule
             return null;
         }
 
-        if (!StackWalker.TryGetFrame(stack, out var stackFrame))
+        if (!StackWalker.TryGetFrame(stack, out var stackFrame, out var identityFrame))
         {
             return null;
         }
@@ -766,7 +766,7 @@ internal static partial class IastModule
             }
         }
 
-        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
+        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId, identityFrame);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)

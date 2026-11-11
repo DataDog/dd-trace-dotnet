@@ -53,18 +53,48 @@ namespace
 TEST(StackSamplerLoopManagerTest, StartFailsCleanlyWhenStackSamplerLoopWasNeverWiredIn)
 {
     MockProfilerInfo profilerInfo;
+    auto [configHolder, config] = CreateConfiguration();
     ThreadsCpuManager threadsCpuManager;
     MetricsRegistry metricsRegistry;
 
     StackSamplerLoopManager manager(
         &profilerInfo, nullptr /*metricsSender*/, nullptr /*clrLifetime*/,
-        &threadsCpuManager, nullptr /*stackFramesCollector*/, metricsRegistry);
+        &threadsCpuManager, nullptr /*stackFramesCollector*/, metricsRegistry, configHolder.get());
 
     // SetStackSamplerLoop() is deliberately never called. Before the fix, a mistake like this
     // (e.g. dropping the wiring call in a future refactor of CorProfilerCallback::
     // InitializeServices()) would let RunWatcher() spawn a watcher thread that immediately
     // dereferences a null StackSamplerLoop* - a SIGSEGV on every single startup. StartImpl()'s
     // safety-net check must turn that into a clean, logged Start() failure instead.
+    ASSERT_FALSE(manager.Start());
+    ASSERT_FALSE(manager.IsStarted());
+}
+
+// A zero watcher start timeout means "do not wait for the watcher thread": Start() must fail without
+// creating it. This is what the integration tests rely on to reach the delayed-start failure path
+// deterministically - a small-but-nonzero timeout would race the readiness handshake (SCP-1413).
+TEST(StackSamplerLoopManagerTest, StartFailsWithoutWaitingWhenWatcherStartTimeoutIsZero)
+{
+    MockProfilerInfo profilerInfo;
+    auto [configHolder, config] = CreateConfiguration();
+    StubOutSamplingConfig(config);
+    config.WatcherStartTimeout = 0ms;
+
+    ThreadsCpuManager threadsCpuManager;
+    ManagedThreadList managedThreadList(nullptr);
+    ManagedThreadList codeHotspotThreadList(nullptr);
+    MetricsRegistry metricsRegistry;
+
+    StackSamplerLoopManager manager(
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
+
+    StackSamplerLoop stackSamplerLoop(
+        &profilerInfo, configHolder.get(), nullptr, &manager, &threadsCpuManager,
+        &managedThreadList, &codeHotspotThreadList, nullptr, nullptr, metricsRegistry);
+
+    // wired in correctly, so this is not the StartFailsCleanlyWhenStackSamplerLoopWasNeverWiredIn case
+    manager.SetStackSamplerLoop(&stackSamplerLoop);
+
     ASSERT_FALSE(manager.Start());
     ASSERT_FALSE(manager.IsStarted());
 }
@@ -86,7 +116,7 @@ TEST(StackSamplerLoopManagerTest, StackSamplerLoopStartsAndStopsIndependentlyOfT
     // independence this fix is meant to provide (previously, StackSamplerLoop had no lifecycle of
     // its own to test - it was entirely internal to StackSamplerLoopManager).
     StackSamplerLoopManager manager(
-        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry);
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
 
     StackSamplerLoop stackSamplerLoop(
         &profilerInfo, configHolder.get(), nullptr /*stackFramesCollector*/, &manager,
@@ -111,7 +141,7 @@ TEST(StackSamplerLoopManagerTest, FullLifecycleMatchesStartServicesAndStopServic
     MetricsRegistry metricsRegistry;
 
     StackSamplerLoopManager manager(
-        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry);
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
 
     StackSamplerLoop stackSamplerLoop(
         &profilerInfo, configHolder.get(), nullptr, &manager, &threadsCpuManager,
@@ -124,7 +154,8 @@ TEST(StackSamplerLoopManagerTest, FullLifecycleMatchesStartServicesAndStopServic
     // started) before StackSamplerLoop.
     //
     // manager.Start() spawns the watcher thread and blocks - via a std::promise/std::future
-    // handshake bounded by a 2s timeout (WatcherStartupTimeout in StackSamplerLoopManager.cpp) -
+    // handshake bounded by IConfiguration::GetWatcherStartTimeout() (2s by default, configurable via
+    // DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT) -
     // until that thread actually signals it's running, not merely constructed. If that
     // synchronization were broken (e.g. reverted to a bare std::make_unique<std::thread>(...)
     // with no wait), this call would still "succeed" as far as the type system is concerned; what

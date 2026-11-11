@@ -81,8 +81,8 @@ runs:
         context: ${{ steps.assets.outputs.artifacts_path }}
         file: ${{ steps.assets.outputs.artifacts_path }}/system-tests.dockerfile
         build-args: |
-          LINUX_AMD64_PACKAGE=datadog-dotnet-apm-${{ steps.versions.outputs.version }}.tar.gz
-          LINUX_ARM64_PACKAGE=datadog-dotnet-apm-${{ steps.versions.outputs.version }}.arm64.tar.gz
-          LIBRARY_VERSION=${{ steps.versions.outputs.version }}
+          LINUX_AMD64_PACKAGE=datadog-dotnet-apm-${{ steps.versions.outputs.full_version }}.tar.gz
+          LINUX_ARM64_PACKAGE=datadog-dotnet-apm-${{ steps.versions.outputs.full_version }}.arm64.tar.gz
+          LIBRARY_VERSION=${{ steps.versions.outputs.full_version }}
           LIBDDWAF_VERSION=${{ steps.versions.outputs.lib_waf_version }}
           APPSEC_EVENT_RULES_VERSION=${{ steps.versions.outputs.waf_rules_version }}

@@ -24,6 +24,7 @@ bcmp
 bind
 calloc
 chdir
+chroot
 clock_gettime
 close
 closedir
@@ -79,6 +80,7 @@ nanosleep
 open
 openat
 opendir
+pause
 pipe
 pipe2
 poll
@@ -129,6 +131,7 @@ sendto
 setgid
 setgroups
 setpgid
+setsid
 setsockopt
 setuid
 shutdown

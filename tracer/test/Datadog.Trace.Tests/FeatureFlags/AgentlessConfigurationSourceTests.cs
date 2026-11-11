@@ -7,16 +7,23 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
@@ -241,10 +248,133 @@ public class AgentlessConfigurationSourceTests
         factory.RequestsSent.Should().HaveCount(3);
     }
 
+    [Fact]
+    public async Task ReportsTheNormalizedEnvironmentThatWasRequested()
+    {
+        var logger = CreateDebugLogger();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: BodyFor("configured-env")));
+        using var source = CreateSource(factory, [], environment: "Production", logger: logger.Object);
+
+        await source.PollAsync();
+
+        // The raw setting is normalized before it is sent, so reporting it as written would show a
+        // mismatch with the payload's environment that does not exist.
+        LoggedValues(logger).Should().Contain("production").And.NotContain("Production");
+    }
+
+    [Fact]
+    public async Task ReportsTheEnvironmentOfTheRequestThatProducedTheConfiguration()
+    {
+        var logger = CreateDebugLogger();
+        AgentlessConfigurationSource? sourceRef = null;
+        var factory = new TestRequestFactory(uri => new EnvironmentChangingApiRequest(uri, BodyFor("configured-env")) { Source = sourceRef });
+        using var source = CreateSource(factory, [], environment: "production", logger: logger.Object);
+        sourceRef = source;
+
+        await source.PollAsync();
+
+        // The environment changed to staging while the request was in flight, but the response is
+        // still the configuration served for the environment that request sent.
+        LoggedValues(logger).Should().Contain("production");
+    }
+
+    [Fact]
+    public async Task ReportsUsableAndRejectedFlagsWithTheConfigurationIdentity()
+    {
+        var logger = CreateDebugLogger();
+        const string flags = """
+            "flags": {
+                "valid-flag": { "key": "valid-flag", "enabled": true, "variationType": "BOOLEAN", "variations": {}, "allocations": [] },
+                "broken-flag": { "key": "broken-flag", "enabled": true, "variationType": "BOOLEAN", "variations": {}, "allocations": [ { "key": "a1" } ] } }
+            """;
+        var body = Body.Replace("\"flags\": {}", flags);
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } }));
+        using var source = CreateSource(factory, [], environment: "production", logger: logger.Object);
+
+        await source.PollAsync();
+
+        ArgumentsOf(logger, "applied successfully").Should().Equal(1, 1, "production", "production", "2025-01-01T00:00:00Z", "\"ufc-v1\"");
+        ArgumentsOf(logger, "were rejected").Should().Equal(1, "agentless", "broken-flag");
+    }
+
+    [Fact]
+    public async Task ReportsThatTheAppliedConfigurationRemainsActiveWhenARefreshFails()
+    {
+        var logger = CreateDebugLogger();
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"),
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"),
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"),
+            uri => new TestApiRequest(uri, responseContent: Body),
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"),
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"),
+            uri => new TestApiRequest(uri, statusCode: 500, responseContent: "error"));
+        using var source = CreateSource(factory, [], logger: logger.Object);
+
+        await source.PollAsync();
+        await source.PollAsync();
+        await source.PollAsync();
+
+        LoggedValues(logger).OfType<string>()
+                            .Where(v => v.Contains("configuration"))
+                            .Should().ContainInOrder(
+                                 "no configuration has been applied yet, so evaluations return their default values",
+                                 "the previously applied configuration remains active");
+    }
+
+    [Theory]
+    [InlineData("https://user:token@example.com/signed-token/ufc?sig=secret", "https://example.com")]
+    [InlineData("http://localhost:8080/path", "http://localhost:8080")]
+    [InlineData(EndpointUrl, "https://ufc-server.ff-cdn.datadoghq.com")]
+    public void RedactedOriginKeepsOnlySchemeHostAndPort(string url, string expected)
+        => AgentlessConfigurationSource.RedactedOrigin(new Uri(url)).Should().Be(expected);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReportsEmptyAndAllInvalidConfigurations(bool invalid)
+    {
+        var logger = CreateDebugLogger();
+        var body = invalid ? Body.Replace("\"flags\": {}", "\"flags\": {\"broken\": null}") : Body;
+        var applied = new List<ServerConfiguration>();
+        using var source = CreateSource(new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: body)), applied, logger: logger.Object);
+
+        await source.PollAsync();
+
+        applied.Should().ContainSingle();
+        ArgumentsOf(logger, "applied successfully").Take(2).Should().Equal(0, invalid ? 1 : 0);
+    }
+
+    [Fact]
+    public async Task ReportsTheRequestTimeoutAndEveryFailedAttempt()
+    {
+        const string url = "http://localhost/config";
+        var lines = new List<string>();
+        var sink = new Mock<ILogEventSink>();
+        sink.Setup(x => x.Emit(It.IsAny<LogEvent>())).Callback<LogEvent>(e => lines.Add(e.RenderMessage() + e.Exception));
+        using var serilog = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink.Object).CreateLogger();
+        var logger = new DatadogSerilogLogger(serilog, new NullLogRateLimiter(), null);
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl] = url,
+        }));
+        using var configuredSource = AgentlessConfigurationSource.Create(settings.FeatureFlags, settings.Manager, _ => true, logger);
+        AgentlessEndpoint.TryCreate(null, url, out var endpoint, out _).Should().BeTrue();
+        var factory = new TestRequestFactory(_ => throw new IOException("connection reset"));
+        using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), _ => true, waitAsync: NoWait, logger: logger);
+
+        await source.PollAsync();
+
+        string.Join("\n", lines).Should().Contain("request timeout=5s")
+              .And.Contain("IOException: connection reset")
+              .And.Contain("http://localhost").And.Contain("after 3 attempt(s)");
+    }
+
     private static AgentlessConfigurationSource CreateSource(
         TestRequestFactory factory,
         List<ServerConfiguration> applied,
-        string? environment = null)
+        string? environment = null,
+        IDatadogLogger? logger = null)
         => new(
             CreateEndpoint(),
             factory,
@@ -255,7 +385,36 @@ public class AgentlessConfigurationSourceTests
                 return true;
             },
             environment,
-            waitAsync: NoWait);
+            waitAsync: NoWait,
+            logger: logger);
+
+    private static Mock<IDatadogLogger> CreateDebugLogger()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        return logger;
+    }
+
+    // Every value handed to the logger, whatever the message says, so these tests survive rewording.
+    // A call taking an argument array contributes its elements.
+    private static List<object?> LoggedValues(Mock<IDatadogLogger> logger)
+        => logger.Invocations
+                 .SelectMany(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)))
+                 .Where(p => p.Name is not ("sourceLine" or "sourceFile"))
+                 .SelectMany(p => p.argument is object?[] args ? args : [p.argument])
+                 .ToList();
+
+    // The values handed to the single log call whose message contains the fragment.
+    private static List<object?> ArgumentsOf(Mock<IDatadogLogger> logger, string templateFragment)
+        => logger.Invocations
+                 .Select(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)).ToList())
+                 .Where(call => call.Any(p => p.Name == "messageTemplate" && ((string)p.argument!).Contains(templateFragment)))
+                 .Select(call => call.Where(p => p.Name is not ("sourceLine" or "sourceFile" or "messageTemplate"))
+                                     .SelectMany(p => p.argument is object?[] args ? args : [p.argument])
+                                     .ToList())
+                 .Should().ContainSingle().Subject;
+
+    private static string BodyFor(string environmentName) => Body.Replace("\"production\"", $"\"{environmentName}\"");
 
     private static AgentlessEndpoint CreateEndpoint()
     {
@@ -306,6 +465,19 @@ public class AgentlessConfigurationSourceTests
 
             compressed.Position = 0;
             return Task.FromResult<Stream>(compressed);
+        }
+    }
+
+    private class EnvironmentChangingApiRequest(Uri endpoint, string body) : TestApiRequest(endpoint, responseContent: body)
+    {
+        public AgentlessConfigurationSource? Source { get; set; }
+
+        public override Task<IApiResponse> GetAsync()
+        {
+            var response = base.GetAsync();
+            // Simulate the environment being changed in code while this request is in flight.
+            Source?.UpdateEnvironment("staging");
+            return response;
         }
     }
 

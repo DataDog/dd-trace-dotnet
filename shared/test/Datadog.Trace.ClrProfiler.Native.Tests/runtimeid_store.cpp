@@ -46,4 +46,52 @@ TEST(runtimeid_store, EnsureRuntimeIsDifferentFor2DifferentAppDomains)
     ASSERT_FALSE(rid2.empty());
     ASSERT_NE(rid, rid2);
 }
+
+TEST(runtimeid_store, EnsureNewAppDomainAtReusedAddressGetsNewRuntimeId)
+{
+    AppDomainID reusedId = 42;
+    AppDomainID otherId = 21;
+
+    RuntimeIdStore store(true);
+    const char* oldRidPtr = store.Get(reusedId).c_str();
+    const std::string oldRid = oldRidPtr;
+    const std::string otherRid = store.Get(otherId);
+
+    store.OnAppDomainCreationStarted(reusedId);
+    auto const& newRid = store.Get(reusedId);
+
+    ASSERT_FALSE(newRid.empty());
+    ASSERT_NE(oldRid, newRid);
+    ASSERT_EQ(newRid, store.Get(reusedId));
+    ASSERT_EQ(oldRid, oldRidPtr);
+    ASSERT_EQ(otherRid, store.Get(otherId));
+}
+
+TEST(runtimeid_store, EnsureNewAppDomainAtUnseenAddressGetsRuntimeId)
+{
+    AppDomainID newId = 42;
+    AppDomainID otherId = 21;
+
+    RuntimeIdStore store(true);
+    const std::string otherRid = store.Get(otherId);
+
+    store.OnAppDomainCreationStarted(newId);
+    auto const& newRid = store.Get(newId);
+
+    ASSERT_FALSE(newRid.empty());
+    ASSERT_NE(otherRid, newRid);
+    ASSERT_EQ(newRid, store.Get(newId));
+    ASSERT_EQ(otherRid, store.Get(otherId));
+}
+
+TEST(runtimeid_store, EnsureRuntimeIdIsPerProcessOutsideIisWhenAppDomainIsCreated)
+{
+    AppDomainID id = 42;
+    RuntimeIdStore store;
+    const std::string rid = store.Get(id);
+
+    store.OnAppDomainCreationStarted(id);
+
+    ASSERT_EQ(rid, store.Get(id));
+}
 } // namespace datadog::shared::nativeloader

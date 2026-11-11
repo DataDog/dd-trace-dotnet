@@ -18,6 +18,7 @@
 /.gitlab/                                 @DataDog/apm-dotnet
 /.llm-validation/                         @DataDog/apm-dotnet
 /.nuke/                                   @DataDog/apm-dotnet
+/.pi/                                     @DataDog/apm-dotnet
 /.vscode/                                 @DataDog/apm-dotnet
 /build/                                   @DataDog/apm-dotnet
 /docker/                                  @DataDog/apm-dotnet
@@ -30,7 +31,7 @@
 #       As there appears to be a bug with CI Visibility that causes files
 #       to be listed as ../../../_/tracer/test/ which the rooted version doesn't match on.
 #       We need to update the test logger to fix this.
-tracer/                                   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+tracer/                                   @DataDog/tracing-dotnet
 /tracer/build/                            @DataDog/apm-dotnet
 /tracer/build/timeit/                     @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers*/  @DataDog/apm-lang-platform-dotnet
@@ -82,7 +83,10 @@ tracer/                                   @DataDog/apm-sdk-capabilities @DataDog
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Proxy/                 @DataDog/apm-serverless
 /tracer/src/Datadog.Trace/Serverless/                                            @DataDog/apm-serverless
 
-## Serverless (AWS Lambda)
+## Serverless (AWS)
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                    @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/Tagging/Aws*Tags.cs                                    @DataDog/apm-serverless
+/tracer/test/test-applications/integrations/Samples.AWS.*/                       @DataDog/apm-serverless
 /tracer/src/**/*Lambda*                                                         @DataDog/apm-serverless
 /tracer/test/**/*Lambda*                                                        @DataDog/apm-serverless
 /tracer/build/_build/docker/serverless.lambda.dockerfile                        @DataDog/apm-serverless
@@ -100,7 +104,11 @@ tracer/                                   @DataDog/apm-sdk-capabilities @DataDog
 /tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/apm-serverless
 /docs/development/**/AzureFunctions*.md                                         @DataDog/apm-serverless
 /tracer/tools/Build-AzureFunctionsNuget.ps1                                     @DataDog/apm-serverless
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/      @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                 @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/Tagging/Azure*Tags.cs                                  @DataDog/apm-serverless
+/tracer/test/test-applications/integrations/Samples.Azure*/                    @DataDog/apm-serverless
+/tracer/test/snapshots/Azure*.verified.txt                                     @DataDog/apm-serverless
+/docker/eventgrid-emulator-config.json                                        @DataDog/apm-serverless
 /.claude/skills/azure-functions/                                                @DataDog/apm-serverless
 
 ## Serverless (GCP)
@@ -251,6 +259,9 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 # Test projects
 
+/tracer/test/Datadog.Trace.IntegrationTests/ @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Tracer.Native.Tests/   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+
 ## Single-owner projects
 /tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/ @DataDog/apm-sdk-capabilities
 /tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/Directory.Build.props @DataDog/apm-dotnet
@@ -317,6 +328,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 ## Shared ownership conventions
 /tracer/test/**/AutoInstrumentation/                                  @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
+/tracer/test/**/AutoInstrumentation/AWS/                              @DataDog/apm-serverless
 /tracer/test/**/CI/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/**/Ci/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.*Tests/DataStreamsMonitoring/              @DataDog/data-streams-monitoring
@@ -329,6 +341,9 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/**/Serverless/GCP/                                       @DataDog/apm-serverless
 
 ## Project-specific exceptions
+
+### Benchmarks.Trace
+/tracer/test/benchmarks/Benchmarks.Trace/Tracing/FlagEvaluationBenchmarks.cs @DataDog/feature-flagging-and-experimentation-sdk
 
 ### Datadog.Trace.Tests
 /tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/     @DataDog/apm-serverless
@@ -347,6 +362,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/Serverless/Azure/HttpBypassTests.cs      @DataDog/apm-serverless
 
 ### Datadog.Trace.ClrProfiler.IntegrationTests
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/Azure/             @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNet/            @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNetCore/        @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/ProcessStartTests/ @DataDog/asm-dotnet

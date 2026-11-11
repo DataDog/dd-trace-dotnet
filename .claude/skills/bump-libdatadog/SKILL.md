@@ -60,6 +60,24 @@ Artifact filenames:
 - `libdatadog-x64-windows.zip`
 - `libdatadog-x86-windows.zip`
 
+### 3. MSI snapshot — `tracer/build/_build/MsiValidation/msi-x64.verified.yml`
+
+`BuildMsi` generates a snapshot of the x64 MSI and throws if it differs from this file (`MsiSnapshot.ValidateMsiSnapshot` in `tracer/build/_build/Build.Steps.cs`). There is no separate x86 snapshot: the x64 installer includes both `datadog_profiling_ffi.dll` copies.
+
+WiX does not read the version from the pin files. While binding `shared/src/msi-installer/shared/Files.wxs` it calls `MsiGetFileVersion` on each DLL and writes the result into the MSI `File` table. Update these two entries when that result changes:
+
+| Snapshot key | DLL inside the Windows zip |
+|--------------|----------------------------|
+| `libdatadog` | `libdatadog-x64-windows/release/dynamic/datadog_profiling_ffi.dll` |
+| `libdatadog.32` | `libdatadog-x86-windows/release/dynamic/datadog_profiling_ffi.dll` |
+
+Fields to set on each entry:
+
+- `Version` — four-part version from `VS_FIXEDFILEINFO` (`major.minor.build.revision`), for example `2.2.0.0`. `MsiGetFileVersion` formats the fixed numeric version, not the `FileVersion` string (that string can be `2.2.0`) and not `ProductVersion` (that is the upstream libdatadog version, for example `47.0.0`).
+- `Language` — decimal language id from the first `WORD` of `VarFileInfo\Translation`. Neutral is `0`. When the DLL has no version resource, `MsiGetFileVersion` returns nothing and both fields stay `''`.
+
+Leave `Version` as a literal. `MsiSnapshot` rewrites a value to `FOUR_PART_VERSION` or `THREE_PART_VERSION` only when it equals the tracer's own version, which libdatadog's file version does not.
+
 ## Step-by-Step Procedure
 
 ### Step 1: Determine target version
@@ -99,10 +117,23 @@ Update `"version-string"` to the new version (no `v` prefix).
 
 Replace the SHA-512 hashes for x64 and x86 Windows builds.
 
-### Step 6: Verify
+### Step 6: Update `tracer/build/_build/MsiValidation/msi-x64.verified.yml`
+
+Do this on every bump. `PackageTracerHome` runs `BuildMsi`, which compares the snapshot unconditionally.
+
+1. Download `libdatadog-x64-windows.zip` and `libdatadog-x86-windows.zip` for the new release.
+2. Read `release/dynamic/datadog_profiling_ffi.dll` from each zip. That is the binary copied into the monitoring home and then into the MSI.
+3. Read `VS_FIXEDFILEINFO` and `VarFileInfo\Translation` from each DLL.
+4. Set `libdatadog.Version` / `libdatadog.Language` from the x64 DLL, and `libdatadog.32.Version` / `libdatadog.32.Language` from the x86 DLL.
+5. Leave the entry unchanged when the new DLL still has no version resource (`Version: ''`, `Language: ''`).
+
+On Windows, `.\tracer\build.cmd BuildMsi` is the authoritative check. A mismatch prints the received snapshot and throws.
+
+### Step 7: Verify
 
 - Confirm all 8 hashes were updated (6 for CMake SHA-256, 2 for vcpkg SHA-512)
 - Confirm version strings match in both files
+- Confirm `libdatadog` and `libdatadog.32` in `msi-x64.verified.yml` match `MsiGetFileVersion` for the new DLLs
 - Run the Nuke build targets to validate hashes:
   ```bash
   # Linux — validates CMake SHA-256 hashes during configure
@@ -148,3 +179,4 @@ Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments
 - The CMake version has a `v` prefix (`v1.3.5`); vcpkg does not (`1.3.5`).
 - If a release doesn't have all platform artifacts, the bump may need to wait or be partial.
 - After bumping, CI will validate the hashes on all platforms. Hash mismatches cause clear build failures.
+- A new DLL file version fails `BuildMsi` until `msi-x64.verified.yml` matches what `MsiGetFileVersion` returns (`Version` and `Language` on both `libdatadog` entries).

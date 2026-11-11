@@ -789,7 +789,16 @@ namespace Datadog.Trace.Debugger
             {
                 if (_dynamicInstrumentation != null)
                 {
-                    SafeDisposal.TryDispose(_dynamicInstrumentation);
+                    // During process exit we only dispose, reverting the probes would only add ReJIT work
+                    if (_processExit.Task.IsCompleted)
+                    {
+                        SafeDisposal.TryDispose(_dynamicInstrumentation);
+                    }
+                    else
+                    {
+                        _dynamicInstrumentation.RemoveProbesAndDispose();
+                    }
+
                     _dynamicInstrumentation = null;
                     disabled = true;
                 }

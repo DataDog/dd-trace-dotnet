@@ -27,10 +27,9 @@ namespace Samples
                 port = GetOpenPort().ToString();
             }
 
-            int retries = 5;
+            const int maxAttempts = 5;
 
-            // try up to 5 consecutive ports before giving up
-            while (true)
+            for (var attempt = 1; ; attempt++)
             {
                 uri = $"http://localhost:{port}/{Guid.NewGuid()}/";
 
@@ -45,15 +44,16 @@ namespace Samples
 
                     return new WebServer(listener);
                 }
-                catch (HttpListenerException) when (retries > 0)
+                catch (Exception)
                 {
-                    // only catch the exception if there are retries left
-                    retries--;
+                    // A listener cannot be reused after a failed Start().
+                    // HttpListener.Dispose() is explicit on .NET Framework.
+                    ((IDisposable)listener).Dispose();
+                    if (attempt >= maxAttempts)
+                    {
+                        throw;
+                    }
                 }
-
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
 
                 port = GetOpenPort().ToString();
             }

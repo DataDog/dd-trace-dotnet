@@ -39,11 +39,11 @@ std::vector<uint8_t> TypeReferenceTreeBinarySerializer::Serialize(const TypeRefe
 
         WriteString(body, rootNode->fieldName);
 
-        WriteVarint(body, rootNode->node.children.size());
-        for (const auto& [childTypeID, childNode] : rootNode->node.children)
+        WriteVarint(body, rootNode->node.GetChildCount());
+        rootNode->node.ForEachChild([&](const TypeTreeNode& childNode)
         {
-            WriteNode(*childNode, types, body);
-        }
+            WriteNode(childNode, types, body);
+        });
     }
 
     // Phase 2: assemble header + string table + body
@@ -105,11 +105,11 @@ void TypeReferenceTreeBinarySerializer::WriteNode(const TypeTreeNode& node, Stri
     WriteVarint(out, node.instanceCount);
     WriteVarint(out, node.totalSize);
 
-    WriteVarint(out, node.children.size());
-    for (const auto& [childTypeID, childNode] : node.children)
+    WriteVarint(out, node.GetChildCount());
+    node.ForEachChild([&](const TypeTreeNode& childNode)
     {
-        WriteNode(*childNode, types, out);
-    }
+        WriteNode(childNode, types, out);
+    });
 }
 
 void TypeReferenceTreeBinarySerializer::WriteVarint(std::vector<uint8_t>& out, uint64_t value)

@@ -28,4 +28,7 @@ internal sealed class Evaluation(string flagKey, object? value, EvaluationReason
     public string? Error { get; } = error;
 
     public IDictionary<string, string>? FlagMetadata { get; } = metadata;
+
+    // Set instead of sending when the caller defers the exposure until the evaluation has completed.
+    internal Exposure.Model.ExposureEvent? PendingExposure { get; set; }
 }

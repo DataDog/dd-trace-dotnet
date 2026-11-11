@@ -1075,7 +1075,6 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
             return;
         }
 
-        // Only the bytes written below are part of the signature
         COR_SIGNATURE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_OBJECT};
 
         mdFieldDef isFirstEntry = mdFieldDefNil;

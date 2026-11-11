@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,6 +31,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
+        [Flaky("Test flaked in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckTimerCreateIsDowngradedWhenSignalQueueIsTooSmall(string appName, string framework, string appAssembly)
         {

@@ -7,7 +7,9 @@ pr:
 
 # Global variables
 variables:
-  dotnetCoreSdkLatestVersion: 11.0.100-rc.1.26425.128
+  dotnetCoreSdkLatestVersion: 11.0.100-rc.2.26504.105
+  # Retry parameters for network operations (used by update-github-status.yml)
+  CURL_RETRY_FLAGS: '--retry 5 --retry-delay 2 --retry-connrefused'
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])] # required by update-github-status
   TargetBranch: $[variables['System.PullRequest.TargetBranch']]
 

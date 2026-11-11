@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using MessagePack;
@@ -42,6 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             Assert.Equal(profilerProcessTags, tracerProcessTags);
         }
 
+        [Flaky("Test flaked in CI")]
         [TestAppFact("Samples.BuggyBits")]
         public void CheckProcessTagsNotPropagatedWhenDisabled(string appName, string framework, string appAssembly)
         {

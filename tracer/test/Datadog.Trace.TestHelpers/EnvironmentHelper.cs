@@ -177,6 +177,8 @@ namespace Datadog.Trace.TestHelpers
                 "COR_ENABLE_PROFILING",
                 "COR_PROFILER",
                 "COR_PROFILER_PATH",
+                "COR_PROFILER_PATH_32",
+                "COR_PROFILER_PATH_64",
 
                 // Datadog
                 "DD_PROFILER_PROCESSES",
@@ -440,6 +442,8 @@ namespace Datadog.Trace.TestHelpers
                 string filePattern64 = @"C:\Program Files\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
                 List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
+                    // Windows CI installs Visual Studio 2026 Build Tools under "18".
+                    Tuple.Create("18", "BuildTools"),
                     Tuple.Create("2022", "Enterprise"),
                     Tuple.Create("2022", "Professional"),
                     Tuple.Create("2022", "Community"),

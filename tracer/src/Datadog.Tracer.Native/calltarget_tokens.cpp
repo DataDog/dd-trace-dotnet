@@ -8,6 +8,8 @@
 
 namespace trace
 {
+// Only for signatures made of fixed bytes and compressed tokens.
+// Anything built from a type's GetSignature() is unbounded: use SignatureBuilder.
 const int signatureBufferSize = 500;
 
 /**
@@ -337,17 +339,13 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(const TypeSig
     ULONG methodArgumentSignatureSize;
     methodArgumentSignatureSize = methodArgument->GetSignature(methodArgumentSignature);
 
-    auto signatureLength = 2 + methodArgumentSignatureSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x01;
+    SignatureBuilder signature;
+    signature.Append(IMAGE_CEE_CS_CALLCONV_GENERICINST);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(methodArgumentSignature, methodArgumentSignatureSize);
 
-    memcpy(&signature[offset], methodArgumentSignature, methodArgumentSignatureSize);
-    offset += methodArgumentSignatureSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(getDefaultMemberRef, signature, signatureLength,
-                                                          &getDefaultMethodSpec);
+    hr = module_metadata->metadata_emit->DefineMethodSpec(getDefaultMemberRef, signature.GetSignature(),
+                                                          static_cast<ULONG>(signature.Size()), &getDefaultMethodSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating getDefaultMethodSpec.");
@@ -758,19 +756,15 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(TypeSignature* returnAr
     unsigned callTargetReturnTypeRefBuffer;
     auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
 
-    auto signatureLength = 3 + callTargetReturnTypeRefSize + returnSignatureLength;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
+    SignatureBuilder signature;
+    signature.Append(ELEMENT_TYPE_GENERICINST);
+    signature.Append(ELEMENT_TYPE_VALUETYPE);
+    signature.Append(&callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(returnSignatureBuffer, returnSignatureLength);
 
-    signature[offset++] = ELEMENT_TYPE_GENERICINST;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
-    offset += callTargetReturnTypeRefSize;
-    signature[offset++] = 0x01;
-    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
-    offset += returnSignatureLength;
-
-    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
+    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature.GetSignature(),
+                                                              static_cast<ULONG>(signature.Size()), &returnValueTypeSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating return value type spec");

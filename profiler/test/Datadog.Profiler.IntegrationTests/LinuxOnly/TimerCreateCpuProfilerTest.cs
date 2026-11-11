@@ -50,6 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
         }
 
+        [Flaky("Manual CPU profiling intermittently produces no samples in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckTimerCreateIsDisabledWhenManualIsSet(string appName, string framework, string appAssembly)
         {

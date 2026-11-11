@@ -66,6 +66,24 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
     }
 
     [Fact]
+    public void ExtractAndCreateInferredProxyScope_WithFrontDoorHeaders_ReturnsFrontDoorScope()
+    {
+        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders(unixTimeMilliseconds.ToString());
+
+        var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
+            _tracer,
+            headers,
+            new PropagationContext());
+
+        result.Should().NotBeNull();
+        result!.Value.Scope.Should().NotBeNull();
+        result.Value.Scope.Span.OperationName.Should().Be("azure.frontdoor");
+        result.Value.Scope.Span.StartTime.Should().Be(start);
+    }
+
+    [Fact]
     public void ExtractAndCreateInferredProxyScope_WithMissingProxyNameHeader_ReturnsNull()
     {
         var headers = ProxyTestHelpers.CreateValidHeaders();
@@ -83,6 +101,7 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
     [InlineData("")]
     [InlineData("invalid-proxy")]
     [InlineData("aws.apigateway")]
+    [InlineData("azure.frontdoor")]
     [InlineData("azure.apim")]
     [InlineData("gcp-api-gateway")]
     public void ExtractAndCreateInferredProxyScope_WithInvalidProxyName_ReturnsNull(string proxyName)
@@ -114,6 +133,24 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
 
         result.Should().NotBeNull();
         result!.Value.Scope.Span.OperationName.Should().Be("aws.apigateway");
+    }
+
+    [Theory]
+    [InlineData("azure-fd")]
+    [InlineData("AZURE-FD")]
+    [InlineData("Azure-Fd")]
+    public void ExtractAndCreateInferredProxyScope_WithFrontDoorProxyName_CaseInsensitive_ReturnsFrontDoorScope(string proxyName)
+    {
+        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
+        headers.Set(InferredProxyHeaders.Name, proxyName);
+
+        var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
+            _tracer,
+            headers,
+            new PropagationContext());
+
+        result.Should().NotBeNull();
+        result!.Value.Scope.Span.OperationName.Should().Be("azure.frontdoor");
     }
 
     [Theory]
@@ -162,6 +199,26 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
             new PropagationContext());
 
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public void ExtractAndCreateInferredProxyScope_WithFrontDoorHeadersMissingStartTime_SynthesizesStartTime()
+    {
+        // Front Door injects no timestamp header, so unlike AWS and APIM a missing start time
+        // must still produce a span, with the start time synthesized from "now".
+        var before = DateTimeOffset.UtcNow.AddSeconds(-5);
+        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
+
+        var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
+            _tracer,
+            headers,
+            new PropagationContext());
+
+        var after = DateTimeOffset.UtcNow.AddSeconds(5);
+
+        result.Should().NotBeNull();
+        result!.Value.Scope.Span.OperationName.Should().Be("azure.frontdoor");
+        result.Value.Scope.Span.StartTime.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
     }
 
     [Fact]

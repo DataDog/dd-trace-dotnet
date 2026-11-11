@@ -9,5 +9,6 @@ namespace Datadog.Trace.Configuration.Telemetry;
 public enum ConfigurationOrigins
 {
     Default,
-    AgentUri
+    AgentUri,
+    Calculated
 }

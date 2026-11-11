@@ -68,7 +68,18 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
         {
             if (exception != null || returnValue == null)
             {
-                _continuation(instance, default, exception, in state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    _continuation(instance, default, exception, in state);
+                }
+                catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                }
+
                 return returnValue;
             }
 
@@ -88,11 +99,11 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 try
                 {
                     // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                     // *
                     _continuation(target, result, ex, in state);
                 }
-                catch (Exception contEx)
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
                 {
                     IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
@@ -103,11 +114,11 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 return _continuation(target, result, null, in state);
             }
-            catch (Exception contEx)
+            catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
             }
@@ -137,7 +148,19 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
         {
             if (exception != null)
             {
-                return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                }
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                }
+
+                return default;
             }
 
             TResult? result = default;
@@ -150,11 +173,11 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 try
                 {
                     // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                     // *
                     await _asyncContinuation(target, result, ex, in state).ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
                 {
                     IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
@@ -165,11 +188,11 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 return await _asyncContinuation(target, result, null, in state).ConfigureAwait(_preserveContext);
             }
-            catch (Exception contEx)
+            catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
             }

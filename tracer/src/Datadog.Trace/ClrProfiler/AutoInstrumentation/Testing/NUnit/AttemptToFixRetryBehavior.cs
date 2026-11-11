@@ -5,34 +5,22 @@
 
 #nullable enable
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Net;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 internal readonly struct AttemptToFixRetryBehavior : IRetryBehavior
 {
-    private readonly TestOptimizationClient.TestManagementResponseTestPropertiesAttributes _testProperties;
-
-    public AttemptToFixRetryBehavior(ITestOptimization testOptimization, TestOptimizationClient.TestManagementResponseTestPropertiesAttributes testProperties)
+    public AttemptToFixRetryBehavior(ITestOptimization testOptimization)
     {
         RemainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
-        _testProperties = testProperties;
     }
 
     public int RemainingRetries { get; }
 
     public string RetryMode => "AttemptToFix";
 
-    public bool ShouldRetry(ITestResult result) => true;
+    // A single failure proves the fix did not work.
+    public bool ShouldRetry(ITestResult result) => result.ResultState?.Status != TestStatus.Failed;
 
-    public ITestResult ResultChanges(ITestResult result)
-    {
-        if (_testProperties is { Quarantined: true } or { Disabled: true })
-        {
-            Common.Log.Debug("AttemptToFixRetryBehavior: Test is quarantined or disabled by Datadog.");
-            result.SetResult(result.ResultState.StaticIgnored, "Flaky test is quarantined or disabled by Datadog.", string.Empty);
-        }
-
-        return result;
-    }
+    public ITestResult ResultChanges(ITestResult result) => result;
 }

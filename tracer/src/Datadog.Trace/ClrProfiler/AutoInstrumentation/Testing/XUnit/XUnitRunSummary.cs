@@ -66,6 +66,15 @@ internal struct XUnitRunSummary
         _frameworkResult = XUnitFrameworkResult.Skipped;
     }
 
+    public void ReportFailedResult()
+    {
+        Total = 1;
+        Failed = 1;
+        Skipped = 0;
+        NotRun = 0;
+        _frameworkResult = XUnitFrameworkResult.Failed;
+    }
+
     public void NormalizeFrameworkResult()
     {
         var frameworkResult = GetFrameworkResult();

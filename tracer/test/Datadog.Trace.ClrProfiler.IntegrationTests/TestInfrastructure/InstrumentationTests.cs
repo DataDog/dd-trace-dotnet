@@ -826,7 +826,7 @@ namespace Foo
                                             "runtime_version": "{{runtimeVersion}}",
                                             "language_name": "dotnet",
                                             "language_version": "{{runtimeVersion}}",
-                                            "tracer_version": "{{TracerConstants.ThreePartVersion}}",
+                                            "tracer_version": "{{TracerConstants.SemanticVersion}}",
                                             "pid": {{processResult.Process.Id}},
                                             "inject_result": "{{injectResult}}",
                                             "inject_result_reason": "{{injectResultReason}}",

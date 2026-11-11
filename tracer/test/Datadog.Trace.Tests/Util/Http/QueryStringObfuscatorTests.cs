@@ -103,7 +103,7 @@ public class QueryStringObfuscatorTests
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
         var logger = new Mock<IDatadogLogger>();
-        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object, isDefaultPattern: true);
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
         var result = queryStringObfuscator.Obfuscate(url);
         result.Should().Be(expected);
     }
@@ -120,16 +120,18 @@ public class QueryStringObfuscatorTests
     [InlineData("?q=heyJude.eyJoe", "?q=heyJude.eyJoe")]
     [InlineData("?q=%3DeyJabc.eyJdef", "?q=%3D<redacted>")]
     [InlineData("?q=_eyJabc.eyJdef", "?q=_eyJabc.eyJdef")]
-    [InlineData("?q=\"password\":\"abc\"eyJabc.eyJdef&x=1", "?q=<redacted>eyJabc.eyJdef&x=1")]
+    [InlineData("?x=%eyJabc.eyJdef", "?x=%<redacted>")]
+    [InlineData("?q=\"password\":\"abc\"eyJabc.eyJdef&x=1", "?q=<redacted><redacted>&x=1")]
     [InlineData("?password=abc&eyJabc.eyJdef&x=1", "?<redacted>&<redacted>&x=1")]
-    [InlineData("?q=eyJabc.eyJdef=eyJghi.eyJjkl=eyJmno.eyJpqr&x=1", "?q=<redacted>eyJghi.eyJjkl=<redacted>&x=1")]
-    [InlineData("?q=eyJabc.eyJdef%3DeyJghi.eyJjkl%3DeyJmno.eyJpqr&x=1", "?q=<redacted>eyJghi.eyJjkl%3D<redacted>&x=1")]
+    [InlineData("?q=eyJabc.eyJdef=eyJghi.eyJjkl=eyJmno.eyJpqr&x=1", "?q=<redacted><redacted><redacted>&x=1")]
+    [InlineData("?q=eyJabc.eyJdef%3DeyJghi.eyJjkl%3DeyJmno.eyJpqr&x=1", "?q=<redacted><redacted><redacted>&x=1")]
+    [InlineData("?t=eyJabc%3D.eyJdef%3D%3DeyJa.eyJb", "?t=<redacted><redacted>")]
     public void DefaultPatternPreservesJwtDelimiter(string queryString, string expected)
     {
 #if NETCOREAPP2_1
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
-        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object, isDefaultPattern: true);
+        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object);
 
         obfuscator.Obfuscate(queryString).Should().Be(expected);
     }
@@ -178,7 +180,7 @@ public class QueryStringObfuscatorTests
     public void EdgeCases(string querystring)
     {
         var logger = new Mock<IDatadogLogger>();
-        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object, isDefaultPattern: true);
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
         var result = queryStringObfuscator.Obfuscate(querystring);
         result.Should().Be(querystring);
     }
@@ -204,7 +206,7 @@ public class QueryStringObfuscatorTests
 
             var logger = new Mock<IDatadogLogger>();
             // Constructed under the test culture so the underlying Regex captures it.
-            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object, isDefaultPattern: true);
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
 
             // Upper-case keywords containing 'I' only match when 'I' folds to 'i', which is false
             // under Turkic cultures unless the regex is culture-invariant.
@@ -261,7 +263,7 @@ public class QueryStringObfuscatorTests
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
         var logger = new Mock<IDatadogLogger>();
-        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object, isDefaultPattern: true);
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
 
         var result = queryStringObfuscator.Obfuscate(queryString);
 
@@ -279,7 +281,7 @@ public class QueryStringObfuscatorTests
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
         var logger = new Mock<IDatadogLogger>();
-        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object, isDefaultPattern: true);
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
 
         var url = "/Vault/vaultserver.aspx?fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&ticket=VAULT_TOKEN";
         var result = queryStringObfuscator.Obfuscate(url);

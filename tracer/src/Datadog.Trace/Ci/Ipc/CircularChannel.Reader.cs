@@ -35,8 +35,12 @@ internal partial class CircularChannel
 
         private void PollForMessages(object? state)
         {
-            while (!_pollingThreadFinishEvent.IsSet)
+            // Poll once more after Dispose is requested, so messages written before it are not lost.
+            // Dispose joins this thread before the channel releases the memory mapped file.
+            var finishing = false;
+            while (!finishing)
             {
+                finishing = _pollingThreadFinishEvent.IsSet;
                 try
                 {
                     InternalPollForMessage();
@@ -46,20 +50,15 @@ internal partial class CircularChannel
                     Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
                 }
 
-                if (!_pollingThreadFinishEvent.IsSet)
+                if (!finishing)
                 {
-                    Thread.Sleep(_channel._settings.PollingInterval);
+                    _pollingThreadFinishEvent.Wait(_channel._settings.PollingInterval);
                 }
             }
         }
 
         private void InternalPollForMessage()
         {
-            if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref _channel._disposed) == 1)
-            {
-                return;
-            }
-
             if (_callback is null)
             {
                 // To avoid losing messages, we stop the polling if there are no subscribers
@@ -68,17 +67,11 @@ internal partial class CircularChannel
 
             try
             {
-                var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-                if (!hasHandle)
+                if (!_channel.TryAcquireMutex())
                 {
                     Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                     return;
                 }
-            }
-            catch (AbandonedMutexException ex)
-            {
-                Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
-                return;
             }
             catch (ObjectDisposedException ex)
             {
@@ -95,10 +88,8 @@ internal partial class CircularChannel
                 var readPos = accessor.ReadUInt16(2);
                 while (readPos != writePos)
                 {
-                    // Check if we had to use a virtual write position outside the buffer to avoid blocking the read position
-                    // condition for read is: writepos != readpos
-                    // So if we detect that we have a writepos > buffersize, we use the modulus to check if is the same to the readpos
-                    // and detect the buffer overflow.
+                    // Older versions marked a completely full buffer with a virtual write position past the end of the
+                    // buffer. The writer never does that anymore, but normalize it in case an older version shares this channel.
                     if (writePos >= _channel.BufferBodySize)
                     {
                         // This means that the read position moved to the next buffer, so we need to reset the write position

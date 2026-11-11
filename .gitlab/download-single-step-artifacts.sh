@@ -15,14 +15,14 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   VERSION=${DOTNET_PACKAGE_VERSION:-${CI_COMMIT_TAG##v}} # Use DOTNET_PACKAGE_VERSION if it exists, otherwise use CI_COMMIT_TAG without the v
 
   for SUFFIX in "" ".arm64"; do
-    curl --location --fail \
+    curl --location --fail $AZDO_CURL_RETRY_FLAGS \
       --output $target_dir/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz \
       "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz"
   done
 
   if [ -n "$CI_COMMIT_SHA" ]; then
     echo "Downloading OpenTelemetry Operator startup hook from S3"
-    curl --location --fail \
+    curl --location --fail $AZDO_CURL_RETRY_FLAGS \
         --output $target_dir/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/otel-operator-startup-hook/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 
@@ -31,19 +31,19 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
     mkdir -p $win_target_dir
 
     echo "Downloading Windows Tracer Home from Github"
-    curl --location --fail \
+    curl --location --fail $AZDO_CURL_RETRY_FLAGS \
         --output $win_target_dir/windows-tracer-home.zip \
         "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/windows-tracer-home.zip"
 
     echo "Downloading Windows fleet-installer from S3"
 
-    curl --location --fail \
+    curl --location --fail $AZDO_CURL_RETRY_FLAGS \
         --output $win_target_dir/fleet-installer.zip \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/fleet-installer.zip"
 
     echo "Downloading Telemetry Forwarder from S3"
 
-    curl --location --fail \
+    curl --location --fail $AZDO_CURL_RETRY_FLAGS \
         --output $win_target_dir/telemetry_forwarder.exe \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/telemetry_forwarder.exe"
   fi

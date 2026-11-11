@@ -85,6 +85,17 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         // Concurrency Level is a simple algorithm where we select a number between 1 and 4 depending on the number of Logical Processor Count
         // To scale the number of senders with a hard limit.
         var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 4);
+
+#if !NETFRAMEWORK
+        // No-op if startup already ran it; covers entry points that bypass Instrumentation.Initialize().
+        var frameworkDescription = FrameworkDescription.Instance;
+        if (frameworkDescription.RuntimeVersion.Major < 9 &&
+            frameworkDescription.IsWindows())
+        {
+            GzipWarmUp.RunOnce();
+        }
+#endif
+
         _buffersArray = new Buffers[concurrencyLevel];
         for (var i = 0; i < _buffersArray.Length; i++)
         {

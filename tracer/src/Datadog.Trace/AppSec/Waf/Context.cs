@@ -30,13 +30,16 @@ internal sealed class Context : IContext
     private readonly IWaf _waf;
 
     private readonly List<IEncodeResult> _encodeResults;
-    private readonly Stopwatch _stopwatch;
+    private readonly object _sync = new();
     private readonly IWafLibraryInvoker _wafLibraryInvoker;
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
 
     private bool _disposed;
-    private ulong _totalRuntimeOverRuns;
+
+    // per-request totals, tracked separately for WAF and RASP runs
+    private WafRunTotals _wafTotals;
+    private WafRunTotals _raspTotals;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
     private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -45,7 +48,6 @@ internal sealed class Context : IContext
         _waf = waf;
         _wafLibraryInvoker = wafLibraryInvoker;
         _encoder = encoder;
-        _stopwatch = new Stopwatch();
         _encodeResults = new(64);
     }
 
@@ -167,11 +169,8 @@ internal sealed class Context : IContext
                 parameters);
         }
 
-        // not restart because it's the total runtime over runs, and we run several * during request
-        _stopwatch.Start();
-        WafReturnCode code;
-        bool truncated;
-        lock (_stopwatch)
+        Result result;
+        lock (_sync)
         {
             if (_disposed)
             {
@@ -194,8 +193,11 @@ internal sealed class Context : IContext
                 return null;
             }
 
+            // started inside the lock so that a run waiting for a concurrent one doesn't count its time
+            var start = Stopwatch.GetTimestamp();
             var args = _encoder.Encode(addressData!, applySafetyLimits: true);
-            truncated = args.Truncated;
+            var truncated = args.Truncated;
+            WafReturnCode code;
 
             // WARNING: Don't use ref here, we need to make a copy because args is on the heap
             var argsValue = args.ResultDdwafObject;
@@ -211,9 +213,6 @@ internal sealed class Context : IContext
                     Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
                     RecordBindingError(isRasp);
                     args.Dispose();
-
-                    // nothing ran, so don't let this call's wall clock leak into the aggregated runtime
-                    _stopwatch.Stop();
                     outcome = WafOutcome.BindingFailed;
                     return null;
                 }
@@ -241,11 +240,13 @@ internal sealed class Context : IContext
                 _encodeResults.Add(args);
                 code = _waf.ContextEval(_contextHandle, &argsValue, ref retNative, timeoutMicroSeconds);
             }
+
+            ref var totals = ref isRasp ? ref _raspTotals : ref _wafTotals;
+            totals.AddDurationWithBindings(Stopwatch.GetTimestamp() - start);
+            result = new Result(ref retNative, code, ref totals, isRasp, truncated);
         }
 
-        _stopwatch.Stop();
         outcome = WafOutcome.Success;
-        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp, truncated);
 
         // the result was allocated by the WAF with the output allocator given to ddwaf_context_init, which is the default one
         _wafLibraryInvoker.ObjectDestroy(ref retNative);
@@ -264,7 +265,7 @@ internal sealed class Context : IContext
 
     public void Dispose(bool disposing)
     {
-        lock (_stopwatch)
+        lock (_sync)
         {
             if (_disposed)
             {

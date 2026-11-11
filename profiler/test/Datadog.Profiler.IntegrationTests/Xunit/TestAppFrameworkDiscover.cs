@@ -5,11 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using TestFramework = Datadog.Profiler.IntegrationTests.Helpers.TestFramework;
 
 namespace Datadog.Profiler.IntegrationTests.Xunit
 {
@@ -27,6 +30,11 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
 
         public IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo factAttribute)
         {
+            if (factAttribute.GetNamedArgument<bool>(nameof(TestAppFact.IsTyped)))
+            {
+                return DiscoverTyped(testMethod, factAttribute);
+            }
+
             var appName = factAttribute.GetNamedArgument<string>("AppName");
             var appAssembly = factAttribute.GetNamedArgument<string>("AppAssembly");
             var frameworks = factAttribute.GetNamedArgument<string[]>("Frameworks");
@@ -167,6 +175,93 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
             }
 
             return result;
+        }
+
+        private IEnumerable<IXunitTestCase> DiscoverTyped(ITestMethod testMethod, IAttributeInfo factAttribute)
+        {
+            var application = factAttribute.GetNamedArgument<TestApplication>(nameof(TestAppFact.Application));
+            var exact = factAttribute.GetNamedArgument<TestFramework[]>(nameof(TestAppFact.SelectedFrameworks));
+            var minimum = factAttribute.GetNamedArgument<TestFramework>(nameof(TestAppFact.MinimumFramework));
+            var maximum = factAttribute.GetNamedArgument<TestFramework>(nameof(TestAppFact.MaximumFramework));
+            var excluded = factAttribute.GetNamedArgument<TestFramework[]>(nameof(TestAppFact.ExcludedFrameworks));
+
+            if (!TestApplicationCatalog.TryGet(application, out var descriptor))
+            {
+                return new[] { CreateError(testMethod, $"Unknown test application '{application}'.") };
+            }
+
+            var appFolderPath = TestApplicationRunner.GetApplicationOutputFolderPath(descriptor.FolderName);
+            MessageSink.OnMessage(new DiagnosticMessage("Discovering tests case in {0} for application {1}", appFolderPath, descriptor.FolderName));
+
+            var results = new List<IXunitTestCase>();
+            if (!Directory.Exists(appFolderPath))
+            {
+                results.Add(CreateError(testMethod, $"Application folder path '{appFolderPath}' does not exist: try compiling application '{descriptor.FolderName}' first."));
+                return results;
+            }
+
+            if (!EnvironmentHelper.IsRunningInCi())
+            {
+                var testStatus = GetSkippableStatus(testMethod);
+                if (testStatus.Skip)
+                {
+                    MessageSink.OnMessage(new DiagnosticMessage("Skipping test. Reason: {0}", testStatus.Reason));
+                    var skipped = new TestAppContext(descriptor, TestFramework.None);
+                    results.Add(new SkippableTestCase(
+                        $"Test case skipped. Reason: {testStatus.Reason}",
+                        testMethod,
+                        new object[] { skipped }));
+                    return results;
+                }
+            }
+
+            var builtFolders = Directory.GetDirectories(appFolderPath)
+                .Select(Path.GetFileName)
+                .Where(name => name != null)
+                .ToList();
+            var windows = EnvironmentHelper.IsRunningOnWindows();
+            var arm64 = RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+            var planned = TestAppCasePlanner.Plan(application, exact, minimum, maximum, excluded, builtFolders, windows, arm64);
+            foreach (var plannedCase in planned)
+            {
+                switch (plannedCase.Kind)
+                {
+                    case TestAppCasePlanner.Kind.Error:
+                        results.Add(CreateError(testMethod, plannedCase.Message));
+                        break;
+                    case TestAppCasePlanner.Kind.Skip:
+                        results.Add(new SkippableTestCase(
+                            plannedCase.Message,
+                            testMethod,
+                            new object[] { new TestAppContext(descriptor, plannedCase.Framework) }));
+                        break;
+                    case TestAppCasePlanner.Kind.Run:
+                        results.Add(new ProfilerTestCase(
+                            MessageSink,
+                            TestMethodDisplay.ClassAndMethod,
+                            TestMethodDisplayOptions.All,
+                            testMethod,
+                            new object[] { new TestAppContext(descriptor, plannedCase.Framework) }));
+                        break;
+                }
+            }
+
+            if (results.Count == 0)
+            {
+                results.Add(CreateError(testMethod, $"Application '{descriptor.FolderName}' does not have any test cases: try compiling the application '{descriptor.FolderName}' first."));
+            }
+
+            return results;
+        }
+
+        private ExecutionErrorTestCase CreateError(ITestMethod testMethod, string message)
+        {
+            return new ExecutionErrorTestCase(
+                MessageSink,
+                TestMethodDisplay.Method,
+                TestMethodDisplayOptions.None,
+                testMethod,
+                message);
         }
 
         private record TestSkippableStatus(bool Skip, string Reason = "")

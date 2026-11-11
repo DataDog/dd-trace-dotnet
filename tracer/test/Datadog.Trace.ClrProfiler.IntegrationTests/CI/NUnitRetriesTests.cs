@@ -35,6 +35,25 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
 
     public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.NUnitRetries);
 
+    public static IEnumerable<object[]> GetAutomationExclusionData() => GetAutomationExclusionData(PackageVersions.NUnitRetries);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetAutomationExclusionData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task AutomationExclusions(string packageVersion, string testName, int expectedExecutions, string expectedFinalStatus, int expectedExitCode, string expectedTag)
+        => base.AutomationExclusions(packageVersion, testName, expectedExecutions, expectedFinalStatus, expectedExitCode, expectedTag);
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task ProtectedAttemptToFixFailure(string packageVersion)
+        => base.ProtectedAttemptToFixFailure(packageVersion);
+
     [SkippableTheory]
     [MemberData(nameof(GetQuarantineRetryData))]
     [Trait("Category", "EndToEnd")]
@@ -59,11 +78,25 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return base.DynamicFlakyRetries(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
     [Flaky("Under investigation", 5)]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {
         return base.FlakyRetriesWithExceptionReplay(packageVersion);
     }
+
+    // The automation exclusion scenarios share this sample, so keep the retry scenarios on their own suite.
+    protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+        => GetTestFilterArguments("Samples.NUnitTestsRetries.TestSuite.");
 }
 
 #endif

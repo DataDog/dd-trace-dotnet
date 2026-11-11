@@ -221,6 +221,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // populate the libraries cache, and the profiler silently falls back to slower unwinding.
             environmentVariables[EnvironmentVariables.LibrariesInfoCacheStartTimeout] = "10000";
 
+            // On x86 (WOW64) CI machines, the whole process can stall for a few seconds at startup, which makes
+            // the default 2s watcher start timeout expire and the profiler abort its initialization.
+            // Tests can still override it (e.g. "0" to force a start failure) via CustomEnvironmentVariables.
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+            {
+                environmentVariables[EnvironmentVariables.WatcherStartTimeout] = "10000";
+            }
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();

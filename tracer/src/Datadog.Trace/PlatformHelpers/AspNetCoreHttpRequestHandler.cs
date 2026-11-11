@@ -384,7 +384,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // by default on aspnetcore spans when _not_ using activities.
                                 // We also don't want to override any of our standard aspnetcore/web
                                 // tags that already have a value.
-                                if (!IsKnownWebTagWithValue(s.Span, kvp.Key))
+                                if (ShouldCopyTag(s.Span, kvp.Key))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -407,7 +407,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // by default on aspnetcore spans when _not_ using activities.
                                 // We also don't want to override any of our standard aspnetcore/web
                                 // tags that already have a value.
-                                if (!IsKnownWebTagWithValue(s.Span, kvp.Key))
+                                if (ShouldCopyTag(s.Span, kvp.Key))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -423,13 +423,14 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             // We never let the activity overwrite a tag that we have already given a value to, but
-            // we do let its value through when we haven't recorded one ourselves. That means a span
+            // we do let its value through when we haven't recorded one ourselves (apart from a few
+            // tags that we deliberately don't record, such as the client IP). That means a span
             // looks the same whether the OpenTelemetry attributes were added by the OTel SDK's
             // AddAspNetCoreInstrumentation() or (from .NET 11 onwards) by ASP.NET Core itself, at
             // the cost of some "duplicate" OTel-named tags alongside our Datadog-named ones.
             // Only the tags we might set on aspnetcore root spans are worth checking, so we don't
             // bother with e.g. the aspnetcore.* tags, which the activity never carries.
-            static bool IsKnownWebTagWithValue(Span span, string tagName)
+            static bool ShouldCopyTag(Span span, string tagName)
             {
                 switch (tagName)
                 {
@@ -441,9 +442,19 @@ namespace Datadog.Trace.PlatformHelpers
                     case Tags.SpanKind:
                     case Tags.InstrumentationName:
                     case Tags.ErrorType:
-                        return true;
+                    // We only record the client IP (and so never the client port) when IP collection is
+                    // enabled, and we only record the query string after applying the user's query string
+                    // settings and obfuscation. Not having a value is a deliberate choice for these, so we
+                    // never take them from the activity (which adds them from .NET 11 onwards).
+                    case Tags.HttpClientIp:
+                    case Tags.ClientAddress:
+                    case Tags.NetworkClientIp:
+                    case Tags.NetworkPeerAddress:
+                    case Tags.NetworkPeerPort:
+                    case Tags.UrlQuery:
+                        return false;
                     default:
-                        return span.Tags is WebTags tags && HasWebTagValue(tags, tagName);
+                        return span.Tags is not WebTags tags || !HasWebTagValue(tags, tagName);
                 }
 
                 // Note that the OpenTelemetry names that are aliases of a Datadog name (rather than
@@ -458,11 +469,8 @@ namespace Datadog.Trace.PlatformHelpers
                         Tags.HttpUrl => tags.HttpUrl is not null,
                         Tags.HttpRequestHeadersHost => tags.HttpRequestHeadersHost is not null,
                         Tags.HttpStatusCode or Tags.HttpResponseStatusCode => tags.HttpStatusCode is not null,
-                        Tags.NetworkClientIp or Tags.NetworkPeerAddress => tags.NetworkClientIp is not null,
-                        Tags.HttpClientIp or Tags.ClientAddress => tags.HttpClientIp is not null,
                         Tags.UrlScheme => tags.UrlScheme is not null,
                         Tags.UrlPath => tags.UrlPath is not null,
-                        Tags.UrlQuery => tags.UrlQuery is not null,
                         Tags.ServerAddress => tags.ServerAddress is not null,
                         Tags.ServerPort => tags.ServerPort is not null,
                         Tags.NetworkProtocolVersion => tags.NetworkProtocolVersion is not null,

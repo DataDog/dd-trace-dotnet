@@ -4,11 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
+using static Datadog.Trace.Tests.CallTarget.ContinuationGeneratorTestHelpers;
 
 namespace Datadog.Trace.Tests.CallTarget
 {
@@ -277,36 +279,116 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
-        internal class CustomException : Exception
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
         {
-            public CustomException(string message)
-                : base(message)
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            var previousTask = alreadyCompleted ? new ValueTask<string>("ReturnValue") : new ValueTask<string>(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult("ReturnValue");
+
+            // An integration failing must not change what the instrumented method returns
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ContinuationRunsOnceWhenTargetThrowsTest(bool hasResult)
+        {
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            IntegrationThatRecordsExceptions.Exceptions.Clear();
+            if (hasResult)
             {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatRecordsExceptions, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatRecordsExceptions, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+
+            // The integration sees the target's exception, exactly once
+            Assert.Same(exception, Assert.Single(IntegrationThatRecordsExceptions.Exceptions));
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationWhenTargetThrowsTest(bool hasResult)
+        {
+            // The target's exception is rethrown by the rewritten method, but the integration's must not fault the task
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            if (hasResult)
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
             }
         }
 
-        internal class CustomCancellationException : OperationCanceledException
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
         {
-            public CustomCancellationException(CancellationToken token)
-                : base(token)
+            // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            if (alreadyCompleted)
             {
+                Complete(tcs, faulted);
             }
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask<string>(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
         }
 
-        internal class CustomSynchronizationContext : SynchronizationContext
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerNoResultTest(bool alreadyCompleted, bool faulted)
         {
-            private readonly TaskCompletionSource<bool> _tcs = new();
-
-            public Task Task => _tcs.Task;
-
-            public override void Post(SendOrPostCallback d, object state)
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            if (alreadyCompleted)
             {
-                _tcs.TrySetResult(true);
+                Complete(tcs, faulted);
             }
 
-            public override void Send(SendOrPostCallback d, object state)
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        private static async Task AwaitIgnoringTargetException(Task task, Exception targetException)
+        {
+            // Depending on the runtime the returned task may carry the target's exception, which is fine because the
+            // rewritten method rethrows that one anyway. Anything else is the integration's exception escaping.
+            var ex = await Record.ExceptionAsync(() => task);
+            if (ex is not null)
             {
-                _tcs.TrySetResult(true);
+                Assert.Same(targetException, ex);
             }
         }
 
@@ -347,6 +429,40 @@ namespace Datadog.Trace.Tests.CallTarget
             {
                 await Task.Delay(1000).ConfigureAwait(false);
                 return returnValue + "[Modified]";
+            }
+        }
+
+        internal class IntegrationThatThrows
+        {
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Yield();
+                throw new CustomException("Integration Exception");
+            }
+        }
+
+        internal class IntegrationThatRecordsExceptions
+        {
+            public static List<Exception> Exceptions { get; } = [];
+
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Yield();
+                lock (Exceptions)
+                {
+                    Exceptions.Add(exception);
+                }
+
+                return returnValue;
+            }
+        }
+
+        internal class IntegrationThatBubblesUp
+        {
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("Blocked", new BubbleUpException());
             }
         }
     }

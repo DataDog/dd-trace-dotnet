@@ -24,7 +24,7 @@ internal sealed class SingleLineTextFormatter : ITextFormatter
         output.Write("[");
         output.Write(utcTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
         output.Write(" | DD-TRACE-DOTNET ");
-        output.Write(TracerConstants.ThreePartVersion);
+        output.Write(TracerConstants.SemanticVersion);
         output.Write(" | ");
         output.Write(logLevel);
         output.Write("] ");

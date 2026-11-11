@@ -29,6 +29,7 @@ namespace Datadog.Trace.Tests
         private const ulong OtelTraceStateMinimumTraceIdLower = 1;
         private const double OtelTraceStateExampleSamplingRate = 0.1;
         private const double OtelTraceStateImprecisionClampSamplingRate = 0.1;
+        private const double OtelTraceStatePrecisionSamplingRate = 0.01;
         private const float OtelTraceStateRateLimiterRate = 0.05f;
         private const float NeverSampleRate = 0f;
         private const float AlwaysSampleRate = 1f;
@@ -38,6 +39,7 @@ namespace Datadog.Trace.Tests
         private const string OtelTraceStateExampleThreshold = "e6666666666668";
         private const string OtelTraceStateMaximumThreshold = "ffffffffffffff";
         private const string OtelTraceStateMinimumThreshold = "0";
+        private const string OtelTraceStatePrecisionThreshold = "fd70a3d70a3d7";
         private const string OtelTraceStateUnrelatedValue = "foo:bar";
         private const string OtelTraceStateExample = "rv:" + OtelTraceStateExampleRandomValue + ";th:" + OtelTraceStateExampleThreshold;
         private const string OtelTraceStateExampleWithoutThreshold = "rv:" + OtelTraceStateExampleRandomValue;
@@ -366,6 +368,23 @@ namespace Datadog.Trace.Tests
             traceContext.GetOrMakeSamplingDecision();
 
             WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
+        }
+
+        [Fact]
+        public void TraceSampler_PreservesDoublePrecisionThreshold_ViaGetOrMakeSamplingDecision()
+        {
+            var builder = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null));
+            builder.RegisterRule(new GlobalSamplingRateRule(OtelTraceStatePrecisionSamplingRate));
+            var sampler = builder.Build();
+
+            var tracer = new StubDatadogTracer(sampler);
+            var rootSpan = new Span(new SpanContext(OtelTraceStateExampleTraceIdLower, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var traceContext = new TraceContext(tracer);
+            traceContext.AddSpan(rootSpan);
+
+            traceContext.GetOrMakeSamplingDecision();
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().EndWith("th:" + OtelTraceStatePrecisionThreshold);
         }
 
         [Fact]

@@ -33,8 +33,18 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
-    // Cache several strings required for encoding OTLP JSON
-    private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
+    // Closes one ResourceSpans: the repeated Span spans field, the ScopeSpans message,
+    // the repeated ScopeSpans field and the ResourceSpans message.
+    private const string ClosingResourceSpans = "]}]}";
+
+    // Closes the payload: the current ResourceSpans, the repeated ResourceSpans field
+    // and the ExportTraceServiceRequest message. Built from ClosingResourceSpans so the two can't drift.
+    private const string ClosingTraces = ClosingResourceSpans + "]}";
+
+    private static readonly byte[] ClosingTracesBytes = Encoding.UTF8.GetBytes(ClosingTraces);
+
+    // The ResourceSpans opened in the current payload.
+    private readonly OtlpResourceSpansGroups _resourceSpansGroups = new();
 
     public int HeaderSize => 0;
 
@@ -143,7 +153,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteResource(JsonTextWriter writer, in TraceChunkModel traceChunk)
+    internal static void WriteResource(JsonTextWriter writer, in TraceChunkModel traceChunk, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
@@ -156,7 +166,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WritePropertyName("attributes");
         writer.WriteStartArray();
 
-        OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, WriteKeyValue(writer));
+        OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, WriteKeyValue(writer), resourceGlobalTags);
 
         writer.WriteEndArray();
 
@@ -314,15 +324,19 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
+            case int intValue:
+                writer.WritePropertyName("intValue");
+                writer.WriteValue(IntStringCache.ToInvariantString(intValue));
+                break;
+
             case byte:
             case sbyte:
             case short:
             case ushort:
-            case int:
             case uint:
             case long:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
 
             case double doubleValue:
@@ -383,16 +397,24 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         };
     }
 
-    internal void ExportTraceServiceRequest(JsonTextWriter writer, in TraceChunkModel traceChunk)
+    internal void ExportTraceServiceRequest(JsonTextWriter writer, in TraceChunkModel traceChunk, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         writer.WriteStartObject();
 
         writer.WritePropertyName("resourceSpans");
         writer.WriteStartArray();
 
+        WriteResourceSpans(writer, in traceChunk, resourceGlobalTags);
+
+        // Unclosed repeated ResourceSpans field
+        // Unclosed ExportTraceServiceRequest message
+    }
+
+    private void WriteResourceSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, OtlpResourceGlobalTags? resourceGlobalTags = null)
+    {
         writer.WriteStartObject();
         writer.WritePropertyName("resource");
-        WriteResource(writer, in traceChunk);
+        WriteResource(writer, in traceChunk, resourceGlobalTags);
 
         // if (!string.IsNullOrEmpty(resourceSpans.SchemaUrl))
         // {
@@ -409,8 +431,6 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // Unclosed repeated ScopeSpans spans field
         // Unclosed ResourceSpans message
-        // Unclosed repeated ResourceSpans field
-        // Unclosed ExportTraceServiceRequest message
     }
 
     internal void WriteScopeSpans(JsonTextWriter writer, in TraceChunkModel traceChunk)
@@ -436,7 +456,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // Unclosed ScopeSpans message
     }
 
-    internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
+    internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
         var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
@@ -455,11 +475,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             // or if its parent can also be found in the same chunk, so we use SpanModel
             // to pass that information to the serializer
             var spanModel = traceChunk.GetSpanModel(i);
-            WriteSpan(writer, spanModel, otlpTraceState);
+            WriteSpan(writer, spanModel, otlpTraceState, resourceGlobalTags);
         }
     }
 
-    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState)
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState, OtlpResourceGlobalTags? resourceGlobalTags = null)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
@@ -489,7 +509,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // flags (optional)
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        // Local spans carry the sampling decision on the trace chunk, not on their own context.
+        if ((spanModel.TraceChunk.SamplingPriority ?? spanModel.Span.Context.SamplingPriority) is int samplingPriority)
         {
             writer.WritePropertyName("flags");
             writer.WriteValue(SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0);
@@ -524,7 +545,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         int droppedAttributesCount = 0;
         writer.WritePropertyName("attributes");
         writer.WriteStartArray();
-        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit);
+        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit, resourceGlobalTags);
         writer.WriteEndArray();
 
         // droppedAttributesCount (optional)
@@ -625,6 +646,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     public int FinishBody(ref byte[] bytes, int offset, int maxSize)
     {
+        // Reset for next flush cycle (same serializer instance can be reused on the same buffer).
+        _resourceSpansGroups.Clear();
+
         // If no spans were written, there's nothing to do
         if (offset == HeaderSize)
         {
@@ -664,7 +688,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     ///
     /// Note: This method is stateful. The first time a trace chunk is serialized (the provided offset is the same as the header size),
     /// the method will write the enclosing ResourceSpans and ScopeSpans message and then write the spans into the `repeated Span spans` field.
-    /// Subsequent calls to the method will only append to the `repeated Span spans` field.
+    /// Subsequent calls to the method will only append to the `repeated Span spans` field, unless the trace chunk
+    /// produces different resource attributes (see <see cref="OtlpResourceIdentity"/>), in which case the current
+    /// ResourceSpans message is closed and a new one is opened.
     /// </summary>
     /// <param name="bytes">The temporary byte buffer</param>
     /// <param name="temporaryBufferOffset">The offset of the temporary byte buffer</param>
@@ -681,16 +707,29 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             CloseOutput = false
         };
 
+        // Open a new ResourceSpans when this chunk's resource differs from the current one (see OtlpResourceSpansGroups).
+        // The first chunk of a payload always opens one.
+        var resourceGlobalTags = OtlpResourceGlobalTags.FromTraceChunk(in traceChunk);
+        var newResource = _resourceSpansGroups.GetNewResource(in traceChunk, resourceGlobalTags, spanBufferOffset);
+
         // This implementation assumes that there is at least one span in the trace chunk
-        // The spanBufferOffset is only used to check whether this is the first chunk in the payload
         if (spanBufferOffset == HeaderSize)
         {
-            ExportTraceServiceRequest(jsonWriter, in traceChunk);
-            WriteSpans(jsonWriter, in traceChunk, emitStartingComma: false);
+            ExportTraceServiceRequest(jsonWriter, in traceChunk, resourceGlobalTags);
+            WriteSpans(jsonWriter, in traceChunk, emitStartingComma: false, resourceGlobalTags);
+        }
+        else if (newResource is not null)
+        {
+            // Close the previous ResourceSpans, then open a new ResourceSpans.
+            // The JSON writer is re-entrant and its state is not synchronized to the fact that we're
+            // in the `resourceSpans` array, so the separators are written raw.
+            jsonWriter.WriteRaw(ClosingResourceSpans + ",");
+            WriteResourceSpans(jsonWriter, in traceChunk, resourceGlobalTags);
+            WriteSpans(jsonWriter, in traceChunk, emitStartingComma: false, resourceGlobalTags);
         }
         else
         {
-            WriteSpans(jsonWriter, in traceChunk, emitStartingComma: true);
+            WriteSpans(jsonWriter, in traceChunk, emitStartingComma: true, resourceGlobalTags);
         }
 
         jsonWriter.Flush();
@@ -713,6 +752,12 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // MemoryStream.GetBuffer() returns the internal buffer without copying
         var buffer = memoryStream.GetBuffer();
         Array.Copy(buffer, 0, bytes, temporaryBufferOffset, length);
+
+        // Only record the group once the chunk serialized successfully.
+        if (newResource is not null)
+        {
+            _resourceSpansGroups.Add(new OtlpResourceSpansGroups.Group(spanBufferOffset, newResource));
+        }
 
         return length;
     }

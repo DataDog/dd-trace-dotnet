@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -142,6 +143,7 @@ namespace Datadog.Profiler.SmokeTests
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
+        [Flaky("Intermittently finds an error message in the profiler log file in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckCustomGetFunctionFromIP(string appName, string framework, string appAssembly)
         {

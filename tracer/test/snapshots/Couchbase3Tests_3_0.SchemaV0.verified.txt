@@ -42,7 +42,7 @@
       error.msg: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.,
       error.stack:
 Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.
-at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object state, CancellationToken token),
+at Couchbase.Core.ClusterNode.ExecuteOp(...),
       error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
       language: dotnet,
       runtime-id: Guid_1,
@@ -191,13 +191,13 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
     TraceId: Id_15,
     SpanId: Id_16,
     Name: couchbase.query,
-    Resource: SelectBucket,
+    Resource: NoOp,
     Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: SelectBucket,
-      couchbase.operation.key: default,
+      couchbase.operation.code: NoOp,
+      couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
@@ -216,6 +216,32 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
   {
     TraceId: Id_17,
     SpanId: Id_18,
+    Name: couchbase.query,
+    Resource: NoOp,
+    Service: Samples.Couchbase3-couchbase,
+    Type: db,
+    Tags: {
+      component: Couchbase,
+      couchbase.operation.code: NoOp,
+      couchbase.operation.key: ,
+      db.couchbase.seed.nodes: couchbase,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
     Name: couchbase.query,
     Resource: SelectBucket,
     Service: Samples.Couchbase3-couchbase,
@@ -240,8 +266,34 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_20,
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: couchbase.query,
+    Resource: SelectBucket,
+    Service: Samples.Couchbase3-couchbase,
+    Type: db,
+    Tags: {
+      component: Couchbase,
+      couchbase.operation.code: SelectBucket,
+      couchbase.operation.key: default,
+      db.couchbase.seed.nodes: couchbase,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_24,
     Name: couchbase.query,
     Resource: Set,
     Service: Samples.Couchbase3-couchbase,

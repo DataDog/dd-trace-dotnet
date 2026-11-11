@@ -10,6 +10,7 @@
     <ClCompile Include="rejit_concurrency_test.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
+    <ClCompile Include="dd_version_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="util_test.cpp" />
     <ClCompile Include="test_link_stubs.cpp" />

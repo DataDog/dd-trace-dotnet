@@ -82,6 +82,11 @@ public:
         return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), _rawSampleTransformer, _valueOffsets);
     }
 
+    std::size_t GetPendingSamplesCount() const override
+    {
+        return _collectedSamples.size();
+    }
+
 protected:
     std::chrono::nanoseconds GetCurrentTimestamp()
     {

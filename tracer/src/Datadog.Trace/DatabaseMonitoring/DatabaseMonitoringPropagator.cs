@@ -43,6 +43,15 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static int _remainingDirectionErrorLogs = 100;
         private static int _remainingQuoteErrorLogs = 100;
 
+        // On .NET Framework, ODP.NET can bind REF CURSORs implicitly from app.config/web.config/machine.config.
+        // It finds those bindings by matching CommandText to the procedure name, so any comment breaks the lookup.
+        // ODP.NET Core does not support that configuration, so stored procedures keep their service comments there.
+#if NETFRAMEWORK
+        internal const bool OracleStoredProcedureCommentsSupported = false;
+#else
+        internal const bool OracleStoredProcedureCommentsSupported = true;
+#endif
+
         // baseHash should be null if hash injection is disabled, config is not checked in this method
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure, string? baseHash)
         {
@@ -52,11 +61,16 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
+            if (command.CommandType == CommandType.StoredProcedure)
             {
-                // We don't inject into StoredProcedures unless enabled as we change the commands
-                // We don't inject into StoredProcedures unless we are in SqlClient
-                return false;
+                // ODP.NET includes the leading comment in its generated PL/SQL invocation without changing command type or bindings.
+                // SQL Server requires the opt-in below because its RPC must instead be rewritten as an EXEC text command.
+                var oracleServiceComment = OracleStoredProcedureCommentsSupported && integrationId == IntegrationId.Oracle && propagationLevel == DbmPropagationLevel.Service;
+                var sqlServerComment = integrationId == IntegrationId.SqlClient && injectStoredProcedure;
+                if (!oracleServiceComment && !sqlServerComment)
+                {
+                    return false;
+                }
             }
 
             var propagatorStringBuilder = StringBuilderCache.Acquire();

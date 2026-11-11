@@ -82,7 +82,8 @@ public:
         IClrLifetime const* clrLifetime,
         IThreadsCpuManager* pThreadsCpuManager,
         StackFramesCollectorBase* pStackFramesCollector,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        IConfiguration const* pConfiguration);
 
     ~StackSamplerLoopManager() override;
 
@@ -197,6 +198,9 @@ private:
 private:
     const char* _serviceName = "StackSamplerLoopManager";
     ICorProfilerInfo4* _pCorProfilerInfo;
+
+    // how long RunWatcher() waits for the watcher thread to signal readiness before failing the start
+    std::chrono::milliseconds _watcherStartTimeout;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
 
     // Non-owning: both are independently-registered IServices; lifetime is managed by

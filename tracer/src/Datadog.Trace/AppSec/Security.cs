@@ -610,6 +610,12 @@ namespace Datadog.Trace.AppSec
                 }
 
                 TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                // a failed init is a config error even when the WAF reported none, e.g. an unparseable ruleset
+                if (_wafInitResult.UpdateResult.ConfigErrors == 0)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafConfigErrors(Telemetry.Metrics.MetricTags.WafConfigAction.Init);
+                }
+
                 _wafInitResult.Waf?.Dispose();
                 _configurationState.AppsecEnabled = false;
                 InitializationError = "Error initializing waf";

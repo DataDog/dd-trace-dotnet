@@ -7,6 +7,11 @@
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+    <!-- This file applies to both managed and native projects. DdVersion.props imports version.props
+         itself, so each project imports exactly one of the two. -->
+    <Import Project="$(MSBuildThisFileDirectory)..\tracer\build\_build\version.props" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
+    <Import Project="$(MSBuildThisFileDirectory)..\build\DdVersion.props" Condition="'$(MSBuildProjectExtension)' == '.vcxproj'" />
+
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
     <!-- # Purpose                                                                                                                                          -->
     <!--                                                                                                                                                    -->

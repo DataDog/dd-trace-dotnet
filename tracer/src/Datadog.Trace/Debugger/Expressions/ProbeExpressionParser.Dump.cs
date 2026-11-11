@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
-    private const string RedactedValueDump = "{REDACTED}";
+    private const string RedactedValueDump = "{redacted}";
     private const string BackingFieldSuffix = ">k__BackingField";
 
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)

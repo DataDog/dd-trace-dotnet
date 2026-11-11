@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -36,9 +37,10 @@ public class ConsoleLoggingTests : TestHelper
                                                 line != "Sending 1 spans");
 
         // Expected formats:
-        // [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z | LVL] Message
-        // [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
-        lines.Should().AllSatisfy(line => line.Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] (.+)( | .+)?$"));
+        // [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL] Message
+        // [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
+        var version = Regex.Escape(TracerConstants.SemanticVersion);
+        lines.Should().AllSatisfy(line => line.Should().MatchRegex($@"^\[\d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}}:\d{{2}}\.\d{{3}} \+00:00 \| DD-TRACE-DOTNET {version} \| \w{{3}}\] (.+)( | .+)?$"));
     }
 
 /*

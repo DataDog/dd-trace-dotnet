@@ -31,8 +31,15 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private const int StatusReady = 1;
     private const int StatusError = 2;
 
+    private static readonly FeatureFlagsSdk.EvaluationCallback EvaluateDeferred = FeatureFlagsSdk.EvaluateDeferred;
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
+    private readonly FeatureFlagsSdk.EvaluationCallback? _evaluateDeferred;
+
+    // Asked once: when the tracer supports it, exposures are sent only after OpenFeature completes the
+    // evaluation. Otherwise the tracer sends them during the evaluation, as older providers expect.
+    private readonly bool _deferExposures;
+    private readonly ExposureCommitHook? _exposureCommitHook;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
@@ -41,25 +48,18 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     // Span-enrichment hook is constructed ONLY when the gate is on; null otherwise so
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
+    // Startup gate: enabling events later requires a new provider (or application restart).
+    private readonly FlagEvalEVPHook? _evpHook;
 
-    // Both hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
+    // Hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
     private readonly IImmutableList<Hook> _providerHooks;
 
     private int _status = StatusInitializing;
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
+        : this(FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
     {
-        FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
-#if NET6_0_OR_GREATER
-        _metricsHook = new FlagEvalMetricsHook();
-#endif
-        if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
-        {
-            _spanEnrichmentHook = new SpanEnrichmentHook();
-        }
-
-        _providerHooks = CreateProviderHooks();
     }
 
     // The native profiler normally connects FeatureFlagsSdk.Evaluate to the tracer. Unit tests
@@ -68,6 +68,39 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         : this()
     {
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
+    }
+
+    // Unit tests stand in for both tracer entry points and for the capability probe.
+    internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
+        : this(canDeferExposures, commitExposure)
+    {
+        _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
+        _evaluateDeferred = evaluateDeferred ?? throw new ArgumentNullException(nameof(evaluateDeferred));
+    }
+
+    private DatadogProvider(Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
+    {
+        FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
+        _deferExposures = canDeferExposures();
+        if (_deferExposures)
+        {
+            _exposureCommitHook = new ExposureCommitHook(commitExposure);
+        }
+
+#if NET6_0_OR_GREATER
+        _metricsHook = new FlagEvalMetricsHook();
+#endif
+        if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
+        {
+            _spanEnrichmentHook = new SpanEnrichmentHook();
+        }
+
+        if (FeatureFlagsSdk.IsEvaluationEventsEnabled())
+        {
+            _evpHook = new FlagEvalEVPHook();
+        }
+
+        _providerHooks = CreateProviderHooks();
     }
 
     /// <summary> Gets a value indicating whether the Datadog's provider is instrumented and available  </summary>
@@ -226,7 +259,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
         return Task.FromResult(res);
     }
 
@@ -239,7 +272,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
         return Task.FromResult(res);
     }
 
@@ -252,7 +285,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
         return Task.FromResult(res);
     }
 
@@ -265,7 +298,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
         return Task.FromResult(res);
     }
 
@@ -278,7 +311,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
         return Task.FromResult(res);
     }
 
@@ -296,22 +329,30 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         // the trace context, so there's nothing to dispose on provider close.
     }
 
+    private FeatureFlagsSdk.EvaluationCallback? Evaluator() => _deferExposures ? _evaluateDeferred ?? EvaluateDeferred : _evaluate;
+
     private IImmutableList<Hook> CreateProviderHooks()
     {
+        var hooks = ImmutableList.CreateBuilder<Hook>();
 #if NET6_0_OR_GREATER
-        if (_spanEnrichmentHook is not null)
-        {
-            return ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook);
-        }
-
-        return ImmutableList.Create<Hook>(_metricsHook);
-#else
-        if (_spanEnrichmentHook is not null)
-        {
-            return ImmutableList.Create<Hook>(_spanEnrichmentHook);
-        }
-
-        return ImmutableList<Hook>.Empty;
+        hooks.Add(_metricsHook);
 #endif
+        if (_spanEnrichmentHook is not null)
+        {
+            hooks.Add(_spanEnrichmentHook);
+        }
+
+        if (_evpHook is not null)
+        {
+            hooks.Add(_evpHook);
+        }
+
+        // Finally hooks run in reverse order, so the last hook commits before the others read the result.
+        if (_exposureCommitHook is not null)
+        {
+            hooks.Add(_exposureCommitHook);
+        }
+
+        return hooks.ToImmutable();
     }
 }

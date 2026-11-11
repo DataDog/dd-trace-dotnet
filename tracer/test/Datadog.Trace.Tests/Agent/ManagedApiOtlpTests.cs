@@ -17,6 +17,22 @@ namespace Datadog.Trace.Tests.Agent;
 public class ManagedApiOtlpTests
 {
     [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("invalid")]
+    public void ExporterSettings_WithoutValidTracesProtocol_DefaultsToHttpProtobuf(string protocol)
+    {
+        var source = protocol is null
+                         ? BuildSource("OTEL_TRACES_EXPORTER:otlp")
+                         : BuildSource("OTEL_TRACES_EXPORTER:otlp", $"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL:{protocol}");
+        var exporterSettings = new ExporterSettings(source, _ => false, NullConfigurationTelemetry.Instance);
+
+        exporterSettings.OtlpTracesProtocol.Should().Be(OtlpProtocol.HttpProtobuf);
+        exporterSettings.TracesEncoding.Should().Be(TracesEncoding.OtlpProtobuf);
+        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("http://localhost:4318/v1/traces"));
+    }
+
+    [Theory]
     [InlineData("grpc",          "http://otel-collector:4317", "http://otel-collector:4317")]
     [InlineData("http/protobuf", "http://otel-collector:4318", "http://otel-collector:4318/v1/traces")]
     [InlineData("http/json",     "http://otel-collector:4318", "http://otel-collector:4318/v1/traces")]

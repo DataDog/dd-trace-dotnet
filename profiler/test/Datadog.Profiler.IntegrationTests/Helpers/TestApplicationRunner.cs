@@ -51,6 +51,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             ServiceName = $"IntegrationTest-{_appName}";
         }
 
+        public TestApplicationRunner(
+            TestAppContext context,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableTracer = false,
+            bool enableProfiler = true)
+            : this(
+                context.Application.FolderName,
+                TestFrameworkInfo.ToMoniker(context.Framework),
+                context.Application.AssemblyName,
+                output,
+                commandLine,
+                enableTracer,
+                enableProfiler)
+        {
+        }
+
         public string TestOutputDir => _testBaseOutputDir;
 
         public EnvironmentHelper Environment { get; }
@@ -80,6 +97,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             RunTest(agent);
             PrintTestInfo();
+            agent.ThrowIfHandlerFailed();
         }
 
         public bool WaitForExitOrCaptureDump(Process process, int milliseconds)

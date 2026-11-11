@@ -51,10 +51,9 @@ namespace HttpListenerExample
             Environment.Exit(0);
         }
 
-        public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)
+        public static HttpListener StartHttpListenerWithPortResilience(string port, int maxAttempts = 5)
         {
-            // try up to 5 consecutive ports before giving up
-            while (true)
+            for (var attempt = 1; ; attempt++)
             {
                 Url = $"http://localhost:{port}/Samples.HttpMessageHandler/";
 
@@ -72,16 +71,18 @@ namespace HttpListenerExample
 
                     return listener;
                 }
-                catch (HttpListenerException) when (retries > 0)
+                catch (Exception)
                 {
-                    // only catch the exception if there are retries left
-                    port = TcpPortProvider.GetOpenPort().ToString();
-                    retries--;
+                    // A listener cannot be reused after a failed Start().
+                    // HttpListener.Dispose() is explicit on .NET Framework.
+                    ((IDisposable)listener).Dispose();
+                    if (attempt >= maxAttempts)
+                    {
+                        throw;
+                    }
                 }
 
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
+                port = TcpPortProvider.GetOpenPort().ToString();
             }
         }
 
