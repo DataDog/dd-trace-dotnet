@@ -86,8 +86,9 @@ internal partial class ProbeExpressionParser<T>
             constant = Expression.Constant(Expression.Lambda<Func<string>>(body).Compile()(), typeof(string));
             return true;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Log.Debug(e, "Could not fold a constant dictionary key, so it is evaluated at runtime");
             return false;
         }
     }
@@ -424,20 +425,20 @@ internal partial class ProbeExpressionParser<T>
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
             }
 
-            // Fold string keys computed only from constants so they are redaction-checked like literal keys.
-            if (indexOrKey?.Type == typeof(string) &&
-                indexOrKey is not ConstantExpression &&
-                TryFoldStringKey(indexOrKey, out var foldedKey))
+            if (indexOrKey?.Type == typeof(string))
             {
-                indexOrKey = foldedKey;
-            }
+                // Fold string keys computed only from constants so they are redaction-checked like literal keys.
+                if (indexOrKey is not ConstantExpression && TryFoldStringKey(indexOrKey, out var foldedKey))
+                {
+                    indexOrKey = foldedKey;
+                }
 
-            if (indexOrKey.Type == typeof(string) &&
-                indexOrKey is ConstantExpression expr &&
-                Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
-            {
-                AddRedactionError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]");
-                return RedactedValue();
+                if (indexOrKey is ConstantExpression expr &&
+                    Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
+                {
+                    AddRedactionError($"{source?.ToString() ?? "N/A"}[{indexOrKey.ToString()}]");
+                    return RedactedValue();
+                }
             }
 
             return CallGetItem(source, assignableFrom, indexOrKey);
@@ -915,11 +916,8 @@ internal partial class ProbeExpressionParser<T>
     }
 
     /// <summary>
-    /// Checks that a key can be folded at compile time and strips the parser budget checks from it.
-    /// Accepts only: string, primitive or null constants; blocks without variables; unary and binary nodes
-    /// over primitives without an operator method (including conversions between primitives); conditionals;
-    /// instance members declared on <see cref="string"/>; and methods declared on <see cref="string"/>.
-    /// Anything else rejects the key.
+    /// Rejects every key that is not built from constants, and replaces the parser budget checks with
+    /// <see cref="Expression.Empty()"/>: the fold lambda has no budget parameter to pass them.
     /// </summary>
     private sealed class FoldableKeyVisitor : ExpressionVisitor
     {
@@ -955,8 +953,8 @@ internal partial class ProbeExpressionParser<T>
                 UnaryExpression unary => unary.Method is null && unary.Operand is not null && unary.Operand.Type.IsPrimitive && unary.Type.IsPrimitive,
                 BinaryExpression binary => binary.Method is null && binary.Conversion is null && binary.Left.Type.IsPrimitive && binary.Right.Type.IsPrimitive,
                 ConditionalExpression => true,
-                MemberExpression member => member.Expression is not null && member.Member.DeclaringType == typeof(string),
-                MethodCallExpression call => call.Method.DeclaringType == typeof(string),
+                MemberExpression member => member.Expression is not null && member.Member.DeclaringType == typeof(string) && member.Member.Name == nameof(string.Length),
+                MethodCallExpression call => call.Method.DeclaringType == typeof(string) && call.Method.Name == nameof(string.Substring),
                 _ => false
             };
         }
