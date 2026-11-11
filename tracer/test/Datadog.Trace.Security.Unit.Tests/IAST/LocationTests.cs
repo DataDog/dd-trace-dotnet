@@ -104,14 +104,15 @@ public class LocationTests
     [Fact]
     public async Task GivenAnAsyncIterator_WhenCreatedFromItsFrame_TheSourceMethodIsReported()
     {
-        Location? location = null;
+        var locations = new List<Location>();
         await foreach (var item in GetLocationFromAsyncIterator())
         {
-            location = item;
+            locations.Add(item);
         }
 
-        location!.Value.Class.Should().Be(typeof(LocationTests).FullName);
-        location.Value.Method.Should().Be(nameof(GetLocationFromAsyncIterator));
+        locations.Should().ContainSingle();
+        locations[0].Class.Should().Be(typeof(LocationTests).FullName);
+        locations[0].Method.Should().Be(nameof(GetLocationFromAsyncIterator));
     }
 #endif
 
