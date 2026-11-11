@@ -21,6 +21,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -43,11 +44,24 @@ public class AgentlessConfigurationSourceTests
 
     private const string ServiceRejection = "DD-Service header not sent";
 
-    // The limits of the format the CDN attributes usage to.
+    // Names already in the format the CDN attributes usage to, at its limits.
     public static TheoryData<string> AttributableServices => new() { "a", "svc_name.v2:api/edge-1", "a" + new string('b', 99) };
 
-    // Values the CDN drops. A line break or a non-ASCII character can also make the request fail.
-    public static TheoryData<string> UnattributableServices => new() { "a" + new string('b', 100), "_svc", "my service", "支付", "bad\nvalue" };
+    // Names the CDN would drop, and the name the Agent turns each into for APM. Default Web Site/Shop
+    // is the name inferred for an IIS application in the default site.
+    public static TheoryData<string, string> CleanedUpServices => new()
+    {
+        { "My Service", "my_service" },
+        { "Default Web Site/Shop", "default_web_site/shop" },
+        { "My-API", "my-api" },
+        { "_svc", "svc" },
+        { "bad\nvalue", "bad_value" },
+        { "a" + new string('b', 100), "a" + new string('b', 99) },
+    };
+
+    // Names with nothing left the CDN accepts once cleaned up: non-ASCII letters are kept, and a
+    // name of underscores is left empty.
+    public static TheoryData<string> UnattributableServices => new() { "支付", "___" };
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -145,7 +159,7 @@ public class AgentlessConfigurationSourceTests
 
     [Theory]
     [MemberData(nameof(AttributableServices))]
-    public async Task SendsAServiceAtTheLimitsOfTheFormatTheCdnAccepts(string service)
+    public async Task SendsAServiceAlreadyInTheFormatTheCdnAcceptsUnchanged(string service)
     {
         var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
         using var source = CreateSource(factory, [], service: service);
@@ -156,8 +170,8 @@ public class AgentlessConfigurationSourceTests
     }
 
     [Theory]
-    [MemberData(nameof(UnattributableServices))]
-    public async Task SkipsAServiceTheCdnWouldDrop(string service)
+    [MemberData(nameof(CleanedUpServices))]
+    public async Task CleansUpAServiceTheCdnWouldDropTheWayTheAgentDoesForApm(string service, string sent)
     {
         var logger = CreateDebugLogger();
         var factory = new TestRequestFactory();
@@ -166,10 +180,63 @@ public class AgentlessConfigurationSourceTests
         await source.PollAsync();
         await source.PollAsync();
 
+        factory.RequestsSent.Should().HaveCount(2).And.AllSatisfy(r => r.ExtraHeaders.Should().Contain("DD-Service", sent));
+        RejectedServices(logger).Should().BeEmpty();
+    }
+
+    [Theory]
+    [MemberData(nameof(UnattributableServices))]
+    public async Task SkipsAServiceWithNothingLeftOnceCleanedUp(string service)
+    {
+        var logger = CreateDebugLogger();
+        var applied = new List<ServerConfiguration>();
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body),
+            uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, applied, service: service, logger: logger.Object);
+
+        await source.PollAsync();
+        await source.PollAsync();
+
+        // Polling carries on, without the header.
         factory.RequestsSent.Should().HaveCount(2).And.AllSatisfy(r => r.ExtraHeaders.Should().NotContainKey("DD-Service"));
+        applied.Should().NotBeEmpty();
 
         // Reported once, not on every poll.
         RejectedServices(logger).Should().Equal(service);
+    }
+
+    // Configured the way a customer does, through DD_SERVICE, and checked on the request sent to the CDN.
+    [Theory]
+    [InlineData("My Service", "my_service")]
+    [InlineData("Default Web Site/Shop", "default_web_site/shop")]
+    public async Task SendsTheConfiguredServiceCleanedUpAndLeavesTheTracerServiceAsConfigured(string service, string sent)
+    {
+        var settings = CreateTracerSettings(service);
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateConfiguredSource(settings, factory);
+
+        await source.PollAsync();
+
+        factory.RequestsSent.Should().ContainSingle().Which.ExtraHeaders.Should().Contain("DD-Service", sent);
+
+        // Only the header value is cleaned up. Spans, logs and metrics keep the service as configured.
+        settings.Manager.InitialMutableSettings.ServiceName.Should().Be(service);
+        settings.Manager.InitialMutableSettings.DefaultServiceName.Should().Be(service);
+    }
+
+    [Fact]
+    public async Task StillPollsWhenTheConfiguredServiceHasNothingLeftOnceCleanedUp()
+    {
+        var logger = CreateDebugLogger();
+        var settings = CreateTracerSettings(service: "支付");
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateConfiguredSource(settings, factory, logger.Object);
+
+        await source.PollAsync();
+
+        factory.RequestsSent.Should().ContainSingle().Which.ExtraHeaders.Should().NotContainKey("DD-Service");
+        RejectedServices(logger).Should().Equal("支付");
     }
 
     [Fact]
@@ -182,11 +249,11 @@ public class AgentlessConfigurationSourceTests
         using var source = CreateConfiguredSource(settings, factory);
 
         await source.PollAsync();
-        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "payments");
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "Payments API");
         await source.PollAsync();
 
         factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", "checkout");
-        factory.RequestsSent[1].ExtraHeaders.Should().Contain("DD-Service", "payments");
+        factory.RequestsSent[1].ExtraHeaders.Should().Contain("DD-Service", "payments_api");
     }
 
     [Fact]
@@ -198,24 +265,24 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        // The name the tracer's spans use when DD_SERVICE is not set.
+        // The name the tracer's spans use when DD_SERVICE is not set, cleaned up like any other.
         var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
         inferred.Should().NotBeNullOrEmpty();
-        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", inferred);
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", NormalizerTraceProcessor.NormalizeService(inferred));
     }
 
     [Fact]
     public void ReportsARejectedServiceOnlyWhenTheServiceChanges()
     {
         var logger = CreateDebugLogger();
-        var settings = CreateTracerSettings(service: "my service");
+        var settings = CreateTracerSettings(service: "支付");
         using var source = CreateConfiguredSource(settings, new TestRequestFactory(), logger.Object);
 
         // Every settings change reaches the source, including one that leaves the service as it was.
         UpdateSettingsInCode(settings, TracerSettingKeyConstants.EnvironmentKey, "staging");
-        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "other service");
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "___");
 
-        RejectedServices(logger).Should().Equal("my service", "other service");
+        RejectedServices(logger).Should().Equal("支付", "___");
     }
 
     [Fact]

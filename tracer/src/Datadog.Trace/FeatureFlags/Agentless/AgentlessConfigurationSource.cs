@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -205,7 +206,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// </summary>
     private void UpdateService(string? service)
     {
-        // Every settings change lands here, so the service is only checked, and a rejection
+        // Every settings change lands here, so the service is only cleaned up, and a rejection
         // reported, when the setting itself changes.
         if (string.Equals(_serviceSetting, service, StringComparison.Ordinal))
         {
@@ -214,16 +215,26 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         _serviceSetting = service;
 
-        // A value the CDN would drop is not sent. Besides being wasted, a header value with a line
-        // break or a non-ASCII character can make the request fail, and with it every poll.
         string? sent = null;
-        if (service is not null && IsAttributableService(service))
+        if (!StringUtil.IsNullOrEmpty(service))
         {
-            sent = service;
-        }
-        else if (!StringUtil.IsNullOrEmpty(service))
-        {
-            _log.Debug<string>("Feature Flags: service {Service} does not match the format the CDN attributes usage to; DD-Service header not sent", service);
+            // Cleaned up the way the Agent cleans up span service names, so the usage is attributed
+            // to the name APM shows (My Service as my_service) instead of being dropped by the CDN.
+            // Only the header value is cleaned up: the tracer's service stays as configured. An empty
+            // name never gets here, so the normalizer's unnamed-service placeholder is never sent.
+            var cleaned = NormalizerTraceProcessor.NormalizeService(service);
+
+            // The normalizer keeps non-ASCII letters and can leave nothing at all, so the result is
+            // checked against the CDN's format too. A value the CDN would drop is not sent. Besides
+            // being wasted, a non-ASCII header value can make the request fail, and with it every poll.
+            if (IsAttributableService(cleaned))
+            {
+                sent = cleaned;
+            }
+            else
+            {
+                _log.Debug<string>("Feature Flags: service {Service} has nothing left the CDN can attribute usage to once cleaned up; DD-Service header not sent", service);
+            }
         }
 
         Volatile.Write(ref _service, sent);
