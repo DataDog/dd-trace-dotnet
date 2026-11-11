@@ -198,6 +198,11 @@ public class AgentlessEndpointTests
     [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&selected_flag_tags=mobile")]
     [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&selected_flag_tags=mobile")]
     [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc??x=1", "https://flags.example.com/ufc??x=1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc???x=1", "https://flags.example.com/ufc???x=1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=?inside", "https://flags.example.com/ufc?x=?inside&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?%3Fx=1", "https://flags.example.com/ufc?%3Fx=1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=1#frag", "https://flags.example.com/ufc?x=1&selected_flag_tags=mobile#frag")]
     [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?selected_flag_tags=mobile")]
     public void MergesTheSelectionIntoACustomEndpointQuery(string baseUrl, string expected)
     {

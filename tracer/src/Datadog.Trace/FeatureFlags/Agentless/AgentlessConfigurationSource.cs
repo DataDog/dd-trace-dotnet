@@ -72,7 +72,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
     // Completed when a new flag selection is claimed, so the poll loop requests it at once instead of
     // after the poll interval: the provider that claimed it is waiting for that configuration.
-    // Replaced by the poll loop before each poll.
+    // Acknowledged under _requestTargetLock when a request captures the changed target.
     private TaskCompletionSource<bool> _flagSelectionChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // Set when a new flag selection is claimed, so the next request goes out without the ETag even when
@@ -219,10 +219,10 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             }
 
             Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, current.ConfiguredEnvironment, selection));
+            _requestUnconditionally = 1;
+            _flagSelectionChanged.TrySetResult(true);
         }
 
-        Volatile.Write(ref _requestUnconditionally, 1);
-        Volatile.Read(ref _flagSelectionChanged).TrySetResult(true);
         _log.Debug("Feature Flags: agentless configuration source now requests a different flag selection");
     }
 
@@ -360,11 +360,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         while (!_shutdown.Task.IsCompleted)
         {
-            // Replaced before the poll reads its target, so a selection claimed during the poll ends the
-            // wait below, and the next poll requests it.
-            var flagSelectionChanged = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Volatile.Write(ref _flagSelectionChanged, flagSelectionChanged);
-
             try
             {
                 await PollAsync().ConfigureAwait(false);
@@ -375,16 +370,16 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             }
 
             // Fixed delay after completion, so polls never overlap.
-            await Task.WhenAny(_waitAsync(_pollInterval), _shutdown.Task, flagSelectionChanged.Task).ConfigureAwait(false);
+            await WaitAsync(_pollInterval).ConfigureAwait(false);
         }
 
         _log.Debug("AgentlessConfigurationSource::RunAsync -> Exit");
     }
 
-    // A shutdown ends the wait early. The delay itself is left to expire on its own: it holds no
+    // Shutdown or a new selection ends the wait early. The delay itself expires on its own: it holds no
     // thread, and the loop has already exited by the time it does.
     private async Task WaitAsync(TimeSpan delay)
-        => await Task.WhenAny(_waitAsync(delay), _shutdown.Task).ConfigureAwait(false);
+        => await Task.WhenAny(_waitAsync(delay), _shutdown.Task, Volatile.Read(ref _flagSelectionChanged).Task).ConfigureAwait(false);
 
     private TimeSpan RetryDelay(int attempt)
     {
@@ -404,7 +399,18 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     {
         // Read per request rather than captured, because the environment it carries can be
         // changed in code after startup.
-        var target = Volatile.Read(ref _requestTarget);
+        RequestTarget target;
+        bool newClaim;
+        lock (_requestTargetLock)
+        {
+            target = _requestTarget;
+            newClaim = _requestUnconditionally != 0;
+            _requestUnconditionally = 0;
+            if (_flagSelectionChanged.Task.IsCompleted)
+            {
+                Volatile.Write(ref _flagSelectionChanged, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+            }
+        }
 
         try
         {
@@ -413,7 +419,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // An ETag only identifies the configuration served for the URI it came from. Sending it
             // against a different environment would earn a 304 and pin the process to the previous
             // environment's flags, with no way back.
-            var newClaim = Interlocked.Exchange(ref _requestUnconditionally, 0) != 0;
             if (newClaim || (_etagUri is not null && uri != _etagUri))
             {
                 _etag = null;
@@ -441,7 +446,14 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 // Only a response to a request that carried the selection can say it was ignored.
                 if (target.SelectionSent)
                 {
-                    ignoredSelection = FlagSelectionDiagnostics.ParseIgnoredReason(response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName));
+#if NETCOREAPP
+                    var ignoredHeader = response is HttpClientResponse httpResponse
+                                            ? httpResponse.GetCombinedHeader(FlagSelectionDiagnostics.IgnoredHeaderName)
+                                            : response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName);
+#else
+                    var ignoredHeader = response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName);
+#endif
+                    ignoredSelection = FlagSelectionDiagnostics.ParseIgnoredReason(ignoredHeader);
                 }
 
                 using var stream = await response.GetStreamAsync().ConfigureAwait(false);

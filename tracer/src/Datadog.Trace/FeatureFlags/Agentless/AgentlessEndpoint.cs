@@ -284,13 +284,16 @@ internal sealed class AgentlessEndpoint
 
     private static Uri AppendQuery(Uri uri, string parameters)
     {
-        var builder = new UriBuilder(uri);
+        // Built as a string rather than with UriBuilder, whose Query setter adds a "?" on .NET Framework
+        // but not on .NET Core when the value already starts with one, so a query whose data starts
+        // with "?" would lose it. A URL ending in a bare "?" reports a query of "?".
+        var separator = uri.Query.Length switch
+        {
+            0 => "?",
+            1 => string.Empty,
+            _ => "&",
+        };
 
-        // The getter returns the query with its leading "?", while the setter prepends one of its
-        // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
-        // ending in a bare "?" reports a query of "?", which the length check treats as no query.
-        var existing = builder.Query;
-        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameters : parameters;
-        return builder.Uri;
+        return new Uri(uri.GetLeftPart(UriPartial.Query) + separator + parameters + uri.Fragment);
     }
 }

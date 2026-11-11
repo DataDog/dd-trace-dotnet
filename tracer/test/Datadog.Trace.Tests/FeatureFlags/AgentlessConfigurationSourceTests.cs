@@ -652,6 +652,64 @@ public class AgentlessConfigurationSourceTests
     }
 
     [Fact]
+    public async Task ANewlyClaimedSelectionEndsARetryDelayAndIsRequestedOnce()
+    {
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, statusCode: 503),
+            uri => new TestApiRequest(uri, statusCode: 304),
+            uri => new TestApiRequest(uri, statusCode: 304));
+        var waits = 0;
+        var firstWait = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var source = new AgentlessConfigurationSource(
+            CreateEndpoint(),
+            factory,
+            TimeSpan.FromSeconds(30),
+            (_, _) => ConfigurationApplyResult.Applied,
+            waitAsync: _ =>
+            {
+                System.Threading.Interlocked.Increment(ref waits);
+                firstWait.TrySetResult(true);
+                return new TaskCompletionSource<bool>().Task;
+            },
+            flagSelection: Mobile,
+            flagSelectionDiagnostics: new FlagSelectionDiagnostics(new Mock<IMetricsTelemetryCollector>().Object));
+
+        source.Start();
+        (await Task.WhenAny(firstWait.Task, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(firstWait.Task, "the 503 starts a retry delay");
+
+        source.UpdateFlagSelection(FlagSelection.Create(["beta"], null));
+
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (System.Threading.Volatile.Read(ref waits) < 2 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
+
+        await Task.Delay(200);
+        factory.RequestsSent.Should().HaveCount(2, "the claim ends the retry delay, and the poll interval never elapses in this test");
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=beta");
+    }
+
+#if NETCOREAPP
+    [Theory]
+    [InlineData("too_many_values", "invalid_tag")]
+    [InlineData("too_many_values", "too_many_values")]
+    [InlineData("", "invalid_tag")]
+    public async Task ReportsRepeatedIgnoredHeadersAsUnknown(string first, string second)
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        var factory = new TestRequestFactory(uri => new HttpClientApiRequest(uri, Body, first, second));
+        using var source = CreateSource(factory, [], logger: logger.Object, selection: Mobile, diagnostics: new FlagSelectionDiagnostics(metrics.Object));
+
+        await source.PollAsync();
+
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UnknownIgnored);
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.Unknown, 1), Times.Once);
+    }
+
+#endif
+    [Fact]
     public async Task ASupersededResponseLeavesTheEtagAndReportsNothing()
     {
         var logger = new Mock<IDatadogLogger>();
@@ -787,6 +845,22 @@ public class AgentlessConfigurationSourceTests
 
     private static Task NoWait(TimeSpan delay) => Task.CompletedTask;
 
+#if NETCOREAPP
+    private class HttpClientApiRequest(Uri endpoint, string body, params string[] ignoredHeaderValues) : TestApiRequest(endpoint)
+    {
+        public override Task<IApiResponse> GetAsync()
+        {
+            var message = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new System.Net.Http.StringContent(body) };
+            foreach (var value in ignoredHeaderValues)
+            {
+                message.Headers.TryAddWithoutValidation(FlagSelectionDiagnostics.IgnoredHeaderName, value);
+            }
+
+            return Task.FromResult<IApiResponse>(new Datadog.Trace.Agent.Transports.HttpClientResponse(message));
+        }
+    }
+
+#endif
     private class ThrowingApiRequest(Uri endpoint) : TestApiRequest(endpoint)
     {
         public override Task<IApiResponse> GetAsync() => throw new IOException("The connection was refused");
