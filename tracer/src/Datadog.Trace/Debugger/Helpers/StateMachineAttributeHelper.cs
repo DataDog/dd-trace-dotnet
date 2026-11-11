@@ -4,13 +4,10 @@
 // </copyright>
 
 using System;
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 #nullable enable
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class StateMachineAttributeHelper
     {
@@ -58,45 +55,6 @@ namespace Datadog.Trace.Util
 
             stateMachineType = null;
             isIterator = false;
-            return false;
-        }
-
-        /// <summary>
-        /// Resolves a method of a compiler-generated async or iterator state machine (such as its MoveNext) to the
-        /// method of the source code it was generated from, as System.Diagnostics.StackTrace does for its ToString.
-        /// Only metadata is read: no attribute is instantiated and no customer code runs.
-        /// </summary>
-        /// <param name="method">the method of a stack frame</param>
-        /// <param name="sourceMethod">the method the state machine was generated from</param>
-        /// <param name="isIterator">whether the state machine is an iterator, sync or async</param>
-        /// <returns>whether <paramref name="method"/> belongs to a state machine whose source method was found</returns>
-        internal static bool TryGetStateMachineSourceMethod(MethodBase method, [NotNullWhen(true)] out MethodBase? sourceMethod, out bool isIterator)
-        {
-            sourceMethod = null;
-            isIterator = false;
-
-            var stateMachineType = method.DeclaringType;
-            var parentType = stateMachineType?.DeclaringType;
-            // not checking CompilerGeneratedAttribute: the state machines of lambdas, nested in their display class, don't have it.
-            // What proves the type is a state machine is the attribute of the method below that points to it.
-            if (parentType is null
-             || !(typeof(IAsyncStateMachine).IsAssignableFrom(stateMachineType) || typeof(IEnumerator).IsAssignableFrom(stateMachineType)))
-            {
-                return false;
-            }
-
-            var methods = parentType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            foreach (var candidateMethod in methods)
-            {
-                if (TryGetStateMachineType(candidateMethod, out var candidateStateMachineType, out var candidateIsIterator) &&
-                    candidateStateMachineType == stateMachineType)
-                {
-                    sourceMethod = candidateMethod;
-                    isIterator = candidateIsIterator;
-                    return true;
-                }
-            }
-
             return false;
         }
 

@@ -39,16 +39,13 @@ namespace Datadog.Trace.Debugger.Helpers
                 var declaringType = mb.DeclaringType;
                 var methodName = mb.Name;
                 var methodChanged = false;
-                if (declaringType != null &&
-                    declaringType.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) &&
-                    StateMachineAttributeHelper.TryGetStateMachineSourceMethod(mb, out var sourceMethod, out var isIterator))
+                if (declaringType != null && declaringType.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false))
                 {
-                    // If this is an iterator (sync or async), mark the iterator as changed, so it gets the + annotation
-                    // of the original method. Non-iterator async state machines resolve directly to their builder methods
-                    // so aren't marked as changed.
-                    mb = sourceMethod;
-                    declaringType = sourceMethod.DeclaringType;
-                    methodChanged = isIterator;
+                    var isAsync = typeof(IAsyncStateMachine).IsAssignableFrom(declaringType);
+                    if (isAsync || typeof(IEnumerator).IsAssignableFrom(declaringType))
+                    {
+                        methodChanged = TryResolveStateMachineMethod(ref mb, out declaringType);
+                    }
                 }
 
                 // if there is a type (non global method) print it
@@ -152,6 +149,35 @@ namespace Datadog.Trace.Debugger.Helpers
             {
                 StringBuilderCache.Release(sb);
             }
+        }
+
+        private static bool TryResolveStateMachineMethod(ref MethodBase method, out Type? declaringType)
+        {
+            declaringType = method.DeclaringType;
+
+            var parentType = declaringType?.DeclaringType;
+            if (parentType == null)
+            {
+                return false;
+            }
+
+            var methods = parentType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+            foreach (MethodInfo candidateMethod in methods)
+            {
+                if (StateMachineAttributeHelper.TryGetStateMachineType(candidateMethod, out var stateMachineType, out var isIterator) &&
+                    stateMachineType == declaringType)
+                {
+                    // If this is an iterator (sync or async), mark the iterator as changed, so it gets the + annotation
+                    // of the original method. Non-iterator async state machines resolve directly to their builder methods
+                    // so aren't marked as changed.
+                    method = candidateMethod;
+                    declaringType = candidateMethod.DeclaringType;
+                    return isIterator;
+                }
+            }
+
+            return false;
         }
     }
 }

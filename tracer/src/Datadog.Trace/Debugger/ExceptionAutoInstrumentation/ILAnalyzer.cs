@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Util;
+using Datadog.Trace.Debugger.Helpers;
 
 #if NETCOREAPP
 using System.Reflection.Metadata;

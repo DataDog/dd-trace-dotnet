@@ -13,7 +13,6 @@ using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -107,7 +106,7 @@ internal readonly struct Location
     {
         try
         {
-            if (method is not null && StateMachineAttributeHelper.TryGetStateMachineSourceMethod(method, out var sourceMethod, out _))
+            if (method is not null && StateMachineHelper.TryGetSourceMethod(method, out var sourceMethod))
             {
                 return sourceMethod;
             }
