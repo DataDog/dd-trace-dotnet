@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Agent
             string outcome)
         {
             var api = new Mock<IApi>();
-            api.SetupGet(x => x.TracesEncoding).Returns(Enum.Parse<TracesEncoding>(encoding));
+            api.SetupGet(x => x.TracesEncoding).Returns((TracesEncoding)Enum.Parse(typeof(TracesEncoding), encoding));
             var stats = new Mock<IStatsAggregator>();
             stats.SetupGet(x => x.CanComputeStats).Returns(canComputeStats);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tests.Agent
             var processedBeforeAggregation = false;
             stats.Setup(x => x.ProcessTrace(ref It.Ref<SpanCollection>.IsAny))
                  .Callback(() => normalizedBeforeProcessing = span.ServiceName == "mixedcase-service")
-                 .Returns(Enum.Parse<TraceKeepState>(outcome));
+                 .Returns((TraceKeepState)Enum.Parse(typeof(TraceKeepState), outcome));
             stats.Setup(x => x.AddRange(in It.Ref<SpanCollection>.IsAny))
                  .Callback(() => processedBeforeAggregation = normalizedBeforeProcessing);
             var agent = new AgentWriter(api.Object, stats.Object, TestStatsdManager.NoOp, automaticFlush: false, apmTracingEnabled: apmTracingEnabled);
