@@ -749,10 +749,17 @@ internal partial class ProbeExpressionParser<T>
         parser._parserContext = parserContext;
         parser._captureLimitInfo = captureLimitInfo;
 
+        CompiledExpression<T> compiledExpression;
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
+            if (parser._hasRedaction && typeof(T).IsNumeric())
+            {
+                // A number computed from a redacted value, such as len(password), would be made up.
+                return CompiledExpression<T>.WithoutDelegate(expressionJson, parser._errors.ToArray());
+            }
+
             var expression = Expression.Lambda<CompiledExpressionDelegate<T>>(
                 parsedExpression.ExpressionBody,
                 parsedExpression.ThisParameterExpression,
@@ -762,17 +769,25 @@ internal partial class ProbeExpressionParser<T>
                 parsedExpression.ArgsAndLocalsParameterExpression,
                 parsedExpression.EvaluationBudgetParameterExpression);
             var compiled = expression.Compile();
-            return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
+            compiledExpression = new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }
         catch (Exception e)
         {
             Log.Error(e, "Expression was: {Expression}", expressionJson);
             parser.AddError(parsedExpression.ExpressionBody?.ToString() ?? expressionJson, e.Message);
-            return new CompiledExpression<T>(
+            compiledExpression = new CompiledExpression<T>(
                 DefaultDelegate,
                 parsedExpression.ExpressionBody ?? Expression.Constant("N/A"),
                 expressionJson,
                 parser._errors.ToArray());
         }
+
+        if (parser._hasRedaction && typeof(T).IsNumeric())
+        {
+            // Parsing failed after the redaction: the default delegate would report a made-up 0.
+            return CompiledExpression<T>.WithoutDelegate(expressionJson, compiledExpression.Errors);
+        }
+
+        return compiledExpression;
     }
 }

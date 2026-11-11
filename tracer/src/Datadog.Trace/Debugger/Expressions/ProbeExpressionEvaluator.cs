@@ -366,13 +366,11 @@ internal sealed class ProbeExpressionEvaluator
             }
 
             compiledExpression = cached.Value;
-            if (compiledExpression.BudgetedDelegate is null)
+            if (compiledExpression.BudgetedDelegate is { } metricDelegate)
             {
-                return;
+                result.Metric = metricDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             }
 
-            var metric = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
-            result.Metric = metric;
             if (compiledExpression.Errors != null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
