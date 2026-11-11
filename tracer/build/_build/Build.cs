@@ -128,12 +128,7 @@ partial class Build : NukeBuild
     string Glibc217SysrootCMakeArgs =>
         UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / $"Glibc217.cmake.{(IsArm64 ? "aarch64" : "x86_64")}"}" : "";
 
-    // Must match the defaults in build/cmake/Glibc217.cmake.*, which NativeAOT publishing doesn't read.
-    AbsolutePath Glibc217SysrootDirectory => (AbsolutePath)$"/sysroot/{(IsArm64 ? "aarch64" : "x86_64")}-glibc217";
-
-    AbsolutePath Glibc217ToolchainLibDirectory => Glibc217SysrootDirectory / (IsArm64 ? "devtoolset10" : "devtoolset11") / "lib";
-
-    AbsolutePath GetUncompressedDdDotnetPath(string rid) => TemporaryDirectory / "dd-dotnet-uncompressed" / rid / "dd-dotnet";
+    AbsolutePath GetUncompressedDdDotnetPath(string rid) => ArtifactsDirectory / "dd-dotnet-uncompressed" / rid / "dd-dotnet";
 
     string DdDotnetRuntimeIdentifier =>
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
@@ -472,9 +467,13 @@ partial class Build : NukeBuild
             var publishFolder = ArtifactsDirectory / "dd-dotnet" / rid;
 
             var useGlibc217Sysroot = UseGlibc217Sysroot && IsLinux && !IsAlpine;
+
+            // Must match the defaults in build/cmake/Glibc217.cmake.*, which NativeAOT publishing doesn't read.
+            AbsolutePath sysrootDirectory = (AbsolutePath)$"/sysroot/{(IsArm64 ? "aarch64" : "x86_64")}-glibc217";
+            AbsolutePath toolchainLibDirectory = sysrootDirectory / (IsArm64 ? "devtoolset10" : "devtoolset11") / "lib";
             if (useGlibc217Sysroot)
             {
-                Assert.DirectoryExists(Glibc217ToolchainLibDirectory, "The harvested glibc 2.17 sysroot is missing. It is provided by ubuntu.dockerfile.");
+                Assert.DirectoryExists(toolchainLibDirectory, "The harvested glibc 2.17 sysroot is missing. It is provided by ubuntu.dockerfile.");
             }
 
             DotNetPublish(x => x
@@ -485,9 +484,10 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder)
                 .When(useGlibc217Sysroot, o => o
-                    .SetProperty("SysRoot", Glibc217SysrootDirectory)
-                    .SetProperty("Glibc217ToolchainLibPath", Glibc217ToolchainLibDirectory))
-                .When(IsLinux, o => o.SetProperty("UncompressedNativeBinaryPath", GetUncompressedDdDotnetPath(rid))));
+                    .SetProperty("SysRoot", sysrootDirectory)
+                    .SetProperty("Glibc217ToolchainLibPath", toolchainLibDirectory)
+                    // Only the glibc 2.17 validation needs the decompressed copy; Alpine and ordinary publishes must not run upx -d.
+                    .SetProperty("UncompressedNativeBinaryPath", GetUncompressedDdDotnetPath(rid))));
 
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
             CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
