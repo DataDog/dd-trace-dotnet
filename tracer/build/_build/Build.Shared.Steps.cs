@@ -326,7 +326,7 @@ partial class Build
     Target ValidateDdDotnetGlibcCompatibility => _ => _
         .Unlisted()
         .Description("Validates the glibc requirements of the uncompressed dd-dotnet NativeAOT executable")
-        .OnlyWhenStatic(() => IsLinux && !IsAlpine)
+        .OnlyWhenStatic(() => UseGlibc217Sysroot && IsLinux && !IsAlpine)
         .After(BuildDdDotnet)
         .Executes(() =>
         {
@@ -341,12 +341,12 @@ partial class Build
             var interpreter = IsArm64 ? "/lib/ld-linux-aarch64.so.1" : "/lib64/ld-linux-x86-64.so.2";
             var allowedLibraries = new[] { "libc.so.6", "libdl.so.2", "libm.so.6", "libpthread.so.0", "librt.so.1", loader };
 
-            var dynamicSection = ReadElf.Value($"--wide --dynamic {binary}", logOutput: false)
+            var dynamicSection = ReadElf.Value($"--wide --dynamic \"{binary}\"", logOutput: false)
                                         .Where(x => x.Type == OutputType.Std)
                                         .Select(x => x.Text);
             ElfDynamicLinkingChecker.ValidateNeededLibraries(dynamicSection, allowedLibraries, "dd-dotnet");
 
-            var programHeaders = ReadElf.Value($"--wide --program-headers {binary}", logOutput: false)
+            var programHeaders = ReadElf.Value($"--wide --program-headers \"{binary}\"", logOutput: false)
                                         .Where(x => x.Type == OutputType.Std)
                                         .Select(x => x.Text);
             ElfDynamicLinkingChecker.ValidateInterpreter(programHeaders, interpreter, "dd-dotnet");

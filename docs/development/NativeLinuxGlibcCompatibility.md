@@ -144,8 +144,9 @@ The sysroot paths in `Build.cs` must match the defaults in
 `PublishAotCompressed` compresses the published executable with UPX, which
 removes its dynamic section. Running `nm` or `readelf` on the shipped file
 proves nothing. `BuildDdDotnet` therefore writes a `upx -d` copy of the
-published binary to `.nuke/temp/dd-dotnet-uncompressed/<rid>/dd-dotnet`.
-`ValidateDdDotnetGlibcCompatibility` checks that copy.
+published binary to `dd-dotnet-uncompressed/<rid>/dd-dotnet` under the artifacts
+directory. Only the glibc 2.17 build writes it. `ValidateDdDotnetGlibcCompatibility`
+checks that copy.
 
 ## Refreshing the sysroot
 
