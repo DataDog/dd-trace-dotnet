@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,98 +28,72 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
-        public void ShouldGetAllocationSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6)]
+        public void ShouldGetAllocationSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly(ProfilerFeature.Allocations);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            using var run = runner.Run();
 
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
-
-            // only allocation profiler enabled so should only see the 2 related values per sample
-            CheckAllocationProfiles(runner);
+            CheckAllocationProfiles(run);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
-        public void ShouldAllocationProfilerBeDisabledByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6)]
+        public void ShouldAllocationProfilerBeDisabledByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.DisableAllExcept(ProfilerFeature.Allocations);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // On alpine, this check is flaky.
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(agent.NbCallsOnProfilingEndpoint == 0);
+                Assert.True(run.UploadCount == 0);
             }
 
             // no profiler enabled so should not see any sample
-            Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
+            Assert.Empty(run.Profiles.Samples);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
-        public void ExplicitlyDisableAllocationProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6)]
+        public void ExplicitlyDisableAllocationProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
+            runner.Environment.EnableOnly(ProfilerFeature.WallTime);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
+            using var run = runner.Run();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
-
-            // only walltime profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net10.0", "net11.0" })]
-        public void MeasureAllocations(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net10, TestFramework.Net11)]
+        public void MeasureAllocations(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureAllocation);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioMeasureAllocation);
+            runner.Environment.EnableOnly(ProfilerFeature.Allocations);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
+            using var run = runner.Run();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            Assert.True(run.UploadCount > 0);
 
-            runner.Run(agent);
-
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
+            var allocationSamples = run.Profiles.AllocationSamples();
             allocationSamples.Should().NotBeEmpty();
 
             // check that we use the new .NET 10 AllocationSampled event if running on .NET 10+
             // and AllocationTick otherwise
-            string expectedLog = (framework == "net10.0" || framework == "net11.0")
+            string expectedLog = app.IsAtLeast(TestFramework.Net10)
                 ? "Listen to AllocationSampled event"
                 : "Listen to AllocationTick event";
-            bool containsExpectedLog = false;
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                            .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            foreach (var line in File.ReadLines(logFile))
-            {
-                if (line.Contains(expectedLog))
-                {
-                    containsExpectedLog = true;
-                    break;
-                }
-            }
-
-            containsExpectedLog.Should().BeTrue();
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+            run.Logs.NativeProfiler.Should().ContainLine(expectedLog);
 
             // this test always succeeds: it is used to display the differences between sampled and real allocations
             Dictionary<string, AllocStats> profiledAllocations = GetProfiledAllocations(allocationSamples);
-            Dictionary<string, AllocStats> realAllocations = GetRealAllocations(runner.ProcessOutput);
+            Dictionary<string, AllocStats> realAllocations = GetRealAllocations(run.ProcessOutput);
 
             runner.XUnitLogger.WriteLine("Comparing allocations");
             runner.XUnitLogger.WriteLine("-------------------------------------------------------");
@@ -148,15 +122,14 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void ShouldGetAllocationSamplesViaEtw(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
+        public void ShouldGetAllocationSamplesViaEtw(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioWithoutGC);
             // allow agent proxy to send the recorded events
             runner.TestDurationInSeconds = 30;
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.Allocations);
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
@@ -178,8 +151,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
-            allocationSamples.Should().NotBeEmpty();
+            ProfileReader.Read(runner.Environment.PprofDir).AllocationSamples().Should().NotBeEmpty();
         }
 
         private static Dictionary<string, AllocStats> GetProfiledAllocations(IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> allocations)
@@ -356,51 +328,11 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             return next;
         }
 
-        private static IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> ExtractAllocationSamples(string directory)
+        private static void CheckAllocationProfiles(ProfilerTestRun run)
         {
-            static IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace, long Time)> GetAllocationSamples(string directory)
-            {
-                foreach (var profile in SamplesHelper.GetProfiles(directory))
-                {
-                    foreach (var sample in profile.Sample)
-                    {
-                        var count = sample.Value[0];
-                        if (count == 0)
-                        {
-                            continue;
-                        }
+            Assert.True(run.UploadCount > 0);
 
-                        long size = 0;
-                        // no size available for .NET Framework
-                        if (sample.Value.Count > 1)
-                        {
-                           size = sample.Value[1];
-                        }
-
-                        var labels = sample.Labels(profile).ToArray();
-
-                        // from Sample.cpp
-                        var type = labels.Single(l => l.Name == "allocation class").Value;
-
-                        yield return (type, count, size, sample.StackTrace(profile), profile.TimeNanos);
-                    }
-                }
-            }
-
-            return GetAllocationSamples(directory)
-                .OrderBy(s => s.Time)
-                .Select(s => (s.Type, s.Count, s.Size, s.Stacktrace));
-        }
-
-        private void CheckAllocationProfiles(TestApplicationRunner runner)
-        {
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
-
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
+            var allocationSamples = run.Profiles.AllocationSamples();
             allocationSamples.Should().NotBeEmpty();
 
             // expected allocations:
