@@ -109,6 +109,39 @@ public class TestingPlatformCommandLineTests : IDisposable
         parsed.UnsupportedOption.Should().Be(expected);
     }
 
+    [Theory]
+    [InlineData("test --filter-namespace tests")]
+    [InlineData("test --report-trx-filename tests")]
+    [InlineData("test --some-future-option tests/Sample.Tests")]
+    public void DoesNotTakeTheValueOfAnOptionItDoesNotKnowForTheProject(string commandLine)
+    {
+        var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);
+
+        parsed.ProjectOrSolution.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("test --no-restore tests/Sample.Tests", "tests/Sample.Tests")]
+    [InlineData("test --list-tests Sample.slnx", "Sample.slnx")]
+    [InlineData("test --no-ansi --no-progress tests/Sample.Tests/Sample.Tests.csproj", "tests/Sample.Tests/Sample.Tests.csproj")]
+    public void KeepsTheProjectAfterOptionsThatTakeNoValue(string commandLine, string expected)
+    {
+        var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);
+
+        parsed.ProjectOrSolution.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("test -cRelease", "-cRelease")]
+    [InlineData("test -fnet9.0", "-fnet9.0")]
+    [InlineData("test -ax64", "-ax64")]
+    public void DoesNotUnderstandShortOptionsWithTheValueAttached(string commandLine, string expected)
+    {
+        var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);
+
+        parsed.UnsupportedOption.Should().Be(expected);
+    }
+
     [Fact]
     public void ReadsTheTestModulesAndTheirRootDirectory()
     {

@@ -7,19 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Ci.Coverage.Exceptions;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-using Formatting = Datadog.Trace.Vendors.Newtonsoft.Json.Formatting;
 
 namespace Datadog.Trace.Coverage.Collector
 {

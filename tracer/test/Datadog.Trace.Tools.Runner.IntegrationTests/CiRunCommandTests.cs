@@ -1084,6 +1084,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             using var workingDirectory = new TemporaryDirectory("dd-ci-mtp-build-");
             File.WriteAllText(Path.Combine(workingDirectory.RootPath, "global.json"), """{ "test": { "runner": "Microsoft.Testing.Platform" } }""");
+            var tracerHome = Directory.CreateDirectory(Path.Combine(workingDirectory.RootPath, "home")).FullName;
 
             try
             {
@@ -1091,7 +1092,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
                 var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"{CommandPrefix} dotnet test tests/Sample.Tests/Sample.Tests.csproj --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+                var commandLine = $"{CommandPrefix} dotnet test tests/Sample.Tests/Sample.Tests.csproj --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home {tracerHome} --agent-url {agentUrl}";
 
                 using var console = ConsoleHelper.Redirect();
                 var exitCode = Program.Main(commandLine.Split(' '));

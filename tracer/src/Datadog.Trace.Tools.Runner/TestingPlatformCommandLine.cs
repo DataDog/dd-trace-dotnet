@@ -28,6 +28,15 @@ internal sealed class TestingPlatformCommandLine
     // Options that change the output folders in ways this class doesn't reproduce.
     private static readonly string[] UnsupportedOptions = ["-a", "--arch", "--os", "--use-current-runtime", "--ucr", "--device"];
 
+    // Options of the command that don't take a value.
+    private static readonly string[] FlagOptions =
+    [
+        "--no-build", "--no-restore", "--no-dependencies", "--no-ansi", "--no-progress", "--no-launch-profile", "--no-launch-profile-arguments",
+        "--list-tests", "--no-logo", "--nologo", "--no-banner", "-?", "-h", "--help"
+    ];
+
+    private static readonly string[] MsBuildPropertyPrefixes = ["-p:", "/p:", "-property:", "/property:", "--property:"];
+
     private static readonly string[] ProjectFileExtensions = [".sln", ".slnx", ".slnf"];
 
     private TestingPlatformCommandLine(bool noBuild, string? testModules, string? testModulesRootDirectory, string? projectOrSolution, List<string> msBuildArguments, string? unsupportedOption)
@@ -91,6 +100,7 @@ internal sealed class TestingPlatformCommandLine
         string? positional = null;
         string? unsupportedOption = null;
         var msBuildArguments = new List<string>();
+        var previousIsUnknownOption = false;
 
         var index = 0;
         while (index < arguments.Count && !string.Equals(Unquote(arguments[index]), "test", StringComparison.OrdinalIgnoreCase))
@@ -101,6 +111,8 @@ internal sealed class TestingPlatformCommandLine
         for (index++; index < arguments.Count; index++)
         {
             var argument = Unquote(arguments[index]);
+            var afterUnknownOption = previousIsUnknownOption;
+            previousIsUnknownOption = false;
             if (argument == "--")
             {
                 // The rest is for the test applications.
@@ -164,7 +176,20 @@ internal sealed class TestingPlatformCommandLine
                     index++;
                 }
             }
-            else if (positional is null && IsProjectOrSolutionPath(argument, workingDirectory))
+            else if (IsOptionToken(argument))
+            {
+                // An option that isn't listed, such as one of the test application: its value is not a project.
+                // Short options with the value attached, like -cRelease, are not understood either.
+                if (IsAttachedShortOption(argument))
+                {
+                    unsupportedOption ??= argument;
+                }
+                else if (Array.IndexOf(FlagOptions, GetOptionName(argument)) < 0 && argument.IndexOf(':') < 0 && argument.IndexOf('=') < 0)
+                {
+                    previousIsUnknownOption = true;
+                }
+            }
+            else if (positional is null && !afterUnknownOption && IsProjectOrSolutionPath(argument, workingDirectory))
             {
                 positional = argument;
             }
@@ -207,7 +232,7 @@ internal sealed class TestingPlatformCommandLine
 
     private static bool IsMsBuildProperty(string argument, out string property)
     {
-        foreach (var prefix in new[] { "-p:", "/p:", "-property:", "/property:", "--property:" })
+        foreach (var prefix in MsBuildPropertyPrefixes)
         {
             if (argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             {
@@ -219,6 +244,11 @@ internal sealed class TestingPlatformCommandLine
         property = string.Empty;
         return false;
     }
+
+    private static bool IsOptionToken(string argument) => argument.Length > 1 && argument[0] == '-';
+
+    private static bool IsAttachedShortOption(string argument)
+        => argument.Length > 2 && argument[0] == '-' && argument[1] != '-' && "cfa".IndexOf(argument[1]) >= 0 && argument[2] != ':' && argument[2] != '=';
 
     private static bool IsProjectOrSolutionPath(string argument, string workingDirectory)
     {

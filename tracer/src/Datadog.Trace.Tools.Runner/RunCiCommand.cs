@@ -75,6 +75,8 @@ namespace Datadog.Trace.Tools.Runner
                     await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
                 }
 
+                initResults.StartCoverageRewrite();
+
                 if (Program.CallbackForTests is { } callbackForTests)
                 {
                     callbackForTests(program, arguments, initResults.ProfilerEnvironmentVariables);
@@ -105,7 +107,7 @@ namespace Datadog.Trace.Tools.Runner
             finally
             {
                 initResults.CleanupTemporaryArgumentFiles();
-                initResults.CoverageRewriter?.Dispose();
+                initResults.EndCoverageRewrite();
             }
         }
     }

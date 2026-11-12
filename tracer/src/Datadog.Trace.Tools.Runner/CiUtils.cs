@@ -79,7 +79,7 @@ internal static class CiUtils
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
         var temporaryArgumentFiles = new List<string>();
-        TestingPlatformCoverageRewriter? coverageRewriter = null;
+        Func<IDisposable?>? startCoverageRewrite = null;
 
         var explicitCodeCoveragePath = HasExplicitAdditionalEnvironmentVariable(context, commonTracerSettings, Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
         var clearInheritedCodeCoveragePath = includeRunScopedBackfillEnvironment &&
@@ -434,16 +434,23 @@ internal static class CiUtils
                 else if (usesTestingPlatformRunner)
                 {
                     // There is no data collector for this command: the test assemblies are rewritten before they run instead, which only holds without a build.
+                    // It starts right before the command does, so that the files are only changed while the command that undoes it is about to run.
                     profilerEnvironmentVariables.TryGetValue(Configuration.ConfigurationKeys.DotNetTracerHome, out var tracerHome);
-                    if (TestingPlatformCoverageRewriter.TryRewrite(program, expandedArguments, Environment.CurrentDirectory, tracerHome, testOptimizationSettings, out coverageRewriter, out var reason))
+                    var rewriteProgram = program;
+                    var rewriteArguments = expandedArguments;
+                    var rewriteDirectory = Environment.CurrentDirectory;
+                    startCoverageRewrite = () =>
                     {
-                        Log.Information("RunCiCommand: The test assemblies were rewritten for per-test code coverage before running 'dotnet test' with the Microsoft Testing Platform command.");
-                    }
-                    else
-                    {
+                        if (TestingPlatformCoverageRewriter.TryRewrite(rewriteProgram, rewriteArguments, rewriteDirectory, tracerHome, testOptimizationSettings, out var rewriter, out var reason))
+                        {
+                            Log.Information("RunCiCommand: The test assemblies were rewritten for per-test code coverage before running 'dotnet test' with the Microsoft Testing Platform command.");
+                            return rewriter;
+                        }
+
                         Log.Warning<string?>("RunCiCommand: Per-test code coverage is not collected when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't use it from this run. {Reason}", reason);
                         Utils.WriteWarning($"RunCiCommand: Per-test code coverage is not collected when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't use it from this run. {reason}");
-                    }
+                        return null;
+                    };
                 }
                 else if (isDotnetTestCommand)
                 {
@@ -523,7 +530,7 @@ internal static class CiUtils
             }
         }
 
-        return new InitResults(true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles, coverageRewriter);
+        return new InitResults(true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles, startCoverageRewrite);
     }
 
     private static bool HasExplicitAdditionalEnvironmentVariable(InvocationContext context, CommonTracerSettings commonTracerSettings, string key)
@@ -1077,8 +1084,10 @@ internal static class CiUtils
     public class InitResults
     {
         private readonly Task _uploadRepositoryChangesTask;
+        private readonly Func<IDisposable?>? _startCoverageRewrite;
+        private IDisposable? _coverageRewriter;
 
-        public InitResults(bool success, ICollection<string> arguments, Dictionary<string, string>? profilerEnvironmentVariables, bool testSkippingEnabled, bool codeCoverageEnabled, Task uploadRepositoryChangesTask, ICollection<string>? temporaryArgumentFiles = null, IDisposable? coverageRewriter = null)
+        public InitResults(bool success, ICollection<string> arguments, Dictionary<string, string>? profilerEnvironmentVariables, bool testSkippingEnabled, bool codeCoverageEnabled, Task uploadRepositoryChangesTask, ICollection<string>? temporaryArgumentFiles = null, Func<IDisposable?>? startCoverageRewrite = null)
         {
             Success = success;
             Arguments = arguments;
@@ -1086,7 +1095,7 @@ internal static class CiUtils
             TestSkippingEnabled = testSkippingEnabled;
             CodeCoverageEnabled = codeCoverageEnabled;
             TemporaryArgumentFiles = temporaryArgumentFiles ?? [];
-            CoverageRewriter = coverageRewriter;
+            _startCoverageRewrite = startCoverageRewrite;
             _uploadRepositoryChangesTask = uploadRepositoryChangesTask;
         }
 
@@ -1103,9 +1112,22 @@ internal static class CiUtils
         public ICollection<string> TemporaryArgumentFiles { get; }
 
         /// <summary>
-        /// Gets the rewrite of the test assemblies to undo after the command runs, or null.
+        /// Rewrites the test assemblies for code coverage when the command needs it. Call it right before the command starts,
+        /// and call <see cref="EndCoverageRewrite"/> when the command is over.
         /// </summary>
-        public IDisposable? CoverageRewriter { get; }
+        public void StartCoverageRewrite()
+        {
+            _coverageRewriter ??= _startCoverageRewrite?.Invoke();
+        }
+
+        /// <summary>
+        /// Puts the test assemblies back as they were before <see cref="StartCoverageRewrite"/>.
+        /// </summary>
+        public void EndCoverageRewrite()
+        {
+            _coverageRewriter?.Dispose();
+            _coverageRewriter = null;
+        }
 
         public async Task UploadRepositoryChangesTask()
         {
