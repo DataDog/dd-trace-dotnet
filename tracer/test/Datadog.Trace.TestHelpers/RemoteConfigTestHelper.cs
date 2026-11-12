@@ -63,7 +63,7 @@ namespace Datadog.Trace.TestHelpers
                 if (lastRemoteConfigPayload != null)
                 {
                     // prefer a request that has been processed, meaning the config states have been filled in
-                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    request = GetRcmRequestExtensions.DeserializeRcmRequest(lastRemoteConfigPayload);
                     if (request.Matches(response))
                     {
                         return request;
@@ -96,7 +96,7 @@ namespace Datadog.Trace.TestHelpers
                 if (lastRemoteConfigPayload != null)
                 {
                     // prefer a request that has been processed, meaning the config states have been filled in
-                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    request = GetRcmRequestExtensions.DeserializeRcmRequest(lastRemoteConfigPayload);
 
                     var configState = request.Client.State.ConfigStates.SingleOrDefault(s => s.Product == product);
 

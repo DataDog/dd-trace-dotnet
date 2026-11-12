@@ -53,8 +53,8 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         foreach (var state in states)
         {
             state.ApplyState.Should().Be(expectedState, message);
-            // The client sends "" for no error, the proto3 default
-            state.ApplyError.Should().Be(expectedError ?? string.Empty, message);
+            // For no error, the libdatadog client sends "", the proto3 default, and the managed client null
+            (state.ApplyError ?? string.Empty).Should().Be(expectedError ?? string.Empty, message);
         }
     }
 }

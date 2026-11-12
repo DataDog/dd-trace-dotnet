@@ -84,7 +84,7 @@ public class NativeRemoteConfigClientTests
         // Nothing changed
         client.Fetch().IsEmpty.Should().BeTrue();
 
-        var request = JsonConvert.DeserializeObject<GetRcmRequest>(agent.RemoteConfigRequests.Last());
+        var request = GetRcmRequestExtensions.DeserializeRcmRequest(agent.RemoteConfigRequests.Last());
         request.Client.Id.Should().Be("client-id");
         request.Client.Products.Should().NotContain("NOT_A_PRODUCT").And.Contain(RcmProducts.AsmFeatures);
         request.Client.ClientTracer.Service.Should().Be("service");
@@ -143,11 +143,11 @@ public class NativeRemoteConfigClientTests
         // The known files are neither downloaded again nor reported again
         client.Rebind(RcmClientTracer.Create("runtime-id", "1.2.3", "other-service", "env", null, tags, null), null);
         client.Fetch().IsEmpty.Should().BeTrue();
-        JsonConvert.DeserializeObject<GetRcmRequest>(agent.RemoteConfigRequests.Last()).Client.ClientTracer.Service.Should().Be("other-service");
+        GetRcmRequestExtensions.DeserializeRcmRequest(agent.RemoteConfigRequests.Last()).Client.ClientTracer.Service.Should().Be("other-service");
 
         client.Rebind(RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, tags, null), endpoint);
         client.Fetch().IsEmpty.Should().BeTrue();
-        var request = JsonConvert.DeserializeObject<GetRcmRequest>(agent.RemoteConfigRequests.Last());
+        var request = GetRcmRequestExtensions.DeserializeRcmRequest(agent.RemoteConfigRequests.Last());
         request.Client.ClientTracer.Service.Should().Be("service");
         request.Client.State.TargetsVersion.Should().Be(0);
         request.CachedTargetFiles.Should().NotBeEmpty();

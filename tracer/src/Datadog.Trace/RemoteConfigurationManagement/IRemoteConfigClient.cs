@@ -14,8 +14,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 
 /// <summary>
 /// The remote configuration protocol client: polls the agent, validates and tracks the configurations.
-/// Implemented by libdatadog, see <see cref="LibDatadog.RemoteConfig.NativeRemoteConfigClient"/>.
-/// It must not be used by multiple threads at once, except for <see cref="Cancel"/>.
+/// Implemented by libdatadog, see <see cref="LibDatadog.RemoteConfig.NativeRemoteConfigClient"/>, and by the previous
+/// managed client, <see cref="ManagedRemoteConfigClient"/>, the fallback. It must not be used by multiple threads at once, except for <see cref="Cancel"/>.
 /// </summary>
 internal interface IRemoteConfigClient : IDisposable
 {

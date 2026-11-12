@@ -20,14 +20,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             configurationSource ??= NullConfigurationSource.Instance;
 
-            var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
+            var config = new ConfigurationBuilder(configurationSource, telemetry);
+            var pollInterval = config
                               .WithKeys(ConfigurationKeys.Rcm.PollInterval)
                               .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
+
+            NativeClientEnabled = config
+                                 .WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled)
+                                 .AsBool(defaultValue: true);
         }
 
         public TimeSpan PollInterval { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether libdatadog's client is used where available, rather than the managed one.
+        /// A temporary switch, see <see cref="ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
+        /// </summary>
+        public bool NativeClientEnabled { get; }
 
         public static RemoteConfigurationSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
             => new(source, telemetry);

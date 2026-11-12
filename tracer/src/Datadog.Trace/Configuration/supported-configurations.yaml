@@ -2442,6 +2442,17 @@ supportedConfigurations:
       Is remote configuration management (RCM) enabled. Defaults to <c>true</c>. RCM requires
       the use of the full agent, so will not always be available. This switch is primarily
       intended for testing and for explicitly disabling RCM even though it is available.
+  DD_REMOTE_CONFIGURATION_NATIVE_CLIENT_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: Rcm
+    documentation: |-
+      Temporary switch, to be removed in a future release. Selects the remote configuration client: when <c>true</c>
+      (the default), the client of libdatadog is used where libdatadog is available, and when <c>false</c>, the previous
+      managed client is used instead. The managed client is also used when the libdatadog client can't be created;
+      if it is created but then fails, setting this to <c>false</c> is the remedy.
   DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS:
   - implementation: B
     scope: managed

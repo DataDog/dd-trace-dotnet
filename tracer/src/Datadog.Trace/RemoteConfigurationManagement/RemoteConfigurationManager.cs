@@ -29,7 +29,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
-        private readonly Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? _clientFactory;
+        private readonly Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> _clientFactory;
         private readonly IDisposable _settingSubscription;
         private readonly ManualResetEventSlim _processExit = new();
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager,
-            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? clientFactory)
+            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory)
         {
             _discoveryService = discoveryService;
             _pollInterval = pollInterval;
@@ -99,11 +99,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             IRcmSubscriptionManager subscriptionManager,
             Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? clientFactory = null)
         {
-            // The remote configuration client is part of libdatadog
-            if (clientFactory is null && LibDatadogAvailabilityHelper.IsLibDatadogAvailable.IsAvailable)
-            {
-                clientFactory = NativeRemoteConfigClient.Create;
-            }
+            clientFactory ??= CreateClientFactory(
+                settings.NativeClientEnabled,
+                LibDatadogAvailabilityHelper.IsLibDatadogAvailable.IsAvailable,
+                NativeRemoteConfigClient.Create,
+                (clientId, target, endpoint) => ManagedRemoteConfigClient.Create(clientId, target, endpoint, discoveryService),
+                Log);
 
             return new RemoteConfigurationManager(
                     discoveryService,
@@ -114,6 +115,40 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     clientFactory);
         }
 
+        /// <summary>
+        /// Returns the factory of the remote configuration client, which is called once per AppDomain: libdatadog's client,
+        /// unless it is disabled or libdatadog is not available, and the managed client if libdatadog's client can't be created.
+        /// </summary>
+        internal static Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> CreateClientFactory(
+            bool nativeClientEnabled,
+            bool isLibDatadogAvailable,
+            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> nativeClientFactory,
+            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> managedClientFactory,
+            IDatadogLogger log)
+            => (clientId, target, endpoint) =>
+            {
+                if (!nativeClientEnabled || !isLibDatadogAvailable)
+                {
+                    log.Information(
+                        "Remote Configuration uses the managed client, as {Reason}.",
+                        nativeClientEnabled ? "libdatadog is not available" : $"{ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled} is false");
+                    return managedClientFactory(clientId, target, endpoint);
+                }
+
+                try
+                {
+                    var client = nativeClientFactory(clientId, target, endpoint);
+                    log.Information("Remote Configuration uses the libdatadog client.");
+                    return client;
+                }
+                catch (Exception ex)
+                {
+                    // Error, to reach telemetry: the managed client is only a fallback
+                    log.Error(ex, "Remote Configuration could not create the libdatadog client, and uses the managed client instead.");
+                    return managedClientFactory(clientId, target, endpoint);
+                }
+            };
+
         public void Start()
         {
             if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
@@ -122,14 +157,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return;
             }
 
-            if (_clientFactory is null)
-            {
-                Log.Information("Remote Configuration is unavailable, as libdatadog is not available.");
-                return;
-            }
-
-            // The libdatadog client blocks while polling, and runs on the polling thread. A dedicated thread, with the stack
-            // size of Rust's own threads: the process default can be much smaller (256 KB in 32-bit IIS)
+            // The clients block while polling, and run on the polling thread. A dedicated thread, with the stack size of
+            // the threads of Rust (libdatadog): the process default can be much smaller (256 KB in 32-bit IIS)
             new Thread(PollLoopSafe, maxStackSize: RustThreadStackSize) { IsBackground = true, Name = "Datadog Remote Configuration" }.Start();
         }
 
@@ -163,8 +192,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private void PollLoop()
         {
-            // Not started without one
-            var clientFactory = _clientFactory!;
             while (!_processExit.IsSet)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
@@ -174,7 +201,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     try
                     {
                         var tracer = EnrichTagsWithGitMetadata(Volatile.Read(ref _rcmTracer));
-                        if (!_subscriptionManager.Poll(clientFactory, tracer, Volatile.Read(ref _endpoint), ExtraServicesProvider.Instance.GetExtraServices()))
+                        if (!_subscriptionManager.Poll(_clientFactory, tracer, Volatile.Read(ref _endpoint), ExtraServicesProvider.Instance.GetExtraServices()))
                         {
                             return;
                         }

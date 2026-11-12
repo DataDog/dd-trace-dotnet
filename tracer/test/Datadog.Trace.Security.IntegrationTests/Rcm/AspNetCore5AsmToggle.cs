@@ -31,6 +31,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
     }
 
+    // The managed remote configuration client, the fallback of libdatadog's: same snapshots as AspNetCore5AsmToggleSecurityDefault
+    public class AspNetCore5AsmToggleSecurityDefaultManagedClient : AspNetCore5AsmToggle
+    {
+        public AspNetCore5AsmToggleSecurityDefaultManagedClient(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefaultManagedClient))
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled, "false");
+        }
+    }
+
     public class AspNetCore5AsmToggleSecurityDisabled : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)

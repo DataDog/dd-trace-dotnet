@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Json
@@ -23,7 +24,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
                 return null;
             }
 
-            using var streamReader = new StringReader(Encoding.UTF8.GetString(Convert.FromBase64String((string)reader.Value)));
+            using var stream = new Base64DecodingStream((string)reader.Value);
+            using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader)
             {
                 ArrayPool = JsonArrayPool.Shared,

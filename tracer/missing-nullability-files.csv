@@ -129,6 +129,7 @@ src/Datadog.Trace/RemoteConfigurationManagement/ApplyStates.cs
 src/Datadog.Trace/RemoteConfigurationManagement/IRemoteConfigurationManager.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RcmCapabilitiesIndices.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfiguration.cs
+src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationCache.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationException.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationPath.cs
 src/Datadog.Trace/RuntimeMetrics/AzureAppServicePerformanceCounters.cs

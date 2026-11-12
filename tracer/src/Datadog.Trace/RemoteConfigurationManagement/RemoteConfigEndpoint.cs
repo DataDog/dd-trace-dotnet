@@ -13,13 +13,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal sealed class RemoteConfigEndpoint
 {
-    // Same as the timeout of the previous (managed) transport
+    // Same as the timeout of the managed transport, see Transport.RemoteConfigurationApiFactory
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
-    public RemoteConfigEndpoint(string url, TimeSpan timeout)
+    public RemoteConfigEndpoint(string url, TimeSpan timeout, ExporterSettings? exporterSettings = null)
     {
         Url = url;
         TimeoutMs = (ulong)timeout.TotalMilliseconds;
+        ExporterSettings = exporterSettings;
     }
 
     /// <summary>
@@ -29,6 +30,11 @@ internal sealed class RemoteConfigEndpoint
 
     public ulong TimeoutMs { get; }
 
+    /// <summary>
+    /// Gets the settings the endpoint was created from, which the managed client creates its transport from
+    /// </summary>
+    public ExporterSettings? ExporterSettings { get; }
+
     public static RemoteConfigEndpoint FromExporterSettings(ExporterSettings exporter)
         => new(
             exporter.TracesTransport switch
@@ -37,5 +43,6 @@ internal sealed class RemoteConfigEndpoint
                 TracesTransportType.UnixDomainSocket => $"unix://{exporter.TracesUnixDomainSocketPath}",
                 _ => exporter.AgentUri.ToString(),
             },
-            Timeout);
+            Timeout,
+            exporter);
 }
