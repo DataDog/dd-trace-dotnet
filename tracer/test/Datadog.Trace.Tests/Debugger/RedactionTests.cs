@@ -379,6 +379,7 @@ namespace Datadog.Trace.Tests.Debugger
             for (var i = 0; i < 2; i++)
             {
                 redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedact("<customerName>k__BackingField", typeof(Uri), out _);
                 redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
             }
 
@@ -386,6 +387,7 @@ namespace Datadog.Trace.Tests.Debugger
             for (var i = 0; i < Iterations; i++)
             {
                 redaction.ShouldRedact("customerName", typeof(Uri), out _);
+                redaction.ShouldRedact("<customerName>k__BackingField", typeof(Uri), out _);
                 redaction.ShouldRedactDataKey("customerKey", typeof(Uri), out _);
             }
 
@@ -405,6 +407,32 @@ namespace Datadog.Trace.Tests.Debugger
             Redaction.Instance.IsRedactedKeyword(identifier).Should().BeTrue();
             Redaction.Instance.IsRedactedKeyword(identifier.ToUpperInvariant()).Should().BeTrue();
             Redaction.Instance.IsRedactedKeyword(identifier + "x").Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("<password>k__BackingField", true)]
+        [InlineData("<password>P", true)]
+        [InlineData("<Password>i__Field", true)]
+        [InlineData("<password>5__2", true)]
+        [InlineData("<name>k__BackingField", false)]
+        [InlineData("<>3__password", true)]
+        [InlineData("<>3__name", false)]
+        [InlineData("<>4__this", false)]
+        [InlineData("<>3__", false)]
+        [InlineData("<password", false)]
+        [InlineData("password>P", false)]
+        [InlineData("<", false)]
+        public void IsRedactedKeyword_CompilerGeneratedName_IsCheckedBySourceName(string name, bool expected)
+        {
+            Redaction.Instance.IsRedactedKeyword(name).Should().Be(expected);
+        }
+
+        [Fact]
+        public void IsRedactedDataKey_CompilerGeneratedName_IsNotCheckedBySourceName()
+        {
+            // A data key comes from customer data, not from probed code, so it's matched as is.
+            Redaction.Instance.IsRedactedDataKey("password").Should().BeTrue();
+            Redaction.Instance.IsRedactedDataKey("<password>P").Should().BeFalse();
         }
 
         [Fact]

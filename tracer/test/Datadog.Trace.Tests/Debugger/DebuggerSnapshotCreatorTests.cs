@@ -371,6 +371,38 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ObjectStructure_CompilerGeneratedFieldOfRedactedName_IsRedacted()
+        {
+            (object Target, string SecretField, string PublicField)[] cases =
+            [
+                (new PrimaryConstructorTarget("DD_SECRET_LEAK", "value"), "<password>P", "<name>P"),
+                (new { Password = "DD_SECRET_LEAK", Name = "value" }, "<Password>i__Field", "<Name>i__Field")
+            ];
+
+            foreach (var (target, secretField, publicField) in cases)
+            {
+                var fields = GetLocalToken(target)["fields"];
+
+                var secret = fields[secretField];
+                secret.Should().NotBeNull();
+                secret["notCapturedReason"]!.Value<string>().Should().Be("redactedIdent");
+                secret["value"].Should().BeNull();
+                fields[publicField]!["value"]!.Value<string>().Should().Be("value");
+            }
+        }
+
+        [Fact]
+        public void ObjectStructure_IteratorParameterCopy_IsRedacted()
+        {
+            var fields = GetLocalToken(IteratorOverPassword("DD_SECRET_LEAK"))["fields"];
+
+            var copy = fields["<>3__password"];
+            copy.Should().NotBeNull();
+            copy["notCapturedReason"]!.Value<string>().Should().Be("redactedIdent");
+            fields.ToString().Should().NotContain("DD_SECRET_LEAK");
+        }
+
+        [Fact]
         public void ObjectStructure_SortedList_IsSerializedAsDictionary()
         {
             var local = GetLocalToken(new SortedList { { "one", 1 }, { "two", 2 } });
@@ -803,6 +835,11 @@ namespace Datadog.Trace.Tests.Debugger
             return JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals.local0");
         }
 
+        private static IEnumerable<string> IteratorOverPassword(string password)
+        {
+            yield return password;
+        }
+
         private static void DummyMethod()
         {
         }
@@ -991,6 +1028,13 @@ namespace Datadog.Trace.Tests.Debugger
         private static void ResetStaticCaptureInitializedCount()
         {
             _staticCaptureInitializedCount = 0;
+        }
+
+        private sealed class PrimaryConstructorTarget(string password, string name)
+        {
+            public string Name => name;
+
+            public int PasswordLength => password.Length;
         }
 
         private sealed class CancelingCollection : ICollection

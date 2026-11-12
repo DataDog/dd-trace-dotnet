@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -503,15 +504,16 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         /// <summary>
-        /// Checks an identifier from probed code, such as a variable, field or property name.
+        /// Checks an identifier from probed code, such as a variable, field or property name. The name of a
+        /// compiler-generated field is also checked by the source name it keeps in angle brackets.
         /// </summary>
-        internal bool IsRedactedKeyword(string name) => IsRedactedName(name, ref _keywordCache);
+        internal bool IsRedactedKeyword(string name) => IsRedactedName(name, ref _keywordCache, isIdentifier: true);
 
         /// <summary>
         /// Checks a key taken from customer data, such as a dictionary key. Data keys have their own cache
         /// so that unique keys cannot keep resetting the identifier cache.
         /// </summary>
-        internal bool IsRedactedDataKey(string? key) => IsRedactedName(key, ref _dataKeyCache);
+        internal bool IsRedactedDataKey(string? key) => IsRedactedName(key, ref _dataKeyCache, isIdentifier: false);
 
         internal bool CheckForRedactedKeyword(string keyword)
         {
@@ -609,7 +611,45 @@ namespace Datadog.Trace.Debugger.Snapshots
             return c is '_' or '-' or '$' or '@';
         }
 
-        private bool IsRedactedName(string? name, ref RedactionCache<string> cacheField)
+        // A compiler-generated field keeps the source name in angle brackets: <Name>k__BackingField (auto-property),
+        // <name>P (primary constructor parameter), <Name>i__Field (anonymous type) and <name>5__2 (hoisted local). The
+        // copy of an iterator parameter, <>3__name, has the name after the digits and two underscores instead.
+        private static bool TryGetCompilerGeneratedSourceName(string name, [NotNullWhen(true)] out string? sourceName)
+        {
+            sourceName = null;
+            if (name[0] != '<')
+            {
+                return false;
+            }
+
+            var end = name.IndexOf('>', 1);
+            if (end < 0)
+            {
+                return false;
+            }
+
+            if (end > 1)
+            {
+                sourceName = name.Substring(1, end - 1);
+                return true;
+            }
+
+            var start = 2;
+            while (start < name.Length && name[start] is >= '0' and <= '9')
+            {
+                start++;
+            }
+
+            if (start == 2 || start + 2 >= name.Length || name[start] != '_' || name[start + 1] != '_')
+            {
+                return false;
+            }
+
+            sourceName = name.Substring(start + 2);
+            return true;
+        }
+
+        private bool IsRedactedName(string? name, ref RedactionCache<string> cacheField, bool isIdentifier)
         {
             if (StringUtil.IsNullOrEmpty(name))
             {
@@ -623,7 +663,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     Log.Warning("Name length {Length} exceeds {MaxLength} characters, so its redaction result is not cached. Further occurrences are not logged.", name.Length, property1: MaxCachedNameLength);
                 }
 
-                return CheckForRedactedKeyword(name);
+                return CheckName(name, isIdentifier);
             }
 
             var cache = Volatile.Read(ref cacheField);
@@ -632,9 +672,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return redacted;
             }
 
-            redacted = CheckForRedactedKeyword(name);
+            redacted = CheckName(name, isIdentifier);
             AddToCache(ref cacheField, cache, name, redacted);
             return redacted;
+        }
+
+        // Data keys come from customer data, so only an identifier gets the compiler-generated name rule. The source
+        // name is allocated on a cache miss, and on every call for a name too long to cache.
+        private bool CheckName(string name, bool isIdentifier)
+        {
+            return CheckForRedactedKeyword(name) ||
+                   (isIdentifier && TryGetCompilerGeneratedSourceName(name, out var sourceName) && CheckForRedactedKeyword(sourceName));
         }
 
         private bool ShouldRedactCore(bool isRedactedName, Type type, out RedactionReason redactionReason)
