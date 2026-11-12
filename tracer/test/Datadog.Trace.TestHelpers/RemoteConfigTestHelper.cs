@@ -21,10 +21,13 @@ namespace Datadog.Trace.TestHelpers
     {
         public const int WaitForAcknowledgmentTimeout = 50000;
 
+        // Omits null fields, as the agent does: the client rejects e.g. "roots": null
+        private static readonly JsonSerializerSettings AgentResponseSettings = new() { NullValueHandling = NullValueHandling.Ignore };
+
         internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
-            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response, AgentResponseSettings));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
             return response;
         }
@@ -32,7 +35,7 @@ namespace Datadog.Trace.TestHelpers
         internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }), c.ProductName, c.Id)));
-            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response, AgentResponseSettings));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response} with custom opaque state {response.Targets.Signed.Custom.OpaqueBackendState}");
             var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;

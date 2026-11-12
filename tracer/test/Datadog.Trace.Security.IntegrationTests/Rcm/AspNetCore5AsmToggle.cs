@@ -76,17 +76,15 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             {
                 if (EnableSecurity != null)
                 {
-                    // AsmFeatures is requested when security is enabled, as it contains info about userId collection
-                    if (EnableSecurity is false)
-                    {
-                        associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
-                    }
-
-                    // Other products may be included, but none of the ASM ones should be
-                    var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd };
+                    // Other products may be included, but none of the ASM ones should be. AsmFeatures is requested when
+                    // security is enabled, as it contains info about userId collection.
+                    var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd, RcmProducts.AsmFeatures };
                     if (EnableSecurity == false)
                     {
                         associatedRcmRequest.Client.Products.Should().NotContain(asmProducts);
+                        // libdatadog still caches the file this mock agent sends (a real agent only sends requested products),
+                        // but the tracer doesn't apply it
+                        associatedRcmRequest.Client.State.ConfigStates.Should().NotContain(s => s.Product == RcmProducts.AsmFeatures && s.ApplyState != ApplyStates.UNACKNOWLEDGED);
                     }
                     else
                     {

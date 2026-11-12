@@ -53,7 +53,8 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         foreach (var state in states)
         {
             state.ApplyState.Should().Be(expectedState, message);
-            state.ApplyError.Should().Be(expectedError, message);
+            // The client sends "" for no error, the proto3 default
+            state.ApplyError.Should().Be(expectedError ?? string.Empty, message);
         }
     }
 }
