@@ -8,6 +8,7 @@
 #if NET10_0_OR_GREATER
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
@@ -99,19 +100,51 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
         (await declared).Should().Be("value");
     }
 
-    [Fact]
-    public void OnMethodEnd_OnException_ReceivesNoTask()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OnMethodEnd_OnException_ReceivesAFaultedTask(bool useValueTask)
     {
         MethodEndIntegration.Reset();
         var exception = new InvalidOperationException("boom");
-
-        InvokeMethodEndWithTask(null, exception);
+        var task = InvokeFailingMethodEnd(useValueTask, exception);
 
         MethodEndIntegration.Calls.Should().Be(1);
-        MethodEndIntegration.Exception.Should().BeSameAs(exception);
+        MethodEndIntegration.Exception.Should().BeNull();
+        task.Should().NotBeNull();
+        task.IsFaulted.Should().BeTrue();
+        task.Exception.InnerException.Should().BeSameAs(exception);
+    }
 
-        // Not a faulted task - the exception travels in the exception argument.
-        MethodEndIntegration.ReturnValue.Should().BeNull();
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(false, 1)]
+    [InlineData(false, 2)]
+    [InlineData(true, 0)]
+    [InlineData(true, 1)]
+    [InlineData(true, 2)]
+    public void OnMethodEnd_OnCancellation_PreservesTheExceptionAndToken(bool useValueTask, int tokenKind)
+    {
+        MethodEndIntegration.Reset();
+        using var source = new CancellationTokenSource();
+        if (tokenKind == 2)
+        {
+            source.Cancel();
+        }
+
+        // Exercise a default token, an uncanceled token, and a canceled token.
+        var token = tokenKind == 0 ? default : source.Token;
+        var exception = new ContinuationGeneratorTestHelpers.CustomCancellationException(token);
+        var task = InvokeFailingMethodEnd(useValueTask, exception);
+
+        MethodEndIntegration.Calls.Should().Be(1);
+        MethodEndIntegration.Exception.Should().BeNull();
+        task.Should().NotBeNull();
+        task.IsCanceled.Should().BeTrue();
+        Action act = () => task.GetAwaiter().GetResult();
+        var thrown = act.Should().Throw<OperationCanceledException>().Which;
+        thrown.Should().BeSameAs(exception);
+        thrown.CancellationToken.Should().Be(token);
     }
 
     [Fact]
@@ -212,6 +245,23 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     }
 
     [Fact]
+    public void WhenBothCallbacksAreDeclared_OnFailure_OnlyAsyncCallbackReceivesTheException()
+    {
+        BothCallbacksIntegration.Reset();
+        var exception = new InvalidOperationException("boom");
+
+        InvokeBothCallbacks(null, exception);
+
+        BothCallbacksIntegration.AsyncCalls.Should().Be(1);
+        BothCallbacksIntegration.SyncCalls.Should().Be(1);
+        BothCallbacksIntegration.AsyncException.Should().BeSameAs(exception);
+        BothCallbacksIntegration.SyncException.Should().BeNull();
+        var task = BothCallbacksIntegration.SyncReturnValue.Should().BeAssignableTo<Task<string>>().Subject;
+        task.IsFaulted.Should().BeTrue();
+        task.Exception.InnerException.Should().BeSameAs(exception);
+    }
+
+    [Fact]
     public async Task WhenOnAsyncMethodEndThrows_OnMethodEndStillRunsWithTheOriginalResult()
     {
         ThrowingAsyncEndIntegration.Reset();
@@ -279,11 +329,11 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
         returned.Should().Be("value");
     }
 
-    private static string InvokeBothCallbacks(string returnValue)
+    private static string InvokeBothCallbacks(string returnValue, Exception exception = null)
     {
         var state = CallTargetState.GetDefault();
         return CallTargetInvoker
-              .EndMethodRuntimeAsync<BothCallbacksIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, null, in state)
+              .EndMethodRuntimeAsync<BothCallbacksIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, exception, in state)
               .GetReturnValue();
     }
 
@@ -311,6 +361,19 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     {
         var state = CallTargetState.GetDefault();
         CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, int, ValueTask<int>>(new TestTarget(), returnValue, null, in state);
+    }
+
+    private static Task<int> InvokeFailingMethodEnd(bool useValueTask, Exception exception)
+    {
+        var state = CallTargetState.GetDefault();
+        if (useValueTask)
+        {
+            CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, int, ValueTask<int>>(new TestTarget(), 0, exception, in state);
+            return ((ValueTask<int>)MethodEndIntegration.ReturnValue).AsTask();
+        }
+
+        CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, int, Task<int>>(new TestTarget(), 0, exception, in state);
+        return (Task<int>)MethodEndIntegration.ReturnValue;
     }
 
     internal class TestTarget
@@ -407,17 +470,24 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
 
         public static object SyncReturnValue { get; private set; }
 
+        public static Exception AsyncException { get; private set; }
+
+        public static Exception SyncException { get; private set; }
+
         public static void Reset()
         {
             AsyncCalls = 0;
             SyncCalls = 0;
             SyncReturnValue = null;
+            AsyncException = null;
+            SyncException = null;
         }
 
         // Substitutes, so the test can prove the value reaches OnMethodEnd rather than the original.
         public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
         {
             AsyncCalls++;
+            AsyncException = exception;
             return returnValue + "[Async]";
         }
 
@@ -425,6 +495,7 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
         {
             SyncCalls++;
             SyncReturnValue = returnValue;
+            SyncException = exception;
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
