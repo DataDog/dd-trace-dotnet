@@ -191,8 +191,6 @@ services:
     image: andrewlock/dotnet-fedora-arm64:40-9.0@sha256:0fb6a59a9ddb8312d4654fdadf90c53163d3a93657b8ed2f5cbd7f1a944c1b63
   dotnet-fedora-arm64-42-10_0:
     image: andrewlock/dotnet-fedora-arm64:42-10.0@sha256:08b2326752297e685c29506fa327fa9165711ace1c2ca4c215ea76c38d3f09fd
-  dotnet-fedora-arm64-45-11_0:
-    image: andrewlock/dotnet-fedora-arm64:45-11.0@sha256:428ed03d8af6d362e932deb43938d4cb945706366074eeca453cc5336d30140c
 
   # andrewlock/dotnet-opensuse
   dotnet-opensuse-15-2_1:
