@@ -19,6 +19,8 @@ internal static class StateMachineHelper
     private const string IteratorStateMachineAttributeName = "System.Runtime.CompilerServices.IteratorStateMachineAttribute";
     private const string AsyncIteratorStateMachineAttributeName = "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute";
 
+    private static readonly ConditionalWeakTable<Type, StrongBox<MethodBase?>> SourceMethods = new();
+
     /// <summary>
     /// Resolves a method of a compiler-generated async or iterator state machine (such as its MoveNext) to the
     /// method of the source code it was generated from, as System.Diagnostics.StackTrace does for its ToString.
@@ -41,17 +43,24 @@ internal static class StateMachineHelper
             return false;
         }
 
-        var methods = parentType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        // the attributes of every method of the parent type are read to find it, so the result is kept per state machine.
+        // The weak keys don't keep collectible assemblies alive.
+        sourceMethod = SourceMethods.GetValue(stateMachineType!, static type => new StrongBox<MethodBase?>(FindSourceMethod(type))).Value;
+        return sourceMethod is not null;
+    }
+
+    private static MethodInfo? FindSourceMethod(Type stateMachineType)
+    {
+        var methods = stateMachineType.DeclaringType!.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         foreach (var candidateMethod in methods)
         {
             if (GetStateMachineType(candidateMethod) == stateMachineType)
             {
-                sourceMethod = candidateMethod;
-                return true;
+                return candidateMethod;
             }
         }
 
-        return false;
+        return null;
     }
 
     private static Type? GetStateMachineType(MethodBase method)
