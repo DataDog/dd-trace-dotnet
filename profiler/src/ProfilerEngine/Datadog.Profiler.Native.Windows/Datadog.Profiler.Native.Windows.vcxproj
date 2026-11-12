@@ -233,10 +233,14 @@
     <ClInclude Include="WindowsThreadInfo.h" />
     <ClInclude Include="..\Datadog.Profiler.Native\AutoResetEvent.h" />
     <ClInclude Include="..\Datadog.Profiler.Native\ManagedCodeCache.h" />
+    <ClInclude Include="..\Datadog.Profiler.Native\CodeRangeTrie.h" />
+    <ClInclude Include="..\Datadog.Profiler.Native\EpochReclaimer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
     <ClCompile Include="..\Datadog.Profiler.Native\ManagedCodeCache.cpp" />
+    <ClCompile Include="..\Datadog.Profiler.Native\CodeRangeTrie.cpp" />
+    <ClCompile Include="..\Datadog.Profiler.Native\EpochReclaimer.cpp" />
     <ClCompile Include="CrashReportingWindows.cpp" />
     <ClCompile Include="DbgHelpParser.cpp" />
     <ClCompile Include="EtwEventsManager.cpp" />
