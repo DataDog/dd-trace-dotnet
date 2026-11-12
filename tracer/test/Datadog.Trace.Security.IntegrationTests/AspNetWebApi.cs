@@ -105,6 +105,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/api/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            // Allow the [Flaky] retry to reuse the snapshot prefix, otherwise attempt 2 fails with "The prefix has already been used"
+            settings.DisableRequireUniquePrefix();
             FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
@@ -121,6 +123,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            // Allow the [Flaky] retry to reuse the snapshot prefix, otherwise attempt 2 fails with "The prefix has already been used"
+            settings.DisableRequireUniquePrefix();
             FilterConnectionHeader(settings);
 
             var expectedSpans = test == AddressesConstants.RequestPathParams ? 1 : 2;
