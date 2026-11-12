@@ -1600,6 +1600,83 @@ public class CoverageBackfillDataStoreTests
         }
     }
 
+    [Theory]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public void ReadCoverageIpcResultFolderRejectsIncompleteSnapshotWhenDeadlineExpires(bool waitForResults, bool hasResultFile, bool waitForFallback)
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            if (hasResultFile)
+            {
+                File.WriteAllText(Path.Combine(workspacePath, "Coverlet-first.json"), CreateCoverageIpcResultJson("first-result", CodeCoverageReportSource.Coverlet, 25, false, 4, 1, "first"));
+                var temporarySource = waitForFallback ? CodeCoverageReportSource.CoverletXmlFallback : CodeCoverageReportSource.Coverlet;
+                File.WriteAllText(Path.Combine(workspacePath, $"{temporarySource}-second.json.tmp"), "incomplete");
+            }
+
+            var results = new List<CodeCoverageAggregationResult>();
+            var resultIds = new HashSet<string>();
+            var deadline = TimeSpan.FromSeconds(waitForFallback ? 5 : 1);
+            var elapsedReads = 0;
+
+            CoverageBackfillDataStore.ReadCoverageIpcResultFolder(
+                CreateTestOptimization(workspacePath).Object,
+                workspacePath,
+                sessionId: 123,
+                results,
+                resultIds,
+                waitForResultFiles: waitForResults,
+                waitForCoverletXmlFallback: waitForFallback,
+                readTimeout: TimeSpan.FromSeconds(1),
+                elapsedProvider: () => elapsedReads++ == 0 ? deadline - TimeSpan.FromTicks(1) : deadline,
+                waitForRetry: () => { }).Should().BeFalse();
+
+            results.Should().BeEmpty();
+            resultIds.Should().BeEmpty();
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void ReadCoverageIpcResultFolderAcceptsCompleteSnapshotAtDeadline(bool waitForResults)
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            File.WriteAllText(Path.Combine(workspacePath, "Coverlet-first.json"), CreateCoverageIpcResultJson("first-result", CodeCoverageReportSource.Coverlet, 25, false, 4, 1, "first"));
+            var results = new List<CodeCoverageAggregationResult>();
+            var resultIds = new HashSet<string>();
+
+            CoverageBackfillDataStore.ReadCoverageIpcResultFolder(
+                CreateTestOptimization(workspacePath).Object,
+                workspacePath,
+                sessionId: 123,
+                results,
+                resultIds,
+                waitForResultFiles: waitForResults,
+                waitForCoverletXmlFallback: false,
+                readTimeout: TimeSpan.FromSeconds(1),
+                elapsedProvider: () => TimeSpan.FromSeconds(1),
+                waitForRetry: () => { }).Should().BeTrue();
+
+            var result = results.Should().ContainSingle().Subject;
+            result.Percentage.Should().Be(25);
+            result.ResultId.Should().Be("first-result");
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
     [Fact]
     public void TryReadCoverageIpcResultsDoesNotPublishPartialSnapshotWhenFinalResultIsInvalid()
     {

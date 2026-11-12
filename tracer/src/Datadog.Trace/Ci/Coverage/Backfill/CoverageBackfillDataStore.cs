@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
@@ -1399,7 +1400,8 @@ internal static class CoverageBackfillDataStore
         return false;
     }
 
-    private static bool ReadCoverageIpcResultFolder(
+    [TestingAndPrivateOnly]
+    internal static bool ReadCoverageIpcResultFolder(
         ITestOptimization testOptimization,
         string resultFolder,
         ulong sessionId,
@@ -1408,7 +1410,9 @@ internal static class CoverageBackfillDataStore
         bool waitForResultFiles,
         bool waitForCoverletXmlFallback,
         TimeSpan readTimeout,
-        Stopwatch? stopwatch = null)
+        Stopwatch? stopwatch = null,
+        Func<TimeSpan>? elapsedProvider = null,
+        Action? waitForRetry = null)
     {
         stopwatch ??= Stopwatch.StartNew();
         var sawTemporaryFile = false;
@@ -1454,31 +1458,25 @@ internal static class CoverageBackfillDataStore
                 if (!string.Equals(snapshot, previousSnapshot, StringComparison.Ordinal))
                 {
                     previousSnapshot = snapshot;
-                    previousSnapshotTime = stopwatch.Elapsed;
+                    previousSnapshotTime = GetElapsed();
                     canReadCurrentSnapshot = false;
                 }
-                else if (stopwatch.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
+                else if (GetElapsed() - previousSnapshotTime < ResultFolderQuietPeriod)
                 {
                     canReadCurrentSnapshot = false;
                 }
             }
 
-            if (sawTemporaryFileInCurrentPass &&
-                stopwatch.Elapsed >= effectiveReadTimeout)
-            {
-                return false;
-            }
-
-            if (waitForResultFiles &&
-                resultFiles.Count == 0 &&
-                stopwatch.Elapsed >= effectiveReadTimeout)
-            {
-                return false;
-            }
-
             if (canReadCurrentSnapshot ||
-                stopwatch.Elapsed >= effectiveReadTimeout)
+                GetElapsed() >= effectiveReadTimeout)
             {
+                // Reaching the deadline may end the quiet-period wait, but it must never
+                // turn an incomplete snapshot into publishable coverage.
+                if (sawTemporaryFileInCurrentPass || (waitForResultFiles && resultFiles.Count == 0))
+                {
+                    return false;
+                }
+
                 foreach (var filePath in resultFiles)
                 {
                     if (!TryReadAllTextWithRetry(testOptimization, filePath, waitForFile: false, out var contents) ||
@@ -1497,8 +1495,18 @@ internal static class CoverageBackfillDataStore
                 return true;
             }
 
-            Thread.Sleep(ReadRetryDelay);
+            if (waitForRetry is null)
+            {
+                Thread.Sleep(ReadRetryDelay);
+            }
+            else
+            {
+                waitForRetry();
+            }
         }
+
+        // Tests can advance the monotonic clock across the deadline without racing a real timer.
+        TimeSpan GetElapsed() => elapsedProvider?.Invoke() ?? stopwatch.Elapsed;
     }
 
     /// <summary>
