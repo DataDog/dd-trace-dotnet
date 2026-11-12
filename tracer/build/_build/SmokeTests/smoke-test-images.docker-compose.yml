@@ -37,10 +37,6 @@ services:
     image: mcr.microsoft.com/dotnet/aspnet:6.0-windowsservercore-ltsc2022@sha256:5238d71241c7a284eedd81e7aa6e73741eca460825a49944fc1c92bc98a3c5e8
   aspnet-7_0-alpine3_16:
     image: mcr.microsoft.com/dotnet/aspnet:7.0-alpine3.16@sha256:9b7a890bfe341c517b428eb62c5ca3e664cceb37f73ab402cd3eea766e0ee425
-  aspnet-7_0-alpine3_18:
-    image: mcr.microsoft.com/dotnet/aspnet:7.0-alpine3.18@sha256:6b238600364bf7a448cab037738eed308f6e5cc8263951e58057646cf20f2ba8
-  aspnet-7_0-bullseye-slim:
-    image: mcr.microsoft.com/dotnet/aspnet:7.0-bullseye-slim@sha256:a95ba0eec08f877dffe6aa4fa78346c8733a000df597d44359f11d7a401f6348
   aspnet-7_0-windowsservercore-ltsc2022:
     image: mcr.microsoft.com/dotnet/aspnet:7.0-windowsservercore-ltsc2022@sha256:fb805eb531896d6cf8cbf0a0d04b45f9c9776eb789fefa9e76ec9969e447ed80
   aspnet-8_0-alpine3_18:
@@ -127,10 +123,6 @@ services:
     image: mcr.microsoft.com/dotnet/sdk:6.0-alpine3.16@sha256:9b2f6581fb11f9315086c772ba918fba1de49131d6156c4165e2fdf6488e9d10
   sdk-6_0-bullseye-slim:
     image: mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim@sha256:fc71510497ce2ec3575359068b9c7b1b9f449cfdb0371b5c71a939963a2fedfd
-  sdk-7_0-alpine3_16:
-    image: mcr.microsoft.com/dotnet/sdk:7.0-alpine3.16@sha256:509ff45154267fdda0d35b14d2bb6cff8c547b0aecef71176e3bf1c141ae3c64
-  sdk-7_0-bullseye-slim:
-    image: mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim@sha256:964a81320f969fba817877c85d524c9a899dc5873e519ab9bd42d282498509fe
   sdk-8_0-alpine3_18:
     image: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18@sha256:b16fdc4c48d4627bd5c4e8e569f1cc295b8cda938a29ead7d2df981d410a4175
   sdk-8_0-jammy:
