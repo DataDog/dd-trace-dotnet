@@ -404,26 +404,7 @@ internal partial class ProbeExpressionParser<T>
 
     private static bool ShouldRedactValue(string name, Type type)
     {
-        if (Redaction.Instance.ShouldRedact(name, type, out _))
-        {
-            return true;
-        }
-
-        var sourceName = GetCompilerGeneratedSourceName(name);
-        return sourceName is not null && Redaction.Instance.IsRedactedKeyword(sourceName);
-    }
-
-    // Compiler-generated fields keep the source name in angle brackets: <Name>k__BackingField (auto-property),
-    // <name>P (primary constructor parameter), <Name>i__Field (anonymous type) and <name>5__2 (hoisted local).
-    private static string GetCompilerGeneratedSourceName(string fieldName)
-    {
-        if (StringUtil.IsNullOrEmpty(fieldName) || fieldName[0] != '<')
-        {
-            return null;
-        }
-
-        var end = fieldName.IndexOf('>', 1);
-        return end > 1 ? fieldName.Substring(1, end - 1) : null;
+        return Redaction.Instance.ShouldRedact(name, type, out _);
     }
 
     private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
