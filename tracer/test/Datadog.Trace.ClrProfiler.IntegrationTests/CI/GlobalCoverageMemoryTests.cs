@@ -200,7 +200,10 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
             .Should()
             .BeFalse("the production runner layout must not contain the test suite's legacy collector with the same VSTest friendly name");
 
-        using var root = new TemporaryDirectory("dd-global-coverage-memory-");
+        // Azure publishes LogDirectory even when this test fails. Keep the complete run
+        // until every assertion passes, including the coarse process-memory bound.
+        using var root = new TemporaryDirectory("dd-global-coverage-memory-", LogDirectory) { DeleteOnDispose = false };
+        _output.WriteLine($"Stress artifacts: {root.RootPath}");
         var coverageDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "coverage")).FullName;
 
         using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
@@ -216,13 +219,51 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
             expectedCaseCount,
             targetCommand);
 
-        var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
-        result.ExitCode.Should().Be(0, result.Error);
+        try
+        {
+            var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
+            result.ExitCode.Should().Be(0, result.Error);
 
-        AssertLaunch(result.Output, runnerDirectory);
-        var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
-        AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
-        AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
+            AssertLaunch(result.Output, runnerDirectory);
+            var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
+            AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
+            AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
+            root.DeleteOnDispose = true;
+        }
+        finally
+        {
+            if (!root.DeleteOnDispose)
+            {
+                _output.WriteLine($"Preserved stress artifacts: {root.RootPath}");
+                WriteStressDiagnostics(progressPath, logDirectory);
+            }
+        }
+    }
+
+    private void WriteStressDiagnostics(string progressPath, string logDirectory)
+    {
+        try
+        {
+            if (File.Exists(progressPath))
+            {
+                _output.WriteLine(File.ReadAllText(progressPath));
+            }
+
+            foreach (var line in Directory.EnumerateFiles(logDirectory, "*.log", SearchOption.AllDirectories).SelectMany(File.ReadLines))
+            {
+                if (line.Contains("Global coverage context diagnostics:", StringComparison.Ordinal) ||
+                    line.Contains("Global coverage native context-buffer", StringComparison.Ordinal))
+                {
+                    _output.WriteLine(line);
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            // A diagnostic read failure must not replace the original test failure.
+            // The retained files remain available in the CI log artifact.
+            _output.WriteLine($"Could not read stress diagnostics: {exception}");
+        }
     }
 
     private ProcessResult RunRunner(string dotnetExecutable, string runnerAssembly, string[] arguments, string logDirectory)
@@ -252,19 +293,26 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         process.Start().Should().BeTrue();
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit((int)TimeSpan.FromMinutes(20).TotalMilliseconds))
+        var timedOut = !process.WaitForExit((int)TimeSpan.FromMinutes(20).TotalMilliseconds);
+        if (timedOut)
         {
             process.Kill(entireProcessTree: true);
             process.WaitForExit();
-            throw new TimeoutException("The dd-trace CI run memory test exceeded 20 minutes.");
         }
 
         var output = outputTask.GetAwaiter().GetResult();
         var error = errorTask.GetAwaiter().GetResult();
+        File.WriteAllText(Path.Combine(logDirectory, "runner-stdout.txt"), output);
+        File.WriteAllText(Path.Combine(logDirectory, "runner-stderr.txt"), error);
         _output.WriteLine(output);
         if (!string.IsNullOrWhiteSpace(error))
         {
             _output.WriteLine(error);
+        }
+
+        if (timedOut)
+        {
+            throw new TimeoutException("The dd-trace CI run memory test exceeded 20 minutes.");
         }
 
         return new ProcessResult(process.ExitCode, output, error);
@@ -516,6 +564,27 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 
     private readonly record struct ProcessResult(int ExitCode, string Output, string Error);
 
+    internal sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory(string prefix, string? parentDirectory = null)
+        {
+            RootPath = Path.Combine(parentDirectory ?? Path.GetTempPath(), prefix + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(RootPath);
+        }
+
+        public string RootPath { get; }
+
+        public bool DeleteOnDispose { get; set; } = true;
+
+        public void Dispose()
+        {
+            if (DeleteOnDispose)
+            {
+                Directory.Delete(RootPath, recursive: true);
+            }
+        }
+    }
+
     private sealed class ProgressRecord
     {
         public int Pid { get; set; }
@@ -536,22 +605,6 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 
         protected override void Setup(IGitInfo gitInfo)
         {
-        }
-    }
-
-    private sealed class TemporaryDirectory : IDisposable
-    {
-        public TemporaryDirectory(string prefix)
-        {
-            RootPath = Path.Combine(Path.GetTempPath(), prefix + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(RootPath);
-        }
-
-        public string RootPath { get; }
-
-        public void Dispose()
-        {
-            Directory.Delete(RootPath, recursive: true);
         }
     }
 }
