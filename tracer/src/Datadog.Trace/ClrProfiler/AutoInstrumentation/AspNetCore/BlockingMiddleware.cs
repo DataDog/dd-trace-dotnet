@@ -98,6 +98,10 @@ internal sealed class BlockingMiddleware
                         var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
+                        if (!endedResponse)
+                        {
+                            securityCoordinator.MarkBlockFailed();
+                        }
                     }
 
                     securityCoordinator.Reporter.TryReport(result, endedResponse);
@@ -126,6 +130,11 @@ internal sealed class BlockingMiddleware
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
+                        if (!endedResponse)
+                        {
+                            span.Context.TraceContext?.AppSecRequestContext.MarkBlockFailed();
+                        }
+
                         var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context));
                         if (!blockException.Reported)
                         {

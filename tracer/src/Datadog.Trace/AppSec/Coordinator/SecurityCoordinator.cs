@@ -41,6 +41,8 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
+    public void MarkBlockFailed() => _appsecRequestContext.MarkBlockFailed();
+
     public IResult? Scan(bool lastTime = false)
     {
         var args = CollectRequestArgsForWaf();
@@ -106,7 +108,7 @@ internal readonly partial struct SecurityCoordinator
             }
 
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordWafTelemetry(result, isRasp);
+            SecurityReporter.RecordWafTelemetry(result, isRasp, _appsecRequestContext);
             ApiSecurity.RecordSamplingTelemetry(samplingDecision, result, _localRootSpan, TelemetryFactory.Metrics);
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -185,7 +187,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                SecurityReporter.RecordWafTelemetry(result, isRasp: false);
+                SecurityReporter.RecordWafTelemetry(result, isRasp: false, _appsecRequestContext);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {

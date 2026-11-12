@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal sealed partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 835;
+    private const int CountLength = 889;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -720,31 +720,85 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "event_rules_version", "action:update" }),
             // waf.requests, index = 651
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
-            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
-            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
-            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
-            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
-            // waf.input_truncated, index = 661
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:true", "block_failure:false", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:false", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:true", "input_truncated:false", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:false", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:true", "input_truncated:true", "waf_error:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:false", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:true", "input_truncated:false", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:false", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "block_failure:true", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:true", "block_failure:true", "rate_limited:true", "input_truncated:true", "waf_error:true" }),
+            // waf.input_truncated, index = 715
             new(new[] { "truncation_reason:string_too_long" }),
             new(new[] { "truncation_reason:list_or_map_too_large" }),
             new(new[] { "truncation_reason:object_too_deep" }),
-            // waf.error, index = 664
+            // waf.error, index = 718
             new(new[] { "waf_version", "event_rules_version", "waf_error:-127" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-3" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-2" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-1" }),
-            // rasp.rule.eval, index = 668
+            // rasp.rule.eval, index = 722
             new(new[] { "waf_version", "event_rules_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.rule.match, index = 673
+            // rasp.rule.match, index = 727
             new(new[] { "waf_version", "event_rules_version", "block:success", "rule_type:lfi" }),
             new(new[] { "waf_version", "event_rules_version", "block:success", "rule_type:ssrf" }),
             new(new[] { "waf_version", "event_rules_version", "block:success", "rule_type:sql_injection" }),
@@ -760,13 +814,13 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "event_rules_version", "block:irrelevant", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "event_rules_version", "block:irrelevant", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "event_rules_version", "block:irrelevant", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.timeout, index = 688
+            // rasp.timeout, index = 742
             new(new[] { "waf_version", "event_rules_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "event_rules_version", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.error, index = 693
+            // rasp.error, index = 747
             new(new[] { "waf_version", "event_rules_version", "waf_error:-127", "rule_type:lfi" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-127", "rule_type:ssrf" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-127", "rule_type:sql_injection" }),
@@ -787,7 +841,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "event_rules_version", "waf_error:-1", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-1", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "event_rules_version", "waf_error:-1", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.rule.skipped, index = 713
+            // rasp.rule.skipped, index = 767
             new(new[] { "reason:after-request", "rule_type:lfi" }),
             new(new[] { "reason:after-request", "rule_type:ssrf" }),
             new(new[] { "reason:after-request", "rule_type:sql_injection" }),
@@ -798,35 +852,35 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "reason:out-of-request", "rule_type:sql_injection" }),
             new(new[] { "reason:out-of-request", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "reason:out-of-request", "rule_type:command_injection", "rule_variant:exec" }),
-            // instrum.user_auth.missing_user_id, index = 723
+            // instrum.user_auth.missing_user_id, index = 777
             new(new[] { "framework:aspnetcore_identity", "event_type:login_success" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:login_failure" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:signup" }),
             new(new[] { "framework:unknown", "event_type:signup" }),
-            // instrum.user_auth.missing_user_login, index = 727
+            // instrum.user_auth.missing_user_login, index = 781
             new(new[] { "framework:aspnetcore_identity", "event_type:login_success" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:login_failure" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:signup" }),
             new(new[] { "framework:unknown", "event_type:signup" }),
-            // sdk.event, index = 731
+            // sdk.event, index = 785
             new(new[] { "event_type:login_success", "sdk_version:v1" }),
             new(new[] { "event_type:login_success", "sdk_version:v2" }),
             new(new[] { "event_type:login_failure", "sdk_version:v1" }),
             new(new[] { "event_type:login_failure", "sdk_version:v2" }),
             new(new[] { "event_type:custom", "sdk_version:v1" }),
-            // api_security.missing_route, index = 736
+            // api_security.missing_route, index = 790
             new(new[] { "framework:aspnet_core" }),
             new(new[] { "framework:aspnet" }),
             new(new[] { "framework:unknown" }),
-            // api_security.request.schema, index = 739
+            // api_security.request.schema, index = 793
             new(new[] { "framework:aspnet_core" }),
             new(new[] { "framework:aspnet" }),
             new(new[] { "framework:unknown" }),
-            // api_security.request.no_schema, index = 742
+            // api_security.request.no_schema, index = 796
             new(new[] { "framework:aspnet_core" }),
             new(new[] { "framework:aspnet" }),
             new(new[] { "framework:unknown" }),
-            // executed.source, index = 745
+            // executed.source, index = 799
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -841,9 +895,9 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
             new(new[] { "source_type:sql.row.value" }),
-            // executed.propagation, index = 759
+            // executed.propagation, index = 813
             new(null),
-            // executed.sink, index = 760
+            // executed.sink, index = 814
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -871,9 +925,9 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
-            // request.tainted, index = 787
+            // request.tainted, index = 841
             new(null),
-            // suppressed.vulnerabilities, index = 788
+            // suppressed.vulnerabilities, index = 842
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -901,19 +955,19 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
-            // flagevaluation.rows.dropped, index = 815
+            // flagevaluation.rows.dropped, index = 869
             new(new[] { "reason:pre_queue_overflow" }),
             new(new[] { "reason:queue_overflow" }),
             new(new[] { "reason:closed" }),
             new(new[] { "reason:degraded_cap" }),
             new(new[] { "reason:payload_limit" }),
             new(new[] { "reason:serialization_error" }),
-            // flagevaluation.rows.degraded, index = 821
+            // flagevaluation.rows.degraded, index = 875
             new(new[] { "reason:cardinality_cap" }),
             new(new[] { "reason:payload_limit" }),
-            // flagevaluation.payload.splits, index = 823
+            // flagevaluation.payload.splits, index = 877
             new(null),
-            // flagevaluation.context.truncated, index = 824
+            // flagevaluation.context.truncated, index = 878
             new(new[] { "reason:max_context_fields" }),
             new(new[] { "reason:max_key_length" }),
             new(new[] { "reason:max_value_length" }),
@@ -923,9 +977,9 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "reason:max_visited_nodes" }),
             new(new[] { "reason:unsupported_value" }),
             new(new[] { "reason:snapshot_error" }),
-            // flagevaluation.targeting_key.omitted, index = 833
+            // flagevaluation.targeting_key.omitted, index = 887
             new(new[] { "reason:invalid" }),
-            // flagevaluation.hook.errors, index = 834
+            // flagevaluation.hook.errors, index = 888
             new(null),
         };
 
@@ -935,7 +989,7 @@ internal sealed partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 87, 1, 3, 7, 2, 2, 7, 1, 1, 1, 22, 3, 2, 5, 5, 4, 1, 1, 22, 3, 34, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 87, 1, 22, 3, 8, 2, 10, 8, 4, 12, 4, 16, 2, 2, 2, 10, 3, 4, 5, 15, 5, 20, 10, 4, 4, 5, 3, 3, 3, 14, 1, 27, 1, 27, 6, 2, 1, 9, 1, 1, };
+        = new int[]{ 4, 87, 1, 3, 7, 2, 2, 7, 1, 1, 1, 22, 3, 2, 5, 5, 4, 1, 1, 22, 3, 34, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 87, 1, 22, 3, 8, 2, 10, 8, 4, 12, 4, 16, 2, 2, 2, 64, 3, 4, 5, 15, 5, 20, 10, 4, 4, 5, 3, 3, 3, 14, 1, 27, 1, 27, 6, 2, 1, 9, 1, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -1225,141 +1279,141 @@ internal sealed partial class MetricsTelemetryCollector
 
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
     {
-        var index = 661 + (int)tag;
+        var index = 715 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountWafError(Datadog.Trace.Telemetry.Metrics.MetricTags.WafError tag, int increment = 1)
     {
-        var index = 664 + (int)tag;
+        var index = 718 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 668 + (int)tag;
+        var index = 722 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleTypeMatch tag, int increment = 1)
     {
-        var index = 673 + (int)tag;
+        var index = 727 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 688 + (int)tag;
+        var index = 742 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspError(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspError tag, int increment = 1)
     {
-        var index = 693 + (int)tag;
+        var index = 747 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleTypeSkipped tag, int increment = 1)
     {
-        var index = 713 + (int)tag;
+        var index = 767 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
     {
-        var index = 723 + (int)tag;
+        var index = 777 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
     {
-        var index = 727 + (int)tag;
+        var index = 781 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountUserEventSdk(Datadog.Trace.Telemetry.Metrics.MetricTags.UserEventSdk tag, int increment = 1)
     {
-        var index = 731 + (int)tag;
+        var index = 785 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountApiSecMissingRoute(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
     {
-        var index = 736 + (int)tag;
+        var index = 790 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountApiSecRequestSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
     {
-        var index = 739 + (int)tag;
+        var index = 793 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountApiSecRequestNoSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
     {
-        var index = 742 + (int)tag;
+        var index = 796 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
-        var index = 745 + (int)tag;
+        var index = 799 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[759], increment);
+        Interlocked.Add(ref _buffer.Count[813], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
-        var index = 760 + (int)tag;
+        var index = 814 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[787], increment);
+        Interlocked.Add(ref _buffer.Count[841], increment);
     }
 
     public void RecordCountIastSuppressedVulnerabilities(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
-        var index = 788 + (int)tag;
+        var index = 842 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountFlagEvaluationRowsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDropReason tag, int increment = 1)
     {
-        var index = 815 + (int)tag;
+        var index = 869 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountFlagEvaluationRowsDegraded(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDegradeReason tag, int increment = 1)
     {
-        var index = 821 + (int)tag;
+        var index = 875 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountFlagEvaluationPayloadSplits(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[823], increment);
+        Interlocked.Add(ref _buffer.Count[877], increment);
     }
 
     public void RecordCountFlagEvaluationContextTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationContextReason tag, int increment = 1)
     {
-        var index = 824 + (int)tag;
+        var index = 878 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountFlagEvaluationTargetingKeyOmitted(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationTargetingReason tag, int increment = 1)
     {
-        var index = 833 + (int)tag;
+        var index = 887 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountFlagEvaluationHookErrors(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[834], increment);
+        Interlocked.Add(ref _buffer.Count[888], increment);
     }
 }

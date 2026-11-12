@@ -11,7 +11,9 @@ using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -33,7 +35,10 @@ internal sealed partial class AppSecRequestContext
     private int? _wafRaspError;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
-    internal void CloseWebSpan(Span span)
+    internal void CloseWebSpan(Span span) => CloseWebSpan(span, TelemetryFactory.Metrics);
+
+    [TestingAndPrivateOnly]
+    internal void CloseWebSpan(Span span, IMetricsTelemetryCollector metrics)
     {
         lock (_sync)
         {
@@ -73,6 +78,7 @@ internal sealed partial class AppSecRequestContext
             }
 
             _raspMetricsHelper?.GenerateRaspSpanMetricTags(span.Tags);
+            ReportWafRequests(span, metrics);
         }
     }
 
