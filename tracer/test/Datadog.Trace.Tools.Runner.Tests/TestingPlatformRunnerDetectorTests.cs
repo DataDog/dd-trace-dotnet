@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class TestingPlatformRunnerDetectorTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "dd-mtp-detector-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "dd-mtp-detector-" + Path.GetRandomFileName());
 
     public TestingPlatformRunnerDetectorTests()
     {

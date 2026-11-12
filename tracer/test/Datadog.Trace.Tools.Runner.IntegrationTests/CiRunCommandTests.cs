@@ -56,6 +56,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
         Configuration.ConfigurationKeys.CIVisibility.GitCommitSha,
         Configuration.ConfigurationKeys.CIVisibility.GitRepositoryUrl,
+        Configuration.PlatformKeys.DotNetTestRunner,
         "X_DATADOG_TRACE_ID",
         "X_DATADOG_PARENT_ID",
         "X_DATADOG_SAMPLING_PRIORITY",
@@ -895,8 +896,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [Theory]
         [InlineData("""{ "test": { "runner": "Microsoft.Testing.Platform" } }""", null, false)]
-        [InlineData("""{ "test": { "runner": "Microsoft.Testing.Platform" } }""", "VSTest", true)]
-        [InlineData("""{ "test": { "runner": "VSTest" } }""", "Microsoft.Testing.Platform", false)]
         [InlineData(null, "Microsoft.Testing.Platform", false)]
         [InlineData(null, null, true)]
         public void RemoteInternalCoverageInjectsVstestCollectorOnlyWhenDotnetTestRunsVstest(string globalJson, string runnerEnvironmentValue, bool expectCollector)
@@ -969,6 +968,66 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 Environment.CurrentDirectory = previousDirectory;
                 EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, previousRunnerEnvironmentValue);
+                Program.CallbackForTests = null;
+                if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
+                    Directory.Exists(coveragePath))
+                {
+                    Directory.Delete(coveragePath, recursive: true);
+                }
+
+                TestOptimization.Instance.Reset();
+            }
+        }
+
+        [Fact]
+        public void RemoteInternalCoverageInjectsCollectorForVstestCommandWhenGlobalJsonSelectsTestingPlatform()
+        {
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled, "0");
+            var previousDirectory = Environment.CurrentDirectory;
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+
+            Program.CallbackForTests = (_, a, e) =>
+            {
+                arguments = a;
+                environmentVariables = e;
+            };
+
+            using var workingDirectory = new TemporaryDirectory("dd-ci-mtp-runner-");
+            File.WriteAllText(Path.Combine(workingDirectory.RootPath, "global.json"), """{ "test": { "runner": "Microsoft.Testing.Platform" } }""");
+
+            try
+            {
+                Environment.CurrentDirectory = workingDirectory.RootPath;
+
+                using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+                var agentUrl = $"http://localhost:{agent.Port}";
+                var commandLine = $"{CommandPrefix} vstest tests/Sample.Tests/Sample.Tests.dll --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+
+                using var console = ConsoleHelper.Redirect();
+                var exitCode = Program.Main(commandLine.Split(' '));
+
+                using var scope = new AssertionScope();
+                scope.AddReportable("output", console.Output);
+
+                exitCode.Should().Be(0);
+                arguments.Should().Contain("/TestAdapterPath:");
+                arguments.Should().Contain("/Collect:DatadogCoverage");
+                console.Output.Should().NotContain("Microsoft Testing Platform");
+            }
+            finally
+            {
+                Environment.CurrentDirectory = previousDirectory;
                 Program.CallbackForTests = null;
                 if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
                     Directory.Exists(coveragePath))

@@ -68,7 +68,7 @@ internal static class TestingPlatformRunnerDetector
             }
             catch (Exception ex)
             {
-                // A malformed global.json makes the SDK fall back to VSTest.
+                // SDK 11 falls back to VSTest on a malformed global.json (SDK 10 fails), so this isn't MTP.
                 Log.Debug(ex, "Unable to read the test runner from {GlobalJsonPath}", globalJsonPath);
                 return null;
             }
