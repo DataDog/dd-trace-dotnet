@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,7 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.LiveObjects
             using var run = runner.Run();
 
             Assert.True(run.UploadCount > 0);
-            Assert.True(run.Profiles.EveryProfileHasOnlyMatchingSamples(sample => sample.Labels.Has("object lifetime")));
+            Assert.True(run.Profiles.AllSamplesMatch(sample => sample.Labels.Has(ProfileLabelNames.ObjectLifetime)));
         }
     }
 }

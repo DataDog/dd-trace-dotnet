@@ -50,7 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         /// <summary>
         /// True when there is at least one profile, every profile has samples, and every sample matches.
         /// </summary>
-        public bool EveryProfileHasOnlyMatchingSamples(Func<ProfileSample, bool> predicate)
+        public bool AllSamplesMatch(Func<ProfileSample, bool> predicate)
         {
             if (Profiles.Count == 0)
             {
