@@ -6,10 +6,12 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.SourceGenerators;
 
 #if NETCOREAPP
 using System.Reflection.Metadata;
@@ -31,6 +33,10 @@ namespace Datadog.Trace.Debugger.Symbols
         protected const int UnknownMethodEndLine = 0;
         protected const int UnknownFieldAndArgLine = 0;
         protected const MethodAttributes StaticFinalVirtualMethod = System.Reflection.MethodAttributes.Static | System.Reflection.MethodAttributes.Final | System.Reflection.MethodAttributes.Virtual;
+        private const string LocalFunctionMarker = ">g__";
+        private const string ClosureThisFieldName = "<>4__this";
+        private const string ParentClosureFieldNamePrefix = "CS$<>8__locals";
+        private const int MaxClosureNestingDepth = 16;
 
         protected SymbolExtractor(DatadogMetadataReader metadataReader, string assemblyPath)
         {
@@ -94,6 +100,107 @@ namespace Datadog.Trace.Debugger.Symbols
                 Log.Error(e, "Error while creating instance of SymbolExtractor with {Assembly}", assembly.FullName);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Roslyn emits a local function declared in source as <c>Name</c> as a method named
+        /// <c>&lt;{containing member}&gt;g__Name|{id}</c>, e.g. <c>&lt;&lt;Main&gt;$&gt;g__GetProduct|0_0</c> for a local function declared in top-level statements.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static bool TryGetLocalFunctionName(string? methodName, [NotNullWhen(true)] out string? localFunctionName)
+        {
+            if (methodName is null || !TryGetLocalFunctionNameRange(methodName.AsSpan(), out var start, out var length))
+            {
+                localFunctionName = null;
+                return false;
+            }
+
+            localFunctionName = methodName.Substring(start, length);
+            return true;
+        }
+
+        internal static bool IsLocalFunctionName(string? methodName) => TryGetLocalFunctionNameRange(methodName.AsSpan(), out _, out _);
+
+        private static bool TryGetLocalFunctionNameRange(ReadOnlySpan<char> methodName, out int start, out int length)
+        {
+            start = 0;
+            length = 0;
+            if (methodName.IsEmpty || methodName[0] != '<')
+            {
+                return false;
+            }
+
+            var idSeparator = methodName.LastIndexOf('|');
+            if (idSeparator < 0)
+            {
+                return false;
+            }
+
+            var markerIndex = methodName.Slice(0, idSeparator).LastIndexOf(LocalFunctionMarker.AsSpan());
+            // the containing member name between '<' and the marker can't be empty
+            if (markerIndex < 2)
+            {
+                return false;
+            }
+
+            start = markerIndex + LocalFunctionMarker.Length;
+            length = idSeparator - start;
+            return length > 0 && methodName.Slice(start, length).IndexOfAny('<', '>') < 0;
+        }
+
+        private static void AddScope(ref Model.Scope[] scopes, ref int index, in Model.Scope scope)
+        {
+            if (index >= scopes.Length)
+            {
+                var newScopes = ArrayPool<Model.Scope>.Shared.Rent(Math.Max(scopes.Length * 2, 4));
+                Array.Copy(scopes, 0, newScopes, 0, index);
+
+                // Clear only the used portion to avoid keeping references alive via the pool
+                Array.Clear(scopes, 0, index);
+                ArrayPool<Model.Scope>.Shared.Return(scopes);
+                scopes = newScopes;
+            }
+
+            scopes[index] = scope;
+            index++;
+        }
+
+        /// <summary>
+        /// The 'this' of a generated method (closure, local function) is a compiler-generated instance.
+        /// Shows the user's 'this' instead: typed as <paramref name="userTypeName"/>, or removed when there is no 'this' in the user's code.
+        /// </summary>
+        protected static Symbol[]? ReplaceGeneratedThis(Symbol[] symbols, string? userTypeName)
+        {
+            var thisIndex = -1;
+            for (var i = 0; i < symbols.Length; i++)
+            {
+                if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
+                {
+                    thisIndex = i;
+                    break;
+                }
+            }
+
+            if (thisIndex < 0)
+            {
+                return symbols;
+            }
+
+            if (userTypeName is not null)
+            {
+                symbols[thisIndex].Type = userTypeName;
+                return symbols;
+            }
+
+            if (symbols.Length == 1)
+            {
+                return null;
+            }
+
+            var symbolsWithoutThis = new Symbol[symbols.Length - 1];
+            Array.Copy(symbols, 0, symbolsWithoutThis, 0, thisIndex);
+            Array.Copy(symbols, thisIndex + 1, symbolsWithoutThis, thisIndex, symbols.Length - thisIndex - 1);
+            return symbolsWithoutThis;
         }
 
         internal bool TryGetAssemblySymbol(out Model.Scope assemblyScope)
@@ -171,12 +278,16 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
+                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
+
+                // Compiler-generated types are not user types, but the synthesized type of top-level statements
+                // (e.g. Program) holds the local functions declared there. Nested compiler-generated types
+                // (closure classes, state machines) are surfaced through the user type that declares them.
+                var isCompilerGeneratedType = DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle));
+                if (type.IsNested && (isCompilerGeneratedType || IsNestedInCompilerGeneratedType(type)))
                 {
                     return false;
                 }
-
-                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
 
                 if (type.IsInterfaceType())
                 {
@@ -184,31 +295,33 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var fields = type.GetFields();
-                if (fields.Count > 0)
+                if (fields.Count > 0 && !isCompilerGeneratedType)
                 {
                     fieldSymbols = GetFieldSymbols(fields, type);
                 }
 
                 var methods = type.GetMethods();
                 var nestedTypes = type.GetNestedTypes();
-                int scopesBufferLength = methods.Count + nestedTypes.Length;
-                scopes = ArrayPool<Model.Scope>.Shared.Rent(scopesBufferLength);
-                int methodsScopeIndex = 0;
-                int nestedClassesScopeIndex = 0;
+                scopes = ArrayPool<Model.Scope>.Shared.Rent(methods.Count + nestedTypes.Length);
+                int scopesIndex = 0;
                 if (methods.Count > 0)
                 {
-                    PopulateMethodScopes(type, methods, scopes, ref methodsScopeIndex);
+                    PopulateMethodScopes(type, methods, ref scopes, ref scopesIndex, localFunctionsOnly: isCompilerGeneratedType);
                 }
 
-                nestedClassesScopeIndex = methodsScopeIndex;
                 if (nestedTypes.Length > 0)
                 {
-                    PopulateNestedNotCompileGeneratedClassScope(nestedTypes, scopes, ref nestedClassesScopeIndex);
+                    PopulateNestedTypeScopes(nestedTypes, ref scopes, ref scopesIndex);
+                }
+
+                if (isCompilerGeneratedType && scopesIndex == 0)
+                {
+                    return false;
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
                 SourceLocationInfo linesAndSource = default;
-                var allScopes = nestedClassesScopeIndex == 0 ? null : new Model.Scope[nestedClassesScopeIndex];
+                var allScopes = scopesIndex == 0 ? null : new Model.Scope[scopesIndex];
                 if (allScopes == null)
                 {
                     linesAndSource = GetClassSourceLocationInfo(null);
@@ -226,16 +339,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return true;
                 }
 
-                if (methodsScopeIndex > 0)
-                {
-                    Array.Copy(scopes!, 0, allScopes!, 0, methodsScopeIndex);
-                }
-
-                if ((nestedClassesScopeIndex - methodsScopeIndex) > 0)
-                {
-                    int destIndex = methodsScopeIndex == 0 ? 0 : methodsScopeIndex;
-                    Array.Copy(scopes!, destIndex, allScopes!, destIndex, nestedClassesScopeIndex - methodsScopeIndex);
-                }
+                Array.Copy(scopes, 0, allScopes, 0, scopesIndex);
 
                 linesAndSource = GetClassSourceLocationInfo(allScopes);
                 classScope = new Model.Scope
@@ -252,17 +356,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             catch (Exception e)
             {
-                string? typeName = null;
-                try
-                {
-                    typeName = typeDefinitionHandle.FullName(MetadataReader);
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", typeName ?? "NA");
+                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", GetTypeNameOrUnknown(typeDefinitionHandle));
                 return false;
             }
             finally
@@ -343,14 +437,18 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SourceLocationInfo(startLine: classStartLine, endLine: classEndLine, path: classSourceFile);
         }
 
-        private void PopulateNestedNotCompileGeneratedClassScope(ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
+        /// <summary>
+        /// Nested user types are surfaced as nested class scopes. Nested compiler-generated types are not user types, but
+        /// local functions that share captured variables with a lambda are emitted as instance methods of such a closure class
+        /// (e.g. &lt;&gt;c__DisplayClass0_0), so we surface these local functions as methods of the type declaring them.
+        /// </summary>
+        private void PopulateNestedTypeScopes(ImmutableArray<TypeDefinitionHandle> nestedTypes, ref Model.Scope[] scopes, ref int index)
         {
             for (var i = 0; i < nestedTypes.Length; i++)
             {
-                Model.Scope nestedClassScope = default;
+                var typeHandle = nestedTypes[i];
                 try
                 {
-                    var typeHandle = nestedTypes[i];
                     if (typeHandle.IsNil)
                     {
                         continue;
@@ -358,21 +456,88 @@ namespace Datadog.Trace.Debugger.Symbols
 
                     if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle)))
                     {
+                        PopulateClosureClassLocalFunctionScopes(MetadataReader.GetTypeDefinition(typeHandle), ref scopes, ref index);
                         continue;
                     }
 
-                    if (!TryGetClassSymbols(typeHandle, out nestedClassScope))
+                    // types nested in a compiler-generated type are rejected by TryGetClassSymbols
+                    if (TryGetClassSymbols(typeHandle, out var nestedClassScope))
+                    {
+                        AddScope(ref scopes, ref index, in nestedClassScope);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Symbol extractor fail to get information for nested class {NestedClass}", GetTypeNameOrUnknown(typeHandle));
+                }
+            }
+        }
+
+        private void PopulateClosureClassLocalFunctionScopes(TypeDefinition closureType, ref Model.Scope[] scopes, ref int index)
+        {
+            foreach (var methodHandle in closureType.GetMethods())
+            {
+                try
+                {
+                    if (methodHandle.IsNil)
                     {
                         continue;
                     }
 
-                    nestedClassScopes[index] = nestedClassScope;
-                    index++;
+                    var method = MetadataReader.GetMethodDefinition(methodHandle);
+                    if (TryGetLocalFunctionScope(closureType, methodHandle, method, declaredOnClosureClass: true, out var localFunctionScope))
+                    {
+                        AddScope(ref scopes, ref index, in localFunctionScope);
+                    }
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Symbol extractor fail to get information for nested class {NestedClass}", nestedClassScope.Name ?? "Unknown");
+                    Log.Warning(e, "Symbol extractor fail to get information for local function {Method}", GetMethodNameOrUnknown(methodHandle));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Users can't declare a type inside a compiler-generated type. Such types are compiler-generated even when they
+        /// are not marked as such, e.g. the state machine of an async lambda nested in its closure class (&lt;&gt;c__DisplayClass0_0+&lt;&lt;Main&gt;b__0&gt;d).
+        /// </summary>
+        protected bool IsNestedInCompilerGeneratedType(TypeDefinition type)
+        {
+            var declaringType = type.GetDeclaringType();
+            while (!declaringType.IsNil)
+            {
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(declaringType)))
+                {
+                    return true;
+                }
+
+                declaringType = MetadataReader.GetTypeDefinition(declaringType).GetDeclaringType();
+            }
+
+            return false;
+        }
+
+        private string GetMethodNameOrUnknown(MethodDefinitionHandle handle)
+        {
+            try
+            {
+                return MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name);
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
+        private string GetTypeNameOrUnknown(TypeDefinitionHandle handle)
+        {
+            try
+            {
+                return handle.FullName(MetadataReader);
+            }
+            catch
+            {
+                return "Unknown";
             }
         }
 
@@ -451,7 +616,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return fieldSymbols;
         }
 
-        private void PopulateMethodScopes(TypeDefinition type, MethodDefinitionHandleCollection methods, Model.Scope[] classMethods, ref int index)
+        private void PopulateMethodScopes(TypeDefinition type, MethodDefinitionHandleCollection methods, ref Model.Scope[] classMethods, ref int index, bool localFunctionsOnly)
         {
             foreach (var methodDefHandle in methods)
             {
@@ -459,6 +624,29 @@ namespace Datadog.Trace.Debugger.Symbols
                 try
                 {
                     if (methodDefHandle.IsNil)
+                    {
+                        continue;
+                    }
+
+                    var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
+                    if (methodDef.Name.IsNil)
+                    {
+                        continue;
+                    }
+
+                    // Names starting with '<' are synthesized by the compiler (e.g. <Main>$ for top-level statements)
+                    // and are never shown to the user. Local functions are the only ones among them the user declared by name.
+                    if (MetadataReader.StringComparer.StartsWith(methodDef.Name, "<"))
+                    {
+                        if (TryGetLocalFunctionScope(type, methodDefHandle, methodDef, declaredOnClosureClass: false, out methodScope))
+                        {
+                            AddScope(ref classMethods, ref index, in methodScope);
+                        }
+
+                        continue;
+                    }
+
+                    if (localFunctionsOnly)
                     {
                         continue;
                     }
@@ -475,7 +663,6 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
                     if (!TryCreateMethodScope(type, methodDefHandle, methodDef, out methodScope))
                     {
                         continue;
@@ -503,25 +690,12 @@ namespace Datadog.Trace.Debugger.Symbols
                         }
                     }
 
-                    classMethods[index] = methodScope;
-                    index++;
+                    AddScope(ref classMethods, ref index, in methodScope);
                 }
                 catch (Exception e)
                 {
-                    var name = GetMethodName(methodScope.Name, methodDefHandle);
+                    var name = methodScope.Name ?? GetMethodNameOrUnknown(methodDefHandle);
                     Log.Warning(e, "Symbol extractor fail to get information for method {Method}", name);
-                }
-            }
-
-            string GetMethodName(string? name, MethodDefinitionHandle handle)
-            {
-                try
-                {
-                    return name ?? MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name);
-                }
-                catch
-                {
-                    return "Unknown";
                 }
             }
         }
@@ -600,22 +774,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
             // closures
             var closureScopes = GetClosureScopes(type, methodHandle, method);
-            var methodAttributes = method.Attributes & StaticFinalVirtualMethod;
-            var isAsyncMethod = DatadogMetadataReader.IsAsyncMethod(method.GetCustomAttributes());
-            var methodLanguageSpecifics = new LanguageSpecifics
-            {
-                ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
-                AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask)] } : null,
-                Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)], "async" } :
-                              methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } :
-                              isAsyncMethod ? new[] { "async" } : null
-            };
 
             methodScope = new Model.Scope
             {
                 ScopeType = ScopeType.Method,
                 Name = methodName,
-                LanguageSpecifics = methodLanguageSpecifics,
+                LanguageSpecifics = GetMethodLanguageSpecifics(method),
                 HasInjectibleLines = false,
                 Symbols = argsSymbol,
                 Scopes = closureScopes,
@@ -624,6 +788,127 @@ namespace Datadog.Trace.Debugger.Symbols
                 EndLine = UnknownMethodEndLine
             };
 
+            return true;
+        }
+
+        private LanguageSpecifics GetMethodLanguageSpecifics(MethodDefinition method)
+        {
+            var methodAttributes = method.Attributes & StaticFinalVirtualMethod;
+            var isAsyncMethod = DatadogMetadataReader.IsAsyncMethod(method.GetCustomAttributes());
+            return new LanguageSpecifics
+            {
+                ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
+                AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask)] } : null,
+                Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)], "async" } :
+                              methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } :
+                              isAsyncMethod ? new[] { "async" } : null
+            };
+        }
+
+        private bool TryGetLocalFunctionScope(TypeDefinition ownerType, MethodDefinitionHandle methodHandle, MethodDefinition method, bool declaredOnClosureClass, out Model.Scope methodScope)
+        {
+            methodScope = default;
+            if (method.Name.IsNil
+             || !MetadataReader.StringComparer.StartsWith(method.Name, "<")
+             || !TryGetLocalFunctionName(MetadataReader.GetString(method.Name), out var localFunctionName)
+             || !DatadogMetadataReader.HasMethodBody(MetadataTokens.GetToken(methodHandle)))
+            {
+                return false;
+            }
+
+            return TryCreateLocalFunctionScope(ownerType, methodHandle, method, localFunctionName, declaredOnClosureClass, out methodScope);
+        }
+
+        /// <summary>
+        /// Creates the method scope of a local function. The scope uses the name the user wrote, not the generated metadata name,
+        /// and its source location is the one of the method that runs, so line probes on it resolve to the generated method.
+        /// </summary>
+        protected virtual bool TryCreateLocalFunctionScope(TypeDefinition ownerType, MethodDefinitionHandle methodHandle, MethodDefinition method, string localFunctionName, bool declaredOnClosureClass, out Model.Scope methodScope)
+        {
+            methodScope = new Model.Scope
+            {
+                ScopeType = ScopeType.Method,
+                Name = localFunctionName,
+                LanguageSpecifics = GetMethodLanguageSpecifics(method),
+                HasInjectibleLines = false,
+                Symbols = GetLocalFunctionArgsSymbol(ownerType, method, declaredOnClosureClass),
+                SourceFile = null,
+                StartLine = UnknownMethodStartLine,
+                EndLine = UnknownMethodEndLine
+            };
+
+            return true;
+        }
+
+        private Symbol[]? GetLocalFunctionArgsSymbol(TypeDefinition ownerType, MethodDefinition method, bool declaredOnClosureClass)
+        {
+            var argsSymbol = GetArgsSymbol(method);
+            if (!declaredOnClosureClass || method.IsStaticMethod() || argsSymbol is not { Length: > 0 })
+            {
+                return argsSymbol;
+            }
+
+            // 'this' is the closure instance. When the closure captured the user's 'this',
+            // expose 'this' with the user's type, otherwise there is no 'this' in the user's code.
+            var userType = ownerType.GetDeclaringType();
+            var userTypeName = !userType.IsNil && ClosureCapturesThis(ownerType, MaxClosureNestingDepth) ? userType.FullName(MetadataReader) : null;
+            return ReplaceGeneratedThis(argsSymbol, userTypeName);
+        }
+
+        /// <summary>
+        /// A closure captures the user's 'this' in a &lt;&gt;4__this field. The closure of a nested scope (e.g. a loop body)
+        /// reaches it through the closure of its parent scope, stored in a CS$&lt;&gt;8__locals field.
+        /// </summary>
+        private bool ClosureCapturesThis(TypeDefinition closureType, int remainingDepth)
+        {
+            foreach (var fieldHandle in closureType.GetFields())
+            {
+                var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                if (MetadataReader.StringComparer.Equals(field.Name, ClosureThisFieldName))
+                {
+                    return true;
+                }
+
+                if (remainingDepth > 0
+                 && MetadataReader.StringComparer.StartsWith(field.Name, ParentClosureFieldNamePrefix)
+                 && TryGetFieldTypeDefinition(field, out var parentClosureType)
+                 && ClosureCapturesThis(MetadataReader.GetTypeDefinition(parentClosureType), remainingDepth - 1))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryGetFieldTypeDefinition(FieldDefinition field, out TypeDefinitionHandle typeHandle)
+        {
+            typeHandle = default;
+            var signature = MetadataReader.GetBlobReader(field.Signature);
+            if (signature.ReadSignatureHeader().Kind != SignatureKind.Field)
+            {
+                return false;
+            }
+
+            var typeCode = signature.ReadSignatureTypeCode();
+            if (typeCode == SignatureTypeCode.GenericTypeInstance)
+            {
+                // closure of a generic method or type
+                typeCode = signature.ReadSignatureTypeCode();
+            }
+
+            if (typeCode != SignatureTypeCode.TypeHandle)
+            {
+                return false;
+            }
+
+            var handle = signature.ReadTypeHandle();
+            if (handle.Kind != HandleKind.TypeDefinition)
+            {
+                return false;
+            }
+
+            typeHandle = (TypeDefinitionHandle)handle;
             return true;
         }
 
@@ -714,21 +999,8 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (TryCreateMethodScopeForGeneratedMethod(methodDefHandle, methodDef, generatedMethodHandle, generatedMethod, ownerType, out var closureMethodScope))
                 {
-                    // This can exceed our initial heuristic, so grow the pooled buffer on-demand to avoid dropping closure methods.
-                    if (index >= closureMethods!.Length)
-                    {
-                        var newBuffer = ArrayPool<Model.Scope>.Shared.Rent(closureMethods.Length * 2);
-                        Array.Copy(closureMethods, 0, newBuffer, 0, index);
-
-                        // Clear only the used portion
-                        Array.Clear(closureMethods, 0, index);
-                        ArrayPool<Model.Scope>.Shared.Return(closureMethods);
-
-                        closureMethods = newBuffer;
-                    }
-
-                    closureMethods![index] = closureMethodScope;
-                    index++;
+                    // This can exceed our initial heuristic, so the pooled buffer grows on-demand to avoid dropping closure methods.
+                    AddScope(ref closureMethods!, ref index, in closureMethodScope);
                 }
             }
         }

@@ -37,6 +37,8 @@ namespace Datadog.Trace.Pdb
         private const string Unknown = "UNKNOWN";
         private const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
         private const string AsyncStateMachineAttribute = "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
+        private const string IteratorStateMachineAttribute = "System.Runtime.CompilerServices.IteratorStateMachineAttribute";
+        private const string AsyncIteratorStateMachineAttribute = "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute";
         private const int UnknownLocalLine = int.MaxValue;
         private static readonly Guid SourceLink = new("CC110556-A091-4D38-9FEC-25AB9A351A6A");
         private static readonly Guid EncLambdaAndClosureMap = new("A643004C-0240-496F-A783-30D64F4979DE");
@@ -384,7 +386,7 @@ namespace Datadog.Trace.Pdb
                 MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefHandle.ToDebugInformationHandle());
                 if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef, includeIteratorStateMachines: false);
                     if (moveNext.IsNil)
                     {
                         return null;
@@ -450,7 +452,7 @@ namespace Datadog.Trace.Pdb
                 MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefHandle.ToDebugInformationHandle());
                 if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef, includeIteratorStateMachines: false);
                     if (moveNext.IsNil)
                     {
                         return null;
@@ -481,7 +483,23 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        private MethodDefinitionHandle GetMoveNextMethod(MethodDefinitionHandle methodDefHandle, MethodDefinition methodDef)
+        /// <summary>
+        /// Gets the MoveNext method of the state machine the compiler generated for an async, iterator or async iterator method.
+        /// </summary>
+        /// <param name="methodToken">The kickoff method token</param>
+        /// <returns>The MoveNext method handle, or a nil handle when the method is not a state machine kickoff method</returns>
+        internal MethodDefinitionHandle GetStateMachineMoveNextMethod(int methodToken)
+        {
+            var methodDefHandle = GetMethodDefHandle(methodToken);
+            if (methodDefHandle.IsNil)
+            {
+                return default;
+            }
+
+            return GetMoveNextMethod(methodDefHandle, GetMethodDef(methodDefHandle), includeIteratorStateMachines: true);
+        }
+
+        private MethodDefinitionHandle GetMoveNextMethod(MethodDefinitionHandle methodDefHandle, MethodDefinition methodDef, bool includeIteratorStateMachines)
         {
             if (methodDef.GetDeclaringType().IsNil)
             {
@@ -498,7 +516,9 @@ namespace Datadog.Trace.Pdb
                     continue;
                 }
 
-                if (GetAttributeName(attributeHandle) != AsyncStateMachineAttribute)
+                var attributeName = GetAttributeName(attributeHandle);
+                if (attributeName != AsyncStateMachineAttribute
+                 && (!includeIteratorStateMachines || (attributeName != IteratorStateMachineAttribute && attributeName != AsyncIteratorStateMachineAttribute)))
                 {
                     continue;
                 }
@@ -720,7 +740,7 @@ namespace Datadog.Trace.Pdb
 
             if (localsCount == 0 && searchMoveNext)
             {
-                var moveNext = GetMoveNextMethod(methodDefHandle, method);
+                var moveNext = GetMoveNextMethod(methodDefHandle, method, includeIteratorStateMachines: false);
                 if (!moveNext.IsNil)
                 {
                     return GetLocalVariableNames(MetadataTokens.GetToken(moveNext), false);
@@ -1015,7 +1035,7 @@ namespace Datadog.Trace.Pdb
 
                 if (localScopes.Count == 0 && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(methodDefHandle, method);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, method, includeIteratorStateMachines: false);
                     return GetLocalSymbols(MetadataTokens.GetToken(moveNext), sequencePoints, false);
                 }
             }
