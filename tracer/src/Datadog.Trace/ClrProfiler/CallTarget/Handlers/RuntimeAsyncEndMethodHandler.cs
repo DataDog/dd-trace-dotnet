@@ -130,7 +130,16 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
 
         if (OnAsyncMethodEnd is not null)
         {
-            OnAsyncMethodEnd(instance, null, exception, in state);
+            // As in the continuation generators, a failing OnAsyncMethodEnd is logged rather than
+            // allowed to skip OnMethodEnd, unless it is a CallTargetBubbleUpException (e.g. an AppSec block)
+            try
+            {
+                OnAsyncMethodEnd(instance, null, exception, in state);
+            }
+            catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+            {
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+            }
         }
 
         if (OnMethodEnd is not null)
