@@ -125,8 +125,8 @@ public static class CiStageSelection
     private static bool IsReadme(string path)
     {
         var slash = path.LastIndexOf('/');
-        var name = slash < 0 ? path.AsSpan() : path.AsSpan(slash + 1);
-        return name.Equals("README.md".AsSpan(), StringComparison.Ordinal);
+        var name = slash < 0 ? path : path.Substring(slash + 1);
+        return string.Equals(name, "README.md", StringComparison.Ordinal);
     }
 
     private static bool IsTracerToolsScript(string path)
@@ -136,15 +136,15 @@ public static class CiStageSelection
             return false;
         }
 
-        var name = path.AsSpan(TracerToolsPrefix.Length);
+        var name = path.Substring(TracerToolsPrefix.Length);
         if (name.IndexOf('/') >= 0)
         {
             return false;
         }
 
-        return name.EndsWith(".ps1".AsSpan(), StringComparison.Ordinal)
-            || name.EndsWith(".psm1".AsSpan(), StringComparison.Ordinal)
-            || name.EndsWith(".psd1".AsSpan(), StringComparison.Ordinal);
+        return name.EndsWith(".ps1", StringComparison.Ordinal)
+            || name.EndsWith(".psm1", StringComparison.Ordinal)
+            || name.EndsWith(".psd1", StringComparison.Ordinal);
     }
 
     private static bool IsProfilerOnly(string path)
