@@ -79,6 +79,7 @@ internal static class CiUtils
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
         var temporaryArgumentFiles = new List<string>();
+        TestingPlatformCoverageRewriter? coverageRewriter = null;
 
         var explicitCodeCoveragePath = HasExplicitAdditionalEnvironmentVariable(context, commonTracerSettings, Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
         var clearInheritedCodeCoveragePath = includeRunScopedBackfillEnvironment &&
@@ -432,9 +433,17 @@ internal static class CiUtils
                 }
                 else if (usesTestingPlatformRunner)
                 {
-                    const string message = "RunCiCommand: Per-test code coverage is not supported when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't collect it from this run. The Datadog coverage data collector was not added.";
-                    Log.Warning(message);
-                    Utils.WriteWarning(message);
+                    // There is no data collector for this command: the test assemblies are rewritten before they run instead, which only holds without a build.
+                    profilerEnvironmentVariables.TryGetValue(Configuration.ConfigurationKeys.DotNetTracerHome, out var tracerHome);
+                    if (TestingPlatformCoverageRewriter.TryRewrite(program, expandedArguments, Environment.CurrentDirectory, tracerHome, testOptimizationSettings, out coverageRewriter, out var reason))
+                    {
+                        Log.Information("RunCiCommand: The test assemblies were rewritten for per-test code coverage before running 'dotnet test' with the Microsoft Testing Platform command.");
+                    }
+                    else
+                    {
+                        Log.Warning<string?>("RunCiCommand: Per-test code coverage is not collected when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't use it from this run. {Reason}", reason);
+                        Utils.WriteWarning($"RunCiCommand: Per-test code coverage is not collected when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't use it from this run. {reason}");
+                    }
                 }
                 else if (isDotnetTestCommand)
                 {
@@ -514,7 +523,7 @@ internal static class CiUtils
             }
         }
 
-        return new InitResults(true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles);
+        return new InitResults(true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles, coverageRewriter);
     }
 
     private static bool HasExplicitAdditionalEnvironmentVariable(InvocationContext context, CommonTracerSettings commonTracerSettings, string key)
@@ -1069,7 +1078,7 @@ internal static class CiUtils
     {
         private readonly Task _uploadRepositoryChangesTask;
 
-        public InitResults(bool success, ICollection<string> arguments, Dictionary<string, string>? profilerEnvironmentVariables, bool testSkippingEnabled, bool codeCoverageEnabled, Task uploadRepositoryChangesTask, ICollection<string>? temporaryArgumentFiles = null)
+        public InitResults(bool success, ICollection<string> arguments, Dictionary<string, string>? profilerEnvironmentVariables, bool testSkippingEnabled, bool codeCoverageEnabled, Task uploadRepositoryChangesTask, ICollection<string>? temporaryArgumentFiles = null, IDisposable? coverageRewriter = null)
         {
             Success = success;
             Arguments = arguments;
@@ -1077,6 +1086,7 @@ internal static class CiUtils
             TestSkippingEnabled = testSkippingEnabled;
             CodeCoverageEnabled = codeCoverageEnabled;
             TemporaryArgumentFiles = temporaryArgumentFiles ?? [];
+            CoverageRewriter = coverageRewriter;
             _uploadRepositoryChangesTask = uploadRepositoryChangesTask;
         }
 
@@ -1091,6 +1101,11 @@ internal static class CiUtils
         public bool CodeCoverageEnabled { get; }
 
         public ICollection<string> TemporaryArgumentFiles { get; }
+
+        /// <summary>
+        /// Gets the rewrite of the test assemblies to undo after the command runs, or null.
+        /// </summary>
+        public IDisposable? CoverageRewriter { get; }
 
         public async Task UploadRepositoryChangesTask()
         {

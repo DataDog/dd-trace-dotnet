@@ -35,6 +35,12 @@
     <None Update="coverage.opencover.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\Datadog.Trace.Tools.Runner.Tests\CoverageRewriterAssembly.dll" Link="CoverageRewriterAssembly.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Datadog.Trace.Tools.Runner.Tests\CoverageRewriterAssembly.pdb" Link="CoverageRewriterAssembly.pdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="V1\DummyLibrary.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
