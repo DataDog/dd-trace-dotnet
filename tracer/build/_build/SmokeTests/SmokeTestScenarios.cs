@@ -121,7 +121,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "andrewlock/dotnet-fedora", "45-11.0", "45", true),
+                    // Fedora 45 ships RPM 6, which rejects unsigned packages by default, so installing our RPM fails with "does not verify: no signature".
+                    // Re-enable once we either add --nosignature to the rpm install command, or start signing the RPMs
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-fedora", "45-11.0", "45", true),
                     // Image currently contains .NET 10.0.0-rc.1 instead of GA, so disabled until it's rebuilt
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora", "42-10.0", "42", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora", "40-9.0", "40", true),
@@ -313,7 +315,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "andrewlock/dotnet-fedora-arm64", "45-11.0", "45", true),
+                    // Fedora 45 ships RPM 6, which rejects unsigned packages by default, so installing our RPM fails with "does not verify: no signature".
+                    // Re-enable once we either add --nosignature to the rpm install command, or start signing the RPMs
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-fedora-arm64", "45-11.0", "45", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-fedora-arm64", "42-10.0", "42", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora-arm64", "40-9.0", "40", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-fedora-arm64", "35-7.0", "35", true),
