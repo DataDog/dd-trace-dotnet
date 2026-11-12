@@ -19,8 +19,6 @@ internal static class StateMachineHelper
     private const string IteratorStateMachineAttributeName = "System.Runtime.CompilerServices.IteratorStateMachineAttribute";
     private const string AsyncIteratorStateMachineAttributeName = "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute";
 
-    private static readonly ConditionalWeakTable<Type, StrongBox<MethodBase?>> SourceMethods = new();
-
     /// <summary>
     /// Resolves a method of a compiler-generated async or iterator state machine (such as its MoveNext) to the
     /// method of the source code it was generated from, as System.Diagnostics.StackTrace does for its ToString.
@@ -35,23 +33,12 @@ internal static class StateMachineHelper
 
         // not checking CompilerGeneratedAttribute: the state machines of lambdas, nested in their display class, don't have it.
         // What proves the type is a state machine is the attribute of the method below that points to it.
-        if (method.DeclaringType is not { DeclaringType: { } parentType } stateMachineType
+        var stateMachineType = method.DeclaringType;
+        var parentType = stateMachineType?.DeclaringType;
+        if (parentType is null
          || !(typeof(IAsyncStateMachine).IsAssignableFrom(stateMachineType) || typeof(IEnumerator).IsAssignableFrom(stateMachineType)))
         {
             return false;
-        }
-
-        // the attributes of every method of the parent type are read to find it, so the result is kept per state machine.
-        // The weak keys don't keep collectible assemblies alive.
-        sourceMethod = SourceMethods.GetValue(stateMachineType, static type => new StrongBox<MethodBase?>(FindSourceMethod(type))).Value;
-        return sourceMethod is not null;
-    }
-
-    private static MethodInfo? FindSourceMethod(Type stateMachineType)
-    {
-        if (stateMachineType.DeclaringType is not { } parentType)
-        {
-            return null;
         }
 
         var methods = parentType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -59,11 +46,12 @@ internal static class StateMachineHelper
         {
             if (GetStateMachineType(candidateMethod) == stateMachineType)
             {
-                return candidateMethod;
+                sourceMethod = candidateMethod;
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
     private static Type? GetStateMachineType(MethodBase method)
