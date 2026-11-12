@@ -35,9 +35,7 @@ internal static class StateMachineHelper
 
         // not checking CompilerGeneratedAttribute: the state machines of lambdas, nested in their display class, don't have it.
         // What proves the type is a state machine is the attribute of the method below that points to it.
-        var stateMachineType = method.DeclaringType;
-        var parentType = stateMachineType?.DeclaringType;
-        if (parentType is null
+        if (method.DeclaringType is not { DeclaringType: { } parentType } stateMachineType
          || !(typeof(IAsyncStateMachine).IsAssignableFrom(stateMachineType) || typeof(IEnumerator).IsAssignableFrom(stateMachineType)))
         {
             return false;
@@ -45,13 +43,18 @@ internal static class StateMachineHelper
 
         // the attributes of every method of the parent type are read to find it, so the result is kept per state machine.
         // The weak keys don't keep collectible assemblies alive.
-        sourceMethod = SourceMethods.GetValue(stateMachineType!, static type => new StrongBox<MethodBase?>(FindSourceMethod(type))).Value;
+        sourceMethod = SourceMethods.GetValue(stateMachineType, static type => new StrongBox<MethodBase?>(FindSourceMethod(type))).Value;
         return sourceMethod is not null;
     }
 
     private static MethodInfo? FindSourceMethod(Type stateMachineType)
     {
-        var methods = stateMachineType.DeclaringType!.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        if (stateMachineType.DeclaringType is not { } parentType)
+        {
+            return null;
+        }
+
+        var methods = parentType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         foreach (var candidateMethod in methods)
         {
             if (GetStateMachineType(candidateMethod) == stateMachineType)

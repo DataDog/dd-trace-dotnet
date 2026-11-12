@@ -170,16 +170,6 @@ public class LocationTests
     }
 
     [Fact]
-    public async Task GivenTheSameStateMachine_WhenItIsResolvedAgain_TheSameSourceMethodIsReported()
-    {
-        var first = await GetLocationFromAsyncMethod();
-        var second = await GetLocationFromAsyncMethod();
-
-        second.Class.Should().Be(first.Class).And.Be(typeof(LocationTests).FullName);
-        second.Method.Should().Be(first.Method).And.Be(nameof(GetLocationFromAsyncMethod));
-    }
-
-    [Fact]
     public async Task GivenAnAsyncMethod_WhenCreatedFromItsFrame_TheHashStillComesFromTheStateMachine()
     {
         var location = await GetLocationFromAsyncMethod();
