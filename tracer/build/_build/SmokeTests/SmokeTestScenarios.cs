@@ -67,7 +67,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bionic", "bionic", true),
@@ -110,7 +109,6 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-debian", "trixie-9.0", "trixie", true),
                     (TargetFramework.NET8_0, "andrewlock/dotnet-debian", "trixie-8.0", "trixie", true),
                 });
 
@@ -150,8 +148,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -244,8 +240,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -270,7 +264,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
@@ -303,7 +296,6 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-debian", "trixie-9.0", "trixie", true),
                     (TargetFramework.NET8_0, "andrewlock/dotnet-debian", "trixie-8.0", "trixie", true),
                 });
 
@@ -335,7 +327,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -437,8 +428,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -489,7 +478,6 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
@@ -521,8 +509,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -695,8 +681,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -719,8 +703,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19", "3.19", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -761,7 +743,6 @@ public static class SmokeTestScenarios
                     // TODO: Crash test is flaky in .NET 11, investigate ASAP
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-alpine3.16", "3.16", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
@@ -844,8 +825,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });
