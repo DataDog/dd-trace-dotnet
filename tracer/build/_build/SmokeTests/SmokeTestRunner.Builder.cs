@@ -29,7 +29,7 @@ public static partial class SmokeTestRunner
 
         /// <summary>
         /// Builds all Docker images for the given scenario. Returns the list of image tags to test.
-        /// Most categories produce a single image; chiseled categories produce two (one per entrypoint style).
+        /// Returns the base image, plus a "-dd-dotnet" variant (launched via dd-dotnet) for categories that support it.
         /// Windows categories also build the test agent
         /// </summary>
         public async Task<string[]> BuildImageAsync(
@@ -122,7 +122,26 @@ public static partial class SmokeTestRunner
                 };
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
-                return new[] {scenario.DockerTag};
+
+                if (!scenario.IncludeDdDotnetScenario)
+                {
+                    return new[] {scenario.DockerTag};
+                }
+
+                // Build the dd-dotnet NuGet variant
+                const string ddDotnetDockerfilePath = "build/_build/docker/smoke.nuget.dd-dotnet.dockerfile";
+                var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+                var ddDotnetBuildArgs = new Dictionary<string, string>
+                {
+                    ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
+                    ["RUNTIME_IMAGE"] = ImageDigests.GetImageWithDigest(scenario.RuntimeImage),
+                    ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+                    ["TOOL_VERSION"] = toolVersion,
+                };
+
+                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+
+                return new[] {scenario.DockerTag, ddDotnetTag};
             }
 
             async Task<string[]> BuildDotnetToolImageAsync(DotnetToolScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
