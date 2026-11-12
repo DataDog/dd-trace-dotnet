@@ -148,8 +148,7 @@ public static class CiStageSelection
 
     private static bool IsProfilerOnly(string path)
     {
-        return path.StartsWith(ProfilerPrefix, StringComparison.Ordinal)
-            || IsLibdatadogPin(path);
+        return path.StartsWith(ProfilerPrefix, StringComparison.Ordinal);
     }
 
     public readonly struct Result

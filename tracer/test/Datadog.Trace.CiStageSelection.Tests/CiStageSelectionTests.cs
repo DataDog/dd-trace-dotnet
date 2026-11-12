@@ -20,13 +20,13 @@ namespace Datadog.Trace.CiStageSelectionTests
         [Fact]
         public void LibdatadogCmakeOnly()
         {
-            AssertSelection(["build/cmake/FindLibdatadog.cmake"], skipTracerOnlyStages: true, libdatadogChanged: true);
+            AssertSelection(["build/cmake/FindLibdatadog.cmake"], skipTracerOnlyStages: false, libdatadogChanged: true);
         }
 
         [Fact]
         public void LibdatadogPortOnly()
         {
-            AssertSelection(["build/vcpkg_local_ports/libdatadog/vcpkg.json"], skipTracerOnlyStages: true, libdatadogChanged: true);
+            AssertSelection(["build/vcpkg_local_ports/libdatadog/vcpkg.json"], skipTracerOnlyStages: false, libdatadogChanged: true);
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace Datadog.Trace.CiStageSelectionTests
         {
             AssertSelection(
                 ["profiler/src/foo.cpp", "build/cmake/FindLibdatadog.cmake"],
-                skipTracerOnlyStages: true,
+                skipTracerOnlyStages: false,
                 libdatadogChanged: true);
         }
 
