@@ -11,6 +11,7 @@ using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Json;
@@ -36,6 +37,7 @@ internal sealed partial class AppSecRequestContext
 
     internal void CloseWebSpan(Span span) => CloseWebSpan(span, TelemetryFactory.Metrics);
 
+    [TestingAndPrivateOnly]
     internal void CloseWebSpan(Span span, IMetricsTelemetryCollector metrics)
     {
         lock (_sync)

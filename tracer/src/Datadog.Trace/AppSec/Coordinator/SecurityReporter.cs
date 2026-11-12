@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Json;
@@ -144,6 +145,7 @@ internal sealed partial class SecurityReporter
     /// appsec.waf.requests counts requests and is reported by the request context when the request ends.
     /// RASP runs are left out of both: they have their own metrics.
     /// </summary>
+    [TestingAndPrivateOnly]
     internal static void RecordWafTelemetry(IResult? result, bool isRasp, AppSecRequestContext requestContext, IMetricsTelemetryCollector metrics)
     {
         if (result is null || isRasp)
@@ -153,12 +155,16 @@ internal sealed partial class SecurityReporter
 
         requestContext.RecordWafRun(result);
 
-        // a timeout takes precedence over the return code
-        if (!result.Timeout && result.ReturnCode < WafReturnCode.Ok && result.ReturnCode.ToWafErrorTag() is { } wafError)
+        if (IsWafError(result) && result.ReturnCode.ToWafErrorTag() is { } wafError)
         {
             metrics.RecordCountWafError(wafError);
         }
     }
+
+    /// <summary>
+    /// Whether a WAF run failed. A timeout takes precedence over the return code: it is reported as a timeout only.
+    /// </summary>
+    internal static bool IsWafError(IResult result) => !result.Timeout && result.ReturnCode < WafReturnCode.Ok;
 
     internal void ReportWafInitInfoOnce(InitResult? initResult)
     {
