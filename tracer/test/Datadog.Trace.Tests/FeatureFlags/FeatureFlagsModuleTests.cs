@@ -1401,9 +1401,63 @@ public class FeatureFlagsModuleTests
         module.SetFlagSelection(tooMany.Concat(["one-more"]).ToArray(), null);
 
         var notSent = FlagSelectionDiagnostics.TooManyValuesNotSent;
-        FlagSelectionTests.Errors(logger).Should().Equal([notSent, notSent], "an equal selection is dropped for its provider too, and a different one is warned about instead");
-        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.DifferentSelectionWarning);
+        FlagSelectionTests.Errors(logger).Should().Equal([notSent, notSent, notSent], "an equal selection is dropped for its provider too, and a different one reports its own drop");
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty("every one of these selections loads every flag");
         metrics.Verify(m => m.RecordCountFlagSelectionDropped(DroppedReason.TooManyValues, 1), Times.Once);
+    }
+
+    [Fact]
+    public void SetFlagSelection_AMalformedSelectionAfterNone_LogsItsOwnErrorWithoutTheDifferentSelectionWarning()
+    {
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, new FlagSelectionDiagnostics(metrics.Object));
+
+        module.SetFlagSelection(null, null);
+        module.SetFlagSelection(["mobile", null], null);
+
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.MalformedSelectionNotSent);
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
+        metrics.Verify(m => m.RecordCountFlagSelectionDropped(DroppedReason.MalformedSelection, 1), Times.Once);
+    }
+
+    [Fact]
+    public void SetFlagSelection_NoSelectionAfterADroppedOne_DoesNotWarn()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(Enumerable.Range(0, 32).Select(i => $"tag-{i}").ToArray(), null);
+        module.SetFlagSelection(null, null);
+
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.TooManyValuesNotSent);
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SetFlagSelection_ADroppedSelectionAfterASentOne_LogsItsOwnErrorAndWarns()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection(Enumerable.Range(0, 32).Select(i => $"tag-{i}").ToArray(), null);
+
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.TooManyValuesNotSent);
+        FlagSelectionTests.Warnings(logger).Should().Equal(FlagSelectionDiagnostics.DifferentSelectionWarning);
+    }
+
+    [Fact]
+    public void SetFlagSelection_NoSelectionAfterOneTheRequestUrlCannotCarry_DoesNotWarn()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => new FakeDeliverySource { OmitsFlagSelection = true }, logger.Object, NewDiagnostics());
+
+        module.SetFlagSelection(["mobile"], null);
+        module.Activate();
+        module.SetFlagSelection(null, null);
+
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
     }
 
     [Fact]

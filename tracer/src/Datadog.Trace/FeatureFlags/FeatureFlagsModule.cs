@@ -501,7 +501,19 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (!selection.Equals(claimed))
                 {
-                    _flagSelectionDiagnostics.WarnDifferentSelection(_log);
+                    // A different selection is not used: it reports its own drop, and warns only if it would
+                    // load other flags, since a dropped selection and no selection both load every flag.
+                    if (selection.DropReason is { } ownReason)
+                    {
+                        _flagSelectionDiagnostics.ReportDropped(_log, ownReason);
+                    }
+
+                    var loadedFlags = claimed.HasValues && source?.OmitsFlagSelection != true ? claimed : FlagSelection.AllFlags;
+                    if (!(selection.HasValues ? selection : FlagSelection.AllFlags).Equals(loadedFlags))
+                    {
+                        _flagSelectionDiagnostics.WarnDifferentSelection(_log);
+                    }
+
                     return;
                 }
 
