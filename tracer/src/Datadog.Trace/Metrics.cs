@@ -88,6 +88,11 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
+        /// Set to 1 when a block, from the WAF or from RASP, could not be applied to the response
+        /// </summary>
+        public const string AppSecBlockFailed = "_dd.appsec.block.failed";
+
+        /// <summary>
         /// The number of WAF timeouts during a request
         /// </summary>
         public const string WafTimeouts = "_dd.appsec.waf.timeouts";
