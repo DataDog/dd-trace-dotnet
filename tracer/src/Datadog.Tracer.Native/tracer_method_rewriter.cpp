@@ -329,6 +329,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                     // object type.
                     return S_FALSE;
                 }
+
+                if (tracerTokens->IsRuntimeAsyncValueTypeInstanceMethod(caller))
+                {
+                    // Keep a copy of `this` for the epilog, which cannot reload the byref after a suspension
+                    reWriterWrapper.StLocal(staticValueTypeIndex);
+                    reWriterWrapper.LoadLocal(staticValueTypeIndex);
+                }
             }
         }
     }
@@ -620,6 +627,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         if (callerTypeToken == mdTokenNil)
         {
             endMethodTryStartInstr = reWriterWrapper.LoadNull();
+        }
+        else if (tracerTokens->IsRuntimeAsyncValueTypeInstanceMethod(caller))
+        {
+            // `this` is a byref, and the runtime does not preserve a byref across a suspension, so after
+            // the body has awaited, ldarg.0 no longer points at the instance. Use the copy the prologue took.
+            // That is also the value a state-machine target would hand over: its body works on a copy too.
+            endMethodTryStartInstr = reWriterWrapper.LoadLocal(staticValueTypeIndex);
         }
         else
         {

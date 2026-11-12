@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
+        // If you change this mapping, update the matching runtime mapping in
+        // tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.targets, which filters the published files.
         internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
             var version = Environment.Version;
