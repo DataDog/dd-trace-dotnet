@@ -893,6 +893,93 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        [Theory]
+        [InlineData("""{ "test": { "runner": "Microsoft.Testing.Platform" } }""", null, false)]
+        [InlineData("""{ "test": { "runner": "Microsoft.Testing.Platform" } }""", "VSTest", true)]
+        [InlineData("""{ "test": { "runner": "VSTest" } }""", "Microsoft.Testing.Platform", false)]
+        [InlineData(null, "Microsoft.Testing.Platform", false)]
+        [InlineData(null, null, true)]
+        public void RemoteInternalCoverageInjectsVstestCollectorOnlyWhenDotnetTestRunsVstest(string globalJson, string runnerEnvironmentValue, bool expectCollector)
+        {
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled, "0");
+            var previousRunnerEnvironmentValue = EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner);
+            var previousDirectory = Environment.CurrentDirectory;
+            string command = null;
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+
+            Program.CallbackForTests = (c, a, e) =>
+            {
+                command = c;
+                arguments = a;
+                environmentVariables = e;
+            };
+
+            // A global.json without a runner keeps the search from reaching one outside of the temporary folder.
+            using var workingDirectory = new TemporaryDirectory("dd-ci-mtp-runner-");
+            File.WriteAllText(Path.Combine(workingDirectory.RootPath, "global.json"), globalJson ?? "{}");
+
+            try
+            {
+                // The SDK resolves the runner from the working directory of the command.
+                Environment.CurrentDirectory = workingDirectory.RootPath;
+                EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, runnerEnvironmentValue);
+
+                using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+                var agentUrl = $"http://localhost:{agent.Port}";
+                var commandLine = $"{CommandPrefix} dotnet test tests/Sample.Tests/Sample.Tests.csproj --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+
+                using var console = ConsoleHelper.Redirect();
+                var exitCode = Program.Main(commandLine.Split(' '));
+
+                using var scope = new AssertionScope();
+                scope.AddReportable("output", console.Output);
+
+                exitCode.Should().Be(0);
+                command.Should().Be("dotnet");
+                arguments.Should().StartWith("test tests/Sample.Tests/Sample.Tests.csproj");
+                environmentVariables.Should().NotBeNull();
+                environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+
+                if (expectCollector)
+                {
+                    arguments.Should().Contain("--test-adapter-path");
+                    arguments.Should().EndWith("--collect DatadogCoverage");
+                    console.Output.Should().NotContain("Microsoft Testing Platform");
+                }
+                else
+                {
+                    arguments.Should().NotContain("--test-adapter-path");
+                    arguments.Should().NotContain("--collect");
+                    arguments.Should().NotContain("DatadogCoverage");
+                    console.Output.Should().Contain("Microsoft Testing Platform command");
+                }
+            }
+            finally
+            {
+                Environment.CurrentDirectory = previousDirectory;
+                EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, previousRunnerEnvironmentValue);
+                Program.CallbackForTests = null;
+                if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
+                    Directory.Exists(coveragePath))
+                {
+                    Directory.Delete(coveragePath, recursive: true);
+                }
+
+                TestOptimization.Instance.Reset();
+            }
+        }
+
         [Fact]
         public void RemoteInternalCoverageInjectsCollectorForBareVstestCommand()
         {

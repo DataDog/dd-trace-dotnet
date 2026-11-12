@@ -387,8 +387,14 @@ internal static class CiUtils
                 var usesTestingPlatformCoverage = isDotnetTestCommand &&
                                                    CoverageBackfillCapability.IsTestingPlatformCoverageCommand(GetCommandLine(program, expandedArguments), Environment.CurrentDirectory);
 
+                // When `dotnet test` runs the Microsoft Testing Platform command it rejects the VSTest-only --collect and --test-adapter-path options.
+                var usesTestingPlatformRunner = isDotnetTestCommand &&
+                                                !usesTestingPlatformCoverage &&
+                                                TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(Environment.CurrentDirectory, EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner));
+                var skipVsTestCollector = usesTestingPlatformCoverage || usesTestingPlatformRunner;
+
                 var hasExpandedResponseFileArguments = !ReferenceEquals(expandedArguments, lstArguments);
-                if (((isDotnetTestCommand && !usesTestingPlatformCoverage) || isDotnetVsTestCommand || isVsTestConsoleCommand) &&
+                if (((isDotnetTestCommand && !skipVsTestCollector) || isDotnetVsTestCommand || isVsTestConsoleCommand) &&
                     hasExpandedResponseFileArguments &&
                     IndexOfDoubleDash(expandedArguments) >= 0)
                 {
@@ -398,7 +404,7 @@ internal static class CiUtils
 
                 var doubleDashIndex = IndexOfDoubleDash(lstArguments);
 
-                if (isDotnetTestCommand && !usesTestingPlatformCoverage)
+                if (isDotnetTestCommand && !skipVsTestCollector)
                 {
                     var alreadyCollectsDatadogCoverage = HasDatadogCoverageCollector(program, lstArguments);
                     if (doubleDashIndex == -1)
@@ -423,6 +429,12 @@ internal static class CiUtils
                     }
 
                     Log.Debug("DatadogCoverage data collector added as a command argument");
+                }
+                else if (usesTestingPlatformRunner)
+                {
+                    const string message = "RunCiCommand: Per-test code coverage is not supported when 'dotnet test' runs the Microsoft Testing Platform command, so Test Impact Analysis can't collect it from this run. The Datadog coverage data collector was not added.";
+                    Log.Warning(message);
+                    Utils.WriteWarning(message);
                 }
                 else if (isDotnetTestCommand)
                 {

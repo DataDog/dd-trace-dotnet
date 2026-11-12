@@ -35,6 +35,12 @@ internal static partial class PlatformKeys
     public const string ProgramData = "ProgramData";
 
     /// <summary>
+    /// The .NET SDK (11 and later) reads this variable to choose the <c>dotnet test</c> runner, VSTest or Microsoft.Testing.Platform.
+    /// It takes precedence over the <c>test.runner</c> setting of <c>global.json</c>.
+    /// </summary>
+    public const string DotNetTestRunner = "DOTNET_TEST_RUNNER";
+
+    /// <summary>
     /// Sets the GC's "high memory load" threshold percent (clamped to 99 by the runtime). Parsed as
     /// <b>hexadecimal</b> by the runtime (see <c>GCToEEInterface::GetIntConfigValue</c>), and takes precedence
     /// over the <c>System.GC.HighMemoryPercent</c> runtimeconfig knob, which is parsed using C-style base
