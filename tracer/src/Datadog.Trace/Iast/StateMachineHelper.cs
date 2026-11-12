@@ -22,7 +22,7 @@ internal static class StateMachineHelper
     /// <summary>
     /// Resolves a method of a compiler-generated async or iterator state machine (such as its MoveNext) to the
     /// method of the source code it was generated from, as System.Diagnostics.StackTrace does for its ToString.
-    /// Only metadata is read: no attribute is instantiated and no customer code runs.
+    /// Reads attribute metadata without instantiating attributes.
     /// </summary>
     /// <param name="method">the method of a stack frame</param>
     /// <param name="sourceMethod">the method the state machine was generated from</param>
