@@ -739,6 +739,7 @@ supportedConfigurations:
       Configuration key for setting DBM propagation mode
       Default value is disabled, expected values are either: disabled, service, dynamic_service or full
       dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
+      For Oracle, dynamic_service writes the Base Hash to the session ACTION instead of injecting SQL comments
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
   DD_DBM_INJECT_SQL_BASEHASH:
   - implementation: A
@@ -748,6 +749,7 @@ supportedConfigurations:
     const_name: DbmInjectSqlBasehash
     documentation: |-
       Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+      For Oracle in service mode, the Base Hash is written to the session ACTION instead of SQL comments.
       Default value is false (disabled).
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
   DD_DIAGNOSTIC_SOURCE_ENABLED:

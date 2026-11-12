@@ -8,7 +8,9 @@ using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -32,6 +34,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentBaseHash = "ddsh";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
         private const string ContextInfoParameterName = "@dd_trace_context";
+        private const string OracleServiceHashActionPrefix = "_DD_DDSH:";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
 
         private static readonly char[] PgHintPrefix = ['/', '*', '+']; // the characters that identify a pg_hint_plan
@@ -42,6 +45,10 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static int _remainingErrorLogs = 100;
         private static int _remainingDirectionErrorLogs = 100;
         private static int _remainingQuoteErrorLogs = 100;
+        private static int _remainingOracleActionErrorLogs = 100;
+
+        // The base hash string only changes when the container tags hash is received, so cache the matching ACTION value.
+        private static OracleServiceHashAction? _oracleServiceHashAction;
 
         // On .NET Framework, ODP.NET can bind REF CURSORs implicitly from app.config/web.config/machine.config.
         // It finds those bindings by matching CommandText to the procedure name, so any comment breaks the lookup.
@@ -324,6 +331,71 @@ namespace Datadog.Trace.DatabaseMonitoring
         }
 
         /// <summary>
+        /// Writes the base hash to the Oracle session ACTION instead of a SQL comment, so <see cref="IDbCommand.CommandText"/>
+        /// is left untouched (ODP.NET on .NET Framework matches implicit REF CURSOR bindings on it) and SQL run inside
+        /// stored procedures is attributed too. The value is written on every execution because the application,
+        /// or a pooled reconnection, can change ACTION between executions.
+        /// </summary>
+        /// <returns>True if the ACTION was set, in which case the span should carry the same base hash</returns>
+        internal static bool PropagateServiceHashViaOracleAction(IDbCommand command, string baseHash)
+        {
+            // ODP.NET throws when ActionName is set on a connection that isn't open. The command would fail the same way,
+            // so skip ACTION rather than report the application's connection state as a tracer error.
+            if (command.Connection is not { State: ConnectionState.Open } connection)
+            {
+                return false;
+            }
+
+            if (!connection.TryDuckCast<IOracleConnectionAction>(out var oracleConnection))
+            {
+                if (TryConsumeOracleActionErrorLog(out var remaining))
+                {
+                    Log.Warning<string?, int>("Oracle connection type {ConnectionType} does not expose ActionName, so the DBM service hash cannot be propagated. (will log this {N} more time and then stop)", connection.GetType().FullName, remaining);
+                }
+
+                return false;
+            }
+
+            try
+            {
+                // ODP.NET before 23.x skips an assignment equal to its cached value, so an ACTION changed server-side
+                // (for example by DBMS_APPLICATION_INFO in PL/SQL) would never be restored. Clearing first forces the write;
+                // the driver sends the final value with the next round trip, so this adds no round trip.
+                oracleConnection.ActionName = string.Empty;
+                oracleConnection.ActionName = GetOracleServiceHashAction(baseHash);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (TryConsumeOracleActionErrorLog(out var remaining))
+                {
+                    Log.Error<int>(ex, "Error setting the Oracle session ACTION for DBM service hash propagation. (will log this {N} more time and then stop)", remaining);
+                }
+
+                return false;
+            }
+
+            // stop logging the error after a while
+            static bool TryConsumeOracleActionErrorLog(out int remaining)
+            {
+                remaining = Volatile.Read(ref _remainingOracleActionErrorLogs) > 0 ? Interlocked.Decrement(ref _remainingOracleActionErrorLogs) : -1;
+                return remaining >= 0;
+            }
+        }
+
+        private static string GetOracleServiceHashAction(string baseHash)
+        {
+            var cached = Volatile.Read(ref _oracleServiceHashAction);
+            if (cached is null || !string.Equals(cached.BaseHash, baseHash, StringComparison.Ordinal))
+            {
+                cached = new OracleServiceHashAction(baseHash, OracleServiceHashActionPrefix + baseHash);
+                Volatile.Write(ref _oracleServiceHashAction, cached);
+            }
+
+            return cached.Action;
+        }
+
+        /// <summary>
         /// Uses a sql instruction to set a context for the current connection, bearing the span ID and trace ID.
         /// This is meant to circumvent cache invalidation issues that occur when those values are injected in comment.
         /// Currently only working for Microsoft SQL Server (uses an instruction that is specific to it)
@@ -412,6 +484,13 @@ namespace Datadog.Trace.DatabaseMonitoring
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong) + sizeof(ulong)), traceId.Lower);
 
             return contextBytes;
+        }
+
+        private sealed class OracleServiceHashAction(string baseHash, string action)
+        {
+            public string BaseHash { get; } = baseHash;
+
+            public string Action { get; } = action;
         }
     }
 }
