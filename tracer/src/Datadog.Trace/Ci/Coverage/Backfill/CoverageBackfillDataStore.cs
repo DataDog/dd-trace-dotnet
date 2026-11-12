@@ -694,7 +694,7 @@ internal static class CoverageBackfillDataStore
         var recoveredResultIds = new HashSet<string>(StringComparer.Ordinal);
         try
         {
-            var stopwatch = waitForResultFolder ? Stopwatch.StartNew() : null;
+            var timeProvider = waitForResultFolder ? new DefaultTimeProvider() : null;
             var lastRecoveredResultTime = TimeSpan.Zero;
             while (true)
             {
@@ -719,7 +719,7 @@ internal static class CoverageBackfillDataStore
                             waitForResultFolder,
                             waitForCoverletXmlFallback,
                             resultFolderReadTimeout,
-                            stopwatch))
+                            timeProvider))
                     {
                         results = [];
                         readFailed = true;
@@ -729,7 +729,7 @@ internal static class CoverageBackfillDataStore
 
                 if (waitForResultFolder && recoveredResults.Count > recoveredResultCountBeforePass)
                 {
-                    lastRecoveredResultTime = stopwatch!.Elapsed;
+                    lastRecoveredResultTime = timeProvider!.Elapsed;
                 }
 
                 var shouldWaitLongerForCoverletXmlFallback = ShouldWaitLongerForCoverletXmlFallback(waitForCoverletXmlFallback, recoveredResults);
@@ -737,15 +737,15 @@ internal static class CoverageBackfillDataStore
                                       CoverletXmlFallbackResultTimeout :
                                       ReadRetryTimeout;
                 if (!waitForResultFolder ||
-                    stopwatch!.Elapsed >= readTimeout ||
+                    timeProvider!.Elapsed >= readTimeout ||
                     (recoveredResults.Count > 0 &&
                      !shouldWaitLongerForCoverletXmlFallback &&
-                     stopwatch.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
+                     timeProvider.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
                 {
                     break;
                 }
 
-                Thread.Sleep(ReadRetryDelay);
+                timeProvider!.Sleep(ReadRetryDelay);
             }
         }
         catch (Exception ex)
@@ -1410,11 +1410,9 @@ internal static class CoverageBackfillDataStore
         bool waitForResultFiles,
         bool waitForCoverletXmlFallback,
         TimeSpan readTimeout,
-        Stopwatch? stopwatch = null,
-        Func<TimeSpan>? elapsedProvider = null,
-        Action? waitForRetry = null)
+        ITimeProvider? timeProvider = null)
     {
-        stopwatch ??= Stopwatch.StartNew();
+        timeProvider ??= new DefaultTimeProvider();
         var sawTemporaryFile = false;
         string? previousSnapshot = null;
         var previousSnapshotTime = TimeSpan.Zero;
@@ -1458,17 +1456,17 @@ internal static class CoverageBackfillDataStore
                 if (!string.Equals(snapshot, previousSnapshot, StringComparison.Ordinal))
                 {
                     previousSnapshot = snapshot;
-                    previousSnapshotTime = GetElapsed();
+                    previousSnapshotTime = timeProvider.Elapsed;
                     canReadCurrentSnapshot = false;
                 }
-                else if (GetElapsed() - previousSnapshotTime < ResultFolderQuietPeriod)
+                else if (timeProvider.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
                 {
                     canReadCurrentSnapshot = false;
                 }
             }
 
             if (canReadCurrentSnapshot ||
-                GetElapsed() >= effectiveReadTimeout)
+                timeProvider.Elapsed >= effectiveReadTimeout)
             {
                 // Reaching the deadline may end the quiet-period wait, but it must never
                 // turn an incomplete snapshot into publishable coverage.
@@ -1495,18 +1493,8 @@ internal static class CoverageBackfillDataStore
                 return true;
             }
 
-            if (waitForRetry is null)
-            {
-                Thread.Sleep(ReadRetryDelay);
-            }
-            else
-            {
-                waitForRetry();
-            }
+            timeProvider.Sleep(ReadRetryDelay);
         }
-
-        // Tests can advance the monotonic clock across the deadline without racing a real timer.
-        TimeSpan GetElapsed() => elapsedProvider?.Invoke() ?? stopwatch.Elapsed;
     }
 
     /// <summary>
