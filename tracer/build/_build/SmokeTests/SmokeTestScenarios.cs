@@ -152,6 +152,9 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -248,6 +251,9 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -438,6 +444,9 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -689,6 +698,9 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -749,6 +761,8 @@ public static class SmokeTestScenarios
                     // TODO: Crash test is flaky in .NET 11, investigate ASAP
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-alpine3.15", "3.15", true),
