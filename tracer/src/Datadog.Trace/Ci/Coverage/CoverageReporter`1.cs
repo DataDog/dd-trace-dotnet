@@ -27,26 +27,8 @@ namespace Datadog.Trace.Ci.Coverage;
 public static class CoverageReporter<TMeta>
     where TMeta : ModuleCoverageMetadata, new()
 {
-    private static readonly TMeta Metadata;
-    private static readonly Module Module;
-    private static readonly int ModuleMemorySize;
     private static IntPtr _discardedCounters;
     private static ModuleValue? _globalModuleValue;
-
-    static CoverageReporter()
-    {
-        try
-        {
-            Metadata = new TMeta();
-            Module = typeof(TMeta).Module;
-            ModuleMemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
-        }
-        catch
-        {
-            CoverageReporter.Handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
-            throw;
-        }
-    }
 
     [TestingOnly]
     internal static bool HasDiscardedCounters => Volatile.Read(ref _discardedCounters) != IntPtr.Zero;
@@ -114,9 +96,9 @@ public static class CoverageReporter<TMeta>
     private static unsafe IntPtr TryAllocateDiscardedCounters()
     {
         // Never freed: probes may keep writing to it for the rest of the process.
-        var byteLength = Math.Max(ModuleMemorySize, 1);
         try
         {
+            var byteLength = Math.Max(Layout.MemorySize, 1);
             var pointer = Marshal.AllocHGlobal(byteLength);
             Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)byteLength);
             return pointer;
@@ -131,9 +113,9 @@ public static class CoverageReporter<TMeta>
     {
         if (handler.Container is { } container &&
             container.TryGetOrAddModuleValue(
-                Metadata,
-                Module,
-                ModuleMemorySize,
+                Layout.Metadata,
+                Layout.Module,
+                Layout.MemorySize,
                 out var module) &&
             module is not null)
         {
@@ -151,9 +133,9 @@ public static class CoverageReporter<TMeta>
         }
 
         if (!handler.GlobalContainer.TryGetOrAddModuleValue(
-                Metadata,
-                Module,
-                ModuleMemorySize,
+                Layout.Metadata,
+                Layout.Module,
+                Layout.MemorySize,
                 out var module) || module is null)
         {
             return null;
@@ -164,7 +146,7 @@ public static class CoverageReporter<TMeta>
     }
 
     private static int GetByteOffset(int fileIndex)
-        => Metadata.CoverageMode == 0 ? Metadata.GetOffset(fileIndex) : Metadata.GetOffset(fileIndex) * sizeof(int);
+        => Layout.Metadata.CoverageMode == 0 ? Layout.Metadata.GetOffset(fileIndex) : Layout.Metadata.GetOffset(fileIndex) * sizeof(int);
 
     private static unsafe void* GetPointer(ModuleValue module, int fileIndex)
     {
@@ -175,5 +157,25 @@ public static class CoverageReporter<TMeta>
         }
 
         return (byte*)filesLines + GetByteOffset(fileIndex);
+    }
+
+    /// <summary>
+    /// The module's coverage layout. It is initialized by an explicit static constructor on first use, from inside
+    /// <see cref="GetFileCounter"/>'s protected region, instead of by a static constructor of the reporter: if it fails,
+    /// every later probe still runs that method and marks the current test's coverage incomplete before the cached
+    /// <see cref="TypeInitializationException"/> propagates.
+    /// </summary>
+    private static class Layout
+    {
+        public static readonly TMeta Metadata;
+        public static readonly Module Module;
+        public static readonly int MemorySize;
+
+        static Layout()
+        {
+            Metadata = new TMeta();
+            Module = typeof(TMeta).Module;
+            MemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
+        }
     }
 }

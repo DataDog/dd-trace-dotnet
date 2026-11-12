@@ -216,6 +216,64 @@ public class CoverageEventHandlerTests
     }
 
     [Fact]
+    public unsafe void SessionWithAFailedProbeReportsNoCoverage()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new DefaultCoverageEventHandler();
+        CoverageReporter.Handler = handler;
+        try
+        {
+            var handle = handler.StartSession("xunit");
+            var pointer = (byte*)CoverageReporter<IncompleteSessionMetadata>.GetFileCounter(0);
+            pointer[0] = 1;
+            var module = handle.Context!.SnapshotModules().Should().ContainSingle().Subject;
+
+            // What GetFileCounter does when a probe of this test cannot get its counters.
+            handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
+
+            handler.EndSession(handle).Should().BeNull();
+            module.FilesLines.Should().Be(IntPtr.Zero);
+
+            // The next test starts complete again.
+            var nextHandle = handler.StartSession("xunit");
+            pointer = (byte*)CoverageReporter<IncompleteSessionMetadata>.GetFileCounter(0);
+            pointer[0] = 1;
+            handler.EndSession(nextHandle).Should().BeOfType<TestCoverage>().Which.Files.Should().ContainSingle();
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
+    public unsafe void EverySessionThatHitsAFailedReporterInitializationReportsNoCoverage()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new DefaultCoverageEventHandler();
+        CoverageReporter.Handler = handler;
+        try
+        {
+            for (var session = 0; session < 2; session++)
+            {
+                var handle = handler.StartSession("xunit");
+                var pointer = (byte*)CoverageReporter<IncompleteSessionMetadata>.GetFileCounter(0);
+                pointer[0] = 1;
+
+                // The second time, the runtime rethrows the cached TypeInitializationException.
+                var probe = () => GetInvalidLayoutCounter();
+                probe.Should().Throw<TypeInitializationException>();
+
+                handler.EndSession(handle).Should().BeNull();
+            }
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
     public unsafe void SuccessfulProbesDoNotAllocateDiscardedCounters()
     {
         var previousHandler = CoverageReporter.Handler;
@@ -403,6 +461,9 @@ public class CoverageEventHandlerTests
     private static unsafe IntPtr GetDeferredFlowCounter()
         => (IntPtr)CoverageReporter<DeferredFlowMetadata>.GetFileCounter(0);
 
+    private static unsafe IntPtr GetInvalidLayoutCounter()
+        => (IntPtr)CoverageReporter<InvalidLayoutMetadata>.GetFileCounter(0);
+
     private static unsafe IntPtr GetNestedFlowCounter()
         => (IntPtr)CoverageReporter<NestedFlowMetadata>.GetFileCounter(0);
 
@@ -443,6 +504,22 @@ public class CoverageEventHandlerTests
     {
         public SuccessfulProbeMetadata()
             : base(1, 0, [new FileCoverageMetadata("/src/successful.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class IncompleteSessionMetadata : TestModuleCoverageMetadata
+    {
+        public IncompleteSessionMetadata()
+            : base(1, 0, [new FileCoverageMetadata("/src/incomplete.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class InvalidLayoutMetadata : TestModuleCoverageMetadata
+    {
+        public InvalidLayoutMetadata()
+            : base(int.MaxValue, 1, [])
         {
         }
     }
