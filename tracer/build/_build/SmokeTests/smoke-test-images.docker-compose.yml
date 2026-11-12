@@ -265,8 +265,6 @@ services:
     image: andrewlock/dotnet-rhel:8-7.0@sha256:297220df25f7d9371feae5db330d5c0ff7cc57c4b18377ced536052a5b4bd902
   dotnet-rhel-8-9_0:
     image: andrewlock/dotnet-rhel:8-9.0@sha256:ac676ef418926667275caca349ba01cc76aad80f97d8cfa35aad319f9ae14f1c
-  dotnet-rhel-9-9_0:
-    image: andrewlock/dotnet-rhel:9-9.0@sha256:ac676ef418926667275caca349ba01cc76aad80f97d8cfa35aad319f9ae14f1c
   dotnet-rhel-10-10_0:
     image: andrewlock/dotnet-rhel:10-10.0@sha256:3b3e024e7551375f637442f5cd725550c787f5fff512a67700a947e21e687423
   dotnet-rhel-10-11_0:

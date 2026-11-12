@@ -186,7 +186,7 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "andrewlock/dotnet-rhel", "10-11.0", "10", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10", true),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9", true),
+                    // andrewlock/dotnet-rhel:9-9.0 currently has the same digest as 8-9.0, so add it back once it's republished
                     (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "8-9.0", "8", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-rhel", "8-7.0", "8", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-rhel", "8-6.0", "8", true),
@@ -813,7 +813,7 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "andrewlock/dotnet-rhel", "10-11.0", "10"),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10"),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9"),
+                    // andrewlock/dotnet-rhel:9-9.0 currently has the same digest as 8-9.0, so add it back once it's republished
                     (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "8-9.0", "8"),
                 });
 
