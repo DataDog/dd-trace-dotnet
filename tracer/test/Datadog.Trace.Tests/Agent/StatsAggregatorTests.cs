@@ -659,7 +659,8 @@ namespace Datadog.Trace.Tests.Agent
             var result = aggregator.ProcessTrace(ref traceChunk);
             result.Should().Be(TraceKeepState.AggregateAndExport);
             traceChunk.Count.Should().Be(1);
-            // Normalization belongs to the writer, before stats processing.
+            // This test calls the aggregator directly, bypassing the writer
+            // and its normalization stage, so the service name remains empty.
             span.ServiceName.Should().BeEmpty();
             // obfuscated
             traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
