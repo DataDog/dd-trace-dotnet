@@ -80,7 +80,6 @@ public static class SmokeTestScenarios
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", true),
                     (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-stretch-slim", "stretch", true),
@@ -265,7 +264,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // https://github.com/dotnet/runtime/issues/66707
                     // Arm64 .NET 5 buster-slim images are currently flaky
@@ -329,7 +327,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -395,7 +392,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bullseye-slim", "bullseye", true),
@@ -481,7 +477,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // Arm64 .NET 5 buster-slim images are currently flaky
                     // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
@@ -511,7 +506,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -568,7 +562,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bullseye-slim", "bullseye", true),
@@ -644,7 +637,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // Arm64 .NET 5 buster-slim images are currently flaky
                     // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
@@ -705,7 +697,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19", "3.19", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -729,7 +720,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-bullseye", "bullseye", true),
                 });
@@ -744,7 +734,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-alpine3.16", "3.16", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-alpine3.15", "3.15", true),
                 });
