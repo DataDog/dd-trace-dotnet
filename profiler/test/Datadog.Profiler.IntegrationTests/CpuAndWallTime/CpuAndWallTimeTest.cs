@@ -115,7 +115,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // the wall time duration depends on the number of managed threads
             // --> could be up to the number of threads x total test duration
             var walltimeDuration = run.Profiles.Sum(ProfileValue.WallTime);
-            var managedThreadsCount = run.Profiles.Samples.DistinctLabelValues("thread id").Count;
+            var managedThreadsCount = run.Profiles.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Count;
             var totalDuration = (run.Duration.TotalMilliseconds * 1000000L) * managedThreadsCount;
             Assert.True(walltimeDuration <= totalDuration);
         }

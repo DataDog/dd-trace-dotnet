@@ -137,17 +137,17 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
         private static void AssertBlockingThreadLabel(ProfileOutput profiles)
         {
-            var threadIds = profiles.Samples.DistinctLabelValues("thread id").Select(int.Parse).ToList();
+            var threadIds = profiles.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Select(int.Parse).ToList();
             // get samples with lock-count value set and blocking thread info
             var contentionSamples = profiles.WithNonZeroValue(ProfileValue.LockCount)
-                .Where(sample => sample.Labels.Has("blocking thread id"))
+                .Where(sample => sample.Labels.Has(ProfileLabelNames.BlockingThreadId))
                 .ToList();
 
             contentionSamples.Should().NotBeEmpty();
 
             foreach (var sample in contentionSamples)
             {
-                var blockingThreadId = sample.Labels.GetRequired("blocking thread id");
+                var blockingThreadId = sample.Labels.GetRequired(ProfileLabelNames.BlockingThreadId);
                 blockingThreadId.Should().NotBeNullOrWhiteSpace();
                 threadIds.Should().Contain(int.Parse(blockingThreadId), $"Unknown blocking thread id {blockingThreadId}");
             }
@@ -157,7 +157,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         {
             // get samples with lock-count value set and Wait as contention type
             var lockCountSamples = profiles.WithNonZeroValue(ProfileValue.LockCount);
-            var waitSamples = lockCountSamples.WithLabel("contention type", "Wait");
+            var waitSamples = lockCountSamples.WithLabel(ProfileLabelNames.ContentionType, "Wait");
             Assert.True(waitSamples.Count > 8);
 
             // check that we get samples 500+ ms for supported wait handles based on callstacks
@@ -229,7 +229,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             waitTypes.Should().Be(WaitHandleType.All, "missing Wait events = " + GetMissingWaitType(waitTypes));
 
             // check that wait duration label should not be present for lock samples
-            foreach (var sample in lockCountSamples.WithLabel("contention type", "Lock"))
+            foreach (var sample in lockCountSamples.WithLabel(ProfileLabelNames.ContentionType, "Lock"))
             {
                 sample.Labels.Has("Wait duration bucket").Should().BeFalse();
             }
