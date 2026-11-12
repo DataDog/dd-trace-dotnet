@@ -7,8 +7,11 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
@@ -24,25 +27,11 @@ namespace Datadog.Trace.Ci.Coverage;
 public static class CoverageReporter<TMeta>
     where TMeta : ModuleCoverageMetadata, new()
 {
-    private static readonly TMeta Metadata;
-    private static readonly Module Module;
-    private static readonly int ModuleMemorySize;
+    private static IntPtr _discardedCounters;
     private static ModuleValue? _globalModuleValue;
 
-    static CoverageReporter()
-    {
-        try
-        {
-            Metadata = new TMeta();
-            Module = typeof(TMeta).Module;
-            ModuleMemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
-        }
-        catch
-        {
-            CoverageReporter.Handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
-            throw;
-        }
-    }
+    [TestingOnly]
+    internal static bool HasDiscardedCounters => Volatile.Read(ref _discardedCounters) != IntPtr.Zero;
 
     /// <summary>
     /// Gets the coverage counter for the file
@@ -64,8 +53,59 @@ public static class CoverageReporter<TMeta>
         }
         catch
         {
+            // Probes run inside customer code, including finalizers and type initializers, where an exception would
+            // crash the process or break the type. Coverage is already marked incomplete, so let the probe write into
+            // counters that are never reported instead.
             handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
-            throw;
+            var discardedCounters = GetDiscardedCounters();
+            if (discardedCounters == IntPtr.Zero)
+            {
+                throw;
+            }
+
+            return (byte*)discardedCounters + GetByteOffset(fileIndex);
+        }
+    }
+
+    // Allocated on the first probe failure only, so successful runs don't keep a second counters buffer per module.
+    private static IntPtr GetDiscardedCounters()
+    {
+        var discardedCounters = Volatile.Read(ref _discardedCounters);
+        if (discardedCounters != IntPtr.Zero)
+        {
+            return discardedCounters;
+        }
+
+        var allocated = TryAllocateDiscardedCounters();
+        if (allocated == IntPtr.Zero)
+        {
+            // Another thread may have published one in the meantime.
+            return Volatile.Read(ref _discardedCounters);
+        }
+
+        var published = Interlocked.CompareExchange(ref _discardedCounters, allocated, IntPtr.Zero);
+        if (published != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(allocated);
+            return published;
+        }
+
+        return allocated;
+    }
+
+    private static unsafe IntPtr TryAllocateDiscardedCounters()
+    {
+        // Never freed: probes may keep writing to it for the rest of the process.
+        try
+        {
+            var byteLength = Math.Max(Layout.MemorySize, 1);
+            var pointer = Marshal.AllocHGlobal(byteLength);
+            Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)byteLength);
+            return pointer;
+        }
+        catch
+        {
+            return IntPtr.Zero;
         }
     }
 
@@ -73,9 +113,9 @@ public static class CoverageReporter<TMeta>
     {
         if (handler.Container is { } container &&
             container.TryGetOrAddModuleValue(
-                Metadata,
-                Module,
-                ModuleMemorySize,
+                Layout.Metadata,
+                Layout.Module,
+                Layout.MemorySize,
                 out var module) &&
             module is not null)
         {
@@ -93,9 +133,9 @@ public static class CoverageReporter<TMeta>
         }
 
         if (!handler.GlobalContainer.TryGetOrAddModuleValue(
-                Metadata,
-                Module,
-                ModuleMemorySize,
+                Layout.Metadata,
+                Layout.Module,
+                Layout.MemorySize,
                 out var module) || module is null)
         {
             return null;
@@ -106,7 +146,7 @@ public static class CoverageReporter<TMeta>
     }
 
     private static int GetByteOffset(int fileIndex)
-        => Metadata.CoverageMode == 0 ? Metadata.GetOffset(fileIndex) : Metadata.GetOffset(fileIndex) * sizeof(int);
+        => Layout.Metadata.CoverageMode == 0 ? Layout.Metadata.GetOffset(fileIndex) : Layout.Metadata.GetOffset(fileIndex) * sizeof(int);
 
     private static unsafe void* GetPointer(ModuleValue module, int fileIndex)
     {
@@ -117,5 +157,25 @@ public static class CoverageReporter<TMeta>
         }
 
         return (byte*)filesLines + GetByteOffset(fileIndex);
+    }
+
+    /// <summary>
+    /// The module's coverage layout. It is initialized by an explicit static constructor on first use, from inside
+    /// <see cref="GetFileCounter"/>'s protected region, instead of by a static constructor of the reporter: if it fails,
+    /// every later probe still runs that method and marks the current test's coverage incomplete before the cached
+    /// <see cref="TypeInitializationException"/> propagates.
+    /// </summary>
+    private static class Layout
+    {
+        public static readonly TMeta Metadata;
+        public static readonly Module Module;
+        public static readonly int MemorySize;
+
+        static Layout()
+        {
+            Metadata = new TMeta();
+            Module = typeof(TMeta).Module;
+            MemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
+        }
     }
 }

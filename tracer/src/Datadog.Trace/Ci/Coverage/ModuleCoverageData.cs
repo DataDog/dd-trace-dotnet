@@ -33,7 +33,8 @@ internal readonly struct ModuleCoverageData
     /// <summary>
     /// Scans the native counters once, outside the accumulator lock, and retains only executed bits.
     /// Counter values are intentionally read without synchronization because coverage only depends on
-    /// whether a counter is non-zero.
+    /// whether a counter is non-zero. Only executable lines are reported: counter buffers are reused across
+    /// modules, and a probe that kept a stale pointer can write a counter that is not a line of this module.
     /// </summary>
     public static unsafe ModuleCoverageData Capture(ModuleValue moduleValue)
     {
@@ -60,7 +61,7 @@ internal readonly struct ModuleCoverageData
                 var counters = (byte*)rawPointer + file.Offset;
                 for (var lineIndex = 0; lineIndex < file.LastExecutableLine; lineIndex++)
                 {
-                    if (counters[lineIndex] != 0)
+                    if (counters[lineIndex] != 0 && IsExecutable(file.Bitmap, lineIndex))
                     {
                         executedBitmap ??= new byte[FileBitmap.GetSize(file.LastExecutableLine)];
                         SetBit(executedBitmap, lineIndex);
@@ -72,7 +73,7 @@ internal readonly struct ModuleCoverageData
                 var counters = (int*)rawPointer + file.Offset;
                 for (var lineIndex = 0; lineIndex < file.LastExecutableLine; lineIndex++)
                 {
-                    if (counters[lineIndex] != 0)
+                    if (counters[lineIndex] != 0 && IsExecutable(file.Bitmap, lineIndex))
                     {
                         executedBitmap ??= new byte[FileBitmap.GetSize(file.LastExecutableLine)];
                         SetBit(executedBitmap, lineIndex);
@@ -84,6 +85,12 @@ internal readonly struct ModuleCoverageData
         }
 
         return new ModuleCoverageData(moduleValue.Module, metadata, executedBitmaps);
+    }
+
+    private static bool IsExecutable(byte[] executableBitmap, int zeroBasedLine)
+    {
+        var byteIndex = zeroBasedLine >> 3;
+        return byteIndex < executableBitmap.Length && (executableBitmap[byteIndex] & (128 >> (zeroBasedLine & 7))) != 0;
     }
 
     private static void SetBit(byte[] bitmap, int zeroBasedLine)

@@ -105,6 +105,15 @@ internal abstract class CoverageEventHandler
         }
 
         _contextDiagnostics.RecordClosed();
+        if (context.IsProbeDataIncomplete)
+        {
+            // Some of this test's code ran without coverage probes, and the global coverage is already marked
+            // incomplete. Report no coverage for the test, as for an aborted session, instead of a partial set that
+            // test impact analysis would rely on.
+            context.DisposeWhenExecutionContextsAreInactive(null, _recordContextDisposed, handle.Admission);
+            return null;
+        }
+
         var deferCompletion = false;
         try
         {
@@ -176,6 +185,8 @@ internal abstract class CoverageEventHandler
     {
         try
         {
+            // The failed probe ran in the current test's context, so that test's coverage misses lines too.
+            _asyncContext.Value?.MarkProbeDataIncomplete();
             MarkGlobalCoverageIncomplete(reason);
         }
         catch
