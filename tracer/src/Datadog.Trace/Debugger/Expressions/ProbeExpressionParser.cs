@@ -163,7 +163,9 @@ internal partial class ProbeExpressionParser<T>
         const int maxIteration = 100000;
         while (ConditionalRead(reader, shouldAdvanceReader) && safeguard++ <= maxIteration)
         {
-            var readerValue = reader.Value?.ToString();
+            // Only property names and strings are read as text; other tokens use the typed reader.Value, because
+            // formatting it (e.g. a double or a negative number) would depend on the current culture
+            var readerValue = reader.Value as string;
             try
             {
                 switch (reader.TokenType)
@@ -420,12 +422,12 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Integer:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32, CultureInfo.InvariantCulture));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Int32, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.Float:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double, CultureInfo.InvariantCulture));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Double, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.StartArray:
@@ -447,7 +449,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Boolean:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean, CultureInfo.InvariantCulture));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Boolean, CultureInfo.InvariantCulture));
                         }
                 }
             }
