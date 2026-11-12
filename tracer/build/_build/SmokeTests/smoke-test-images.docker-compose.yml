@@ -177,10 +177,16 @@ services:
     image: andrewlock/dotnet-centos-stream:9-6.0@sha256:8c0a6a4bf1f74c7fcaa11bf37fcde9423334028429a34142d815256799ad7446
   dotnet-centos-stream-9-9_0:
     image: andrewlock/dotnet-centos-stream:9-9.0@sha256:cea4664d4e2dc40b7fa8d3a5bc24f6432c1401049e3f6b0a5c29a1c115750e17
+  dotnet-centos-stream-10-10_0:
+    image: andrewlock/dotnet-centos-stream:10-10.0@sha256:37e6027fd2efdf10835c3e0ebc8976b76ace3ace76f21bc18be1dc6b20413f16
+  dotnet-centos-stream-10-11_0:
+    image: andrewlock/dotnet-centos-stream:10-11.0@sha256:4f2c0257595278935824a3461eadc057f23f7f344a2008fd1d68dbd53b36e27b
 
   # andrewlock/dotnet-debian
   dotnet-debian-trixie-10_0:
     image: andrewlock/dotnet-debian:trixie-10.0@sha256:79e785f35bf30d641cc032a8684c3ac18742aa0ef59acebb0d20b159e282ca23
+  dotnet-debian-trixie-11_0:
+    image: andrewlock/dotnet-debian:trixie-11.0@sha256:7cdd64eba13d162abc2196232c1e84da16dfa16d113190857e53fc4ff0ca5fca
   dotnet-debian-trixie-8_0:
     image: andrewlock/dotnet-debian:trixie-8.0@sha256:1443b1fbd9fbc17dfefeeed33f7a0e2d26905497583651a2126cac0bc73fc5ae
   dotnet-debian-trixie-9_0:
@@ -209,6 +215,10 @@ services:
     image: andrewlock/dotnet-fedora:35-7.0@sha256:e18f6f927837c3f314ddba6f3eb1c72855ce9834976c701455b9c152e08b0257
   dotnet-fedora-40-9_0:
     image: andrewlock/dotnet-fedora:40-9.0@sha256:0385b2b048a9295ab6778fb6ca2f8564aefcf967ecfd0cd1eb711cbf3eaf1094
+  dotnet-fedora-42-10_0:
+    image: andrewlock/dotnet-fedora:42-10.0@sha256:2b9b7875d2e1005f14f836112865aa79878f4fbbee79851eddeda57e04223801
+  dotnet-fedora-45-11_0:
+    image: andrewlock/dotnet-fedora:45-11.0@sha256:be1207dcb1f3527a32020cb6ed97fe1c1ccd2edc0653df2bae3015ecf290b997
 
   # andrewlock/dotnet-fedora-arm64
   dotnet-fedora-arm64-34-6_0:
@@ -219,6 +229,10 @@ services:
     image: andrewlock/dotnet-fedora-arm64:35-7.0@sha256:49989d778eb5edfcb25df0715bc7a06c7ae1aa7a5c558654998c6444f3272239
   dotnet-fedora-arm64-40-9_0:
     image: andrewlock/dotnet-fedora-arm64:40-9.0@sha256:0fb6a59a9ddb8312d4654fdadf90c53163d3a93657b8ed2f5cbd7f1a944c1b63
+  dotnet-fedora-arm64-42-10_0:
+    image: andrewlock/dotnet-fedora-arm64:42-10.0@sha256:08b2326752297e685c29506fa327fa9165711ace1c2ca4c215ea76c38d3f09fd
+  dotnet-fedora-arm64-45-11_0:
+    image: andrewlock/dotnet-fedora-arm64:45-11.0@sha256:428ed03d8af6d362e932deb43938d4cb945706366074eeca453cc5336d30140c
 
   # andrewlock/dotnet-opensuse
   dotnet-opensuse-15-2_1:
@@ -235,6 +249,10 @@ services:
     image: andrewlock/dotnet-opensuse:15-9.0@sha256:b7d1a53640fc599b30ab8cdf5b551fb87d63a1ab7f17ea779e6a55692b66a352
   dotnet-opensuse-15-10_0:
     image: andrewlock/dotnet-opensuse:15-10.0@sha256:ecc5d023ad6f09c1619302cf3044a3524d2cb34182010caf4e3cb7bdd89f7689
+  dotnet-opensuse-16_0-10_0:
+    image: andrewlock/dotnet-opensuse:16.0-10.0@sha256:74bc1357c314f257c6f9eb9262a79c0dea9bff603d9ce8488f828b68c320598b
+  dotnet-opensuse-16_1-11_0:
+    image: andrewlock/dotnet-opensuse:16.1-11.0@sha256:351e1d729f54ce8e9e66fdc98819066d0a1ee91650f114217ca8f944bceaf187
 
   # andrewlock/dotnet-rhel
   dotnet-rhel-8-3_1:
@@ -249,7 +267,15 @@ services:
     image: andrewlock/dotnet-rhel:8-9.0@sha256:ac676ef418926667275caca349ba01cc76aad80f97d8cfa35aad319f9ae14f1c
   dotnet-rhel-9-9_0:
     image: andrewlock/dotnet-rhel:9-9.0@sha256:ac676ef418926667275caca349ba01cc76aad80f97d8cfa35aad319f9ae14f1c
+  dotnet-rhel-10-10_0:
+    image: andrewlock/dotnet-rhel:10-10.0@sha256:3b3e024e7551375f637442f5cd725550c787f5fff512a67700a947e21e687423
+  dotnet-rhel-10-11_0:
+    image: andrewlock/dotnet-rhel:10-11.0@sha256:0d194d0454f1676b55abcd17088ad52cd40baefbcb7fa3f804716e8dee9043be
 
   # andrewlock/dotnet-ubuntu
   dotnet-ubuntu-25_04-9_0:
     image: andrewlock/dotnet-ubuntu:25.04-9.0@sha256:0e5c1ae3e68db344d00af798276cd403d552d106e225e41e919528d0f433885c
+  dotnet-ubuntu-25_10-10_0:
+    image: andrewlock/dotnet-ubuntu:25.10-10.0@sha256:df4a6290ddcc005fab0b3e8ff97aa089b206c695eae299ff8473893c24e104fb
+  dotnet-ubuntu-26_10-11_0:
+    image: andrewlock/dotnet-ubuntu:26.10-11.0@sha256:697267582e4530ff563cc9459c499e61ab5b82c14130f93ccf102750c6f27d83
