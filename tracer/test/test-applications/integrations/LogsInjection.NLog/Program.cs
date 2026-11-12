@@ -1,27 +1,25 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
 using PluginApplication;
 
-#pragma warning disable CS0618 // MappedDiagnosticContext is obsolete
+#pragma warning disable CS0618 // MDC and MDLC are obsolete in newer NLog versions
+#if NLOG_4_0
+using Mdc = NLog.MappedDiagnosticsContext;
+#else
+using Mdc = NLog.MDC;
+#endif
+
 namespace LogsInjection.NLog
 {
     public class Program
     {
-        private enum ContextProperty
-        {
-            None,
-            Mdc,
-            Mdlc,
-            ScopeContext
-        }
+        private const string CustomContextKey = "CustomContextKey";
+        private const string CustomContextValue = "CustomContextValue";
 
         private enum ConfigurationType
         {
@@ -31,40 +29,16 @@ namespace LogsInjection.NLog
             None,
 
             /// <summary>
-            /// All targets in configuration will _not_ contain targets pre-configured with logs injection related elements.
-            /// (e.g., "includeMdc = true" would be omitted from the JSON target)
-            /// </summary>
-            NoLogsInjection,
-
-            /// <summary>
-            /// All targets in configuration _will_ contain targets pre-configured with logs injection related elements.
-            /// (e.g., "includeMdc = true" would be present in the JSON target)
-            /// </summary>
-            LogsInjection,
-
-            /// <summary>
             /// Configuration file contains targets that are and aren't pre-configured with logs injection related elements.
+            /// (e.g., "includeMdc = true" is present in one JSON target, and omitted from the other)
             /// </summary>
             Both
-        }
-
-        private enum DirectLogSubmission
-        {
-            /// <summary>
-            /// DirectLogSubmission is enabled.
-            /// </summary>
-            Enable,
-
-            /// <summary>
-            /// DirectLogSubmission is disabled.
-            /// </summary>
-            Disable
         }
 
         public static int Main(string[] args)
         {
             // This test creates and unloads an appdomain
-            // It seems that in some (unknown) conditions the tracer gets loader into the child appdomain
+            // It seems that in some (unknown) conditions the tracer gets loaded into the child appdomain
             // When that happens, there is a risk that the startup log thread gets aborted during appdomain unload,
             // adding error logs which in turn cause a failure in CI.
             // Disabling the startup log at the process level should prevent this.
@@ -75,102 +49,34 @@ namespace LogsInjection.NLog
 
             LoggingMethods.DeleteExistingLogs();
 
-            var contextProperty = ContextProperty.None;
-            if (args.Length > 0 && !ContextProperty.TryParse(args[0], true, out contextProperty))
-            {
-                throw new ArgumentException($"Invalid context property '{args[0]}'", args[0]);
-            }
-
             var configType = ConfigurationType.Both;
-            if (args.Length >= 2 && !Enum.TryParse(args[1], true, out configType))
+            if (args.Length >= 1 && !Enum.TryParse(args[0], true, out configType))
             {
-                throw new ArgumentException($"Failed to parse configuration type for NLog sample '{args[1]}'", args[1]);
+                throw new ArgumentException($"Failed to parse configuration type for NLog sample '{args[0]}'", args[0]);
             }
-
-            Console.WriteLine("Context property injection: {0}", contextProperty);
 
             // Initialize NLog
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
 #if NLOG_5_0
-            switch (configType)
-            {
-                case ConfigurationType.None:
-                    break;
-                case ConfigurationType.NoLogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.50.NoLogsInjection.config"));
-                    break;
-                case ConfigurationType.LogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.50.WithLogsInjection.config"));
-                    break;
-                case ConfigurationType.Both:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.50.config"));
-                    break;
-            }
-
-            Console.WriteLine($"Using NLOG_5_0: Configuration type is: {configType}");
-
-            global::NLog.LogManager.ThrowExceptions = true;
-            global::NLog.Common.InternalLogger.LogToConsole = true;
-            global::NLog.Common.InternalLogger.LogLevel = LogLevel.Debug;
+            const string configFile = "NLog.50.config";
 #elif NLOG_4_6
-            switch (configType)
-            {
-                case ConfigurationType.None:
-                    break;
-                case ConfigurationType.NoLogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.46.NoLogsInjection.config"));
-                    break;
-                case ConfigurationType.LogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.46.WithLogsInjection.config"));
-                    break;
-                case ConfigurationType.Both:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.46.config"));
-                    break;
-            }
-
-            Console.WriteLine($"Using NLOG_4_6: Configuration type is: {configType}");
-
-            global::NLog.LogManager.ThrowExceptions = true;
-            global::NLog.Common.InternalLogger.LogToConsole = true;
-            global::NLog.Common.InternalLogger.LogLevel = LogLevel.Debug;
+            const string configFile = "NLog.46.config";
 #elif NLOG_4_0
+            const string configFile = "NLog.40.config";
+#else
+            const string configFile = "NLog.Pre40.config";
+#endif
+#if NLOG_4_0
             global::NLog.LogManager.ThrowExceptions = true;
             global::NLog.Common.InternalLogger.LogToConsole = true;
             global::NLog.Common.InternalLogger.LogLevel = LogLevel.Debug;
-
-            switch (configType)
-            {
-                case ConfigurationType.None:
-                    break;
-                case ConfigurationType.NoLogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.40.NoLogsInjection.config"));
-                    break;
-                case ConfigurationType.LogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.40.WithLogsInjection.config"));
-                    break;
-                case ConfigurationType.Both:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.40.config"));
-                    break;
-            }
-
-            Console.WriteLine($"Using NLOG_4_0: Configuration type is: {configType}");
-#else
-            switch (configType)
-            {
-                case ConfigurationType.None:
-                    break;
-                case ConfigurationType.NoLogsInjection:
-                    throw new InvalidOperationException("The pre NLOG_4_0 configurations don't have JSON support so no auto-configured logs injection either.");
-                case ConfigurationType.LogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.Pre40.WithLogsInjection.config"));
-                    break;
-                case ConfigurationType.Both:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.Pre40.config"));
-                    break;
-            }
-
-            Console.WriteLine($"Using pre NLOG_4_0: Configuration type is: {configType}");
 #endif
+            if (configType == ConfigurationType.Both)
+            {
+                LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", configFile));
+            }
+
+            Console.WriteLine($"Using {configFile}: Configuration type is: {configType}");
 #if NETCOREAPP
             // Hacks for the fact the NLog on Linux just can't do anything right
             // When on ConfigurationType.None LogManager.Configuration is going to be null - so need to skip
@@ -189,13 +95,7 @@ namespace LogsInjection.NLog
                     target.FileName = Path.Combine(appDirectory, "log-jsonFile-withInject.log");
                 }
 
-                // ones without Log Injection stuff
-                target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile-noInject");
-                if (target is not null)
-                {
-                    target.FileName = Path.Combine(appDirectory, "log-textFile-noInject.log");
-                }
-
+                // the one without Log Injection stuff
                 target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile-noInject");
                 if (target is not null)
                 {
@@ -206,46 +106,63 @@ namespace LogsInjection.NLog
             }
 #endif
 
-            return LoggingMethods.RunLoggingProcedure(message => AddToContextAndLog(message, contextProperty));
+            Logger logger = LogManager.GetCurrentClassLogger();
+
+#if NETFRAMEWORK && NLOG_4_6
+            // Keep logical context alive across the helper's AppDomain call. The per-message contexts
+            // below are removed before that call, which would otherwise miss serialization regressions.
+            const string crossDomainContextKey = "CrossDomainContextKey";
+            const string crossDomainContextValue = "CrossDomainContextValue";
+            var includeCrossDomainCall = Environment.GetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL") != "false";
+#if NLOG_5_0
+            using var crossDomainContext = includeCrossDomainCall ? global::NLog.ScopeContext.PushProperty(crossDomainContextKey, crossDomainContextValue) : null;
+#else
+            using var crossDomainContext = includeCrossDomainCall ? global::NLog.MappedDiagnosticsLogicalContext.SetScoped(crossDomainContextKey, crossDomainContextValue) : null;
+#endif
+#endif
+            var exitCode = LoggingMethods.RunLoggingProcedure(message => LogWithEachContext(logger, message));
+#if NETFRAMEWORK && NLOG_4_6
+            if (includeCrossDomainCall && global::NLog.MappedDiagnosticsLogicalContext.Get(crossDomainContextKey) != crossDomainContextValue)
+            {
+                throw new InvalidOperationException("The logging context was lost across the AppDomain call.");
+            }
+#endif
+            return exitCode;
         }
 
-        private static void AddToContextAndLog(string message, ContextProperty contextProperty)
+        // A single run covers every context this NLog version supports; NLogTests checks each one using the "(context: X)" suffix
+        private static void LogWithEachContext(Logger logger, string message)
         {
-            string propKey = "CustomContextKey", propValue = "CustomContextValue";
-            // don't complain if they're not actually used.
-            _ = propKey;
-            _ = propValue;
+            logger.Info($"{message} (context: None)");
 
-            switch (contextProperty)
+            Mdc.Set(CustomContextKey, CustomContextValue);
+            try
             {
-                case ContextProperty.ScopeContext:
-#if NLOG_5_0
-                    global::NLog.ScopeContext.PushProperty(propKey, propValue);
-                    break;
-#else
-                    throw new ArgumentException($"Invalid context property '{contextProperty}' for this NLog version", contextProperty.ToString());
-#endif
-                case ContextProperty.Mdlc:
-#if NLOG_5_0 || NLOG_4_6
-                    global::NLog.MappedDiagnosticsLogicalContext.Set(propKey, propValue);
-                    break;
-#else
-                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
-#endif
-                case ContextProperty.Mdc:
-
-#if NLOG_5_0 || NLOG_4_6 || NLOG_4_0
-                    global::NLog.MappedDiagnosticsContext.Set(propKey, propValue);
-                    break;
-#else
-                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
-#endif
+                logger.Info($"{message} (context: Mdc)");
+            }
+            finally
+            {
+                Mdc.Remove(CustomContextKey);
             }
 
-            Logger logger = LogManager.GetCurrentClassLogger();
-            logger.Info(message);
+#if NLOG_4_1
+            global::NLog.MappedDiagnosticsLogicalContext.Set(CustomContextKey, CustomContextValue);
+            try
+            {
+                logger.Info($"{message} (context: Mdlc)");
+            }
+            finally
+            {
+                global::NLog.MappedDiagnosticsLogicalContext.Remove(CustomContextKey);
+            }
+#endif
 
-            // No need to remove properties from context, as program is going to exit immediately
+#if NLOG_5_0
+            using (global::NLog.ScopeContext.PushProperty(CustomContextKey, CustomContextValue))
+            {
+                logger.Info($"{message} (context: ScopeContext)");
+            }
+#endif
         }
     }
 
@@ -255,7 +172,7 @@ namespace LogsInjection.NLog
 
         public static bool IsProfilerAttached()
         {
-            if(NativeMethodsType is null)
+            if (NativeMethodsType is null)
             {
                 return false;
             }
@@ -271,28 +188,6 @@ namespace LogsInjection.NLog
             }
 
             return false;
-        }
-
-        public static string GetTracerAssemblyLocation()
-        {
-            return NativeMethodsType?.Assembly.Location ?? "(none)";
-        }
-
-        public static void RunShutDownTasks(object caller)
-        {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (var assembly in assemblies)
-            {
-                foreach (var type in assembly.DefinedTypes)
-                {
-                    if (type.Namespace == "Coverlet.Core.Instrumentation.Tracker")
-                    {
-                        var unloadModuleMethod = type.GetMethod("UnloadModule", BindingFlags.Public | BindingFlags.Static);
-                        unloadModuleMethod.Invoke(null, new object[] { caller, EventArgs.Empty });
-                    }
-                }
-            }
         }
     }
 }
