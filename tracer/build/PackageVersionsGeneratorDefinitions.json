@@ -498,19 +498,24 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "11.0.0",
+    "MaxVersionExclusive": "12.0.0",
     "SpecificVersions": [
       "2.*.*",
       "5.*.*",
       "8.*.*",
       "9.*.*",
-      "10.*.*"
+      "10.*.*",
+      "11.*.*"
     ],
     "VersionConditions": [
       {
         "MinVersion": "3.1.32",
         "MaxVersionExclusive": "4.0.0",
         "ExcludeTargetFrameworks": [ "netcoreapp3.0" ]
+      },
+      {
+        "MinVersion": "11.0.0",
+        "IncludeOnlyTargetFrameworks": [ "net10.0", "net11.0" ]
       },
       {
         "ExcludeTargetFrameworks": [ "netcoreapp2.1" ]
@@ -830,11 +835,12 @@
     "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
     "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
     "MinVersion": "8.0.0",
-    "MaxVersionExclusive": "11.0.0",
+    "MaxVersionExclusive": "12.0.0",
     "SpecificVersions": [
       "8.*.*",
       "9.*.*",
-      "10.*.*"
+      "10.*.*",
+      "11.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "9.0.0",

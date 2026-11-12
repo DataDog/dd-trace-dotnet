@@ -63,7 +63,7 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // no 11.0-noble tag exists yet (Ubuntu 26.04 LTS isn't out); resolute is the only Ubuntu-based 11.0 tag on MCR
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
@@ -259,7 +259,7 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // no 11.0-noble tag exists yet (Ubuntu 26.04 LTS isn't out); resolute is the only Ubuntu-based 11.0 tag on MCR
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
@@ -526,7 +526,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
-                    // no 11.0-noble tag exists yet (Ubuntu 26.04 LTS isn't out); resolute is the only Ubuntu-based 11.0 tag on MCR
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute"),
@@ -1070,9 +1070,8 @@ public static class SmokeTestScenarios
 
             yield return from platform in platforms
                          from image in GetWindowsRuntimeImages()
-                        // just test the highest and lowest LTS versions for brevity
-						// Azure Functions doesn't support .NET 11 yet
-                         where image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework ==  TargetFramework.NET6_0
+                        // just test the latest version and the highest and lowest LTS versions for brevity
+                         where image.PublishFramework == TargetFramework.NET11_0 || image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework == TargetFramework.NET8_0
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""

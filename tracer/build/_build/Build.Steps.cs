@@ -2754,10 +2754,6 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
-               // With the .NET 11 RC SDK, a .NET 11 process and a .NET 8-10 process sharing the CircularChannel named mutex
-               // corrupt its ownership record (dotnet/runtime#134491), so ReleaseMutex can fail after a successful wait.
-               // Remove this once we build with .NET 11 GA.
-               new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
@@ -2826,18 +2822,6 @@ partial class Build
            // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
-
-           // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
-           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
-           {
-               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
-           }
-
-           // Make sure we _only_ add this while .NET 11 is in preview (to make sure we don't forget in the final release)
-           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 11.0.0-"))
-           {
-               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 11 or higher.*", RegexOptions.Compiled));
-           }
 
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));

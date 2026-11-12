@@ -40,8 +40,6 @@ public class VSTestEmptySessionTests : TestingFrameworkEvpTest
     [Trait("Category", "TestIntegrations")]
     public async Task SessionIsSkippedWhenVSTestRunsNoTests(string testName, string expectedStatus)
     {
-        // The testhost connects to the session in vstest.console over IPC.
-        SkipIfVSTestCannotShareNamedMutexes();
         var sessions = new ConcurrentQueue<MockCIVisibilityTestModule>();
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.EventPlatformProxyPayloadReceived += (_, e) =>
@@ -81,8 +79,6 @@ public class VSTestEmptySessionTests : TestingFrameworkEvpTest
     [Trait("Category", "TestIntegrations")]
     public async Task VSTestSendsExecutedTestsToTheParentSession(string testName, long expectedExecutedTests)
     {
-        // As with dotnet test, the session belongs to a parent process and vstest.console reports to it over IPC.
-        SkipIfVSTestCannotShareNamedMutexes();
         InjectSession(out var sessionId, out _, out _, out _, out _, out _, out _);
 
         // Test modules report their tests too, so without the xUnit integration only vstest.console sends a count.
