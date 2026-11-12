@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -46,16 +47,8 @@ internal sealed partial class AppSecRequestContext
             _ruleTriggered |= result.ShouldReportSecurityResult || result.ShouldBlock;
             _blockRequested |= result.ShouldBlock;
             _inputTruncated |= result.Truncated;
-
-            // a timeout takes precedence over the return code, as for appsec.waf.error
-            if (result.Timeout)
-            {
-                _wafTimedOut = true;
-            }
-            else if (result.ReturnCode < WafReturnCode.Ok)
-            {
-                _wafFailed = true;
-            }
+            _wafTimedOut |= result.Timeout;
+            _wafFailed |= SecurityReporter.IsWafError(result);
         }
     }
 

@@ -7,13 +7,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
 
@@ -133,6 +136,34 @@ public class WafRequestsTelemetryTests
 
         var metrics = await GetMetricsAsync(collector);
         metrics.Should().ContainSingle(m => m.Name == "waf.requests").Which.Points.Should().Be(1);
+    }
+
+    [Fact]
+    public void GivenTheWafAnalysisValues_WhenTheirTagsAreRead_ThenTheyFollowTheOutcomeAndFlagsLayout()
+    {
+        // AppSecRequestContext computes the value as (int)outcome * 16 + flags, so the order of the values matters
+        var values = (MetricTags.WafAnalysis[])Enum.GetValues(typeof(MetricTags.WafAnalysis));
+        values.Should().HaveCount(64);
+
+        foreach (var value in values)
+        {
+            var index = (int)value;
+            var outcome = index / 16;
+            var tags = typeof(MetricTags.WafAnalysis).GetField(value.ToString())!.GetCustomAttribute<DescriptionAttribute>()!.Description.Split(';');
+
+            tags.Should().Equal(
+                "waf_version",
+                "event_rules_version",
+                $"rule_triggered:{Bool(outcome != 0)}",
+                $"request_blocked:{Bool(outcome == 2)}",
+                $"waf_timeout:{Bool((index & 1) != 0)}",
+                $"block_failure:{Bool(outcome == 3)}",
+                $"rate_limited:{Bool((index & 2) != 0)}",
+                $"input_truncated:{Bool((index & 4) != 0)}",
+                $"waf_error:{Bool((index & 8) != 0)}");
+        }
+
+        static string Bool(bool value) => value ? "true" : "false";
     }
 
     internal static async Task<List<(string Name, string[] Tags, int Points)>> CloseAsync(AppSecRequestContext requestContext)
