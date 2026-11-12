@@ -290,7 +290,7 @@ publish:
 
 download-nuget-packages-to-sign:
   stage: package
-  image: registry.ddbuild.io/images/ci/images:1.2.6
+  image: registry.ddbuild.io/images/ci/images:v152562619-de9f215-1.2.6-buildx-0382@sha256:583073060ef6f815d9b8415dadd90a2843e655241ecba192a11fad72548452d1
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
@@ -373,7 +373,7 @@ sign-nuget-packages:
 
 download-single-step-artifacts:
   stage: package
-  image: registry.ddbuild.io/images/ci/images:1.2.6
+  image: registry.ddbuild.io/images/ci/images:v152562619-de9f215-1.2.6-buildx-0382@sha256:583073060ef6f815d9b8415dadd90a2843e655241ecba192a11fad72548452d1
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
@@ -422,7 +422,7 @@ deploy_to_reliability_env:
 
 download-serverless-artifacts:
   stage: package
-  image: registry.ddbuild.io/images/ci/images:1.2.6
+  image: registry.ddbuild.io/images/ci/images:v152562619-de9f215-1.2.6-buildx-0382@sha256:583073060ef6f815d9b8415dadd90a2843e655241ecba192a11fad72548452d1
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
