@@ -178,10 +178,21 @@
     <Compile Include="WindowsDirectoryAccess.NonWindows.cs" />
   </ItemGroup>
 
+  <!-- The NativeAOT build-time commands (aot, ducktype-aot) load and reflect over the assemblies they process, which trimming
+       breaks: the trimmed standalone dd-trace doesn't include them (Datadog.Trace.Aot ships the tool build of the runner). -->
+  <PropertyGroup Condition="'$(BuildStandalone)' == 'true'">
+    <DefineConstants>$(DefineConstants);DD_TRACE_STANDALONE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BuildStandalone)' == 'true'">
+    <Compile Remove="Aot\**;DuckTypeAot\**;AotCommand.cs;DuckTypeAotCommand.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Tools.Runner.SourceGenerators\Datadog.Trace.Tools.Runner.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
   </ItemGroup>
