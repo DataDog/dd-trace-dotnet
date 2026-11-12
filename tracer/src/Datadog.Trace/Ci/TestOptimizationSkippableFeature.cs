@@ -21,11 +21,6 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
 
-    /// <summary>
-    /// Reused empty lookup result returned when no skippable response is available for a local test query.
-    /// </summary>
-    private static readonly IList<SkippableTest> EmptySkippableTests = Array.Empty<SkippableTest>();
-
     private readonly ITestOptimization _testOptimization;
     private readonly ITestOptimizationClient _testOptimizationClient;
     private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
@@ -110,13 +105,13 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     /// <returns>A lookup dictionary enriched with backend response metadata.</returns>
     private static SkippableTestsDictionary BuildSkippableTestsDictionary(SkippableTestsRequestScope scope, TestOptimizationClient.SkippableTestsResponse response, ICollection<SkippableTest> tests)
     {
-        var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
+        var candidatesBySuiteAndName = new Dictionary<string, Dictionary<string, List<SkippableTest>>>();
         foreach (var item in tests)
         {
-            if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+            if (!candidatesBySuiteAndName.TryGetValue(item.Suite, out var suite))
             {
-                suite = new Dictionary<string, IList<SkippableTest>>();
-                skippableTestsBySuiteAndName[item.Suite] = suite;
+                suite = new Dictionary<string, List<SkippableTest>>();
+                candidatesBySuiteAndName[item.Suite] = suite;
             }
 
             if (!suite.TryGetValue(item.Name, out var name))
@@ -126,6 +121,18 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             }
 
             name.Add(item);
+        }
+
+        var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
+        foreach (var suite in candidatesBySuiteAndName)
+        {
+            var indexedTests = new Dictionary<string, SkippableTestCollection>(suite.Value.Count, StringComparer.Ordinal);
+            foreach (var test in suite.Value)
+            {
+                indexedTests.Add(test.Key, new SkippableTestCollection(test.Value));
+            }
+
+            skippableTestsBySuiteAndName.Add(suite.Key, indexedTests);
         }
 
         skippableTestsBySuiteAndName.CorrelationId = response.CorrelationId;
@@ -154,12 +161,12 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
     }
 
-    public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null)
+    public SkippableTestCollection GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null)
     {
         var skippableTestsTask = GetSkippableTestsTask(moduleName);
         if (skippableTestsTask is null)
         {
-            return EmptySkippableTests;
+            return default;
         }
 
         try
@@ -168,7 +175,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
                 testsInSuite.TryGetValue(name, out var tests))
             {
-                return FilterByModuleScope(tests, moduleName, skippableTestsBySuiteAndName.Scope.HasTestBundle);
+                return tests.ForModule(moduleName);
             }
         }
         catch (Exception ex)
@@ -176,7 +183,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             Log.Error(ex, "TestOptimizationSkippableFeature: Error waiting for skippable tests task to finish.");
         }
 
-        return EmptySkippableTests;
+        return default;
     }
 
     /// <summary>
@@ -811,29 +818,6 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
     }
 
-    /// <summary>
-    /// Keeps module-scoped backend candidates aligned with the currently executing local test module.
-    /// </summary>
-    /// <param name="tests">Backend candidates that matched suite and name.</param>
-    /// <param name="moduleName">Local test module or bundle name, when available.</param>
-    /// <param name="requestScopeMatchesModule">Whether the backend request itself was already scoped to the local module.</param>
-    /// <returns>Candidates that are valid for the local module scope.</returns>
-    private IList<SkippableTest> FilterByModuleScope(IList<SkippableTest> tests, string? moduleName, bool requestScopeMatchesModule)
-    {
-        var filtered = new List<SkippableTest>(tests.Count);
-        for (var i = 0; i < tests.Count; i++)
-        {
-            var test = tests[i];
-            if ((requestScopeMatchesModule && !test.TryGetModuleScope(out _)) ||
-                test.MatchesModuleScope(moduleName))
-            {
-                filtered.Add(test);
-            }
-        }
-
-        return filtered.Count == tests.Count ? tests : filtered;
-    }
-
     private sealed class ActualSkippedDictionaryState
     {
         public ActualSkippedDictionaryState(SkippableTestsDictionary dictionary)
@@ -844,7 +828,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         public SkippableTestsDictionary Dictionary { get; }
     }
 
-    internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
+    internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, SkippableTestCollection>>
     {
         /// <summary>
         /// Gets or sets the backend correlation id associated with this skippable-test response.

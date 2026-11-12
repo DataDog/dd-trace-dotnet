@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
@@ -94,7 +95,7 @@ internal static class Common
         return paramValue.ToString() ?? "(null)";
     }
 
-    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
+    internal static TestParameters CreateTestParameters(ReadOnlySpan<object?> testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
     {
         var testParameters = new TestParameters
         {
@@ -115,7 +116,7 @@ internal static class Common
         for (var i = 0; i < methodParameters.Length; i++)
         {
             var key = methodParameters[i].Name ?? (useParameterIndexForUnnamedParameters ? i.ToString(CultureInfo.InvariantCulture) : string.Empty);
-            testParameters.Arguments[key] = testMethodArguments is not null && i < testMethodArguments.Length
+            testParameters.Arguments[key] = i < testMethodArguments.Length
                                                 ? GetParametersValueData(testMethodArguments[i])
                                                 : "(default)";
         }
@@ -133,172 +134,60 @@ internal static class Common
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
-            var skippableTests = GetSkippableTestsFromSuiteAndNames(testSuite, testName, moduleName, metadataTestName);
-            if (skippableTests.Count > 0)
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature is null)
             {
-                TestParameters? localTestParameters = null;
-                string? localTestParametersFingerprint = null;
-                foreach (var candidate in skippableTests)
-                {
-                    TestParameters? parameters = null;
-                    if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) &&
-                        !candidate.TryGetParameters(out parameters))
-                    {
-                        Log.Debug("Common: Ignoring a skippable test candidate because its parameters are not valid JSON.");
-                        continue;
-                    }
-
-                    if (parameters?.TryGetFingerprint(out var expectedFingerprint) == true)
-                    {
-                        localTestParameters ??= CreateTestParameters(
-                            testMethodArguments,
-                            methodParameters,
-                            includeMetadataTestNameInFingerprint ? metadataTestName : null,
-                            useParameterIndexForUnnamedParameters);
-                        localTestParametersFingerprint ??= localTestParameters.GetFingerprint();
-                        if (string.Equals(expectedFingerprint, localTestParametersFingerprint, StringComparison.Ordinal))
-                        {
-                            return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                        }
-
-                        continue;
-                    }
-
-                    // Same test name and no parameters
-                    if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
-                        (testMethodArguments is null || testMethodArguments.Length == 0) &&
-                        ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
-                    {
-                        return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                    }
-
-                    if (parameters?.Arguments is not null &&
-                        testMethodArguments is not null &&
-                        methodParameters is not null)
-                    {
-                        if (parameters.Arguments.Count != methodParameters.Length)
-                        {
-                            continue;
-                        }
-
-                        var matchSignature = true;
-                        for (var i = 0; i < methodParameters.Length; i++)
-                        {
-                            var targetValue = "(default)";
-                            if (i < testMethodArguments.Length)
-                            {
-                                targetValue = GetParametersValueData(testMethodArguments[i]);
-                            }
-
-                            if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue))
-                            {
-                                matchSignature = false;
-                                break;
-                            }
-
-                            if (argValue is not string strArgValue)
-                            {
-                                strArgValue = argValue?.ToString() ?? "(null)";
-                            }
-
-                            if (strArgValue != targetValue)
-                            {
-                                matchSignature = false;
-                                break;
-                            }
-                        }
-
-                        if (matchSignature)
-                        {
-                            if (ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
-                            {
-                                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
-                            }
-                        }
-                    }
-                }
+                return false;
             }
+
+            moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+            return ShouldSkip(skippableFeature, testSuite, testName, testMethodArguments, methodParameters, out skippableTest, moduleName, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
         }
         finally
         {
             SynchronizationContext.SetSynchronizationContext(currentContext);
         }
-
-        return false;
     }
 
-    private static List<SkippableTest> GetSkippableTestsFromSuiteAndNames(string testSuite, string testName, string? moduleName, string? metadataTestName)
+    [TestingAndPrivateOnly]
+    internal static bool ShouldSkip(ITestOptimizationSkippableFeature skippableFeature, string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName, string? metadataTestName, bool includeMetadataTestNameInFingerprint, bool useParameterIndexForUnnamedParameters)
     {
-        var skippableFeature = TestOptimization.Instance.SkippableFeature;
-        if (skippableFeature is null)
+        skippableTest = null;
+        var query = new SkippableTestCollection.Query(testMethodArguments, methodParameters, metadataTestName, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
+        try
         {
-            return [];
-        }
-
-        var skippableTests = new List<SkippableTest>();
-        var seen = new HashSet<SkippableTest>();
-        AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName));
-        if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
-            !metadataTestName!.Equals(testName, StringComparison.Ordinal))
-        {
-            AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName));
-        }
-
-        return skippableTests;
-    }
-
-    private static void AddSkippableTests(List<SkippableTest> skippableTests, HashSet<SkippableTest> seen, IList<SkippableTest>? candidates)
-    {
-        if (candidates is null)
-        {
-            return;
-        }
-
-        foreach (var candidate in candidates)
-        {
-            if (seen.Add(candidate))
+            if (skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName).TryMatch(ref query, out var candidate))
             {
-                skippableTests.Add(candidate);
+                return CanSkipForCoverage(skippableFeature, candidate, moduleName, out skippableTest);
             }
-        }
-    }
 
-    private static bool ParametersMetadataMatches(TestParameters? parameters, string? metadataTestName, bool allowParametersMetadataMismatch)
-    {
-        if (parameters?.Metadata is null ||
-            !parameters.Metadata.TryGetValue(TestTags.MetadataTestName, out var expectedMetadataTestName))
-        {
-            return true;
-        }
+            if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
+                !metadataTestName!.Equals(testName, StringComparison.Ordinal) &&
+                skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName).TryMatch(ref query, out candidate))
+            {
+                return CanSkipForCoverage(skippableFeature, candidate, moduleName, out skippableTest);
+            }
 
-        var expectedTestName = expectedMetadataTestName?.ToString();
-        if (StringUtil.IsNullOrEmpty(expectedTestName))
-        {
-            return true;
-        }
-
-        if (allowParametersMetadataMismatch && StringUtil.IsNullOrEmpty(metadataTestName))
-        {
             return false;
         }
-
-        return !StringUtil.IsNullOrEmpty(metadataTestName) &&
-               string.Equals(expectedTestName, metadataTestName, StringComparison.Ordinal);
+        finally
+        {
+            query.Dispose();
+        }
     }
 
     /// <summary>
     /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
     /// </summary>
+    /// <param name="skippableFeature">Feature that supplied the matched candidate.</param>
     /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
     /// <param name="moduleName">Local test module or bundle that is about to skip the test.</param>
     /// <param name="matchedSkippableTest">Backend candidate matched to the current framework test.</param>
     /// <returns>True when the test can be skipped safely.</returns>
-    private static bool CanSkipForCoverage(SkippableTest skippableTest, string? moduleName, out SkippableTest? matchedSkippableTest)
+    private static bool CanSkipForCoverage(ITestOptimizationSkippableFeature skippableFeature, SkippableTest skippableTest, string? moduleName, out SkippableTest? matchedSkippableTest)
     {
         matchedSkippableTest = skippableTest;
-        var skippableFeature = TestOptimization.Instance.SkippableFeature;
-        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        if (!skippableFeature.IsCoverageBackfillRequired())
         {
             return true;
         }
