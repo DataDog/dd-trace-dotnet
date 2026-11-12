@@ -9,10 +9,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -31,84 +31,79 @@ public class SecurityReporterWafTelemetryTests
 
     [Theory]
     [MemberData(nameof(ErrorCodes))]
-    public async Task GivenAFailedWafRun_WhenTheTelemetryIsRecorded_ThenBothWafErrorAndWafRequestsAreReported(int returnCode, string expectedErrorTag)
+    public async Task GivenAFailedWafRun_WhenTheTelemetryIsRecorded_ThenWafErrorIsReportedForTheRunAndWafRequestsOnlyAtTheEndOfTheRequest(int returnCode, string expectedErrorTag)
     {
-        var metrics = await RecordAsync(CreateResult(returnCode), isRasp: false);
+        var requestContext = new AppSecRequestContext();
 
-        metrics.Should().ContainSingle(m => m.Name == "waf.error")
-               .Which.Tags.Should().Contain(expectedErrorTag);
-        metrics.Should().ContainSingle(m => m.Name == "waf.requests")
-               .Which.Tags.Should().Contain("waf_error:true").And.Contain("input_truncated:false");
+        var runMetrics = await RecordAsync(CreateResult(returnCode), isRasp: false, requestContext);
+        var requestMetrics = await WafRequestsTelemetryTests.CloseAsync(requestContext);
+
+        runMetrics.Should().ContainSingle(m => m.Name == "waf.error")
+                  .Which.Tags.Should().Contain(expectedErrorTag);
+        runMetrics.Should().NotContain(m => m.Name == "waf.requests");
+        requestMetrics.Should().ContainSingle(m => m.Name == "waf.requests")
+                      .Which.Tags.Should().Contain("waf_error:true");
     }
 
     [Theory]
     [InlineData(-3)]
-    [InlineData(-2)]
-    [InlineData(-1)]
-    public async Task GivenAFailedRaspRun_WhenTheTelemetryIsRecorded_ThenNeitherWafErrorNorTheWafRequestsTagIsSet(int returnCode)
+    [InlineData(0)]
+    public async Task GivenARaspRun_WhenTheTelemetryIsRecorded_ThenNeitherWafErrorNorWafRequestsCountIt(int returnCode)
     {
-        var metrics = await RecordAsync(CreateResult(returnCode), isRasp: true);
+        var requestContext = new AppSecRequestContext();
 
-        metrics.Should().NotContain(m => m.Name == "waf.error");
-        metrics.Should().ContainSingle(m => m.Name == "waf.requests")
-               .Which.Tags.Should().Contain("waf_error:false");
-    }
+        var runMetrics = await RecordAsync(CreateResult(returnCode), isRasp: true, requestContext);
+        var requestMetrics = await WafRequestsTelemetryTests.CloseAsync(requestContext);
 
-    [Fact]
-    public async Task GivenAFailedTruncatedWafRun_WhenTheTelemetryIsRecorded_ThenTheTruncatedTagIsUsed()
-    {
-        var metrics = await RecordAsync(CreateResult(-3, truncated: true), isRasp: false);
-
-        metrics.Should().ContainSingle(m => m.Name == "waf.requests")
-               .Which.Tags.Should().Contain("waf_error:true").And.Contain("input_truncated:true");
+        runMetrics.Should().BeEmpty();
+        requestMetrics.Should().NotContain(m => m.Name == "waf.requests");
     }
 
     [Fact]
     public async Task GivenATimedOutWafRun_WhenTheTelemetryIsRecorded_ThenItIsNotReportedAsAnError()
     {
-        var metrics = await RecordAsync(CreateResult(0, timeout: true), isRasp: false);
+        var requestContext = new AppSecRequestContext();
 
-        metrics.Should().NotContain(m => m.Name == "waf.error");
-        metrics.Should().ContainSingle(m => m.Name == "waf.requests")
-               .Which.Tags.Should().Contain("waf_timeout:true").And.Contain("waf_error:false");
-    }
+        var runMetrics = await RecordAsync(CreateResult(-3, timeout: true), isRasp: false, requestContext);
+        var requestMetrics = await WafRequestsTelemetryTests.CloseAsync(requestContext);
 
-    [Fact]
-    public async Task GivenASuccessfulWafRun_WhenTheTelemetryIsRecorded_ThenNoErrorIsReported()
-    {
-        var metrics = await RecordAsync(CreateResult(0), isRasp: false);
-
-        metrics.Should().NotContain(m => m.Name == "waf.error");
-        metrics.Should().ContainSingle(m => m.Name == "waf.requests")
-               .Which.Tags.Should().Contain("waf_error:false");
+        runMetrics.Should().NotContain(m => m.Name == "waf.error");
+        requestMetrics.Should().ContainSingle(m => m.Name == "waf.requests")
+                      .Which.Tags.Should().Contain("waf_timeout:true").And.Contain("waf_error:false");
     }
 
     [Fact]
     public async Task GivenNoResult_WhenTheTelemetryIsRecorded_ThenNothingIsReported()
     {
-        var metrics = await RecordAsync(result: null, isRasp: false);
+        var requestContext = new AppSecRequestContext();
 
-        metrics.Should().BeEmpty();
+        var runMetrics = await RecordAsync(result: null, isRasp: false, requestContext);
+        var requestMetrics = await WafRequestsTelemetryTests.CloseAsync(requestContext);
+
+        runMetrics.Should().BeEmpty();
+        requestMetrics.Should().NotContain(m => m.Name == "waf.requests");
     }
 
-    private static async Task<List<(string Name, string[] Tags)>> RecordAsync(IResult? result, bool isRasp)
+    internal static IResult CreateResult(int returnCode = 0, bool timeout = false, bool truncated = false, bool ruleTriggered = false, bool block = false)
+    {
+        var result = new Mock<IResult>();
+        result.SetupGet(x => x.ReturnCode).Returns((WafReturnCode)returnCode);
+        result.SetupGet(x => x.Timeout).Returns(timeout);
+        result.SetupGet(x => x.Truncated).Returns(truncated);
+        result.SetupGet(x => x.ShouldReportSecurityResult).Returns(ruleTriggered || block);
+        result.SetupGet(x => x.ShouldBlock).Returns(block);
+        return result.Object;
+    }
+
+    private static async Task<List<(string Name, string[] Tags)>> RecordAsync(IResult? result, bool isRasp, AppSecRequestContext requestContext)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
-        SecurityReporter.RecordWafTelemetry(result, isRasp, collector);
+        SecurityReporter.RecordWafTelemetry(result, isRasp, requestContext, collector);
         await collector.DisposeAsync();
 
         return collector.GetMetrics().Metrics?
                         .Select(m => (m.Metric, m.Tags ?? []))
                         .ToList()
             ?? [];
-    }
-
-    private static IResult CreateResult(int returnCode, bool timeout = false, bool truncated = false)
-    {
-        var result = new Mock<IResult>();
-        result.SetupGet(x => x.ReturnCode).Returns((WafReturnCode)returnCode);
-        result.SetupGet(x => x.Timeout).Returns(timeout);
-        result.SetupGet(x => x.Truncated).Returns(truncated);
-        return result.Object;
     }
 }
