@@ -67,12 +67,12 @@ runs:
     - name: Install Datadog Buildx
       shell: bash
       env:
-        BUILDX_VERSION: 0.38.1-dd.1
+        BUILDX_VERSION: 0.38.2-dd.3
       run: |
         set -euo pipefail
         case "$(uname -m)" in
-          x86_64) arch=amd64; checksum=3a7b0c660da5bdb9df799d5ce339bdfceeafc98b2fa7f56cf2cccbca4691a112 ;;
-          aarch64|arm64) arch=arm64; checksum=9d47a29f85bfa7b4998a4969bcb8c51102ecea1f1db19217df7b2b68977e029a ;;
+          x86_64) arch=amd64; checksum=d974b718dd988bfe661346e8e2ac5751be55475883ae796ae9dea9d0f6cbe0b2 ;;
+          aarch64|arm64) arch=arm64; checksum=b22f3da81c913eb76da05143ba49ec3de06224b617161c969c43022add397b29 ;;
           *) echo "Unsupported Buildx architecture" >&2; exit 1 ;;
         esac
         buildx_tmp="$(mktemp -d)"
