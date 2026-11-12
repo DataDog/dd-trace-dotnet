@@ -8,6 +8,276 @@
   "unknownTopLevelField": "ignored",
   "unknownTopLevelNull": null,
   "flags": {
+    "invalid-dolog-missing": {
+      "key": "invalid-dolog-missing",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ]
+        }
+      ]
+    },
+    "invalid-dolog-null": {
+      "key": "invalid-dolog-null",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": null
+        }
+      ]
+    },
+    "invalid-dolog-string-true": {
+      "key": "invalid-dolog-string-true",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": "true"
+        }
+      ]
+    },
+    "invalid-dolog-string-false": {
+      "key": "invalid-dolog-string-false",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": "false"
+        }
+      ]
+    },
+    "invalid-dolog-number-zero": {
+      "key": "invalid-dolog-number-zero",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": 0
+        }
+      ]
+    },
+    "invalid-dolog-number-one": {
+      "key": "invalid-dolog-number-one",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": 1
+        }
+      ]
+    },
+    "invalid-dolog-array": {
+      "key": "invalid-dolog-array",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": []
+        }
+      ]
+    },
+    "invalid-dolog-object": {
+      "key": "invalid-dolog-object",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Malformed doLog must reject this flag without affecting other flags.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": {}
+        }
+      ]
+    },
+    "invalid-dolog-before-fallback": {
+      "key": "invalid-dolog-before-fallback",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Reject the whole flag during ingestion, regardless of which allocation would match.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ]
+        },
+        {
+          "key": "fallback",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "invalid-dolog-after-match": {
+      "key": "invalid-dolog-after-match",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "Reject the whole flag during ingestion, regardless of which allocation would match.",
+      "variations": {
+        "unexpected": {
+          "key": "unexpected",
+          "value": "unexpected"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        },
+        {
+          "key": "invalid",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "unexpected",
+              "shards": []
+            }
+          ],
+          "doLog": null
+        }
+      ]
+    },
     "empty_flag": {
       "key": "empty_flag",
       "enabled": true,

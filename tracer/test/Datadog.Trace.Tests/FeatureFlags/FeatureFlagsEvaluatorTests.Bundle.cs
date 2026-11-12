@@ -76,6 +76,12 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal(testCase.Result.Reason, ToCanonicalReason(result.Reason));
 
+        if (testCase.Result.ErrorCode is not null)
+        {
+            Assert.Equal(testCase.Result.ErrorCode, result.Error);
+            Assert.Equal(testCase.Result.ErrorCode, result.FlagMetadata?["errorCode"]);
+        }
+
         Assert.NotNull(description);
 
         void AssertEqual(object? expected, object? obj)
@@ -222,6 +228,8 @@ public partial class FeatureFlagsEvaluatorTests
             public string? Variant { get; set; }
 
             public string? Error { get; set; }
+
+            public string? ErrorCode { get; set; }
 
             public Dictionary<string, string>? FlagMetadata { get; set; }
         }
