@@ -42,7 +42,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotArtifactPaths artifactPaths,
             DuckTypeAotMappingResolutionResult mappingResolutionResult)
         {
-            return EmitAndValidate(options, artifactPaths, mappingResolutionResult);
+            // The mappings of open generic target types are emitted as generic proxies (see PrepareGenericProxyTemplates).
+            var templatedResolution = PrepareGenericProxyTemplates(mappingResolutionResult, out var templates);
+            genericProxyTemplates = templates;
+            try
+            {
+                return RestoreGenericProxyTemplateMappings(EmitAndValidate(options, artifactPaths, templatedResolution), templates);
+            }
+            finally
+            {
+                genericProxyTemplates = null;
+            }
         }
 
         private static DuckTypeAotRegistryEmissionResult EmitAndValidate(
@@ -341,6 +351,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     mappingResolutionResult.GenericTypeRoots,
                     targetTypeIndex,
                     runtimeDuplicateKeys));
+                // A generic proxy serves the runtime types of the instantiations itself (see CompleteGenericProxyTemplate).
+                runtimeRegistrations.RemoveAll(registration => !registration.IsCanonical && genericProxyTemplates?.ContainsKey(registration.CanonicalMappingKey) == true);
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeRegistrationsSeconds += seconds);
                 var generatedProxyTargets = new List<KeyValuePair<DuckTypeAotMapping, TypeDef>>();
                 var generatedTypes = new GeneratedTypeIndex(moduleDef);
@@ -354,6 +366,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var runtimeRegistration = runtimeRegistrations[i];
                     var mapping = runtimeRegistration.Mapping;
                     var emitMappingStopwatch = StartProfilePhase();
+                    DuckTypeAotMapping? genericProxyMapping = null;
+                    _ = genericProxyTemplates?.TryGetValue(mapping.Key, out genericProxyMapping);
+                    var typeCountBefore = moduleDef.Types.Count;
+                    var bootstrapMethodCountBefore = bootstrapType.Methods.Count;
                     // Alias targets (types assignable to a mapped target, the underlying type of a mapped Nullable<T>) get
                     // their own proxy, like dynamic duck typing creates one per runtime type: it reports its own
                     // IDuckType.Type and ProxyType, binds the alias's own members and replays the alias's own failures.
@@ -369,6 +385,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         mappingResolutionResult.ProxyAssemblyPathsByName,
                         mappingResolutionResult.TargetAssemblyPathsByName,
                         emissionWarnings);
+                    if (genericProxyMapping is not null)
+                    {
+                        emissionResult = CompleteGenericProxyTemplate(
+                            moduleDef,
+                            bootstrapType,
+                            registrationMethod,
+                            importedMembers,
+                            genericProxyMapping,
+                            i + 1,
+                            emissionResult,
+                            typeCountBefore,
+                            bootstrapMethodCountBefore,
+                            proxyModulesByAssemblyName,
+                            targetModulesByAssemblyName);
+                    }
+
                     if (_currentExecutionContext.ReplaysDynamicFailure(mapping.Key) &&
                         !string.Equals(emissionResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
                     {
@@ -405,7 +437,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     // The proxy types the registry generates, whose instances dynamic duck typing creates forward proxies for: a
                     // reverse proxy type, and a forward proxy type (a proxy of a proxy), see EmitGeneratedProxyTargetAliases.
-                    if (emissionResult.Status == DuckTypeAotCompatibilityStatuses.Compatible &&
+                    if (genericProxyMapping is null &&
+                        emissionResult.Status == DuckTypeAotCompatibilityStatuses.Compatible &&
                         generatedTypes.Find(emissionResult.GeneratedProxyTypeName) is { } generatedProxyType &&
                         (mapping.Mode == DuckTypeAotMappingMode.Reverse || generatedProxyType.Interfaces.Any(implementation => string.Equals(implementation.Interface?.FullName, "Datadog.Trace.DuckTyping.IDuckType", StringComparison.Ordinal))))
                     {
