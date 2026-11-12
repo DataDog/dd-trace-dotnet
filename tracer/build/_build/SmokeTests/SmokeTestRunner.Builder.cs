@@ -73,7 +73,12 @@ public static partial class SmokeTestRunner
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
-                return new[] {scenario.DockerTag};
+                // Build the dd-dotnet variant (launches the app via dd-dotnet.sh)
+                const string ddDotnetDockerfilePath = "build/_build/docker/smoke.dd-dotnet.dockerfile";
+                var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, buildArgs, artifactsDir);
+
+                return new[] {scenario.DockerTag, ddDotnetTag};
             }
 
             async Task<string[]> BuildChiseledImageAsync(ChiseledScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
