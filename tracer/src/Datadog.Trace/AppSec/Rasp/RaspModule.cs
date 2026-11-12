@@ -640,6 +640,7 @@ internal static class RaspModule
         }
     }
 
+    [TestingAndPrivateOnly]
     internal static Dictionary<string, object> GetDownstreamResponseArgs(System.Net.Http.HttpResponseMessage responseMessage)
     {
         var wafArgs = new Dictionary<string, object>

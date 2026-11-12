@@ -21,28 +21,18 @@ public class DownstreamApiSecurityTests : WafLibraryRequiredTest
     private const string McpBrokenAuth = "api.security.mcp.broken_auth";
     private const string LargeResponseUrl = "api.security.large_response.url";
 
-    [Fact]
-    public void GivenAnUnauthenticatedMcpCall_WhenRequestAndResponseShareTheSubcontext_ThenBrokenAuthIsTagged()
+    [Theory]
+    [InlineData("200", true)]
+    [InlineData("401", false)]
+    public void GivenAnUnauthenticatedMcpCall_WhenRequestAndResponseShareTheSubcontext_ThenBrokenAuthDependsOnTheStatus(string status, bool expectedTagged)
     {
         using var waf = CreateWaf().Waf!;
         using var context = waf.CreateContext(out _)!;
 
         context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
-        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("200"), TimeoutMicroSeconds, isRasp: true, out _);
+        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus(status), TimeoutMicroSeconds, isRasp: true, out _);
 
-        result!.WafSpanAttributes.Should().ContainKey(McpBrokenAuth);
-    }
-
-    [Fact]
-    public void GivenAnUnauthenticatedMcpCall_WhenTheServerAnswers401_ThenBrokenAuthIsNotTagged()
-    {
-        using var waf = CreateWaf().Waf!;
-        using var context = waf.CreateContext(out _)!;
-
-        context.RunInSubcontext(OutboundCallId, McpRequest(), TimeoutMicroSeconds, isRasp: true, out _);
-        var result = context.RunInSubcontext(OutboundCallId, ResponseWithStatus("401"), TimeoutMicroSeconds, isRasp: true, out _);
-
-        (result!.WafSpanAttributes?.ContainsKey(McpBrokenAuth) ?? false).Should().BeFalse();
+        (result!.WafSpanAttributes?.ContainsKey(McpBrokenAuth) ?? false).Should().Be(expectedTagged);
     }
 
     [Fact]

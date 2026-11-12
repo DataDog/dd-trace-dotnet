@@ -164,8 +164,9 @@ internal sealed class Context : IContext
     /// Runs the WAF over one batch of addresses.
     /// </summary>
     /// <param name="addressData">the addresses to evaluate</param>
-    /// <param name="ephemeral">when true the batch is evaluated in its own subcontext, so that its side
-    /// effects don't outlive the call; this is what RASP relies on</param>
+    /// <param name="ephemeral">when true the batch is evaluated in a subcontext rather than the request context:
+    /// without <paramref name="subcontextId"/> the subcontext ends with the call, with it the subcontext stays open
+    /// until <see cref="CloseSubcontext"/> or until this context is disposed; this is what RASP relies on</param>
     /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
     /// <param name="isRasp">whether this run should be reported as a RASP run</param>
     /// <param name="outcome">why the run produced no result</param>

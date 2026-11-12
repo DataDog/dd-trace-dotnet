@@ -7,6 +7,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf;
@@ -20,13 +21,14 @@ internal static class WafAttributeRedaction
     internal static object? Redact(string key, object? value)
         => value is string url && IsUrlAttribute(key) ? RemoveUrlSecrets(url) : value;
 
-    internal static bool IsUrlAttribute(string key)
+    private static bool IsUrlAttribute(string key)
         => key is "api.security.large_response.url" or "api.security.redirection.move_target" or "api.security.redirection.redirect_target";
 
     /// <summary>
     /// Removes the user-info, query and fragment of a URL, which may be relative (e.g. a Location header).
     /// When the user-info can't be told apart from the rest of the authority, everything from the authority on is dropped.
     /// </summary>
+    [TestingAndPrivateOnly]
     internal static string RemoveUrlSecrets(string rawUrl)
     {
         var url = Normalize(rawUrl);
@@ -60,7 +62,7 @@ internal static class WafAttributeRedaction
 
         if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
-            return uri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
+            return UriHelpers.CleanUri(uri, removeScheme: false, tryRemoveIds: false);
         }
 
         var end = url.IndexOfAny(Separators.QueryOrFragment);
