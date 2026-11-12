@@ -368,10 +368,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
 
             var output = processResult.StandardOutput;
-            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(64 + skipMethodBodyCalls);
-            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(53 + skipMethodBodyCalls);
-            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(60 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(69 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(58 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(65 + skipMethodBodyCalls);
             Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
+
+            VerifyInstrumentation(processResult.Process);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task AsyncMethodFailures()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "runtimeasyncfailures");
+            processResult.ExitCode.Should().Be(0);
+
+            var output = processResult.StandardOutput;
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(9);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(9);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(9);
 
             VerifyInstrumentation(processResult.Process);
         }
