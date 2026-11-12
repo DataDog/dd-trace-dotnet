@@ -594,6 +594,12 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 // Resolves a module through the profiling API on a cache miss. Every caller is either a profiler
 // callback (ModuleLoaded) or reached from one (the JIT callbacks), which is the context the
 // profiling API requires: GetAssemblyInfo is synchronous-only and fails outside a callback.
+bool Dataflow::IsModuleExcluded(ModuleID id)
+{
+    const auto module = GetModuleInfo(id);
+    return module == nullptr || module->IsExcluded();
+}
+
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
     CSGUARD(_cs);
