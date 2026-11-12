@@ -67,8 +67,6 @@ services:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2025@sha256:f82ebdba2f00ce94529c8bce041ce3451940bb191400d4416942b4c35234f01a
   aspnet-9_0-alpine3_24:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24@sha256:51df5457d7170de07ef41b55cebe1ca49723281bb52165c113826643cb7acf72
-  aspnet-9_0-alpine3_24-composite:
-    image: mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24-composite@sha256:282e44ca987e5ab8c33dac9f2ba5207b0efd381595fdb58a5e50f1d2680b7187
   aspnet-9_0-bookworm-slim:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim@sha256:c5d96442d3fc5b9a85380922a174692c8a9899bc1efa5d1bf5a540dcd2079f5c
   aspnet-9_0-noble:
@@ -137,8 +135,6 @@ services:
     image: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18@sha256:b16fdc4c48d4627bd5c4e8e569f1cc295b8cda938a29ead7d2df981d410a4175
   sdk-8_0-jammy:
     image: mcr.microsoft.com/dotnet/sdk:8.0-jammy@sha256:d312e9523e521d4de274ff51961d6d958e572fa8bd55d38ec0e5b41b5ccdfe67
-  sdk-9_0-alpine3_24:
-    image: mcr.microsoft.com/dotnet/sdk:9.0-alpine3.24@sha256:8833c4a2e6f04c404bfb74ca901ed6ed4bccb0cf38f808c016b4895afd688c1e
   sdk-9_0-bookworm-slim:
     image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim@sha256:07ed28d9e7279248fcea27334880f6c415b42c631c39b8bc5b3caf13ec6fdaa2
   sdk-9_0-noble:
@@ -189,8 +185,6 @@ services:
     image: andrewlock/dotnet-debian:trixie-11.0@sha256:7cdd64eba13d162abc2196232c1e84da16dfa16d113190857e53fc4ff0ca5fca
   dotnet-debian-trixie-8_0:
     image: andrewlock/dotnet-debian:trixie-8.0@sha256:1443b1fbd9fbc17dfefeeed33f7a0e2d26905497583651a2126cac0bc73fc5ae
-  dotnet-debian-trixie-9_0:
-    image: andrewlock/dotnet-debian:trixie-9.0@sha256:770a04ecc180a208e13e2ad4e796de5c1b0c3c864de7a9d1621c651cc9b75909
 
   # andrewlock/dotnet-fedora
   dotnet-fedora-29-2_1:
