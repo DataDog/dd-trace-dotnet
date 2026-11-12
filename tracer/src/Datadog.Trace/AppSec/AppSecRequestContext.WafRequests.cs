@@ -7,7 +7,6 @@
 
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -87,18 +86,14 @@ internal sealed partial class AppSecRequestContext
     }
 
     /// <summary>
-    /// Reports the request telemetry when the local root span of the request isn't a web span, such as the HTTP
-    /// root of an Azure Function, which is typed serverless: the web span enrichment of CloseWebSpan doesn't
-    /// apply to it, but the request was still analyzed
+    /// Reports the request telemetry of a local root span that isn't a web span, such as the HTTP root of an Azure
+    /// Function, which is typed serverless and so never reaches CloseWebSpan. Nothing is reported if the WAF didn't run.
     /// </summary>
-    internal void CloseNonWebRootSpan(Span span) => CloseNonWebRootSpan(span, TelemetryFactory.Metrics);
-
-    [TestingAndPrivateOnly]
-    internal void CloseNonWebRootSpan(Span span, IMetricsTelemetryCollector metrics)
+    internal void CloseNonWebRootSpan(Span span)
     {
         lock (_sync)
         {
-            ReportWafRequests(span, metrics);
+            ReportWafRequests(span, TelemetryFactory.Metrics);
         }
     }
 
