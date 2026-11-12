@@ -16,11 +16,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class GlobalCoverageMemoryDiagnosticsTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void StressArtifactsAreRetainedOnlyOnFailure(bool fail)
     {
-        var parentDirectory = Path.Combine(Path.GetTempPath(), "dd-memory-diagnostics-test-" + Guid.NewGuid().ToString("N"));
+        var parentDirectory = Path.Combine(Path.GetTempPath(), "dd-memory-diagnostics-test-" + Path.GetRandomFileName());
         Directory.CreateDirectory(parentDirectory);
         var rootPath = string.Empty;
         Action run = () =>
@@ -47,7 +46,7 @@ public class GlobalCoverageMemoryDiagnosticsTests
                 run();
             }
 
-            Path.GetDirectoryName(rootPath).Should().Be(parentDirectory, "stress artifacts must stay under the selected artifact directory");
+            Path.GetDirectoryName(rootPath).Should().Be(parentDirectory);
             Directory.Exists(rootPath).Should().Be(fail);
             if (fail)
             {
