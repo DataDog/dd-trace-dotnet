@@ -34,7 +34,7 @@ namespace Datadog.Trace.CiStageSelectionTests
         {
             AssertSelection(
                 ["tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ProfilerTests.cs"],
-                skipTracerOnlyStages: true,
+                skipTracerOnlyStages: false,
                 libdatadogChanged: false);
         }
 

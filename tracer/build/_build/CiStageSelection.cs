@@ -16,7 +16,6 @@ public static class CiStageSelection
     private const string LibdatadogCmake = "build/cmake/FindLibdatadog.cmake";
     private const string LibdatadogPortPrefix = "build/vcpkg_local_ports/libdatadog/";
     private const string ProfilerPrefix = "profiler/";
-    private const string ProfilerManagedTestsPrefix = "tracer/test/Datadog.Trace.Tests/ContinuousProfiler/";
     private const string TracerToolsPrefix = "tracer/tools/";
 
     private static readonly string[] IgnoredFiles =
@@ -150,7 +149,6 @@ public static class CiStageSelection
     private static bool IsProfilerOnly(string path)
     {
         return path.StartsWith(ProfilerPrefix, StringComparison.Ordinal)
-            || path.StartsWith(ProfilerManagedTestsPrefix, StringComparison.Ordinal)
             || IsLibdatadogPin(path);
     }
 
