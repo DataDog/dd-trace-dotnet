@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
             Assert.True(run.UploadCount > 0);
-            Assert.True(run.Profiles.EveryProfileHasOnlyMatchingSamples(IsThreadLifetimeSample));
+            Assert.True(run.Profiles.AllSamplesMatch(IsThreadLifetimeSample));
         }
 
         [TestAppFact(TestApplication.Computer01, /*TestFramework.Net48,*/ TestFramework.Net6, TestFramework.Net7)]
@@ -46,12 +46,12 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             using var run = runner.Run();
 
             Assert.False(run.UploadCount > 0);
-            Assert.False(run.Profiles.EveryProfileHasOnlyMatchingSamples(IsThreadLifetimeSample));
+            Assert.False(run.Profiles.AllSamplesMatch(IsThreadLifetimeSample));
         }
 
         private static bool IsThreadLifetimeSample(ProfileSample sample)
         {
-            var events = sample.Labels.GetValues("event");
+            var events = sample.Labels.GetValues(ProfileLabelNames.Event);
             if (!events.Contains("thread start") && !events.Contains("thread stop"))
             {
                 return false;

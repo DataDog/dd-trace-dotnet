@@ -73,8 +73,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("request url")));
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("response status code")));
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.RequestUrl)));
+            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.ResponseStatusCode)));
         }
 
         [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
@@ -94,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             {
                 Assert.True(sample.CallStack.FramesCount > 0);
 
-                var url = sample.Labels.GetRequired("request url");
+                var url = sample.Labels.GetRequired(ProfileLabelNames.RequestUrl);
                 url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
@@ -104,12 +104,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 }
 
                 // skip samples with errors (transient network failures to github.com in CI)
-                if (sample.Labels.Has("response error"))
+                if (sample.Labels.Has(ProfileLabelNames.ResponseError))
                 {
                     continue;
                 }
 
-                var redirectUrl = sample.Labels.GetRequired("redirect url");
+                var redirectUrl = sample.Labels.GetRequired(ProfileLabelNames.RedirectUrl);
 
                 // in .NET 7, the redirect is detected but no redirected url is available
                 if (app.Framework != TestFramework.Net7)
@@ -118,8 +118,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 }
 
                 // request/response happens for all runtimes
-                sample.Labels.GetRequired("request.duration").Should().NotBeNullOrWhiteSpace();
-                sample.Labels.GetRequired("response_content.duration").Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired(ProfileLabelNames.RequestDuration).Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired(ProfileLabelNames.ResponseContentDuration).Should().NotBeNullOrWhiteSpace();
             }
         }
 
@@ -140,7 +140,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             {
                 Assert.True(sample.CallStack.FramesCount > 0);
 
-                var url = sample.Labels.GetRequired("request url");
+                var url = sample.Labels.GetRequired(ProfileLabelNames.RequestUrl);
                 url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
@@ -149,10 +149,10 @@ namespace Datadog.Profiler.IntegrationTests.Network
                     continue;
                 }
 
-                sample.Labels.GetRequired("response error").Should().NotBeNullOrWhiteSpace();
+                sample.Labels.GetRequired(ProfileLabelNames.ResponseError).Should().NotBeNullOrWhiteSpace();
 
-                sample.Labels.Has("request.duration").Should().BeFalse();
-                sample.Labels.Has("response_content.duration").Should().BeFalse();
+                sample.Labels.Has(ProfileLabelNames.RequestDuration).Should().BeFalse();
+                sample.Labels.Has(ProfileLabelNames.ResponseContentDuration).Should().BeFalse();
             }
         }
 
@@ -175,7 +175,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 Assert.True(sample.CallStack.FramesCount > 0);
 
                 var labels = sample.Labels;
-                var url = labels.GetRequired("request url");
+                var url = labels.GetRequired(ProfileLabelNames.RequestUrl);
                 url.Should().NotBeNullOrWhiteSpace();
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
@@ -185,7 +185,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 }
 
                 // skip samples with errors (transient network failures to github.com in CI)
-                if (labels.Has("response error"))
+                if (labels.Has(ProfileLabelNames.ResponseError))
                 {
                     continue;
                 }
@@ -193,26 +193,26 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 checkedSamples++;
 
                 // since there are 2 iterations, it is possible that low level connection has been cached for the second iteration and thus no labels are emitted
-                if (labels.Has("dns.success"))
+                if (labels.Has(ProfileLabelNames.DnsSuccess))
                 {
-                    Assert.True(labels.GetRequired("dns.success") == "true");
+                    Assert.True(labels.GetRequired(ProfileLabelNames.DnsSuccess) == "true");
 
-                    labels.GetRequired("dns.duration").Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired(ProfileLabelNames.DnsDuration).Should().NotBeNullOrWhiteSpace();
 
                     // no socket duration on Linux
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        labels.GetRequired("socket.duration").Should().NotBeNullOrWhiteSpace();
+                        labels.GetRequired(ProfileLabelNames.SocketDuration).Should().NotBeNullOrWhiteSpace();
                     }
 
-                    labels.GetRequired("tls.duration").Should().NotBeNullOrWhiteSpace();
-                    labels.GetRequired("request.duration").Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired(ProfileLabelNames.TlsDuration).Should().NotBeNullOrWhiteSpace();
+                    labels.GetRequired(ProfileLabelNames.RequestDuration).Should().NotBeNullOrWhiteSpace();
                 }
 
-                labels.GetRequired("response_content.duration").Should().NotBeNullOrWhiteSpace();
-                labels.GetRequired("response.thread_id").Should().NotBeNullOrWhiteSpace();
-                labels.GetRequired("response.thread_name").Should().NotBeNullOrWhiteSpace();
-                Assert.True(labels.GetRequired("response status code") == "200");
+                labels.GetRequired(ProfileLabelNames.ResponseContentDuration).Should().NotBeNullOrWhiteSpace();
+                labels.GetRequired(ProfileLabelNames.ResponseThreadId).Should().NotBeNullOrWhiteSpace();
+                labels.GetRequired(ProfileLabelNames.ResponseThreadName).Should().NotBeNullOrWhiteSpace();
+                Assert.True(labels.GetRequired(ProfileLabelNames.ResponseStatusCode) == "200");
             }
 
             Assert.True(checkedSamples > 0);
@@ -242,7 +242,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 Assert.True(sample.CallStack.FramesCount > 0);
 
                 var labels = sample.Labels;
-                var url = labels.GetRequired("request url");
+                var url = labels.GetRequired(ProfileLabelNames.RequestUrl);
 
                 // some unexpected requests could be emitted (e.g. telemetry, etc.)
                 if (!url.StartsWith(appListenerPort))
@@ -252,7 +252,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
 
                 checkedSamples++;
 
-                var redirectUrl = labels.GetRequired("redirect url");
+                var redirectUrl = labels.GetRequired(ProfileLabelNames.RedirectUrl);
 
                 // in .NET 7, the redirect is detected but no redirected url is available
                 if (app.Framework != TestFramework.Net7)
@@ -260,12 +260,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
                     redirectUrl.Split('|').Length.Should().Be(2);
                 }
 
-                var requestDurationLabel = labels.GetRequired("request.duration");
+                var requestDurationLabel = labels.GetRequired(ProfileLabelNames.RequestDuration);
                 requestDurationLabel.Should().NotBeNullOrWhiteSpace();
                 Assert.True(double.TryParse(requestDurationLabel, out double requestDuration));
                 requestDuration.Should().BeGreaterOrEqualTo(3L * 900 * 1000000);  // avoid flaky test but should be larger than 3 x 1000ms
 
-                Assert.True(double.TryParse(labels.GetRequired("response_content.duration"), out double responseDuration));
+                Assert.True(double.TryParse(labels.GetRequired(ProfileLabelNames.ResponseContentDuration), out double responseDuration));
                 responseDuration.Should().BeGreaterOrEqualTo(1500L * 1000000);  // avoid flaky test but should be larger than 2000ms
             }
 
