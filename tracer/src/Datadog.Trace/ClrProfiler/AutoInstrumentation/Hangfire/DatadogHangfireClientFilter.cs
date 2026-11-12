@@ -29,10 +29,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext)
-             && !creatingContext.Items.ContainsKey(HangfireConstants.DatadogContextKey))
+            // Not deduplicated: a duplicate filter rewrites the same values, an Items flag would outlive a reused context.
+            if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext))
             {
-                creatingContext.Items[HangfireConstants.DatadogContextKey] = true;
                 PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, null);
                 var contextDetails = new Dictionary<string, string>();
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(contextToInject, contextDetails, HangfireCommon.InjectSpanProperties);

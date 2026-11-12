@@ -29,13 +29,15 @@ public class HangfireTests : TracingIntegrationTest
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHangfire(metadataSchemaVersion);
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("baggage")]
+    [InlineData("custom-filter-combined-baggage")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task BaggageDoesNotAccumulateAcrossSequentialJobs()
+    public async Task BaggageDoesNotAccumulateAcrossSequentialJobs(string scenario)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "baggage");
+        using var process = await RunSampleAndWaitForExit(agent, arguments: scenario);
 
         var workerThreadIds = Regex.Matches(process.StandardOutput, @"Worker thread for job-(?:one|two): (\d+)")
                                    .Cast<Match>()
@@ -52,6 +54,7 @@ public class HangfireTests : TracingIntegrationTest
     [InlineData("custom-filter-collection")]
     [InlineData("custom-filter-provider")]
     [InlineData("custom-filter-combined")]
+    [InlineData("custom-filter-combined-reversed")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTracesWithApplicationJobFilterCollections(string scenario)
@@ -61,7 +64,7 @@ public class HangfireTests : TracingIntegrationTest
 
         var jobs = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 15000, operationName: "hangfire.perform");
         // The combined scenario adds a PostPerform span from a filter between the two Datadog filters.
-        var combined = scenario == "custom-filter-combined";
+        var combined = scenario.StartsWith("custom-filter-combined");
         var internals = await agent.WaitForSpansAsync(combined ? 2 : 1, timeoutInMilliseconds: 15000, operationName: "internal");
         jobs.Should().HaveCount(1);
         internals.Should().HaveCount(combined ? 2 : 1);

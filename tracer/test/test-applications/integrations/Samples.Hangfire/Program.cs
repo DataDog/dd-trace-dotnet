@@ -35,7 +35,7 @@ public class Program
         GlobalJobFilters.Filters.Add(new JobCompletionFilter());
 
         Console.WriteLine("Starting Hangfire server...");
-        if (scenario == "custom-filter-combined")
+        if (scenario is "custom-filter-combined" or "custom-filter-combined-baggage")
         {
             // Client and server read both collections, so each Datadog filter runs twice per job,
             // with this global filter between the two copies.
@@ -43,7 +43,14 @@ public class Program
             JobFilterProviders.Providers.Add(customFilters!);
         }
 
-        var isBaggageScenario = scenario == "baggage";
+        if (scenario == "custom-filter-combined-reversed")
+        {
+            // Application collection first, so its Datadog copy owns the scope.
+            customFilters!.Add(new PostPerformSpanFilter());
+            JobFilterProviders.Providers.Insert(0, customFilters);
+        }
+
+        var isBaggageScenario = scenario is "baggage" or "custom-filter-combined-baggage";
         using var server = CreateServer(isBaggageScenario);
 
         try
