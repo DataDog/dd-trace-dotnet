@@ -11,8 +11,8 @@ using Logger = Serilog.Log;
 namespace NativeValidation;
 
 /// <summary>
-/// Helper class for validating native libraries. We keep the check on __libc_single_threaded to make sure
-/// that we don't accidentally use a newer version of the glibc (appeared in 2.32).
+/// Helper class for validating native libraries. The __libc_single_threaded check rejects that symbol.
+/// Glibc version validation is a separate check.
 /// </summary>
 public class NativeValidationHelper
 {

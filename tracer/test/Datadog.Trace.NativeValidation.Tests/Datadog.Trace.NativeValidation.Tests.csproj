@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Include="..\..\build\_build\NativeValidation\NativeExportChecker.cs" Link="NativeValidation\NativeExportChecker.cs" />
+    <Compile Include="..\..\build\_build\NativeValidation\NmSymbol.cs" Link="NativeValidation\NmSymbol.cs" />
+    <Compile Include="..\..\build\_build\NativeValidation\NativeExportCheckerTests.cs" Link="NativeValidation\NativeExportCheckerTests.cs" />
+  </ItemGroup>
+</Project>
