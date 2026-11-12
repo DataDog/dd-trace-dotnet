@@ -20,6 +20,7 @@ public static partial class SmokeTestRunner
         const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
+        const string WindowsTestAgentBaseImageLtsc2025 = "python:3.12.10-windowsservercore-ltsc2025";
         readonly SmokeTestImageDigests ImageDigests;
 
         public Builder(SmokeTestImageDigests imageDigests)
@@ -366,7 +367,7 @@ public static partial class SmokeTestRunner
         {
             if (scenario.IsWindows)
             {
-                await BuildWindowsTestAgentImageAsync(tracerDir);
+                await BuildWindowsTestAgentImageAsync(tracerDir, scenario.OsVersion);
                 return WindowsTestAgentImage;
             }
             else
@@ -374,9 +375,14 @@ public static partial class SmokeTestRunner
                 await DockerService.PullImageAsync(LinuxTestAgentImage, skipIfImageExists: true);
                 return LinuxTestAgentImage;
             }
-            static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
+            static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir, string osVersion)
             {
+                // Use the scenario's Windows version: a second base OS image doesn't fit on the hosted agents' disk
                 var buildArgs = new Dictionary<string, string>();
+                if (osVersion.Contains("2025"))
+                {
+                    buildArgs["BASE_IMAGE"] = WindowsTestAgentBaseImageLtsc2025;
+                }
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, WindowsTestAgentDockerfile, WindowsTestAgentImage, buildArgs, null);
             }
         }
