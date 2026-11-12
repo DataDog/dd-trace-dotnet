@@ -171,7 +171,7 @@ partial class Build : NukeBuild
                 var scheduledDefaultBranch = Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false");
                 if (!scheduledDefaultBranch && !IsGitBaseBranch(stageBaseBranch))
                 {
-                    var selection = CiStageSelection.Select(GetGitChangedFiles(stageBaseBranch));
+                    var selection = CiStageSelection.Select(GetGitChangedFiles(stageBaseBranch, includeRenameSources: true));
                     skipTracerOnlyStages = selection.SkipTracerOnlyStages;
                     libdatadogChanged = selection.LibdatadogChanged;
                 }
@@ -991,11 +991,12 @@ partial class Build : NukeBuild
         }
     }
 
-    static string[] GetGitChangedFiles(string baseBranch)
+    static string[] GetGitChangedFiles(string baseBranch, bool includeRenameSources = false)
     {
         var baseCommit = GitTasks.Git($"merge-base {baseBranch} HEAD").First().Text;
+        var renameOption = includeRenameSources ? " --no-renames" : string.Empty;
         return GitTasks
-              .Git($"diff --name-only \"{baseCommit}\"")
+              .Git($"diff --name-only{renameOption} \"{baseCommit}\"")
               .Select(output => output.Text)
               .ToArray();
     }

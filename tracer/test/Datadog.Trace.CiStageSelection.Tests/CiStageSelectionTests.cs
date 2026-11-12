@@ -104,6 +104,15 @@ namespace Datadog.Trace.CiStageSelectionTests
                 libdatadogChanged: false);
         }
 
+        [Fact]
+        public void TracerFileMovedIntoProfiler()
+        {
+            AssertSelection(
+                ["tracer/src/Datadog.Trace/Foo.cs", "profiler/src/Foo.cs"],
+                skipTracerOnlyStages: false,
+                libdatadogChanged: false);
+        }
+
         private static void AssertSelection(string[] changedPaths, bool skipTracerOnlyStages, bool libdatadogChanged)
         {
             var result = CiStageSelection.Select(changedPaths);
