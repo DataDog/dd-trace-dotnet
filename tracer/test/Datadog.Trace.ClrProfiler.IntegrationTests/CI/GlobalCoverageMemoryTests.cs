@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -291,17 +292,32 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         process.StartInfo.Environment[ConfigurationKeys.DebugEnabled] = "1";
         process.StartInfo.Environment[ConfigurationKeys.LogDirectory] = logDirectory;
         process.Start().Should().BeTrue();
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
+
+        // ProcessHelper's buffers may still be changing when Drain times out. Keep thread-safe
+        // snapshots of complete lines in case a descendant keeps a redirected pipe open.
+        var outputLines = new ConcurrentQueue<string>();
+        var errorLines = new ConcurrentQueue<string>();
+        using var processHelper = new ProcessHelper(process, outputLines.Enqueue, errorLines.Enqueue);
         var timedOut = !process.WaitForExit((int)TimeSpan.FromMinutes(20).TotalMilliseconds);
         if (timedOut)
         {
-            process.Kill(entireProcessTree: true);
-            process.WaitForExit();
+            try
+            {
+                process.Kill(entireProcessTree: true);
+                if (!process.WaitForExit(5_000))
+                {
+                    _output.WriteLine("The runner did not exit within 5 seconds after termination was requested.");
+                }
+            }
+            catch (Exception exception)
+            {
+                _output.WriteLine($"Could not terminate the timed-out runner: {exception}");
+            }
         }
 
-        var output = outputTask.GetAwaiter().GetResult();
-        var error = errorTask.GetAwaiter().GetResult();
+        var outputDrained = processHelper.Drain(5_000);
+        var output = string.Join(Environment.NewLine, outputLines);
+        var error = string.Join(Environment.NewLine, errorLines);
         File.WriteAllText(Path.Combine(logDirectory, "runner-stdout.txt"), output);
         File.WriteAllText(Path.Combine(logDirectory, "runner-stderr.txt"), error);
         _output.WriteLine(output);
@@ -313,6 +329,11 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         if (timedOut)
         {
             throw new TimeoutException("The dd-trace CI run memory test exceeded 20 minutes.");
+        }
+
+        if (!outputDrained)
+        {
+            throw new TimeoutException("Timed out draining the dd-trace CI run memory test output streams. Captured output may be incomplete.");
         }
 
         return new ProcessResult(process.ExitCode, output, error);
