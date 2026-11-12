@@ -88,6 +88,8 @@ steps:
       done
     }
 
+    # Besides the test logger, tracer/build/_build/Build.Steps.cs (IsAzurePipelineEnvironment) relies on
+    # DD_LOGGER_TF_BUILD and DD_LOGGER_BUILD_BUILDID to detect CI inside the container (e.g. DuckType AOT gates).
     docker_run_with_retry \
     docker run --rm \
         --cap-add=SYS_PTRACE \
