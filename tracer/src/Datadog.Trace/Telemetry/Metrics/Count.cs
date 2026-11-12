@@ -389,5 +389,11 @@ internal enum Count
 
     /// <summary>Unexpected hook errors isolated from customer evaluations.</summary>
     [TelemetryMetric("flagevaluation.hook.errors", isCommon: true)] FlagEvaluationHookErrors,
+
+    /// <summary>Flag selections the SDK did not send, once per process per reason.</summary>
+    [TelemetryMetric<MetricTags.FlagSelectionDroppedReason>("flag_selection.dropped", isCommon: true)] FlagSelectionDropped,
+
+    /// <summary>Flag selections the server ignored, once per process per reason.</summary>
+    [TelemetryMetric<MetricTags.FlagSelectionIgnoredReason>("flag_selection.ignored", isCommon: true)] FlagSelectionIgnored,
 #endregion
 }

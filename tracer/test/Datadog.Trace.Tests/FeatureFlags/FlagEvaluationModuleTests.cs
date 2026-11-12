@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
@@ -508,7 +509,13 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
 
         public int Disposed { get; private set; }
 
+        public bool OmitsFlagSelection => false;
+
         public void Start() => Started++;
+
+        public void UpdateFlagSelection(FlagSelection selection)
+        {
+        }
 
         public void Dispose() => Disposed++;
     }

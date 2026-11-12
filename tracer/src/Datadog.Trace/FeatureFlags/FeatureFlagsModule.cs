@@ -68,12 +68,22 @@ namespace Datadog.Trace.FeatureFlags
         private readonly Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?> _agentlessSourceFactory;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
-        private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly FlagSelectionDiagnostics _flagSelectionDiagnostics;
         private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
         // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
         private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<ExposureEvent>> _deferredExposures = new();
+
+        // Replaced, under _handlerLock, when a new claim selects other flags than the held configuration
+        // was loaded for, so the provider that made the claim waits for configuration of its own.
+        private TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Guarded by _handlerLock: the selection readiness waits for, and the one the held configuration
+        // was requested with. Null for the Remote Configuration source, which never sends a selection.
+        private FlagSelection? _awaitedFlagSelection;
+        private FlagSelection? _loadedFlagSelection;
+
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -98,22 +108,30 @@ namespace Datadog.Trace.FeatureFlags
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
+        private FlagSelection _claimedFlagSelection = FlagSelection.AllFlags;
+        private int _flagSelectionClaims;
+
+        // Providers whose selection equals the claimed one, constructed before the source existed:
+        // whether the request URL is too long with it is only known once the source is created.
+        private int _flagSelectionClaimsBeforeSource;
 
         internal FeatureFlagsModule(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
             IDiscoveryService? discoveryService = null,
-            IDatadogLogger? logger = null)
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
         {
             _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+            _flagSelectionDiagnostics = flagSelectionDiagnostics ?? FlagSelectionDiagnostics.Shared;
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _tracerSettings = settings;
             _agentlessSourceFactory = agentlessSourceFactory
-                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration, module._log));
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyAgentlessConfiguration, module._log, module._claimedFlagSelection, module._flagSelectionDiagnostics));
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
 
@@ -127,7 +145,7 @@ namespace Datadog.Trace.FeatureFlags
         /// Gets a task that completes once configuration has been applied for the first time.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal Task FirstConfigReceived => _firstConfigReceived.Task;
+        internal Task FirstConfigReceived => Volatile.Read(ref _firstConfigReceived).Task;
 
         [TestingAndPrivateOnly]
         internal FeatureFlagsSettings Settings => _settings;
@@ -142,12 +160,26 @@ namespace Datadog.Trace.FeatureFlags
 
         internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
 
+        /// <summary>Gets the flag selection the agentless source requests.</summary>
+        [TestingAndPrivateOnly]
+        internal FlagSelection ClaimedFlagSelection
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _claimedFlagSelection;
+                }
+            }
+        }
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
             IDiscoveryService? discoveryService = null,
-            IDatadogLogger? logger = null)
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
@@ -166,7 +198,7 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger, flagSelectionDiagnostics);
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
@@ -260,6 +292,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             IFeatureFlagsDeliverySource? sourceToStart = null;
+            int claimsBeforeSource;
 
             lock (_stateLock)
             {
@@ -267,6 +300,9 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     return;
                 }
+
+                claimsBeforeSource = _flagSelectionClaimsBeforeSource;
+                _flagSelectionClaimsBeforeSource = 0;
 
                 SubscribeToEvaluationDelivery();
                 Volatile.Write(ref _activated, true);
@@ -288,6 +324,14 @@ namespace Datadog.Trace.FeatureFlags
                         sourceToStart = source;
                         _deliveryStarted = true;
                         break;
+                }
+            }
+
+            if (sourceToStart?.OmitsFlagSelection == true)
+            {
+                for (var i = 0; i < claimsBeforeSource; i++)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
                 }
             }
 
@@ -327,7 +371,8 @@ namespace Datadog.Trace.FeatureFlags
             _log.Debug<FeatureFlagsSource, double>("Feature Flags: provider initialization started (source={Source}, timeout={TimeoutMs}ms)", _settings.Source, _settings.InitializationTimeout.TotalMilliseconds);
             Activate();
 
-            if (_firstConfigReceived.Task.IsCompleted)
+            var firstConfigReceived = Volatile.Read(ref _firstConfigReceived).Task;
+            if (firstConfigReceived.IsCompleted)
             {
                 _log.Debug("Feature Flags: provider initialized successfully (configuration already received)");
                 return;
@@ -370,13 +415,13 @@ namespace Datadog.Trace.FeatureFlags
             // milliseconds does not leave a timer armed for the rest of the timeout.
             using var timeoutCancellation = new CancellationTokenSource();
             var timeout = Task.Delay(_settings.InitializationTimeout, timeoutCancellation.Token);
-            var completed = await Task.WhenAny(_firstConfigReceived.Task, timeout, cancelled.Task).ConfigureAwait(false);
+            var completed = await Task.WhenAny(firstConfigReceived, timeout, cancelled.Task).ConfigureAwait(false);
 
             if (completed != timeout)
             {
                 timeoutCancellation.Cancel();
 
-                if (completed == _firstConfigReceived.Task)
+                if (completed == firstConfigReceived)
                 {
                     _log.Debug("Feature Flags: provider initialized successfully");
                 }
@@ -389,9 +434,139 @@ namespace Datadog.Trace.FeatureFlags
             {
                 // Lets the configuration that eventually arrives report the recovery this warning promises.
                 Interlocked.Exchange(ref _initializationTimedOut, 1);
-                _log.Warning<double>(
-                    "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
-                    _settings.InitializationTimeout.TotalMilliseconds);
+                if (HasConfiguration)
+                {
+                    // Only a configuration loaded for a released, different flag selection is held here.
+                    _log.Warning<double>(
+                        "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use the configuration loaded for the previous flag selection until it does.",
+                        _settings.InitializationTimeout.TotalMilliseconds);
+                }
+                else
+                {
+                    _log.Warning<double>(
+                        "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
+                        _settings.InitializationTimeout.TotalMilliseconds);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Claims the flag selection a provider was constructed with, or every flag when it has none.
+        /// One agentless source serves every provider in the process, so a provider constructed while
+        /// another one holds the claim uses the claimed selection.
+        /// Called from the provider's constructor rather than from its initialization, because an
+        /// evaluation before initialization also activates delivery.
+        /// </summary>
+        internal void SetFlagSelection(string?[]? tags, string?[]? keyPatterns)
+        {
+            try
+            {
+                var selection = FlagSelection.Create(tags, keyPatterns);
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig)
+                {
+                    if (selection.IsSet)
+                    {
+                        _flagSelectionDiagnostics.WarnRemoteConfig(_log);
+                    }
+
+                    return;
+                }
+
+                FlagSelection claimed;
+                IFeatureFlagsDeliverySource? source;
+                lock (_stateLock)
+                {
+                    if (_disposed)
+                    {
+                        return;
+                    }
+
+                    if (_flagSelectionClaims++ == 0)
+                    {
+                        _claimedFlagSelection = selection;
+                        _flagSelectionClaimsBeforeSource = 0;
+                        AwaitConfigurationFor(selection);
+
+                        // Under the lock, so a concurrent activation cannot start the source with the previous claim.
+                        _agentlessSource?.UpdateFlagSelection(selection);
+                    }
+
+                    claimed = _claimedFlagSelection;
+                    source = _agentlessSource;
+                    if (source is null && selection.Equals(claimed))
+                    {
+                        _flagSelectionClaimsBeforeSource++;
+                    }
+                }
+
+                if (!selection.Equals(claimed))
+                {
+                    // A different selection is not used: it reports its own drop, and warns only if it would
+                    // load other flags, since a dropped selection and no selection both load every flag.
+                    if (selection.DropReason is { } ownReason)
+                    {
+                        _flagSelectionDiagnostics.ReportDropped(_log, ownReason);
+                    }
+
+                    var loadedFlags = claimed.HasValues && source?.OmitsFlagSelection != true ? claimed : FlagSelection.AllFlags;
+                    if (!(selection.HasValues ? selection : FlagSelection.AllFlags).Equals(loadedFlags))
+                    {
+                        _flagSelectionDiagnostics.WarnDifferentSelection(_log);
+                    }
+
+                    return;
+                }
+
+                // Logged for every provider whose selection is not sent.
+                if (claimed.DropReason is { } reason)
+                {
+                    _flagSelectionDiagnostics.ReportDropped(_log, reason);
+                }
+                else if (source?.OmitsFlagSelection == true)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Feature Flags: the flag selection could not be applied");
+            }
+        }
+
+        /// <summary>
+        /// Releases a claim when its provider shuts down. Once none is left, the next provider
+        /// constructed claims its own selection.
+        /// </summary>
+        internal void ReleaseFlagSelection()
+        {
+            lock (_stateLock)
+            {
+                if (_flagSelectionClaims > 0)
+                {
+                    _flagSelectionClaims--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Makes readiness wait for configuration requested with <paramref name="selection"/>. When the
+        /// held configuration was loaded for a released, different selection, the provider that made the
+        /// claim waits for its own configuration rather than becoming ready on the previous one.
+        /// Callers hold <see cref="_stateLock"/>, and call this before the source requests the new selection,
+        /// so a response to that request can never be discarded as one for the previous selection.
+        /// </summary>
+        private void AwaitConfigurationFor(FlagSelection selection)
+        {
+            lock (_handlerLock)
+            {
+                _awaitedFlagSelection = selection;
+                if (Volatile.Read(ref _evaluator) is not null
+                 && !selection.Equals(_loadedFlagSelection)
+                 && _firstConfigReceived.Task.IsCompleted)
+                {
+                    Volatile.Write(ref _firstConfigReceived, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+                    Interlocked.Exchange(ref _initializationTimedOut, 0);
+                }
             }
         }
 
@@ -464,6 +639,14 @@ namespace Datadog.Trace.FeatureFlags
 
         [TestingAndPrivateOnly]
         internal bool ApplyConfiguration(ServerConfiguration configuration)
+            => ApplyAgentlessConfiguration(configuration, requestedSelection: null) == ConfigurationApplyResult.Applied;
+
+        /// <summary>
+        /// Installs a configuration that the agentless source requested with <paramref name="requestedSelection"/>.
+        /// A response to a request made before the current claim is discarded: installing it would make a
+        /// provider that claimed other flags ready on the previous selection's configuration.
+        /// </summary>
+        internal ConfigurationApplyResult ApplyAgentlessConfiguration(ServerConfiguration configuration, FlagSelection? requestedSelection)
         {
             FeatureFlagsEvaluator? previous;
             bool isFirst;
@@ -472,9 +655,16 @@ namespace Datadog.Trace.FeatureFlags
                 var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled);
                 lock (_handlerLock)
                 {
+                    if (requestedSelection is not null && _awaitedFlagSelection is { } awaited && !requestedSelection.Equals(awaited))
+                    {
+                        _log.Debug("Feature Flags: discarded a configuration requested for a previous flag selection");
+                        return ConfigurationApplyResult.Superseded;
+                    }
+
                     // Keep first-configuration detection with installation so concurrent updates
                     // cannot make the first configuration look like recovery from a withdrawal.
                     previous = Interlocked.Exchange(ref _evaluator, evaluator);
+                    _loadedFlagSelection = requestedSelection ?? _awaitedFlagSelection;
                     isFirst = _firstConfigReceived.TrySetResult(true);
                 }
             }
@@ -484,7 +674,7 @@ namespace Datadog.Trace.FeatureFlags
                 _log.Debug<string>(
                     "Feature Flags: configuration was not applied; {State}",
                     HasConfiguration ? "the previously applied configuration remains active" : "no configuration is active, so evaluations return their default values");
-                return false;
+                return ConfigurationApplyResult.Failed;
             }
 
             // Reported once the evaluator is installed and readiness is signalled, so neither depends
@@ -501,7 +691,7 @@ namespace Datadog.Trace.FeatureFlags
 
             NotifyNewConfiguration("ApplyConfiguration");
 
-            return true;
+            return ConfigurationApplyResult.Applied;
         }
 
         private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)

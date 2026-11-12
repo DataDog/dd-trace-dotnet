@@ -39,6 +39,12 @@ public class FeatureFlagsSdkInstrumentationTests
         Integrations().Select(row => (string)row[0]).Should().Contain(["OpenFeatureSdkEvaluateDeferredIntegration", "OpenFeatureSdkCommitExposureIntegration", "OpenFeatureSdkCanDeferExposuresIntegration"]);
     }
 
+    [Fact]
+    public void TheFlagSelectionStubsAreInstrumented()
+    {
+        Integrations().Select(row => (string)row[0]).Should().Contain(["OpenFeatureSdkSetFlagSelectionIntegration", "OpenFeatureSdkReleaseFlagSelectionIntegration"]);
+    }
+
     [Theory]
     [MemberData(nameof(Integrations))]
     public void EachIntegrationMatchesItsStubAndBinds(string integrationName)

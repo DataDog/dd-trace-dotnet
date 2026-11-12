@@ -83,6 +83,9 @@ namespace Datadog.Trace.Agent.Transports
             return null;
         }
 
+        internal string? GetCombinedHeader(string headerName)
+            => _response.Headers.TryGetValues(headerName, out var headers) ? string.Join(",", headers) : null;
+
         public Task<Stream> GetStreamAsync()
         {
             return _response.Content.ReadAsStreamAsync();

@@ -151,6 +151,14 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
 
         if (source is FileInfo file)
         {
+            // The fixture repository's own documentation, at any depth: instructions for working in that
+            // repository, not fixtures, and an AGENTS.md would steer agents working in this one.
+            var filesToExclude = new[] { "AGENTS.md", "CONTRIBUTING.md", "README.md" };
+            if (filesToExclude.Contains(file.Name))
+            {
+                return;
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             file.CopyTo(destination, overwrite: true);
             return;
@@ -197,6 +205,25 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
         if (fixtureCount == 0)
         {
             throw new InvalidOperationException("No FFE fixture test cases found");
+        }
+
+        var selectionVectorsPath = snapshot / "flag-selection" / "selection-vectors.json";
+        if (!File.Exists(selectionVectorsPath))
+        {
+            throw new InvalidOperationException("FFE fixture repository does not contain flag-selection/selection-vectors.json");
+        }
+
+        using (var vectors = JsonDocument.Parse(File.ReadAllText(selectionVectorsPath)))
+        {
+            if (vectors.RootElement.ValueKind != JsonValueKind.Object
+             || !vectors.RootElement.TryGetProperty("cases", out var selectionCases)
+             || selectionCases.ValueKind != JsonValueKind.Array
+             || selectionCases.GetArrayLength() == 0)
+            {
+                throw new InvalidOperationException($"{selectionVectorsPath} must contain a non-empty JSON array of cases");
+            }
+
+            fixtureCount += selectionCases.GetArrayLength();
         }
 
         return fixtureCount;
