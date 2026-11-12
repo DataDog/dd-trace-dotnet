@@ -13,6 +13,7 @@ using Xunit;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Trait("Area", "CIVisibility")]
+[Trait("RunOnWindows", "True")]
 public class GlobalCoverageMemoryDiagnosticsTests
 {
     [Theory]
