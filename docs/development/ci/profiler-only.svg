@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="942" viewBox="0 0 1280 942">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="640.0" y="32" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="700">Profiler-only diff</text>
+<line x1="640.0" y1="108" x2="640.0" y2="148" stroke="#868e96" stroke-width="2"/>
+<line x1="640.0" y1="220" x2="221.33333333333334" y2="270" stroke="#868e96" stroke-width="2"/>
+<line x1="221.33333333333334" y1="500" x2="640.0" y2="550" stroke="#868e96" stroke-width="2"/>
+<line x1="640.0" y1="220" x2="640.0" y2="270" stroke="#868e96" stroke-width="2"/>
+<line x1="640.0" y1="500" x2="640.0" y2="550" stroke="#868e96" stroke-width="2"/>
+<line x1="640.0" y1="220" x2="1058.6666666666667" y2="270" stroke="#868e96" stroke-width="2"/>
+<line x1="1058.6666666666667" y1="500" x2="640.0" y2="550" stroke="#868e96" stroke-width="2"/>
+<rect x="480.0" y="56" width="320" height="52" rx="8" fill="#fff3bf" stroke="#e67700" stroke-width="2"/>
+<text x="492.0" y="78" font-family="sans-serif" font-size="14" font-weight="700">merge_commit_id</text>
+<rect x="440.0" y="148" width="400" height="72" rx="8" fill="#fff3bf" stroke="#e67700" stroke-width="2"/>
+<text x="452.0" y="170" font-family="sans-serif" font-size="14" font-weight="700">generate_variables</text>
+<text x="452.0" y="194" font-family="sans-serif" font-size="12">SkipTracerOnlyStages, LibdatadogChanged</text>
+<rect x="24.0" y="270" width="394.6666666666667" height="230" rx="8" fill="#ffe3e3" stroke="#c92a2a" stroke-width="2"/>
+<text x="36.0" y="292" font-family="sans-serif" font-size="14" font-weight="700">Tracer integration stages — skipped</text>
+<text x="36.0" y="316" font-family="sans-serif" font-size="12">integration_tests_windows</text>
+<text x="36.0" y="332" font-family="sans-serif" font-size="12">integration_tests_windows_iis</text>
+<text x="36.0" y="348" font-family="sans-serif" font-size="12">integration_tests_azure_functions</text>
+<text x="36.0" y="364" font-family="sans-serif" font-size="12">msi_integration_tests_windows</text>
+<text x="36.0" y="380" font-family="sans-serif" font-size="12">integration_tests_linux</text>
+<text x="36.0" y="396" font-family="sans-serif" font-size="12">integration_tests_arm64</text>
+<rect x="442.6666666666667" y="270" width="394.6666666666667" height="230" rx="8" fill="#d3f9d8" stroke="#2b8a3e" stroke-width="2"/>
+<text x="454.6666666666667" y="292" font-family="sans-serif" font-size="14" font-weight="700">Profiler integration stages — run</text>
+<text x="454.6666666666667" y="316" font-family="sans-serif" font-size="12">profiler_integration_tests_windows</text>
+<text x="454.6666666666667" y="332" font-family="sans-serif" font-size="12">profiler_integration_tests_linux</text>
+<text x="454.6666666666667" y="348" font-family="sans-serif" font-size="12">profiler_integration_tests_arm64</text>
+<rect x="861.3333333333334" y="270" width="394.6666666666667" height="230" rx="8" fill="#ffe3e3" stroke="#c92a2a" stroke-width="2"/>
+<text x="873.3333333333334" y="292" font-family="sans-serif" font-size="14" font-weight="700">Extra tracer stages — skipped</text>
+<text x="873.3333333333334" y="316" font-family="sans-serif" font-size="12">unit_tests_windows</text>
+<text x="873.3333333333334" y="332" font-family="sans-serif" font-size="12">unit_tests_macos</text>
+<text x="873.3333333333334" y="348" font-family="sans-serif" font-size="12">unit_tests_linux</text>
+<text x="873.3333333333334" y="364" font-family="sans-serif" font-size="12">unit_tests_arm64</text>
+<text x="873.3333333333334" y="380" font-family="sans-serif" font-size="12">static_analysis_checks_tracer</text>
+<text x="873.3333333333334" y="396" font-family="sans-serif" font-size="12">build_samples</text>
+<text x="873.3333333333334" y="412" font-family="sans-serif" font-size="12">build_samples_macos</text>
+<text x="873.3333333333334" y="428" font-family="sans-serif" font-size="12">debug_builds</text>
+<rect x="460.0" y="550" width="360" height="52" rx="8" fill="#fff3bf" stroke="#e67700" stroke-width="2"/>
+<text x="472.0" y="572" font-family="sans-serif" font-size="14" font-weight="700">azure_pipeline_complete</text>
+<text x="24" y="658" font-family="sans-serif" font-size="14" font-weight="700">Always run</text>
+<rect x="24" y="676" width="604.0" height="130" rx="8" fill="#d0ebff" stroke="#1864ab" stroke-width="2"/>
+<text x="36" y="698" font-family="sans-serif" font-size="14" font-weight="700">Build and package stages — run</text>
+<text x="36" y="722" font-family="sans-serif" font-size="12">build_windows_tracer, build_linux_tracer, build_arm64_tracer</text>
+<text x="36" y="738" font-family="sans-serif" font-size="12">build_*_universal, build_dd_dotnet_*, build_*_profiler</text>
+<text x="36" y="754" font-family="sans-serif" font-size="12">package_*</text>
+<rect x="652.0" y="676" width="604.0" height="130" rx="8" fill="#d0ebff" stroke="#1864ab" stroke-width="2"/>
+<text x="664.0" y="698" font-family="sans-serif" font-size="14" font-weight="700">Kept: a later stage downloads the artifact — run</text>
+<text x="664.0" y="722" font-family="sans-serif" font-size="12">build_macos → dotnet_tool</text>
+<text x="664.0" y="738" font-family="sans-serif" font-size="12">build_linux_tracer_r2r and build_arm64_tracer_r2r</text>
+<text x="664.0" y="754" font-family="sans-serif" font-size="12">→ store_serverless_artifacts → upload_to_azure</text>
+<rect x="24" y="826" width="1232" height="84" rx="8" fill="#fff9db" stroke="#e67700" stroke-width="2"/>
+<text x="36" y="848" font-family="sans-serif" font-size="14" font-weight="700">Footnote</text>
+<text x="36" y="872" font-family="sans-serif" font-size="12">A libdatadog pin does not start asan_profiler_tests, ubsan_profiler_tests, tsan_profiler_tests,</text>
+<text x="36" y="888" font-family="sans-serif" font-size="12">static_analysis_tests_profiler, or exploration_tests_*. A profiler/ change still starts those, because</text>
+<text x="36" y="904" font-family="sans-serif" font-size="12">isProfilerChanged stays as it is today.</text>
+</svg>
