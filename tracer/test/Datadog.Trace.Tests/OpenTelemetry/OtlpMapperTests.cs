@@ -215,6 +215,33 @@ public class OtlpMapperTests
         attributes.Should().NotContain(kv => kv.Key == "span.type");
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void SecurityReportsTakePrecedenceOverCustomerTags(bool openTelemetrySemanticsEnabled)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        foreach (var key in new[] { "appsec", "iast", "_dd.stack" })
+        {
+            span.SetMetaStruct(key, [0x80]);
+        }
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+        var limit = attributes.Count;
+        attributes.Clear();
+        var traceContext = span.Context.TraceContext.Should().BeOfType<TraceContext>().Which;
+        for (var i = 0; i < 20; i++)
+        {
+            traceContext.Tags.SetTag($"trace.custom.{i}", "value");
+            span.SetTag($"span.custom.{i}", "value");
+        }
+
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit);
+
+        attributes.Should().HaveCount(limit);
+        attributes.FindAll(kv => kv.Value is byte[]).Should().HaveCount(3);
+    }
+
     [Fact]
     public void EmitAttributesFromSpan_EmitsStringTags()
     {
