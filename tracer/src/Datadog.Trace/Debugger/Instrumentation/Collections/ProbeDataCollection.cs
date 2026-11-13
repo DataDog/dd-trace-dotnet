@@ -45,8 +45,8 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// Tries to create a new <see cref="ProbeData"/> at <paramref name="index"/> and return it.
         /// </summary>
         /// <param name="index">The index of the probe inside <see cref="EverGrowingCollection{TPayload}.Items"/></param>
-        /// <param name="probeId">The id of the probe/></param>
-        /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
+        /// <param name="probeId">The id of the probe</param>
+        /// <returns>A reference to the probe data (either existed before or just created), or to <see cref="ProbeData.Empty"/> if it fails to create</returns>
         public ref ProbeData TryCreateProbeDataIfNotExists(int index, string probeId)
         {
             ref var probeData = ref TryGetProbeDataIndex(index, probeId);
