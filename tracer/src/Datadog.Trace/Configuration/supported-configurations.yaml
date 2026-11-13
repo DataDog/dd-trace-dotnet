@@ -708,6 +708,17 @@ supportedConfigurations:
     documentation: |-
       Enables data streams monitoring support
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsMonitoringEnabled"/>
+  DD_DATA_STREAMS_LEGACY_ENCODING_BEHAVIOR_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: DataStreamsMonitoring
+    const_name: LegacyEncodingBehaviorEnabled
+    documentation: |-
+      Configuration key for restoring the legacy double Base64 encoding of the Data Streams pathway context in SQS and SNS messages.
+      Enable while consumers still run a tracer version older than 3.55.0.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyEncodingBehaviorEnabled"/>
   DD_DATA_STREAMS_LEGACY_HEADERS:
   - implementation: A
     scope: managed
