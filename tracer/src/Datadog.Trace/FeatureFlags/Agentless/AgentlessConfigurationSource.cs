@@ -33,6 +33,9 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
 
+    // The Agent cuts a service to 100 bytes of UTF-8.
+    private const int MaxServiceLength = 100;
+
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan FirstRetryMax = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan SecondRetryMin = TimeSpan.FromSeconds(5);
@@ -56,13 +59,20 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
 
-    private readonly IDisposable? _environmentSubscription;
+    private readonly IDisposable? _settingsSubscription;
 
     // Written by the settings-change callback, read by the poll loop. The URI is stored rather than
     // the environment it carries, so it is only built when the environment changes. The environment
     // the URI sends travels with it, so a response is reported against the environment its own
     // request used, even when the setting changes while that request is in flight.
     private RequestTarget _requestTarget;
+
+    // The settings-change callback writes this value, and the poll loop reads it. It is null when
+    // requests send no DD-Service header.
+    private string? _service;
+
+    // The setting that gives _service. Only the constructor and the settings-change callback use it.
+    private string? _serviceSetting;
 
     // Only ever touched from the poll loop.
     private bool _hasApplied;
@@ -79,6 +89,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         TimeSpan pollInterval,
         Func<ServerConfiguration, bool> applyConfiguration,
         string? environment = null,
+        string? service = null,
         TracerSettings.SettingsManager? settingsManager = null,
         Func<TimeSpan, Task>? waitAsync = null,
         IDatadogLogger? logger = null)
@@ -90,15 +101,17 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         _applyConfiguration = applyConfiguration;
         _requestTarget = new RequestTarget(endpoint, environment);
         _waitAsync = waitAsync ?? Task.Delay;
+        UpdateService(service);
 
-        // Subscribed last, so every field the callback touches is already set. The environment is
-        // tracked rather than captured: customers can change it in code while the application runs,
-        // and flags are targeted per environment.
-        _environmentSubscription = settingsManager?.SubscribeToChanges(changes =>
+        // The source subscribes last, so the callback finds every field set. Code can change the
+        // environment and the service while the application runs, so the source tracks both. The CDN
+        // targets flags per environment and attributes usage per service.
+        _settingsSubscription = settingsManager?.SubscribeToChanges(changes =>
         {
             if (changes.UpdatedMutable is { } mutable)
             {
                 UpdateEnvironment(mutable.Environment);
+                UpdateService(mutable.DefaultServiceName);
             }
         });
     }
@@ -112,7 +125,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         FeatureFlagsSettings settings,
         TracerSettings.SettingsManager manager,
         Func<ServerConfiguration, bool> applyConfiguration,
-        IDatadogLogger? logger = null)
+        IDatadogLogger? logger = null,
+        IApiRequestFactory? requestFactory = null)
     {
         var log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
 
@@ -136,10 +150,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         return new AgentlessConfigurationSource(
             endpoint,
-            CreateRequestFactory(endpoint, settings),
+            requestFactory ?? CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
             applyConfiguration,
             manager.InitialMutableSettings.Environment,
+            manager.InitialMutableSettings.DefaultServiceName,
             manager,
             logger: log);
     }
@@ -162,6 +177,175 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, environment));
         _log.Debug<string>("Feature Flags: agentless configuration source now requests env={RequestedEnvironment}", requested ?? "none");
+    }
+
+    /// <summary>
+    /// Returns true when the value is not empty and has only printable ASCII (0x21 to 0x7E).
+    /// HttpClient refuses a header value that is not ASCII, so the request fails.
+    /// </summary>
+    private static bool IsAsciiHeaderValue(string value)
+    {
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (!char.IsBetween(c, '!', '~'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Returns the name APM shows for a service. <c>My Service</c> becomes <c>my_service</c>.
+    /// The result can be empty or not plain ASCII, such as <c>café-api</c>. Then no header is sent.
+    /// </summary>
+    /// <remarks>
+    /// This is a port of <c>NormalizeService</c> in the current Agent (pkg/trace/traceutil/normalize).
+    /// <c>NormalizerTraceProcessor.NormalizeService</c> follows an older Agent. That version removes
+    /// the characters before the first letter, so it changes <c>_svc</c> to <c>svc</c> and
+    /// <c>2fa-service</c> to <c>fa-service</c>. APM does not show these names.
+    /// </remarks>
+    internal static string CleanUpService(string service)
+    {
+        // Most names do not change. The method copies the name only when the result stops being a
+        // prefix of it.
+        char[]? cleaned = null;
+        var length = 0;
+        var bytes = 0;
+
+        // A run of replaced characters becomes one _ before the next kept character. At the end of
+        // the name, the run is removed.
+        var pending = false;
+
+        var i = 0;
+        while (i < service.Length)
+        {
+            var c = service[i];
+            var width = char.IsSurrogatePair(service, i) ? 2 : 1;
+
+            // The Agent first cuts the name to 100 bytes of UTF-8, and never splits a character.
+            // A lone surrogate is sent as U+FFFD, which has 3 bytes.
+            bytes += c switch
+            {
+                < '\u0080' => 1,
+                < '\u0800' => 2,
+                _ => width == 2 ? 4 : 3,
+            };
+
+            if (bytes > MaxServiceLength)
+            {
+                break;
+            }
+
+            bool kept;
+            if (c < 0x80)
+            {
+                // Only ASCII letters are lowercased. The Agent also lowercases most other letters.
+                // That has no effect on the header, because a name with a non-ASCII character is
+                // not sent.
+                if (c is >= 'A' and <= 'Z')
+                {
+                    c = (char)(c + ('a' - 'A'));
+                }
+
+                kept = c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or ':' or '.' or '/' or '-';
+            }
+            else
+            {
+                kept = char.IsLetter(service, i) || char.IsDigit(service, i);
+            }
+
+            if (kept)
+            {
+                if (pending)
+                {
+                    Append(service, ref cleaned, ref length, '_');
+                    pending = false;
+                }
+
+                Append(service, ref cleaned, ref length, c);
+                if (width == 2)
+                {
+                    Append(service, ref cleaned, ref length, service[i + 1]);
+                }
+            }
+            else
+            {
+                pending = true;
+            }
+
+            i += width;
+        }
+
+        if (cleaned is not null)
+        {
+            return new string(cleaned, 0, length);
+        }
+
+        return length == service.Length ? service : service.Substring(0, length);
+
+        // Adds a character to the result. While the result is a prefix of the name, it only counts
+        // the character. Each character of the result comes from at least one character of the name
+        // before the cut, so the result has at most MaxServiceLength characters.
+        static void Append(string service, ref char[]? cleaned, ref int length, char value)
+        {
+            if (cleaned is null)
+            {
+                if (length < service.Length && service[length] == value)
+                {
+                    length++;
+                    return;
+                }
+
+                cleaned = new char[Math.Min(service.Length, MaxServiceLength)];
+                service.CopyTo(0, cleaned, 0, length);
+            }
+
+            cleaned[length++] = value;
+        }
+    }
+
+    /// <summary>
+    /// Sets the service to send as DD-Service. The poll loop uses it on its next request.
+    /// </summary>
+    private void UpdateService(string? service)
+    {
+        // Every settings change calls this method. It does work only when the service setting
+        // changes, so it logs a rejected name only once.
+        if (string.Equals(_serviceSetting, service, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _serviceSetting = service;
+
+        string? sent = null;
+        if (!StringUtil.IsNullOrEmpty(service))
+        {
+            // The header uses the name APM shows, so usage and APM name the same service. For
+            // example, My Service is sent as my_service. The tracer's own service does not change.
+            var shown = CleanUpService(service);
+
+            // The CDN decides which names it attributes usage to. The source skips only an empty
+            // name and a name that HttpClient refuses, such as café-api. A refused name makes every
+            // poll fail. The source never sends a different name, because APM does not show it.
+            if (IsAsciiHeaderValue(shown))
+            {
+                sent = shown;
+            }
+            else
+            {
+                _log.Debug<string>("Feature Flags: service {Service} has no ASCII APM name; DD-Service header not sent", service);
+            }
+        }
+
+        Volatile.Write(ref _service, sent);
     }
 
     /// <summary>
@@ -248,7 +432,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         try
         {
-            _environmentSubscription?.Dispose();
+            _settingsSubscription?.Dispose();
         }
         catch (Exception ex)
         {
@@ -354,6 +538,14 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             _etagUri = uri;
 
             var request = _requestFactory.Create(uri);
+
+            // The header lets the CDN attribute the usage of this request to the service. The source
+            // reads the service for each request, because code can change it after startup.
+            if (Volatile.Read(ref _service) is { } service)
+            {
+                request.AddHeader("DD-Service", service);
+            }
+
             if (_etag is { } etag)
             {
                 request.AddHeader("If-None-Match", etag);

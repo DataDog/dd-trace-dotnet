@@ -14,7 +14,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -37,6 +40,61 @@ public class AgentlessConfigurationSourceTests
         """;
 
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
+
+    private const string ServiceRejection = "DD-Service header not sent";
+
+    // Each row is a service and its DD-Service header. Null means that the request has no header.
+    // The values come from NormalizeService in the Agent v0.82.3. NormalizeService gives the name
+    // APM shows. The source sends that name only when it is ASCII.
+    public static TheoryData<string, string?> ServiceHeaders => new()
+    {
+        { "checkout", "checkout" },
+        { "My Service", "my_service" },
+        { "My-API", "my-api" },
+        { "UPPER", "upper" },
+        { "bad\nvalue", "bad_value" },
+        { "a\tb", "a_b" },
+        { "a  b!", "a_b" },
+        { "svc ", "svc" },
+        { " svc", "_svc" },
+        { "a_", "a" },
+        { "svc-", "svc-" },
+        { "a..b", "a..b" },
+        { "2fa-service", "2fa-service" },
+        { "9lives", "9lives" },
+        { "unnamed-service", "unnamed-service" },
+        { "svc_name.v2:api/edge-1", "svc_name.v2:api/edge-1" },
+        { "my__service", "my_service" },
+        { "a🐶b", "a_b" },
+
+        // The tracer infers this name for an IIS application in the default site.
+        { "Default Web Site/Shop", "default_web_site/shop" },
+
+        // The Agent cuts a service to 100 bytes of UTF-8, and never splits a character.
+        { "a" + new string('b', 99), "a" + new string('b', 99) },
+        { "a" + new string('b', 100), "a" + new string('b', 99) },
+        { new string('a', 100) + " b", new string('a', 100) },
+        { new string('a', 99) + "\u00e9", new string('a', 99) },
+
+        // The source sends these names as APM shows them. The CDN decides if it accepts them.
+        { "_svc", "_svc" },
+        { "-svc", "-svc" },
+        { ".svc", ".svc" },
+        { ":svc", ":svc" },
+        { "-", "-" },
+
+        // APM shows these names, but they are not ASCII. HttpClient refuses them.
+        { "caf\u00e9-api", null },
+        { "Caf\u00e9", null },
+        { "支付", null },
+        { "\u0130stanbul", null },
+        { new string('\u00e9', 60), null },
+
+        // Nothing is left of these names.
+        { "___", null },
+        { string.Empty, null },
+        { "   ", null },
+    };
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -99,6 +157,150 @@ public class AgentlessConfigurationSourceTests
 
         factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=staging"));
         factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
+    }
+
+    [Fact]
+    public async Task SendsTheServiceOnEveryPoll()
+    {
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } }),
+            uri => new TestApiRequest(uri, statusCode: 304, responseContent: "{}"));
+        using var source = CreateSource(factory, [], service: "checkout");
+
+        await source.PollAsync();
+        await source.PollAsync();
+
+        factory.RequestsSent.Should().HaveCount(2);
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", "checkout");
+        factory.RequestsSent[1].ExtraHeaders.Should().Contain("If-None-Match", "\"ufc-v1\"").And.Contain("DD-Service", "checkout");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task OmitsTheServiceWhenThereIsNone(string? service)
+    {
+        var logger = CreateDebugLogger();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, [], service: service, logger: logger.Object);
+
+        await source.PollAsync();
+
+        factory.RequestsSent[0].ExtraHeaders.Should().NotContainKey("DD-Service");
+        RejectedServices(logger).Should().BeEmpty();
+    }
+
+    [Theory]
+    [MemberData(nameof(ServiceHeaders))]
+    public async Task SendsTheNameApmShowsOrNoHeader(string service, string? header)
+    {
+        var logger = CreateDebugLogger();
+        var applied = new List<ServerConfiguration>();
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body),
+            uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, applied, service: service, logger: logger.Object);
+
+        await source.PollAsync();
+        await source.PollAsync();
+
+        // Polling is the same with or without the header.
+        factory.RequestsSent.Should().HaveCount(2);
+        applied.Should().HaveCount(2);
+
+        if (header is not null)
+        {
+            factory.RequestsSent.Should().AllSatisfy(r => r.ExtraHeaders.Should().Contain("DD-Service", header));
+            RejectedServices(logger).Should().BeEmpty();
+        }
+        else
+        {
+            factory.RequestsSent.Should().AllSatisfy(r => r.ExtraHeaders.Should().NotContainKey("DD-Service"));
+
+            // The source logs each name that it does not send. It logs the name once, not for each
+            // poll. An empty service has no name to log.
+            RejectedServices(logger).Should().Equal(service.Length == 0 ? Array.Empty<object?>() : new object?[] { service });
+        }
+    }
+
+    // The customer sets DD_SERVICE, and the test checks the request that goes to the CDN.
+    [Theory]
+    [InlineData("My Service", "my_service")]
+    [InlineData("Default Web Site/Shop", "default_web_site/shop")]
+    [InlineData("_svc", "_svc")]
+    [InlineData("caf\u00e9-api", null)]
+    public async Task SendsTheNameApmShowsForTheConfiguredServiceAndKeepsTheTracerService(string service, string? header)
+    {
+        var logger = CreateDebugLogger();
+        var settings = CreateTracerSettings(service);
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateConfiguredSource(settings, factory, logger.Object);
+
+        await source.PollAsync();
+
+        // The source sends the request also when the name is not ASCII. That request has no header.
+        var headers = factory.RequestsSent.Should().ContainSingle().Subject.ExtraHeaders;
+        if (header is not null)
+        {
+            headers.Should().Contain("DD-Service", header);
+            RejectedServices(logger).Should().BeEmpty();
+        }
+        else
+        {
+            headers.Should().NotContainKey("DD-Service");
+            RejectedServices(logger).Should().Equal(service);
+        }
+
+        // Only the header changes. Spans, logs and metrics keep the service as configured.
+        settings.Manager.InitialMutableSettings.ServiceName.Should().Be(service);
+        settings.Manager.InitialMutableSettings.DefaultServiceName.Should().Be(service);
+    }
+
+    [Fact]
+    public async Task SendsTheConfiguredServiceAndFollowsChangesMadeInCode()
+    {
+        var settings = CreateTracerSettings(service: "checkout");
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body),
+            uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateConfiguredSource(settings, factory);
+
+        await source.PollAsync();
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "Payments API");
+        await source.PollAsync();
+
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", "checkout");
+        factory.RequestsSent[1].ExtraHeaders.Should().Contain("DD-Service", "payments_api");
+    }
+
+    [Fact]
+    public async Task SendsTheInferredServiceWhenNoneIsConfigured()
+    {
+        var settings = CreateTracerSettings(service: null);
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateConfiguredSource(settings, factory);
+
+        await source.PollAsync();
+
+        // The spans use this name when DD_SERVICE is not set. The header sends it as APM shows it.
+        // The name of the test host is ASCII, so the source sends it.
+        var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
+        inferred.Should().NotBeNullOrEmpty();
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", AgentlessConfigurationSource.CleanUpService(inferred));
+    }
+
+    [Fact]
+    public void ReportsARejectedServiceOnlyWhenTheServiceChanges()
+    {
+        var logger = CreateDebugLogger();
+        var settings = CreateTracerSettings(service: "支付");
+        using var source = CreateConfiguredSource(settings, new TestRequestFactory(), logger.Object);
+
+        // Every settings change goes to the source. This includes a change that keeps the service.
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.EnvironmentKey, "staging");
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "caf\u00e9-api");
+
+        RejectedServices(logger).Should().Equal("支付", "caf\u00e9-api");
     }
 
     [Fact]
@@ -374,6 +576,7 @@ public class AgentlessConfigurationSourceTests
         TestRequestFactory factory,
         List<ServerConfiguration> applied,
         string? environment = null,
+        string? service = null,
         IDatadogLogger? logger = null)
         => new(
             CreateEndpoint(),
@@ -385,8 +588,45 @@ public class AgentlessConfigurationSourceTests
                 return true;
             },
             environment,
+            service,
             waitAsync: NoWait,
             logger: logger);
+
+    // A custom base URL needs no API key. A custom endpoint also gets the service, because a service
+    // name is not a secret.
+    private static TracerSettings CreateTracerSettings(string? service)
+    {
+        var values = new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl] = "http://localhost/config",
+        };
+
+        if (service is not null)
+        {
+            values[ConfigurationKeys.ServiceName] = service;
+        }
+
+        return new TracerSettings(new NameValueConfigurationSource(values));
+    }
+
+    // The tracer builds the source in the same way. Only the transport is different.
+    private static AgentlessConfigurationSource CreateConfiguredSource(TracerSettings settings, TestRequestFactory factory, IDatadogLogger? logger = null)
+        => AgentlessConfigurationSource.Create(settings.FeatureFlags, settings.Manager, _ => true, logger, factory)
+        ?? throw new InvalidOperationException("Create did not produce a source for the test settings.");
+
+    // Changes settings as customer code does, through the manual instrumentation API.
+    private static void UpdateSettingsInCode(TracerSettings settings, string key, string value)
+    {
+        var source = new ManualInstrumentationConfigurationSource(new Dictionary<string, object?> { [key] = value }, useDefaultSources: true);
+        settings.Manager.UpdateManualConfigurationSettings(source, NullConfigurationTelemetry.Instance).Should().BeTrue();
+    }
+
+    // Returns the services that the source logs at debug level as not sent.
+    private static List<object?> RejectedServices(Mock<IDatadogLogger> logger)
+        => logger.Invocations
+                 .Where(i => i.Method.Name == nameof(IDatadogLogger.Debug) && i.Arguments[0] is string template && template.Contains(ServiceRejection))
+                 .Select(i => i.Arguments[1])
+                 .ToList<object?>();
 
     private static Mock<IDatadogLogger> CreateDebugLogger()
     {
