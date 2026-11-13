@@ -93,6 +93,49 @@ public class DockerService
             RetryDelays);
     }
 
+    /// <summary>
+    /// Removes the .NET SDK images (only used to build the smoke test app) and the dangling layers of the build
+    /// stages, so that building the next image doesn't run out of disk on the hosted agents. Best effort: never throws.
+    /// </summary>
+    public static async Task RemoveSdkAndDanglingImagesAsync()
+    {
+        const string sdkRepository = "mcr.microsoft.com/dotnet/sdk";
+        try
+        {
+            using var client = CreateDockerClient();
+            var images = await client.Images.ListImagesAsync(new ImagesListParameters());
+            foreach (var image in images)
+            {
+                var references = (image.RepoTags ?? new List<string>()).Concat(image.RepoDigests ?? new List<string>());
+                if (!references.Any(r => r.StartsWith(sdkRepository + ":", StringComparison.Ordinal) || r.StartsWith(sdkRepository + "@", StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await client.Images.DeleteImageAsync(image.ID, new ImageDeleteParameters { Force = false });
+                    Logger.Information("Removed {Image} ({SizeGb:F1} GB)", string.Join(", ", references), image.Size / 1e9);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Could not remove {Image}", image.ID);
+                }
+            }
+
+            var pruned = await client.Images.PruneImagesAsync(
+                new ImagesPruneParameters
+                {
+                    Filters = new Dictionary<string, IDictionary<string, bool>> { ["dangling"] = new Dictionary<string, bool> { ["true"] = true } }
+                });
+            Logger.Information("Pruned dangling images: {ReclaimedGb:F1} GB reclaimed", pruned.SpaceReclaimed / 1e9);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Could not free disk space before the next image build");
+        }
+    }
+
     public static async Task PullImageAsync(string image, bool skipIfImageExists)
     {
         // A reference may be "repo", "repo:tag", "repo@sha256:...", or "repo:tag@sha256:...".

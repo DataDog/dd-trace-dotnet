@@ -366,7 +366,20 @@ public static partial class SmokeTestRunner
         {
             if (scenario.IsWindows)
             {
-                await BuildWindowsTestAgentImageAsync(tracerDir);
+                // TEMPORARY diagnostics (DataDog/dd-trace-dotnet#9700): measure C: around the test agent build
+                // The test agent brings its own Windows base image (~6 GB): free what the app build no longer needs first
+                LogDiskSpace("before freeing disk space");
+                await DockerService.RemoveSdkAndDanglingImagesAsync();
+                LogDiskSpace("before building the Windows test agent");
+                try
+                {
+                    await BuildWindowsTestAgentImageAsync(tracerDir);
+                }
+                finally
+                {
+                    LogDiskSpace("after building the Windows test agent");
+                }
+
                 return WindowsTestAgentImage;
             }
             else
@@ -374,6 +387,23 @@ public static partial class SmokeTestRunner
                 await DockerService.PullImageAsync(LinuxTestAgentImage, skipIfImageExists: true);
                 return LinuxTestAgentImage;
             }
+            static void LogDiskSpace(string when)
+            {
+                try
+                {
+                    var drive = new DriveInfo("C");
+                    Logger.Information(
+                        "DISK-DIAG {When}: C: {FreeGb:F1} GB free of {TotalGb:F1} GB",
+                        when,
+                        drive.AvailableFreeSpace / 1e9,
+                        drive.TotalSize / 1e9);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "DISK-DIAG {When}: could not read C: free space", when);
+                }
+            }
+
             static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
             {
                 var buildArgs = new Dictionary<string, string>();
