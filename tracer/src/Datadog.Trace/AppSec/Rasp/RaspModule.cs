@@ -574,6 +574,9 @@ internal static class RaspModule
         catch (Exception ex) when (ex is not BlockException)
         {
             Log.Error(ex, "RASP: Error while checking downstream request body.");
+
+            // the run may have opened the subcontext before failing, and no response will close it
+            CloseDownstreamSubcontext(rootSpan?.Context.TraceContext, requestSpanId);
         }
 
         return false;
@@ -619,20 +622,16 @@ internal static class RaspModule
         {
             Log.Error(ex, "RASP: Error while checking downstream response body.");
         }
-        finally
-        {
-            CloseDownstreamSubcontext(requestSpanId);
-        }
     }
 
     /// <summary>
     /// Releases the subcontext kept for this outbound call since <see cref="OnDownstreamRequest"/>; a no-op if there is none.
     /// </summary>
-    internal static void CloseDownstreamSubcontext(ulong requestSpanId)
+    internal static void CloseDownstreamSubcontext(TraceContext? traceContext, ulong requestSpanId)
     {
         try
         {
-            Tracer.Instance.InternalActiveScope?.Root?.Span.Context.TraceContext?.AppSecRequestContext.CloseSubcontext(requestSpanId);
+            traceContext?.AppSecRequestContext.CloseSubcontext(requestSpanId);
         }
         catch (Exception ex)
         {

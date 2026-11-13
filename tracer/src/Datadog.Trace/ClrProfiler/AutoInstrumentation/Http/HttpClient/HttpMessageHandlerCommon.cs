@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                         }
                         catch (AppSec.BlockException ex)
                         {
-                            RaspModule.CloseDownstreamSubcontext(scope.Span.SpanId);
+                            RaspModule.CloseDownstreamSubcontext(scope.Span.Context.TraceContext, scope.Span.SpanId);
                             scope.DisposeWithException(ex);
                             throw;
                         }
@@ -118,12 +118,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             try
             {
 #if NETCOREAPP
-                if (state.State is true && responseMessage is not System.Net.Http.HttpResponseMessage)
-                {
-                    // the call failed before a response came back
-                    RaspModule.CloseDownstreamSubcontext(scope.Span.SpanId);
-                }
-
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
@@ -149,6 +143,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             }
             finally
             {
+#if NETCOREAPP
+                // whether a response came back or not, the subcontext opened for this call ends with it
+                if (state.State is true)
+                {
+                    RaspModule.CloseDownstreamSubcontext(scope.Span.Context.TraceContext, scope.Span.SpanId);
+                }
+#endif
+
                 scope.Dispose();
             }
 

@@ -81,12 +81,20 @@ internal sealed class Context : IContext
     {
         lock (_sync)
         {
+#if NETCOREAPP
+            if (_disposed || _openSubcontexts is null || !_openSubcontexts.Remove(subcontextId, out var subcontext))
+            {
+                return;
+            }
+#else
             if (_disposed || _openSubcontexts is null || !_openSubcontexts.TryGetValue(subcontextId, out var subcontext))
             {
                 return;
             }
 
             _openSubcontexts.Remove(subcontextId);
+#endif
+
             subcontext.Destroy(_wafLibraryInvoker);
         }
     }
