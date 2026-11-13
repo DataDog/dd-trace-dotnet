@@ -301,6 +301,14 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
         // Base sets Azure CI values. Take those we can reuse for GitHub
         repo = values[PlatformKeys.Ci.Azure.BuildRepositoryUri];
 
+        // These tests modify the real checkout and must observe its Git metadata.
+        values.Remove(ConfigurationKeys.CIVisibility.GitRepositoryUrl);
+        values.Remove(ConfigurationKeys.CIVisibility.GitBranch);
+        values.Remove(ConfigurationKeys.CIVisibility.GitCommitSha);
+        values.Remove(ConfigurationKeys.CIVisibility.GitCommitMessage);
+        values.Remove(ConfigurationKeys.CIVisibility.GitCommitAuthorName);
+        values.Remove(ConfigurationKeys.CIVisibility.GitCommitAuthorEmail);
+
         return values;
     }
 

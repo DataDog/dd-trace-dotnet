@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 // ReSharper disable ConvertToPrimaryConstructor
 // ReSharper disable NotAccessedField.Local
@@ -23,8 +24,8 @@ internal sealed partial class TestOptimizationClient
         // Let's first try get the commit data from local and remote
         var initialCommitData = await GetCommitsAsync().ConfigureAwait(false);
 
-        // Let's check if we could retrieve commit data
-        if (!initialCommitData.IsOk)
+        // Missing selected history may be recovered from the configured remote below.
+        if (!initialCommitData.IsOk && initialCommitData.HasCommits)
         {
             return 0;
         }
@@ -44,46 +45,57 @@ internal sealed partial class TestOptimizationClient
         try
         {
             var isShallow = GitCommandHelper.IsShallowCloneRepository(_workingDirectory);
-            if (!isShallow)
+            var selectedShaIsValid = GitCommandHelper.IsValidCommitSha(_commitSha);
+            var recoverSelected = !initialCommitData.HasCommits && selectedShaIsValid;
+            if (!isShallow && !recoverSelected)
             {
+                if (!initialCommitData.HasCommits)
+                {
+                    return 0;
+                }
+
                 // Repo is not in a shallow state, we continue with the pack files upload with the initial commit data we retrieved earlier.
                 Log.Debug("TestOptimizationClient: Repository is not in a shallow state, uploading changes...");
                 return await SendPackFilesAsync(initialCommitData.LocalCommits[0], initialCommitData.MissingCommits, initialCommitData.RemoteCommits).ConfigureAwait(false);
             }
 
-            Log.Debug("TestOptimizationClient: Unshallowing the repository...");
+            Log.Debug("TestOptimizationClient: Fetching repository history...");
 
-            // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
-            if (gitShallowLogOutput is null)
+            // Check the selected root; another checkout commit can have a different shallow boundary.
+            var historyRoot = selectedShaIsValid ? _commitSha : "HEAD";
+            var gitShallowLogOutput = recoverSelected ? null : GitCommandHelper.RunGitCommand(_workingDirectory, $"log --format=oneline -n 2 {historyRoot} --", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
+            if (!recoverSelected && gitShallowLogOutput is null)
             {
                 Log.Warning("TestOptimizationClient: 'git log --format=oneline -n 2' command is null");
                 return 0;
             }
 
-            // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
-            // to ask for git commits and trees of the last month (no blobs)
-            var shallowLogArray = gitShallowLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
-            if (shallowLogArray.Length == 1)
+            var shallowLogArray = gitShallowLogOutput?.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries) ?? [];
+            if (shallowLogArray.Length == 1 || recoverSelected)
             {
-                // Just one commit SHA. Fetching previous commits
-
-                // ***
-                // Let's try to unshallow the repo:
-                // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
-                // ***
-
                 var originName = GitCommandHelper.GetRemoteName(_workingDirectory);
 
                 // git rev-parse HEAD
                 var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
-                var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var checkoutHead = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var head = selectedShaIsValid ? _commitSha : checkoutHead;
+                var targetedRecovery = recoverSelected || !string.Equals(head, checkoutHead, StringComparison.OrdinalIgnoreCase);
+                var depth = isShallow ? "--shallow-since=\"1 month ago\"" : string.Empty;
 
-                // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
-                Log.Information("TestOptimizationClient: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                Log.Information("TestOptimizationClient: Refetching Git data for {OriginName}|{Head}", originName, head);
+                var gitUnshallowOutput = FetchRepositoryHistory($"{depth} --update-shallow --recurse-submodules=no {originName} {head}");
 
-                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                if (targetedRecovery && isShallow && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
+                {
+                    gitUnshallowOutput = FetchRepositoryHistory($"--depth=1 --update-shallow --recurse-submodules=no {originName} {head}");
+                }
+
+                if (recoverSelected && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
+                {
+                    return 0;
+                }
+
+                if (!targetedRecovery && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
                     // ***
                     // The previous command has a drawback: if the local HEAD is a commit that has not been pushed to the remote, it will fail.
@@ -98,10 +110,10 @@ internal sealed partial class TestOptimizationClient
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                    gitUnshallowOutput = FetchRepositoryHistory($"--shallow-since=\"1 month ago\" --update-shallow --recurse-submodules=no {originName} {head}");
                 }
 
-                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                if (!targetedRecovery && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
                 {
                     // ***
                     // It could be that the CI is working on a detached HEAD or maybe branch tracking hasn’t been set up.
@@ -112,7 +124,7 @@ internal sealed partial class TestOptimizationClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
+                    FetchRepositoryHistory($"--shallow-since=\"1 month ago\" --update-shallow --recurse-submodules=no {originName}");
                 }
             }
         }
@@ -128,5 +140,18 @@ internal sealed partial class TestOptimizationClient
         }
 
         return await SendPackFilesAsync(commitsData.LocalCommits[0], commitsData.MissingCommits, commitsData.RemoteCommits).ConfigureAwait(false);
+    }
+
+    private ProcessHelpers.CommandOutput? FetchRepositoryHistory(string arguments)
+    {
+        var output = GitCommandHelper.RunGitCommand(_workingDirectory, "fetch --filter=\"blob:none\" " + arguments, MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+        if (output is { ExitCode: not 0 } &&
+            output.Error.IndexOf("--filter can only be used when extensions.partialClone is set", StringComparison.Ordinal) >= 0)
+        {
+            // Older Git cannot filter a fetch into an ordinary clone. Uploaded packs still exclude blobs.
+            return GitCommandHelper.RunGitCommand(_workingDirectory, "fetch " + arguments, MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+        }
+
+        return output;
     }
 }

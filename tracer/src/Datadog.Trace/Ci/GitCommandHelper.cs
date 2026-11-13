@@ -28,6 +28,8 @@ namespace Datadog.Trace.Ci;
 
 internal static class GitCommandHelper
 {
+    internal const string CommitFormat = "%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B";
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandHelper));
 
     // Regex patterns for parsing the diff output
@@ -142,7 +144,7 @@ internal static class GitCommandHelper
                         gitOutput is not null &&
                         JsonHelper.SerializeObject(gitOutput) is { } jsonValue)
                 {
-                        File.WriteAllText(cacheKey, jsonValue);
+                    File.WriteAllText(cacheKey, jsonValue);
                 }
             }
             catch (Exception ex)
@@ -596,9 +598,7 @@ internal static class GitCommandHelper
 
             // 3. Get commit details via `git show`
             Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
-            // Example output:
-            // '1f808ea4e7c068a149975e1851bd905cef56779c|,|1753691341|,|Tony Redondo|,|tony.redondo@datadoghq.com|,|1753691341|,|GitHub|,|noreply@github.com|,|Merge branch 'master' into tony/topt-get-head-commit-info'
-            var showArgs = $"""show {commitSha} -s --format='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""";
+            var showArgs = "-c log.showSignature=false show -s --format=" + CommitFormat + " " + commitSha + " --";
             var showOutput = RunGitCommand(
                 workingDirectory,
                 showArgs,
@@ -610,50 +610,11 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // 4. Parse output
-            // The delimiter is |,| to avoid issues with commit messages that may contain commas.
-            var gitLogDataArray = showOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
-            if (gitLogDataArray.Length < 8)
+            if (ParseCommitData(showOutput.Output) is not { } commitData)
             {
-                Log.Warning<int>("GitCommandHelper.FetchCommitData: unexpected git show output – expected ≥ 8 tokens, got {Count}", gitLogDataArray.Length);
+                Log.Warning("GitCommandHelper.FetchCommitData: invalid git show commit data.");
                 return null;
             }
-
-            // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
-            {
-                Log.Warning("Error parsing author date from git log output");
-                return null;
-            }
-
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
-            {
-                Log.Warning("Error parsing committer date from git log output");
-                return null;
-            }
-
-            var commit = gitLogDataArray[0];
-            if (commit.StartsWith("'"))
-            {
-                commit = commit.Substring(1);
-            }
-
-            // The commit message may contain the `|,|` string , so we join the remaining parts.
-            var commitMessage = gitLogDataArray.Length > 8 ? string.Join("|,|", gitLogDataArray.Skip(7)).Trim() : gitLogDataArray[7].Trim();
-            if (commitMessage.EndsWith("'"))
-            {
-                commitMessage = commitMessage.Substring(0, commitMessage.Length - 1).Trim();
-            }
-
-            var commitData = new CommitData(
-                CommitSha: commit,
-                AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorUnixDate),
-                AuthorName: gitLogDataArray[2],
-                AuthorEmail: gitLogDataArray[3],
-                CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerUnixDate),
-                CommitterName: gitLogDataArray[5],
-                CommitterEmail: gitLogDataArray[6],
-                CommitMessage: commitMessage);
 
             Log.Debug("GitCommandHelper.FetchCommitData: completed successfully for {Commit}", commitSha);
             return commitData;
@@ -663,6 +624,27 @@ internal static class GitCommandHelper
             Log.Warning(ex, "GitCommandHelper.FetchCommitData: unexpected error while fetching data for {Commit}", commitSha);
             return null;
         }
+    }
+
+    internal static CommitData? ParseCommitData(string output)
+    {
+        var fields = output.Trim().Split(['\0'], 8, StringSplitOptions.None);
+        if (fields.Length < 8 ||
+            !long.TryParse(fields[1], out var authorDate) ||
+            !long.TryParse(fields[4], out var committerDate))
+        {
+            return null;
+        }
+
+        return new CommitData(
+            CommitSha: fields[0],
+            AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorDate),
+            AuthorName: fields[2],
+            AuthorEmail: fields[3],
+            CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerDate),
+            CommitterName: fields[5],
+            CommitterEmail: fields[6],
+            CommitMessage: fields[7].Trim());
     }
 
     /// <summary>
@@ -736,18 +718,40 @@ internal static class GitCommandHelper
     /// Retrieves a list of local commits from the repository located at <paramref name="workingDirectory"/>.
     /// </summary>
     /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <param name="commitSha">Selected commit to walk instead of HEAD, when provided.</param>
     /// <returns>String array containing commit SHAs, or an empty array if no commits are found.</returns>
-    public static string[] GetLocalCommits(string workingDirectory)
+    public static string[] GetLocalCommits(string workingDirectory, string? commitSha = null)
     {
-        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
-        if (gitLogOutput is null)
+        if (!StringUtil.IsNullOrEmpty(commitSha) && !IsValidCommitSha(commitSha))
+        {
+            return [];
+        }
+
+        var revision = StringUtil.IsNullOrEmpty(commitSha) ? string.Empty : $" {commitSha} --";
+        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"" + revision, MetricTags.CIVisibilityCommands.GetLocalCommits, useCache: false);
+        if (gitLogOutput is null || gitLogOutput.ExitCode != 0)
         {
             Log.Warning("TestOptimizationClient: 'git log...' command is null");
             return [];
         }
 
-        return gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+        var commits = gitLogOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        if (!StringUtil.IsNullOrEmpty(commitSha) && !commits.Contains(commitSha, StringComparer.OrdinalIgnoreCase))
+        {
+            var selected = RunGitCommand(workingDirectory, $"rev-parse --verify {commitSha}^{{commit}}", MetricTags.CIVisibilityCommands.GetHead, useCache: false);
+            if (selected?.ExitCode != 0 || !selected.Output.AsSpan().Trim().Equals(commitSha.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return [];
+            }
+
+            return [commitSha, .. commits];
+        }
+
+        return commits;
     }
+
+    internal static bool IsValidCommitSha(string commitSha)
+        => Regex.IsMatch(commitSha, @"\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z", RegexOptions.IgnoreCase);
 
     private static void CheckAndFetchBranch(string workingDirectory, string branch, string remoteName)
     {

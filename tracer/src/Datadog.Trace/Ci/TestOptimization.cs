@@ -103,7 +103,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public ITestOptimizationClient Client
     {
-        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(CIValues.WorkspacePath ?? Environment.CurrentDirectory, this))!;
+        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(CIValues.SourceRoot ?? CIValues.WorkspacePath ?? Environment.CurrentDirectory, this))!;
         private set => _client = value;
     }
 
