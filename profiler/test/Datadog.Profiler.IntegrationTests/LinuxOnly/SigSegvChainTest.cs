@@ -27,6 +27,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
         // Once the heap snapshot has installed the profiler SIGSEGV handler, the 2nd NullReferenceException
         // of a thread must still reach the CLR handler: the thread must not loop forever on the faulting instruction.
+        // On .NET 6 the process must also not crash on the 1st one: the CLR handler needs SA_ONSTACK.
+        // https://github.com/DataDog/dd-trace-dotnet/issues/9563
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0", "net11.0" })]
         public void CheckThatNullReferenceExceptionsAreHandledAfterHeapSnapshot(string appName, string framework, string appAssembly)
         {
