@@ -166,6 +166,8 @@ public class AppSecContextTests : WafLibraryRequiredTest
 
         public bool Truncated { get; }
 
+        public AppSec.WafEncoding.TruncationInfo Truncation { get; }
+
         public bool ShouldBlock => throw new System.NotImplementedException();
 
         public Dictionary<string, object> BlockInfo => throw new System.NotImplementedException();
