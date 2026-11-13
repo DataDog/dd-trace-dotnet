@@ -973,7 +973,7 @@ internal class CreatedumpCommand : Command
             else
             {
                 DebugPrint($"Calling createdump with arguments: {string.Join(" ", commandLineArgs[2..])}");
-                System.Diagnostics.Process.Start(commandLineArgs[2], commandLineArgs[3..]).WaitForExit();
+                Process.Start(new ProcessStartInfo(commandLineArgs[2], commandLineArgs[3..]) { UseShellExecute = false })!.WaitForExit();
             }
         }
         else
