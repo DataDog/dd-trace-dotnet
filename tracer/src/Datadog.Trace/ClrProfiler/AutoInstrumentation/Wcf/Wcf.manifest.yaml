@@ -1,0 +1,10 @@
+_v: 1
+name: Wcf
+display_name: WCF
+description: Instruments Windows Communication Foundation (WCF) server service operations and Web HTTP endpoints.
+packages: []
+category:
+- http.server
+- rpc.server
+systems: []
+creation_date: '2019-04-10'

@@ -1,0 +1,12 @@
+_v: 1
+name: IbmMq
+display_name: IBM MQ
+description: Instruments IBM MQ .NET client message production and consumption, including optional Data Streams Monitoring
+  checkpoints.
+packages:
+- name: IBMMQDotnetClient
+category:
+- messaging.consumer
+- messaging.producer
+systems: []
+creation_date: '2023-11-09'

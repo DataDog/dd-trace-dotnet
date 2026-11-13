@@ -1,0 +1,10 @@
+_v: 1
+name: Hangfire
+display_name: Hangfire
+description: Instruments Hangfire background job processing and propagates trace context from job creation to execution.
+packages:
+- name: Hangfire.Core
+category:
+- messaging.consumer
+systems: []
+creation_date: '2025-12-09'

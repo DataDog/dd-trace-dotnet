@@ -1,0 +1,10 @@
+_v: 1
+name: Remoting
+display_name: .NET Remoting
+description: Instruments .NET Remoting client invocations and server request handling.
+packages: []
+category:
+- rpc.client
+- rpc.server
+systems: []
+creation_date: '2023-11-14'
