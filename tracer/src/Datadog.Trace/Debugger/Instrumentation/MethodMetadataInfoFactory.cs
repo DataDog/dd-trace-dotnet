@@ -14,7 +14,7 @@ using Datadog.Trace.Pdb;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// Responsible to create <see cref="MethodMetadataInfo"/> structures.
+    /// Responsible to create <see cref="MethodMetadataInfo"/> instances.
     /// </summary>
     internal static class MethodMetadataInfoFactory
     {
