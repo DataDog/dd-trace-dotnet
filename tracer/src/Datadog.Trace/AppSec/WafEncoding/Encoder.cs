@@ -14,8 +14,6 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -91,15 +89,15 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true)
         {
-            var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>());
+            var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>(), remainingDepth);
             var result = Encode(ref context, remainingDepth, o);
-            return new EncodeResult(context.Buffers, context.Pool, ref result, context.Truncated);
+            return new EncodeResult(context.Buffers, context.Pool, ref result, in context.Truncation);
         }
 
         // -----------------------------------
         internal DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
-            var context = new EncoderContext(applySafetyLimits, pool ?? Pool, argToFree);
+            var context = new EncoderContext(applySafetyLimits, pool ?? Pool, argToFree, remainingDepth);
             return Encode(ref context, remainingDepth, o);
         }
 
@@ -228,8 +226,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 return count;
             }
 
-            context.Truncated = true;
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            context.Truncation.AddContainer(count);
             Log.Warning<int, int>("Container holds {Count} entries, more than the {MaxContainerCapacity} a WAF object can address, it will be truncated", count, DdwafObjectStruct.MaxContainerCapacity);
             return DdwafObjectStruct.MaxContainerCapacity;
         }
@@ -240,8 +237,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (context.ApplySafetyLimits && remainingDepth-- <= 0)
             {
-                context.Truncated = true;
-                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                context.Truncation.AddTooDeep(context.MaxDepth);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
@@ -254,8 +250,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             {
                 if (context.ApplySafetyLimits && count > WafConstants.MaxContainerSize)
                 {
-                    context.Truncated = true;
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                    context.Truncation.AddContainer(count);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -314,8 +309,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     childrenCount++;
                     if (context.ApplySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                     {
-                        context.Truncated = true;
-                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                        // the enumeration stops here, so the original count isn't known
+                        context.Truncation.AddContainer(childrenCount);
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
                             Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -403,8 +398,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         return StringBuilderCache.GetStringAndRelease(sb);
                     }
 
-                    context.Truncated = true;
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                    context.Truncation.AddTooDeep(context.MaxDepth);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
@@ -415,8 +409,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 if (count > WafConstants.MaxContainerSize)
                 {
-                    context.Truncated = true;
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                    context.Truncation.AddContainer(count);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -582,7 +575,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var length = s.Length;
             if (applySafety || length <= WafConstants.MaxStringLength)
             {
-                length = Math.Min(length, WafConstants.MaxStringLength);
+                if (length > WafConstants.MaxStringLength)
+                {
+                    context.Truncation.AddString(length);
+                    length = WafConstants.MaxStringLength;
+                }
+
                 unmanagedMemory = context.Pool.Rent();
                 fixed (char* chrPtr = s)
                 {
@@ -724,15 +722,19 @@ namespace Datadog.Trace.AppSec.WafEncoding
             public readonly UnmanagedMemoryPool Pool;
             public readonly List<IntPtr> Buffers;
 
-            public EncoderContext(bool applySafetyLimits, UnmanagedMemoryPool pool, List<IntPtr> buffers)
+            // the depth the encoding started with
+            public readonly int MaxDepth;
+
+            public TruncationInfo Truncation;
+
+            public EncoderContext(bool applySafetyLimits, UnmanagedMemoryPool pool, List<IntPtr> buffers, int maxDepth)
             {
                 ApplySafetyLimits = applySafetyLimits;
                 Pool = pool;
                 Buffers = buffers;
-                Truncated = false;
+                MaxDepth = maxDepth;
+                Truncation = default;
             }
-
-            public bool Truncated { get; set; }
         }
 
         public sealed class EncodeResult : IEncodeResult
@@ -741,17 +743,17 @@ namespace Datadog.Trace.AppSec.WafEncoding
             private readonly UnmanagedMemoryPool _innerPool;
             private DdwafObjectStruct _result;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result, bool truncated)
+            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result, in TruncationInfo truncation)
             {
                 _pointers = pointers;
                 _innerPool = pool;
                 _result = result;
-                Truncated = truncated;
+                Truncation = truncation;
             }
 
             public DdwafObjectStruct ResultDdwafObject => _result;
 
-            public bool Truncated { get; }
+            public TruncationInfo Truncation { get; }
 
             public void Dispose()
             {

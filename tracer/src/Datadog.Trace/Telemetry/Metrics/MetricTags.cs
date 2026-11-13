@@ -566,9 +566,15 @@ internal static class MetricTags
 
     public enum TruncationReason
     {
-        [Description("truncation_reason:string_too_long")]StringTooLong = 1,
-        [Description("truncation_reason:list_or_map_too_large")]ListOrMapTooLarge = 2,
-        [Description("truncation_reason:object_too_deep")]ObjectTooDeep = 4,
+        // The tag is the bitfield of the telemetry RFC: 1 string too long, 2 list or map too large, 4 object too deep.
+        // The values are the flags minus one, as the generator indexes the tags by value.
+        [Description("truncation_reason:1")] StringTooLong = 0,
+        [Description("truncation_reason:2")] ListOrMapTooLarge = 1,
+        [Description("truncation_reason:3")] StringTooLongAndListOrMapTooLarge = 2,
+        [Description("truncation_reason:4")] ObjectTooDeep = 3,
+        [Description("truncation_reason:5")] StringTooLongAndObjectTooDeep = 4,
+        [Description("truncation_reason:6")] ListOrMapTooLargeAndObjectTooDeep = 5,
+        [Description("truncation_reason:7")] StringTooLongAndListOrMapTooLargeAndObjectTooDeep = 6,
     }
 
     [EnumExtensions]

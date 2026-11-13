@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -298,6 +299,84 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         attributes["signed"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", -42L } });
         attributes["double"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 3.14D } });
         attributes["bool"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", true } });
+    }
+
+    [SkippableFact]
+    public void GivenAStringLongerThanTheLimit_WhenEncoded_ThenItsLengthIsRecorded()
+    {
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", new string('a', 5000) } }, applySafetyLimits: true);
+
+        result.Truncation.StringLength.Should().Be(5000);
+        result.Truncation.ContainerSize.Should().Be(0);
+        result.Truncation.ContainerDepth.Should().Be(0);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.StringTooLong);
+    }
+
+    [SkippableFact]
+    public void GivenAMapLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        var map = Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)$"value{i}");
+
+        using var result = _encoder.Encode(map, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+
+    [SkippableFact]
+    public void GivenAListLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        var list = Enumerable.Range(0, 300).Select(i => $"value{i}").ToList();
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", list } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+
+    [SkippableFact]
+    public void GivenAnObjectDeeperThanTheLimit_WhenEncoded_ThenTheDepthWhereItWasCutIsRecorded()
+    {
+        using var result = _encoder.Encode(MakeNestedMap(25), applySafetyLimits: true);
+
+        result.Truncation.ContainerDepth.Should().Be(WafConstants.MaxContainerDepth + 1);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ObjectTooDeep);
+    }
+
+    [SkippableFact]
+    public void GivenEveryKindOfTruncation_WhenEncoded_ThenTheReasonHoldsAllTheFlags()
+    {
+        var payload = new Dictionary<string, object>
+        {
+            { "deepObject", MakeNestedMap(25) },
+            { "longValue", new string('a', 5000) },
+            { "largeObject", Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)$"value{i}") },
+        };
+
+        using var result = _encoder.Encode(payload, applySafetyLimits: true);
+
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.StringTooLongAndListOrMapTooLargeAndObjectTooDeep);
+        result.Truncation.StringLength.Should().Be(5000);
+        result.Truncation.ContainerSize.Should().Be(300);
+    }
+
+    [SkippableFact]
+    public void GivenInputsWithinTheLimits_WhenEncoded_ThenNothingIsRecorded()
+    {
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", "value" }, { "list", new List<string> { "a", "b" } } }, applySafetyLimits: true);
+
+        result.Truncation.Truncated.Should().BeFalse();
+        result.Truncation.Reason.Should().BeNull();
+    }
+
+    [SkippableFact]
+    public void GivenNoSafetyLimits_WhenALongStringAndALargeMapAreEncoded_ThenNothingIsRecorded()
+    {
+        var map = Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)new string('a', 5000));
+
+        using var result = _encoder.Encode(map, applySafetyLimits: false);
+
+        result.Truncation.Truncated.Should().BeFalse();
     }
 
     private static List<object> MakeNestedList(int nestingDepth)

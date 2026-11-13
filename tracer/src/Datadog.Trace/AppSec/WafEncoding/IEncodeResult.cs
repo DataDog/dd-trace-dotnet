@@ -12,5 +12,8 @@ internal interface IEncodeResult : IDisposable
 {
     public DdwafObjectStruct ResultDdwafObject { get; }
 
-    public bool Truncated { get; }
+    /// <summary>
+    /// Gets what the encoder truncated to fit the WAF safety limits
+    /// </summary>
+    public TruncationInfo Truncation { get; }
 }
