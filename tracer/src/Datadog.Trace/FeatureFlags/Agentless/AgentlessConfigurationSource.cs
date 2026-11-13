@@ -203,7 +203,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
     /// <summary>
     /// Returns the name APM shows for a service. <c>My Service</c> becomes <c>my_service</c>.
-    /// The result can be empty, or a name the CDN drops, such as <c>_svc</c> or <c>café-api</c>.
+    /// The result can be empty or not plain ASCII, such as <c>café-api</c>. Then no header is sent.
     /// </summary>
     /// <remarks>
     /// This is a port of <c>NormalizeService</c> in the current Agent (pkg/trace/traceutil/normalize).
@@ -247,7 +247,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             if (c < 0x80)
             {
                 // Only ASCII letters are lowercased. The Agent also lowercases most other letters.
-                // That has no effect on the header, because the CDN drops every non-ASCII name.
+                // That has no effect on the header, because a name with a non-ASCII character is
+                // not sent.
                 if (c is >= 'A' and <= 'Z')
                 {
                     c = (char)(c + ('a' - 'A'));
