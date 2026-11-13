@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
@@ -26,6 +27,21 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 
 public class OtlpTracesProtobufSerializerTests
 {
+    [Theory]
+    [CombinatorialData]
+    public void SecurityReportBytesArePreserved(bool openTelemetrySemanticsEnabled)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        var report = MetaStructHelper.ObjectToByteArray(new Dictionary<string, object>
+        {
+            ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } },
+        });
+        span.SetMetaStruct("_dd.stack", report);
+
+        SerializeAndParse(CreateChunk(span)).Attributes.Should().ContainSingle(kv => kv.Key == "_dd.stack")
+            .Which.Value.BytesValue.ToByteArray().Should().Equal(report);
+    }
+
     [Fact]
     public void FinishBody_ReturnsZero_WhenNothingSerialized()
     {
