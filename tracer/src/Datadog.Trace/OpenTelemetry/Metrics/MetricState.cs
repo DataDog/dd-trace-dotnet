@@ -111,7 +111,7 @@ internal sealed class MetricState
     /// <summary>
     /// Builds metric point snapshots and adds them to the provided list.
     /// For Delta temporality, resets the running values after snapshotting.
-    /// Only exports metric points that have received new measurements since the last export.
+    /// Only exports metric points that have received measurements (or were observed) since the last export.
     /// </summary>
     public void BuildPoints(List<MetricPoint> into)
     {

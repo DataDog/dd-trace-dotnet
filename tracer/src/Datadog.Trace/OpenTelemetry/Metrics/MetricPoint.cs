@@ -102,16 +102,9 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 return;
             }
 
-            if (double.IsNaN(_lastObservedCumulative))
-            {
-                _hasMeasurements = true;
-            }
-            else if (currentValue != _lastObservedCumulative)
-            {
-                _hasMeasurements = true;
-            }
-
+            // OTel spec: export every observed series, even if its value is unchanged.
             _runningDoubleValue = currentValue;
+            _hasMeasurements = true;
         }
     }
 
