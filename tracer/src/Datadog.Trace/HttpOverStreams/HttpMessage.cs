@@ -23,7 +23,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         public IHttpContent Content { get; }
 
-        public int? ContentLength => int.TryParse(Headers.GetValue("Content-Length"), out int length) ? length : (int?)null;
+        public int? ContentLength => int.TryParseInvariant(Headers.GetValue("Content-Length"), out int length) ? length : (int?)null;
 
         public string ContentType => Headers.GetValue("Content-Type");
 

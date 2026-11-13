@@ -189,7 +189,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
-                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TraceClock.Instance.UtcNow - testRunnerState.StartTime));
+                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, TraceClock.Instance.UtcNow - testRunnerState.StartTime);
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
@@ -248,10 +248,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's clear the failed and skipped runs if we have at least one successful run
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
 
+                    var frameworkResult = XUnitFrameworkResult.Unknown;
                     if (testCaseMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
                     {
                         // Quarantined or disabled test results should not be reported to the testing framework.
@@ -261,6 +262,13 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Total = 1;
                         runSummary.Failed = 0;
                         runSummary.Skipped = 1;
+                    }
+                    else if (testCaseMetadata.ShouldReportAttemptToFixFailure)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Skipped = 0;
+                        runSummary.Failed = 1;
+                        frameworkResult = XUnitFrameworkResult.Failed;
                     }
                     else
                     {
@@ -287,11 +295,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                     }
 
-                    messageBus.FlushMessages(testCaseMetadata.UniqueID);
+                    messageBus.FlushMessages(testCaseMetadata.UniqueID, frameworkResult);
 
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
                 }

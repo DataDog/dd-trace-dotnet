@@ -468,6 +468,19 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;success:false")] Error
     }
 
+    public enum ApiSecFramework
+    {
+        [Description("framework:aspnet_core")] AspNetCore,
+        [Description("framework:aspnet")] AspNet,
+        [Description("framework:unknown")] Unknown,
+    }
+
+    public enum WafConfigAction
+    {
+        [Description("waf_version;event_rules_version;action:init")] Init,
+        [Description("waf_version;event_rules_version;action:update")] Update
+    }
+
     public enum UserEventSdk
     {
         [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
@@ -844,6 +857,12 @@ internal static class MetricTags
     {
         [Description("test_management_enabled:true")] Enabled,
         [Description("test_management_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilityDynamicFlakyRetryBuckets
+    {
+        [Description("")] Default,
+        [Description("has_custom_buckets:true")] Custom,
     }
 
     public enum CIVisibilityRequestCompressed

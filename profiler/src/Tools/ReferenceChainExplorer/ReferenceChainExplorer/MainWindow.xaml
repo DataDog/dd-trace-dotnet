@@ -35,9 +35,7 @@
                            Visibility="{Binding FieldName, Converter={StaticResource NullToVisConverter}}" />
                 <TextBlock Text=" (" Foreground="Gray" />
                 <TextBlock Text="{Binding InstanceCount, StringFormat={}{0:N0}}" Foreground="Gray" />
-                <TextBlock Text=" instances, " Foreground="Gray" />
-                <TextBlock Text="{Binding TotalSize, StringFormat={}{0:N0}}" Foreground="Gray" />
-                <TextBlock Text=" bytes)" Foreground="Gray" />
+                <TextBlock Text=" instances)" Foreground="Gray" />
                 <TextBlock Text=" [" Foreground="DarkGreen"
                            Visibility="{Binding IsRoot, Converter={StaticResource BoolToVisConverter}}" />
                 <TextBlock Text="{Binding CategoryCode, Converter={StaticResource CategoryNameConverter}}"
@@ -163,37 +161,7 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBlock Text=" instances, " Foreground="Gray">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Text="{Binding TotalSize, StringFormat={}{0:N0}}" Foreground="Gray">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Text=" bytes)" Foreground="Gray">
+                <TextBlock Text=" instances)" Foreground="Gray">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -271,20 +239,6 @@
                             <DataGridTextColumn Header="Count" Width="120"
                                                 Binding="{Binding TotalInstanceCount, StringFormat={}{0:N0}}"
                                                 SortMemberPath="TotalInstanceCount">
-                                <DataGridTextColumn.HeaderStyle>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="HorizontalContentAlignment" Value="Right" />
-                                    </Style>
-                                </DataGridTextColumn.HeaderStyle>
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right" />
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Size (bytes)" Width="120"
-                                                Binding="{Binding TotalSize, StringFormat={}{0:N0}}"
-                                                SortMemberPath="TotalSize">
                                 <DataGridTextColumn.HeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="HorizontalContentAlignment" Value="Right" />

@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Tools.Shared.Linux
                           null bytes ('\0'), and there may be a null byte at the end.
             */
 
-            var path = $"/proc/{process.Id}/environ";
+            var path = $"/proc/{process.Id.ToString(CultureInfo.InvariantCulture)}/environ";
 
             var result = new Dictionary<string, string>();
 
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Tools.Shared.Linux
             return result;
         }
 
-        public static string[] ReadModules(Process process) => ReadModulesFromFile($"/proc/{process.Id}/maps");
+        public static string[] ReadModules(Process process) => ReadModulesFromFile($"/proc/{process.Id.ToString(CultureInfo.InvariantCulture)}/maps");
 
         internal static string[] ReadModulesFromFile(string path)
         {

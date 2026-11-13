@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -25,9 +26,20 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsEvaluator
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataErrorCode = "errorCode";
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
         internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
+
+        internal const string FeatureDestinationHook = "HOOK";
+        internal const string FeatureDestinationExposure = "EXPOSURE";
+        internal const string FeatureDestinationEvaluation = "EVALUATION";
+
+        // A newer configuration can name destinations this SDK does not know; warn once per name,
+        // not per evaluation, and stop after this many distinct names.
+        private const int MaxWarnedDestinations = 64;
+
+        private static readonly ConcurrentDictionary<string, byte> WarnedDestinations = new(StringComparer.Ordinal);
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
@@ -52,7 +64,20 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
+        /// <summary>
+        /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
+        /// </summary>
+        internal ServerConfiguration? Configuration => _config;
+
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
+
+        // Leaves an exposure on Evaluation.PendingExposure instead of recording and sending it, for the
+        // caller to commit once the evaluation has completed.
+        public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
+
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
             var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
@@ -201,7 +226,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent, deferExposure);
                             }
                         }
                     }
@@ -615,7 +640,7 @@ namespace Datadog.Trace.FeatureFlags
             return int.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
-        private static string? AllocationKey(Evaluation evaluation)
+        internal static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.FlagMetadata == null)
             {
@@ -623,6 +648,20 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return evaluation.FlagMetadata.TryGetValue(MetadataAllocationKey, out var key) ? key : null;
+        }
+
+        /// <summary>
+        /// Returns the structured error code, which is always one of a fixed set, unlike
+        /// <see cref="Evaluation.Error"/>, which can carry an exception message.
+        /// </summary>
+        internal static string? ErrorCode(Evaluation evaluation)
+        {
+            if (evaluation.FlagMetadata == null)
+            {
+                return null;
+            }
+
+            return evaluation.FlagMetadata.TryGetValue(MetadataErrorCode, out var code) ? code : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
@@ -658,7 +697,7 @@ namespace Datadog.Trace.FeatureFlags
                             {
                                 for (var i = 0; i < list.Count; i++)
                                 {
-                                    stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i], entry.Level + 1));
+                                    stack.Push(new FlattenEntry(StringUtil.Invariant($"{entry.Key}[{i}]"), list[i], entry.Level + 1));
                                 }
                             }
                             else if (value is IDictionary dict)
@@ -684,6 +723,108 @@ namespace Datadog.Trace.FeatureFlags
             return result;
         }
 
+        /// <summary>
+        /// Writes one metadata entry per (feature, destination) of the selected split, under the
+        /// destination's prefix. On a repeated key the first valid feature wins for every
+        /// destination. Returns the EXPOSURE-destination features for the exposure event.
+        /// </summary>
+        private static Dictionary<string, object>? AddFeatureMetadata(Dictionary<string, string> metadata, List<Feature>? features)
+        {
+            if (features is null or { Count: 0 })
+            {
+                return null;
+            }
+
+            Dictionary<string, object>? exposureFeatures = null;
+            HashSet<string>? seenKeys = null;
+            StringBuilder? types = null;
+
+            foreach (var feature in features)
+            {
+                seenKeys ??= new HashSet<string>(StringComparer.Ordinal);
+                if (!seenKeys.Add(feature.Key))
+                {
+                    continue;
+                }
+
+                var value = NormalizeFeatureValue(feature.Value);
+                var written = false;
+                foreach (var destination in feature.Destinations)
+                {
+                    string? prefix;
+                    if (destination == FeatureDestinationHook)
+                    {
+                        prefix = FeatureFlagMetadataKeys.FeaturePrefix;
+                    }
+                    else if (destination == FeatureDestinationExposure)
+                    {
+                        prefix = FeatureFlagMetadataKeys.ExposureFeaturePrefix;
+                    }
+                    else if (destination == FeatureDestinationEvaluation)
+                    {
+                        prefix = FeatureFlagMetadataKeys.EvaluationFeaturePrefix;
+                    }
+                    else
+                    {
+                        WarnUnknownDestination(destination);
+                        continue;
+                    }
+
+                    metadata[prefix + feature.Key] = FeatureMetadataValue(value);
+                    written = true;
+                    if (prefix == FeatureFlagMetadataKeys.ExposureFeaturePrefix)
+                    {
+                        exposureFeatures ??= new Dictionary<string, object>();
+                        exposureFeatures[feature.Key] = value;
+                    }
+                }
+
+                if (written && value is bool or double)
+                {
+                    types ??= new StringBuilder();
+                    types.Append(feature.Key.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(feature.Key).Append(value is bool ? 'b' : 'n');
+                }
+            }
+
+            if (types is not null)
+            {
+                metadata[FeatureFlagMetadataKeys.FeatureTypes] = types.ToString();
+            }
+
+            return exposureFeatures;
+
+            static void WarnUnknownDestination(string destination)
+            {
+                if (WarnedDestinations.Count < MaxWarnedDestinations && WarnedDestinations.TryAdd(destination, 0))
+                {
+                    Log.Warning<string>("Ignoring unknown feature flag split feature destination {Destination}", destination);
+                }
+            }
+        }
+
+        // The contract allows a string, a double or a boolean; other number representations collapse
+        // to double so every consumer sees one numeric type.
+        private static object NormalizeFeatureValue(object value)
+        {
+            return value switch
+            {
+                bool or string or double => value,
+                IConvertible convertible => Convert.ToDouble(convertible, CultureInfo.InvariantCulture),
+                _ => value,
+            };
+        }
+
+        private static string FeatureMetadataValue(object value)
+        {
+            return value switch
+            {
+                bool b => b ? "true" : "false",
+                // "R" keeps the value round-trippable through the string-based metadata channel.
+                double d => d.ToString("R", CultureInfo.InvariantCulture),
+                _ => (string)value,
+            };
+        }
+
         private Evaluation ResolveVariant(
             string flagKey,
             ValueType resultType,
@@ -694,7 +835,8 @@ namespace Datadog.Trace.FeatureFlags
             EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context,
-            string consent)
+            string consent,
+            bool deferExposure)
         {
             var variationKey = split.VariationKey!;
 
@@ -721,10 +863,10 @@ namespace Datadog.Trace.FeatureFlags
                 [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
             };
 
-            // do_log and the split serial id are only consumed by APM span enrichment, so emit them
-            // (and the serial-id ToString) only when that feature is enabled. doLog itself is still
-            // needed below to drive exposure dispatch.
-            if (_spanEnrichmentEnabled)
+            // The serial id and doLog feed both APM span enrichment and the exposure hooks, so emit
+            // them whenever either consumer can run, not only when span enrichment is enabled.
+            // __dd_split_serial_id is omitted when the split carries none.
+            if (_spanEnrichmentEnabled || doLog)
             {
                 metadata[MetadataDoLog] = doLog ? "true" : "false";
 
@@ -734,6 +876,8 @@ namespace Datadog.Trace.FeatureFlags
                 }
             }
 
+            var exposureFeatures = AddFeatureMetadata(metadata, split.Features);
+
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
@@ -741,9 +885,29 @@ namespace Datadog.Trace.FeatureFlags
                 variant: variant.Key,
                 metadata: metadata);
 
-            if (doLog)
+            if (doLog && CreateExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures) is { } exposure)
             {
-                DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
+                if (deferExposure)
+                {
+                    // The commit after the evaluation returns the one verdict, so none is stamped here.
+                    evaluation.PendingExposure = exposure;
+                }
+                else
+                {
+                    // The single deduplication verdict for this evaluation: the same call that records
+                    // the subject and sends the exposure returns whether the subject was already
+                    // exposed. A failed evaluation never gets here, so it records nothing. Nothing
+                    // recorded (for example after shutdown) means no verdict at all.
+                    var recorded = _onExposureEvent?.Invoke(in exposure) ?? Exposure.ExposureRecordResult.NotRecorded;
+                    if (recorded != Exposure.ExposureRecordResult.NotRecorded)
+                    {
+                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = recorded == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
+                    }
+                }
+            }
+            else if (!doLog)
+            {
+                Log.Debug<string, string>("Feature Flags: exposure not recorded for {FlagKey}: allocation {AllocationKey} has exposure logging disabled", flagKey, allocation.Key);
             }
 
             return evaluation;
@@ -764,30 +928,31 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void DispatchExposure(
+        private Exposure.Model.ExposureEvent? CreateExposure(
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
             EvaluationContext? context,
-            long? serialId)
+            Split split,
+            Dictionary<string, object>? features)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
 
             if (allocationKey == null || variantKey == null)
             {
-                return;
+                Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
+                return null;
             }
 
-            var evt = new Exposure.Model.ExposureEvent(
+            return new Exposure.Model.ExposureEvent(
                 new DateTimeOffset(evalTime).ToUnixTimeMilliseconds(),
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
                 new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
-                serialId);
-
-            _onExposureEvent?.Invoke(in evt);
+                split.SerialId,
+                features);
         }
 
         private record struct FlattenEntry(string Key, object? Value, int Level)
@@ -799,7 +964,7 @@ namespace Datadog.Trace.FeatureFlags
         }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
-        internal delegate void ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
+        internal delegate Exposure.ExposureRecordResult ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }

@@ -926,7 +926,7 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::ToUpper()", AspectFilter.StringLiteral_0)]
     public static string ToUpper(string target)
     {
-        var result = target.ToUpper();
+        var result = target.ToUpper(CultureInfo.CurrentCulture);
         try
         {
             PropagationModuleImpl.PropagateTaint(target, result);
@@ -992,7 +992,7 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::ToLower()", AspectFilter.StringLiteral_0)]
     public static string ToLower(string target)
     {
-        var result = target.ToLower();
+        var result = target.ToLower(CultureInfo.CurrentCulture);
         try
         {
             PropagationModuleImpl.PropagateTaint(target, result);
@@ -1406,7 +1406,9 @@ public sealed class StringAspects
     public static string Format(string format, ReadOnlySpan<object> args)
 #pragma warning disable DD0005 // Aspect is in incorrect format
     {
+#pragma warning disable MA0011 // IFormatProvider is missing - the aspect must mirror the culture-sensitive String.Format call it replaces
         return Format(format, args.ToArray());
+#pragma warning restore MA0011
     }
 #pragma warning restore DD0005 // Aspect is in incorrect format
 

@@ -18,6 +18,8 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -42,15 +44,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string AzureApim = AzureFunctionsConstants.AzureApimName;
+        public const string AzureFrontDoor = AzureFunctionsConstants.AzureFrontDoorName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
-        {
-            var tracer = Tracer.Instance;
+            => OnFunctionExecutionBegin(instance, instanceParam, AzureInfo.Instance, Tracer.Instance);
 
+        [TestingAndPrivateOnly]
+        internal static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam, AzureInfo azureInfo, Tracer tracer)
+            where TFunction : IFunctionInstance
+        {
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
@@ -64,13 +70,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 return CallTargetState.GetDefault();
             }
 
-            var scope = CreateScope(tracer, instanceParam);
+            var scope = CreateScope(tracer, instanceParam, azureInfo);
             return new CallTargetState(scope);
         }
 
-        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam, AzureInfo azureInfo)
             where TFunction : IFunctionInstance
         {
+            var isContainerApps = azureInfo.IsAzureContainerApp;
             Scope? scope = null;
 
             try
@@ -129,8 +136,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
+
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -139,20 +145,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // otherwise it is essentially a duplicate of the span created inside the
                     // isolated app. We _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
-                    if (!isProxySpan)
+                    if (GetFunctionMetadataTarget(activeScope) is { } targetSpan)
                     {
-                        var rootSpan = activeScope.Root.Span;
                         // The shortname is prefixed with "Functions.", so strip that off
-                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                        var remoteFunctionName = functionName?.StartsWithOrdinal("Functions.") == true
                                                      ? functionName.Substring(10)
                                                      : functionName;
                         AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan.Tags,
+                            targetSpan.Tags,
+                            isContainerApps,
                             shortName: remoteFunctionName,
-                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+                            fullName: targetSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                             bindingSource: bindingSourceType.FullName,
                             triggerType: triggerType);
-                        rootSpan.Type = SpanType;
+                        targetSpan.Type = SpanType;
                     }
 
                     return null;
@@ -160,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (tracer.InternalActiveScope == null)
                 {
-                    var tags = new AzureFunctionsTags
+                    var tags = new AzureFunctionsTags(isContainerApps)
                     {
                         TriggerType = triggerType,
                         ShortName = functionName,
@@ -176,20 +182,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     scope = tracer.StartActiveInternal(OperationName);
 
-                    if (!isProxySpan)
+                    // This span is created without tags, so when the root is an inferred proxy span
+                    // the metadata has to be copied onto the proxy's nearest descendant instead -
+                    // otherwise no span in the trace carries the Azure Functions identity. Only this
+                    // branch needs the span type set here; in the branch above `scope` has no parent,
+                    // so it is its own root and the unconditional write below already covers it.
+                    if (GetFunctionMetadataTarget(scope) is { } targetSpan)
                     {
                         AzureFunctionsTags.SetRootSpanTags(
-                            scope.Root.Span.Tags,
+                            targetSpan.Tags,
+                            isContainerApps,
                             shortName: functionName,
                             fullName: instanceParam.FunctionDescriptor.FullName,
                             bindingSource: bindingSourceType.FullName,
                             triggerType: triggerType);
-                    }
-                }
 
-                if (!isProxySpan)
-                {
-                    scope.Root.Span.Type = SpanType;
+                        targetSpan.Type = SpanType;
+                    }
                 }
 
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
@@ -212,9 +221,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
-        {
-            var tracer = Tracer.Instance;
+            => OnIsolatedFunctionBegin(functionContext, triggerType, startTime, AzureInfo.Instance, Tracer.Instance);
 
+        [TestingAndPrivateOnly]
+        internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime, AzureInfo azureInfo, Tracer tracer)
+            where T : IFunctionContext
+        {
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
@@ -225,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // (in OnAsyncMethodEnd of the calling integration).
             var aspNetCoreScope = GetAspNetCoreScope(functionContext);
 
-            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime);
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime, azureInfo);
 
             if (scope == null && aspNetCoreScope == null)
             {
@@ -235,9 +247,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime, AzureInfo azureInfo)
             where T : IFunctionContext
         {
+            var isContainerApps = azureInfo.IsAzureContainerApp;
             Scope? scope = null;
 
             try
@@ -348,11 +361,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
                 }
 
-                var tags = new AzureFunctionsTags
+                // Read these once into locals: they are needed both for the tags object and for
+                // the resource name, and FunctionDefinition is a struct we would otherwise re-read.
+                var shortName = functionContext.FunctionDefinition.Name;
+                var fullName = functionContext.FunctionDefinition.EntryPoint;
+
+                var tags = new AzureFunctionsTags(isContainerApps)
                 {
                     TriggerType = triggerType,
-                    ShortName = functionContext.FunctionDefinition.Name,
-                    FullName = functionContext.FunctionDefinition.EntryPoint,
+                    ShortName = shortName,
+                    FullName = fullName,
                 };
 
                 // Use the supplied aspnet_core.request scope (from HttpContext.Items bridge)
@@ -363,20 +381,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
                 {
                     // The ASP.NET Core span is already active - don't create a new span,
-                    // just update the existing root span's tags to make it a "serverless" span.
+                    // just update the existing span's tags to make it a "serverless" span.
                     // Don't assign to `scope`: the ASP.NET Core middleware owns this scope's
                     // lifetime, and returning it here would cause OnAsyncMethodEnd to dispose it.
-                    var rootSpan = activeScope.Root.Span;
+                    // This branch creates no span at all, so skipping the write entirely when an
+                    // inferred proxy span is the root would drop the function identity from the
+                    // whole trace - GetFunctionMetadataTarget moves it onto the ASP.NET Core span
+                    // instead, and returns the root unchanged when there is no proxy.
+                    if (GetFunctionMetadataTarget(activeScope) is { } targetSpan)
+                    {
+                        AzureFunctionsTags.SetRootSpanTags(
+                            targetSpan.Tags,
+                            isContainerApps,
+                            shortName: shortName,
+                            fullName: fullName,
+                            bindingSource: targetSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: triggerType);
 
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan.Tags,
-                        shortName: tags.ShortName,
-                        fullName: tags.FullName,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: tags.TriggerType);
-
-                    rootSpan.Type = SpanType; // "serverless"
-                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                        targetSpan.Type = SpanType; // "serverless"
+                        targetSpan.ResourceName = $"{triggerType} {shortName}";
+                    }
                 }
                 else
                 {
@@ -403,18 +427,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                     else
                     {
-                        // this is NOT the local root span, copy some tags to the root span
-                        AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan.Tags,
-                            shortName: tags.ShortName,
-                            fullName: tags.FullName,
-                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                            triggerType: tags.TriggerType);
+                        // this is NOT the local root span, so copy some tags to the root span -
+                        // or, when the root is an inferred proxy span we must not overwrite, to
+                        // the proxy's nearest descendant on this chain.
+                        if (GetFunctionMetadataTarget(scope) is { } targetSpan)
+                        {
+                            AzureFunctionsTags.SetRootSpanTags(
+                                targetSpan.Tags,
+                                isContainerApps,
+                                shortName: shortName,
+                                fullName: fullName,
+                                bindingSource: targetSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                                triggerType: triggerType);
 
-                        rootSpan.Type = SpanType; // "serverless"
+                            targetSpan.Type = SpanType; // "serverless"
+                        }
                     }
 
-                    span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    span.ResourceName = $"{triggerType} {shortName}";
                     span.Type = SpanType;
                 }
 
@@ -428,6 +458,52 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        /// <summary>
+        /// Gets the span that the Azure Functions "serverless" metadata (tags, span type, resource
+        /// name) should be written to, starting from <paramref name="scope"/>.
+        /// </summary>
+        /// <remarks>
+        /// Normally this is the local root span. When an inferred proxy span is the root we must not
+        /// overwrite it, because it represents the proxy rather than the function - but the function
+        /// metadata still has to land somewhere, so we walk up to the proxy's nearest descendant on
+        /// this scope's chain instead, and return null only when the scope's own span is that proxy
+        /// span. Without a proxy the walk reaches the chain root, so the non-proxy behaviour is
+        /// unchanged.
+        /// <para>
+        /// azure.frontdoor and azure.apim are treated identically. Previously the write was skipped
+        /// outright for a proxy root, which left no span in the trace carrying the Azure Functions
+        /// identity; relocating it fixes that for both. aws.apigateway is not listed because it
+        /// cannot front an Azure Function - but note that an unlisted operation name falls through
+        /// to the root, so a proxy added to <see cref="InferredProxySpanHelper"/> must be added here
+        /// too or its root span will be overwritten.
+        /// </para>
+        /// </remarks>
+        private static Span? GetFunctionMetadataTarget(Scope scope)
+        {
+            var rootSpan = scope.Root.Span;
+            var rootOperationName = rootSpan.OperationName;
+
+            if (rootOperationName != AzureFrontDoor && rootOperationName != AzureApim)
+            {
+                return rootSpan;
+            }
+
+            if (ReferenceEquals(rootSpan, scope.Span))
+            {
+                // The proxy span itself is the only candidate, so there is nothing safe to write to.
+                return null;
+            }
+
+            var candidate = scope;
+
+            while (candidate.Parent is { } parent && !ReferenceEquals(parent.Span, rootSpan))
+            {
+                candidate = parent;
+            }
+
+            return candidate.Span;
         }
 
         private static Scope? GetAspNetCoreScope<T>(T functionContext)

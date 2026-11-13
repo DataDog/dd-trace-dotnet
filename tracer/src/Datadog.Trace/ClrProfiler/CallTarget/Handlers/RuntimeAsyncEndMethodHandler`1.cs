@@ -129,7 +129,16 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
         {
             // Feeding the substituted value forward mirrors EndMethodHandler, where OnMethodEnd
             // receives whatever the continuation generator produced rather than the original.
-            returnValue = OnAsyncMethodEnd(instance, returnValue, exception, in state);
+            // As there, a failing OnAsyncMethodEnd is logged and leaves the original result, rather
+            // than skipping OnMethodEnd, unless it is a CallTargetBubbleUpException (e.g. an AppSec block)
+            try
+            {
+                returnValue = OnAsyncMethodEnd(instance, returnValue, exception, in state);
+            }
+            catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+            {
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+            }
         }
 
         if (OnMethodEnd is not null)

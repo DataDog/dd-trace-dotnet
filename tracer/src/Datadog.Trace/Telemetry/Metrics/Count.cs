@@ -266,6 +266,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
+    /// The number of errors the waf reported while loading a configuration, at init or on update
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafConfigAction>("waf.config_errors", isCommon: true, NS.ASM)] WafConfigErrors,
+
+    /// <summary>
     /// Requests analyzed by ddwaf
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
@@ -320,6 +325,21 @@ internal enum Count
     /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
     /// </summary>
     [TelemetryMetric<UserEventSdk>("sdk.event", isCommon: true, NS.ASM)] UserEventSdk,
+
+    /// <summary>
+    /// Counts the requests for which API Security could not get the route, so could not consider them for schema extraction
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.missing_route", isCommon: true, NS.ASM)] ApiSecMissingRoute,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which at least one schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.schema", isCommon: true, NS.ASM)] ApiSecRequestSchema,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which no schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.no_schema", isCommon: true, NS.ASM)] ApiSecRequestNoSchema,
 
 #endregion
 #region Iast Namespace

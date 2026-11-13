@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,11 +47,11 @@ namespace Datadog.Trace.Coverage.Collector
                 events.SessionEnd += OnSessionEnd;
                 events.TestHostLaunched += (sender, args) =>
                 {
-                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
+                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId.ToString(CultureInfo.InvariantCulture)} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
                 };
                 events.TestCaseStart += (sender, args) =>
                 {
-                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber)}]: {args.TestCaseName}");
+                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber).ToString(CultureInfo.InvariantCulture)}]: {args.TestCaseName}");
                 };
                 events.TestCaseEnd += (sender, args) =>
                 {
@@ -313,7 +314,7 @@ namespace Datadog.Trace.Coverage.Collector
                 }
             }
 
-            _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
+            _logger?.Warning($"Processed {numAssemblies.ToString(CultureInfo.InvariantCulture)} assemblies in folder: {folder}");
 
             // The following is just a best effort approach to indicate in the test session that
             // we successfully instrumented all assemblies to collect code coverage.

@@ -93,7 +93,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
             if (result != 0)
             {
-                throw new Win32Exception(result, $"PssCaptureSnapshot failed with code {result}");
+                throw new Win32Exception(result, StringUtil.Invariant($"PssCaptureSnapshot failed with code {result}"));
             }
 
             threadCount = GetThreadCount(snapshotHandle);
@@ -110,7 +110,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (64 bits) failed with code {result}");
+                    throw new Win32Exception(result, StringUtil.Invariant($"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (64 bits) failed with code {result}"));
                 }
 
                 userTime = (long)processInformation.UserTime;
@@ -125,7 +125,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (32 bits) failed with code {result}");
+                    throw new Win32Exception(result, StringUtil.Invariant($"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (32 bits) failed with code {result}"));
                 }
 
                 userTime = (long)processInformation.UserTime;
@@ -160,14 +160,14 @@ internal static class ProcessSnapshotRuntimeInformation
 
         if (result != 0)
         {
-            throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result}");
+            throw new Win32Exception(result, StringUtil.Invariant($"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result}"));
         }
 
         result = PssWalkMarkerCreate(IntPtr.Zero, out var walkMarkerHandle);
 
         if (result != 0)
         {
-            throw new Win32Exception(result, $"PssWalkMarkerCreate failed with code {result}");
+            throw new Win32Exception(result, StringUtil.Invariant($"PssWalkMarkerCreate failed with code {result}"));
         }
 
         try
@@ -182,7 +182,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssWalkSnapshot failed with code {result}");
+                    throw new Win32Exception(result, StringUtil.Invariant($"PssWalkSnapshot failed with code {result}"));
                 }
 
                 if (entry.Flags == PSS_THREAD_FLAGS.PSS_THREAD_FLAGS_TERMINATED)

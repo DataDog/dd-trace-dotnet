@@ -50,6 +50,16 @@ internal sealed class SkipLocalsInitAttribute : Attribute
 
 #endif
 
+#if !NET6_0_OR_GREATER
+/// <summary>
+/// Indicates the attributed type is to be used as an interpolated string handler.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+internal sealed class InterpolatedStringHandlerAttribute : Attribute
+{
+}
+#endif
+
 #if !NET7_0_OR_GREATER
 /// <summary>
 /// Specifies that a type has required members or that a member is required.

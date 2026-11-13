@@ -10,7 +10,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
 
-internal readonly struct TestsConfigurations
+internal readonly record struct TestsConfigurations
 {
     [JsonProperty(CommonTags.OSPlatform)]
     public readonly string OSPlatform;
@@ -37,6 +37,7 @@ internal readonly struct TestsConfigurations
     public readonly string? TestBundle;
 
     [JsonProperty("custom")]
+    // Retain dictionary reference equality so mutations do not invalidate keys in hash collections.
     public readonly Dictionary<string, string>? Custom;
 
     public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string? runtimeName, string? runtimeVersion, string? runtimeArchitecture, Dictionary<string, string>? custom, string? testBundle = null)

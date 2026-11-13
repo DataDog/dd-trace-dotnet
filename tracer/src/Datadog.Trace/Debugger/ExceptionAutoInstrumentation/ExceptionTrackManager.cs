@@ -278,7 +278,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     if (!string.IsNullOrEmpty(noCaptureReason))
                     {
-                        TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame, noCaptureReason);
+                        TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{assignIndex}."), participatingFrame, noCaptureReason);
                     }
 
                     assignIndex += 1;
@@ -391,7 +391,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             frameIndex -= 1;
                         }
 
-                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[0], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
+                        TagAndUpload(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), capturedFrames[0], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
                         uploadedHeadFrame = true;
                     }
                     else
@@ -408,7 +408,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                 frameIndex -= 1;
                             }
 
-                            TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", probe.Method.Method.Name, noCaptureReason);
+                            TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), probe.Method.Method.Name, noCaptureReason);
                         }
                     }
 
@@ -441,7 +441,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                         break;
                                     }
 
-                                    TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
+                                    TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
                                 }
 
                                 probeIndex -= 1;
@@ -472,7 +472,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                     frameIndex += 1;
                                 }
 
-                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
+                                TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
                             }
 
                             probeIndex -= 1;
@@ -495,7 +495,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             break;
                         }
 
-                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[capturedFrameIndex], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
+                        TagAndUpload(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), capturedFrames[capturedFrameIndex], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
                         capturedFrameIndex -= 1;
                         probeIndex -= 1;
                         frameIndex += 1;
@@ -585,7 +585,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             snapshot = snapshot
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionCaptureId, exceptionId)
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionHash, exceptionHash)
-                      .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToString());
+                      .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToStringInvariant());
             DebuggerManager.Instance.ExceptionReplay?.AddSnapshot(probeId, snapshot);
         }
 
@@ -628,11 +628,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ex != typeof(InvalidProgramException) &&
             ex != typeof(TypeInitializationException) &&
             ex != typeof(TypeLoadException) &&
-            // Both OutOfMemoryException and ThreadAbortException may be thrown anywhere from non-deterministic reasons, which means it won't
-            // necessarily re-occur with the same callstack. We should not attempt to rejit methods nor track these exceptions.
-            // ThreadAbortException is particularly problematic because is it often thrown in legacy ASP.NET apps whenever
+            // OutOfMemoryException, StackOverflowException, and ThreadAbortException may be thrown from
+            // non-deterministic reasons, so they will not necessarily re-occur with the same call stack.
+            // We should not attempt to rejit methods nor track these exceptions.
+            // ThreadAbortException is particularly problematic because it is often thrown in legacy ASP.NET apps whenever
             // there is an HTTP Redirect. See also https://stackoverflow.com/questions/2777105/why-response-redirect-causes-system-threading-threadabortexception
             ex != typeof(OutOfMemoryException) &&
+            ex != typeof(StackOverflowException) &&
             ex != typeof(ThreadAbortException);
 
         public void Dispose()
@@ -821,7 +823,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             span.Tags.SetTag("_dd.di._er", exceptionPhase);
-            span.Tags.SetTag("_dd.di._eh", exceptionHash.ToString());
+            span.Tags.SetTag("_dd.di._eh", exceptionHash.ToStringInvariant());
         }
     }
 }

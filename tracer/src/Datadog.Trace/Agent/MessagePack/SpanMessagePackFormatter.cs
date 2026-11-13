@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Processors;
@@ -442,13 +443,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 case sbyte or byte or short or ushort or int or uint or long:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, IntValueFieldBytes);
-                    offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value));
+                    offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value, CultureInfo.InvariantCulture));
                     break;
 
                 case float or double:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DoubleValueFieldBytes);
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value));
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value, CultureInfo.InvariantCulture));
                     break;
             }
 

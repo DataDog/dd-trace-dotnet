@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -137,7 +138,7 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteStringKvJson(writer, "telemetry.sdk.language", TracerConstants.Language);
-            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.SemanticVersion);
 
             WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
@@ -325,7 +326,7 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("value");
             writer.WriteStartObject();
             writer.WritePropertyName("intValue");
-            writer.WriteValue(value.ToString());
+            writer.WriteValue(value.ToString(CultureInfo.InvariantCulture));
             writer.WriteEndObject();
             writer.WriteEndObject();
         }
@@ -383,7 +384,7 @@ namespace Datadog.Trace.Agent
 
             WriteAttribute(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteAttribute(writer, "telemetry.sdk.language", TracerConstants.Language);
-            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.SemanticVersion);
 
             WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
@@ -635,7 +636,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Numeric code path: "0"→"OK", "5"→"NOT_FOUND", etc.
-            if (int.TryParse(grpcStatusCode, out var code) && (uint)code <= 16)
+            if (int.TryParseInvariant(grpcStatusCode, out var code) && (uint)code <= 16)
             {
                 return GrpcStatusNames[code];
             }

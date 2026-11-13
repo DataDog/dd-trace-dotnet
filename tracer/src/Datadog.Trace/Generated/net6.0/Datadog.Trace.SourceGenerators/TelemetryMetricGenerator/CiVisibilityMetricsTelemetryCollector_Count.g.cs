@@ -200,6 +200,10 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountWafConfigErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.WafConfigAction tag, int increment = 1)
+    {
+    }
+
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
     }
@@ -241,6 +245,18 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     }
 
     public void RecordCountUserEventSdk(Datadog.Trace.Telemetry.Metrics.MetricTags.UserEventSdk tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountApiSecMissingRoute(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountApiSecRequestSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountApiSecRequestNoSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
     {
     }
 

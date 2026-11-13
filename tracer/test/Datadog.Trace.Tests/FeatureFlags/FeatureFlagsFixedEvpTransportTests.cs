@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Specialized;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -29,10 +28,7 @@ public class FeatureFlagsFixedEvpTransportTests
     [InlineData("remote_config", 500)]
     public async Task ProductionSenderKeepsFixedV2AfterHttpFailure(string source, int firstStatus)
     {
-        using var agent = new HttpListener();
-        var agentUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        agent.Prefixes.Add(agentUrl);
-        agent.Start();
+        using var agent = TcpPortProvider.StartHttpListenerOnFreePort(out var agentUrl);
         var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, source },

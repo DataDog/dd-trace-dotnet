@@ -41,10 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, WebException webException, ref HttpWebResponse response)
         {
-            if (Tracer.Instance.InternalActiveScope is var scope)
-            {
-                scope.Span?.SetException(webException);
-            }
+            Tracer.Instance.InternalActiveScope?.Span.SetException(webException);
 
             return CallTargetState.GetDefault();
         }

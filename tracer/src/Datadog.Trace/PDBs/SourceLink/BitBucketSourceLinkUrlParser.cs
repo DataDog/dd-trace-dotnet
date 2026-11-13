@@ -27,7 +27,7 @@ namespace Datadog.Trace.Pdb.SourceLink
 
             try
             {
-                if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/"))
+                if (!uri.OriginalString.StartsWithOrdinal(@"https://api.bitbucket.org/2.0/repositories/"))
                 {
                     return false;
                 }

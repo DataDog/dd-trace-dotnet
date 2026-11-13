@@ -42,7 +42,7 @@ internal static class NUnitIntegration
 
     internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0, string? skipReasonOverride = null)
     {
-        var key = $"{currentTest.Id}|{repeatCount}";
+        var key = StringUtil.Invariant($"{currentTest.Id}|{repeatCount}");
         lock (Tests)
         {
             if (Tests.TryGetValue(key, out var testReference) && testReference.TryGetTarget(out var test))
@@ -367,6 +367,7 @@ internal static class NUnitIntegration
 
         var test = suite.CreateTest(testMethod.Name);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
         string? skipReason = skipReasonOverride;
 
         // Get test parameters

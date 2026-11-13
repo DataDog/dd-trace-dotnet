@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 69;
+    public const int Length = 73;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -69,6 +69,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "capture.incomplete",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
+            Datadog.Trace.Telemetry.Metrics.Count.WafConfigErrors => "waf.config_errors",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "waf.input_truncated",
             Datadog.Trace.Telemetry.Metrics.Count.WafError => "waf.error",
@@ -80,6 +81,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "instrum.user_auth.missing_user_id",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "instrum.user_auth.missing_user_login",
             Datadog.Trace.Telemetry.Metrics.Count.UserEventSdk => "sdk.event",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecMissingRoute => "api_security.missing_route",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecRequestSchema => "api_security.request.schema",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecRequestNoSchema => "api_security.request.no_schema",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "executed.source",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "executed.propagation",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
@@ -139,6 +143,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "debugger",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafConfigErrors => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafError => "appsec",
@@ -150,6 +155,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.UserEventSdk => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecMissingRoute => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecRequestSchema => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.ApiSecRequestNoSchema => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "iast",

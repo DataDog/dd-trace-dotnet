@@ -9,13 +9,17 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Location>();
+
     // Both Windows ('\') and Unix ('/') separators, because PDBs produced on one OS may be read on another.
     private static readonly char[] PathSeparators = ['/', '\\'];
 
@@ -48,20 +52,15 @@ internal readonly struct Location
     public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId, StackFrame? identityFrame = null)
     {
         var method = stackFrame?.GetMethod();
-        Class = method?.DeclaringType?.FullName;
-        Method = method?.Name;
+        var sourceMethod = GetSourceMethod(method);
+        Class = sourceMethod?.DeclaringType?.FullName;
+        Method = sourceMethod?.Name;
 
-        if (identityFrame is null || identityFrame == stackFrame)
-        {
-            _identityClass = Class;
-            _identityMethod = Method;
-        }
-        else
-        {
-            var identityMethod = identityFrame.GetMethod();
-            _identityClass = identityMethod?.DeclaringType?.FullName;
-            _identityMethod = identityMethod?.Name;
-        }
+        // the identity keeps the frame's own method, state machine included, because it is what the
+        // vulnerability hash, and so the backend, identifies the vulnerability by
+        var identityMethod = identityFrame is null || identityFrame == stackFrame ? method : identityFrame.GetMethod();
+        _identityClass = identityMethod?.DeclaringType?.FullName;
+        _identityMethod = identityMethod?.Name;
 
         var line = stackFrame?.GetFileLineNumber();
         Line = line > 0 ? line : null;
@@ -100,6 +99,26 @@ internal readonly struct Location
     {
         // We do not calculate the hash including the spanId nor the line
         return IastUtils.GetHashCode(_identityClass, _identityMethod);
+    }
+
+    // The MoveNext of an async method or an iterator is reported as the method it was generated from
+    private static MethodBase? GetSourceMethod(MethodBase? method)
+    {
+        try
+        {
+            if (method is not null && StateMachineHelper.TryGetSourceMethod(method, out var sourceMethod))
+            {
+                return sourceMethod;
+            }
+        }
+        catch (Exception ex)
+        {
+            // reading the attributes of the customer's methods can fail when an assembly they reference is missing,
+            // which happens again for every vulnerability raised there, so not worth more than a debug log
+            Log.Debug(ex, "Could not resolve the source method of the state machine {Type}", method?.DeclaringType?.FullName);
+        }
+
+        return method;
     }
 
     // Extracts the file name from a path, handling both Windows ('\') and Unix ('/') separators.

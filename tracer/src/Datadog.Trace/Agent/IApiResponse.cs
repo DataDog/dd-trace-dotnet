@@ -72,7 +72,7 @@ namespace Datadog.Trace.Agent
             }
             catch (JsonException ex) when (bufferedStream?.GetBufferedContent() is { } buffered)
             {
-                throw new JsonException($"{ex.Message} Original content length {apiResponse.ContentLength} and content: '{buffered}'", ex);
+                throw new JsonException(StringUtil.Invariant($"{ex.Message} Original content length {apiResponse.ContentLength} and content: '{buffered}'"), ex);
             }
             finally
             {

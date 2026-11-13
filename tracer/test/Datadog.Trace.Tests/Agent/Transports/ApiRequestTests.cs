@@ -7,7 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.StreamFactories;
@@ -43,13 +47,222 @@ public class ApiRequestTests
 
     [Theory]
     [CombinatorialData]
-    public async Task ApiWebRequest(bool useGzip)
+    public async Task ApiWebRequest(bool useGzip, bool withTimeout)
     {
         using var agent = MockTracerAgent.Create(_output);
         var url = new Uri($"http://localhost:{agent.Port}/");
-        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
+
+        var timeout = withTimeout ? TimeSpan.FromSeconds(90) : (TimeSpan?)null;
+        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders, timeout);
         await RunTest(agent, () => factory.Create(url), useGzip);
     }
+
+    // These tests exercise the deadline-enforcement added to ApiWebRequest to work around
+    // HttpWebRequest.Timeout having no effect on the async GetRequestStreamAsync/
+    // GetResponseAsync APIs.
+
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_AbortedMidFlight_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+        var bytes = Encoding.UTF8.GetBytes("{}");
+
+        try
+        {
+            var pending = request.SendAsync("POST", "application/json", null, stream => stream.WriteAsync(bytes, 0, bytes.Length), cts);
+
+            await listener.Accepted;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_GetAsync_AbortedMidFlight_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+
+        try
+        {
+            var pending = request.SendAsync("GET", null, null, null, cts);
+
+            await listener.Accepted;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_AlreadyCancelledDeadline_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+
+        try
+        {
+            // Cancel before the send even starts, so the abort lands during
+            // GetRequestStreamAsync/connect, not during GetResponseAsync.
+            cts.Cancel();
+
+            Func<Task> act = () => request.SendAsync("GET", null, null, null, cts);
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_ProtocolError_WithoutTimeout_StillReturnsResponse()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        agent.ShouldDeserializeTraces = false;
+        agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse("{\"errors\":[\"bad request\"]}", 400);
+
+        var url = new Uri($"http://localhost:{agent.Port}/");
+        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders, TimeSpan.FromSeconds(30));
+        var request = factory.Create(url);
+        var bytes = Encoding.UTF8.GetBytes("{}");
+
+        var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json");
+
+        response.StatusCode.Should().Be(400);
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_ProducerStalledOnUnrelatedIO_ThrowsOperationCanceledException()
+    {
+        // The deadline must bound the request-body producer even when it's blocked on something
+        // other than the request stream (e.g. reading a local file), where Abort() alone has no
+        // effect. Use a body producer that never completes on its own -- if the deadline doesn't
+        // bound it, this test hangs instead of failing.
+        //
+        // This producer never writes to the request stream, so we can't synchronize on
+        // listener.Accepted: GetRequestStreamAsync() hands back a buffering stream (neither
+        // ContentLength nor SendChunked is set), and HttpWebRequest defers the actual connect/send
+        // until that stream sees data or is closed. Since nothing is ever written, no connection is
+        // ever attempted - waiting on the listener would hang forever. Instead, synchronize on the
+        // producer having actually been invoked.
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+        var neverCompletes = new TaskCompletionSource<bool>();
+        var started = new TaskCompletionSource<bool>();
+
+        try
+        {
+            var pending = request.SendAsync(
+                "POST",
+                "application/json",
+                null,
+                _ =>
+                {
+                    started.TrySetResult(true);
+                    return neverCompletes.Task;
+                },
+                cts);
+
+            await started.Task;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            neverCompletes.TrySetResult(true);
+            listener.Release();
+        }
+    }
+
+#if NETFRAMEWORK || NET9_0_OR_GREATER
+    // Before .NET 9, HttpWebRequest on .NET Core always buffers the request body in memory
+    // (AllowWriteStreamBuffering is ignored), so a write can never block on the connection.
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_AbortedWhileBlockedWritingRequestStream_ThrowsOperationCanceledException()
+    {
+        // Make sure the request is aborted when the producer is blocked writing to the request stream.
+        // ApiWebRequest currently uses the default buffered request stream, where writes never touch the
+        // socket, but we want to stay safe if that changes. Disable buffering so writes go straight to the
+        // connection: BlackHoleTcpListener never reads from the socket, so once the OS buffers fill, a
+        // write stays pending.
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var httpWebRequest = (HttpWebRequest)WebRequest.Create($"http://127.0.0.1:{listener.Port}/");
+        httpWebRequest.SendChunked = true;
+        httpWebRequest.AllowWriteStreamBuffering = false;
+        var request = new ApiWebRequest(httpWebRequest);
+
+        var chunk = new byte[64 * 1024];
+        var writeBlocked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var producerFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        try
+        {
+            var pending = request.SendAsync(
+                "POST",
+                "application/json",
+                null,
+                async stream =>
+                {
+                    try
+                    {
+                        // Keep writing until a write doesn't complete promptly, which means it's blocked on the
+                        // full send buffer. Bounded so we fail rather than hang if writes never block.
+                        for (var i = 0; i < 1024; i++)
+                        {
+                            var writeTask = stream.WriteAsync(chunk, 0, chunk.Length);
+                            if (await Task.WhenAny(writeTask, Task.Delay(100)) != writeTask)
+                            {
+                                writeBlocked.TrySetResult(true);
+                            }
+
+                            await writeTask;
+                        }
+                    }
+                    finally
+                    {
+                        producerFinished.TrySetResult(true);
+                    }
+                },
+                cts);
+
+            var first = await Task.WhenAny(writeBlocked.Task, producerFinished.Task, pending);
+            first.Should().BeSameAs(writeBlocked.Task, "the producer should be blocked mid-write");
+
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+
+            // Abort() should also unblock the stalled write itself, rather than leaving it pending forever
+            var finished = await Task.WhenAny(producerFinished.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            finished.Should().BeSameAs(producerFinished.Task, "aborting the request should fault the blocked write");
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+#endif
 
 #if NETCOREAPP3_1_OR_GREATER
 
@@ -73,6 +286,28 @@ public class ApiRequestTests
             new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
+    }
+
+    [Fact]
+    public async Task HttpClientRequest_TimesOut_PropagatesTaskCanceledException()
+    {
+        var handler = new StubHttpMessageHandler(_ => throw new TaskCanceledException("Simulated HttpClient.Timeout"));
+        var factory = new HttpClientRequestFactory(Localhost, AgentHttpHeaderNames.DefaultHeaders, handler);
+        var request = factory.Create(Localhost);
+
+        Func<Task> act = request.GetAsync;
+        await act.Should().ThrowAsync<TaskCanceledException>();
+    }
+
+    [Fact]
+    public async Task HttpClientRequest_OtherFailure_PropagatesUnchanged()
+    {
+        var handler = new StubHttpMessageHandler(_ => throw new HttpRequestException("Simulated connection failure"));
+        var factory = new HttpClientRequestFactory(Localhost, AgentHttpHeaderNames.DefaultHeaders, handler);
+        var request = factory.Create(Localhost);
+
+        Func<Task> act = request.GetAsync;
+        await act.Should().ThrowAsync<HttpRequestException>();
     }
 #endif
 
@@ -105,6 +340,8 @@ public class ApiRequestTests
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
     }
+
+    private static ApiWebRequest CreateWebRequest(int port) => new((HttpWebRequest)WebRequest.Create($"http://127.0.0.1:{port}/"));
 
     private async Task RunTest(MockTracerAgent agent, Func<IApiRequest> createRequest, bool useGzip)
     {
@@ -187,4 +424,94 @@ public class ApiRequestTests
                         Interval = 60,
                     },
                 }));
+
+#if NETCOREAPP3_1_OR_GREATER
+    private sealed class StubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
+
+        public StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(_responder(request));
+    }
+#endif
+
+    private sealed class BlackHoleTcpListener : IDisposable
+    {
+        private readonly TcpListener _listener;
+        private readonly TaskCompletionSource<bool> _accepted = new();
+        private readonly TaskCompletionSource<bool> _release = new();
+        private volatile bool _stopping;
+
+        public BlackHoleTcpListener()
+        {
+            _listener = new TcpListener(IPAddress.Loopback, 0);
+            _listener.Start();
+            Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
+
+            var thread = new Thread(Run) { IsBackground = true };
+            thread.Start();
+        }
+
+        public int Port { get; }
+
+        public Task Accepted => _accepted.Task;
+
+        public void Release() => _release.TrySetResult(true);
+
+        public void Dispose()
+        {
+            // Tell Run() to give up instead of calling the blocking AcceptTcpClient() if nothing has
+            // connected yet. On some runtimes (e.g. netcoreapp3.1 on Linux), Stop()/Dispose() spin-waits
+            // for an in-flight accept to release the socket handle, and a newly-arriving connection
+            // doesn't reliably wake it -- deadlocking test cleanup. Avoiding the blocking call entirely
+            // once we're stopping sidesteps that instead of depending on the runtime to interrupt it.
+            _stopping = true;
+            Release();
+
+            try
+            {
+                _listener.Stop();
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+        }
+
+        private void Run()
+        {
+            TcpClient client = null;
+            try
+            {
+                while (!_stopping && !_listener.Pending())
+                {
+                    Thread.Sleep(10);
+                }
+
+                if (_stopping)
+                {
+                    return;
+                }
+
+                client = _listener.AcceptTcpClient();
+                _accepted.TrySetResult(true);
+
+                // Hold the connection open -- never finish the response -- until the test is done with it.
+                _release.Task.Wait();
+            }
+            catch (Exception ex)
+            {
+                _accepted.TrySetException(ex);
+            }
+            finally
+            {
+                client?.Close();
+            }
+        }
+    }
 }

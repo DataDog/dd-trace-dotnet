@@ -73,6 +73,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+    /// For Oracle in service mode, the Base Hash is written to the session ACTION instead of SQL comments.
     /// Default value is false (disabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
@@ -82,6 +83,7 @@ internal static partial class ConfigurationKeys
     /// Configuration key for setting DBM propagation mode
     /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
     /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
+    /// For Oracle, dynamic_service writes the Base Hash to the session ACTION instead of injecting SQL comments
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
@@ -155,6 +157,16 @@ internal static partial class ConfigurationKeys
     /// Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
     /// </summary>
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
+
+    /// <summary>
+    /// Origin detection information injected into application containers by the Datadog Cluster Agent Admission Controller,
+    /// e.g. <c>it-false,cn-nginx-webserver,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759</c>.
+    /// When set, the value is forwarded unparsed in the <c>Datadog-External-Env</c> header on requests to the agent
+    /// (traces, stats, remote configuration) and to the telemetry intake, so that the agent can resolve the origin
+    /// container when the container id or cgroup inode are not available. Empty or invalid values are ignored.
+    /// This is not intended to be set manually.
+    /// </summary>
+    public const string ExternalEnv = "DD_EXTERNAL_ENV";
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
@@ -248,6 +260,7 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
     /// Default value is <c>true</c> (enabled) on .NET 6+ and <c>false</c> (disabled) otherwise.
+    /// Runtime metrics are always disabled when <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> is <c>true</c>.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 

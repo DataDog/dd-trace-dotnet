@@ -328,16 +328,6 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
 #endif
         }
 
-        public static bool StartsWith(this string source, char value)
-        {
-            return (source.Length > 0 && source[0] == value);
-        }
-
-        public static bool EndsWith(this string source, char value)
-        {
-            return (source.Length > 0 && source[source.Length - 1] == value);
-        }
-
         public static string Trim(this string s, int start, int length)
         {
             // References: https://referencesource.microsoft.com/#mscorlib/system/string.cs,2691

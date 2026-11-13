@@ -185,7 +185,10 @@ internal static class FiltersHelper
             return false;
         }
 
-        if (!filter.StartsWith("["))
+        // Not the char overloads: this assembly only targets netstandard2.0, where StartsWith(char)/EndsWith(char)
+        // bind to Datadog.Trace's StringUtil polyfills, which don't exist in the .NET Core builds of Datadog.Trace
+        // that are loaded at runtime on .NET Core
+        if (!filter.StartsWithOrdinal("["))
         {
             return false;
         }
@@ -215,7 +218,7 @@ internal static class FiltersHelper
             return false;
         }
 
-        if (filter.EndsWith("]"))
+        if (filter.EndsWithOrdinal("]"))
         {
             return false;
         }

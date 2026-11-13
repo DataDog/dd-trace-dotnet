@@ -75,10 +75,7 @@ public class FeatureFlagsEvpTransportTests
     public async Task RuntimeEndpointChangeRequiresCapabilitiesFromReplacementAgent(bool discoverBeforeTransportUpdate, bool replacementSupportsIdentity, bool sendBeforeUpdate)
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var replacement = new HttpListener();
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        replacement.Prefixes.Add(replacementUrl);
-        replacement.Start();
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var received = replacement.GetContextAsync();
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
@@ -162,10 +159,7 @@ public class FeatureFlagsEvpTransportTests
     public async Task DelayedOldAgentDiscoveryCannotAuthorizeReplacementAgent()
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var replacement = new HttpListener();
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        replacement.Prefixes.Add(replacementUrl);
-        replacement.Start();
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var received = replacement.GetContextAsync();
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
@@ -232,14 +226,8 @@ public class FeatureFlagsEvpTransportTests
     public async Task LateOldAgentResponseDoesNotSuppressReplacementAgent(int oldStatus)
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var oldAgent = new HttpListener();
-        using var replacement = new HttpListener();
-        var oldUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        oldAgent.Prefixes.Add(oldUrl);
-        replacement.Prefixes.Add(replacementUrl);
-        oldAgent.Start();
-        replacement.Start();
+        using var oldAgent = TcpPortProvider.StartHttpListenerOnFreePort(out var oldUrl);
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
             (ConfigurationKeys.AgentUri, oldUrl));
@@ -678,12 +666,12 @@ public class FeatureFlagsEvpTransportTests
         directHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
         directHeaders.Should().Contain(TelemetryConstants.ApiKeyHeader, "test-api-key");
         directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        directHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         directHeaders.Should().NotContainKey(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader);
 
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpSubdomainHeader, FeatureFlagsEvpHeaderHelper.EvpSubdomain);
         localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin);
-        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion);
+        localHeaders.Should().Contain(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion);
         localHeaders.Should().NotContainKey(TelemetryConstants.ApiKeyHeader);
         localHeaders.Should().Contain(HttpHeaderNames.TracingEnabled, "false");
     }
@@ -719,6 +707,30 @@ public class FeatureFlagsEvpTransportTests
 
         send.IsCompleted.Should().BeTrue("there is no discovery loop or direct credential to wait for");
         await send;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NetworkFailureUsesInjectedLogger(bool useLocalRoute)
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var failure = new IOException("connection reset");
+        var local = CreateFactory("http://agent:8126/", uri => new ThrowingApiRequest(uri, failure));
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/", uri => new ThrowingApiRequest(uri, failure));
+        using var transport = new FeatureFlagsEvpTransport(
+            FeatureFlagsSource.Agentless,
+            local,
+            direct,
+            NullDiscoveryService.Instance,
+            initialLocalProxyEndpoint: useLocalRoute ? FeatureFlagsEvpTransport.EventPlatformProxyV4 : null,
+            logger: logger.Object);
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+
+        logger.Verify(l => l.ErrorSkipTelemetry(failure, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        (useLocalRoute ? local : direct).RequestsSent.Should().ContainSingle();
+        (useLocalRoute ? direct : local).RequestsSent.Should().BeEmpty();
     }
 
     [Theory]
@@ -767,14 +779,8 @@ public class FeatureFlagsEvpTransportTests
     [Fact]
     public async Task LocalRedirectIsNotFollowedOrReplayedAndOnlyFutureBatchUsesDirect()
     {
-        using var relay = new HttpListener();
-        using var destination = new HttpListener();
-        var relayUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        relay.Prefixes.Add(relayUrl);
-        relay.Start();
-        var destinationUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        destination.Prefixes.Add(destinationUrl);
-        destination.Start();
+        using var relay = TcpPortProvider.StartHttpListenerOnFreePort(out var relayUrl);
+        using var destination = TcpPortProvider.StartHttpListenerOnFreePort(out var destinationUrl);
         var receivedAtDestination = destination.GetContextAsync();
         var receivedAtRelay = relay.GetContextAsync();
         var local = FeatureFlagsEvpTransport.CreateLocalRequestFactory(CreateSettings((ConfigurationKeys.AgentUri, relayUrl)).Manager.InitialExporterSettings);
@@ -1059,7 +1065,7 @@ public class FeatureFlagsEvpTransportTests
         endpoint.Should().Be(new Uri("https://event-platform-intake.mock-intake.invalid/api/v2/exposures"));
         headers.Should().Contain("DD-API-KEY", "test-api-key");
         headers.Should().Contain("DD-EVP-ORIGIN", "dd-trace-dotnet");
-        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion);
+        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.SemanticVersion);
         headers.Should().Contain("x-datadog-tracing-enabled", "false");
         headers.Should().NotContainKey("X-Datadog-EVP-Subdomain");
     }

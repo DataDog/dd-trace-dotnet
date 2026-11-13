@@ -935,12 +935,43 @@
       "tags": [
         "waf_version",
         "event_rules_version",
+        "action",
         "config_key",
         "scope"
       ],
       "metric_type": "count",
       "data_type": "errors",
       "description": "Count of errors reported by the WAF on about particular config item",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.missing_route": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which the library was unable to obtain the HTTP route.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which schemas were generated.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.no_schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests without schema..",
       "send_to_user": false,
       "user_tags": []
     },
@@ -1737,6 +1768,16 @@
       "metric_type": "count",
       "data_type": "tests",
       "description": "The number of tests detected as modified",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "dynamic_atr_retries.enabled": {
+      "tags": [
+        "has_custom_buckets"
+      ],
+      "metric_type": "count",
+      "data_type": "sessions",
+      "description": "The number of sessions that pick the automatic test retries count from the duration of each test. Tagged with has_custom_buckets:true when DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS sets the counts",
       "send_to_user": false,
       "user_tags": []
     }

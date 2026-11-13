@@ -100,14 +100,14 @@ internal sealed class TelemetryController : ITelemetryController
         });
 
         _flushTask = Task.Run(PushTelemetryLoopAsync);
-        _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in telemetry flush task"), TaskContinuationOptions.OnlyOnFaulted);
+        _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in telemetry flush task"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     public void RecordTracerSettings(TracerSettings settings)
     {
         _application.RecordTracerSettings(settings);
         _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
-        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
+        _namingVersion = ((int)settings.MetadataSchemaVersion).ToStringInvariant();
         _logTagBuilder.Update(settings);
     }
 

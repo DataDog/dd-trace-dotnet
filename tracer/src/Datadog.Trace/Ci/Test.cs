@@ -52,6 +52,7 @@ public sealed class Test
     {
         Suite = suite;
         var module = suite.Module;
+        module.CountTest();
         _priorTest = CurrentTest.Value;
         _testOptimization = TestOptimization.Instance;
 
@@ -87,7 +88,7 @@ public sealed class Test
             tags.CapabilitiesAutoTestRetries = "1";
             tags.CapabilitiesTestManagementQuarantine = "1";
             tags.CapabilitiesTestManagementDisable = "1";
-            tags.CapabilitiesTestManagementAttemptToFix = "4";
+            tags.CapabilitiesTestManagementAttemptToFix = "5";
 
             CurrentTest.Value = this;
             lock (OpenedTests)

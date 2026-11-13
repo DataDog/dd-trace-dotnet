@@ -81,14 +81,14 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
             }
 
             // .NET Core 3.1+, but is it _too_ high?
-            if(runtimeInformation.major_version <= 10)
+            if(runtimeInformation.major_version <= 11)
             {
                 // supported
                 Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET runtime version detected, continuing with single step instrumentation");
                 return S_OK;
             }
 
-            const auto eol = ".NET 11 or higher";
+            const auto eol = ".NET 12 or higher";
 
             const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
                                  std::to_string(runtimeInformation.minor_version) + "." +

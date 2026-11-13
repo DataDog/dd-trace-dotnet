@@ -476,7 +476,7 @@ internal static class CiUtils
                     var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                     foreach (var folder in outputFolders)
                     {
-                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{testOptimization.RunId}");
+                        var outputPath = Path.Combine(folder, StringUtil.Invariant($"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{testOptimization.RunId}"));
                         if (!Directory.Exists(outputPath))
                         {
                             try

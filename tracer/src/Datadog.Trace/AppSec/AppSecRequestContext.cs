@@ -98,11 +98,11 @@ internal sealed partial class AppSecRequestContext
         }
     }
 
-    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
+    internal void AddRaspSpanMetrics(ulong totalDuration, ulong totalDurationWithBindings, bool timeout)
     {
         lock (_sync)
         {
-            _raspMetricsHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
+            _raspMetricsHelper?.AddRaspSpanMetrics(totalDuration, totalDurationWithBindings, timeout);
         }
     }
 
