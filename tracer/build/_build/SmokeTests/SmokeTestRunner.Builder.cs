@@ -20,7 +20,7 @@ public static partial class SmokeTestRunner
         const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
-        const string WindowsTestAgentBaseImageLtsc2025 = "python:3.12.10-windowsservercore-ltsc2025";
+        const string WindowsTestAgentBaseImageLtsc2025 = "python:3.10.5-windowsservercore-ltsc2022"; // TEMPORARY (#9700): baseline measurement
         readonly SmokeTestImageDigests ImageDigests;
 
         public Builder(SmokeTestImageDigests imageDigests)
