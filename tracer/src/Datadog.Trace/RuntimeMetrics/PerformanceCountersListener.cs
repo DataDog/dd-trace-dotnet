@@ -63,7 +63,20 @@ namespace Datadog.Trace.RuntimeMetrics
             // That's because performance counters may rely on wmiApSrv being started,
             // and the windows service manager only allows one service at a time to be starting: https://docs.microsoft.com/en-us/windows/win32/services/service-startup
             _initializationTask = Task.Run(InitializePerformanceCounters);
-            _initializationTask.ContinueWith(t => Log.ErrorSkipTelemetry(t.Exception, "Error in performance counter initialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _initializationTask.ContinueWith(
+                t =>
+                {
+                    var exception = t.Exception;
+                    if (exception.InnerException is UnauthorizedAccessException ex && ex.Message.Contains("'Global'"))
+                    {
+                        Log.ErrorSkipTelemetry(exception, InsufficientPermissionsMessageTemplate);
+                    }
+                    else
+                    {
+                        Log.ErrorSkipTelemetry(exception, "Error in performance counter initialization task");
+                    }
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public Task WaitForInitialization() => _initializationTask;
@@ -132,33 +145,17 @@ namespace Datadog.Trace.RuntimeMetrics
 
         protected virtual void InitializePerformanceCounters()
         {
-            try
-            {
-                _memoryCategory = new PerformanceCounterCategory(MemoryCategoryName);
+            _memoryCategory = new PerformanceCounterCategory(MemoryCategoryName);
 
-                var instanceName = GetInstanceName();
-                _fullInstanceName = instanceName.Item2;
-                _instanceName = instanceName.Item1;
+            var instanceName = GetInstanceName();
+            _fullInstanceName = instanceName.Item2;
+            _instanceName = instanceName.Item1;
 
-                _gen0Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 0 heap size", _instanceName);
-                _gen1Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 1 heap size", _instanceName);
-                _gen2Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 2 heap size", _instanceName);
-                _lohSize = new PerformanceCounterWrapper(MemoryCategoryName, "Large Object Heap size", _instanceName);
-                _contentionCount = new PerformanceCounterWrapper(ThreadingCategoryName, "Total # of Contentions", _instanceName);
-            }
-            catch (UnauthorizedAccessException ex) when (ex.Message.Contains("'Global'"))
-            {
-                // Catching error UnauthorizedAccessException: Access to the registry key 'Global' is denied.
-                // The 'Global' part seems consistent across localizations
-
-                Log.ErrorSkipTelemetry(ex, InsufficientPermissionsMessageTemplate);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorSkipTelemetry(ex, "An error occured while initializing the performance counters");
-                throw;
-            }
+            _gen0Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 0 heap size", _instanceName);
+            _gen1Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 1 heap size", _instanceName);
+            _gen2Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 2 heap size", _instanceName);
+            _lohSize = new PerformanceCounterWrapper(MemoryCategoryName, "Large Object Heap size", _instanceName);
+            _contentionCount = new PerformanceCounterWrapper(ThreadingCategoryName, "Total # of Contentions", _instanceName);
         }
 
         private void TryUpdateGauge(IDogStatsd statsd, string path, PerformanceCounterWrapper counter)
