@@ -1451,9 +1451,20 @@ namespace Datadog.Trace.DuckTyping
             internal static Type AddIlToExtractDuckType(LazyILGenerator il, Type toType, Type fromType)
             {
                 // outer is a duck type, so extract it
-                // Call IDuckType.Instance property to get the actual value
                 il.Emit(OpCodes.Castclass, typeof(IDuckType));
+                return AddIlToGetDuckTypeInstance(il);
+            }
+
+            internal static Type AddIlToGetDuckTypeInstance(LazyILGenerator il)
+            {
+                // A null proxy represents a null target instance.
+                var skipDuckTypeInstanceLabel = il.DefineLabel();
+                il.Emit(OpCodes.Dup);
+                il.Emit(OpCodes.Brfalse_S, skipDuckTypeInstanceLabel);
+
                 il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod!, null!);
+
+                il.MarkLabel(skipDuckTypeInstanceLabel);
                 return typeof(object);
             }
         }
