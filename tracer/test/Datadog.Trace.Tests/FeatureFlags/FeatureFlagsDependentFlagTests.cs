@@ -420,7 +420,7 @@ public class FeatureFlagsDependentFlagTests
 
         (result.Reason == EvaluationReason.Error).Should().Be(expectError);
         trace.DependencyEvaluations.Should().ContainSingle();
-        logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(expectLog ? 1 : 0);
+        logger.Invocations.Count(IsMalformedEvaluatorOptionsDiagnostic).Should().Be(expectLog ? 1 : 0);
     }
 
     [Fact]
@@ -587,7 +587,7 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Fact]
-    public void MalformedAndThrowingEvaluatorOptionsWarnOncePerRootAndFallBackLazily()
+    public void MalformedAndThrowingEvaluatorOptionsLogDebugOncePerRootAndFallBackLazily()
     {
         var options = new EvaluatorParams?[]
         {
@@ -608,18 +608,18 @@ public class FeatureFlagsDependentFlagTests
             var evaluator = new FeatureFlagsEvaluator(null, config, logger: logger.Object);
 
             evaluator.Evaluate("ordinary", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("ordinary");
-            logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning));
+            logger.Invocations.Should().NotContain(invocation => IsMalformedEvaluatorOptionsDiagnostic(invocation));
             evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
             evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
-            logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(2);
+            logger.Invocations.Count(IsMalformedEvaluatorOptionsDiagnostic).Should().Be(2);
         }
     }
 
     [Fact]
-    public void EvaluatorOptionWarningFailureDoesNotAffectEvaluation()
+    public void EvaluatorOptionDiagnosticFailureDoesNotAffectEvaluation()
     {
         var logger = new Mock<IDatadogLogger>();
-        logger.Setup(x => x.Warning(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
+        logger.Setup(x => x.Debug(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
               .Throws(new InvalidOperationException("logging failed"));
         var config = Configuration(
             StaticFlag("dependency", "on"),
@@ -683,6 +683,12 @@ public class FeatureFlagsDependentFlagTests
 
         result.Error.Should().Be("PARSE_ERROR");
     }
+
+    private static bool IsMalformedEvaluatorOptionsDiagnostic(IInvocation invocation) =>
+        invocation.Method.Name == nameof(IDatadogLogger.Debug)
+     && invocation.Arguments.Count > 1
+     && invocation.Arguments[1] is string message
+     && message == "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10";
 
     private static FeatureFlagsEvaluator Evaluator(ServerConfiguration config) => new(null, config);
 

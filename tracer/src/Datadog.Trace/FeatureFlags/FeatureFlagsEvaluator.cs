@@ -606,7 +606,7 @@ namespace Datadog.Trace.FeatureFlags
             {
                 try
                 {
-                    log.Warning(ex, "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10");
+                    log.Debug(ex, "Feature Flags evaluator options are malformed; using the default maximum dependency depth of 10");
                 }
                 catch
                 {
