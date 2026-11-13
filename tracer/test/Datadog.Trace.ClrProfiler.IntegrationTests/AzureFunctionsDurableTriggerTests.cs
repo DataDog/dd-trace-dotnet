@@ -18,6 +18,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -39,7 +40,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
     private const string ExpectedFailureMessage = "Unable to greet World.";
     private const string ExpectedImmediateFailureMessage = "Unable to start orchestration.";
     private const string ManualActivitySpanName = "Manual inside DurableActivity";
-    private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     private static readonly string[] ExpectedDurableResources =
     [
         "DurableOrchestration DurableWorkflow",
@@ -51,13 +51,15 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         "DurableOrchestration ImmediatelyFailingDurableWorkflow",
     ];
 
-    public AzureFunctionsDurableTriggerTests(ITestOutputHelper output)
+    private readonly AzureEventHubsFixture _eventHubsFixture;
+
+    public AzureFunctionsDurableTriggerTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture)
         : base("AzureFunctions.V4Isolated.Durable", output)
     {
+        _eventHubsFixture = eventHubsFixture;
         SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
         SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(AzureFunctionsDurableTriggerTests));
-        SetEnvironmentVariable("AzureWebJobsStorage", GetAzuriteConnectionString());
         SetEnvironmentVariable("TASKHUB_NAME", "default");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
     }
@@ -70,6 +72,7 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
     public async Task OrchestrationActivityEntity_SubmitsTrace(string packageVersion)
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
+        await ConfigureContainers(_eventHubsFixture);
 
         var testId = Guid.NewGuid().ToString("N");
         SetEnvironmentVariable("AzureFunctionsWebHost__hostid", "afdurable" + testId.Substring(0, 23));
@@ -179,12 +182,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 
         responseBody.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
                     .Should().Equal("Completed", "Failed", "Failed");
-    }
-
-    private static string GetAzuriteConnectionString()
-    {
-        var host = Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME") is null ? "127.0.0.1" : "azurite";
-        return $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={AzuriteAccountKey};BlobEndpoint=http://{host}:10000/devstoreaccount1;QueueEndpoint=http://{host}:10001/devstoreaccount1;TableEndpoint=http://{host}:10002/devstoreaccount1;";
     }
 }
 
