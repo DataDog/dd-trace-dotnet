@@ -103,6 +103,15 @@ build:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
+      - script_failure
   timeout: 2h
   tags: ["windows-v2:2022"]
   hooks:
@@ -240,6 +249,15 @@ publish:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
       - $DOTNET_PACKAGE_VERSION
   stage: publish-artifacts
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
+      - script_failure
   tags: ["windows-v2:2022"]
   needs:
     - job: build
@@ -295,6 +313,14 @@ publish:
 
 download-nuget-packages-to-sign:
   stage: package
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
   image: registry.ddbuild.io/images/ci/images:1.2.6
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
@@ -319,6 +345,15 @@ download-nuget-packages-to-sign:
 
 sign-nuget-packages:
   stage: sign-nuget
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
+      - script_failure
   timeout: 15m
   tags: ["windows-v2:2022"]
   rules:
@@ -378,6 +413,14 @@ sign-nuget-packages:
 
 download-single-step-artifacts:
   stage: package
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
   image: registry.ddbuild.io/images/ci/images:1.2.6
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
@@ -427,6 +470,14 @@ deploy_to_reliability_env:
 
 download-serverless-artifacts:
   stage: package
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - unknown_failure
+      - data_integrity_failure
   image: registry.ddbuild.io/images/ci/images:1.2.6
   # Overall job cap across all artifact polls, downloads, and build retries; never resets.
   # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.

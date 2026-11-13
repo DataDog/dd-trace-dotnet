@@ -1436,6 +1436,7 @@ stages:
         displayName: Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        retryCountOnTaskFailure: 1
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -1550,6 +1551,7 @@ stages:
         baseImage: $(baseImage)
         command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
@@ -1608,6 +1610,7 @@ stages:
             baseImage: $(baseImage)
             command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 1
 
         - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
@@ -1821,6 +1824,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+      retryCountOnTaskFailure: 1
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (ASM)
@@ -1905,6 +1909,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+      retryCountOnTaskFailure: 1
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1972,6 +1977,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+      retryCountOnTaskFailure: 1
 
     - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisTracerIntegrationTests (ASM)
@@ -2060,6 +2066,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+      retryCountOnTaskFailure: 1
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2274,6 +2281,7 @@ stages:
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2327,6 +2335,7 @@ stages:
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2412,6 +2421,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+      retryCountOnTaskFailure: 1
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2534,6 +2544,7 @@ stages:
         baseImage: $(baseImage) # for interpolation in the docker-compose file
         COMPOSE_PROFILES: group$(dockerGroup)
         EVENTGRID_WEBHOOK_HOST: integrationtests
+      retryCountOnTaskFailure: 1
 
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
       displayName: docker-compose logs
@@ -2678,6 +2689,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+      retryCountOnTaskFailure: 1
 
     - script: |
         mkdir -p artifacts/build_data/docker
@@ -2820,6 +2832,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+      retryCountOnTaskFailure: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
@@ -2901,6 +2914,7 @@ stages:
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -3031,6 +3045,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+      retryCountOnTaskFailure: 1
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -3114,6 +3129,7 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3152,6 +3168,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+      retryCountOnTaskFailure: 1
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -3538,6 +3555,7 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
+          retryCountOnTaskFailure: 1
 
         - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
@@ -3624,6 +3642,7 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
+          retryCountOnTaskFailure: 1
 
         - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs
           displayName: docker-compose logs
@@ -3720,6 +3739,7 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
+          retryCountOnTaskFailure: 1
 
         - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
@@ -3810,6 +3830,7 @@ stages:
       displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - publish: artifacts/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -4197,17 +4218,20 @@ stages:
       displayName: Build and Test tool
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net48 --TargetPlatform $(targetPlatform)
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
+      retryCountOnTaskFailure: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
@@ -4318,16 +4342,19 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
+        retryCountForRunCommand: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
@@ -4379,6 +4406,7 @@ stages:
       displayName: Build and Test bundle
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      retryCountOnTaskFailure: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
@@ -4425,6 +4453,7 @@ stages:
         build: true
         baseImage: debian
         command: "BuildAndRunBundleArtifactTests"
+        retryCountForRunCommand: 1
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
