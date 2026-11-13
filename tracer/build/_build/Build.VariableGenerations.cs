@@ -164,6 +164,26 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
                     changedTeamValue.IsChanged = isChanged;
                 }
+
+                var stageBaseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                var skipTracerOnlyStages = false;
+                var libdatadogChanged = false;
+                var scheduledDefaultBranch = Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false");
+                if (!scheduledDefaultBranch && !IsGitBaseBranch(stageBaseBranch))
+                {
+                    var selection = CiStageSelection.Select(GetGitChangedFiles(stageBaseBranch, includeRenameSources: true));
+                    skipTracerOnlyStages = selection.SkipTracerOnlyStages;
+                    libdatadogChanged = selection.LibdatadogChanged;
+                }
+
+                Logger.Information($"skipTracerOnlyStages - {skipTracerOnlyStages}");
+                Logger.Information($"libdatadogChanged - {libdatadogChanged}");
+                var skipTracerOnlyStagesValue = skipTracerOnlyStages.ToString();
+                var libdatadogChangedValue = libdatadogChanged.ToString();
+                EnvironmentInfo.SetVariable("skipTracerOnlyStages", skipTracerOnlyStagesValue);
+                EnvironmentInfo.SetVariable("libdatadogChanged", libdatadogChangedValue);
+                AzurePipelines.Instance.SetOutputVariable("skipTracerOnlyStages", skipTracerOnlyStagesValue);
+                AzurePipelines.Instance.SetOutputVariable("libdatadogChanged", libdatadogChangedValue);
             }
 
             void GenerateSmokeTestInputsChanged()
@@ -971,11 +991,12 @@ partial class Build : NukeBuild
         }
     }
 
-    static string[] GetGitChangedFiles(string baseBranch)
+    static string[] GetGitChangedFiles(string baseBranch, bool includeRenameSources = false)
     {
         var baseCommit = GitTasks.Git($"merge-base {baseBranch} HEAD").First().Text;
+        var renameOption = includeRenameSources ? " --no-renames" : string.Empty;
         return GitTasks
-              .Git($"diff --name-only \"{baseCommit}\"")
+              .Git($"diff --name-only{renameOption} \"{baseCommit}\"")
               .Select(output => output.Text)
               .ToArray();
     }

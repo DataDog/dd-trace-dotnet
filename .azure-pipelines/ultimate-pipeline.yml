@@ -23,6 +23,7 @@ pr:
     include:
       - '*' # default
   paths:
+    # Keep in sync with the ignore list in tracer/build/_build/CiStageSelection.cs.
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .gitignore
@@ -1287,16 +1288,28 @@ stages:
       artifact: dd-dotnet-symbols-$(artifactSuffix)
 
 - stage: debug_builds
-  dependsOn: [merge_commit_id]
+  dependsOn: [merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [linux, macos, windows, linux_arm64]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: linux
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: []
     strategy:
@@ -1348,6 +1361,14 @@ stages:
           timeoutInMinutesForRunCommand: 20
 
   - job: windows
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
@@ -1364,6 +1385,14 @@ stages:
         retryCountOnTaskFailure: 1
 
   - job: linux_arm64
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
@@ -1385,6 +1414,14 @@ stages:
           timeoutInMinutesForRunCommand: 30
 
   - job: macos
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
@@ -1406,6 +1443,8 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   pool:
     name: $(windowsX64Pool)
 
@@ -1413,8 +1452,18 @@ stages:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [managed]
+        allowSkipped: true
+        successDescription: $(stageStatusDescription)
 
     - job: managed
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 90
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_windows_matrix'] ]
@@ -1454,12 +1503,24 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [managed]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: managed
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     strategy:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_macos_matrix'] ]
@@ -1512,12 +1573,24 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [managed]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: managed
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 90 # BuildManagedUnitTests can retry up to 4x15 min, so make sure there's headroom for RunManagedUnitTests too
     strategy:
       matrix:
@@ -1569,12 +1642,24 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [test]
+        allowSkipped: true
+        successDescription: $(stageStatusDescription)
 
     - job: test
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 90 # BuildManagedUnitTests can retry up to 4x15 min, so make sure there's headroom for RunManagedUnitTests too
 
       strategy:
@@ -1623,17 +1708,29 @@ stages:
           condition: succeededOrFailed()
 
 - stage: build_samples
-  dependsOn: [merge_commit_id]
+  dependsOn: [merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
     performComprehensiveTesting: $[eq(variables.perform_comprehensive_testing, 'true')]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [standalone, multi_version]
+        allowSkipped: true
+        successDescription: $(stageStatusDescription)
 
     - job: standalone
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 60 #default value
       pool:
         name: $(windowsX64Pool)
@@ -1661,6 +1758,14 @@ stages:
           continueOnError: true
 
     - job: multi_version
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 60 #default value
       strategy:
         # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
@@ -1716,16 +1821,28 @@ stages:
 # This is just to test that we _can_ build the solution on macos
 # It's not used by other stages, and just ensures we don't break the macos build
 - stage: build_samples_macos
-  dependsOn: [merge_commit_id]
+  dependsOn: [merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [macos]
+        allowSkipped: true
+        successDescription: $(stageStatusDescription)
 
     - job: macos
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 90
       pool:
         vmImage: macos-15
@@ -1755,12 +1872,24 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: Win
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     pool:
       name: $(windowsX64Pool)
     timeoutInMinutes: 90
@@ -1933,13 +2062,25 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [tracer]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: tracer
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
@@ -2010,13 +2151,25 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [windows]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: windows
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
@@ -2084,17 +2237,29 @@ stages:
       displayName: Check logs for errors
 
 - stage: static_analysis_checks_tracer
-  dependsOn: [merge_commit_id]
+  dependsOn: [merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
     baseImage: "debian"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [linux, macos]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: linux
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
@@ -2114,6 +2279,14 @@ stages:
         retryCountForRunCommand: 1
 
   - job: macos
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
@@ -2213,13 +2386,25 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [msi_tests, fleet_installer_tests]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: msi_tests
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
@@ -2305,6 +2490,14 @@ stages:
       displayName: Check logs for errors
 
   - job: fleet_installer_tests
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     pool:
       name: $(windowsX64Pool)
@@ -2355,12 +2548,24 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test, DockerTest, Serverless]
+      allowSkipped: true
+      successDescription: $(stageStatusDescription)
 
   - job: Test
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
@@ -2457,6 +2662,14 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
@@ -2577,6 +2790,14 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
+    condition: >
+      and(
+        succeeded(),
+        or(
+          eq(variables.isMainOrReleaseBranch, true),
+          ne(variables.SkipTracerOnlyStages, 'True')
+        )
+      )
     timeoutInMinutes: 60
 
     variables:
@@ -2852,7 +3073,8 @@ stages:
       succeeded(),
       or(
         eq(variables.isMainOrReleaseBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.LibdatadogChanged'], 'True')
       )
     )
   dependsOn: [package_windows, generate_variables, merge_commit_id]
@@ -2920,7 +3142,8 @@ stages:
       succeeded(),
       or(
         eq(variables.isMainOrReleaseBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.LibdatadogChanged'], 'True')
       )
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
@@ -3050,7 +3273,8 @@ stages:
       succeeded(),
       or(
         eq(variables.isMainOrReleaseBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.LibdatadogChanged'], 'True')
       )
     )
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
@@ -3483,6 +3707,8 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    SkipTracerOnlyStages: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'] ]
+    stageStatusDescription: "$[ iif(or(eq(variables.isMainOrReleaseBranch, true), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.SkipTracerOnlyStages'], 'True')), 'Run succeeded', 'Skipped: profiler-only diff') ]"
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
@@ -3491,8 +3717,18 @@ stages:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [Test, DockerTest]
+        allowSkipped: true
+        successDescription: $(stageStatusDescription)
 
     - job: Test
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 90 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
@@ -3565,6 +3801,14 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - job: DockerTest
+      condition: >
+        and(
+          succeeded(),
+          or(
+            eq(variables.isMainOrReleaseBranch, true),
+            ne(variables.SkipTracerOnlyStages, 'True')
+          )
+        )
       timeoutInMinutes: 60 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
