@@ -1,7 +1,4 @@
-﻿# The scenario's Windows version: a test agent on another one pulls a second base OS image, and fills
-# the disk of the hosted agents. python publishes ltsc2025 images from 3.12 only.
-ARG BASE_IMAGE=python:3.10.5-windowsservercore-ltsc2022
-FROM ${BASE_IMAGE}
+﻿FROM python:3.10.5-windowsservercore-ltsc2022
 
 WORKDIR /
 
