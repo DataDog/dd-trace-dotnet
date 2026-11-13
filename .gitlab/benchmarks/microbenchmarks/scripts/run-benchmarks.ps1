@@ -116,6 +116,14 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
+# Disable tiered compilation for every BenchmarkDotNet child process.
+# BDN's pilot iteration runs before warmup, on cold tier-0 code, and tiered
+# JIT recompiles during the benchmark perturb it. No amount of warmup can
+# fix the pilot; only disabling tiered compilation does.
+# DOTNET_ covers net6.0+, COMPlus_ covers netcoreapp3.1. net472 ignores both.
+$env:DOTNET_TieredCompilation = "0"
+$env:COMPlus_TieredCompilation = "0"
+
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
@@ -134,12 +142,11 @@ $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    # We change this manually on benchmark methods from 200 ms to 500 ms on 
-    # less stable benchmarks with "[IterationTime(500)]"
-    "--iterationTime", "200",
-    "--launchCount", "5",
-    "--warmupCount", "10",
-    "--iterationCount", "10",
+    # One process draw is too noisy run-to-run; average over 3 launches.
+    "--launchCount", "3",
+    # The adaptive stop hits the 15-iteration floor on 97% of benchmarks;
+    # the cap only trims rare 100-iteration stragglers.
+    "--maxIterationCount", "20",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir

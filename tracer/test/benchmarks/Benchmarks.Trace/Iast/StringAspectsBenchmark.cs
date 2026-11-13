@@ -20,6 +20,7 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
+[GcForce(true)]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 [IterationTime(500)]
@@ -70,12 +71,18 @@ public class StringAspectsBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-    }
+        // Swap in the inert tracer (dummy agent writer, no telemetry, no remote config).
+        // The measured operation is a tainted string call, which never touches the writer,
+        // so the default production stack only adds background noise here. Using the inert
+        // tracer also removes the CI accident of writer retry storms against the absent
+        // agent, plus agentless telemetry being sent to the real intake. The tracer instance
+        // only provides the fake request span the IAST taint context hangs off (created below
+        // by InitTaintedContext), so this does not change what is measured: the same tainted
+        // strings go through the same StringAspects.Concat propagation path.
+        TracerHelper.SetGlobalTracer();
 
-    [IterationSetup(Target = nameof(StringConcatBenchmark))]
-    public void InitTaintedContextWhenFalse()
-    {
         _initTaintedContextFalse = InitTaintedContext(10, false);
+        _initTaintedContextTrue = InitTaintedContext(10, true);
     }
 
     [Benchmark]
@@ -92,12 +99,6 @@ public class StringAspectsBenchmark
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
-    [IterationSetup(Target = nameof(StringConcatAspectBenchmark))]
-    public void InitTaintedContextWhenTrue()
-    {
-        _initTaintedContextTrue = InitTaintedContext(10, true);
-    }
-
     [Benchmark]
     public void StringConcatAspectBenchmark()
     {
@@ -112,8 +113,8 @@ public class StringAspectsBenchmark
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
-    [IterationCleanup]
-    public void Cleanup()
+    [GlobalCleanup]
+    public void GlobalCleanup()
     {
         Tracer.Instance?.ActiveScope?.Close();
         Datadog.Trace.Iast.Iast.Instance = null;

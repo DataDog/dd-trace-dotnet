@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
+using BenchmarkDotNet.Jobs;
 using Benchmarks.Trace.Jetbrains;
 using System.Reflection.Metadata;
 using BenchmarkDotNet.Attributes;
@@ -63,7 +64,8 @@ namespace Benchmarks.Trace
             }
 
             config = config.WithDatadog(useDatadogProfiler)
-                           .AddExporter(JsonExporter.FullCompressed);
+                           .AddExporter(JsonExporter.FullCompressed)
+                           .AddFilter(new SimpleFilter(IsRealAspNetCoreBenchmark));
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
@@ -121,6 +123,77 @@ namespace Benchmarks.Trace
             initMethod?.Invoke(instance, null);
             method.Invoke(instance, args.Length > 0 ? args : null);
             cleanupMethod?.Invoke(instance, null);
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        // The real AspNetCoreBenchmark body (a TestServer round trip) is
+        // compiled into this assembly on .NET Core 3.0 and later.
+        private const bool AspNetCoreBenchmarkIsReal = true;
+#else
+        private const bool AspNetCoreBenchmarkIsReal = false;
+#endif
+
+#if NET6_0_OR_GREATER
+        // The real SingleSpanAspNetCoreBenchmark body is compiled into this
+        // assembly on .NET 6.0 and later.
+        private const bool SingleSpanAspNetCoreBenchmarkIsReal = true;
+#else
+        private const bool SingleSpanAspNetCoreBenchmarkIsReal = false;
+#endif
+
+        /// <summary>
+        /// Skips the ASP.NET Core benchmarks on target runtimes where their
+        /// bodies compile to a "return null;" stub because ASP.NET Core is
+        /// unsupported there (see AutoInstrumentation/AspNetCoreBenchmark.cs).
+        /// Those stubs measure the BenchmarkDotNet loop overhead instead of a
+        /// scenario. Only the null bodies are filtered out: the real bodies, a
+        /// TestServer round trip through the tracer, run on ASP.NET Core 3.0
+        /// and later for SendRequest, and on .NET 6.0 and later for
+        /// SingleSpanAspNetCore.
+        /// </summary>
+        private static bool IsRealAspNetCoreBenchmark(BenchmarkCase benchmarkCase)
+        {
+            var type = benchmarkCase.Descriptor.Type;
+
+            if (type != typeof(AspNetCoreBenchmark) &&
+                type != typeof(SingleSpanAspNetCoreBenchmark))
+            {
+                return true;
+            }
+
+            var runtime = benchmarkCase.Job.Environment.Runtime;
+
+            if (runtime is null)
+            {
+                // Without an explicit target runtime the benchmark runs on the
+                // host framework, so the body compiled into this assembly runs.
+                return type == typeof(AspNetCoreBenchmark)
+                    ? AspNetCoreBenchmarkIsReal
+                    : SingleSpanAspNetCoreBenchmarkIsReal;
+            }
+
+            switch (runtime.RuntimeMoniker)
+            {
+                case RuntimeMoniker.Net472:
+                case RuntimeMoniker.Net48:
+                case RuntimeMoniker.Net481:
+                case RuntimeMoniker.NetCoreApp20:
+                case RuntimeMoniker.NetCoreApp21:
+                case RuntimeMoniker.NetCoreApp22:
+                    // ASP.NET Core is unsupported: both bodies are stubs.
+                    return false;
+
+                case RuntimeMoniker.NetCoreApp30:
+                case RuntimeMoniker.NetCoreApp31:
+                case RuntimeMoniker.Net50:
+                    // SendRequest is real on ASP.NET Core 3.0 and later, but
+                    // SingleSpanAspNetCore needs .NET 6.0 and is still a stub.
+                    return type != typeof(SingleSpanAspNetCoreBenchmark);
+
+                default:
+                    // .NET 6.0 and later: both bodies are real.
+                    return true;
+            }
         }
     }
 }
