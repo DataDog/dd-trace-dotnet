@@ -159,8 +159,12 @@ bool ProfilerSignalManager::IsProfilerSignalHandlerInstalled()
 
     sigaction(_signalToSend, nullptr, &currentAction);
 
-    return (currentAction.sa_flags & SA_SIGINFO) == SA_SIGINFO &&
-           currentAction.sa_sigaction == ProfilerSignalManager::SignalHandler;
+    return IsProfilerSignalHandler(currentAction);
+}
+
+bool ProfilerSignalManager::IsProfilerSignalHandler(const struct sigaction& action)
+{
+    return (action.sa_flags & SA_SIGINFO) == SA_SIGINFO && action.sa_sigaction == ProfilerSignalManager::SignalHandler;
 }
 
 bool ProfilerSignalManager::IsHandlerInPlace() const
@@ -170,25 +174,46 @@ bool ProfilerSignalManager::IsHandlerInPlace() const
 
 bool ProfilerSignalManager::SetupSignalHandler()
 {
+    struct sigaction currentAction;
+    if (sigaction(_signalToSend, nullptr, &currentAction) != 0)
+    {
+        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to get the signal handler for ", strsignal(_signalToSend), " signals. Reason: ",
+                   strerror(errno), ".");
+        return false;
+    }
+
+    // Installed again over itself: it must keep chaining to the action it replaced the first time
+    const bool isAlreadyInstalled = IsProfilerSignalHandler(currentAction);
+    const struct sigaction& actionToChainTo = isAlreadyInstalled ? _previousAction : currentAction;
+
     struct sigaction sampleAction;
     sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
-    if (_signalToSend == SIGSEGV || _signalToSend == SIGBUS)
-    {
-        // Like the CLR, run on the alternate stack of the thread (if there is one). Without it, the .NET 6 CLR handler
-        // executes its worker on the faulting thread's stack, just below the faulting frame, where our frames and
-        // the signal frame are: it overwrites them, and the process crashes when the handler returns.
-        sampleAction.sa_flags |= SA_ONSTACK;
-    }
     sampleAction.sa_sigaction = ProfilerSignalManager::SignalHandler;
     sigemptyset(&sampleAction.sa_mask);
+    if (_signalToSend == SIGSEGV || _signalToSend == SIGBUS)
+    {
+        // The previous handler (the CLR one) is called from this one: it must run on the stack and with the signals
+        // blocked it was registered with. The CLR SIGSEGV handler runs on the alternate stack, with its suspension signal
+        // (SIGRTMIN) blocked. Called from the thread stack, the .NET 6 one executes its worker just below the faulting
+        // frame, where our frames and the signal frame are: it overwrites them, and the process crashes when it returns.
+        // The CLR SIGBUS handler runs on the thread stack.
+        sampleAction.sa_flags |= actionToChainTo.sa_flags & SA_ONSTACK;
+        sampleAction.sa_mask = actionToChainTo.sa_mask;
+    }
     sigaddset(&sampleAction.sa_mask, _signalToSend);
 
-    int32_t result = sigaction(_signalToSend, &sampleAction, &_previousAction);
+    struct sigaction replacedAction;
+    int32_t result = sigaction(_signalToSend, &sampleAction, &replacedAction);
     if (result != 0)
     {
         Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to setup signal handler for ", strsignal(_signalToSend), " signals. Reason: ",
                    strerror(errno), ".");
         return false;
+    }
+
+    if (!IsProfilerSignalHandler(replacedAction))
+    {
+        _previousAction = replacedAction;
     }
 
     Log::Info("ProfilerSignalManager::SetupSignalHandler: Successfully setup signal handler for ", strsignal(_signalToSend), " signal.");
@@ -218,9 +243,18 @@ bool ProfilerSignalManager::CallCustomHandler(int32_t signal, siginfo_t* info, v
 
 void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
-    // The previous action is this handler: calling it would recurse forever.
-    if ((_previousAction.sa_flags & SA_SIGINFO) == SA_SIGINFO && _previousAction.sa_sigaction == ProfilerSignalManager::SignalHandler)
+    if (_previousAction.sa_handler == SIG_DFL || _previousAction.sa_handler == SIG_IGN || IsProfilerSignalHandler(_previousAction))
     {
+        // Nothing to chain to. A fault raised by the CPU happens again when this handler returns: the thread would
+        // loop on the faulting instruction (https://github.com/DataDog/dd-trace-dotnet/issues/9563). Like the CLR,
+        // put the default action back, so that the fault ends the process as it would without the profiler.
+        if ((signal == SIGSEGV || signal == SIGBUS) && info != nullptr && info->si_code > 0)
+        {
+            struct sigaction defaultAction = {};
+            defaultAction.sa_handler = SIG_DFL;
+            sigemptyset(&defaultAction.sa_mask);
+            sigaction(signal, &defaultAction, nullptr);
+        }
         return;
     }
 

@@ -78,6 +78,7 @@ private:
     ~ProfilerSignalManager() noexcept;
 
     bool IsProfilerSignalHandlerInstalled();
+    static bool IsProfilerSignalHandler(const struct sigaction& action);
     bool SetupSignalHandler();
     bool CallCustomHandler(int32_t signal, siginfo_t* info, void* context);
     void CallOrignalHandler(int32_t signal, siginfo_t* info, void* context);
