@@ -1,0 +1,15 @@
+_v: 1
+name: AzureFunctions
+display_name: Azure Functions
+description: Instruments Azure Functions invocations from HTTP and non-HTTP triggers, including Durable Functions orchestration,
+  activity, and entity executions.
+packages:
+- name: Microsoft.Azure.Functions.Worker.Core
+- name: Microsoft.Azure.Functions.Worker.Extensions.DurableTask
+- name: Microsoft.Azure.WebJobs
+category:
+- faas
+- workflow.durable_execution
+systems:
+- azure.functions
+creation_date: '2021-09-22'
