@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -139,14 +140,14 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate, FlagEvalEVPHook? evaluationEventsHook, bool deferredExposure)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, bool deferredExposure, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
-        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
+        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure: deferredExposure);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
         // Only exposures need the context in ExposureHook, so other evaluations skip the table.
         if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
@@ -164,17 +165,101 @@ internal static class FeatureFlagsSdk
             return null;
         }
 
-        return context.AsDictionary().Select(p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(p => p.Key, p => p.Value);
+        var source = context.AsDictionary();
+        var result = new ContextAttributes(source.Count);
+        var omissionReasons = ContextOmissionReason.None;
+        var remainingNodes = ContextSnapshotLimits.Visits;
+        foreach (var pair in source)
+        {
+            // Targeting must see every top-level scalar. Share one budget across recursive values so
+            // many nested attributes cannot multiply the conversion work before tracer evaluation.
+            var consumesRecursiveBudget = pair.Value is not null && (pair.Value.IsStructure || pair.Value.IsList);
+            result[pair.Key] = ToObject(pair.Value, depth: 1, ref remainingNodes, ref omissionReasons, consumesRecursiveBudget);
+        }
+
+        result.ContextOmissionReasons = (int)omissionReasons;
+        return result;
     }
 
-    private static object? ToObject(Value value) => value switch
+    private static object? ToObject(Value? value, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons, bool consumeNode)
     {
-        null => null,
-        { IsBoolean: true } => value.AsBoolean,
-        { IsString: true } => value.AsString,
-        { IsNumber: true } => value.AsDouble,
-        _ => value.AsObject,
-    };
+        if (consumeNode && remainingNodes <= 0)
+        {
+            omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
+            return null;
+        }
+
+        if (consumeNode)
+        {
+            remainingNodes--;
+        }
+
+        if (depth > ContextSnapshotLimits.Depth)
+        {
+            omissionReasons |= ContextOmissionReason.MaxSnapshotDepth;
+            return null;
+        }
+
+        if (value is null) { return null; }
+        if (value.IsNull) { return null; }
+        if (value.IsBoolean) { return value.AsBoolean; }
+        if (value.IsString) { return value.AsString; }
+        if (value.IsNumber) { return value.AsDouble; }
+        if (value.AsDateTime is { } dateTime) { return dateTime; }
+        if (value.AsStructure is { } structure) { return ConvertStructure(structure.AsDictionary(), depth, ref remainingNodes, ref omissionReasons); }
+        if (value.AsList is { } list) { return ConvertList(list, depth, ref remainingNodes, ref omissionReasons); }
+        omissionReasons |= ContextOmissionReason.UnsupportedValue;
+        return null;
+    }
+
+    private static Dictionary<string, object?> ConvertStructure(IEnumerable<KeyValuePair<string, Value>> structure, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
+    {
+        var result = new Dictionary<string, object?>();
+        var count = 0;
+        foreach (var pair in structure)
+        {
+            if (count++ >= ContextSnapshotLimits.ContainerItems)
+            {
+                omissionReasons |= ContextOmissionReason.MaxStructureProperties;
+                break;
+            }
+
+            if (remainingNodes <= 0)
+            {
+                omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            result[pair.Key] = ToObject(pair.Value, depth + 1, ref remainingNodes, ref omissionReasons, consumeNode: true);
+        }
+
+        return result;
+    }
+
+    private static object?[] ConvertList(IReadOnlyList<Value> list, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
+    {
+        if (list.Count > ContextSnapshotLimits.ContainerItems)
+        {
+            omissionReasons |= ContextOmissionReason.MaxListElements;
+        }
+
+        var count = Math.Min(list.Count, ContextSnapshotLimits.ContainerItems);
+        var result = new object?[count];
+        var converted = 0;
+        while (converted < count && remainingNodes > 0)
+        {
+            result[converted] = ToObject(list[converted], depth + 1, ref remainingNodes, ref omissionReasons, consumeNode: true);
+            converted++;
+        }
+
+        if (converted < count)
+        {
+            omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
+            Array.Resize(ref result, converted);
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// The selected split's HOOK-destination features associated with a result's metadata, for
@@ -242,7 +327,7 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             value,
             errorType,
-            ReasonToLowerSnakeCase(evaluation.Reason),
+            ToOpenFeatureReason(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata, evalTimeMs, deferredExposure));
@@ -265,19 +350,17 @@ internal static class FeatureFlagsSdk
         };
     }
 
-    // Converts EvaluationReason enum to lower_snake_case string for OpenFeature Reason field.
-    // Uses cached strings to avoid allocation.
-    private static string ReasonToLowerSnakeCase(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
+    private static string ToOpenFeatureReason(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
     {
-        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
-        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
-        _ => "unknown"
+        Datadog.Trace.FeatureFlags.EvaluationReason.Static => Reason.Static,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Default => Reason.Default,
+        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => Reason.TargetingMatch,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Split => Reason.Split,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => Reason.Disabled,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => Reason.Cached,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => Reason.Unknown,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Error => Reason.Error,
+        _ => Reason.Unknown
     };
 
     private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs, bool deferredExposure)
@@ -295,7 +378,7 @@ internal static class FeatureFlagsSdk
             var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
             foreach (var pair in metadata)
             {
-                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes || pair.Key == FeatureFlagMetadataKeys.PendingExposure)
                 {
                     continue;
                 }
@@ -338,7 +421,9 @@ internal static class FeatureFlagsSdk
 
         var immutable = new ImmutableMetadata(dic);
         // Keeps the tracer's own dictionary instance, not a copy, for CommitExposure.
-        var pendingExposure = deferredExposure && metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"
+        var pendingExposure = deferredExposure && metadata is not null
+                           && ((metadata.TryGetValue(FeatureFlagMetadataKeys.PendingExposure, out var pending) && pending == "true")
+                            || (metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"))
                                   ? metadata
                                   : null;
         if (hookFeatures is not null || evaluationFeatures is not null || pendingExposure is not null)
@@ -460,6 +545,13 @@ internal static class FeatureFlagsSdk
     private static Value ConvertArray(object?[] array)
     {
         return new Value(array.Select(ConvertObject).ToList());
+    }
+
+    internal sealed class ContextAttributes(int capacity) : Dictionary<string, object?>(capacity)
+    {
+        // Read by the tracer integration through duck typing. Keeping this on the dictionary avoids
+        // changing the instrumented Evaluate signature and preserves compatibility with older tracers.
+        public int ContextOmissionReasons { get; internal set; }
     }
 
     private sealed class ResultState(IReadOnlyDictionary<string, object>? hookFeatures, IReadOnlyDictionary<string, object?>? evaluationFeatures, IDictionary<string, string>? pendingExposure)

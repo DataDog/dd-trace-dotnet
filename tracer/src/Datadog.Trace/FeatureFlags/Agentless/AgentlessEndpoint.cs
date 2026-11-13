@@ -36,6 +36,11 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const string EnvParameterName = "dd_env";
 
+    /// <summary>
+    /// The query parameter selecting UFCs that can contain dependent flag conditions.
+    /// </summary>
+    internal const string DependentFlagsParameter = "cap_dependent-flags-variant-key=v1";
+
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
@@ -241,20 +246,25 @@ internal sealed class AgentlessEndpoint
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        var normalized = RequestEnvironment(env);
-        if (normalized is null)
+        if (!IsManaged)
         {
             return Uri;
         }
 
-        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(normalized);
+        var normalized = RequestEnvironment(env);
         var builder = new UriBuilder(Uri);
 
         // The getter returns the query with its leading "?", while the setter prepends one of its
         // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
         // ending in a bare "?" reports a query of "?", which the length check treats as no query.
-        var existing = builder.Query;
-        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameter : parameter;
+        var query = builder.Query.Length > 1 ? builder.Query.TrimStart('?') + "&" : string.Empty;
+        query += DependentFlagsParameter;
+        if (normalized is not null)
+        {
+            query += "&" + EnvParameterName + "=" + Uri.EscapeDataString(normalized);
+        }
+
+        builder.Query = query;
         return builder.Uri;
     }
 }

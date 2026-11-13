@@ -14,9 +14,6 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal static class FlagEvaluationContext
 {
-    private const int MaxFields = 256;
-    private const int MaxTextLength = 256;
-
     internal static Dictionary<string, object?>? Copy(IReadOnlyDictionary<string, object?>? attributes, out ContextOmissionReason omissions)
     {
         omissions = ContextOmissionReason.None;
@@ -33,14 +30,14 @@ internal static class FlagEvaluationContext
                 return null;
             }
 
-            if (count > MaxFields)
+            if (count > ContextSnapshotLimits.Fields)
             {
                 omissions |= ContextOmissionReason.MaxContextFields;
             }
 
-            var result = new Dictionary<string, object?>(Math.Min(count, MaxFields), StringComparer.Ordinal);
+            var result = new Dictionary<string, object?>(Math.Min(count, ContextSnapshotLimits.Fields), StringComparer.Ordinal);
             using var iterator = attributes.GetEnumerator();
-            for (var i = 0; i < MaxFields && iterator.MoveNext(); i++)
+            for (var i = 0; i < ContextSnapshotLimits.Fields && iterator.MoveNext(); i++)
             {
                 var pair = iterator.Current;
                 if (pair.Key is null)
@@ -49,7 +46,7 @@ internal static class FlagEvaluationContext
                     continue;
                 }
 
-                if (pair.Key.Length > MaxTextLength)
+                if (pair.Key.Length > ContextSnapshotLimits.TextLength)
                 {
                     omissions |= ContextOmissionReason.MaxKeyLength;
                     continue;
@@ -61,7 +58,7 @@ internal static class FlagEvaluationContext
                     continue;
                 }
 
-                if (pair.Value is string text && text.Length > MaxTextLength)
+                if (pair.Value is string text && text.Length > ContextSnapshotLimits.TextLength)
                 {
                     omissions |= ContextOmissionReason.MaxValueLength;
                     continue;

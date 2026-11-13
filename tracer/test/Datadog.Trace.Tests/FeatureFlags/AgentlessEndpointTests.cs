@@ -36,7 +36,7 @@ public class AgentlessEndpointTests
 
     [Fact]
     public void AddsDdEnvWhenEnvIsConfigured()
-        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?dd_env=production");
+        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=production");
 
     [Theory]
     [InlineData(null)]
@@ -46,7 +46,7 @@ public class AgentlessEndpointTests
     // normalizes away. Spans are tagged the same way, so no environment is reported either.
     [InlineData("2024")]
     public void DoesNotAddDdEnvWhenEnvIsNotConfigured(string? env)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().BeEmpty();
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1");
 
     [Theory]
     // Normalized exactly as the tracer normalizes the environment before tagging spans: lowercased,
@@ -56,17 +56,17 @@ public class AgentlessEndpointTests
     [InlineData("  staging  ", "staging")]
     [InlineData("my env&test", "my_env_test")]
     public void NormalizesDdEnvValue(string env, string expected)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?dd_env=" + expected);
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + expected);
 
     [Fact]
     public void EscapesDdEnvValue()
         // "/" survives normalization but cannot be carried unescaped in a query value.
-        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?dd_env=team%2Fa");
+        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=team%2Fa");
 
     [Fact]
     public void TruncatesAnOverlongDdEnvValue()
         => Create("datadoghq.com").BuildRequestUri(new string('a', 500))
-                                  .Query.Should().Be("?dd_env=" + new string('a', 200));
+                                  .Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + new string('a', 200));
 
     [Theory]
     // A configured base URL is opaque: the operator may have scoped it themselves, and it may carry

@@ -15,6 +15,7 @@ namespace Datadog.Trace.FeatureFlags
         internal const string AllocationKey = "__dd_allocation_key";
         internal const string ObserveFullEvaluationData = "__dd_observe_full_evaluation_data";
         internal const string EvaluationTimestampMs = "__dd_eval_timestamp_ms";
+        internal const string PendingExposure = "__dd_pending_exposure";
 
         // One metadata entry is written for each feature of the selected split, per destination,
         // under that destination's prefix. Only the __dd_feature prefix is a public contract.

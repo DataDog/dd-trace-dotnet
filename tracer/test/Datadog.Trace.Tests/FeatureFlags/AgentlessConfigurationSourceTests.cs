@@ -79,7 +79,7 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=production"));
+        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production"));
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class AgentlessConfigurationSourceTests
         source.UpdateEnvironment("staging");
         await source.PollAsync();
 
-        factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=staging"));
+        factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=staging"));
         factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
     }
 

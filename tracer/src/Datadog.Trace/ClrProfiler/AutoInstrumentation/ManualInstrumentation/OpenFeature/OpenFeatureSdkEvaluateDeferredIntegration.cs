@@ -30,7 +30,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 public sealed class OpenFeatureSdkEvaluateDeferredIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
-        => new(null, new OpenFeatureSdkEvaluateIntegration.State(flagKey, targetType, defaultValue, targetingKey, attributes));
+        => new(null, new OpenFeatureSdkEvaluateIntegration.State(
+            flagKey,
+            targetType,
+            defaultValue,
+            targetingKey,
+            attributes,
+            OpenFeatureSdkEvaluateIntegration.GetContextOmissionReasons(attributes)));
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
@@ -39,6 +45,9 @@ public sealed class OpenFeatureSdkEvaluateDeferredIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        return new CallTargetReturn<TReturn?>(OpenFeatureSdkEvaluateIntegration.Evaluate((OpenFeatureSdkEvaluateIntegration.State)state.State!, deferExposure: true).DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn?>(OpenFeatureSdkEvaluateIntegration.Evaluate(
+            (OpenFeatureSdkEvaluateIntegration.State)state.State!,
+            deferExposure: true,
+            reportRootEvaluation: false).DuckCast<TReturn>());
     }
 }

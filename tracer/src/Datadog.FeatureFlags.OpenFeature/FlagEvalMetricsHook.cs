@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature;
@@ -45,9 +46,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
             var flagKey = context.FlagKey;
             var variant = details.Variant ?? string.Empty;
 
-            // Reason is already in lower_snake_case format from the provider
-            // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-            var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
+            var reason = ToTelemetryReason(details.Reason);
 
             // Extract error type if present
             string? errorType = null;
@@ -61,10 +60,9 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
 
             _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Metrics recording should never break flag evaluation.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex}");
         }
 
         return default;
@@ -75,6 +73,22 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
     {
         _metrics.Dispose();
     }
+
+    // OpenFeature reasons are canonical uppercase strings, while the Datadog telemetry
+    // convention uses lower_snake_case tags. Cache the standard mappings on this hot path.
+    private static string ToTelemetryReason(string? reason) => reason switch
+    {
+        null or "" => "unknown",
+        Reason.TargetingMatch => "targeting_match",
+        Reason.Split => "split",
+        Reason.Disabled => "disabled",
+        Reason.Default => "default",
+        Reason.Static => "static",
+        Reason.Cached => "cached",
+        Reason.Unknown => "unknown",
+        Reason.Error => "error",
+        _ => reason.ToLower(CultureInfo.InvariantCulture)
+    };
 
     private static string ErrorTypeToString(ErrorType errorType)
     {
