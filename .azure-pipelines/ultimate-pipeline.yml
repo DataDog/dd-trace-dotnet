@@ -5693,7 +5693,8 @@ stages:
 
 # Windows NuGet (WindowsNuGet)
 - stage: smoke_win_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(variables.isPullRequest, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
+  # TEMPORARY: run on PRs to collect docker disk usage logs. Revert before merging.
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2025
