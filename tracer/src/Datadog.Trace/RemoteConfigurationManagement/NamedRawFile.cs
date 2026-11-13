@@ -23,15 +23,19 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public byte[] RawFile { get; }
 
-        public NamedTypedFile<T?> Deserialize<T>()
+        public NamedTypedFile<T?> Deserialize<T>() => Deserialize<T>(DateParseHandling.DateTime);
+
+        public NamedTypedFile<T?> Deserialize<T>(DateParseHandling dateParseHandling)
         {
             using var stream = new MemoryStream(RawFile);
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader)
             {
                 ArrayPool = JsonArrayPool.Shared,
+                DateParseHandling = dateParseHandling,
             };
 
+            // CreateDefault() leaves DateParseHandling unset, so the reader's value applies.
             return new NamedTypedFile<T?>(Path.Path, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
         }
     }

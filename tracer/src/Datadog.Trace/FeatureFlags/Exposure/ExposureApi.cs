@@ -247,6 +247,15 @@ internal sealed class ExposureApi : IDisposable
         return stopped ? ExposureRecordResult.NotRecorded : isNew ? ExposureRecordResult.New : ExposureRecordResult.Repeat;
     }
 
+    /// <summary>
+    /// Tells whether this exposure is already recorded, without recording it. Null once exposure
+    /// reporting stops.
+    /// </summary>
+    public bool? IsExposed(in ExposureEvent exposure)
+        // No _lifecycleLock (COR-2.3 exception, as in Java): every deferred doLog evaluation peeks. Safe because
+        // Dispose never touches the cache, the answer is advisory, and a commit records nothing after shutdown.
+        => Volatile.Read(ref _disposed) ? null : _exposureCache.Contains(exposure);
+
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)
     {
         public Dictionary<string, string> Context { get; } = context;

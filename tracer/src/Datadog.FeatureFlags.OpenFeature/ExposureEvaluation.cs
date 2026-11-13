@@ -31,7 +31,8 @@ public sealed class ExposureEvaluation
         string? allocationKey,
         string? targetingKey,
         EvaluationContext? context,
-        ImmutableMetadata? metadata)
+        ImmutableMetadata? metadata,
+        FeatureFlagsSdk.ResultState? result)
     {
         _evaluationSucceeded = evaluationSucceeded;
         _metadata = metadata;
@@ -40,9 +41,10 @@ public sealed class ExposureEvaluation
         AllocationKey = allocationKey;
         TargetingKey = targetingKey;
         Context = context;
-        Features = FeatureFlagsSdk.GetHookFeatures(metadata) ?? EmptyFeatures;
-        // A committed exposure carries the final verdict; otherwise the tracer stamped it during evaluation.
-        _cacheHit = FeatureFlagsSdk.GetExposureCacheHit(metadata) ?? metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
+        Features = result?.HookFeatures ?? EmptyFeatures;
+        SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
+        // A deferred exposure uses the committed verdict, not the advisory stamp; otherwise use the stamp.
+        _cacheHit = result is not null && result.TryGetCommittedVerdict(out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     /// <summary> Gets the evaluated flag key. </summary>
@@ -59,6 +61,12 @@ public sealed class ExposureEvaluation
 
     /// <summary> Gets the evaluation context, including the targeting key. </summary>
     public EvaluationContext? Context { get; }
+
+    /// <summary>
+    /// Gets the selected split's serial id in Datadog (an unsigned 32-bit value), or null when the split
+    /// has none or the tracer does not report it.
+    /// </summary>
+    public long? SplitSerialId { get; }
 
     /// <summary>
     /// Gets a value indicating whether the evaluation succeeded and selected an allocation that logs
@@ -78,8 +86,8 @@ public sealed class ExposureEvaluation
     public bool IsCacheHit => IsExposure && _cacheHit == true;
 
     /// <summary>
-    /// Gets a value indicating whether this is a new or changed exposure: exactly the decision the
-    /// provider uses for sending the exposure to Datadog.
+    /// Gets a value indicating whether this is a new or changed exposure: the decision the provider uses
+    /// for sending the exposure to Datadog.
     /// </summary>
     public bool ShouldSend => IsExposure && _cacheHit == false;
 

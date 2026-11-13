@@ -14,14 +14,16 @@ namespace Datadog.Trace.FeatureFlags.Exposure;
 internal sealed class ExposureCache
 {
     private readonly int _capacity;
-    private readonly Dictionary<Key, Value> _cache;
-    private readonly LinkedList<Key> _lruList;
+
+    // Maps each subject to its LRU node, so a repeat moves in O(1).
+    private readonly Dictionary<Key, LinkedListNode<Entry>> _cache;
+    private readonly LinkedList<Entry> _lruList;
 
     public ExposureCache(int capacity)
     {
         _capacity = capacity;
-        _cache = new Dictionary<Key, Value>(capacity);
-        _lruList = new LinkedList<Key>();
+        _cache = new Dictionary<Key, LinkedListNode<Entry>>(capacity);
+        _lruList = new LinkedList<Entry>();
     }
 
     public int Size => _lruList.Count;
@@ -31,63 +33,54 @@ internal sealed class ExposureCache
         lock (_cache)
         {
             var key = new Key(exposureEvent);
-            var value = new Value(exposureEvent);
-
-            bool exists = _cache.TryGetValue(key, out var oldValue);
-
-            if (exists)
+            if (_cache.TryGetValue(key, out var node))
             {
-                // Update LRU priority (move element to the begining of the queue)
-                _lruList.Remove(key);
-                _lruList.AddFirst(key);
+                // Update LRU priority (move the node to the beginning of the list)
+                _lruList.Remove(node);
+                _lruList.AddFirst(node);
 
-                if (oldValue == value)
+                if (Matches(node.Value.Recorded, in exposureEvent))
                 {
                     return false;
                 }
+
+                node.Value = new Entry(node.Value.Key, new Value(exposureEvent));
+                return true;
             }
 
-            // New key or different value
-            if (!exists && _cache.Count >= _capacity)
+            var entry = new Entry(key, new Value(exposureEvent));
+            if (_cache.Count >= _capacity && _lruList.Last is { } evicted)
             {
-                RemoveLeastRecentlyUsed();
+                // Reuse the evicted node, so a full cache allocates no node.
+                _cache.Remove(evicted.Value.Key);
+                _lruList.RemoveLast();
+                evicted.Value = entry;
+                _lruList.AddFirst(evicted);
+                _cache[key] = evicted;
+                return true;
             }
 
-            _cache[key] = value;
-            if (!exists)
-            {
-                _lruList.AddFirst(key);
-            }
-
+            _cache[key] = _lruList.AddFirst(entry);
             return true;
         }
     }
 
-    public Value? Get(Key key)
+    /// <summary>True when the subject has this exact exposure recorded. Does not change the LRU order.</summary>
+    public bool Contains(ExposureEvent exposureEvent)
     {
         lock (_cache)
         {
-            if (_cache.TryGetValue(key, out var value))
-            {
-                // Get operation should refresh LRU priority
-                _lruList.Remove(key);
-                _lruList.AddFirst(key);
-                return value;
-            }
-
-            return null;
+            return _cache.TryGetValue(new Key(exposureEvent), out var node) && Matches(node.Value.Recorded, in exposureEvent);
         }
     }
 
-    private void RemoveLeastRecentlyUsed()
-    {
-        var last = _lruList.Last;
-        if (last != null)
-        {
-            _cache.Remove(last.Value);
-            _lruList.RemoveLast();
-        }
-    }
+    // Same as Value equality, without allocating a Value.
+    private static bool Matches(Value recorded, in ExposureEvent exposureEvent)
+        => recorded.Variant == exposureEvent.Variant.Key
+           && recorded.Allocation == exposureEvent.Allocation.Key
+           && recorded.SerialId == exposureEvent.SerialId;
+
+    private readonly record struct Entry(Key Key, Value Recorded);
 
     public sealed record Key
     {
