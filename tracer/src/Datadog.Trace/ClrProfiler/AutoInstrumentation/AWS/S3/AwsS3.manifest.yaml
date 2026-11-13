@@ -1,0 +1,12 @@
+_v: 1
+name: AwsS3
+display_name: AWS S3
+description: Instruments Amazon S3 bucket and object operations, including multipart uploads, with client spans and optional
+  S3 object span pointers.
+packages:
+- name: AWSSDK.S3
+category:
+- object_store.client
+systems:
+- aws.s3
+creation_date: '2025-02-10'
