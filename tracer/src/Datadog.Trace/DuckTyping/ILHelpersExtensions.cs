@@ -250,7 +250,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else if (value >= -128 && value <= 127)
             {
-                il.Emit(OpCodes.Ldc_I4_S, value);
+                il.Emit(OpCodes.Ldc_I4_S, (sbyte)value);
             }
             else
             {
