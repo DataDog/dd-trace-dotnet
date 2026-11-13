@@ -211,16 +211,31 @@ bool ProfilerSignalManager::CallCustomHandler(int32_t signal, siginfo_t* info, v
 
 void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
-    // This thread local variable helps in detecting the case where the profiler handler and
-    // the previous handler are referencing/calling each other.
-    // As it's synchchronous, we can check if we already executed the previous handler and
-    // stop if it's the case.
-    static thread_local bool isExecuting = false;
-
-    if (isExecuting)
+    // The previous action is this handler: calling it would recurse forever.
+    if ((_previousAction.sa_flags & SA_SIGINFO) == SA_SIGINFO && _previousAction.sa_sigaction == ProfilerSignalManager::SignalHandler)
+    {
         return;
+    }
 
-    isExecuting = true;
+    // For the signals that are sent by the profiler (SIGUSR1, SIGPROF), this thread local variable helps in detecting
+    // the case where the profiler handler and the previous handler are referencing/calling each other.
+    // As it's synchronous, we can check if we already executed the previous handler and stop if it's the case.
+    //
+    // It cannot be used for SIGSEGV and SIGBUS: the previous handler (the CLR one) does not return for
+    // a hardware exception in managed code (a null reference for example). It leaves the alternate stack and
+    // dispatches the managed exception on the faulting thread's stack (see also Datadog.Linux.ApiWrapper/functions_to_wrap.c).
+    // The flag would never be cleared: the next fault on this thread would not be chained, and the faulting instruction
+    // would be restarted forever (https://github.com/DataDog/dd-trace-dotnet/issues/9563).
+    static thread_local bool isExecuting = false;
+    const bool useRecursionFlag = signal != SIGSEGV && signal != SIGBUS;
+
+    if (useRecursionFlag)
+    {
+        if (isExecuting)
+            return;
+
+        isExecuting = true;
+    }
 
     try
     {
@@ -240,7 +255,10 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
     {
     }
 
-    isExecuting = false;
+    if (useRecursionFlag)
+    {
+        isExecuting = false;
+    }
 }
 
 int32_t ProfilerSignalManager::GetSignal() const

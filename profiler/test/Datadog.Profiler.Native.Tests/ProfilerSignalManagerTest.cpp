@@ -8,6 +8,8 @@
 #include "OpSysTools.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
+#include <atomic>
+#include <csetjmp>
 #include <future>
 #include <signal.h>
 
@@ -122,6 +124,120 @@ TEST_F(ProfilerSignalManagerFixture, CheckSignalDeRegistration)
 
     // Make sure we do not un register more than once
     ASSERT_FALSE(manager->UnRegisterHandler());
+}
+
+// SIGSEGV and SIGBUS: the previous handler (the CLR one) may never return.
+// It is replaced here by a handler that leaves with siglongjmp, and counts its calls.
+namespace
+{
+sigjmp_buf s_fromPreviousHandler;
+std::atomic<int> s_previousHandlerCalls{0};
+std::atomic<int> s_customHandlerCalls{0};
+
+void PreviousHandlerThatDoesNotReturn(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
+{
+    s_previousHandlerCalls++;
+    siglongjmp(s_fromPreviousHandler, 1);
+}
+
+bool CustomHandlerThatChains(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
+{
+    s_customHandlerCalls++;
+    return false;
+}
+} // namespace
+
+class ProfilerSignalManagerFaultSignalsFixture : public ::testing::Test
+{
+public:
+    void TearDown() override
+    {
+        // Restores the previous action saved by the manager, then the one that was set before the test
+        if (_signal != 0)
+        {
+            ProfilerSignalManager::Get(_signal)->Reset();
+            sigaction(_signal, &_originalAction, nullptr);
+        }
+    }
+
+protected:
+    void Init(int signal)
+    {
+        _signal = signal;
+        s_previousHandlerCalls = 0;
+        s_customHandlerCalls = 0;
+        ASSERT_EQ(sigaction(signal, nullptr, &_originalAction), 0);
+        ProfilerSignalManager::Get(signal)->Reset();
+    }
+
+    void InstallPreviousAction(void (*handler)(int, siginfo_t*, void*))
+    {
+        struct sigaction action = {};
+        action.sa_flags = SA_SIGINFO;
+        action.sa_sigaction = handler;
+        sigemptyset(&action.sa_mask);
+        ASSERT_EQ(sigaction(_signal, &action, nullptr), 0);
+    }
+
+    // Delivers the signal synchronously to the current thread.
+    // If the previous handler is called, it leaves with siglongjmp, like the CLR one does.
+    void Deliver()
+    {
+        if (sigsetjmp(s_fromPreviousHandler, 1) == 0)
+        {
+            raise(_signal);
+        }
+    }
+
+    void CheckPreviousHandlerIsCalledOnEachSignal(int signal)
+    {
+        Init(signal);
+        ASSERT_NO_FATAL_FAILURE(InstallPreviousAction(PreviousHandlerThatDoesNotReturn));
+        ASSERT_TRUE(ProfilerSignalManager::Get(signal)->RegisterHandler(CustomHandlerThatChains));
+
+        for (int i = 1; i <= 3; i++)
+        {
+            Deliver();
+            EXPECT_EQ(s_customHandlerCalls.load(), i);
+            EXPECT_EQ(s_previousHandlerCalls.load(), i) << "The previous handler was not called for signal #" << i;
+        }
+    }
+
+    int _signal = 0;
+    struct sigaction _originalAction = {};
+};
+
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckPreviousSigsegvHandlerIsCalledOnEachSignal)
+{
+    CheckPreviousHandlerIsCalledOnEachSignal(SIGSEGV);
+}
+
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckPreviousSigbusHandlerIsCalledOnEachSignal)
+{
+    CheckPreviousHandlerIsCalledOnEachSignal(SIGBUS);
+}
+
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckProfilerHandlerIsNotChainedToItself)
+{
+    Init(SIGSEGV);
+    auto* signalManager = ProfilerSignalManager::Get(SIGSEGV);
+
+    // Get the address of ProfilerSignalManager::SignalHandler (private)
+    ASSERT_TRUE(signalManager->RegisterHandler(CustomHandlerThatChains));
+    struct sigaction profilerAction;
+    ASSERT_EQ(sigaction(SIGSEGV, nullptr, &profilerAction), 0);
+    signalManager->Reset();
+
+    // The previous action is now the profiler handler itself
+    ASSERT_EQ(sigaction(SIGSEGV, &profilerAction, nullptr), 0);
+    ASSERT_TRUE(signalManager->RegisterHandler(CustomHandlerThatChains));
+    s_customHandlerCalls = 0;
+
+    raise(SIGSEGV);
+    EXPECT_EQ(s_customHandlerCalls.load(), 1);
+
+    raise(SIGSEGV);
+    EXPECT_EQ(s_customHandlerCalls.load(), 2);
 }
 
 #endif
