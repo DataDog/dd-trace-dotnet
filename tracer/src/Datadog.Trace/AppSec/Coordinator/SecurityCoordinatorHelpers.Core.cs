@@ -110,7 +110,7 @@ internal static class SecurityCoordinatorHelpers
 
     private static Dictionary<string, object> BuildResponseArgs(int statusCode, IHeaderDictionary headers)
     {
-        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToString() } };
+        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToStringInvariant() } };
 
         if (SecurityCoordinator.ExtractHeadersFromRequest(headers) is { } extractedHeaders)
         {

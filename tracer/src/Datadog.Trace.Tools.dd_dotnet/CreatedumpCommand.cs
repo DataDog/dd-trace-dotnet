@@ -169,17 +169,17 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, out var signalValue))
+        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParseInvariant(rawSignal, out var signalValue))
         {
             signal = signalValue;
         }
 
-        if (parsedArguments.TryGetValue("--code", out var rawCode) && int.TryParse(rawCode, out var signalCodeValue))
+        if (parsedArguments.TryGetValue("--code", out var rawCode) && int.TryParseInvariant(rawCode, out var signalCodeValue))
         {
             signalCode = signalCodeValue;
         }
 
-        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
+        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParseInvariant(rawCrashthread, out var crashThreadValue))
         {
             crashThread = crashThreadValue;
         }
@@ -193,13 +193,13 @@ internal class CreatedumpCommand : Command
         if (pidCandidates.Count == 1)
         {
             // Best case scenario
-            return int.TryParse(pidCandidates[0], out pid);
+            return int.TryParseInvariant(pidCandidates[0], out pid);
         }
 
         // Check all the values to check if one is really a pid
         foreach (var candidate in pidCandidates)
         {
-            if (int.TryParse(candidate, out pid))
+            if (int.TryParseInvariant(candidate, out pid))
             {
                 try
                 {
@@ -250,7 +250,7 @@ internal class CreatedumpCommand : Command
     {
         try
         {
-            DebugPrint($"Resolving managed callstack for thread {threadId}");
+            DebugPrint(StringUtil.Invariant($"Resolving managed callstack for thread {threadId}"));
 
             *numberOfFrames = 0;
 
@@ -643,7 +643,7 @@ internal class CreatedumpCommand : Command
             return true;
         }
 
-        if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType"))
+        if (method.Type.Module.IsDynamic && assemblyName.StartsWithOrdinal("DuckType"))
         {
             return true;
         }
@@ -685,7 +685,7 @@ internal class CreatedumpCommand : Command
 
                 if (Errors.Count > 3)
                 {
-                    AnsiConsole.WriteLine($"... and {Errors.Count - 3} more");
+                    AnsiConsole.WriteLine(StringUtil.Invariant($"... and {Errors.Count - 3} more"));
                 }
             }
 
@@ -713,7 +713,7 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode)
     {
-        DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
+        DebugPrint(StringUtil.Invariant($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})"));
 
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
@@ -748,7 +748,7 @@ internal class CreatedumpCommand : Command
             _oldUnhandledExceptionFilter = SetUnhandledExceptionFilter((IntPtr)unhandledExceptionFilter);
         }
 
-        DebugPrint($"Attaching to process {pid}");
+        DebugPrint(StringUtil.Invariant($"Attaching to process {pid}"));
 
         using var target = DataTarget.AttachToProcess(pid, suspend: true);
         _dataTarget = target;
@@ -770,7 +770,7 @@ internal class CreatedumpCommand : Command
 
         if (result != 0)
         {
-            AddError($"Failed to query interface: {result}");
+            AddError(StringUtil.Invariant($"Failed to query interface: {result}"));
             return;
         }
 
@@ -811,7 +811,7 @@ internal class CreatedumpCommand : Command
             if (firstThreadWithException != null)
             {
                 crashThread = (int)firstThreadWithException.OSThreadId;
-                DebugPrint($"Crashing thread is not set, using the first thread with an exception: {crashThread}");
+                DebugPrint(StringUtil.Invariant($"Crashing thread is not set, using the first thread with an exception: {crashThread}"));
             }
         }
 
@@ -997,7 +997,7 @@ internal class CreatedumpCommand : Command
             return Marshal.PtrToStringAnsi(message, length);
         }
 
-        return $"unspecified error: {exception.NativeErrorCode}";
+        return StringUtil.Invariant($"unspecified error: {exception.NativeErrorCode}");
     }
 
     private bool SetSignal(ICrashReport crashReport, int signal, int? signalCode)

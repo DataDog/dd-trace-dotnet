@@ -304,7 +304,13 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug("CIVisibilityProtocolWriter: TestCycle stats: {Stats}", $"[Tests: {buffers.CiTestCycleBuffer.TestEventsCount}, TestSuites: {buffers.CiTestCycleBuffer.TestSuiteEventsCount}, TestModules: {buffers.CiTestCycleBuffer.TestModuleEventsCount}, TestSessions: {buffers.CiTestCycleBuffer.TestSessionEventsCount}, Spans: {buffers.CiTestCycleBuffer.SpanEventsCount}]");
+            Log.Debug<int, int, int, int, int>(
+                "CIVisibilityProtocolWriter: TestCycle stats: [Tests: {Tests}, TestSuites: {TestSuites}, TestModules: {TestModules}, TestSessions: {TestSessions}, Spans: {Spans}]",
+                buffers.CiTestCycleBuffer.TestEventsCount,
+                buffers.CiTestCycleBuffer.TestSuiteEventsCount,
+                buffers.CiTestCycleBuffer.TestModuleEventsCount,
+                buffers.CiTestCycleBuffer.TestSessionEventsCount,
+                buffers.CiTestCycleBuffer.SpanEventsCount);
             Log.Debug<int>("CIVisibilityProtocolWriter: CodeCoverage stats: [Coverage: {Coverage}]", buffers.CiCodeCoverageBuffer.TestCoverageEventsCount);
         }
     }

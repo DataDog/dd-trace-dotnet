@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 AnsiConsole.WriteLine("Done");
             }
 
-            AnsiConsole.WriteLine($"{processed} files processed.");
+            AnsiConsole.WriteLine(StringUtil.Invariant($"{processed} files processed."));
         }
 
         private static bool TryProcessAssembly(string inputPath, string outputPath)

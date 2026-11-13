@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using Microsoft.Web.Administration;
 
@@ -88,7 +89,7 @@ internal static class AppHostHelper
             attempt++;
             if (attempt > 1)
             {
-                log.WriteInfo($"Attempt {attempt} to update IIS failed, retrying.");
+                log.WriteInfo($"Attempt {attempt.ToString(CultureInfo.InvariantCulture)} to update IIS failed, retrying.");
             }
 
             if (ModifyEnvironmentVariables(log, envVars, updateEnvVars))
@@ -97,7 +98,7 @@ internal static class AppHostHelper
             }
         }
 
-        log.WriteError($"Failed to update IIS after {attempt} attempts");
+        log.WriteError($"Failed to update IIS after {attempt.ToString(CultureInfo.InvariantCulture)} attempts");
         return false;
     }
 

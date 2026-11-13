@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent
 
             if (maxBufferSize < minimumSize)
             {
-                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {minimumSize}", nameof(maxBufferSize));
+                ThrowHelper.ThrowArgumentException(StringUtil.Invariant($"Buffer size should be at least {minimumSize}"), nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;

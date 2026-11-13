@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Util.Json;
@@ -73,8 +74,8 @@ internal static class BodyParser
             JsonToken.StartObject => ReadObject(r, ref state, depth),
             JsonToken.StartArray => ReadArray(r, ref state, depth),
             JsonToken.String => ReadString(r, ref state),
-            JsonToken.Integer => r.Value != null ? Convert.ToDouble(r.Value) : null,
-            JsonToken.Float => r.Value != null ? Convert.ToDouble(r.Value) : null,
+            JsonToken.Integer => r.Value != null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
+            JsonToken.Float => r.Value != null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
             JsonToken.Boolean => r.Value,
             JsonToken.Null => null,
             _ => null

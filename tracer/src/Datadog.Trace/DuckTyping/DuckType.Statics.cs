@@ -220,7 +220,8 @@ namespace Datadog.Trace.DuckTyping
 
             static ModuleBuilder CreateModuleBuilder(string name, Assembly targetAssembly)
             {
-                var assemblyName = new AssemblyName(name + $"_{++_assemblyCount}");
+                var assemblyCount = ++_assemblyCount;
+                var assemblyName = new AssemblyName(name + "_" + assemblyCount.ToStringInvariant());
                 assemblyName.Version = targetAssembly.GetName().Version;
 
 #if NET6_0_OR_GREATER

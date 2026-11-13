@@ -168,7 +168,7 @@ internal sealed class AwsSqsHandlerCommon
                     var sentTime = 0;
                     if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                     {
-                        if (!int.TryParse(sentTimeStr, out sentTime))
+                        if (!int.TryParseInvariant(sentTimeStr, out sentTime))
                         {
                             sentTime = 0;
                         }

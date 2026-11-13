@@ -47,7 +47,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (lastTime && _httpTransport.StatusCode is { } statusCode)
         {
-            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+            args[AddressesConstants.ResponseStatus] = statusCode.ToStringInvariant();
         }
 
         return args.Count > 0 ? RunWaf(args, lastTime) : null;
