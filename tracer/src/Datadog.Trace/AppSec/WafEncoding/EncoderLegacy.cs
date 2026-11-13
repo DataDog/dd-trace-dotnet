@@ -12,8 +12,6 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -57,7 +55,7 @@ internal sealed class EncoderLegacy : IEncoder
         DdwafObjectStruct root = default;
         var truncation = default(TruncationInfo);
         EncodeInternal(o, &root, remainingDepth, applySafetyLimits, _wafLibraryInvoker, ref truncation, remainingDepth);
-        return new EncodeResult(root, _wafLibraryInvoker, truncation);
+        return new EncodeResult(root, _wafLibraryInvoker, in truncation);
     }
 
     /// <summary>
@@ -214,7 +212,7 @@ internal sealed class EncoderLegacy : IEncoder
     {
         if (applyLimits && remainingDepth-- <= 0)
         {
-            truncation.AddDepth(maxDepth + 1);
+            truncation.AddTooDeep(maxDepth);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
@@ -264,7 +262,7 @@ internal sealed class EncoderLegacy : IEncoder
     {
         if (applyLimits && remainingDepth-- <= 0)
         {
-            truncation.AddDepth(maxDepth + 1);
+            truncation.AddTooDeep(maxDepth);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));

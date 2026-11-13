@@ -58,7 +58,14 @@ internal struct TruncationInfo
 
     public void AddContainer(int count) => ContainerSize = Math.Max(ContainerSize, count);
 
-    public void AddDepth(int depth) => ContainerDepth = Math.Max(ContainerDepth, depth);
+    /// <summary>
+    /// Records that containers were dropped because the object was deeper than the encoding allowed. The depth
+    /// reported is where they were dropped rather than the actual depth of the object, an approximation the RFC allows.
+    /// </summary>
+    /// <param name="startDepth">the depth the encoding started with</param>
+    public void AddTooDeep(int startDepth) => AddDepth(startDepth + 1);
+
+    private void AddDepth(int depth) => ContainerDepth = Math.Max(ContainerDepth, depth);
 
     public void Add(in TruncationInfo other)
     {
