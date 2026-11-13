@@ -367,6 +367,9 @@ public static partial class SmokeTestRunner
             if (scenario.IsWindows)
             {
                 // TEMPORARY diagnostics (DataDog/dd-trace-dotnet#9700): measure C: around the test agent build
+                // The test agent brings its own Windows base image (~6 GB): free what the app build no longer needs first
+                LogDiskSpace("before freeing disk space");
+                await DockerService.RemoveSdkAndDanglingImagesAsync();
                 LogDiskSpace("before building the Windows test agent");
                 try
                 {
