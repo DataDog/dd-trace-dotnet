@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable annotations
+
+using System;
 using System.Collections.Generic;
 using System.Formats.Tar;
 using System.IO;
@@ -301,6 +303,41 @@ public class DockerService
             },
             RetryDelays,
             ct);
+    }
+
+    /// <summary>
+    /// Returns the IP address of a container on the given network.
+    /// </summary>
+    /// <param name="containerId"></param>
+    /// <param name="networkName"></param>
+    /// <returns>The container IP address, or <see langword="null"/> if it could not be resolved after all retries.</returns>
+    public static async Task<string?> GetContainerIpAsync(string containerId, string networkName)
+    {
+        try
+        {
+            using var client = CreateDockerClient();
+            var inspection = await client.Containers.InspectContainerAsync(containerId);
+            if (inspection.NetworkSettings?.Networks?.TryGetValue(networkName, out var network) == true
+             && !string.IsNullOrWhiteSpace(network.IPAddress))
+            {
+                return network.IPAddress;
+            }
+
+            Logger.Warning(
+                "Container {ContainerId} has no IP address on network {NetworkName}",
+                containerId,
+                networkName);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(
+                ex,
+                "Unable to get an IP address for container {ContainerId} on network {NetworkName}",
+                containerId,
+                networkName);
+        }
+
+        return null;
     }
 
     /// <summary>
