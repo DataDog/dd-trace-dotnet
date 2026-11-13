@@ -24,11 +24,12 @@ using Datadog.Trace.Vendors.Serilog.Events;
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 /// <summary>
-/// The managed remote configuration client, which preceded libdatadog's <see cref="LibDatadog.RemoteConfig.NativeRemoteConfigClient"/>.
-/// It is kept for a release, with the protocol behaviour RcmSubscriptionManager had before libdatadog's client, for when libdatadog's client is not
-/// available or can't be created, or is disabled with <see cref="Configuration.ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
+/// The managed remote configuration client, the fallback of libdatadog's <see cref="LibDatadog.RemoteConfig.NativeRemoteConfigClient"/> for one release:
+/// used when libdatadog's client is not available or can't be created, or is disabled with <see cref="Configuration.ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
 /// It does not verify the hashes of the files. Its transport keeps the discovery service of the remote configuration manager which created it,
 /// also after the tracer manager was replaced (TracerManager.ReplaceGlobalManager), which is fine while the endpoint path discovery reports doesn't change.
+/// Removed with it: its key and fallback, RemoteConfigEndpoint.ExporterSettings, Transport/*, Json/*, RemoteConfigurationCache, Base64DecodingStream
+/// and their tests. Protocol/*, except RcmClientTracer, goes back to the test helpers, with the string case of GetRcmRequestExtensions.DeserializeRcmRequest.
 /// </summary>
 internal sealed class ManagedRemoteConfigClient : IRemoteConfigClient
 {
@@ -107,7 +108,7 @@ internal sealed class ManagedRemoteConfigClient : IRemoteConfigClient
 
     public void Rebind(RcmClientTracer target, RemoteConfigEndpoint? endpoint)
     {
-        // Like before, the state is kept: only the next requests change
+        // The client state is kept across a rebind: only the next requests change
         _target = target;
         if (endpoint is not null)
         {
@@ -198,7 +199,7 @@ internal sealed class ManagedRemoteConfigClient : IRemoteConfigClient
         requestState.Error = lastPollError;
         requestState.BackendClientState = _backendClientState;
 
-        // The extra services are set on the target, as before
+        // The protocol sends the extra services on the target
         _target.ExtraServices = _extraServices;
         requestClient.ClientTracer = _target;
         requestClient.Products = _productKeys;

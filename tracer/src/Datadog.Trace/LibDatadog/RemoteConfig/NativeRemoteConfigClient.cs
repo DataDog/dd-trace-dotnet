@@ -110,14 +110,13 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         var updated = new List<RemoteConfiguration>();
         var removed = new List<RemoteConfigurationPath>();
         var count = (int)changes.Len;
-        // The contents of the changes from this index on are still owned here
-        var owned = 0;
+        var firstUnclaimed = 0;
         try
         {
             for (var i = 0; i < count; i++)
             {
                 var change = ((RcChange*)changes.Ptr)[i];
-                owned = i + 1;
+                firstUnclaimed = i + 1;
                 RemoteConfigurationContent? contents = null;
                 if (change.Kind != RcChange.Remove)
                 {
@@ -146,7 +145,7 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         finally
         {
             // Only if the loop failed midway: nothing else releases these contents
-            for (var i = owned; i < count; i++)
+            for (var i = firstUnclaimed; i < count; i++)
             {
                 NativeInterop.RemoteConfig.ContentDrop(((RcChange*)changes.Ptr)[i].ContentsOwner);
             }
@@ -188,6 +187,7 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         return nativeEndpoint;
     }
 
+    // RcmSubscriptionManager.IsSameTarget compares these fields: keep both lists in sync
     private static RcTarget ToTarget(NativeStrings strings, RcmClientTracer target)
         => new()
         {

@@ -231,6 +231,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
+    // The fields NativeRemoteConfigClient.ToTarget sends: keep both lists in sync
     private static bool IsSameTarget(RcmClientTracer tracer, RcmClientTracer? previous)
         => ReferenceEquals(tracer, previous)
         || (previous is not null

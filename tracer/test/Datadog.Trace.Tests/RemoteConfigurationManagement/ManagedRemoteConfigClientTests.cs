@@ -28,7 +28,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
 /// <summary>
-/// The protocol tests of the managed client, from the tests of the previous RcmSubscriptionManager
+/// The protocol tests of the managed client
 /// </summary>
 public class ManagedRemoteConfigClientTests
 {
@@ -591,7 +591,7 @@ public class ManagedRemoteConfigClientTests
     }
 
     [Fact]
-    public void Fetch_FromTheAgent_SendsTheRequestOfThePreviousClient()
+    public void Fetch_FromTheAgent_SendsTheManagedProtocolRequest()
     {
         string response = null;
         foreach (string r in RcmResponses.TargetsTargetFilesClientConfigs())
@@ -625,7 +625,7 @@ public class ManagedRemoteConfigClientTests
 
         client.Fetch().IsEmpty.Should().BeTrue();
 
-        // As before: base64 capabilities, and the opaque backend state as a string
+        // Base64 capabilities, and the opaque backend state as a string
         var json = JObject.Parse(agent.RemoteConfigRequests.Last());
         json["client"]["capabilities"].Type.Should().Be(JTokenType.String);
         Convert.FromBase64String((string)json["client"]["capabilities"]).Should().Equal(ManagedRemoteConfigClient.GetCapabilities(RcmCapabilitiesIndices.AsmActivation));

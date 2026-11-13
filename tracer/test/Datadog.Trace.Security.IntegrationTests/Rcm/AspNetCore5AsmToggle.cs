@@ -35,9 +35,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityDefaultManagedClient : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDefaultManagedClient(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefaultManagedClient))
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefaultManagedClient), managedClient: true)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled, "false");
         }
     }
 
@@ -59,10 +58,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
     public abstract class AspNetCore5AsmToggle : RcmBase
     {
-        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+        private readonly bool _managedClient;
+
+        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName, bool managedClient = false)
             : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
+            _managedClient = managedClient;
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+            if (managedClient)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled, "false");
+            }
         }
 
         [SkippableFact]
@@ -84,11 +90,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             void CheckRequest(GetRcmRequest associatedRcmRequest, int fileNumberIfSecurityCanBeToggled)
             {
+                if (_managedClient)
+                {
+                    // Shows the managed client sent the request: it omits a missing apply error, libdatadog's client sends an empty one
+                    associatedRcmRequest.Client.State.ConfigStates.Should().NotContain(s => s.ApplyError != null);
+                }
+
                 if (EnableSecurity != null)
                 {
                     // Other products may be included, but none of the ASM ones should be. AsmFeatures is requested when
                     // security is enabled, as it contains info about userId collection.
-                    var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd, RcmProducts.AsmFeatures };
+                    string[] asmProducts = [RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd, RcmProducts.AsmFeatures];
                     if (EnableSecurity == false)
                     {
                         associatedRcmRequest.Client.Products.Should().NotContain(asmProducts);
