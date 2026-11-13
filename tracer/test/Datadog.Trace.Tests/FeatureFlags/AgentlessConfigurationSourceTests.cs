@@ -44,8 +44,8 @@ public class AgentlessConfigurationSourceTests
     private const string ServiceRejection = "DD-Service header not sent";
 
     // Each row is a service and its DD-Service header. Null means that the request has no header.
-    // The values come from NormalizeService in the Agent v0.82.3 and from the CDN pattern.
-    // NormalizeService gives the name APM shows. The CDN pattern drops some of these names.
+    // The values come from NormalizeService in the Agent v0.82.3. NormalizeService gives the name
+    // APM shows. The source sends that name only when it is ASCII.
     public static TheoryData<string, string?> ServiceHeaders => new()
     {
         { "checkout", "checkout" },
@@ -56,7 +56,7 @@ public class AgentlessConfigurationSourceTests
         { "a\tb", "a_b" },
         { "a  b!", "a_b" },
         { "svc ", "svc" },
-        { " svc", null },
+        { " svc", "_svc" },
         { "a_", "a" },
         { "svc-", "svc-" },
         { "a..b", "a..b" },
@@ -76,11 +76,14 @@ public class AgentlessConfigurationSourceTests
         { new string('a', 100) + " b", new string('a', 100) },
         { new string('a', 99) + "\u00e9", new string('a', 99) },
 
-        // APM shows these names, but the CDN drops them.
-        { "_svc", null },
-        { "-svc", null },
-        { ".svc", null },
-        { ":svc", null },
+        // The source sends these names as APM shows them. The CDN decides if it accepts them.
+        { "_svc", "_svc" },
+        { "-svc", "-svc" },
+        { ".svc", ".svc" },
+        { ":svc", ":svc" },
+        { "-", "-" },
+
+        // APM shows these names, but they are not ASCII. HttpClient refuses them.
         { "caf\u00e9-api", null },
         { "Caf\u00e9", null },
         { "支付", null },
@@ -89,7 +92,6 @@ public class AgentlessConfigurationSourceTests
 
         // Nothing is left of these names.
         { "___", null },
-        { "-", null },
         { string.Empty, null },
         { "   ", null },
     };
@@ -225,7 +227,7 @@ public class AgentlessConfigurationSourceTests
     [Theory]
     [InlineData("My Service", "my_service")]
     [InlineData("Default Web Site/Shop", "default_web_site/shop")]
-    [InlineData("_svc", null)]
+    [InlineData("_svc", "_svc")]
     [InlineData("caf\u00e9-api", null)]
     public async Task SendsTheNameApmShowsForTheConfiguredServiceAndKeepsTheTracerService(string service, string? header)
     {
@@ -236,8 +238,7 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        // The source sends the request also when the CDN does not accept the name. That request has
-        // no header.
+        // The source sends the request also when the name is not ASCII. That request has no header.
         var headers = factory.RequestsSent.Should().ContainSingle().Subject.ExtraHeaders;
         if (header is not null)
         {
@@ -282,7 +283,7 @@ public class AgentlessConfigurationSourceTests
         await source.PollAsync();
 
         // The spans use this name when DD_SERVICE is not set. The header sends it as APM shows it.
-        // The name of the test host starts with a letter, so the CDN accepts it.
+        // The name of the test host is ASCII, so the source sends it.
         var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
         inferred.Should().NotBeNullOrEmpty();
         factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", AgentlessConfigurationSource.CleanUpService(inferred));
@@ -292,14 +293,14 @@ public class AgentlessConfigurationSourceTests
     public void ReportsARejectedServiceOnlyWhenTheServiceChanges()
     {
         var logger = CreateDebugLogger();
-        var settings = CreateTracerSettings(service: "_svc");
+        var settings = CreateTracerSettings(service: "支付");
         using var source = CreateConfiguredSource(settings, new TestRequestFactory(), logger.Object);
 
         // Every settings change goes to the source. This includes a change that keeps the service.
         UpdateSettingsInCode(settings, TracerSettingKeyConstants.EnvironmentKey, "staging");
         UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "caf\u00e9-api");
 
-        RejectedServices(logger).Should().Equal("_svc", "caf\u00e9-api");
+        RejectedServices(logger).Should().Equal("支付", "caf\u00e9-api");
     }
 
     [Fact]

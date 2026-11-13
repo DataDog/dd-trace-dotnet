@@ -33,8 +33,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
 
-    // The CDN attributes usage only to a service of at most 100 characters. The Agent cuts a service
-    // to 100 bytes of UTF-8.
+    // The Agent cuts a service to 100 bytes of UTF-8.
     private const int MaxServiceLength = 100;
 
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
@@ -181,20 +180,19 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// Returns true when the CDN attributes usage to this DD-Service value. The CDN accepts only values
-    /// that match <c>^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,99}$</c>, and drops all other values.
+    /// Returns true when the value is not empty and has only printable ASCII (0x21 to 0x7E).
+    /// HttpClient refuses a header value that is not ASCII, so the request fails.
     /// </summary>
-    private static bool IsAttributableService(string service)
+    private static bool IsAsciiHeaderValue(string value)
     {
-        if (service.Length is 0 or > MaxServiceLength || !char.IsAsciiLetterOrDigit(service[0]))
+        if (value.Length == 0)
         {
             return false;
         }
 
-        for (var i = 1; i < service.Length; i++)
+        foreach (var c in value)
         {
-            var c = service[i];
-            if (!char.IsAsciiLetterOrDigit(c) && c is not ('_' or '.' or ':' or '/' or '-'))
+            if (!char.IsBetween(c, '!', '~'))
             {
                 return false;
             }
@@ -333,15 +331,16 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // example, My Service is sent as my_service. The tracer's own service does not change.
             var shown = CleanUpService(service);
 
-            // The CDN drops some names that APM shows, such as _svc and café-api. The source does
-            // not send these names. It never sends a different name, because APM does not show it.
-            if (IsAttributableService(shown))
+            // The CDN decides which names it attributes usage to. The source skips only an empty
+            // name and a name that HttpClient refuses, such as café-api. A refused name makes every
+            // poll fail. The source never sends a different name, because APM does not show it.
+            if (IsAsciiHeaderValue(shown))
             {
                 sent = shown;
             }
             else
             {
-                _log.Debug<string>("Feature Flags: the CDN does not accept {Service} as APM shows it; DD-Service header not sent", service);
+                _log.Debug<string>("Feature Flags: service {Service} has no ASCII APM name; DD-Service header not sent", service);
             }
         }
 
