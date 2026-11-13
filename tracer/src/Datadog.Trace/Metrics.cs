@@ -88,6 +88,21 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
+        /// The length, in characters, of the longest string truncated in the WAF inputs of the request
+        /// </summary>
+        public const string AppSecTruncatedStringLength = "_dd.appsec.truncated.string_length";
+
+        /// <summary>
+        /// The element count of the largest container truncated in the WAF inputs of the request
+        /// </summary>
+        public const string AppSecTruncatedContainerSize = "_dd.appsec.truncated.container_size";
+
+        /// <summary>
+        /// The depth at which containers were dropped from the WAF inputs of the request because they were too deep
+        /// </summary>
+        public const string AppSecTruncatedContainerDepth = "_dd.appsec.truncated.container_depth";
+
+        /// <summary>
         /// The number of WAF timeouts during a request
         /// </summary>
         public const string WafTimeouts = "_dd.appsec.waf.timeouts";

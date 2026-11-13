@@ -49,16 +49,15 @@ internal sealed class EncoderLegacy : IEncoder
         _wafLibraryInvoker = wafLibraryInvoker;
     }
 
-    private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
-
     public unsafe IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true)
     {
         // The root is the only object we own outright: everything below it lives inside a container
         // allocated by libddwaf. It starts out invalid so that disposing is safe even if encoding
         // bails out before writing anything.
         DdwafObjectStruct root = default;
-        EncodeInternal(o, &root, remainingDepth, applySafetyLimits, _wafLibraryInvoker);
-        return new EncodeResult(root, _wafLibraryInvoker);
+        var truncation = default(TruncationInfo);
+        EncodeInternal(o, &root, remainingDepth, applySafetyLimits, _wafLibraryInvoker, ref truncation, remainingDepth);
+        return new EncodeResult(root, _wafLibraryInvoker, truncation);
     }
 
     /// <summary>
@@ -66,19 +65,19 @@ internal sealed class EncoderLegacy : IEncoder
     /// capacity of arrays and maps are 16 bit, and libddwaf does not guard against overflowing them:
     /// its grow helper saturates at 65535 and the following insert writes past the end of the buffer.
     /// </summary>
-    private static ushort ClampCapacity(int count)
+    private static ushort ClampCapacity(int count, ref TruncationInfo truncation)
     {
         if (count <= DdwafObjectStruct.MaxContainerCapacity)
         {
             return (ushort)count;
         }
 
-        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+        truncation.AddContainer(count);
         Log.Warning<int, int>("Container holds {Count} entries, more than the {MaxContainerCapacity} a WAF object can address, it will be truncated", count, DdwafObjectStruct.MaxContainerCapacity);
         return (ushort)DdwafObjectStruct.MaxContainerCapacity;
     }
 
-    private static unsafe void EncodeUnknownType(object? o, DdwafObjectStruct* dest, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeUnknownType(object? o, DdwafObjectStruct* dest, WafLibraryInvoker wafLibraryInvoker, ref TruncationInfo truncation)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -86,10 +85,10 @@ internal sealed class EncoderLegacy : IEncoder
         }
 
         var s = o?.ToString() ?? string.Empty;
-        CreateNativeString(s, dest, applyLimits: true, wafLibraryInvoker);
+        CreateNativeString(s, dest, applyLimits: true, wafLibraryInvoker, ref truncation);
     }
 
-    private static unsafe void EncodeInternal<T>(T o, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeInternal<T>(T o, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, ref TruncationInfo truncation, int maxDepth)
     {
         object? args = o;
         switch (args)
@@ -98,10 +97,10 @@ internal sealed class EncoderLegacy : IEncoder
                 wafLibraryInvoker.ObjectSetNull(dest);
                 break;
             case string s:
-                CreateNativeString(s, dest, applyLimits, wafLibraryInvoker);
+                CreateNativeString(s, dest, applyLimits, wafLibraryInvoker, ref truncation);
                 break;
             case JValue jv:
-                EncodeInternal(jv.Value, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeInternal(jv.Value, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case int i:
                 wafLibraryInvoker.ObjectSetSigned(dest, i);
@@ -128,94 +127,94 @@ internal sealed class EncoderLegacy : IEncoder
                 wafLibraryInvoker.ObjectSetBool(dest, b);
                 break;
             case IEnumerable<KeyValuePair<string, JToken>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, int>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, uint>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, long>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, float>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, double>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, decimal>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, string>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, object>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, bool>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, List<string>>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, ArrayList>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, string[]>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, List<double>>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, double[]>> objDict:
-                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<JToken> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<string> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<object> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<int> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<float> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<uint> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<long> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<ulong> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<double> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<decimal> objs:
-                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case ArrayList objs:
-                EncodeList(objs.ToArray(), dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeList(objs.ToArray(), dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             default:
-                EncodeUnknownType(args, dest, wafLibraryInvoker);
+                EncodeUnknownType(args, dest, wafLibraryInvoker, ref truncation);
                 break;
         }
     }
 
-    private static unsafe void EncodeList<T>(IEnumerable<T> objEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeList<T>(IEnumerable<T> objEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, ref TruncationInfo truncation, int maxDepth)
     {
         if (applyLimits && remainingDepth-- <= 0)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+            truncation.AddDepth(maxDepth + 1);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
@@ -228,7 +227,7 @@ internal sealed class EncoderLegacy : IEncoder
         var count = objEnumerator is IList<T> objs ? objs.Count : objEnumerator.Count();
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            truncation.AddContainer(count);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
@@ -240,7 +239,7 @@ internal sealed class EncoderLegacy : IEncoder
 
         // sizing the array up front means no insert ever has to grow it, which is both cheaper and
         // the only way to stay clear of libddwaf's 16 bit overflow when growing
-        var capacity = ClampCapacity(count);
+        var capacity = ClampCapacity(count, ref truncation);
         if (capacity < count)
         {
             objEnumerator = objEnumerator.Take(capacity);
@@ -257,15 +256,15 @@ internal sealed class EncoderLegacy : IEncoder
                 break;
             }
 
-            EncodeInternal(o, slot, remainingDepth, applyLimits, wafLibraryInvoker);
+            EncodeInternal(o, slot, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
         }
     }
 
-    private static unsafe void EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, ref TruncationInfo truncation, int maxDepth)
     {
         if (applyLimits && remainingDepth-- <= 0)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+            truncation.AddDepth(maxDepth + 1);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
@@ -279,7 +278,7 @@ internal sealed class EncoderLegacy : IEncoder
 
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            truncation.AddContainer(count);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
@@ -289,7 +288,7 @@ internal sealed class EncoderLegacy : IEncoder
             count = WafConstants.MaxContainerSize;
         }
 
-        var capacity = ClampCapacity(count);
+        var capacity = ClampCapacity(count, ref truncation);
         if (capacity < count)
         {
             objDictEnumerator = objDictEnumerator.Take(capacity);
@@ -310,7 +309,7 @@ internal sealed class EncoderLegacy : IEncoder
                     break;
                 }
 
-                EncodeInternal(o.Value, slot, remainingDepth, applyLimits, wafLibraryInvoker);
+                EncodeInternal(o.Value, slot, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
             }
             else
             {
@@ -322,12 +321,14 @@ internal sealed class EncoderLegacy : IEncoder
         }
     }
 
-    private static unsafe void CreateNativeString(string s, DdwafObjectStruct* dest, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void CreateNativeString(string s, DdwafObjectStruct* dest, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, ref TruncationInfo truncation)
     {
-        var encodeString =
-            applyLimits
-                ? TruncateLongString(s)
-                : s;
+        var encodeString = s;
+        if (applyLimits && s.Length > WafConstants.MaxStringLength)
+        {
+            truncation.AddString(s.Length);
+            encodeString = s.Substring(0, WafConstants.MaxStringLength);
+        }
 
         // libddwaf takes an explicit byte count, so the string has to be converted to UTF-8 here
         // rather than left to the default (ANSI) marshalling, whose byte count wouldn't match the
@@ -459,15 +460,16 @@ internal sealed class EncoderLegacy : IEncoder
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private DdwafObjectStruct _resultDdwafObject;
 
-        internal EncodeResult(DdwafObjectStruct obj, WafLibraryInvoker wafLibraryInvoker)
+        internal EncodeResult(DdwafObjectStruct obj, WafLibraryInvoker wafLibraryInvoker, in TruncationInfo truncation)
         {
             _resultDdwafObject = obj;
             _wafLibraryInvoker = wafLibraryInvoker;
+            Truncation = truncation;
         }
 
         public DdwafObjectStruct ResultDdwafObject => _resultDdwafObject;
 
-        public bool Truncated => false;
+        public TruncationInfo Truncation { get; }
 
         // the whole tree was built with the default allocator, so that is the one that must free it
         public void Dispose() => _wafLibraryInvoker.ObjectDestroy(ref _resultDdwafObject);

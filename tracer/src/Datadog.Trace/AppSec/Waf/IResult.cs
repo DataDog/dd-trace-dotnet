@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.WafEncoding;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -41,6 +42,11 @@ namespace Datadog.Trace.AppSec.Waf
         bool Timeout { get; }
 
         bool Truncated { get; }
+
+        /// <summary>
+        /// Gets what the encoder truncated in the input of the run
+        /// </summary>
+        TruncationInfo Truncation { get; }
 
         Dictionary<string, object?>? ExtractSchemaDerivatives { get; }
 

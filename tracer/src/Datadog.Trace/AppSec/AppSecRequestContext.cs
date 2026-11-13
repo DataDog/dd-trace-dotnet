@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Json;
@@ -31,6 +32,7 @@ internal sealed partial class AppSecRequestContext
     private int _wafTimeout;
     private int? _wafError;
     private int? _wafRaspError;
+    private TruncationInfo _truncation;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(Span span)
@@ -73,6 +75,42 @@ internal sealed partial class AppSecRequestContext
             }
 
             _raspMetricsHelper?.GenerateRaspSpanMetricTags(span.Tags);
+            SetTruncationMetrics(span);
+        }
+    }
+
+    // must be called with _sync held
+    private void SetTruncationMetrics(Span span)
+    {
+        if (_truncation.StringLength > 0)
+        {
+            span.Tags.SetMetric(Metrics.AppSecTruncatedStringLength, _truncation.StringLength);
+        }
+
+        if (_truncation.ContainerSize > 0)
+        {
+            span.Tags.SetMetric(Metrics.AppSecTruncatedContainerSize, _truncation.ContainerSize);
+        }
+
+        if (_truncation.ContainerDepth > 0)
+        {
+            span.Tags.SetMetric(Metrics.AppSecTruncatedContainerDepth, _truncation.ContainerDepth);
+        }
+    }
+
+    /// <summary>
+    /// Records what the encoder truncated in the input of a WAF run, reported on the root span as the largest of the request
+    /// </summary>
+    internal void AddTruncation(in TruncationInfo truncation)
+    {
+        if (!truncation.Truncated)
+        {
+            return;
+        }
+
+        lock (_sync)
+        {
+            _truncation.Add(truncation);
         }
     }
 
