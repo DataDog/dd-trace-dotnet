@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EEHeapExplorer/EEHeapExplorer.csproj" />
+  <Project Path="EEHeapModel/EEHeapModel.csproj" />
+</Solution>

@@ -49,6 +49,22 @@ bool IsNanosecondsUnit(std::string_view unit)
     return unit == "nanosecond" || unit == "nanoseconds" || unit == "Nanosecond" || unit == "Nanoseconds";
 }
 
+bool IsCustomSampleType(ddog_prof_SampleType sampleType)
+{
+    switch (sampleType)
+    {
+        case DDOG_PROF_SAMPLE_TYPE_CUSTOM1:
+        case DDOG_PROF_SAMPLE_TYPE_CUSTOM2:
+        case DDOG_PROF_SAMPLE_TYPE_CUSTOM3:
+        case DDOG_PROF_SAMPLE_TYPE_CUSTOM4:
+        case DDOG_PROF_SAMPLE_TYPE_CUSTOM5:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType)
 {
     if (type == "alloc-samples" && IsCountUnit(unit))
@@ -102,6 +118,12 @@ bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof
     if (type == "lock-time" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_TIME;
+        return true;
+    }
+
+    if (type == "memory-breakdown" && unit == "bytes")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_CUSTOM1;
         return true;
     }
 

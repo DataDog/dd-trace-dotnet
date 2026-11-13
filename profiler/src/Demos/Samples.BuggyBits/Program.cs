@@ -40,6 +40,7 @@ namespace BuggyBits
         ShortLived = 4096,      // short lived threads
         EndpointProfiling = 8192, // lightweight CPU work for endpoint profiling tests
         Allocations = 16384, // allocate configured arrays
+        SteadyState = 32768,     // ~100 idle threads + controlled, bounded allocations for reproducible memory captures
     }
 
     public class Program

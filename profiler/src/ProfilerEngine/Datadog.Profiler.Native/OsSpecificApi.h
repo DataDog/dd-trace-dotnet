@@ -5,10 +5,13 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IAddressSpaceMap.h"
 #include "MetricsRegistry.h"
 #include "StackFramesCollectorBase.h"
 
 #include <chrono>
+#include <cstddef>
+#include <memory>
 #include <tuple>
 
 // forward declarations
@@ -57,4 +60,12 @@ namespace OsSpecificApi
         );
 
     double GetProcessLifetime();
+
+    // Enumerates and categorizes every OS region of the current process, filling each run's Committed
+    // span and, on Linux, its Rss from smaps. Defined in the Windows and Linux projects (no #ifdef in
+    // common code). Never returns null.
+    std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap();
+
+    // OS page size (OpSysTools::GetPageSize() throws on Windows). Defined per platform.
+    size_t GetSystemPageSize();
  } // namespace OsSpecificApi

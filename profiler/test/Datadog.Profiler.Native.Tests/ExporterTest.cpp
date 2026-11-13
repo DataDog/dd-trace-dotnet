@@ -7,6 +7,7 @@
 #include "ExporterBuilder.h"
 #include "Profile.h"
 #include "ProfilerMockedInterface.h"
+#include "Sample.h"
 #include "Tags.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -105,6 +106,49 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
     auto tags = Tags();
     ASSERT_NO_FATAL_FAILURE(exporter->Send(profile.get(), std::move(tags), {}, std::string(), std::string(), std::string())) << "sending the profile crashed";
 
+    ASSERT_FALSE(fs::is_empty(outputFolder));
+}
+
+TEST(ExporterTest, CheckFileCreatedWithCustomSampleType)
+{
+    auto* testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    auto outputFolder = fs::temp_directory_path() / testInfo->test_suite_name() / testInfo->name();
+    if (fs::exists(outputFolder))
+    {
+        fs::remove_all(outputFolder);
+    }
+    fs::create_directories(outputFolder);
+
+    auto exporter = ExporterBuilder()
+                        .SetLanguageFamily("family")
+                        .SetLibraryName("dotnet")
+                        .SetLibraryVersion("42")
+                        .WithoutAgent("site", "apiKey")
+                        .SetOutputDirectory(outputFolder)
+                        .Build();
+
+    ASSERT_NE(exporter, nullptr);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    auto profile = Profile::Create(
+        configuration.get(),
+        {{"memory-breakdown", "bytes"}},
+        "RealTime",
+        "Nanoseconds",
+        "my app");
+    ASSERT_NE(profile, nullptr);
+
+    Sample::ValuesCount = 1;
+    auto sample = std::make_shared<Sample>(1ns, "1", 1);
+    sample->AddFrame({"", "", "", 1});
+    sample->AddValue(4096, 0);
+    auto addResult = profile->Add(sample);
+    ASSERT_TRUE(addResult) << addResult.message();
+
+    auto tags = Tags();
+    ASSERT_NO_FATAL_FAILURE(exporter->Send(profile.get(), std::move(tags), {}, std::string(), std::string(), std::string())) << "sending the profile crashed";
+
+    // FileSaver is called only after serialization, so this also proves the custom slot was configured.
     ASSERT_FALSE(fs::is_empty(outputFolder));
 }
 } // namespace libdatadog
