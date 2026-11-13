@@ -1,0 +1,13 @@
+_v: 1
+name: MySql
+display_name: MySQL
+description: Instruments ADO.NET command execution against MySQL through MySql.Data and MySqlConnector provider implementations,
+  including optional Database Monitoring context propagation, runtime SQL-injection checks, and IAST data-flow tracking.
+packages:
+- name: MySql.Data
+- name: MySqlConnector
+category:
+- db.client
+systems:
+- mysql
+creation_date: '2021-01-29'

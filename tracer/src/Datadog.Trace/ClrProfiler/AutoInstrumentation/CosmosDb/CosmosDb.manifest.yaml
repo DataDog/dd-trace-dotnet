@@ -1,0 +1,12 @@
+_v: 1
+name: CosmosDb
+display_name: Azure Cosmos DB
+description: Instruments Azure Cosmos DB query iteration, reads, and mutations through the dedicated Microsoft.Azure.Cosmos
+  client.
+packages:
+- name: Microsoft.Azure.Cosmos
+category:
+- db.client
+systems:
+- azure.cosmosdb
+creation_date: '2021-06-07'

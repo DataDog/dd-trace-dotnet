@@ -1,0 +1,11 @@
+_v: 1
+name: Aerospike
+display_name: Aerospike
+description: Instruments Aerospike client commands, including key-value reads and writes, batch operations, and queries.
+packages:
+- name: Aerospike.Client
+category:
+- db.client
+systems:
+- aerospike
+creation_date: '2021-09-02'

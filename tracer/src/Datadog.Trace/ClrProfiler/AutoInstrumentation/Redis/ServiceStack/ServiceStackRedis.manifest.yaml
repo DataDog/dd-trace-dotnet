@@ -1,0 +1,11 @@
+_v: 1
+name: ServiceStackRedis
+display_name: ServiceStack.Redis
+description: Instruments Redis commands issued through the ServiceStack.Redis RedisNativeClient.
+packages:
+- name: ServiceStack.Redis
+category:
+- db.client
+systems:
+- redis
+creation_date: '2018-09-19'

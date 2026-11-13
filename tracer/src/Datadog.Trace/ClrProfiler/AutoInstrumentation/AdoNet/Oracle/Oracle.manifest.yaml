@@ -1,0 +1,13 @@
+_v: 1
+name: Oracle
+display_name: Oracle
+description: Instruments ADO.NET non-query, scalar, and reader commands through Oracle provider implementations, with Database
+  Monitoring propagation and IAST database-value tracking when enabled.
+packages:
+- name: Oracle.ManagedDataAccess
+- name: Oracle.ManagedDataAccess.Core
+category:
+- db.client
+systems:
+- oracle.db
+creation_date: '2021-02-17'

@@ -1,0 +1,13 @@
+_v: 1
+name: MongoDb
+display_name: MongoDB
+description: "Instruments MongoDB driver command execution\u2014including reads, writes, aggregation, and cursor operations\u2014\
+  across synchronous and asynchronous APIs, and reports IAST NoSQL-injection findings for BSON and JSON commands."
+packages:
+- name: MongoDB.Driver
+- name: MongoDB.Driver.Core
+category:
+- db.client
+systems:
+- mongodb
+creation_date: '2019-01-14'

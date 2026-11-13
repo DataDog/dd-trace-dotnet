@@ -1,0 +1,11 @@
+_v: 1
+name: AdoNet
+display_name: ADO.NET
+description: Instruments database commands issued through generic ADO.NET DbCommand base methods, creating query spans and
+  supporting Database Monitoring propagation, RASP SQL blocking, and IAST database-value tracking.
+packages:
+- name: System.Data.Common
+category:
+- db.client
+systems: []
+creation_date: '2019-01-17'
