@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.OpenTelemetry.Common;
@@ -269,6 +270,25 @@ internal static class OtlpMapper
             WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingPriority, samplingPriority), limit, ref count, ref droppedAttributesCount);
         }
 
+        // Preserve security reports and serializer-generated metadata before customer tags can exhaust the limit.
+        if (!spanModel.TraceChunk.IsApmEnabled)
+        {
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.ApmEnabled, 0.0), limit, ref count, ref droppedAttributesCount);
+        }
+
+        if (Security.Instance.AppsecEnabled && spanModel.IsLocalRoot && spanModel.Span.Context.TraceContext?.WafExecuted is true)
+        {
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.AppSecEnabled, 1.0), limit, ref count, ref droppedAttributesCount);
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.RuntimeFamily, TracerConstants.Language), limit, ref count, ref droppedAttributesCount);
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.AppSecRuleFileVersion, Security.Instance.WafRuleFileVersion), limit, ref count, ref droppedAttributesCount);
+        }
+
+        var metaStructWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors: null, count, limit);
+        spanModel.Span.Tags.EnumerateMetaStruct(ref metaStructWriter);
+        count = metaStructWriter.Count;
+        droppedAttributesCount += metaStructWriter.DroppedCount;
+        state = metaStructWriter.State;
+
         if (spanModel.TraceChunk.Tags is { Count: > 0 } traceTags &&
             (spanModel.IsFirstSpanInChunk || spanModel.IsLocalRoot))
         {
@@ -317,7 +337,6 @@ internal static class OtlpMapper
         // add _dd.base_service tag to spans where the service name has been overrideen
         // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
         // SCI tags will be sent only once per trace
-        // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
         // AAS tags need to be set on any span for the backend to properly handle the billing.
 
         // Write span tags
@@ -335,9 +354,6 @@ internal static class OtlpMapper
         droppedAttributesCount += metricsWriter.DroppedCount;
         state = metricsWriter.State;
 
-        // if (model.IsLocalRoot)
-        // add the "apm.enabled" tag with a value of 0
-        // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
         // add "_dd.top_level" to top-level spans (aka service-entry spans)
 
         return droppedAttributesCount;
