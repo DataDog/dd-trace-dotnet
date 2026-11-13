@@ -168,7 +168,7 @@ namespace Datadog.Trace.Agent
             }
 
             _flushTask = Task.Run(Flush);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
             if (_isOtlp)
             {
