@@ -93,6 +93,8 @@ Update development and CI infrastructure:
 
 ## Pre-Release Version Considerations
 
+The .NET 11 RC1 runtime has a Unix named-mutex compatibility bug when communicating with older runtimes ([dotnet/runtime#134491](https://github.com/dotnet/runtime/issues/134491)). Until the pinned SDK includes [the fix](https://github.com/dotnet/runtime/pull/134595), CI Visibility's coverage IPC tests use .NET 10 VSTest on Unix for pre-.NET 11 targets. The Debian and Alpine test images therefore also install the .NET 10 SDK; local Unix runs need it alongside the pinned SDK. When updating to a fixed SDK, remove `useCoverageCompatibleVSTest` from the test helpers and callers and switch those images back to installing only the .NET 10 ASP.NET Core runtime.
+
 When updating to pre-release versions (RC, preview):
 - Use pre-release SDK versions in `global.json`
 - Enable pre-release rolling forward in runtime configurations

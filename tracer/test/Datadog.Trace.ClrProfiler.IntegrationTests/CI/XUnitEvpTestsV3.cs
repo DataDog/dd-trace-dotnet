@@ -683,7 +683,8 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                                       arguments: "--collect:\"XPlat Code Coverage\" --TestCaseFilter:FullyQualifiedName~Samples.XUnitTestsV3.",
                                       packageVersion: packageVersion,
                                       expectedExitCode: 1,
-                                      useDotnetExec: false);
+                                      useDotnetExec: false,
+                                      useCoverageCompatibleVSTest: true);
 
         Volatile.Read(ref coverageReceived).Should().Be(1);
     }
