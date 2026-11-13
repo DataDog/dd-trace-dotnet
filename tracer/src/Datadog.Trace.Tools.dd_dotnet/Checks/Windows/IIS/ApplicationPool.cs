@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             {
                 using var workerProcess = workerProcessesCollection.GetItem(0);
 
-                if (int.TryParse(workerProcess.GetStringProperty("processId"), out var pid))
+                if (int.TryParseInvariant(workerProcess.GetStringProperty("processId"), out var pid))
                 {
                     return pid;
                 }

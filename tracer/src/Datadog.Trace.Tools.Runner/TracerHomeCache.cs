@@ -150,7 +150,7 @@ internal static class TracerHomeCache
         using var cacheLock = AcquireCacheLock(cachedTracerHome, cacheLockRetryDelay);
         for (var generation = 0; generation < MaxCacheGenerations; generation++)
         {
-            var candidate = generation == 0 ? cachedTracerHome : cachedTracerHome + "." + generation;
+            var candidate = generation == 0 ? cachedTracerHome : cachedTracerHome + "." + generation.ToStringInvariant();
             if (candidate.Length >= tracerHome.Length)
             {
                 break;

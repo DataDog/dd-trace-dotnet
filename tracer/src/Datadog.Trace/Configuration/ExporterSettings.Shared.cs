@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
         {
             var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
             var defaultPort = protocol == OtlpProtocol.Grpc ? DefaultOtlpGrpcPort : DefaultOtlpHttpPort;
-            return $"http://{defaultHost}:{defaultPort}";
+            return StringUtil.Invariant($"http://{defaultHost}:{defaultPort}");
         }
 
         private static string AppendOtlpSignalPath(string endpoint, string signal)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Configuration
                 RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
-                if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
+                if (!Uri.TryCreate(StringUtil.Invariant($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}"), UriKind.Absolute, out var uri))
                 {
                     // fallback so AgentUri is always non-null
                     uri = CreateDefaultUri();
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Configuration
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)
         {
-            return TryGetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default, out settings); // default because only called from constructor
+            return TryGetAgentUriAndTransport(StringUtil.Invariant($"http://{host}:{port}"), ConfigurationOrigins.Default, out settings); // default because only called from constructor
         }
 
         private bool TryGetAgentUriAndTransport(string url, ConfigurationOrigins origin, out TraceTransportSettings settings)

@@ -45,7 +45,7 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
+        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTimeOffset.UtcNow, false);
     }
 
     /// <inheritdoc />
@@ -80,7 +80,7 @@ internal class DatadogExporter : IExporter
                     var framework = CommonTags.TestingFrameworkNameBenchmarkDotNet;
                     testModule = moduleStartTime is null ?
                                      TestSession.CreateModule(moduleName, framework, version) :
-                                     TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
+                                     TestSession.CreateModule(moduleName, framework, version, startDate: (DateTimeOffset)moduleStartTime.Value);
                     _testModules[benchmarkModule.Key] = testModule;
                 }
 
@@ -120,7 +120,7 @@ internal class DatadogExporter : IExporter
                                     // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
                                     description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
                                 }
-                                else if (description?.StartsWith("Job-") == true)
+                                else if (description?.StartsWithOrdinal("Job-") == true)
                                 {
                                     // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
                                     description = null;
@@ -258,7 +258,7 @@ internal class DatadogExporter : IExporter
         _testModules.Clear();
 
         var testSession = TestSession;
-        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
-        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTime.UtcNow - testSession.StartTime).ConfigureAwait(false);
+        testSession.Tags.CommandExitCode = Environment.ExitCode.ToStringInvariant();
+        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTimeOffset.UtcNow - testSession.StartTime).ConfigureAwait(false);
     }
 }

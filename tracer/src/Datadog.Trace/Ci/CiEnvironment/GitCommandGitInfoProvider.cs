@@ -81,13 +81,13 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
+            if (!long.TryParseInvariant(gitLogDataArray[1], out var authorUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing author date from git log output");
                 return false;
             }
 
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
+            if (!long.TryParseInvariant(gitLogDataArray[4], out var committerUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing committer date from git log output");
                 return false;
@@ -102,12 +102,12 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             localGitInfo.CommitterName = gitLogDataArray[5];
             localGitInfo.CommitterEmail = gitLogDataArray[6];
             localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
-            if (localGitInfo.Commit.StartsWith("'"))
+            if (localGitInfo.Commit.StartsWith('\''))
             {
                 localGitInfo.Commit = localGitInfo.Commit.Substring(1);
             }
 
-            if (localGitInfo.Message.EndsWith("'"))
+            if (localGitInfo.Message.EndsWith('\''))
             {
                 localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
             }

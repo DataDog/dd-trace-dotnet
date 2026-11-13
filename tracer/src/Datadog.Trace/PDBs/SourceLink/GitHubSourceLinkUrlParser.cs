@@ -171,8 +171,8 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
     private static string BuildBaseUrl(Uri uri, ReadOnlySpan<char> host)
 #if NET6_0_OR_GREATER
-        => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : $"{uri.Scheme}://{host}:{uri.Port}";
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : StringUtil.Invariant($"{uri.Scheme}://{host}:{uri.Port}");
 #else
-        => uri.IsDefaultPort ? $"{uri.Scheme}://{host.ToString()}" : $"{uri.Scheme}://{host.ToString()}:{uri.Port}";
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host.ToString()}" : StringUtil.Invariant($"{uri.Scheme}://{host.ToString()}:{uri.Port}");
 #endif
 }

@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -388,6 +389,45 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.True(notEqualsResult);
             Assert.True(notEqualsCompiled.Errors == null || notEqualsCompiled.Errors.Length == 0);
+        }
+
+        [Theory]
+        [InlineData("3.14159", 3.14159, false)]
+        [InlineData("3.14159", 3.14159, true)]
+        [InlineData("-5", -5, false)]
+        [InlineData("-5", -5, true)]
+        public void ProbeExpressionParser_NumericLiteral_DoesNotDependOnCurrentCulture(string literal, object localValue, bool useAdverseCulture)
+        {
+            var original = CultureInfo.CurrentCulture;
+            try
+            {
+                if (useAdverseCulture)
+                {
+                    // Build the culture explicitly rather than using e.g. de-DE, because without ICU (globalization-invariant
+                    // mode, e.g. on Alpine) every predefined culture formats like the invariant culture
+                    var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+                    culture.NumberFormat.NumberDecimalSeparator = ",";
+                    culture.NumberFormat.NumberGroupSeparator = ".";
+                    culture.NumberFormat.NegativeSign = ((char)0x2212).ToString(); // U+2212 MINUS SIGN, used by e.g. sv-SE under ICU
+                    CultureInfo.CurrentCulture = culture;
+
+                    string.Format(CultureInfo.CurrentCulture, "{0}", localValue).Should().NotBe(literal, "the current culture must format the literal differently for this test to be meaningful");
+                }
+
+                var scopeMembers = CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("NumericLocal", localValue.GetType(), localValue, ScopeMemberKind.Local));
+
+                var json = $$"""{ "eq": [ { "ref": "NumericLocal" }, {{literal}} ] }""";
+
+                var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+
+                compiled.Errors.Should().BeNullOrEmpty();
+                EvaluateCompiled(compiled, scopeMembers).Should().BeTrue($"the literal {literal} should equal the local value {localValue}");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = original;
+            }
         }
 
         [Fact]

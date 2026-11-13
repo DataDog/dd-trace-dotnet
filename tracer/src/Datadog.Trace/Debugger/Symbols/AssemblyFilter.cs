@@ -85,9 +85,9 @@ namespace Datadog.Trace.Debugger.Symbols
                     return assemblyName.Substring(0, assemblyName.Length - 1);
                 }
 
-                var ext = assemblyName.Remove(0, lastPeriod + 1).ToLower();
+                var ext = assemblyName.Remove(0, lastPeriod + 1);
 
-                if (ext is "dll" or "exe" or "so")
+                if (ext.Equals("dll", StringComparison.OrdinalIgnoreCase) || ext.Equals("exe", StringComparison.OrdinalIgnoreCase) || ext.Equals("so", StringComparison.OrdinalIgnoreCase))
                 {
                     return assemblyName.Substring(0, assemblyName.Length - ext.Length);
                 }

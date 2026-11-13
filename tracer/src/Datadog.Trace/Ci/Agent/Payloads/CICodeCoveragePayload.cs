@@ -54,7 +54,7 @@ internal sealed class CICodeCoveragePayload : MultipartPayload
         var index = Count;
         var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
         TestOptimization.Instance.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
-        return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
+        return new MultipartFormItem(StringUtil.Invariant($"coverage{index}"), MimeTypes.MsgPack, StringUtil.Invariant($"filecoverage{index}.msgpack"), new ArraySegment<byte>(eventInBytes));
     }
 
     public override bool TryProcessEvent(IEvent @event)

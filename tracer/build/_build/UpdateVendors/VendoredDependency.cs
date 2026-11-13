@@ -1065,6 +1065,19 @@ namespace UpdateVendors
         private bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)
 #endif");
                             }
+
+                            if (filename == "StringUtils.cs")
+                            {
+                                // Datadog.Trace's StringUtil already polyfills string.StartsWith(char)/EndsWith(char)
+                                // (in the System namespace), so remove Newtonsoft's equivalent extension methods to
+                                // avoid ambiguous calls
+                                var withoutCharPolyfills = Regex.Replace(
+                                    builder.ToString(),
+                                    @"^[ \t]*public static bool (?:StartsWith|EndsWith)\(this string source, char value\)\r?\n[ \t]*\{\r?\n[^{}]*?\}\r?\n(?:[ \t]*\r?\n)?",
+                                    string.Empty,
+                                    RegexOptions.Multiline);
+                                builder.Clear().Append(withoutCharPolyfills);
+                            }
                         }
 
 

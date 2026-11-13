@@ -139,6 +139,31 @@ public class RuntimeAsyncEndMethodHandlerTests
     }
 
     [Fact]
+    public void WhenOnAsyncMethodEndThrows_OnMethodEndStillRuns()
+    {
+        ThrowingAsyncEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        CallTargetInvoker.EndMethodRuntimeAsync<ThrowingAsyncEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        ThrowingAsyncEndIntegration.SyncCalls.Should().Be(1);
+        IntegrationOptions<ThrowingAsyncEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void WhenOnAsyncMethodEndBubblesUp_TheExceptionReachesTheCaller()
+    {
+        BubblingUpAsyncEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        Action act = () => CallTargetInvoker.EndMethodRuntimeAsync<BubblingUpAsyncEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        // AppSec blocks this way, so it must reach the application rather than be logged
+        act.Should().Throw<InvalidOperationException>().WithInnerException<BubbleUpException>();
+        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(0);
+    }
+
+    [Fact]
     public void WhenOnAsyncMethodEndIsItselfAsync_DisablesTheIntegration()
     {
         AsyncCallbackIntegration.Reset();
@@ -311,6 +336,48 @@ public class RuntimeAsyncEndMethodHandlerTests
             SyncReturnValue = returnValue;
             return new CallTargetReturn<TReturn>(returnValue);
         }
+    }
+
+    internal class ThrowingAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Integration Exception");
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubblingUpAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Blocked", new BubbleUpException());
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubbleUpException : CallTargetBubbleUpException
+    {
     }
 
     internal class AsyncCallbackIntegration

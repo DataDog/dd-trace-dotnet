@@ -114,18 +114,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         /// <summary>
         /// Must be called by any test that enables single step instrumentation (<see cref="EnvironmentVariables.SsiDeployed"/>).
-        /// The single step guard rails abort instrumentation on preview runtimes, so we have to force injection there,
-        /// otherwise the profiler is never loaded and nothing is exported.
+        /// The single step guard rails abort instrumentation on preview runtimes, so when a <paramref name="framework"/>
+        /// is in preview we have to force injection (<see cref="EnvironmentVariables.SsiInjectionForced"/>) for it,
+        /// otherwise the profiler is never loaded and nothing is exported. No supported framework currently needs this.
         /// </summary>
         internal static void ForceInjectionIfRequired(TestApplicationRunner runner, string framework)
         {
-            // For preview and old runtimes we have to force injection
-            // after .NET 11 preview, can remove this
-            if (framework == "net11.0")
-            {
-                runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
-            }
-
             if (IsRunningOnWindows())
             {
                 // in SSI on Windows log buffering is enabled, which means we don't write
@@ -174,13 +168,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetProfilerNativeLibraryPath();
             var tracerPath = GetTracerNativeLibraryPath();
+            var architecture = GetArchitectureSubfolder(IsAlpine);
 
-            var loaderConfigFilePath = Path.GetTempFileName();
-            using var sw = new StreamWriter(loaderConfigFilePath);
-
-            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
-            return loaderConfigFilePath;
+            return WriteLoaderConfigFile(
+                $"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{architecture};{profilerPath}",
+                $"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{architecture};{tracerPath}");
         }
 
         internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
@@ -448,6 +440,39 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var baseOutputDir = GetTestOutputPath();
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
+        }
+
+        private string WriteLoaderConfigFile(string profilerLine, string tracerLine)
+        {
+            // Leave the file in the per-test output directory so CI uploads it with the logs.
+            // A test that starts several processes needs a distinct file for each one.
+            // CreateNew reserves the name before the write, so concurrent launches cannot share a path.
+            Directory.CreateDirectory(_testOutputPath);
+
+            for (var index = 1; ; index++)
+            {
+                var fileName = index == 1 ? "loader.conf" : $"loader-{index}.conf";
+                var path = Path.Combine(_testOutputPath, fileName);
+
+                FileStream stream;
+                try
+                {
+                    stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                }
+                catch (IOException) when (File.Exists(path))
+                {
+                    continue;
+                }
+
+                using (stream)
+                {
+                    using var writer = new StreamWriter(stream, leaveOpen: true);
+                    writer.WriteLine(profilerLine);
+                    writer.WriteLine(tracerLine);
+                }
+
+                return path;
+            }
         }
 
         private bool IsCoreClr()

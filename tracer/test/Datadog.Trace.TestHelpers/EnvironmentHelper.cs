@@ -82,6 +82,12 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseCrashTracking { get; set; } = true;
 
+        /// <summary>
+        /// Gets or sets a suffix appended to the sample's artifacts pivot, to select an alternative build of the same
+        /// sample, such as the "_runtime_async" build produced with DD_RuntimeAsync=true.
+        /// </summary>
+        public string ArtifactsPivotSuffix { get; set; } = string.Empty;
+
         public static bool IsNet5()
         {
             return Environment.Version.Major >= 5;
@@ -524,7 +530,7 @@ namespace Datadog.Trace.TestHelpers
                 var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
                 var config = EnvironmentTools.GetBuildConfiguration().ToLowerInvariant();
                 var packageVersionPivot = string.IsNullOrEmpty(packageVersion) ? string.Empty : $"_{packageVersion}";
-                return $"{config}_{targetFramework}{packageVersionPivot}{rid}";
+                return $"{config}_{targetFramework}{packageVersionPivot}{ArtifactsPivotSuffix}{rid}";
             }
         }
 
