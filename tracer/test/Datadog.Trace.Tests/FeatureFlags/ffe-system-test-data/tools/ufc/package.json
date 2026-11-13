@@ -1,0 +1,17 @@
+{
+  "name": "ffe-rules-fixture-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "check": "node generate.mjs --check",
+    "validate": "node validate-rules-resources.mjs",
+    "test": "node --test rules-resources.test.mjs"
+  },
+  "dependencies": {
+    "@datadog/flagging-core": "3.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "name": "obfuscation-object-nested-deep",
+  "description": "Generated obfuscated companion: Object flag with deeply nested structure. SDK must preserve full object hierarchy without flattening or truncating.",
+  "context": {
+    "targetingKey": "nested-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "a75e90efc57ed0e56bd11c3a9b17a2623dcc2a412fa52f3ffa742139fa6b93af": {
+            "allocationKey": "alloc-deep",
+            "variationKey": "deep-config",
+            "variationType": "object",
+            "variationValue": {
+              "level1": {
+                "level2": {
+                  "level3": {
+                    "enabled": true,
+                    "tags": [
+                      "alpha",
+                      "beta"
+                    ],
+                    "threshold": 0.95
+                  }
+                },
+                "name": "nested-test"
+              },
+              "metadata": {
+                "version": 3,
+                "empty": {}
+              }
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.config.deep",
+      "variationType": "object",
+      "defaultValue": {},
+      "expectedResult": {
+        "value": {
+          "level1": {
+            "level2": {
+              "level3": {
+                "enabled": true,
+                "tags": [
+                  "alpha",
+                  "beta"
+                ],
+                "threshold": 0.95
+              }
+            },
+            "name": "nested-test"
+          },
+          "metadata": {
+            "version": 3,
+            "empty": {}
+          }
+        },
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "deep-config"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "android",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}

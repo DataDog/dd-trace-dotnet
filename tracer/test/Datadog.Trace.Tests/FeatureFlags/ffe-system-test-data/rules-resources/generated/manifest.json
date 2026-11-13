@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "catalogSha256": "a49daf231a12027298b0b4426d3eb8e7b09b3420d6cfe7b580519cd8c5c1f58e",
+  "converter": {
+    "source": {
+      "sha256": "1407f5429e6f10d883011cc5a208749ee1061ebfc8d07374e983cef0eb7fa725"
+    }
+  },
+  "generatorInputs": {
+    "tools/ufc/converter-lock.json": "b0a1b06c4ccb5e4f2dab577ec2b6ba98e9cc8cfcef45583287544aaab57f19cb",
+    "tools/ufc/generate.mjs": "7e6d634547ead40137226b026d74a003f3b5320bf995006d6e16b9dc7c47e4c8",
+    "tools/ufc/package-lock.json": "503a5cbe78ac55bbfe96aa544d57696885175248d105ab6f47f01598961b618c",
+    "tools/ufc/package.json": "c75341d53e2362a05b316e978f96a4cded0bc5ea7f65ac0e221f22246b6ea1f8",
+    "ufc-config.json": "f5d6ad45d2f3cd3eb55f1484bee183ba58d2cb9293b6f4d25014a1a830336a79"
+  },
+  "serializer": "@datadog/flagging-core@3.0.1",
+  "resources": [
+    {
+      "id": "canonical-evaluator",
+      "source": "ufc-config.json",
+      "sourceSha256": "f5d6ad45d2f3cd3eb55f1484bee183ba58d2cb9293b6f4d25014a1a830336a79",
+      "convertedFlagKeys": [
+        "basic-flag",
+        "boolean-false-assignment",
+        "boolean-one-of-matches",
+        "comparator-operator-test",
+        "empty-string-variation",
+        "empty-targeting-key-flag",
+        "empty_flag",
+        "empty_string_flag",
+        "experiment-flag",
+        "falsy-value-assignments",
+        "integer-flag",
+        "invalid-regex-flag",
+        "json-config-flag",
+        "kill-switch",
+        "microsecond-date-test",
+        "missing-split-shards-flag",
+        "multi-serial-flag-1",
+        "multi-serial-flag-2",
+        "negative-shard-range-start-flag",
+        "new-user-onboarding",
+        "no-log-flag",
+        "no_allocations_flag",
+        "null-operator-test",
+        "null-shard-range-flag",
+        "numeric-one-of",
+        "numeric_flag",
+        "overflow-total-shards-flag",
+        "regex-flag",
+        "semver-comparison-test",
+        "semver-invalid-comparand-test",
+        "semver-invalid-comparand-waterfall-test",
+        "semver-precedence-test",
+        "semver-valid-comparand-hyphenated-prerelease-test",
+        "semver-version-parts-input-test",
+        "serial-id-basic-flag",
+        "serial-id-missing-flag",
+        "serial-id-targeting-flag",
+        "serial-id-zero-flag",
+        "special-characters",
+        "split-features-destinations",
+        "split-features-selected-allocation",
+        "start-and-end-date-test",
+        "string_flag_with_special_characters",
+        "unknown-fields-tolerance-flag",
+        "valid-flag-after-invalid-config"
+      ],
+      "omittedFlagKeys": [
+        "disabled_flag",
+        "invalid-gt-condition-flag",
+        "invalid-is-null-condition-flag",
+        "invalid-one-of-condition-flag",
+        "malformed-allocations-flag",
+        "operator-grease-flag",
+        "semver-invalid-comparand-consecutive-dots-test",
+        "semver-invalid-comparand-dot-suffix-test",
+        "semver-invalid-comparand-leading-zero-test",
+        "semver-invalid-comparand-non-string-test",
+        "semver-invalid-comparand-syntax-test",
+        "semver-invalid-comparand-vprefix-test",
+        "semver-version-parts-five-part-comparand-test",
+        "semver-version-parts-four-part-comparand-test",
+        "semver-version-parts-one-part-comparand-test",
+        "semver-version-parts-two-part-comparand-test",
+        "split-features-first-valid-key",
+        "variant-type-mismatch-flag"
+      ],
+      "artifacts": {
+        "configuration-wire.json": {
+          "sha256": "0cf561fff82f5e1081df0626efe3856578e062d6ae8d6538e053c2ffef588758"
+        },
+        "ufc.pb": {
+          "sha256": "97d0f2126a280f7a8704bd3b97b4c25dd3df033d74446d2412f5b5e91738941d"
+        }
+      }
+    }
+  ]
+}

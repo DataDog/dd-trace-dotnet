@@ -1,0 +1,490 @@
+{
+  "name": "obfuscation-multi-flag-set",
+  "description": "Generated obfuscated companion: Precomputed response with 50 flags of mixed types. Validates that SDK parsers handle moderate flag sets without truncation or memory errors. Only a sample of flags are evaluated; the remainder are parsed but not asserted.",
+  "context": {
+    "targetingKey": "large-set-user",
+    "attributes": {
+      "plan": "enterprise"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "bf9be622ca7517e32cd02c784169beb8e5102892504fdad8384e348d48e36879": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v1",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "75dcd247147ab21d09a4fc73051324b2000bd0bf97d82d35ad6d80eaa6d07973": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v2",
+            "variationType": "string",
+            "variationValue": "two",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "32681eee3e6ebf4ebaa0b03b91638cbae0920b26239bdea4fa2b7d0bb3a46df3": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v3",
+            "variationType": "integer",
+            "variationValue": 3,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "792f76037d724266f9c00e971967bbfe62cba43274b31f652b9768d6381e7ace": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v4",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "59bf45e79a60fa4a33f2d4c639ef910982d3d3e29ca2fb9c147fb4977569f35a": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v5",
+            "variationType": "string",
+            "variationValue": "five",
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "fce91fe1f119ec27d34a9cb77ab5014d49153c8afa8162b282c9c595591ff130": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v6",
+            "variationType": "float",
+            "variationValue": 6.6,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          },
+          "086529987ece3ae0319c12332405bbec6e6eb913266ade8c8fb33b2b7b89ab5f": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v7",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "1d89f79a25e4eae7f080cb86d35af66fd2147336f6c450dcd40d23333f83d888": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v8",
+            "variationType": "string",
+            "variationValue": "eight",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "0fe82d095e9c1dbefdca57b310ab4c19c80439c87a41b0eef548685914df239d": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v9",
+            "variationType": "integer",
+            "variationValue": 9,
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "1ac48586eced16b0aff76e17312da68f2c43fd3cf9ca33d76f3e427f93797c4b": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v10",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "cc6234a3430646b1df0c9e2bcca80dfe16b05abcca88d58f5f97c19a14a9a320": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v11",
+            "variationType": "string",
+            "variationValue": "eleven",
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "215f50d3c5e5908c31d2bed80414ce26ba68b264ea5baa4ab5b743e1833c1945": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v12",
+            "variationType": "float",
+            "variationValue": 1.2,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "88c23388c4cec50c57429698b96c975be9f8915f88308fba6bda54acc6d01998": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v13",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "b66bc4f899fa5ad230fa050a3ba35ac5c5cda22bebecbb44e6c63afddbaf7b5b": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v14",
+            "variationType": "string",
+            "variationValue": "fourteen",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "83ab766d8522b069512a37e2a5bd8bd8f941fbeef306eab09f6247e8db3b725b": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v15",
+            "variationType": "integer",
+            "variationValue": 15,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "db1c7d8f6ac65f0e493bb4c3a87f153ec6cac18bd0c984b20ff09619ff79cce9": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v16",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "4d23aa03aec589f62d46d15642b79f6e3c87e3aefa5b49cd319304f4a013ac95": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v17",
+            "variationType": "string",
+            "variationValue": "seventeen",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "023b47247033e8bea815ff0cc16255bebdff082b3cfb1eeb4a9b55b3004276e1": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v18",
+            "variationType": "float",
+            "variationValue": 18.0,
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "0b2b70d8c98c0731692191e78b527512e548190d97d710d7f0fc8f19cd05913d": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v19",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "9c1796f3cb195313519a837ead5d54e083195b6206e189bbdd0220561b4ca766": {
+            "allocationKey": "alloc-l",
+            "variationKey": "v20",
+            "variationType": "object",
+            "variationValue": {
+              "count": 20
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "f73dce8e960f6d67023c407ac490ce3605b279288b56f78031bfed36f0014935": {
+            "allocationKey": "alloc-21",
+            "variationKey": "var-21",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "c078d7577eff8d7a6fc8963d0bd16fbb172c3a4a3aeb9e714c75a2574d7967e1": {
+            "allocationKey": "alloc-22",
+            "variationKey": "var-22",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "6326ec0ed3c2465e7cc807f46c743037e7095d3f8e9d1d56dbaea76b2b00452b": {
+            "allocationKey": "alloc-23",
+            "variationKey": "var-23",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "3d3d982d7910fda9264321566138165779600cddbf42d215d689080b617b3fd0": {
+            "allocationKey": "alloc-24",
+            "variationKey": "var-24",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "5a80d2d736721d87db810627614f4f6b127ee0a332f5fdea8550a78e3ec4e699": {
+            "allocationKey": "alloc-25",
+            "variationKey": "var-25",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "86edc8f5b58892c55f5fde77e66cdc7b6d0a9b071e2677d8fa16dbb8f409f380": {
+            "allocationKey": "alloc-26",
+            "variationKey": "var-26",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "cc6b19cce7d683983134195f55a0c6bf3a5f844944e283cda1c58485b5a2dd2a": {
+            "allocationKey": "alloc-27",
+            "variationKey": "var-27",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "4c2f7e12bea6b91c5d5c9862de0b24418f6fde074eb5e017c93293cfabf60060": {
+            "allocationKey": "alloc-28",
+            "variationKey": "var-28",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "5a48e1a5c7c8e185b62cd259351f4abe443771f07292eefbd49f0599881e35ce": {
+            "allocationKey": "alloc-29",
+            "variationKey": "var-29",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "cf6321f08df13c06652debb11c4cb9ea67e215e5a364d845f30d865554876b4d": {
+            "allocationKey": "alloc-30",
+            "variationKey": "var-30",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "1660da21238865ae03e7c5c4959d02a34bc210101d7608f7221f97f254b801d0": {
+            "allocationKey": "alloc-31",
+            "variationKey": "var-31",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "34529807d59d7bf904c56e17e112ed555687ee05a332a9ef957d7f029870ed57": {
+            "allocationKey": "alloc-32",
+            "variationKey": "var-32",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "f8fcf4b3a145194a19daabe0521e6cfea4bac6b20a6fd729f4c8c3ad6ac3e6f6": {
+            "allocationKey": "alloc-33",
+            "variationKey": "var-33",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "210a549229e78c66c588dffc37d99918e7968a04876fa87cd1b719a5dfe1edf2": {
+            "allocationKey": "alloc-34",
+            "variationKey": "var-34",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "ffd5bbbf90dd7c225ddc95b0c1134cee255c5d1ee7f7889bf2c239b99dd43db4": {
+            "allocationKey": "alloc-35",
+            "variationKey": "var-35",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "929200b0fd1248b310ac0f0785a5a3ee3b1aa40cbd4cc7d7ee7c141bd57c839b": {
+            "allocationKey": "alloc-36",
+            "variationKey": "var-36",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "4aefe68d39be982605014ac90b746de9be85b4bea79cacc26459cdc06b96f48f": {
+            "allocationKey": "alloc-37",
+            "variationKey": "var-37",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "6ba21a1d31e1f9074d322885263107157affa2265582bf6a05f84441b8c118eb": {
+            "allocationKey": "alloc-38",
+            "variationKey": "var-38",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "77581b9776c4d5afa1919a1e0c758067d07c3968afa2201870cea6dae6579aa3": {
+            "allocationKey": "alloc-39",
+            "variationKey": "var-39",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "03461ca38265adbdcede804d0ba7a544dce9c4de6296eb32d8a6683096a9b1ce": {
+            "allocationKey": "alloc-40",
+            "variationKey": "var-40",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "92325ac72dff844afbdc8a8a8ca939b673fbb452cd67d7b970990c58596baf57": {
+            "allocationKey": "alloc-41",
+            "variationKey": "var-41",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "934025c0b96e851d348e09166362375a53e2776f595da60d4e2fde30f1503baf": {
+            "allocationKey": "alloc-42",
+            "variationKey": "var-42",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "f6d270502e6f9fc1f4cfa7fbcc78e2b3377d9fb480f23e864cd4be0c96ec3467": {
+            "allocationKey": "alloc-43",
+            "variationKey": "var-43",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "8bb8e9b84c7ab5397d4012c8d58cb797a8fac7562c86ede747d91f5971bfef10": {
+            "allocationKey": "alloc-44",
+            "variationKey": "var-44",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "81be2644335d094121dc49dafd671c0c212980253962dd2f24986736cdaf9583": {
+            "allocationKey": "alloc-45",
+            "variationKey": "var-45",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "b4fa3c55cb8c05baba5ca43eac146e6036b0028e2fb07eafd6819d3935c9e4bc": {
+            "allocationKey": "alloc-46",
+            "variationKey": "var-46",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "a56d4714d20368ac54afa5225b1dec452d9bc102f604fd54bd338e4b693bda38": {
+            "allocationKey": "alloc-47",
+            "variationKey": "var-47",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "SPLIT",
+            "doLog": true
+          },
+          "e5b919481d265c3573d94171004324cff98c4e223efd7b568b028ffcd4314a6e": {
+            "allocationKey": "alloc-48",
+            "variationKey": "var-48",
+            "variationType": "float",
+            "variationValue": 1.5,
+            "reason": "DEFAULT",
+            "doLog": false
+          },
+          "370b0fcd16be8003ef1d1e1f39e7e19b3698f17a24957ed654420be0f81eddc5": {
+            "allocationKey": "alloc-49",
+            "variationKey": "var-49",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "0721adc36960473f00919092dc06adc2988d409a72f5244bc47a4b11de285660": {
+            "allocationKey": "alloc-50",
+            "variationKey": "var-50",
+            "variationType": "string",
+            "variationValue": "value",
+            "reason": "SPLIT",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.large.flag-01",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "v1"
+      }
+    },
+    {
+      "flag": "fixture.large.flag-10",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "v10"
+      }
+    },
+    {
+      "flag": "fixture.large.flag-20",
+      "variationType": "object",
+      "defaultValue": {},
+      "expectedResult": {
+        "value": {
+          "count": 20
+        },
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "v20"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 3
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 3
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "android",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}

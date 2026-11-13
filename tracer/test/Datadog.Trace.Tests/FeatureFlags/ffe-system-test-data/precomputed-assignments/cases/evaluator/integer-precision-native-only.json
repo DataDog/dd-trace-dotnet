@@ -1,0 +1,61 @@
+{
+  "name": "integer-precision-native-only",
+  "description": "Validates that SDKs with 64-bit integer flag evaluation preserve values outside JavaScript's safe integer range (Number.MAX_SAFE_INTEGER = 2^53-1).",
+  "context": {
+    "targetingKey": "precomputed-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "fixture.large-int": {
+            "allocationKey": "allocation-a",
+            "variationKey": "large",
+            "variationType": "integer",
+            "variationValue": 9007199254740993,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.large-int",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 9007199254740993,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "large"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "The native integer API preserves signed 64-bit integers. Browser Dart must report separate applicability."
+    },
+    {
+      "platform": "flutter",
+      "reason": "The native integer API preserves signed 64-bit integers. Browser Dart must report separate applicability."
+    }
+  ]
+}

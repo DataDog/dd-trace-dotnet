@@ -1,0 +1,161 @@
+{
+  "name": "obfuscation-all-types-success",
+  "description": "Generated obfuscated companion: Successful precomputed assignments for all supported Flutter value types.",
+  "context": {
+    "targetingKey": "precomputed-user",
+    "attributes": {
+      "plan": "pro",
+      "platform": "flutter"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "657bbcc45263793d67e4f7967fdd257d6e1896cc095d758c520ca3f52beca003": {
+            "allocationKey": "allocation-success",
+            "variationKey": "enabled",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "abf42b7b192cf3a719bb8ea77c9ff652c82bd4c7aba54561e374efeb2fbbb9b7": {
+            "allocationKey": "allocation-success",
+            "variationKey": "copy-a",
+            "variationType": "string",
+            "variationValue": "Datadog Flags",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "820dab9a17046e7bf33d080bcb6f44547e1b92c31b36e7d9dcfde96c46bb5d56": {
+            "allocationKey": "allocation-success",
+            "variationKey": "limit-five",
+            "variationType": "integer",
+            "variationValue": 5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "f4d559502705ccaba0a55b0defc37636fe7ed397a477a07389771c07183f139b": {
+            "allocationKey": "allocation-success",
+            "variationKey": "half",
+            "variationType": "float",
+            "variationValue": 0.5,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "41057f3677d1a6c229d214c630b71e9f499abbb68116d50594561663f6ec09d9": {
+            "allocationKey": "allocation-success",
+            "variationKey": "object-a",
+            "variationType": "object",
+            "variationValue": {
+              "showBanner": true,
+              "colors": [
+                "blue",
+                "green"
+              ]
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "flutter.fixture.enabled",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "enabled"
+      }
+    },
+    {
+      "flag": "flutter.fixture.title",
+      "variationType": "string",
+      "defaultValue": "Fallback title",
+      "expectedResult": {
+        "value": "Datadog Flags",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "copy-a"
+      }
+    },
+    {
+      "flag": "flutter.fixture.limit",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 5,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "limit-five"
+      }
+    },
+    {
+      "flag": "flutter.fixture.ratio",
+      "variationType": "float",
+      "defaultValue": 0.0,
+      "expectedResult": {
+        "value": 0.5,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "half"
+      }
+    },
+    {
+      "flag": "flutter.fixture.config",
+      "variationType": "object",
+      "defaultValue": {},
+      "expectedResult": {
+        "value": {
+          "showBanner": true,
+          "colors": [
+            "blue",
+            "green"
+          ]
+        },
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "object-a"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 5
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 5
+      }
+    ]
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "android",
+      "reason": "Supports obfuscation and the source fixture."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Supports obfuscation and the source fixture."
+    }
+  ]
+}
