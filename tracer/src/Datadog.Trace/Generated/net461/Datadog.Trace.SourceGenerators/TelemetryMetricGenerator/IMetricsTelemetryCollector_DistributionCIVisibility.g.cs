@@ -41,6 +41,12 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordDistributionCIVisibilityKnownTestsResponseTests(double value);
 
+    public void RecordDistributionCIVisibilityKnownTestsPagesFetched(double value);
+
+    public void RecordDistributionCIVisibilityKnownTestsTotalFetchMs(double value);
+
+    public void RecordDistributionCIVisibilityKnownTestsTotalRequestMs(double value);
+
     public void RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(double value);
 
     public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);

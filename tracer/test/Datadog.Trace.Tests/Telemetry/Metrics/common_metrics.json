@@ -1669,6 +1669,30 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "known_tests.pages_fetched": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "requests",
+      "description": "The number of pages fetched when retrieving known tests from the paginated endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "known_tests.total_fetch_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The total wall-clock time in milliseconds to fetch all pages from the known tests endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "known_tests.total_request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The cumulative request time in milliseconds across all pages when fetching known tests",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "test_management_tests.request": {
       "tags": [
         "rq_compressed"
