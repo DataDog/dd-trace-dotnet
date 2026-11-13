@@ -25,6 +25,38 @@ public:
     int32_t GetSignal() const;
 
 #ifdef DD_TEST
+    // Callback plus the action it chains to. Fault-signal tests call Reset(), which
+    // drops the callback, and must put this back: MemoryFaultGuard's installed flag
+    // stays true, so a later fault would otherwise find no callback and loop.
+    struct SavedState
+    {
+        HandlerFn_t handler;
+        struct sigaction previousAction;
+        struct sigaction installedAction;
+        bool isHandlerInPlace;
+        bool canReplaceSignalHandler;
+    };
+
+    SavedState SaveState()
+    {
+        SavedState state{};
+        state.handler = _handler.load(std::memory_order_acquire);
+        state.previousAction = _previousAction;
+        sigaction(_signalToSend, nullptr, &state.installedAction);
+        state.isHandlerInPlace = _isHandlerInPlace;
+        state.canReplaceSignalHandler = _canReplaceSignalHandler;
+        return state;
+    }
+
+    void RestoreState(const SavedState& state)
+    {
+        _handler.store(state.handler, std::memory_order_release);
+        _previousAction = state.previousAction;
+        _isHandlerInPlace = state.isHandlerInPlace;
+        _canReplaceSignalHandler = state.canReplaceSignalHandler;
+        sigaction(_signalToSend, &state.installedAction, nullptr);
+    }
+
     void Reset()
     {
         _handler.store(nullptr, std::memory_order_release);

@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+#include "MemoryFaultGuard.h"
 #include "OpSysTools.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
@@ -145,6 +146,14 @@ bool CustomHandlerThatChains(int /*signal*/, siginfo_t* /*info*/, void* /*contex
     s_customHandlerCalls++;
     return false;
 }
+
+MemoryFaultGuard::RunResult FaultUnderGuard()
+{
+    return MemoryFaultGuard::Run([] {
+        volatile int* p = nullptr;
+        *p = 1;
+    });
+}
 } // namespace
 
 class ProfilerSignalManagerFaultSignalsFixture : public ::testing::Test
@@ -152,21 +161,32 @@ class ProfilerSignalManagerFaultSignalsFixture : public ::testing::Test
 public:
     void TearDown() override
     {
-        // Restores the previous action saved by the manager, then the one that was set before the test
-        if (_signal != 0)
-        {
-            ProfilerSignalManager::Get(_signal)->Reset();
-            sigaction(_signal, &_originalAction, nullptr);
-        }
+        RestoreSavedState();
     }
 
 protected:
+    // Reset() clears the callback and restores only the chained action. Put the
+    // callback back too, or MemoryFaultGuard stays "installed" with no handler and
+    // the next intentional fault loops.
+    void RestoreSavedState()
+    {
+        if (!_hasSavedState)
+        {
+            return;
+        }
+
+        ProfilerSignalManager::Get(_signal)->RestoreState(_saved);
+        _hasSavedState = false;
+    }
+
     void Init(int signal)
     {
+        RestoreSavedState();
         _signal = signal;
         s_previousHandlerCalls = 0;
         s_customHandlerCalls = 0;
-        ASSERT_EQ(sigaction(signal, nullptr, &_originalAction), 0);
+        _saved = ProfilerSignalManager::Get(signal)->SaveState();
+        _hasSavedState = true;
         ProfilerSignalManager::Get(signal)->Reset();
     }
 
@@ -204,7 +224,8 @@ protected:
     }
 
     int _signal = 0;
-    struct sigaction _originalAction = {};
+    bool _hasSavedState = false;
+    ProfilerSignalManager::SavedState _saved{};
 };
 
 TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckPreviousSigsegvHandlerIsCalledOnEachSignal)
@@ -254,6 +275,22 @@ TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckProfilerHandlerIsNotChaine
 
     raise(SIGSEGV);
     EXPECT_EQ(s_customHandlerCalls.load(), 2);
+}
+
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckMemoryFaultGuardStillRecoversAfterTearDown)
+{
+    ASSERT_EQ(FaultUnderGuard(), MemoryFaultGuard::RunResult::Faulted);
+
+    for (int signal : {SIGSEGV, SIGBUS})
+    {
+        Init(signal);
+        ASSERT_NO_FATAL_FAILURE(InstallPreviousAction(PreviousHandlerThatDoesNotReturn));
+        ASSERT_TRUE(ProfilerSignalManager::Get(signal)->RegisterHandler(CustomHandlerThatChains));
+        Deliver();
+        TearDown();
+    }
+
+    ASSERT_EQ(FaultUnderGuard(), MemoryFaultGuard::RunResult::Faulted);
 }
 
 #endif
