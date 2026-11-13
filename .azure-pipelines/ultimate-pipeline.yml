@@ -624,6 +624,8 @@ stages:
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/upload-native-test-results.yml
+
     # We have to run these in a separate stage because the version of nm included with centos7 is insufficient to validate the glibc version
     - template: steps/run-in-docker.yml
       parameters:
@@ -3207,6 +3209,8 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
+    - template: steps/upload-native-test-results.yml
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -3289,6 +3293,8 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
+    - template: steps/upload-native-test-results.yml
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -3345,6 +3351,8 @@ stages:
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/upload-native-test-results.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3405,6 +3413,8 @@ stages:
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/upload-native-test-results.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3471,6 +3481,8 @@ stages:
         useNativeSdkVersion: true
         command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/upload-native-test-results.yml
 
     - publish: profiler/build_data
       displayName: Uploading Thread sanitizer test results
