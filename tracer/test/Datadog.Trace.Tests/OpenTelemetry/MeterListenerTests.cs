@@ -736,6 +736,74 @@ namespace Datadog.Trace.Tests
         }
 #endif
 
+        [Theory]
+        [InlineData("counter", "delta", 1.0, 0.0)]
+        [InlineData("counter", "cumulative", 8.0, 5.0)]
+        [InlineData("counter", "lowmemory", 8.0, 5.0)]
+#if NET7_0_OR_GREATER
+        [InlineData("updowncounter", "delta", 8.0, 5.0)]
+        [InlineData("updowncounter", "cumulative", 8.0, 5.0)]
+        [InlineData("updowncounter", "lowmemory", 8.0, 5.0)]
+#endif
+        public async Task ObservableCounterExportsObservedSeriesEvenWhenUnchanged(string instrument, string temporalityPreference, double expectedChangedSum, double expectedUnchangedSum)
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference },
+                });
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+
+            // "dropped" is only observed in the first collection.
+            var cycle = 1;
+            IEnumerable<Measurement<long>> Observe()
+            {
+                yield return new Measurement<long>(cycle == 1 ? 7 : 8, new KeyValuePair<string, object>("pool", "changed"));
+                yield return new Measurement<long>(5, new KeyValuePair<string, object>("pool", "unchanged"));
+                if (cycle == 1)
+                {
+                    yield return new Measurement<long>(3, new KeyValuePair<string, object>("pool", "dropped"));
+                }
+            }
+
+            const string name = "test.obs.unchanged";
+            if (instrument == "counter")
+            {
+                meter.CreateObservableCounter<long>(name, Observe);
+            }
+#if NET7_0_OR_GREATER
+            else
+            {
+                meter.CreateObservableUpDownCounter<long>(name, Observe);
+            }
+#endif
+
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle1 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics
+                .Where(m => m.InstrumentName == name)
+                .Select(m => (string)m.Tags["pool"])
+                .Should().BeEquivalentTo("changed", "unchanged", "dropped");
+
+            cycle = 2;
+            await pipeline.ForceCollectAndExportAsync();
+            var secondExport = testExporter.ExportedMetrics.Skip(afterCycle1)
+                .Where(m => m.InstrumentName == name)
+                .ToDictionary(m => (string)m.Tags["pool"], m => m.SnapshotSum);
+
+            secondExport.Should().BeEquivalentTo(
+                new Dictionary<string, double>
+                {
+                    ["changed"] = expectedChangedSum,
+                    ["unchanged"] = expectedUnchangedSum,
+                });
+        }
+
         [Fact]
         public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
         {
