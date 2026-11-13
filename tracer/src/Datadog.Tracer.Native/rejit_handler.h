@@ -172,9 +172,15 @@ class Rejitter;
 /// </summary>
 class RejitHandler
 {
+    friend class RejitHandlerModule;
+
 private:
     std::atomic_bool m_shutdown = {false};
     Lock m_shutdown_lock;
+
+    // Set after a method is added to a RejitHandlerModule's new methods, so EnqueueRejitForNGenInliners can skip
+    // the NGen lookup when nothing was instrumented since its last call.
+    std::atomic_bool m_hasNewMethods = {false};
 
     AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
@@ -197,6 +203,10 @@ private:
     Lock m_rejit_history_lock;
     std::vector<std::tuple<ModuleID, mdMethodDef>> m_rejit_history;
     bool enable_rejit_tracking = false;
+
+    void EnqueueNGenInlinersForRejit(std::vector<RejitRequest> rejitRequests,
+                                     std::shared_ptr<std::promise<void>> promise = nullptr);
+
 public:
     RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
     RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -235,6 +245,11 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);
     void AddNGenInlinerModule(ModuleID moduleId);
+    // Desktop CLR only, and only from a CLR callback: the ReJIT worker has no AppDomain, and the CLR rejects the
+    // lookup on other managed threads with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE. Looks up the NGen inliners of the
+    // methods instrumented since the last NGen inliner replay, and enqueues one ReJIT for them. The future is set
+    // once that ReJIT was requested.
+    std::optional<std::future<void>> EnqueueRejitForNGenInliners();
 
     void SetRejitTracking(bool enabled);
     bool HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef);
