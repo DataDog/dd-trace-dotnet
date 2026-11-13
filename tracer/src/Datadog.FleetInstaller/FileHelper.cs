@@ -115,6 +115,11 @@ internal static class FileHelper
                     InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
                     PropagationFlags.NoPropagateInherit,
                     AccessControlType.Allow));
+
+                // Persist the modified ACL. Without this, the rule is only added to the in-memory copy, and
+                // processes running under different identities (e.g. IIS app pools) can't write to log files
+                // created by other identities. Existing children that inherit permissions also get the new rule.
+                directoryInfo.SetAccessControl(dSecurity);
                 return true;
             }
             catch (Exception ex)
