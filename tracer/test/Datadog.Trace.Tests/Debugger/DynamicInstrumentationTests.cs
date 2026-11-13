@@ -999,6 +999,37 @@ public class DynamicInstrumentationTests
             GetFileProbes(debugger).Should().NotBeNull();
         }
 
+        [Theory]
+        [InlineData("snapshots")]
+        [InlineData("logs")]
+        [InlineData("diagnostics")]
+        public async Task DisposeAsync_WaitsForSnapshotLogAndDiagnosticUploads(string pendingUploader)
+        {
+            var pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var snapshotUploader = new SnapshotUploaderMock { Completion = pendingUploader == "snapshots" ? pending.Task : Task.CompletedTask };
+            var logUploader = new LogUploaderMock { Completion = pendingUploader == "logs" ? pending.Task : Task.CompletedTask };
+            var diagnosticsUploader = new UploaderMock { Completion = pendingUploader == "diagnostics" ? pending.Task : Task.CompletedTask };
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" } }),
+                NullConfigurationTelemetry.Instance);
+            var debugger = CreateDebugger(
+                settings,
+                snapshotUploader: snapshotUploader,
+                logUploader: logUploader,
+                diagnosticsUploader: diagnosticsUploader);
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+            debugger.IsInitialized.Should().BeTrue();
+
+            var shutdown = debugger.DisposeAsync();
+            shutdown.IsCompleted.Should().BeFalse();
+            snapshotUploader.DisposeCallCount.Should().Be(1);
+            logUploader.DisposeCallCount.Should().Be(1);
+            diagnosticsUploader.DisposeCallCount.Should().Be(1);
+            pending.TrySetResult(true);
+            await shutdown;
+        }
+
         private static LineProbeResolveErrorKey SourceMismatchKey(LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch)
         {
             return new LineProbeResolveErrorKey(
@@ -1054,13 +1085,16 @@ public class DynamicInstrumentationTests
             DebuggerSettings settings,
             IDiscoveryService? discoveryService = null,
             LineProbeResolverMock? lineProbeResolver = null,
-            ProbeStatusPollerMock? probeStatusPoller = null)
+            ProbeStatusPollerMock? probeStatusPoller = null,
+            SnapshotUploaderMock? snapshotUploader = null,
+            LogUploaderMock? logUploader = null,
+            UploaderMock? diagnosticsUploader = null)
         {
             var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
             lineProbeResolver ??= new LineProbeResolverMock();
-            var snapshotUploader = new SnapshotUploaderMock();
-            var logUploader = new LogUploaderMock();
-            var diagnosticsUploader = new UploaderMock();
+            snapshotUploader ??= new SnapshotUploaderMock();
+            logUploader ??= new LogUploaderMock();
+            diagnosticsUploader ??= new UploaderMock();
             probeStatusPoller ??= new ProbeStatusPollerMock();
 
             var debugger = new DynamicInstrumentation(
@@ -1622,6 +1656,8 @@ public class DynamicInstrumentationTests
 
     private class UploaderMock : IDebuggerUploader
     {
+        internal Task Completion { get; set; } = Task.CompletedTask;
+
         internal bool Called { get; private set; }
 
         internal int DisposeCallCount { get; private set; }
@@ -1629,7 +1665,7 @@ public class DynamicInstrumentationTests
         public Task StartFlushingAsync()
         {
             Called = true;
-            return Task.CompletedTask;
+            return Completion;
         }
 
         public void Dispose()

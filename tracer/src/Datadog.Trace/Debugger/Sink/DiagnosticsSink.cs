@@ -47,6 +47,17 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new Queue<TimedMessage>(QueueLimit);
         }
 
+        internal bool IsEmpty
+        {
+            get
+            {
+                lock (_locker)
+                {
+                    return _queue.Count == 0;
+                }
+            }
+        }
+
         public static DiagnosticsSink Create(Func<string> serviceNameProvider, DebuggerSettings settings)
         {
             return new DiagnosticsSink(serviceNameProvider, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
@@ -248,21 +259,41 @@ namespace Datadog.Trace.Debugger.Sink
             }
         }
 
+        /// <summary>
+        /// Queues diagnostics whose resend interval has elapsed, then removes and returns the next batch.
+        /// </summary>
         public List<ProbeStatus> GetDiagnostics()
+        {
+            return TakeBatch(queuePeriodicResends: true);
+        }
+
+        /// <summary>
+        /// Removes and returns the next batch of diagnostics that are already queued, without queueing periodic resends.
+        /// Repeated calls empty the queue even when the resend interval elapses between them.
+        /// </summary>
+        public List<ProbeStatus> GetQueuedDiagnostics()
+        {
+            return TakeBatch(queuePeriodicResends: false);
+        }
+
+        private List<ProbeStatus> TakeBatch(bool queuePeriodicResends)
         {
             lock (_locker)
             {
                 var now = Clock.UtcNow;
                 List<TimedMessage>? messagesToReemit = null;
-                foreach (var timedMessage in _diagnostics.Values)
+                if (queuePeriodicResends)
                 {
-                    if (timedMessage.IsQueued || timedMessage.RemoveAfterEmit || !ShouldEmitAgain(timedMessage.LastEmit))
+                    foreach (var timedMessage in _diagnostics.Values)
                     {
-                        continue;
-                    }
+                        if (timedMessage.IsQueued || timedMessage.RemoveAfterEmit || !ShouldEmitAgain(timedMessage.LastEmit))
+                        {
+                            continue;
+                        }
 
-                    messagesToReemit ??= new List<TimedMessage>();
-                    messagesToReemit.Add(timedMessage);
+                        messagesToReemit ??= new List<TimedMessage>();
+                        messagesToReemit.Add(timedMessage);
+                    }
                 }
 
                 if (messagesToReemit is not null)
