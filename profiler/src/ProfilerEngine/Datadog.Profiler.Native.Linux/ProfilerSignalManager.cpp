@@ -172,6 +172,13 @@ bool ProfilerSignalManager::SetupSignalHandler()
 {
     struct sigaction sampleAction;
     sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
+    if (_signalToSend == SIGSEGV || _signalToSend == SIGBUS)
+    {
+        // Like the CLR, run on the alternate stack of the thread (if there is one). Without it, the .NET 6 CLR handler
+        // executes its worker on the faulting thread's stack, just below the faulting frame, where our frames and
+        // the signal frame are: it overwrites them, and the process crashes when the handler returns.
+        sampleAction.sa_flags |= SA_ONSTACK;
+    }
     sampleAction.sa_sigaction = ProfilerSignalManager::SignalHandler;
     sigemptyset(&sampleAction.sa_mask);
     sigaddset(&sampleAction.sa_mask, _signalToSend);

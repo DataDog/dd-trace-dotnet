@@ -217,6 +217,22 @@ TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckPreviousSigbusHandlerIsCal
     CheckPreviousHandlerIsCalledOnEachSignal(SIGBUS);
 }
 
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckFaultSignalHandlersRunOnTheAlternateStack)
+{
+    // The .NET 6 CLR handler crashes if the handlers that chain to it do not run on the alternate stack
+    for (int signal : {SIGSEGV, SIGBUS})
+    {
+        Init(signal);
+        ASSERT_TRUE(ProfilerSignalManager::Get(signal)->RegisterHandler(CustomHandlerThatChains));
+
+        struct sigaction action;
+        ASSERT_EQ(sigaction(signal, nullptr, &action), 0);
+        EXPECT_NE(action.sa_flags & SA_ONSTACK, 0) << "Signal " << signal;
+
+        TearDown();
+    }
+}
+
 TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckProfilerHandlerIsNotChainedToItself)
 {
     Init(SIGSEGV);
