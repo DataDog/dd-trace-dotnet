@@ -261,6 +261,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 /tracer/test/Datadog.Trace.IntegrationTests/ @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Tracer.Native.Tests/   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Bundle.ArtifactTests/ @DataDog/apm-lang-platform-dotnet @DataDog/apm-dotnet @DataDog/tracing-dotnet
 
 ## Single-owner projects
 /tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/ @DataDog/apm-sdk-capabilities
