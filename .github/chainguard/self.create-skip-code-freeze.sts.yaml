@@ -1,0 +1,11 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject_pattern: "repo:DataDog/dd-trace-dotnet:ref:refs/heads/.+"
+
+claim_pattern:
+  event_name: workflow_dispatch
+  repository: DataDog/dd-trace-dotnet
+  job_workflow_ref: DataDog/dd-trace-dotnet/\.github/workflows/create_skip_code_freeze\.yml@refs/heads/.+
+
+permissions:
+  issues: write
