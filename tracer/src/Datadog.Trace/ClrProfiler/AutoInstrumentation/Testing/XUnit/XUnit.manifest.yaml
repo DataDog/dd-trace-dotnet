@@ -1,0 +1,16 @@
+_v: 1
+name: XUnit
+display_name: xUnit
+description: Instruments xUnit test execution and optionally submits test output as logs.
+packages:
+- name: xunit
+- name: xunit.core
+- name: xunit.extensibility.execution
+- name: xunit.v3
+- name: xunit.v3.core
+- name: xunit.v3.extensibility.core
+category:
+- log.emission
+- test.execution
+systems: []
+creation_date: '2021-01-18'
