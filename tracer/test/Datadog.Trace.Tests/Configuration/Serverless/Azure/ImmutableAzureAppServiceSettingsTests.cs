@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -185,6 +186,75 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.NeedsDogStatsD.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("/")]
+        public void AgentCommands_DefaultToTheSiteExtensionAgentFolder(string trailingSeparator)
+        {
+            // The site extension installs ...\v3_57_0\Tracer and ...\v3_57_0\Agent side by side
+            var versionDirectory = Path.Combine(Path.GetTempPath(), "SiteExtensions", "Datadog", "v3_57_0");
+            var agentDirectory = Path.Combine(versionDirectory, "Agent");
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.DotNetTracerHome, Path.Combine(versionDirectory, "Tracer") + trailingSeparator));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.TraceAgentPath.Should().Be(Path.Combine(agentDirectory, "datadog-trace-agent.exe"));
+            settings.TraceAgentArgs.Should().Be("--config " + Path.Combine(agentDirectory, "datadog.yaml"));
+            settings.DogStatsDPath.Should().Be(Path.Combine(agentDirectory, "dogstatsd.exe"));
+            settings.DogStatsDArgs.Should().Be("start -c " + agentDirectory);
+        }
+
+        [Fact]
+        public void AgentCommands_PreferTheConfiguredValues()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.DotNetTracerHome, Path.Combine(Path.GetTempPath(), "v3_57_0", "Tracer")),
+                (ConfigurationKeys.TraceAgentPath, "custom-trace-agent.exe"),
+                (ConfigurationKeys.TraceAgentArgs, "--config custom.yaml"),
+                (ConfigurationKeys.DogStatsDPath, "custom-dogstatsd.exe"),
+                (ConfigurationKeys.DogStatsDArgs, "start -c custom"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.TraceAgentPath.Should().Be("custom-trace-agent.exe");
+            settings.TraceAgentArgs.Should().Be("--config custom.yaml");
+            settings.DogStatsDPath.Should().Be("custom-dogstatsd.exe");
+            settings.DogStatsDArgs.Should().Be("start -c custom");
+        }
+
+        [Fact]
+        public void AgentCommands_DoNotGiveACustomAgentTheBundledArguments()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.DotNetTracerHome, Path.Combine(Path.GetTempPath(), "v3_57_0", "Tracer")),
+                (ConfigurationKeys.TraceAgentPath, "custom-trace-agent.exe"),
+                (ConfigurationKeys.DogStatsDPath, "custom-dogstatsd.exe"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.TraceAgentArgs.Should().BeNull();
+            settings.DogStatsDArgs.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("1", null)]
+        [InlineData(null, "v3_57_0")]
+        public void AgentCommands_HaveNoDefaultWithoutTheSiteExtensionOrATracerHome(string siteExtension, string versionFolder)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, siteExtension),
+                (ConfigurationKeys.DotNetTracerHome, versionFolder is null ? null : Path.Combine(Path.GetTempPath(), versionFolder, "Tracer")));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.TraceAgentPath.Should().BeNull();
+            settings.DogStatsDPath.Should().BeNull();
         }
     }
 }

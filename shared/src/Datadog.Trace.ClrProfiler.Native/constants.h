@@ -56,3 +56,14 @@ const shared::WSTRING default_exclude_processes[]{
     WStr("WerFault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
     WStr("WindowsAzureGuestAgent.exe") // https://github.com/Azure/WindowsVMAgent
 };
+
+// Application Insights and Azure App Services platform processes that run next to the app.
+// Excluded by default when the Azure App Services site extension is in use (DD_AZURE_APP_SERVICES=1).
+// Like the default list above, DD_PROFILER_EXCLUDE_PROCESSES adds to it,
+// and a DD_PROFILER_PROCESSES include list overrides it.
+const shared::WSTRING azure_app_services_exclude_processes[]{
+    WStr("SnapshotUploader.exe"),
+    WStr("workerforwarder.exe"),
+    WStr("SnapshotUploader64.exe"),
+    WStr("Crashmon.exe")
+};

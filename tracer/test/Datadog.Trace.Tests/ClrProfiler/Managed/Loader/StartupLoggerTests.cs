@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.Managed.Loader;
 using FluentAssertions;
@@ -91,5 +92,29 @@ public class StartupLoggerTests
         {
             result.Should().Be("/home/LogFiles/datadog");
         }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("/")]
+    public void GetDefaultLogDirectory_WithTheSiteExtension_UsesTheExtensionVersionFolder(string trailingSeparator)
+    {
+        var envVars = new MockEnvironmentVariableProvider();
+        envVars.SetEnvironmentVariable("WEBSITE_SITE_NAME", "my-site-name");
+        envVars.SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+        envVars.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(Path.GetTempPath(), "SiteExtensions", "Datadog", "v3_57_0", "Tracer") + trailingSeparator);
+
+        var aasLogDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+        StartupLogger.GetDefaultLogDirectory(envVars).Should().Be(Path.Combine(aasLogDirectory, "v3_57_0"));
+    }
+
+    [Fact]
+    public void GetDefaultLogDirectory_WithTheSiteExtensionButNoTracerHome_ReturnsAzureLogDirectory()
+    {
+        var envVars = new MockEnvironmentVariableProvider();
+        envVars.SetEnvironmentVariable("WEBSITE_SITE_NAME", "my-site-name");
+        envVars.SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+
+        StartupLogger.GetDefaultLogDirectory(envVars).Should().Be(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog");
     }
 }

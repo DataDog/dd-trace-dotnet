@@ -156,6 +156,21 @@ namespace datadog::shared::nativeloader
                 }
             }
 
+            bool is_aas_site_extension = false;
+            if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(environment::is_azure_app_services_extension),
+                                                is_aas_site_extension) && is_aas_site_extension)
+            {
+                for (auto&& exclude_process : azure_app_services_exclude_processes)
+                {
+                    if (process_name == exclude_process)
+                    {
+                        Log::Info("CorProfiler::Initialize Datadog SDK disabled: ", process_name,
+                                  " found in the Azure App Services site extension exclude list");
+                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                    }
+                }
+            }
+
             // If we weren't on the explicit include list, then try to filter out `dotnet build` etc.
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
