@@ -93,6 +93,21 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
 
+        public ProfilerTestRun Run()
+        {
+            var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            try
+            {
+                Run(agent);
+                return ProfilerTestRun.From(this, agent);
+            }
+            catch
+            {
+                agent.Dispose();
+                throw;
+            }
+        }
+
         public void Run(MockDatadogAgent agent)
         {
             RunTest(agent);
