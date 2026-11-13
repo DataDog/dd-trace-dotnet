@@ -98,12 +98,21 @@ internal static class ServiceDiscoveryHelper
 
             if (includeOtelThreadContext)
             {
-                var result = NativeInterop.LibraryConfig.IncludeOtelThreadContext(ptr);
-                if (result.Tag == ResultTag.Error)
+                try
                 {
-                    var errorMessage = result.Error.Message.ToUtf8String();
-                    NativeInterop.Common.DropError(ref result.Error);
-                    Log.Error("Failed to include OpenTelemetry thread context metadata with message: {Error}", errorMessage);
+                    var result = NativeInterop.LibraryConfig.IncludeOtelThreadContext(ptr);
+                    if (result.Tag == ResultTag.Error)
+                    {
+                        var errorMessage = result.Error.Message.ToUtf8String();
+                        NativeInterop.Common.DropError(ref result.Error);
+                        Log.Error("Failed to include OpenTelemetry thread context metadata with message: {Error}", errorMessage);
+                    }
+                }
+                catch (Exception e)
+                {
+                    // OTel thread context metadata is optional, so its failure should not prevent
+                    // the remaining tracer metadata from being stored.
+                    Log.Error("Failed to include OpenTelemetry thread context metadata due to an unexpected error: {Error}", e.Message);
                 }
             }
 
