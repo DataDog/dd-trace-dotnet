@@ -72,7 +72,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                             continue; // should not happen
                         }
 
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                        var parentPathway = ContextPropagation.ExtractPathwayContext(dataStreamsManager, record.Data);
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parentPathway);
                     }
                 }
             }
