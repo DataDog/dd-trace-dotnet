@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("RequiresMsmq", "True")]
     public class MsmqTests : TracingIntegrationTest
     {
         public MsmqTests(ITestOutputHelper output)

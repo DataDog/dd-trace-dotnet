@@ -35,6 +35,23 @@
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
 
+  <!-- GitLab builds samples in a Windows container whose image does not include the runner's
+       Git checkout metadata. Supply the source-control root explicitly so the SDK can generate
+       SourceLink data in the sample PDBs. Azure continues to discover this from its checkout. -->
+  <PropertyGroup Condition="'$(GITLAB_CI)' == 'true' AND '$(SourceRevisionId)' != '' AND '$(RepositoryUrl)' != ''">
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <PrivateRepositoryUrl>$(RepositoryUrl)</PrivateRepositoryUrl>
+    <ScmRepositoryUrl>$(RepositoryUrl)</ScmRepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GITLAB_CI)' == 'true' AND '$(SourceRevisionId)' != '' AND '$(RepositoryUrl)' != ''">
+    <SourceRoot Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\..\'))"
+                SourceControl="git"
+                RevisionId="$(SourceRevisionId)"
+                RepositoryUrl="$(RepositoryUrl)"
+                ScmRepositoryUrl="$(RepositoryUrl)" />
+  </ItemGroup>
+
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>

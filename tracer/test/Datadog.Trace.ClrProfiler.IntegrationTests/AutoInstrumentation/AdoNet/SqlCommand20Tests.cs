@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
+    [Trait("RequiresLocalDb", "True")]
     public class SqlCommand20Tests : TracingIntegrationTest
     {
         public SqlCommand20Tests(ITestOutputHelper output)

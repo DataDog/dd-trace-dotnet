@@ -23,6 +23,7 @@ using Expectations = System.Collections.Generic.Dictionary<string, (int StatusCo
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetWebApi2TestsCallTargetClassic : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
@@ -32,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetWebApi2TestsCallTargetIntegrated : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -41,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetWebApi2TestsCallTargetClassicWithFeatureFlag : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -50,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetWebApi2TestsCallTargetIntegratedWithFeatureFlag : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -59,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetWebApi2TestsCallTargetIntegratedWithRouteTemplateExpansion : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetIntegratedWithRouteTemplateExpansion(IisFixture iisFixture, ITestOutputHelper output)
@@ -67,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Collection("IisTests")]
+        [Trait("IISExpress", "True")]
         public class AspNetWebApi2TestsVirtualAppIntegratedWithFeatureFlag : AspNetWebApi2Tests
         {
             public AspNetWebApi2TestsVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -78,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Collection("IisTests")]
+        [Trait("IISExpress", "True")]
         public class AspNetWebApi2TestsModuleOnlyClassic : AspNetWebApi2ModuleOnlyTests
         {
             public AspNetWebApi2TestsModuleOnlyClassic(IisFixture iisFixture, ITestOutputHelper output)
@@ -87,6 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Collection("IisTests")]
+        [Trait("IISExpress", "True")]
         public class AspNetWebApi2TestsModuleOnlyIntegrated : AspNetWebApi2ModuleOnlyTests
         {
             public AspNetWebApi2TestsModuleOnlyIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -96,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Collection("IisTests")]
+        [Trait("IISExpress", "True")]
         public class AspNetWebApi2TestsModuleOnlyVirtualAppIntegrated : AspNetWebApi2ModuleOnlyTests
         {
             public AspNetWebApi2TestsModuleOnlyVirtualAppIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -105,6 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Collection("IisTests")]
+        [Trait("IISExpress", "True")]
         public class AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag : AspNetWebApi2ModuleOnlyTests
         {
             public AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
