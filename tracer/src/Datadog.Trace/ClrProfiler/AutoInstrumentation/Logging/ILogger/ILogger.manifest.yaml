@@ -1,0 +1,13 @@
+_v: 1
+name: ILogger
+display_name: Microsoft.Extensions.Logging
+description: Instruments Microsoft.Extensions.Logging log pipelines to enrich log records with trace and service metadata
+  and optionally submit them directly to Datadog.
+packages:
+- name: Microsoft.Extensions.Logging
+- name: Microsoft.Extensions.Logging.Abstractions
+- name: Microsoft.Extensions.Telemetry
+category:
+- log.emission
+systems: []
+creation_date: '2021-08-23'

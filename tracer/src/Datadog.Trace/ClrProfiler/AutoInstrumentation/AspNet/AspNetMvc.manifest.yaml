@@ -1,0 +1,11 @@
+_v: 1
+name: AspNetMvc
+display_name: ASP.NET MVC
+description: Instruments incoming HTTP requests and controller actions in ASP.NET MVC, with optional application-security
+  monitoring of action parameters and JSON responses.
+packages:
+- name: Microsoft.AspNet.Mvc
+category:
+- http.server
+systems: []
+creation_date: '2018-06-18'

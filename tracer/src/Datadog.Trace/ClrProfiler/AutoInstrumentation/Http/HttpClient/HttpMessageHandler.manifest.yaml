@@ -1,0 +1,14 @@
+_v: 1
+name: HttpMessageHandler
+display_name: HttpMessageHandler
+description: Instruments outbound HTTP requests through System.Net.Http message handlers, creating client spans and propagating
+  trace context while supporting Data Streams transaction tracking and AppSec RASP checks.
+packages:
+- name: Ocelot
+- name: System.Net.Http
+- name: System.Net.Http.WinHttpHandler
+- name: Yarp.ReverseProxy
+category:
+- http.client
+systems: []
+creation_date: '2019-03-04'
