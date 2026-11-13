@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Caching;
+using Datadog.Trace.Util;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;

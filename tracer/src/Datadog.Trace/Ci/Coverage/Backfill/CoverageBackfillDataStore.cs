@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
@@ -693,7 +694,7 @@ internal static class CoverageBackfillDataStore
         var recoveredResultIds = new HashSet<string>(StringComparer.Ordinal);
         try
         {
-            var stopwatch = waitForResultFolder ? Stopwatch.StartNew() : null;
+            var timeProvider = waitForResultFolder ? new DefaultTimeProvider() : null;
             var lastRecoveredResultTime = TimeSpan.Zero;
             while (true)
             {
@@ -718,7 +719,7 @@ internal static class CoverageBackfillDataStore
                             waitForResultFolder,
                             waitForCoverletXmlFallback,
                             resultFolderReadTimeout,
-                            stopwatch))
+                            timeProvider))
                     {
                         results = [];
                         readFailed = true;
@@ -728,7 +729,7 @@ internal static class CoverageBackfillDataStore
 
                 if (waitForResultFolder && recoveredResults.Count > recoveredResultCountBeforePass)
                 {
-                    lastRecoveredResultTime = stopwatch!.Elapsed;
+                    lastRecoveredResultTime = timeProvider!.Elapsed;
                 }
 
                 var shouldWaitLongerForCoverletXmlFallback = ShouldWaitLongerForCoverletXmlFallback(waitForCoverletXmlFallback, recoveredResults);
@@ -736,15 +737,15 @@ internal static class CoverageBackfillDataStore
                                       CoverletXmlFallbackResultTimeout :
                                       ReadRetryTimeout;
                 if (!waitForResultFolder ||
-                    stopwatch!.Elapsed >= readTimeout ||
+                    timeProvider!.Elapsed >= readTimeout ||
                     (recoveredResults.Count > 0 &&
                      !shouldWaitLongerForCoverletXmlFallback &&
-                     stopwatch.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
+                     timeProvider.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
                 {
                     break;
                 }
 
-                Thread.Sleep(ReadRetryDelay);
+                timeProvider!.Sleep(ReadRetryDelay);
             }
         }
         catch (Exception ex)
@@ -1399,7 +1400,8 @@ internal static class CoverageBackfillDataStore
         return false;
     }
 
-    private static bool ReadCoverageIpcResultFolder(
+    [TestingAndPrivateOnly]
+    internal static bool ReadCoverageIpcResultFolder(
         ITestOptimization testOptimization,
         string resultFolder,
         ulong sessionId,
@@ -1408,9 +1410,9 @@ internal static class CoverageBackfillDataStore
         bool waitForResultFiles,
         bool waitForCoverletXmlFallback,
         TimeSpan readTimeout,
-        Stopwatch? stopwatch = null)
+        ITimeProvider? timeProvider = null)
     {
-        stopwatch ??= Stopwatch.StartNew();
+        timeProvider ??= new DefaultTimeProvider();
         var sawTemporaryFile = false;
         string? previousSnapshot = null;
         var previousSnapshotTime = TimeSpan.Zero;
@@ -1454,31 +1456,25 @@ internal static class CoverageBackfillDataStore
                 if (!string.Equals(snapshot, previousSnapshot, StringComparison.Ordinal))
                 {
                     previousSnapshot = snapshot;
-                    previousSnapshotTime = stopwatch.Elapsed;
+                    previousSnapshotTime = timeProvider.Elapsed;
                     canReadCurrentSnapshot = false;
                 }
-                else if (stopwatch.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
+                else if (timeProvider.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
                 {
                     canReadCurrentSnapshot = false;
                 }
             }
 
-            if (sawTemporaryFileInCurrentPass &&
-                stopwatch.Elapsed >= effectiveReadTimeout)
-            {
-                return false;
-            }
-
-            if (waitForResultFiles &&
-                resultFiles.Count == 0 &&
-                stopwatch.Elapsed >= effectiveReadTimeout)
-            {
-                return false;
-            }
-
             if (canReadCurrentSnapshot ||
-                stopwatch.Elapsed >= effectiveReadTimeout)
+                timeProvider.Elapsed >= effectiveReadTimeout)
             {
+                // Reaching the deadline may end the quiet-period wait, but it must never
+                // turn an incomplete snapshot into publishable coverage.
+                if (sawTemporaryFileInCurrentPass || (waitForResultFiles && resultFiles.Count == 0))
+                {
+                    return false;
+                }
+
                 foreach (var filePath in resultFiles)
                 {
                     if (!TryReadAllTextWithRetry(testOptimization, filePath, waitForFile: false, out var contents) ||
@@ -1497,7 +1493,7 @@ internal static class CoverageBackfillDataStore
                 return true;
             }
 
-            Thread.Sleep(ReadRetryDelay);
+            timeProvider.Sleep(ReadRetryDelay);
         }
     }
 
