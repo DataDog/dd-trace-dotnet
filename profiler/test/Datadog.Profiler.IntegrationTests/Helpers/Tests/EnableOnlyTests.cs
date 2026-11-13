@@ -84,5 +84,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
             environment.CustomEnvironmentVariables[EnvironmentVariables.GcThreadsCpuTimeEnabled].Should().Be("0");
             environment.CustomEnvironmentVariables[EnvironmentVariables.ThreadLifetimeEnabled].Should().Be("0");
         }
+
+        [Fact]
+        public void DisableAllExcept_LeavesTheListedFeatureAtItsDefault()
+        {
+            var environment = new EnvironmentHelper("net8.0", enableTracer: false, enableProfiler: true);
+            environment.DisableAllExcept(ProfilerFeature.Cpu);
+
+            environment.CustomEnvironmentVariables.Should().NotContainKey(EnvironmentVariables.CpuProfilerEnabled);
+            environment.CustomEnvironmentVariables[EnvironmentVariables.WallTimeProfilerEnabled].Should().Be("0");
+            environment.CustomEnvironmentVariables[EnvironmentVariables.ContentionProfilerEnabled].Should().Be("0");
+            environment.CustomEnvironmentVariables[EnvironmentVariables.ThreadLifetimeEnabled].Should().Be("0");
+        }
     }
 }

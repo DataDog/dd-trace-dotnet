@@ -168,6 +168,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        /// <summary>
+        /// Disables every profiler data source except the listed ones, which keep their default value.
+        /// Use it to check that a feature is enabled by default.
+        /// </summary>
+        internal void DisableAllExcept(params ProfilerFeature[] features)
+        {
+            EnableOnly(features);
+            foreach (var feature in features)
+            {
+                CustomEnvironmentVariables.Remove(VariableName(feature));
+            }
+        }
+
         internal static bool IsDataSource(ProfilerFeature feature)
         {
             switch (feature)
