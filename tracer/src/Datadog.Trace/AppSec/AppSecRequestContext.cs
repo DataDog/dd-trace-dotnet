@@ -110,7 +110,7 @@ internal sealed partial class AppSecRequestContext
 
         lock (_sync)
         {
-            _truncation.Add(truncation);
+            _truncation.Add(in truncation);
         }
     }
 

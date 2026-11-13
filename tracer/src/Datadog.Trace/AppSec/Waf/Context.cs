@@ -249,7 +249,7 @@ internal sealed class Context : IContext
 
             ref var totals = ref isRasp ? ref _raspTotals : ref _wafTotals;
             totals.AddDurationWithBindings(Stopwatch.GetTimestamp() - start);
-            result = new Result(ref retNative, code, ref totals, isRasp, truncation);
+            result = new Result(ref retNative, code, ref totals, isRasp, in truncation);
         }
 
         outcome = WafOutcome.Success;

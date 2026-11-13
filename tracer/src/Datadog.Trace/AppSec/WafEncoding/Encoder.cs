@@ -14,8 +14,6 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -93,7 +91,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>(), remainingDepth);
             var result = Encode(ref context, remainingDepth, o);
-            return new EncodeResult(context.Buffers, context.Pool, ref result, context.Truncation);
+            return new EncodeResult(context.Buffers, context.Pool, ref result, in context.Truncation);
         }
 
         // -----------------------------------
@@ -239,7 +237,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (context.ApplySafetyLimits && remainingDepth-- <= 0)
             {
-                context.Truncation.AddDepth(context.MaxDepth + 1);
+                context.Truncation.AddTooDeep(context.MaxDepth);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
@@ -400,7 +398,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         return StringBuilderCache.GetStringAndRelease(sb);
                     }
 
-                    context.Truncation.AddDepth(context.MaxDepth + 1);
+                    context.Truncation.AddTooDeep(context.MaxDepth);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
@@ -724,7 +722,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             public readonly UnmanagedMemoryPool Pool;
             public readonly List<IntPtr> Buffers;
 
-            // the depth the encoding started with, which is where the containers that are too deep get dropped
+            // the depth the encoding started with
             public readonly int MaxDepth;
 
             public TruncationInfo Truncation;

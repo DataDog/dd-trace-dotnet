@@ -27,8 +27,7 @@ namespace Datadog.Trace.Security.Unit.Tests;
 public class WafTruncationTelemetryTests : WafLibraryRequiredTest
 {
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task GivenAWafRunWithEveryKindOfTruncation_WhenItRuns_ThenOneInputTruncatedPointHoldsAllTheFlags(bool useUnsafeEncoder)
     {
         var metrics = await RecordAsync(useUnsafeEncoder, CreateTruncatedPayload());
@@ -38,8 +37,7 @@ public class WafTruncationTelemetryTests : WafLibraryRequiredTest
     }
 
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task GivenAWafRunWithinTheLimits_WhenItRuns_ThenNoInputTruncatedPointIsReported(bool useUnsafeEncoder)
     {
         var metrics = await RecordAsync(useUnsafeEncoder, new Dictionary<string, object> { { AddressesConstants.RequestBody, "value" } });
@@ -48,8 +46,7 @@ public class WafTruncationTelemetryTests : WafLibraryRequiredTest
     }
 
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void GivenTruncatedRuns_WhenTheWebSpanCloses_ThenTheLargestTruncationsOfTheRequestAreSetOnIt(bool useUnsafeEncoder)
     {
         using var context = CreateWaf(useUnsafeEncoder).Waf!.CreateContext(out _)!;
