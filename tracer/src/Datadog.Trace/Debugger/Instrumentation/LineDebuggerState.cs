@@ -45,7 +45,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
         /// <param name="snapshotCreator">The snapshot creator associated with the executing probe configuration</param>
-        internal LineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
+        internal LineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
         {
             _probeId = probeId;
             _scope = scope;
