@@ -16,8 +16,7 @@ namespace Datadog.Trace.Tests.Activity;
 public class ActivityListenerHandlerTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void ListensToEverySourceWithTheSameName(bool hasVersion)
     {
         var name = $"Datadog.Tests.{Guid.NewGuid():N}";
@@ -29,8 +28,7 @@ public class ActivityListenerHandlerTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void ListensToConcurrentSourcesWithTheSameName(bool hasVersion)
     {
         var name = $"Datadog.Tests.{Guid.NewGuid():N}";
