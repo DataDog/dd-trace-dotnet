@@ -2,6 +2,10 @@
 *:*/spdlog/*
 *:*/test/*
 *:*/_deps/*
+// Vendored third-party code (e.g. the zstd single-file amalgamation in the
+// profiling PoC) - not our code to lint, and the amalgamation's size trips
+// cppcheck's uninitialized-variable heuristics with false positives.
+*:*/datadog-profiling-poc/vendor/*
 // This error is an issue with cppcheck. So do not report this one specifically
 preprocessorErrorDirective:*/logging.h
 cppcheckError:*/StackSamplerLoopManager.cpp

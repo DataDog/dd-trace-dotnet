@@ -8,6 +8,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     public enum TransportType
     {
         Http,
-        NamedPipe
+        NamedPipe,
+        UnixDomainSocket
     }
 }

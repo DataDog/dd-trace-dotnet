@@ -16,8 +16,8 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 namespace libdatadog {
@@ -52,27 +52,29 @@ ExporterBuilder& ExporterBuilder::SetTags(Tags tags)
 
 struct ExporterBuilder::AgentEndpoint
 {
-    ddog_prof_Endpoint inner;
+    ddog_prof_endpoint inner;
 };
 
 std::unique_ptr<libdatadog::AgentProxy> ExporterBuilder::CreateAgentProxy()
 {
     auto endpoint = CreateEndpoint();
 
-    auto result = ddog_prof_Exporter_new(
-        to_char_slice(_libraryName),
-        to_char_slice(_libraryVersion),
-        to_char_slice(_languageFamily),
-        static_cast<ddog_Vec_Tag*>(*_tags._impl),
-        endpoint.inner);
+    ddog_prof_exporter* rawExporter = nullptr;
+    auto result = ddog_prof_exporter_new(
+        to_poc_char_slice(_libraryName),
+        to_poc_char_slice(_libraryVersion),
+        to_poc_char_slice(_languageFamily),
+        static_cast<ddog_vec_tag*>(*_tags._impl),
+        &endpoint.inner,
+        &rawExporter);
 
-    if (result.tag == DDOG_PROF_PROFILE_EXPORTER_RESULT_ERR_HANDLE_PROFILE_EXPORTER)
+    if (result != DDOG_OK)
     {
-        throw Exception(std::make_unique<SuccessImpl>(result.err));
+        throw Exception(std::make_unique<SuccessImpl>(result));
     }
 
-    // the AgentProxy instance is acquiring the ownership of the ddog_prof_Exporter pointer stored in the ok field
-    return std::make_unique<AgentProxy>(result.ok);
+    // the AgentProxy instance is acquiring the ownership of the ddog_prof_exporter pointer
+    return std::make_unique<AgentProxy>(rawExporter);
 }
 
 ExporterBuilder& ExporterBuilder::SetOutputDirectory(fs::path outputDirectory)
@@ -101,14 +103,26 @@ ExporterBuilder& ExporterBuilder::SetLanguageFamily(std::string family)
 
 ExporterBuilder::AgentEndpoint ExporterBuilder::CreateEndpoint()
 {
+    ddog_prof_endpoint endpoint;
+    ddog_error_code rc;
+
     if (_url.empty())
     {
         assert(!_site.empty());
         assert(!_apiKey.empty());
-        return {ddog_prof_Endpoint_agentless(to_char_slice(_site), to_char_slice(_apiKey), EndpointTimeoutMs, UseSystemResolver)};
+        rc = ddog_prof_endpoint_agentless(to_poc_char_slice(_site), to_poc_char_slice(_apiKey), EndpointTimeoutMs, UseSystemResolver, &endpoint);
+    }
+    else
+    {
+        rc = ddog_prof_endpoint_agent(to_poc_char_slice(_url), EndpointTimeoutMs, UseSystemResolver, &endpoint);
     }
 
-    return {ddog_prof_Endpoint_agent(to_char_slice(_url), EndpointTimeoutMs, UseSystemResolver)};
+    if (rc != DDOG_OK)
+    {
+        throw Exception(std::make_unique<SuccessImpl>(rc));
+    }
+
+    return {endpoint};
 }
 
 std::unique_ptr<Exporter> ExporterBuilder::Build()
