@@ -60,8 +60,9 @@ namespace Datadog.Trace.Activity
                         if (HandlerBySource.TryAdd(sName, handler))
                         {
                             Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                            return true;
                         }
+
+                        return true;
                     }
                 }
                 else if (handler.ShouldListenTo(sName, null))
@@ -75,8 +76,9 @@ namespace Datadog.Trace.Activity
                     if (HandlerBySource.TryAdd(sName, handler))
                     {
                         Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                        return true;
                     }
+
+                    return true;
                 }
             }
 
