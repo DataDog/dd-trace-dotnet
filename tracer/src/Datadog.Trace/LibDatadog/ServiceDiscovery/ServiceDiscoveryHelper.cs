@@ -1,4 +1,4 @@
-﻿// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
+// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,6 +7,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
@@ -25,7 +26,8 @@ internal static class ServiceDiscoveryHelper
 
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings, MutableSettings mutableSettings)
     {
-        var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
+        var framework = FrameworkDescription.Instance;
+        var platformIsSupported = framework.OSPlatform == OSPlatformName.Linux;
         var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
         if (platformIsSupported && deploymentIsSupported.IsAvailable)
         {
@@ -40,7 +42,8 @@ internal static class ServiceDiscoveryHelper
                     mutableSettings.Environment,
                     mutableSettings.ServiceVersion,
                     mutableSettings.ProcessTags?.SerializedTags ?? string.Empty,
-                    ContainerMetadata.Instance.ContainerId ?? string.Empty);
+                    ContainerMetadata.Instance.ContainerId ?? string.Empty,
+                    tracerSettings.OtelThreadContextEnabled && OtelThreadContextPublisher.IsPlatformSupported(framework));
 
                 if (result.Tag == ResultTag.Error)
                 {
@@ -76,7 +79,8 @@ internal static class ServiceDiscoveryHelper
         string? serviceEnv,
         string? serviceVersion,
         string processTags,
-        string containerId)
+        string containerId,
+        bool includeOtelThreadContext)
     {
         IntPtr ptr = IntPtr.Zero;
         try
@@ -91,6 +95,26 @@ internal static class ServiceDiscoveryHelper
             SetMetadata(ptr, MetadataKind.ServiceVersion, serviceVersion);
             SetMetadata(ptr, MetadataKind.ProcessTags, processTags);
             SetMetadata(ptr, MetadataKind.ContainerId, containerId);
+
+            if (includeOtelThreadContext)
+            {
+                try
+                {
+                    var result = NativeInterop.LibraryConfig.IncludeOtelThreadContext(ptr);
+                    if (result.Tag == ResultTag.Error)
+                    {
+                        var errorMessage = result.Error.Message.ToUtf8String();
+                        NativeInterop.Common.DropError(ref result.Error);
+                        Log.Error("Failed to include OpenTelemetry thread context metadata with message: {Error}", errorMessage);
+                    }
+                }
+                catch (Exception e)
+                {
+                    // OTel thread context metadata is optional, so its failure should not prevent
+                    // the remaining tracer metadata from being stored.
+                    Log.Error("Failed to include OpenTelemetry thread context metadata due to an unexpected error: {Error}", e.Message);
+                }
+            }
 
             return NativeInterop.LibraryConfig.StoreTracerMetadata(ptr);
         }
