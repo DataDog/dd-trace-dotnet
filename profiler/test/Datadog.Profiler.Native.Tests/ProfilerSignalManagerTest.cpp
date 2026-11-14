@@ -10,6 +10,7 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
 #include <atomic>
+#include <chrono>
 #include <csetjmp>
 #include <cstdio>
 #include <future>
@@ -18,6 +19,7 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -156,6 +158,41 @@ void PreviousHandlerThatDoesNotReturn(int /*signal*/, siginfo_t* /*info*/, void*
 void StopFaultLoop(int /*signal*/)
 {
     siglongjmp(s_fromPreviousHandler, 2);
+}
+
+// A thread that faults in a loop, each fault handled by a CLR-like handler (it leaves with siglongjmp).
+// Pause n: s_pauseRequest = n, wait for s_pausedFor == n (no fault in progress), then s_resumed = n.
+thread_local sigjmp_buf t_fromFault;
+std::atomic<bool> s_stopFaulting{false};
+std::atomic<int> s_pauseRequest{0};
+std::atomic<int> s_pausedFor{0};
+std::atomic<int> s_resumed{0};
+
+void PreviousHandlerForFaultingThread(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
+{
+    siglongjmp(t_fromFault, 1);
+}
+
+void FaultInALoop()
+{
+    while (!s_stopFaulting)
+    {
+        const int pause = s_pauseRequest;
+        if (pause > s_resumed)
+        {
+            s_pausedFor = pause;
+            while (s_resumed < pause && !s_stopFaulting)
+            {
+            }
+            continue;
+        }
+
+        if (sigsetjmp(t_fromFault, 1) == 0)
+        {
+            volatile int* volatile address = nullptr;
+            *address = 1;
+        }
+    }
 }
 
 bool IsOnAlternateStack()
@@ -493,6 +530,47 @@ TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckRegisteringAgainKeepsThePr
     Deliver();
     EXPECT_EQ(s_customHandlerCalls.load(), 1);
     EXPECT_EQ(s_previousHandlerCalls.load(), 1);
+}
+
+// Another thread can fault as soon as the profiler handler is installed: the handler must already know the
+// CLR handler. Otherwise it finds nothing to chain to, and the fault ends the process.
+TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckFaultDuringRegistrationIsChained)
+{
+    Init(SIGSEGV);
+    testing::FLAGS_gtest_death_test_style = "threadsafe";
+    EXPECT_EXIT(
+        {
+            alarm(10);                 // instead of hanging forever
+            prctl(PR_SET_DUMPABLE, 0); // no core dump
+
+            // The state of a manager that has never registered, with the CLR handler installed
+            ProfilerSignalManager::SavedState firstRegistration = {};
+            firstRegistration.installedAction.sa_flags = SA_SIGINFO;
+            firstRegistration.installedAction.sa_sigaction = PreviousHandlerForFaultingThread;
+            sigemptyset(&firstRegistration.installedAction.sa_mask);
+            firstRegistration.canReplaceSignalHandler = true;
+            auto* signalManager = ProfilerSignalManager::Get(SIGSEGV);
+
+            s_pauseRequest = 1;
+            std::thread faultingThread(FaultInALoop);
+            // The window is a few instructions long: it is not hit on every run, but often enough to notice.
+            // Bounded in time too, for the sanitizer builds.
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+            for (int i = 1; i <= 300000 && std::chrono::steady_clock::now() < deadline; i++)
+            {
+                s_pauseRequest = i;
+                while (s_pausedFor != i)
+                {
+                }
+                signalManager->RestoreState(firstRegistration);
+                s_resumed = i;
+                signalManager->RegisterHandler(CustomHandlerThatChains);
+            }
+            s_stopFaulting = true;
+            faultingThread.join();
+            _exit(0);
+        },
+        testing::ExitedWithCode(0), "");
 }
 
 TEST_F(ProfilerSignalManagerFaultSignalsFixture, CheckSigsegvEndsTheProcessWithoutPreviousHandler)

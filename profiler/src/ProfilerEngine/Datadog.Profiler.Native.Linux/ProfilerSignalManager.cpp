@@ -182,9 +182,12 @@ bool ProfilerSignalManager::SetupSignalHandler()
         return false;
     }
 
-    // Installed again over itself: it must keep chaining to the action it replaced the first time
-    const bool isAlreadyInstalled = IsProfilerSignalHandler(currentAction);
-    const struct sigaction& actionToChainTo = isAlreadyInstalled ? _previousAction : currentAction;
+    // A fault on another thread can reach the handler as soon as it is installed: what it chains to must be set before.
+    // Installed again over itself, it must keep chaining to the action it replaced the first time.
+    if (!IsProfilerSignalHandler(currentAction))
+    {
+        _previousAction = currentAction;
+    }
 
     struct sigaction sampleAction;
     sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
@@ -197,8 +200,8 @@ bool ProfilerSignalManager::SetupSignalHandler()
         // (SIGRTMIN) blocked. Called from the thread stack, the .NET 6 one executes its worker just below the faulting
         // frame, where our frames and the signal frame are: it overwrites them, and the process crashes when it returns.
         // The CLR SIGBUS handler runs on the thread stack.
-        sampleAction.sa_flags |= actionToChainTo.sa_flags & SA_ONSTACK;
-        sampleAction.sa_mask = actionToChainTo.sa_mask;
+        sampleAction.sa_flags |= _previousAction.sa_flags & SA_ONSTACK;
+        sampleAction.sa_mask = _previousAction.sa_mask;
     }
     sigaddset(&sampleAction.sa_mask, _signalToSend);
 
@@ -211,7 +214,8 @@ bool ProfilerSignalManager::SetupSignalHandler()
         return false;
     }
 
-    if (!IsProfilerSignalHandler(replacedAction))
+    // Replaced by another thread between the two calls
+    if (!IsProfilerSignalHandler(replacedAction) && replacedAction.sa_sigaction != _previousAction.sa_sigaction)
     {
         _previousAction = replacedAction;
     }
