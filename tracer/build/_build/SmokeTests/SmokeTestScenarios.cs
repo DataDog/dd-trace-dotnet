@@ -906,6 +906,7 @@ public static class SmokeTestScenarios
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
                 NuGetPackageName = Projects.DatadogTraceBundle,
+                IncludeDdDotnetScenario = true,
             });
 
         static IEnumerable<NuGetScenario> GetAzureFunctionsNuGet(
