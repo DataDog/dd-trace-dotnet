@@ -1,0 +1,144 @@
+[
+  {
+    "description": "Selected by tag team:checkout.",
+    "flag": "checkout-banner",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "Selected by tag team:checkout.",
+    "flag": "checkout-pricing",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "Not selected: it has no selected tag and matches no key pattern, so the server omits it.",
+    "flag": "search-ranking",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: it has no selected tag and matches no key pattern, so the server omits it.",
+    "flag": "summer-sale",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: it has no selected tag and matches no key pattern, so the server omits it.",
+    "flag": "ops-kill-switch",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: it has no selected tag and matches no key pattern, so the server omits it.",
+    "flag": "untagged-flag",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  }
+]

@@ -1,0 +1,129 @@
+{
+  "name": "type-mismatch-all-types",
+  "description": "Wrong nonnumeric getters return TYPE_MISMATCH; an exact numeric conversion succeeds.",
+  "context": {
+    "targetingKey": "mismatch-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "fixture.mismatch.bool-as-string": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-bool",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.string-as-int": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-str",
+            "variationType": "string",
+            "variationValue": "hello",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.int-as-float": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-int",
+            "variationType": "integer",
+            "variationValue": 7,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.float-as-bool": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-float",
+            "variationType": "float",
+            "variationValue": 3.14,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.object-as-string": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-obj",
+            "variationType": "object",
+            "variationValue": {
+              "key": "value"
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.mismatch.bool-as-string",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "fallback",
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.string-as-int",
+      "variationType": "integer",
+      "defaultValue": -1,
+      "expectedResult": {
+        "value": -1,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.int-as-float",
+      "variationType": "float",
+      "defaultValue": 0.0,
+      "expectedResult": {
+        "value": 7,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "var-int"
+      }
+    },
+    {
+      "flag": "fixture.mismatch.float-as-bool",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.object-as-string",
+      "variationType": "string",
+      "defaultValue": "none",
+      "expectedResult": {
+        "value": "none",
+        "reason": "ERROR",
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 5
+      }
+    ]
+  }
+}

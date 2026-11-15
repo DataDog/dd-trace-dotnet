@@ -1,0 +1,59 @@
+{
+  "name": "obfuscation-reject-short-digest",
+  "description": "obfuscation reject short digest.",
+  "context": {
+    "targetingKey": "fixture-subject",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [],
+    "evaluationEvents": []
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "android",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "react-native",
+      "reason": "Reject invalid or unsupported encoding before installation."
+    },
+    {
+      "platform": "unity",
+      "reason": "Reject invalid or unsupported encoding before installation."
+    }
+  ],
+  "expectedResponseError": "INVALID_RESPONSE"
+}

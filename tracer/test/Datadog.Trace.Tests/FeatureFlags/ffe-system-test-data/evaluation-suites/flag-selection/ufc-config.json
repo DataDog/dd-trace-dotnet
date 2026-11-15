@@ -1,0 +1,177 @@
+{
+  "createdAt": "2026-11-03T00:00:00.000Z",
+  "format": "SERVER",
+  "environment": {
+    "name": "Test"
+  },
+  "flags": {
+    "checkout-banner": {
+      "key": "checkout-banner",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "checkout-pricing": {
+      "key": "checkout-pricing",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "search-ranking": {
+      "key": "search-ranking",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "summer-sale": {
+      "key": "summer-sale",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "ops-kill-switch": {
+      "key": "ops-kill-switch",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "untagged-flag": {
+      "key": "untagged-flag",
+      "enabled": true,
+      "variationType": "BOOLEAN",
+      "variations": {
+        "on": {
+          "key": "on",
+          "value": true
+        },
+        "off": {
+          "key": "off",
+          "value": false
+        }
+      },
+      "allocations": [
+        {
+          "key": "everyone",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "on",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    }
+  }
+}
