@@ -784,14 +784,8 @@ partial class Build
                         var dest = MonitoringHomeDirectory / destArch;
                         CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     }
-                    else if (IsOsx)
-                    {
-                        var libdatadogFileName = $"libdatadog_profiling.dylib";
 
-                        var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
-                        var dest = MonitoringHomeDirectory / "osx";
-                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                    }
+                    // We don't ship libdatadog on macOS, as none of the features that use it are supported there
                 });
 
     Target CopyNativeFilesForTests => _ => _
@@ -819,23 +813,23 @@ partial class Build
                 {
                     PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
                     PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch, "libdatadog_profiling.so"),
-                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", "libdatadog_profiling.dylib"),
+                    PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", null), // we don't ship libdatadog on macOS
                     _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
                 };
 
-                var libs = new[]
+                var libs = new List<(string Source, string Destination)> { ($"Datadog.Tracer.Native.{ext}", $"Datadog.Tracer.Native.{ext}") };
+                if (libdatadog is not null)
                 {
-                    (libdatadog, $"LibDatadog.{ext}"),
-                    ($"Datadog.Tracer.Native.{ext}", $"Datadog.Tracer.Native.{ext}"),
-                };
+                    libs.Add((libdatadog, $"LibDatadog.{ext}"));
+                }
 
                 foreach (var framework in frameworks)
                 {
                     var testBinFolder = GetProjectBinDirectory(project.Name, framework);
                     foreach (var lib in libs)
                     {
-                        var dest = testBinFolder / lib.Item2;
-                        CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
+                        var dest = testBinFolder / lib.Destination;
+                        CopyFile(source / lib.Source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
             }
