@@ -162,6 +162,19 @@ public class LineProbeResolverTest
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("/")]
+    [InlineData(@"\")]
+    public void FindPathThatEndsWithReturnsNullForEmptyQuery(string queryPath)
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(@"/_/src/MyFile.cs");
+
+        lookup.FindPathThatEndsWith(queryPath).Should().BeNull();
+    }
+
+    [Theory]
     [InlineData(@"/_/src/MyFile.cs", @"MyFile.cs")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"MyFile.cs")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"D:\agent\src\MyFile.cs")]
