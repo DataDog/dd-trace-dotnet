@@ -29,7 +29,7 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsModule : IDisposable
     {
-        // Deferred exposures in a row without a commit before the one-time warning.
+        // Deferred exposures without any commit call before the one-time warning.
         private const int UncommittedExposureWarningThreshold = 1_000;
 
         // Static, so the warning that debug logs include raw evaluation data is written once per
@@ -84,9 +84,10 @@ namespace Datadog.Trace.FeatureFlags
         private long _handlerDeliveredGeneration;
 
         // Only the provider's hooks commit deferred exposures. These detect hooks that never run, for
-        // example under a wrapper that drops them.
-        private int _exposuresDeferredSinceCommit;
-        private int _uncommittedExposuresWarned;
+        // example under a wrapper that drops them. Counting ends at the first commit call or the warning,
+        // so a healthy app writes neither field per exposure.
+        private int _exposuresDeferredWithoutCommit;
+        private int _uncommittedExposureCheckDone;
 
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
@@ -896,8 +897,12 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
         {
-            // A commit proves the provider's hooks run.
-            Volatile.Write(ref _exposuresDeferredSinceCommit, 0);
+            // A commit call proves the provider's hooks run.
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) == 0)
+            {
+                Volatile.Write(ref _uncommittedExposureCheckDone, 1);
+            }
+
             if (evaluationMetadata is not DeferredExposureMetadata deferred
                 || !deferred.TryTakePendingExposure(out var pending))
             {
@@ -915,17 +920,16 @@ namespace Datadog.Trace.FeatureFlags
 
         private void WarnIfExposuresStayUncommitted()
         {
-            // After the warning, stop writing the shared counter.
-            if (Volatile.Read(ref _uncommittedExposuresWarned) != 0)
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) != 0)
             {
                 return;
             }
 
-            if (Interlocked.Increment(ref _exposuresDeferredSinceCommit) == UncommittedExposureWarningThreshold
-                && Interlocked.Exchange(ref _uncommittedExposuresWarned, 1) == 0)
+            if (Interlocked.Increment(ref _exposuresDeferredWithoutCommit) == UncommittedExposureWarningThreshold
+                && Interlocked.Exchange(ref _uncommittedExposureCheckDone, 1) == 0)
             {
                 _log.Warning<int>(
-                    "Feature Flags: {Count} exposures in a row have not been recorded: their evaluations failed, or the Datadog provider's OpenFeature hooks did not commit them. Exposures are recorded and sent from those hooks: evaluate flags through an OpenFeature client, and if you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
+                    "Feature Flags: {Count} flag evaluations left their exposure uncommitted. The Datadog provider's OpenFeature hooks record and send exposures: evaluate flags through an OpenFeature client, and when you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
                     UncommittedExposureWarningThreshold);
             }
         }

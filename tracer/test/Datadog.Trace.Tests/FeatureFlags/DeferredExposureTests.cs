@@ -221,19 +221,30 @@ public class DeferredExposureTests
     }
 
     [Fact]
-    public void AnyCommitCallRestartsTheCountAndEachModuleWarnsOnce()
+    public void AnyCommitCallEndsTheCheck()
     {
         var logger = new Mock<IDatadogLogger>();
         using var module = Module(logger.Object);
 
         Defer(module, 999);
         module.CommitExposure(null).Should().Be(ExposureCommitResult.NothingPending);
-        Defer(module, 999);
+        Defer(module, 2_000);
+
         UncommittedWarnings(logger).Should().Be(0, "a commit call, even one that finds nothing pending, shows the provider's hooks run");
+    }
 
+    [Fact]
+    public void EachModuleWarnsOnce()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = Module(logger.Object);
+
+        Defer(module, 999);
+        UncommittedWarnings(logger).Should().Be(0);
         Defer(module, 1);
-        UncommittedWarnings(logger).Should().Be(1, "the 1,000th uncommitted exposure since the last commit warns");
+        UncommittedWarnings(logger).Should().Be(1, "the 1,000th uncommitted exposure warns");
 
+        Defer(module, 1_000);
         module.CommitExposure(null);
         Defer(module, 1_000);
         UncommittedWarnings(logger).Should().Be(1, "the warning is written once per module");
@@ -254,7 +265,7 @@ public class DeferredExposureTests
 
     private static int UncommittedWarnings(Mock<IDatadogLogger> logger)
         => logger.Invocations.Count(i => i.Method.Name == nameof(IDatadogLogger.Warning)
-                                      && i.Arguments.OfType<string>().Any(a => a.Contains("OpenFeature hooks did not commit")));
+                                      && i.Arguments.OfType<string>().Any(a => a.Contains("left their exposure uncommitted")));
 
     private static FeatureFlagsModule Module(IDatadogLogger? logger = null)
     {

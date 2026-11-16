@@ -150,7 +150,8 @@ the provider's hooks run:
 - If you wrap `DatadogProvider` in your own `FeatureProvider`, return its `GetProviderHooks()` from
   your wrapper and pass its `FlagMetadata` instance through unchanged; otherwise no exposure is
   sent, and the exposure decisions that `ExposureHook` reports are not reliable. When 1,000
-  exposures in a row are not recorded, the tracer logs a warning, once per tracer configuration.
+  flag evaluations leave their exposure uncommitted before the provider's hooks ever run, the tracer
+  logs a warning, once per tracer configuration.
 - Inside OpenFeature's `MultiProvider`, the provider's hooks run inside the multi-provider, before
   your client's `after` hooks. If one of those hooks then fails the evaluation, the exposure has
   already been recorded and queued for Datadog, and `ExposureHook` reports the evaluation as
