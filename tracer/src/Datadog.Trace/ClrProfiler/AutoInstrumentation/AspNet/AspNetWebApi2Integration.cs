@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var otelSemanticsEnabled = tracerSettings.OtelSemanticsEnabled;
                 var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
-                Uri requestUri = request.RequestUri;
+                Uri requestUri = GetAbsoluteRequestUri(request.RequestUri);
 
                 string method = StringUtil.ToUpperInvariant(request.Method.Method) ?? "GET";
                 string route = GetRouteTemplate(controllerContext);
@@ -278,7 +278,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     string host = request.Headers.Host ?? string.Empty;
-                    var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                    var url = requestUri is null ? null : HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
                     var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
 
                     span.DecorateWebServerSpan(
@@ -320,6 +320,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 Log.Error(ex, "Error populating scope data.");
             }
+        }
+
+        /// <summary>
+        /// Gets the absolute URI of the request, or <c>null</c> if it cannot be determined. Web API does not
+        /// require <c>HttpRequestMessage.RequestUri</c> to be absolute: application code, such as a per-route
+        /// message handler or the action itself, can replace it with a relative URI, and most <see cref="Uri"/>
+        /// members throw for a relative URI. When Web API is hosted by ASP.NET, a relative URI is resolved
+        /// against the URL of the System.Web request.
+        /// </summary>
+        /// <param name="requestUri">The URI of the request being traced</param>
+        private static Uri GetAbsoluteRequestUri(Uri requestUri)
+        {
+            if (requestUri is null || requestUri.IsAbsoluteUri)
+            {
+                return requestUri;
+            }
+
+            var baseUri = System.Web.HttpContext.Current?.Request is { } currentRequest ? RequestDataHelper.GetUrl(currentRequest) : null;
+            return HttpRequestUtils.GetAbsoluteUri(requestUri, baseUri);
         }
 
         /// <summary>

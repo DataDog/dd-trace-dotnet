@@ -132,5 +132,26 @@ namespace Datadog.Trace.Util.Http
         }
 
         internal static string GetNormalizedHost(string? host) => StringUtil.IsNullOrEmpty(host) ? NoHostSpecified : host;
+
+        /// <summary>
+        /// Gets an absolute version of <paramref name="uri"/> that is safe to pass to <see cref="GetUrl(Uri, QueryStringManager?)"/>.
+        /// Some frameworks, such as ASP.NET Web API, allow a request URI to be relative, and members such as
+        /// <see cref="Uri.Query"/> and <see cref="Uri.AbsolutePath"/> throw <see cref="InvalidOperationException"/> for a relative URI.
+        /// </summary>
+        /// <param name="uri">The URI to make absolute</param>
+        /// <param name="baseUri">The absolute URI that a relative <paramref name="uri"/> is resolved against, if known</param>
+        /// <returns><paramref name="uri"/> if it is already absolute, the result of resolving it against
+        /// <paramref name="baseUri"/> if it is relative, or <c>null</c> if no absolute URI can be determined.</returns>
+        internal static Uri? GetAbsoluteUri(Uri? uri, Uri? baseUri)
+        {
+            if (uri is null || uri.IsAbsoluteUri)
+            {
+                return uri;
+            }
+
+            return baseUri is { IsAbsoluteUri: true } && Uri.TryCreate(baseUri, uri, out var absoluteUri)
+                       ? absoluteUri
+                       : null;
+        }
     }
 }

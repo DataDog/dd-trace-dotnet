@@ -263,6 +263,59 @@ public class HttpRequestUtilsTests
         result.Should().Be(expected);
     }
 
+    [Theory]
+    [InlineData("/api/values?id=1")]
+    [InlineData("api/values")]
+    public void GetUrl_WithRelativeUri_Throws(string relativeUrl)
+    {
+        // Documents why callers must pass an absolute URI, e.g. by using GetAbsoluteUri() first
+        var uri = new Uri(relativeUrl, UriKind.Relative);
+        var queryStringManager = new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+
+        FluentActions.Invoking(() => HttpRequestUtils.GetUrl(uri, queryStringManager)).Should().Throw<InvalidOperationException>();
+    }
+
+    [Theory]
+    // Absolute URIs are returned as-is, whether or not there is a base
+    [InlineData("http://localhost/api/values?id=1", null, "http://localhost/api/values?id=1")]
+    [InlineData("http://localhost/api/values?id=1", "https://other:8443/", "http://localhost/api/values?id=1")]
+    // Relative URIs are resolved against the base
+    [InlineData("/api/values?id=1", "https://example.com:8443/app/api/values?id=1", "https://example.com:8443/api/values?id=1")]
+    [InlineData("/api/values", "http://localhost/", "http://localhost/api/values")]
+    [InlineData("values?id=2", "http://localhost/api/", "http://localhost/api/values?id=2")]
+    // Relative URIs without a usable base can't be made absolute
+    [InlineData("/api/values?id=1", null, null)]
+    public void GetAbsoluteUri_ShouldResolveRelativeUris(string url, string baseUrl, string expected)
+    {
+        var uri = new Uri(url, UriKind.RelativeOrAbsolute);
+        var baseUri = baseUrl is null ? null : new Uri(baseUrl);
+
+        var result = HttpRequestUtils.GetAbsoluteUri(uri, baseUri);
+
+        if (expected is null)
+        {
+            result.Should().BeNull();
+        }
+        else
+        {
+            result.Should().Be(new Uri(expected));
+            HttpRequestUtils.GetUrl(result).Should().Be(HttpRequestUtils.GetUrl(new Uri(expected)));
+        }
+    }
+
+    [Fact]
+    public void GetAbsoluteUri_WithRelativeBase_ReturnsNull()
+    {
+        var result = HttpRequestUtils.GetAbsoluteUri(new Uri("/api/values", UriKind.Relative), new Uri("/base/", UriKind.Relative));
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetAbsoluteUri_WithNullUri_ReturnsNull()
+    {
+        HttpRequestUtils.GetAbsoluteUri(null, new Uri("http://localhost/")).Should().BeNull();
+    }
+
     private class DerivedUri : Uri
     {
         public DerivedUri(string uriString)
