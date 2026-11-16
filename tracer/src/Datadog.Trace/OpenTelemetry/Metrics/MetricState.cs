@@ -16,7 +16,8 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
-/// Represents the state for a metric instrument, used to avoid ConcurrentDictionary contention
+/// Aggregation state of one metric stream, shared by the instruments with the same identity
+/// (one object per stream avoids ConcurrentDictionary contention).
 /// </summary>
 internal sealed class MetricState
 {
@@ -35,6 +36,10 @@ internal sealed class MetricState
     private int _pointCount;
     private MetricPoint? _overflowPoint;
 
+    // Live instruments recording into this stream (instruments with the same identity share it).
+    // Guarded by the MetricReaderHandler registration lock.
+    private int _instrumentCount = 1;
+
     public MetricState(MetricStreamIdentity identity, AggregationTemporality? temporality, int maxCardinality)
     {
         _identity = identity;
@@ -43,6 +48,11 @@ internal sealed class MetricState
     }
 
     public MetricStreamIdentity Identity => _identity;
+
+    public void AddInstrument() => _instrumentCount++;
+
+    /// <summary>Returns true when the last instrument recording into this stream was removed.</summary>
+    public bool RemoveInstrument() => --_instrumentCount == 0;
 
     public void RecordMeasurementLong(long value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
@@ -172,7 +182,10 @@ internal sealed class MetricState
             dict,
             _identity.Unit,
             _identity.Description,
-            _identity.IsLongType);
+            _identity.IsLongType)
+        {
+            MeterSchemaUrl = _identity.MeterSchemaUrl,
+        };
 
         // TryAdd (rather than GetOrAdd) so we increment _pointCount only when we insert,
         // in the case where two instances are racing to add the point
@@ -200,7 +213,10 @@ internal sealed class MetricState
             _identity.Unit,
             _identity.Description,
             _identity.IsLongType,
-            isOverflow: true);
+            isOverflow: true)
+        {
+            MeterSchemaUrl = _identity.MeterSchemaUrl,
+        };
 
         return Interlocked.CompareExchange(ref _overflowPoint, created, null) ?? created;
     }

@@ -97,12 +97,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             WriteVarInt(writer, data.Length);
             writer.Write(data);
 
-            // Group metrics by meter identity (name + version + tags)
+            // Group metrics by meter identity (name + version + tags + schema URL)
             var meterGroups = new Dictionary<string, List<MetricPoint>>();
             for (int i = 0; i < metrics.Count; i++)
             {
                 var metric = metrics[i];
-                var meterKey = $"{metric.MeterName}|{metric.MeterVersion}|{JoinMeterTags(metric.MeterTags)}";
+                var meterKey = $"{metric.MeterName}|{metric.MeterVersion}|{JoinMeterTags(metric.MeterTags)}|{metric.MeterSchemaUrl}";
 
                 if (!meterGroups.TryGetValue(meterKey, out var meterMetrics))
                 {
@@ -192,12 +192,14 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             var meterName = string.Empty;
             var meterVersion = string.Empty;
             var meterTags = Array.Empty<KeyValuePair<string, object?>>();
+            var meterSchemaUrl = string.Empty;
 
             if (metrics.Count > 0)
             {
                 meterName = metrics[0].MeterName;
                 meterVersion = metrics[0].MeterVersion;
                 meterTags = metrics[0].MeterTags;
+                meterSchemaUrl = metrics[0].MeterSchemaUrl;
             }
 
             var scopeData = SerializeInstrumentationScope(meterName, meterVersion, meterTags);
@@ -249,6 +251,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     writer.Write(metricData);
                 }
             }
+
+            WriteStringField(writer, FieldNumbers.ScopeSchemaUrl, meterSchemaUrl);
 
             return buffer.ToArray();
         }
@@ -599,6 +603,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             // ScopeMetrics
             public const int Scope = 1;
             public const int Metrics = 2;
+            public const int ScopeSchemaUrl = 3;
 
             // InstrumentationScope
             public const int Name = 1;

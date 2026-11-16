@@ -24,6 +24,30 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Metrics;
 [Collection(nameof(MeterListenerTests))]
 public class OtlpMetricsSerializerTests
 {
+#if NET10_0_OR_GREATER
+    [Fact]
+    public async Task MetersThatDifferOnlyBySchemaUrlAreExportedAsSeparateScopes()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        using var meter1 = new Meter(new MeterOptions("TestMeter.SchemaUrl") { TelemetrySchemaUrl = "https://opentelemetry.io/schemas/1.0.0" });
+        using var meter2 = new Meter(new MeterOptions("TestMeter.SchemaUrl") { TelemetrySchemaUrl = "https://opentelemetry.io/schemas/2.0.0" });
+        meter1.CreateCounter<long>("test.schema.counter").Add(1);
+        meter2.CreateCounter<long>("test.schema.counter").Add(2);
+        await pipeline.ForceCollectAndExportAsync();
+
+        var scopes = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                .Where(s => s.Scope.Name == "TestMeter.SchemaUrl");
+
+        scopes.Select(s => (s.SchemaUrl, s.Metrics.Single().Sum.DataPoints.Single().AsInt))
+              .Should().BeEquivalentTo([("https://opentelemetry.io/schemas/1.0.0", 1L), ("https://opentelemetry.io/schemas/2.0.0", 2L)]);
+    }
+#endif
+
     [Theory]
     [InlineData("cumulative", "Cumulative", "Cumulative")]
     [InlineData("delta", "Delta", "Delta")]
