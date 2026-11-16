@@ -1,8 +1,8 @@
 _v: 1
 name: AspNetWebApi2
 display_name: ASP.NET Web API 2
-description: Instruments inbound ASP.NET Web API 2 controller requests, including routing, errors, and optional Application
-  Security and IAST processing.
+description: Instruments incoming ASP.NET Web API 2 HTTP requests with route metadata and exceptions, and optionally monitors
+  request and response data for application security.
 packages:
 - name: Microsoft.AspNet.WebApi.Core
 category:

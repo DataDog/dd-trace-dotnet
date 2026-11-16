@@ -1,12 +1,12 @@
 _v: 1
 name: OpenTelemetry
 display_name: OpenTelemetry
-description: Instruments OpenTelemetry Activity spans, synchronizes OpenTelemetry baggage with Datadog baggage, and copies
-  tracer-provider resource attributes.
+description: Converts OpenTelemetry API and System.Diagnostics.Activity spans into Datadog spans, applying OpenTelemetry resource
+  attributes, and synchronizes OpenTelemetry Baggage with Datadog baggage.
 packages:
 - name: OpenTelemetry
 - name: OpenTelemetry.Api
 category:
 - other
 systems: []
-creation_date: '2022-12-16'
+creation_date: '2022-04-22'

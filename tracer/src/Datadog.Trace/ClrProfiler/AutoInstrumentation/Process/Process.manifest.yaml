@@ -1,8 +1,8 @@
 _v: 1
 name: Process
 display_name: Process
-description: Instruments System.Diagnostics.Process.Start calls that launch commands, emitting command-execution spans with
-  optional command details and command-injection security checks.
+description: Instruments .NET System.Diagnostics.Process.Start calls that launch child processes, tracing command execution
+  and optionally collecting command details while enabling command-injection analysis and protection.
 packages: []
 category:
 - task.execution

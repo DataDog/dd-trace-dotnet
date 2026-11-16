@@ -1,8 +1,8 @@
 _v: 1
 name: NLog
 display_name: NLog
-description: Instruments NLog log-record emission by injecting trace correlation data and, when enabled, formatting and directly
-  submitting records to Datadog.
+description: Instruments NLog log records by injecting trace correlation identifiers and optionally submitting logs directly
+  to Datadog.
 packages:
 - name: NLog
 category:

@@ -1,8 +1,8 @@
 _v: 1
 name: Log4Net
-display_name: Log4Net
-description: Instruments Log4Net application log emission by enriching log records with trace-correlation and service metadata
-  and, when enabled, directly submitting them.
+display_name: log4net
+description: Instruments log4net to inject trace-correlation fields into log events and, when configured, submit formatted
+  log records directly to Datadog.
 packages:
 - name: log4net
 category:

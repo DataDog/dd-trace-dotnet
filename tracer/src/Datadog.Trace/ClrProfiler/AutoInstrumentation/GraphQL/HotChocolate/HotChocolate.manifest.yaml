@@ -1,7 +1,8 @@
 _v: 1
 name: HotChocolate
-display_name: HotChocolate
-description: Instruments server-side GraphQL query, mutation, and subscription execution in HotChocolate.
+display_name: Hot Chocolate
+description: Instruments Hot Chocolate server-side GraphQL query and mutation request execution, including validation and
+  execution errors.
 packages:
 - name: HotChocolate
 - name: HotChocolate.AspNetCore

@@ -1,8 +1,8 @@
 _v: 1
 name: AspNetMvc
 display_name: ASP.NET MVC
-description: Instruments incoming HTTP requests and controller actions in ASP.NET MVC, with optional application-security
-  monitoring of action parameters and JSON responses.
+description: Instruments ASP.NET MVC controller actions as inbound HTTP server requests, including optional application-security
+  and IAST monitoring.
 packages:
 - name: Microsoft.AspNet.Mvc
 category:
