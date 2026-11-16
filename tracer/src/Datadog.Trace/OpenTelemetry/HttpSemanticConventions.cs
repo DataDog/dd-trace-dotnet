@@ -131,7 +131,7 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="userAgent">The value of the "User-Agent" request header.</param>
         /// <param name="protocol">The request protocol.</param>
         /// <param name="hostHeader">The value of the request's Host header, if any</param>
-        /// <param name="requestUri">The absolute URI of the request, if known</param>
+        /// <param name="requestUri">The URI of the request, if known. If it is relative, only "url.path" and "url.query" are set from it.</param>
         /// <param name="queryStringManager">Used to truncate and obfuscate the query string</param>
         internal static void SetHttpServerRequestValues(
             Span span,
@@ -154,13 +154,25 @@ namespace Datadog.Trace.OpenTelemetry
             tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
             tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
 
-            if (requestUri is not null)
+            string? queryString = null;
+            if (requestUri is { IsAbsoluteUri: true })
             {
                 tags.UrlScheme = requestUri.Scheme;
                 tags.UrlPath = requestUri.AbsolutePath;
+                queryString = requestUri.Query;
+            }
+            else if (requestUri is not null)
+            {
+                // Some frameworks, such as ASP.NET Web API, allow the request URI to be relative. Most Uri members
+                // throw for a relative URI, and the scheme and host are unknown, but the path and query are not
+                HttpRequestUtils.GetRelativeUriPathAndQuery(requestUri, out var path, out queryString);
+                tags.UrlPath = path;
+            }
 
+            if (queryString is not null)
+            {
                 // "url.query" excludes the leading '?'
-                var query = queryStringManager?.TruncateAndObfuscate(requestUri.Query) ?? string.Empty;
+                var query = queryStringManager?.TruncateAndObfuscate(queryString) ?? string.Empty;
                 tags.UrlQuery = query.Length switch
                 {
                     0 => null,
@@ -169,7 +181,7 @@ namespace Datadog.Trace.OpenTelemetry
                 };
             }
 
-            SetServerAddressAndPort(tags, hostHeader, requestUri);
+            SetServerAddressAndPort(tags, hostHeader, requestUri is { IsAbsoluteUri: true } ? requestUri : null);
         }
 
         /// <summary>

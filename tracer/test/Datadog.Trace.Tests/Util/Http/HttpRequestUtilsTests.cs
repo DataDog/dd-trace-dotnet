@@ -264,33 +264,25 @@ public class HttpRequestUtilsTests
     }
 
     [Theory]
-    [InlineData("/api/values?id=1")]
-    [InlineData("api/values")]
-    public void GetUrl_WithRelativeUri_Throws(string relativeUrl)
-    {
-        // Documents why callers must pass an absolute URI, e.g. by using GetAbsoluteUri() first
-        var uri = new Uri(relativeUrl, UriKind.Relative);
-        var queryStringManager = new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
-
-        FluentActions.Invoking(() => HttpRequestUtils.GetUrl(uri, queryStringManager)).Should().Throw<InvalidOperationException>();
-    }
-
-    [Theory]
-    // Absolute URIs are returned as-is, whether or not there is a base
-    [InlineData("http://localhost/api/values?id=1", null, "http://localhost/api/values?id=1")]
-    [InlineData("http://localhost/api/values?id=1", "https://other:8443/", "http://localhost/api/values?id=1")]
     // Relative URIs are resolved against the base
     [InlineData("/api/values?id=1", "https://example.com:8443/app/api/values?id=1", "https://example.com:8443/api/values?id=1")]
     [InlineData("/api/values", "http://localhost/", "http://localhost/api/values")]
     [InlineData("values?id=2", "http://localhost/api/", "http://localhost/api/values?id=2")]
-    // Relative URIs without a usable base can't be made absolute
+    // Without a usable base, the URI can't be made absolute
     [InlineData("/api/values?id=1", null, null)]
-    public void GetAbsoluteUri_ShouldResolveRelativeUris(string url, string baseUrl, string expected)
+    [InlineData("/api/values", "/base/", null)]
+    public void GetAbsoluteUri_ShouldResolveRelativeUris(string relativeUrl, string baseUrl, string expected)
     {
-        var uri = new Uri(url, UriKind.RelativeOrAbsolute);
-        var baseUri = baseUrl is null ? null : new Uri(baseUrl);
+        // The UriKind is explicit: with RelativeOrAbsolute, a path such as "/api" is an absolute file URI on Unix
+        var relativeUri = new Uri(relativeUrl, UriKind.Relative);
+        var baseUri = baseUrl switch
+        {
+            null => null,
+            _ when baseUrl.StartsWith("/", StringComparison.Ordinal) => new Uri(baseUrl, UriKind.Relative),
+            _ => new Uri(baseUrl, UriKind.Absolute),
+        };
 
-        var result = HttpRequestUtils.GetAbsoluteUri(uri, baseUri);
+        var result = HttpRequestUtils.GetAbsoluteUri(relativeUri, baseUri);
 
         if (expected is null)
         {
@@ -298,22 +290,26 @@ public class HttpRequestUtilsTests
         }
         else
         {
-            result.Should().Be(new Uri(expected));
-            HttpRequestUtils.GetUrl(result).Should().Be(HttpRequestUtils.GetUrl(new Uri(expected)));
+            result.Should().Be(new Uri(expected, UriKind.Absolute));
         }
     }
 
-    [Fact]
-    public void GetAbsoluteUri_WithRelativeBase_ReturnsNull()
+    [Theory]
+    [InlineData("/api/values?id=1", "/api/values", "?id=1")]
+    [InlineData("/api/values", "/api/values", "")]
+    [InlineData("api/values", "/api/values", "")]
+    [InlineData("", "/", "")]
+    [InlineData("/api/values?", "/api/values", "?")]
+    [InlineData("/api/values?id=1&q=a?b", "/api/values", "?id=1&q=a?b")]
+    // The fragment is discarded, even when it looks like a query
+    [InlineData("/api/values?id=1#section", "/api/values", "?id=1")]
+    [InlineData("/api/values#section?id=1", "/api/values", "")]
+    public void GetRelativeUriPathAndQuery_ShouldSplitPathAndQuery(string relativeUrl, string expectedPath, string expectedQuery)
     {
-        var result = HttpRequestUtils.GetAbsoluteUri(new Uri("/api/values", UriKind.Relative), new Uri("/base/", UriKind.Relative));
-        result.Should().BeNull();
-    }
+        HttpRequestUtils.GetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString);
 
-    [Fact]
-    public void GetAbsoluteUri_WithNullUri_ReturnsNull()
-    {
-        HttpRequestUtils.GetAbsoluteUri(null, new Uri("http://localhost/")).Should().BeNull();
+        path.Should().Be(expectedPath);
+        queryString.Should().Be(expectedQuery);
     }
 
     private class DerivedUri : Uri

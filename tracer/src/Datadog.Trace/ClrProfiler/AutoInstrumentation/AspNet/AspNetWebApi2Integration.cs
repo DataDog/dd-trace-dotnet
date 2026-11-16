@@ -205,7 +205,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var otelSemanticsEnabled = tracerSettings.OtelSemanticsEnabled;
                 var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
-                Uri requestUri = GetAbsoluteRequestUri(request.RequestUri);
+                Uri originalRequestUri = request.RequestUri;
+                Uri requestUri = GetAbsoluteRequestUri(originalRequestUri);
 
                 string method = StringUtil.ToUpperInvariant(request.Method.Method) ?? "GET";
                 string route = GetRouteTemplate(controllerContext);
@@ -272,7 +273,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         userAgent: request.Headers.UserAgent?.ToString(),
                         protocol: GetCurrentRequestProtocol(request),
                         hostHeader: request.Headers.Host,
-                        requestUri: requestUri,
+                        // a relative URI that can't be resolved still provides url.path and url.query
+                        requestUri: requestUri ?? originalRequestUri,
                         queryStringManager: tracer.TracerManager.QueryStringManager);
                 }
                 else
