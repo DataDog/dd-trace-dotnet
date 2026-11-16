@@ -104,14 +104,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 localDestPath = Path.Combine(localDestPathFolder, ApplicationMonitoringYaml);
                 fleetDestPath = Path.Combine(fleetDestPathFolder, ApplicationMonitoringYaml);
             }
-            else if (EnvironmentTools.IsOsx())
-            {
-                // even if it's skipped on mac keep it for local debugging purpose
-                localDestPathFolder = "/opt/datadog-agent/etc/";
-                fleetDestPathFolder = "/opt/datadog-agent/etc/stable/";
-                localDestPath = Path.Combine(localDestPathFolder, ApplicationMonitoringYaml);
-                fleetDestPath = Path.Combine(fleetDestPathFolder, ApplicationMonitoringYaml);
-            }
 
             SaveOriginalFiles(localDestPath, localDestPathFolder);
             SaveOriginalFiles(fleetDestPath, fleetDestPathFolder);
@@ -170,6 +162,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task SetupAndCheck(string logFolder, string? localKey, string? localValue, string? fleetKey, string? fleetValue, string logKey, string expectedValue)
         {
+            // We don't ship libdatadog on macOS, so hands-off configuration is not supported
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             var logDir = Path.Combine(LogDirectory, logFolder);
             Directory.CreateDirectory(logDir);
             SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
