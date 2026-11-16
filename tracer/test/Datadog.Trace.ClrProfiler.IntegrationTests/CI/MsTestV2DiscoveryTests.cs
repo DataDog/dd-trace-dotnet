@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -104,13 +103,6 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 
     private async Task RunDiscoveryScenario(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp, string additionalSample = null)
     {
-        if (expectedTests > 0 && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-        {
-            // On Linux ARM64 the testhost cannot initialize IPC. Even cases that do not assert "faulty" fail the log check.
-            // Empty runs do not create an IPC client; MTP uses the same runtime at both ends. Keep both enabled.
-            SkipIfVSTestCannotShareNamedMutexes();
-        }
-
         EnvironmentHelper.EnableDefaultTransport();
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");

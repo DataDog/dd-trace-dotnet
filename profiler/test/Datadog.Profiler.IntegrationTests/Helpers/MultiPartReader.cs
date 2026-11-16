@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -16,126 +17,59 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         // boundary is set in request ContentType
         //     multipart/form-data; boundary=uHOg3S
         // --> --uHOg3S
+        private const string ContentTypePrefix = "multipart/form-data";
         private const string ContentTypeBoundary = "boundary=";
-        private const int NewLibeBytesSize = 2;
+        private const int MaxBodyBytes = 1024 * 1024 * 2;
 
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
-        private readonly byte[] MinusBytes = Encoding.ASCII.GetBytes("-");
         private readonly byte[] NewLineBytes = { 0x0d, 0x0a };
 #pragma warning restore SA1306 // Field names should begin with lower-case letter
 
-        private HttpListenerRequest _request;
+        private readonly string _contentType;
+        private readonly Encoding _encoding;
+        private readonly List<MultiPartPart> _files;
+
         private byte[] _buffer;
-        private byte[] _boundaryBytes;
-        private int _boundarySize;
+        private byte[] _delimiterBytes;
+        private byte[] _separatorBytes;
 
-        private List<MultiPartFileInfo> _files;
-
-        public MultiPartReader(HttpListenerRequest request)
+        private MultiPartReader(string contentType, Encoding encoding)
         {
-            _request = request;
-            _files = new List<MultiPartFileInfo>();
+            _contentType = contentType;
+            _encoding = encoding;
+            _files = new List<MultiPartPart>();
         }
 
-        public List<MultiPartFileInfo> Files
+        public static bool TryParse(HttpListenerRequest request, out MultiPartUpload upload)
         {
-            get
+            if (request.ContentType is null || !request.ContentType.StartsWith(ContentTypePrefix))
             {
-                return _files;
-            }
-        }
-
-        public string GetStringFile(int start, int size)
-        {
-            if ((start + size) > _buffer.Length)
-            {
-                return string.Empty;
+                upload = null;
+                return false;
             }
 
-            return _request.ContentEncoding.GetString(_buffer, start, size);
+            // Leave the request stream open: HttpListener still owns it.
+            using var reader = new BinaryReader(request.InputStream, request.ContentEncoding, leaveOpen: true);
+            var body = reader.ReadBytes(MaxBodyBytes);
+            return TryParse(request.ContentType, body, request.ContentEncoding, out upload);
         }
 
-        // The different files are separated by a "boundary" specified in the request ContentType
-        //
-        //  --boundary\r\n
-        //  content-type: application/json\r\n
-        //  content-disposition: form-data; name="event"; filename="event.json"\r\n
-        //  \r\n
-        //   ...
-        //  \r\n--boundary\r\n
-        //  content-type: application/octet-stream\r\n
-        //  content-disposition: form-data; name="auto.pprof"; filename="auto.pprof"\r\n
-        //  \r\n
-        //  ...
-        //  \r\n--boundary\r\n
-        //  content-type: application/octet-stream\r\n
-        //  content-disposition: form-data; name="metrics.json"; filename="metrics.json"\r\n
-        //  \r\n
-        //  ...
-        //  \r\n--boundary--
-        //
-        // Since .pprof are binary files, it is needed to parse the body as binary
-        // The .json file encoding is given by the request ContentEncoding
-        public bool Parse()
+        public static bool TryParse(string contentType, byte[] body, Encoding encoding, out MultiPartUpload upload)
         {
-            // the boundary string pattern is stored in ContentType
-            var boundary = ExtractBoundary(_request.ContentType);
-            if (boundary == null)
+            upload = null;
+            if (contentType is null || !contentType.StartsWith(ContentTypePrefix) || body is null || encoding is null)
             {
                 return false;
             }
 
-            _boundaryBytes = _request.ContentEncoding.GetBytes(boundary);
-            _boundarySize = _boundaryBytes.Length;
-
-            // read the entire body (should not be too big in tests)
-            // _request.ContentLength64 is -1 so use a fixed size
-            var reader = new BinaryReader(_request.InputStream);
-            _buffer = reader.ReadBytes(1024 * 1024 * 2);
-
-            // iterate on each file
-            int pos = 0;
-            while (true)
+            var parser = new MultiPartReader(contentType, encoding);
+            if (!parser.Parse(body))
             {
-                // skip boundary
-                pos = IndexAfterBoundary(pos);
-                if (pos == -1)
-                {
-                    return false;
-                }
-
-                pos += NewLibeBytesSize;
-
-                pos = ReadHeaders(pos, out var contentType, out var name, out var filename);
-                if (pos == -1)
-                {
-                    return false;
-                }
-
-                // file bytes start from pos
-
-                // look for the next one (or final boundary followed by --)
-                var next = IndexAfterBoundary(pos);
-                if (next == -1)
-                {
-                    return false;
-                }
-
-                _files.Add(new MultiPartFileInfo()
-                {
-                    ContentType = contentType,
-                    Name = name,
-                    FileName = filename,
-                    BytesPos = pos,
-                    BytesSize = next - pos - _boundarySize - NewLineBytes.Length
-                });
-
-                // check for the last file
-                if ((_buffer[next] == MinusBytes[0]) && (_buffer[next + 1] == MinusBytes[0]))
-                {
-                    return true;
-                }
+                return false;
             }
+
+            upload = new MultiPartUpload(parser._files);
+            return true;
         }
 
         private static string ExtractBoundary(string contentType)
@@ -179,35 +113,136 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return null;
         }
 
-        // return the position in _buffer AFTER the given array of bytes
-        private int IndexAfter(int pos, byte[] bytes, int size)
+        // The different files are separated by a "boundary" specified in the request ContentType
+        //
+        //  --boundary\r\n
+        //  content-type: application/json\r\n
+        //  content-disposition: form-data; name="event"; filename="event.json"\r\n
+        //  \r\n
+        //   ...
+        //  \r\n--boundary\r\n
+        //  content-type: application/octet-stream\r\n
+        //  content-disposition: form-data; name="auto.pprof"; filename="auto.pprof"\r\n
+        //  \r\n
+        //  ...
+        //  \r\n--boundary--
+        //
+        // Since .pprof are binary files, it is needed to parse the body as binary
+        // The .json file encoding is given by the request ContentEncoding
+        //
+        // A delimiter is "\r\n--boundary" followed by "\r\n" or "--". The boundary token
+        // found anywhere else (for example inside a binary payload) is part of the payload.
+        private bool Parse(byte[] body)
         {
-            int current = 0;
-            while (pos < _buffer.Length)
+            _buffer = body;
+
+            // the boundary string pattern is stored in ContentType
+            var boundary = ExtractBoundary(_contentType);
+            if (boundary == null)
             {
-                if (_buffer[pos] == bytes[current])
-                {
-                    current++;
+                return false;
+            }
 
-                    if (current == size)
-                    {
-                        return pos + 1;
-                    }
-                }
-                else
+            _delimiterBytes = _encoding.GetBytes(boundary);
+            _separatorBytes = new byte[NewLineBytes.Length + _delimiterBytes.Length];
+            NewLineBytes.CopyTo(_separatorBytes, 0);
+            _delimiterBytes.CopyTo(_separatorBytes, NewLineBytes.Length);
+
+            // the body starts with the first delimiter
+            if (!_buffer.AsSpan().StartsWith(_delimiterBytes))
+            {
+                return false;
+            }
+
+            int pos = _delimiterBytes.Length;
+
+            // iterate on each file
+            while (true)
+            {
+                // the delimiter is followed by "--" (last one) or by a new line
+                if (pos + 2 > _buffer.Length)
                 {
-                    current = 0;
+                    return false;
                 }
 
-                pos++;
+                if (_buffer[pos] == (byte)'-' && _buffer[pos + 1] == (byte)'-')
+                {
+                    return true;
+                }
+
+                if (!IsNewLine(pos))
+                {
+                    return false;
+                }
+
+                pos += NewLineBytes.Length;
+
+                pos = ReadHeaders(pos, out var contentType, out var name, out var filename);
+                if (pos == -1)
+                {
+                    return false;
+                }
+
+                // file bytes start from pos: look for the next delimiter
+                var next = IndexOfDelimiter(pos);
+                if (next == -1)
+                {
+                    return false;
+                }
+
+                var bytes = _buffer.AsSpan(pos, next - pos).ToArray();
+                _files.Add(new MultiPartPart(contentType, name, filename, bytes, _encoding));
+
+                pos = next + _separatorBytes.Length;
+            }
+        }
+
+        private bool IsNewLine(int pos)
+        {
+            return pos + NewLineBytes.Length <= _buffer.Length &&
+                   _buffer[pos] == NewLineBytes[0] &&
+                   _buffer[pos + 1] == NewLineBytes[1];
+        }
+
+        // return the position of the new line that starts the next delimiter, or -1.
+        // The delimiter must be followed by a new line or by "--".
+        private int IndexOfDelimiter(int pos)
+        {
+            while (pos <= _buffer.Length)
+            {
+                var index = _buffer.AsSpan(pos).IndexOf(_separatorBytes);
+                if (index == -1)
+                {
+                    return -1;
+                }
+
+                var start = pos + index;
+                var after = start + _separatorBytes.Length;
+                if (IsNewLine(after) ||
+                    (after + 2 <= _buffer.Length && _buffer[after] == (byte)'-' && _buffer[after + 1] == (byte)'-'))
+                {
+                    return start;
+                }
+
+                // the token is part of the payload
+                pos = start + 1;
             }
 
             return -1;
         }
 
-        private int IndexAfterBoundary(int pos)
+        // return the position of the first new line at or after pos, or -1
+        private int IndexOfNewLine(int pos)
         {
-            return IndexAfter(pos, _boundaryBytes, _boundarySize);
+            for (; pos + NewLineBytes.Length <= _buffer.Length; pos++)
+            {
+                if (IsNewLine(pos))
+                {
+                    return pos;
+                }
+            }
+
+            return -1;
         }
 
         private int ReadHeaders(int pos, out string contentType, out string name, out string filename)
@@ -218,14 +253,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             while (true)
             {
-                var next = IndexAfter(pos, NewLineBytes, NewLineBytes.Length);
-                if (next == -1)
+                var end = IndexOfNewLine(pos);
+                if (end == -1)
                 {
                     return -1;
                 }
 
-                var line = _request.ContentEncoding.GetString(_buffer, pos, next - pos - NewLineBytes.Length);
-                pos = next;
+                var line = _encoding.GetString(_buffer, pos, end - pos);
+                pos = end + NewLineBytes.Length;
 
                 // blank line ends the headers and the payload starts immediately after it
                 if (string.IsNullOrEmpty(line))
@@ -258,17 +293,77 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
-        internal class MultiPartFileInfo
+        internal sealed class MultiPartUpload
         {
-            public string ContentType { get; set; }
+            private readonly List<MultiPartPart> _files;
 
-            public string Name { get; set; }
+            internal MultiPartUpload(List<MultiPartPart> files)
+            {
+                _files = files;
+            }
 
-            public string FileName { get; set; }
+            public IReadOnlyList<MultiPartPart> Files
+            {
+                get { return _files; }
+            }
 
-            public int BytesPos { get; set; }
+            public bool ContainsFile(string fileName)
+            {
+                return TryGetFile(fileName, out _);
+            }
 
-            public int BytesSize { get; set; }
+            public bool TryGetFile(string fileName, out MultiPartPart part)
+            {
+                foreach (var candidate in _files)
+                {
+                    if (candidate.FileName == fileName)
+                    {
+                        part = candidate;
+                        return true;
+                    }
+                }
+
+                part = null;
+                return false;
+            }
+        }
+
+        internal sealed class MultiPartPart
+        {
+            private readonly byte[] _bytes;
+            private readonly Encoding _encoding;
+
+            internal MultiPartPart(string contentType, string name, string fileName, byte[] bytes, Encoding encoding)
+            {
+                ContentType = contentType;
+                Name = name;
+                FileName = fileName;
+                _bytes = bytes;
+                _encoding = encoding;
+            }
+
+            public string ContentType { get; }
+
+            public string Name { get; }
+
+            public string FileName { get; }
+
+            public byte[] ReadBytes()
+            {
+                var copy = new byte[_bytes.Length];
+                _bytes.CopyTo(copy, 0);
+                return copy;
+            }
+
+            public string ReadText()
+            {
+                return _encoding.GetString(_bytes);
+            }
+
+            public JsonDocument ReadJson()
+            {
+                return JsonDocument.Parse(ReadText());
+            }
         }
     }
 }

@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -53,7 +54,7 @@ public sealed class SpanExtensionsSetTagIntegration
         {
             // This is a worst case, should basically never be necessary
             // Only required if customers create a custom ISpan
-            span.DuckCast<ISpanSetTagProxy>()!.SetTag(key, value?.ToString());
+            span.DuckCast<ISpanSetTagProxy>()!.SetTag(key, value?.ToStringInvariant());
         }
 
         // The default implementation returns the span

@@ -7,6 +7,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -49,7 +50,7 @@ internal abstract class CommandBase : Command
 
         if (version.Major < 10)
         {
-            errorMessage = $"This installer requires IIS 10.0 or later. Detected IIS version {version.Major}.{version.Minor}";
+            errorMessage = $"This installer requires IIS 10.0 or later. Detected IIS version {version.Major.ToString(CultureInfo.InvariantCulture)}.{version.Minor.ToString(CultureInfo.InvariantCulture)}";
             return false;
         }
 

@@ -292,14 +292,14 @@ namespace Datadog.Trace.Agent
             var apmTracingEnabled = state.ApmTracingEnabled;
 
             // Set additional headers
-            request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
+            request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToStringInvariant());
             request.AddContainerMetadataHeaders(_containerMetadata);
 
             if (statsComputationEnabled)
             {
                 request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
-                request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
-                request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString());
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToStringInvariant());
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToStringInvariant());
             }
             else if (!apmTracingEnabled)
             {
@@ -330,7 +330,7 @@ namespace Datadog.Trace.Agent
                 if (healthStats != null)
                 {
                     // don't bother creating the tags array if trace metrics are disabled
-                    string[] tags = { $"status:{response.StatusCode}" };
+                    string[] tags = { StringUtil.Invariant($"status:{response.StatusCode}") };
 
                     // count every response, grouped by status code
                     healthStats.Increment(TracerMetricNames.Api.Responses, tags: tags);
