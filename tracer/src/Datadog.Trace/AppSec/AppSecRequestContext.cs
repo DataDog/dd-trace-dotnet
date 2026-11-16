@@ -41,14 +41,11 @@ internal sealed partial class AppSecRequestContext
             {
                 // Older version of the Agent doesn't support meta struct
                 // Fallback to the _dd.appsec.json tag
-                var metaStructSupported = Security.Instance.IsMetaStructSupported();
-                if (metaStructSupported || span.Context.TraceContext?.Tracer.Settings.Manager.InitialExporterSettings.IsOtlpTraceExport == true)
+                if (Security.Instance.IsMetaStructSupported())
                 {
                     span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
                 }
-
-                // Keep the JSON fallback for older Agents and Collectors, including when OTLP also carries bytes.
-                if (!metaStructSupported)
+                else
                 {
                     var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
                     span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");

@@ -276,11 +276,14 @@ internal static class OtlpMapper
             WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.ApmEnabled, 0.0), limit, ref count, ref droppedAttributesCount);
         }
 
-        if (Security.Instance.AppsecEnabled && spanModel.IsLocalRoot && spanModel.Span.Context.TraceContext?.WafExecuted is true)
+        if (spanModel.IsLocalRoot && spanModel.Span.Context.TraceContext?.WafExecuted is true && Security.Instance.AppsecEnabled)
         {
             WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.AppSecEnabled, 1.0), limit, ref count, ref droppedAttributesCount);
             WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.RuntimeFamily, TracerConstants.Language), limit, ref count, ref droppedAttributesCount);
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.AppSecRuleFileVersion, Security.Instance.WafRuleFileVersion), limit, ref count, ref droppedAttributesCount);
+            if (Security.Instance.WafRuleFileVersion is { } ruleFileVersion)
+            {
+                WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.AppSecRuleFileVersion, ruleFileVersion), limit, ref count, ref droppedAttributesCount);
+            }
         }
 
         var metaStructWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors: null, count, limit);

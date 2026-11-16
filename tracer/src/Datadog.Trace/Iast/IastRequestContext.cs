@@ -1,4 +1,4 @@
-// <copyright file="IastRequestContext.cs" company="Datadog">
+﻿// <copyright file="IastRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -68,8 +68,7 @@ internal sealed class IastRequestContext
 
             if (_vulnerabilityBatch != null)
             {
-                var metaStructSupported = Iast.Instance.IsMetaStructSupported();
-                if (metaStructSupported || span.Context.TraceContext?.Tracer.Settings.Manager.InitialExporterSettings.IsOtlpTraceExport == true)
+                if (Iast.Instance.IsMetaStructSupported())
                 {
                     span.SetMetaStruct(IastModule.IastMetaStructKey, _vulnerabilityBatch.ToMessagePack());
                     if (_vulnerabilityBatch.IsTruncated())
@@ -77,9 +76,7 @@ internal sealed class IastRequestContext
                         span.Tags.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
                     }
                 }
-
-                // Keep the JSON fallback for older Agents and Collectors, including when OTLP also carries bytes.
-                if (!metaStructSupported)
+                else
                 {
                     span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
                     if (_vulnerabilityBatch.IsTruncated())
