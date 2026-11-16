@@ -866,7 +866,9 @@ internal static class IntegrationMapper
         }
 
         Log.Debug("UnwrapTaskReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
+#pragma warning disable MA0022 // Return Task.FromResult instead of returning null - must mirror the null Task returned by the instrumented method
         return null;
+#pragma warning restore MA0022
 
         static async Task<TTo?> InternalUnwrapTaskReturnValue(Task<TFrom?> returnValue, bool preserveContext)
             => UnwrapReturnValue<TFrom, TTo>(await returnValue.ConfigureAwait(preserveContext));

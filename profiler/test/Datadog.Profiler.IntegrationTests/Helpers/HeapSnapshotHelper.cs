@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
 using System.Net;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -12,22 +11,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     {
         public static bool HasHeapSnapshot(HttpListenerRequest request)
         {
-            if (!request.ContentType.StartsWith("multipart/form-data"))
-            {
-                return false;
-            }
-
-            var mpReader = new MultiPartReader(request);
-            if (!mpReader.Parse())
-            {
-                return false;
-            }
-
-            var files = mpReader.Files;
-            var heapSnapshotFileInfo = files.FirstOrDefault(f => f.FileName == "histogram.json");
-            return (heapSnapshotFileInfo != null);
-
-            // we can't check the file content because it may be compacted
+            // The histogram may be compacted, so only the part name is checked.
+            return MultiPartReader.TryParse(request, out var upload)
+                && upload.ContainsFile("histogram.json");
         }
     }
 }

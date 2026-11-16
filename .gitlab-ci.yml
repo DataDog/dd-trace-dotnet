@@ -50,6 +50,11 @@ variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "745818b5d65805d5852b07cbdf4d09c29b3da6c9"   # v0.1.6 (must match include ref above)
 
+# Enable on demand or in a schedule with LLMVAL_SETUP_ENABLED=true.
+"llm validation (setup smoke)":
+  variables:
+    LLMVAL_SETUP_PRESET: "setup-calibration"
+
 build-windows-ci-image:
   stage: build
   timeout: 2h

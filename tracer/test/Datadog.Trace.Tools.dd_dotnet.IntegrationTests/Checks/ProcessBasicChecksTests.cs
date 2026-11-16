@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -374,14 +373,6 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             (null, { } ssi) => [("DD_INJECTION_ENABLED", ssi)],
             ({ } prof, { } ssi) => [("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
         };
-
-#if NET11_0
-        // TODO: Remove this after .NET 11 is officially released
-        if (!string.IsNullOrEmpty(ssiInjection))
-        {
-            envVars = envVars.Append(("DD_INJECT_FORCE", "1")).ToArray();
-        }
-#endif
 
         using var helper = await StartConsole(enableProfiler: true, envVars);
 

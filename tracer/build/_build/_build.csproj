@@ -56,7 +56,7 @@
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <!-- Enable binary serialization for .NET 9+ -->
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="11.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
   </ItemGroup>
 
   <!-- On it's own, since windows only and just used for notifications -->

@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var operation = tOperation.DuckCast<OperationStruct>();
 
             var host = operation.CurrentHost?.Address?.ToString();
-            var port = operation.CurrentHost?.Port.ToString();
+            var port = operation.CurrentHost?.Port.ToStringInvariant();
             var code = operation.OperationCode.ToString();
 
             var tags = perTraceSettings.Schema.Database.CreateCouchbaseTags();
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 }
 
                 var uri = servers[i];
-                sb.Append($"{uri.Host}:{uri.Port}");
+                sb.Append(uri.Host).Append(':').Append(uri.Port.ToStringInvariant());
             }
 
             normalizedSeedNodes = StringBuilderCache.GetStringAndRelease(sb);
