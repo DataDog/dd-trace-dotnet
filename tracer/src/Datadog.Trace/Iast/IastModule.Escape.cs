@@ -53,16 +53,14 @@ internal static partial class IastModule
                 return encodedObj;
             }
 
-            var scope = tracer.ActiveScope as Scope;
-            var traceContext = scope?.Span?.Context?.TraceContext;
-            var iastContext = traceContext?.IastRequestContext;
+            var iastContext = IastLifecycle.CurrentContext;
 
             if (iastContext is null || iastContext.AddVulnerabilitiesAllowed() != true)
             {
                 return encodedObj;
             }
 
-            var tainted = traceContext?.IastRequestContext?.GetTainted(textObj!);
+            var tainted = iastContext.GetTainted(textObj!);
             if (tainted is null)
             {
                 return encodedObj;

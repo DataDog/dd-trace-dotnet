@@ -146,10 +146,10 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
+            if (iast.Settings.Enabled)
             {
-                // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
-                scope.Span.Context?.TraceContext?.EnableIastInRequest();
+                // If the overheadController disables the vulnerability detection for this request, no iast context is created
+                IastLifecycle.BeginRequest(scope.Span, iast.OverheadController.AcquireRequest());
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);

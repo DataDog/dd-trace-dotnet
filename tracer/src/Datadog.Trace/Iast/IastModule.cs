@@ -487,9 +487,7 @@ internal static partial class IastModule
             return null;
         }
 
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
-        var traceContext = currentSpan?.Context?.TraceContext;
-        return traceContext?.IastRequestContext;
+        return IastLifecycle.CurrentContext;
     }
 
     internal static VulnerabilityBatch GetVulnerabilityBatch()
@@ -507,11 +505,11 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
-        var traceContext = currentSpan?.Context?.TraceContext;
-        var rootSpan = traceContext?.RootSpan;
+        var requestContext = IastLifecycle.CurrentContext;
+        var rootSpan = IastLifecycle.CurrentRootSpan;
+        var traceContext = rootSpan?.Context?.TraceContext;
 
-        if (traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (requestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -527,9 +525,9 @@ internal static partial class IastModule
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             VulnerabilityReporter.Report(vulnerability, rootSpan);
-            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            traceContext.Tags.EnableTraceSources(TraceSources.Asm);
+            requestContext.AddVulnerability(vulnerability);
+            traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
 
             return IastModuleResponse.Vulnerable;
         }
@@ -540,10 +538,7 @@ internal static partial class IastModule
     public static bool AddRequestVulnerabilitiesAllowed()
     {
         // Check for global budget only
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
-        var traceContext = currentSpan?.Context?.TraceContext;
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
-        return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
+        return IastLifecycle.CurrentContext?.AddVulnerabilitiesAllowed() == true;
     }
 
     private static VulnerabilityStats GetRouteVulnerabilityStats(Span? span)
@@ -597,9 +592,12 @@ internal static partial class IastModule
 
         var scope = tracer.ActiveScope as Scope;
         var currentSpan = scope?.Span;
-        var traceContext = currentSpan?.Context?.TraceContext;
-        var rootSpan = traceContext?.RootSpan;
-        var isRequest = rootSpan?.Type == SpanTypes.Web;
+        var isRequest = IastLifecycle.InRequest;
+        var requestContext = IastLifecycle.CurrentContext;
+
+        // Inside a request the web span is the root; outside a request keep the trace root, as before
+        var rootSpan = isRequest ? IastLifecycle.CurrentRootSpan : currentSpan?.Context?.TraceContext?.RootSpan;
+        var traceContext = rootSpan?.Context?.TraceContext;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintValidator != null)
@@ -607,7 +605,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        if (isRequest && requestContext?.AddVulnerabilitiesAllowed() != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -617,7 +615,7 @@ internal static partial class IastModule
         TaintedObject? tainted = null;
         if (taintValidator != null)
         {
-            tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
+            tainted = requestContext?.GetTainted(evidenceValue);
             if (tainted is null || !taintValidator(tainted))
             {
                 return IastModuleResponse.Empty;
@@ -637,14 +635,14 @@ internal static partial class IastModule
             ranges = unsafeRanges;
         }
 
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (isRequest && requestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
             return IastModuleResponse.Empty;
         }
 
-        var location = addLocation ? GetLocation(externalStack, currentSpan) : null;
+        var location = addLocation ? GetLocation(externalStack, currentSpan, requestContext) : null;
         if (addLocation && location is null)
         {
             return IastModuleResponse.Empty;
@@ -663,7 +661,7 @@ internal static partial class IastModule
                 traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
 
-                traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+                requestContext?.AddVulnerability(vulnerability);
                 return IastModuleResponse.Vulnerable;
             }
             else
@@ -675,7 +673,7 @@ internal static partial class IastModule
         return IastModuleResponse.Empty;
     }
 
-    private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
+    private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null, IastRequestContext? requestContext = null)
     {
         stack ??= StackWalker.GetStackTrace();
         if (!StackWalker.TryGetFrame(stack, out var stackFrame))
@@ -686,7 +684,6 @@ internal static partial class IastModule
         string? stackId = null;
         if (IastSettings.StackTraceEnabled)
         {
-            var requestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
             stackId = requestContext?.GetNextVulnerabilityStackId();
         }
 
@@ -972,12 +969,7 @@ internal static partial class IastModule
                 }
             }
 
-            var tracer = Tracer.Instance;
-            var scope = tracer.ActiveScope as Scope;
-            var currentSpan = scope?.Span;
-            var traceContext = currentSpan?.Context?.TraceContext;
-            var context = traceContext?.IastRequestContext;
-            context?.AddDbValue(column, value);
+            IastLifecycle.CurrentContext?.AddDbValue(column, value);
 
             return true;
         }

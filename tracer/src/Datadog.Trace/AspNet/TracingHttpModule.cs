@@ -208,11 +208,10 @@ namespace Datadog.Trace.AspNet
                 shouldDisposeScope = false;
 
                 var iastInstance = Iast.Iast.Instance;
-                if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+                if (iastInstance.Settings.Enabled)
                 {
-                    var traceContext = scope.Span?.Context?.TraceContext;
-                    traceContext?.EnableIastInRequest();
-                    traceContext?.IastRequestContext?.AddRequestData(httpRequest);
+                    var iastContext = IastLifecycle.BeginRequest(scope.Span, iastInstance.OverheadController.AcquireRequest());
+                    iastContext?.AddRequestData(httpRequest);
                 }
             }
             catch (Exception ex)

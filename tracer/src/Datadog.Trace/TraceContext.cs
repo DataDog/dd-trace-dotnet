@@ -99,12 +99,10 @@ namespace Datadog.Trace
         /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
-        internal void EnableIastInRequest()
+        // Set by IastLifecycle.BeginRequest. Temporary mirror of the ambient IAST request context
+        internal void SetIastRequestContext(IastRequestContext? context)
         {
-            if (Volatile.Read(ref _iastRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _iastRequestContext, new(), null);
-            }
+            Volatile.Write(ref _iastRequestContext, context);
         }
 
         public void AddSpan(Span span)
@@ -137,6 +135,8 @@ namespace Datadog.Trace
                         {
                             IastRequestContext.AddIastDisabledFlagToSpan(span);
                         }
+
+                        IastLifecycle.EndRequest(span);
                     }
                 }
             }

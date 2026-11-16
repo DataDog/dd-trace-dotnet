@@ -20,7 +20,6 @@ namespace Samples.InstrumentedTests.Iast;
 public class InstrumentationTestsBase : IDisposable
 {
     private object _iastRequestContext;
-    private object _traceContext;
     private object _taintedObjects;
     private IDisposable Scope;
     private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
@@ -40,8 +39,6 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _contextProperty = _spanType.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _setSpanTypeProperty = _spanType.GetProperty("Type", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
-    private static MethodInfo _traceContextProperty = _spanContextType.GetProperty("TraceContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _startProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
@@ -54,7 +51,7 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
-    private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
+    private static MethodInfo _beginRequestMethod = Type.GetType("Datadog.Trace.Iast.IastLifecycle, Datadog.Trace").GetMethod("BeginRequest", BindingFlags.Static | BindingFlags.NonPublic);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -83,11 +80,8 @@ public class InstrumentationTestsBase : IDisposable
         var span = _spanProperty.Invoke(Scope, Array.Empty<object>());
         span.Should().NotBeNull();
         _setSpanTypeProperty.Invoke(span, new object[] { "web" });
-        var context = _contextProperty.Invoke(span, Array.Empty<object>());
-        context.Should().NotBeNull();
-        _traceContext = _traceContextProperty.Invoke(context, Array.Empty<object>());
-        _enableIastInRequestMethod.Invoke(_traceContext, Array.Empty<object>());
-        _iastRequestContext = _iastRequestContextProperty.Invoke(_traceContext, Array.Empty<object>());
+        _iastRequestContext = _beginRequestMethod.Invoke(null, new object[] { span, true });
+        _iastRequestContext.Should().NotBeNull();
         _taintedObjects = _taintedObjectsField.GetValue(_iastRequestContext);
         _taintedObjects.Should().NotBeNull();
     }

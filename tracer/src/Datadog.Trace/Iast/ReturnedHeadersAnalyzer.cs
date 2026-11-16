@@ -68,8 +68,7 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
-            var iastRequestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
+            var iastRequestContext = IastLifecycle.CurrentContext;
 
             if (iastRequestContext is null)
             {
