@@ -42,6 +42,8 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     public KeyValuePair<string, object?>[] MeterTags { get; } = meterTags;
 
+    public string MeterSchemaUrl { get; init; } = string.Empty;
+
     public InstrumentType InstrumentType { get; } = instrumentType;
 
     public AggregationTemporality? AggregationTemporality { get; } = temporality;
@@ -211,6 +213,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
             var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description, IsLongType)
             {
+                MeterSchemaUrl = MeterSchemaUrl,
                 StartTime = this.StartTime,
                 EndTime = endTime,
                 SnapshotCount = _runningCountValue,

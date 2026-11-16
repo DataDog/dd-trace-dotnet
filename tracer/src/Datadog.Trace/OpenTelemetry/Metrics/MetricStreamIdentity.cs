@@ -30,6 +30,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             // Duck typing works at runtime - checks if Tags property exists (.NET 8+)
             var meterDuck = instrument.Meter.DuckAs<IMeterDuck>();
             MeterTags = meterDuck?.Tags?.ToArray() ?? [];
+            MeterSchemaUrl = instrument.Meter.DuckAs<IMeterSchemaUrlDuck>()?.TelemetrySchemaUrl ?? string.Empty;
 
             Unit = instrument.Unit ?? string.Empty;
             Description = instrument.Description ?? string.Empty;
@@ -42,7 +43,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                          instrumentGenericType == typeof(short) ||
                          instrumentGenericType == typeof(byte);
 
-            MetricStreamName = $"{MeterName}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
+            // Covers the whole meter identity, so distinct meters never share a stream name.
+            var meterTags = string.Join(",", MeterTags.Select(t => $"{t.Key}={t.Value}"));
+            MetricStreamName = $"{MeterName}.{MeterVersion}.{meterTags}.{MeterSchemaUrl}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
         }
 
         public string InstrumentName { get; }
@@ -52,6 +55,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         public string MeterVersion { get; }
 
         public KeyValuePair<string, object?>[] MeterTags { get; }
+
+        public string MeterSchemaUrl { get; }
 
         public string Unit { get; }
 
@@ -80,10 +85,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             if (!string.Equals(InstrumentName, other.InstrumentName, StringComparison.OrdinalIgnoreCase) ||
                 MeterName != other.MeterName ||
                 MeterVersion != other.MeterVersion ||
-                MeterTags != other.MeterTags ||
+                !TagsEqual(MeterTags, other.MeterTags) ||
+                MeterSchemaUrl != other.MeterSchemaUrl ||
                 Unit != other.Unit ||
                 Description != other.Description ||
-                InstrumentType != other.InstrumentType)
+                InstrumentType != other.InstrumentType ||
+                IsLongType != other.IsLongType)
             {
                 return false;
             }
@@ -102,9 +109,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             hashCode.Add(InstrumentName, StringComparer.OrdinalIgnoreCase);
             hashCode.Add(MeterName);
             hashCode.Add(MeterVersion);
+            hashCode.Add(MeterSchemaUrl);
             hashCode.Add(Unit);
             hashCode.Add(Description);
             hashCode.Add(InstrumentType);
+            hashCode.Add(IsLongType);
 
             for (int i = 0; i < MeterTags.Length; i++)
             {
@@ -113,6 +122,26 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
 
             return hashCode.ToHashCode();
+        }
+
+        // Compared by value, as OTel .NET does (MetricStreamIdentity and Tags): meters are identical when all
+        // their parameters are equal (OTel metrics API spec, "Meter"), and each identity copies the tags into a new array.
+        private static bool TagsEqual(KeyValuePair<string, object?>[] left, KeyValuePair<string, object?>[] right)
+        {
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < left.Length; i++)
+            {
+                if (!string.Equals(left[i].Key, right[i].Key, StringComparison.Ordinal) || !Equals(left[i].Value, right[i].Value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
