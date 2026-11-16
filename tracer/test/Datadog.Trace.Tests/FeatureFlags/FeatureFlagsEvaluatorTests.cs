@@ -868,6 +868,22 @@ public partial class FeatureFlagsEvaluatorTests
         double.Parse(metadata["__dd_evaluation_feature.ratio"], NumberStyles.Float, CultureInfo.InvariantCulture).Should().Be(value);
     }
 
+    [Theory]
+    [InlineData(0.1, "0.1")]
+    [InlineData(2026.0, "2026")]
+    public void NumberFeaturesUseTheShortestRoundTripText(double value, string expected)
+    {
+        var features = new List<Feature> { new("ratio", value, new List<string> { "HOOK" }) };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        var metadata = evaluator.Evaluate("features-flag", ValueType.String, "default", new EvaluationContext("user")).FlagMetadata!;
+
+#if NETFRAMEWORK
+        expected = value.ToString("G17", CultureInfo.InvariantCulture);
+#endif
+        metadata["__dd_feature.ratio"].Should().Be(expected);
+    }
+
     [Fact]
     public void UnknownDestinationWarningsStopAtTheCap()
     {

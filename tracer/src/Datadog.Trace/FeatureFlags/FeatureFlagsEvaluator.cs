@@ -835,8 +835,12 @@ namespace Datadog.Trace.FeatureFlags
             return value switch
             {
                 bool b => b ? "true" : "false",
-                // "G17" round-trips through the string metadata, also on .NET Framework ("R" may not).
+#if NETFRAMEWORK
+                // "R" can fail to round-trip on .NET Framework; "G17" always does.
                 double d => d.ToString("G17", CultureInfo.InvariantCulture),
+#else
+                double d => d.ToString("R", CultureInfo.InvariantCulture),
+#endif
                 _ => (string)value,
             };
         }
