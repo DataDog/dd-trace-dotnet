@@ -5,6 +5,8 @@
 
 using System;
 using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -148,6 +150,79 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             traceParentInjectedValue.Should().Be(traceParentInjected);
             command.CommandText.Should().EndWith(expectedComment);
             command.CommandText.Should().StartWith(initialCommandText);
+        }
+
+        [Theory]
+        [InlineData(new string[0], "")]
+        [InlineData(new[] { "UserId" }, "@UserId=@UserId ")]
+        [InlineData(new[] { "@UserId" }, "@UserId=@UserId ")]
+        [InlineData(new[] { "Other", "UserId" }, "@Other=@Other, @UserId=@UserId ")]
+        [InlineData(new[] { "@Other", "UserId" }, "@Other=@Other, @UserId=@UserId ")]
+        [InlineData(new[] { "Other", "@UserId" }, "@Other=@Other, @UserId=@UserId ")]
+        [InlineData(new[] { "@Other", "@UserId" }, "@Other=@Other, @UserId=@UserId ")]
+        public async Task SqlServerStoredProcedureUsesSqlParameterNames(string[] parameterNames, string expectedParameters)
+        {
+            await using var tracer = GetV0Tracer();
+            var span = tracer.StartSpan("sql-server.query", serviceName: "Test.Service-sql-server");
+            using var command = new SqlCommand("dbo.Proc") { CommandType = CommandType.StoredProcedure };
+            foreach (var parameterName in parameterNames)
+            {
+                command.Parameters.AddWithValue(parameterName, 42);
+            }
+
+            var parameters = command.Parameters.Cast<SqlParameter>().ToArray();
+
+            DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.SqlClient, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true, baseHash: null)
+                                       .Should().BeFalse("service comments do not inject trace context");
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().Be($"EXEC [dbo].[Proc] {expectedParameters}/*dddbs='Test.Service-sql-server',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");
+            command.Parameters.Cast<SqlParameter>().Should().Equal(parameters);
+            parameters.Select(p => p.ParameterName).Should().Equal(parameterNames);
+            parameters.Select(p => p.Direction).Should().Equal(Enumerable.Repeat(ParameterDirection.Input, parameterNames.Length));
+            parameters.Select(p => p.Value).Should().Equal(Enumerable.Repeat<object>(42, parameterNames.Length));
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task SqlServerStoredProcedurePreservesRpcWhenInjectionIsUnsupported(ParameterDirection direction)
+        {
+            await using var tracer = GetV0Tracer();
+            var span = tracer.StartSpan("sql-server.query", serviceName: "Test.Service-sql-server");
+            using var command = new SqlCommand("dbo.Proc") { CommandType = CommandType.StoredProcedure };
+            var input = command.Parameters.AddWithValue("UserId", 42);
+            var parameter = command.Parameters.AddWithValue("Result", 10);
+            parameter.Direction = direction;
+
+            DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.SqlClient, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: direction != ParameterDirection.Input, baseHash: null)
+                                       .Should().BeFalse();
+
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.Proc");
+            command.Parameters.Cast<SqlParameter>().Should().Equal(input, parameter);
+            input.ParameterName.Should().Be("UserId");
+            input.Value.Should().Be(42);
+            parameter.ParameterName.Should().Be("Result");
+            parameter.Direction.Should().Be(direction);
+            parameter.Value.Should().Be(10);
+        }
+
+        [Fact]
+        public async Task SqlServerStoredProcedureWithoutParameterNamePreservesRpc()
+        {
+            await using var tracer = GetV0Tracer();
+            var span = tracer.StartSpan("sql-server.query", serviceName: "Test.Service-sql-server");
+            using var command = new SqlCommand("dbo.Proc") { CommandType = CommandType.StoredProcedure };
+            var parameter = command.Parameters.AddWithValue("UserId", 42);
+            parameter.ParameterName = string.Empty;
+
+            DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.SqlClient, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true, baseHash: null)
+                                       .Should().BeFalse();
+
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.Proc");
+            parameter.ParameterName.Should().BeEmpty();
+            parameter.Value.Should().Be(42);
         }
 
         [Theory]

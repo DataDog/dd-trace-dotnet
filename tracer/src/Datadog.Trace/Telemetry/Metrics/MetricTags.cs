@@ -468,6 +468,13 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;success:false")] Error
     }
 
+    public enum ApiSecFramework
+    {
+        [Description("framework:aspnet_core")] AspNetCore,
+        [Description("framework:aspnet")] AspNet,
+        [Description("framework:unknown")] Unknown,
+    }
+
     public enum WafConfigAction
     {
         [Description("waf_version;event_rules_version;action:init")] Init,

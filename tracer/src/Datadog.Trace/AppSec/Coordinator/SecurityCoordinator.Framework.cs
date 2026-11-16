@@ -288,7 +288,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (_httpTransport.StatusCode is { } statusCode)
         {
-            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+            args[AddressesConstants.ResponseStatus] = statusCode.ToStringInvariant();
         }
 
         if (GetPathParams() is { } pathParams)
@@ -400,7 +400,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (httpResponse.HeadersWritten)
         {
-            Log.Warning("Headers have already been written, unable to modify response and set status code to {0}", blockingAction.StatusCode.ToString());
+            Log.Warning<int>("Headers have already been written, unable to modify response and set status code to {0}", blockingAction.StatusCode);
             return;
         }
 

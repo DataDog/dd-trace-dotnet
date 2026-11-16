@@ -65,6 +65,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                from injectStoredProcedure in new[] { false, true }
                select new object[] { commandType, mode, injectStoredProcedure };
 
+        public static IEnumerable<object[]> GetOracleServiceHashActionData()
+            => from commandType in new[] { typeof(Oracle.ManagedDataAccess.Client.OracleCommand), typeof(Oracle.DataAccess.Client.OracleCommand) }
+               from dbCommandType in new[] { CommandType.Text, CommandType.StoredProcedure }
+               from settings in new[] { new { Mode = "dynamic_service", InjectBaseHash = false }, new { Mode = "service", InjectBaseHash = true } }
+               select new object[] { commandType, dbCommandType, settings.Mode, settings.InjectBaseHash };
+
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in (IEnumerable<object[]>)GetDbmCommands()
                from dbm in new[] { "service", "dynamic_service", "full" }
@@ -435,6 +441,157 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().BeNull();
             command.CommandText.Should().Be("MyPackage.MyProcedure");
             command.CommandType.Should().Be(CommandType.StoredProcedure);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetOracleServiceHashActionData))]
+        public async Task CreateDbCommandScope_OracleServiceHashUsesAction(Type commandType, CommandType dbCommandType, string dbmMode, bool injectBaseHash)
+        {
+            using var command = (DbCommand)Activator.CreateInstance(commandType)!;
+            var connection = (MockOracleConnection)Activator.CreateInstance(commandType.Assembly.GetType(commandType.Namespace + ".OracleConnection", throwOnError: true)!)!;
+            const string commandText = "MyPackage.MyProcedure";
+            command.CommandText = commandText;
+            command.CommandType = dbCommandType;
+            command.Connection = connection;
+
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PropagateProcessTags, "true" },
+                { ConfigurationKeys.DbmInjectSqlBasehash, injectBaseHash.ToString() },
+                { ConfigurationKeys.DbmPropagationMode, dbmMode },
+            });
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
+            var expectedAction = "_DD_DDSH:" + serviceRemappingHash.Base64Value;
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.Base64Value);
+                scope.Span.GetTag(Tags.DbmTraceInjected).Should().BeNull();
+            }
+
+            connection.ServerAction.Should().Be(expectedAction);
+
+            // PL/SQL changed ACTION server-side: the same hash must be written again, although the driver last sent it.
+            connection.ServerAction = "app-action";
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.Base64Value);
+            }
+
+            connection.ServerAction.Should().Be(expectedAction);
+
+            // The hash changes once the container tags hash is received.
+            serviceRemappingHash.UpdateContainerTagsHash("container-hash");
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.Base64Value);
+            }
+
+            connection.ServerAction.Should().Be("_DD_DDSH:" + serviceRemappingHash.Base64Value).And.NotBe(expectedAction);
+            command.CommandText.Should().Be(commandText);
+            command.CommandType.Should().Be(dbCommandType);
+        }
+
+        [Theory]
+        [InlineData("full", true, true)]
+        [InlineData("service", false, true)]
+        [InlineData("dynamic_service", true, false)]
+        [InlineData("disabled", true, true)]
+        public async Task CreateDbCommandScope_OracleDoesNotUseActionWithoutServiceHash(string dbmMode, bool injectBaseHash, bool propagateProcessTags)
+        {
+            var connection = new Oracle.ManagedDataAccess.Client.OracleConnection();
+            using var command = new Oracle.ManagedDataAccess.Client.OracleCommand { CommandText = DbmCommandText, Connection = connection };
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+                { ConfigurationKeys.DbmInjectSqlBasehash, injectBaseHash.ToString() },
+                { ConfigurationKeys.DbmPropagationMode, dbmMode },
+            });
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+
+            scope.Should().NotBeNull();
+            connection.SetAttempts.Should().Be(0);
+            connection.ServerAction.Should().BeNull();
+            if (dbmMode == "disabled")
+            {
+                command.CommandText.Should().Be(DbmCommandText);
+            }
+            else
+            {
+                // comments are unchanged: the hash is only in the comment (and the span) when it is enabled
+                command.CommandText.Should().StartWith(DatabaseMonitoringPropagator.DbmPrefix).And.EndWith(DbmCommandText);
+                var hashInComment = injectBaseHash && propagateProcessTags;
+                command.CommandText.Contains($"ddsh='{serviceRemappingHash.Base64Value}'").Should().Be(hashInComment);
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(hashInComment ? serviceRemappingHash.Base64Value : null);
+            }
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(typeof(ThrowingOracleConnection))]
+        [InlineData(typeof(MockDbConnection))]
+        public async Task CreateDbCommandScope_OracleActionFailureDoesNotAffectCommand(Type connectionType)
+        {
+            using var command = new Oracle.ManagedDataAccess.Client.OracleCommand
+            {
+                CommandText = "MyPackage.MyProcedure",
+                CommandType = CommandType.StoredProcedure,
+                Connection = connectionType is null ? null : (DbConnection)Activator.CreateInstance(connectionType)!,
+            };
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PropagateProcessTags, "true" },
+                { ConfigurationKeys.DbmPropagationMode, "dynamic_service" },
+            });
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+
+            // no comment fallback, which would break implicit REF CURSOR bindings on .NET Framework
+            scope.Should().NotBeNull();
+            scope.Span.GetTag(Tags.BaseHash).Should().BeNull();
+            scope.Span.GetTag(Tags.DbmTraceInjected).Should().BeNull();
+            scope.Span.Error.Should().BeFalse();
+            command.CommandText.Should().Be("MyPackage.MyProcedure");
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+        }
+
+        [Theory]
+        [InlineData(ConnectionState.Closed)]
+        [InlineData(ConnectionState.Connecting)]
+        [InlineData(ConnectionState.Broken)]
+        public async Task CreateDbCommandScope_OracleSkipsActionWhenConnectionIsNotOpen(ConnectionState state)
+        {
+            var connection = new Oracle.ManagedDataAccess.Client.OracleConnection { MockState = state };
+            using var command = new Oracle.ManagedDataAccess.Client.OracleCommand
+            {
+                CommandText = "MyPackage.MyProcedure",
+                CommandType = CommandType.StoredProcedure,
+                Connection = connection,
+            };
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PropagateProcessTags, "true" },
+                { ConfigurationKeys.DbmPropagationMode, "dynamic_service" },
+            });
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+
+            // ODP.NET throws if ActionName is set on a connection that isn't open, so it must not be attempted
+            scope.Should().NotBeNull();
+            connection.SetAttempts.Should().Be(0);
+            scope.Span.GetTag(Tags.BaseHash).Should().BeNull();
+            command.CommandText.Should().Be("MyPackage.MyProcedure");
         }
 
         [Theory]

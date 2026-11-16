@@ -19,11 +19,16 @@ namespace Samples.OracleMDA
             var packageName = "DD_SP_COMMENT_" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpperInvariant();
             var schemaName = new OracleConnectionStringBuilder(connection.ConnectionString).UserID.ToUpperInvariant();
             var mode = Environment.GetEnvironmentVariable("DD_DBM_PROPAGATION_MODE");
+            var serviceMode = string.Equals(mode, "service", StringComparison.OrdinalIgnoreCase) || string.Equals(mode, "dynamic_service", StringComparison.OrdinalIgnoreCase);
+            // With the service hash enabled, the tracer writes it to the session ACTION instead of commenting the SQL.
+            var expectAction = serviceMode
+                            && (string.Equals(mode, "dynamic_service", StringComparison.OrdinalIgnoreCase) || IsSet("DD_DBM_INJECT_SQL_BASEHASH", "true"))
+                            && !IsSet("DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED", "false");
 #if NETFRAMEWORK
             // The tracer skips .NET Framework stored procedures: comments would break ODP.NET's implicit REF CURSOR configuration lookup.
             var expectComment = false;
 #else
-            var expectComment = string.Equals(mode, "service", StringComparison.OrdinalIgnoreCase) || string.Equals(mode, "dynamic_service", StringComparison.OrdinalIgnoreCase);
+            var expectComment = serviceMode && !expectAction;
 #endif
             var service = Environment.GetEnvironmentVariable("DD_SERVICE");
             if (string.IsNullOrEmpty(service))
@@ -41,6 +46,8 @@ namespace Samples.OracleMDA
     PROCEDURE with_args(p_in IN NUMBER, p_io IN OUT NUMBER, p_out OUT NUMBER);
     FUNCTION with_return(p_in IN NUMBER, p_io IN OUT NUMBER, p_out OUT NUMBER) RETURN NUMBER;
     PROCEDURE with_cursor(p_cursor OUT SYS_REFCURSOR);
+    PROCEDURE get_action(p_action OUT VARCHAR2);
+    PROCEDURE set_app_action;
 END;";
                     await setup.ExecuteNonQueryAsync();
                     packageCreated = true;
@@ -52,6 +59,10 @@ END;";
     BEGIN p_io := p_io + 2; p_out := p_in + 5; RETURN p_in + 9; END;
     PROCEDURE with_cursor(p_cursor OUT SYS_REFCURSOR) AS
     BEGIN OPEN p_cursor FOR SELECT 1 FROM DUAL; END;
+    PROCEDURE get_action(p_action OUT VARCHAR2) AS
+    BEGIN p_action := SYS_CONTEXT('USERENV', 'ACTION'); END;
+    PROCEDURE set_app_action AS
+    BEGIN DBMS_APPLICATION_INFO.SET_ACTION('app-action'); END;
 END;";
                     await setup.ExecuteNonQueryAsync();
                 }
@@ -151,6 +162,43 @@ END;";
                     }
                 }
 
+                // The ACTION must be visible to SQL run inside the procedure, which comments cannot attribute.
+                using (var getAction = connection.CreateCommand())
+                {
+                    var procedureName = $"{packageName}.get_action";
+                    getAction.CommandText = procedureName;
+                    getAction.CommandType = CommandType.StoredProcedure;
+                    var actionParameter = getAction.Parameters.Add("p_action", OracleDbType.Varchar2, 64);
+                    actionParameter.Direction = ParameterDirection.Output;
+                    await getAction.ExecuteNonQueryAsync();
+
+                    var actionValue = actionParameter.Value is OracleString { IsNull: false } action ? action.Value : null;
+                    Require(getAction.CommandText == procedureName || expectComment, "Stored-procedure text changed in ACTION mode.");
+                    if (expectAction)
+                    {
+                        const string prefix = "_DD_DDSH:";
+                        Require(actionValue != null && actionValue.StartsWith(prefix, StringComparison.Ordinal) && actionValue.Length == prefix.Length + 11, "Service hash ACTION missing inside the stored procedure.");
+                        Console.WriteLine("Oracle service hash ACTION: " + actionValue.Substring(prefix.Length));
+                    }
+                    else
+                    {
+                        Require(actionValue == null, "ACTION set outside service hash mode.");
+                    }
+
+                    // Application PL/SQL can change ACTION on the server; the next execution must restore the same hash.
+                    using (var setAppAction = connection.CreateCommand())
+                    {
+                        setAppAction.CommandText = $"{packageName}.set_app_action";
+                        setAppAction.CommandType = CommandType.StoredProcedure;
+                        await setAppAction.ExecuteNonQueryAsync();
+                    }
+
+                    await getAction.ExecuteNonQueryAsync();
+                    var actionAfterApplication = actionParameter.Value is OracleString { IsNull: false } restored ? restored.Value : null;
+                    Require(actionAfterApplication == (expectAction ? actionValue : "app-action"), "ACTION not restored after the application changed it.");
+                    Console.WriteLine("Oracle ACTION after application change: " + (expectAction ? "restored" : "unchanged"));
+                }
+
                 // Check Oracle's generated invocation, not just the client-side CommandText. No bind values are read or logged.
                 using (var inspect = connection.CreateCommand())
                 {
@@ -185,6 +233,8 @@ END;";
 
             Console.WriteLine("Stored procedure comment checks passed.");
         }
+
+        private static bool IsSet(string name, string value) => string.Equals(Environment.GetEnvironmentVariable(name)?.Trim(), value, StringComparison.OrdinalIgnoreCase);
 
         private static decimal Number(object value) => value is OracleDecimal number ? number.Value : Convert.ToDecimal(value, CultureInfo.InvariantCulture);
 

@@ -102,26 +102,25 @@ dotnet_diagnostic.MA0189.severity = none # Use InlineArray instead of fixed-size
 
 # ---------------------------------------------------------------------------------------------------
 # Rules we want, but which currently have violations.
-# These are temporarily disabled, and will be fixed and enabled in subsequent PRs.
+# These are temporarily disabled, and will be fixed and enabled in subsequent PRs,
+# except where the note on the line says the rule was skipped, and why.
 # ---------------------------------------------------------------------------------------------------
 dotnet_diagnostic.MA0003.severity = none # Add parameter name to improve readability - ~940 null/bool literal arguments across ~350 files. Mechanical (code fix available in the IDE), but a large diff
 dotnet_diagnostic.MA0005.severity = none # Use Array.Empty<T>()
 dotnet_diagnostic.MA0007.severity = none # Add a comma after the last value - StyleCop SA1413 (suppressed in tracer/GlobalSuppressions.cs) should be re-enabled at the same time. Trailing commas simplify merge conflicts
 dotnet_diagnostic.MA0009.severity = none # Add regex evaluation timeout
 dotnet_diagnostic.MA0010.severity = none # Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.MA0011.severity = none # IFormatProvider is missing
 dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type
 dotnet_diagnostic.MA0015.severity = none # Specify the parameter name in ArgumentException
 dotnet_diagnostic.MA0017.severity = none # Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0020.severity = none # Use direct methods instead of LINQ methods
-dotnet_diagnostic.MA0022.severity = none # Return Task.FromResult instead of returning null
 dotnet_diagnostic.MA0023.severity = none # Use RegexOptions.ExplicitCapture or named groups
 dotnet_diagnostic.MA0025.severity = none # Implement the functionality instead of throwing NotImplementedException
 dotnet_diagnostic.MA0028.severity = none # Optimize StringBuilder usage
 dotnet_diagnostic.MA0029.severity = none # Combine LINQ methods
 dotnet_diagnostic.MA0031.severity = none # Optimize Enumerable.Count() usage
-dotnet_diagnostic.MA0040.severity = none # Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.MA0042.severity = none # Do not use blocking calls when the calling method is async
+dotnet_diagnostic.MA0040.severity = none # Forward the CancellationToken parameter to methods that take one - skipped: the in-scope tokens are mostly the wrong ones to forward (per-request timeouts, RequestAborted), and the rest would only add an explicit CancellationToken.None
+dotnet_diagnostic.MA0042.severity = none # Do not use blocking calls when the calling method is async - skipped: most hits are Newtonsoft JsonWriter calls on in-memory buffers (async variants only add overhead), await using/DisposeAsync needs #if (IAsyncDisposable is .NET Core-only), and the .Result hits read completed tasks in CallTarget continuations
 dotnet_diagnostic.MA0043.severity = none # Use nameof operator in ArgumentException
 dotnet_diagnostic.MA0044.severity = none # Remove useless ToString call
 dotnet_diagnostic.MA0047.severity = none # Declare types in namespaces
@@ -136,25 +135,18 @@ dotnet_diagnostic.MA0062.severity = none # Non-flags enums should not be marked 
 dotnet_diagnostic.MA0065.severity = none # Default ValueType.Equals or HashCode is used for struct equality
 dotnet_diagnostic.MA0066.severity = none # Hash table unfriendly type is used in a hash table
 dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations
-dotnet_diagnostic.MA0074.severity = none # Avoid implicit culture-sensitive methods
-dotnet_diagnostic.MA0075.severity = none # Do not use implicit culture-sensitive ToString
-dotnet_diagnostic.MA0076.severity = none # Do not use implicit culture-sensitive ToString in interpolated strings
 dotnet_diagnostic.MA0077.severity = none # A class that provides Equals(T) should implement IEquatable<T>
 dotnet_diagnostic.MA0084.severity = none # Local variables should not hide other symbols
 dotnet_diagnostic.MA0089.severity = none # Optimize string method usage - some suggested overloads (e.g. char overloads) aren't available on net461/netstandard2.0, so may require polyfills
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T>
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = none # Use indexer instead of LINQ methods
-dotnet_diagnostic.MA0100.severity = none # Await task before disposing of resources
 dotnet_diagnostic.MA0101.severity = none # String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = none # Make member readonly
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
 dotnet_diagnostic.MA0105.severity = none # Use the lambda parameters instead of using a closure
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
-dotnet_diagnostic.MA0132.severity = none # Do not convert implicitly to DateTimeOffset
-dotnet_diagnostic.MA0133.severity = none # Use DateTimeOffset instead of relying on the implicit conversion
-dotnet_diagnostic.MA0134.severity = none # Observe result of async calls
 dotnet_diagnostic.MA0136.severity = none # Raw String contains an implicit end of line character
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
@@ -162,10 +154,7 @@ dotnet_diagnostic.MA0147.severity = none # Avoid async void method for delegate
 dotnet_diagnostic.MA0150.severity = none # Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0160.severity = none # Use ContainsKey instead of TryGetValue
-dotnet_diagnostic.MA0161.severity = none # UseShellExecute must be explicitly set
-dotnet_diagnostic.MA0162.severity = none # Use Process.Start overload with ProcessStartInfo
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)
-dotnet_diagnostic.MA0173.severity = none # Use LazyInitializer.EnsureInitialize
 dotnet_diagnostic.MA0176.severity = none # Optimize guid creation
 dotnet_diagnostic.MA0179.severity = none # Use Attribute.IsDefined instead of GetCustomAttribute(s)
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters

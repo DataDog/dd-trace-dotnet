@@ -351,7 +351,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
             }
 
-            localName = localNamesFromPdb?[index] ?? "local_" + index;
+            localName = localNamesFromPdb?[index] ?? "local_" + index.ToStringInvariant();
             return true;
         }
 
