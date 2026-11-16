@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
         private void EnsureCapacity(int min)
         {
-            // Enlarge the _items array as needed. Note that there is an implicit by-design memory-leak here,
+            // Enlarge the Items array as needed. Note that there is an implicit by-design memory-leak here,
             // in the sense that this unbounded collection can only grow and is never shrunk.
             // After removing the default 100 probes cap, a long-running process with high probe churn can
             // retain large backing arrays. We keep this implementation for now and emit warning logs as
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 var newCapacity = Items.Length * 2;
                 if (newCapacity < min)
                 {
-                    newCapacity = min + 1;
+                    newCapacity = min;
                 }
 
                 Capacity = newCapacity;
@@ -97,14 +97,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void EnlargeCapacity(int index)
         {
-            if (index == Items.Length)
-            {
-                EnsureCapacity(index + 1);
-            }
-            else if (index > Items.Length)
-            {
-                EnsureCapacity(index);
-            }
+            EnsureCapacity(index + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
