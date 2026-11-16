@@ -1,7 +1,8 @@
 _v: 1
 name: XUnit
 display_name: xUnit
-description: Instruments xUnit test execution and optionally submits test output as logs.
+description: Instruments xUnit test execution across modules, suites, and tests, including direct log submission of test output
+  and optional test skipping, quarantine, and retries.
 packages:
 - name: xunit
 - name: xunit.core
@@ -13,4 +14,4 @@ category:
 - log.emission
 - test.execution
 systems: []
-creation_date: '2021-01-18'
+creation_date: '2020-08-03'

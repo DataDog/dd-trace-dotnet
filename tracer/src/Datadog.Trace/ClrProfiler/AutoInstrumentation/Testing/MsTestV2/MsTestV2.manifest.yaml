@@ -1,8 +1,8 @@
 _v: 1
 name: MsTestV2
 display_name: MSTest V2
-description: Instruments MSTest V2 test execution and lifecycle hooks, emitting CI Visibility telemetry for test modules,
-  suites, and individual test outcomes, including skips and retries.
+description: Instruments MSTest V2 test discovery and execution, reporting test lifecycle results and enabling configured
+  test skipping, quarantine, and retries.
 packages:
 - name: MSTest.TestAdapter
 - name: MSTest.TestFramework

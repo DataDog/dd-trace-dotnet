@@ -1,7 +1,9 @@
 _v: 1
 name: DotnetTest
 display_name: dotnet test
-description: Instruments dotnet test and VSTest runs with CI Visibility test sessions and optional code coverage collection.
+description: Instruments `dotnet test` and `vstest.console` runs as test sessions, injecting the Datadog coverage collector
+  and reporting code coverage percentages to the session from Datadog, Coverlet, Microsoft Code Coverage, or external coverage
+  reports.
 packages:
 - name: coverlet.collector
 - name: coverlet.msbuild

@@ -1,11 +1,10 @@
 _v: 1
 name: NUnit
 display_name: NUnit
-description: Instruments NUnit test execution, reporting module, suite, and test-case results while supporting test management,
-  selective skipping, and retries.
+description: Instruments NUnit test execution and lifecycle reporting, including test results, skips, and retries.
 packages:
 - name: NUnit
 category:
 - test.execution
 systems: []
-creation_date: '2021-01-18'
+creation_date: '2020-08-21'
