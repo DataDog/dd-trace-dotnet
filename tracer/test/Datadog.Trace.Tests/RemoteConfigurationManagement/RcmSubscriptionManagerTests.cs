@@ -11,9 +11,11 @@ using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
@@ -329,6 +331,24 @@ public class RcmSubscriptionManagerTests
         client.ApplyStates.Should().ContainSingle().Which.Path.Should().Be(config.Path.Path);
     }
 
+    [Theory]
+    [InlineData(2, 2, true)]
+    [InlineData(3, 2, false)]
+    [InlineData(1, 1, false)]
+    public void Poll_RemovingEveryConfiguration_LogsAWarning(int delivered, int removed, bool warns)
+    {
+        var log = new Mock<IDatadogLogger>();
+        var manager = new RcmSubscriptionManager(log.Object);
+        var configs = Enumerable.Range(0, delivered).Select(i => CreateConfig(RcmProducts.Asm, $"asm{i}")).ToList();
+        var client = new FakeRemoteConfigClient(new RemoteConfigurationChanges(configs, []));
+        Poll(manager, client);
+
+        client.Changes = new RemoteConfigurationChanges([], configs.Take(removed).Select(c => c.Path).ToList());
+        Poll(manager, client);
+
+        log.Verify(l => l.Warning(It.IsAny<string>(), removed, It.IsAny<int>(), It.IsAny<string>()), warns ? Times.Once() : Times.Never());
+    }
+
     private static void Poll(RcmSubscriptionManager manager, IRemoteConfigClient client)
         => manager.Poll((_, _, _) => client, Tracer, Endpoint, []).Should().BeTrue();
 
@@ -340,14 +360,15 @@ public class RcmSubscriptionManagerTests
 
     private sealed class FakeRemoteConfigClient : IRemoteConfigClient
     {
-        private readonly RemoteConfigurationChanges _changes;
         private readonly Exception _fetchException;
 
         public FakeRemoteConfigClient(RemoteConfigurationChanges changes = null, Exception fetchException = null)
         {
-            _changes = changes ?? new RemoteConfigurationChanges([], []);
+            Changes = changes ?? new RemoteConfigurationChanges([], []);
             _fetchException = fetchException;
         }
+
+        public RemoteConfigurationChanges Changes { get; set; }
 
         public List<(ICollection<string> Products, BigInteger Capabilities)> ProductUpdates { get; } = [];
 
@@ -370,7 +391,7 @@ public class RcmSubscriptionManagerTests
         public RemoteConfigurationChanges Fetch()
         {
             Fetches++;
-            return _fetchException is null ? _changes : throw _fetchException;
+            return _fetchException is null ? Changes : throw _fetchException;
         }
 
         public void SetApplyState(string path, ulong applyState, string error) => ApplyStates.Add((path, applyState, error));

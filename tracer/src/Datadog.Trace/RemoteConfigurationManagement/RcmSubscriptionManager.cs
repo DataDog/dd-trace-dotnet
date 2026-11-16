@@ -20,8 +20,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 {
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
 
+    private readonly IDatadogLogger _log;
     private readonly object _syncRoot = new();
 
     // Serializes the polls, and with them the dispatch to the subscriptions: the remote configuration managers
@@ -30,6 +30,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     // Publishes the client and cancels it as one step, so that a shutdown during the client creation isn't lost
     private readonly object _cancellationLock = new();
+
+    // The paths of the configurations the client delivered and hasn't removed since. Only accessed with _pollLock held.
+    private readonly HashSet<string> _deliveredPaths = [];
 
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
@@ -45,6 +48,11 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     private string[]? _clientExtraServices;
     private ICollection<string>? _pushedProductKeys;
     private BigInteger _pushedCapabilities;
+
+    internal RcmSubscriptionManager(IDatadogLogger? log = null)
+    {
+        _log = log ?? DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
+    }
 
     public string ClientId { get; } = Guid.NewGuid().ToString();
 
@@ -143,7 +151,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to apply remote configurations for products {ProductKeys}", string.Join(", ", subscription.ProductKeys));
+                _log.Error(e, "Failed to apply remote configurations for products {ProductKeys}", string.Join(", ", subscription.ProductKeys));
             }
         }
 
@@ -183,7 +191,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Remote Configuration is unavailable: failed to create the remote configuration client");
+                    _log.Error(ex, "Remote Configuration is unavailable: failed to create the remote configuration client");
                     return false;
                 }
 
@@ -256,11 +264,11 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         {
             if (Volatile.Read(ref _isCancelled))
             {
-                Log.Debug(e, "Remote configuration fetch cancelled on shutdown");
+                _log.Debug(e, "Remote configuration fetch cancelled on shutdown");
             }
             else
             {
-                Log.Warning(e, "Error fetching remote configurations");
+                _log.Warning(e, "Error fetching remote configurations");
             }
 
             return;
@@ -271,9 +279,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             return;
         }
 
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (_log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug(
+            _log.Debug(
                 "Received remote configurations. Updated: {Updated}. Removed: {Removed}.",
                 string.Join(",", changes.Updated.Select(c => c.Path.Path)),
                 string.Join(",", changes.Removed.Select(p => p.Path)));
@@ -282,6 +290,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
         foreach (var config in changes.Updated)
         {
+            _deliveredPaths.Add(config.Path.Path);
             configByProducts ??= [];
             if (!configByProducts.TryGetValue(config.Path.Product, out var configs))
             {
@@ -294,6 +303,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct = null;
         foreach (var path in changes.Removed)
         {
+            _deliveredPaths.Remove(path.Path);
             removedConfigsByProduct ??= [];
             if (!removedConfigsByProduct.TryGetValue(path.Product, out var paths))
             {
@@ -301,6 +311,13 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
 
             paths.Add(path);
+        }
+
+        // libdatadog's client removes every configuration when the agent answers 404 or the configurations expired.
+        // Removing a single configuration is usually deleting it on purpose.
+        if (changes.Removed.Count > 1 && _deliveredPaths.Count == 0)
+        {
+            _log.Warning<int>("All {Count} remote configurations were removed at once. If they weren't deleted on purpose, the agent stopped serving remote configuration, or its configurations expired.", changes.Removed.Count);
         }
 
         // Polling happens on a dedicated thread, so blocking on the (rarely asynchronous) subscribers is fine
