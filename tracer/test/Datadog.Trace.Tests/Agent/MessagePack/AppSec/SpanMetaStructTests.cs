@@ -5,18 +5,33 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.OpenTelemetry;
+using Datadog.Trace.OpenTelemetry.Common;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
+using Moq;
 using Xunit;
+using IastRuntime = Datadog.Trace.Iast.Iast;
 
 #nullable enable
 
 namespace Datadog.Trace.Tests.Agent.MessagePack;
 
+[Collection(nameof(TracerInstanceTestCollection))]
 public class SpanMetaStructTests
 {
     private const string MetaStructStr = "meta_struct";
@@ -102,6 +117,68 @@ public class SpanMetaStructTests
                    new(DdStackKey, null)
             }
        };
+
+    [Theory]
+    [InlineData(false, true, true, true)]
+    [InlineData(true, true, true, true)]
+    [InlineData(true, false, true, true)]
+    [InlineData(true, true, false, true)]
+    [InlineData(true, true, true, false)]
+    public static async Task SecurityReportsAndMetadataMatchExportMode(bool otlp, bool enabled, bool wafExecuted, bool localRoot)
+    {
+        var previousTracer = Tracer.Instance;
+        var previousSecurity = Security.Instance;
+        var previousIast = IastRuntime.Instance;
+        await using var tracer = TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()
+        {
+            ["OTEL_TRACES_EXPORTER"] = otlp ? "otlp" : "datadog",
+            ["OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"] = "http/json",
+        }));
+        var settings = new SecuritySettings(new DictionaryConfigurationSource(new Dictionary<string, string> { [ConfigurationKeys.AppSec.Enabled] = "0" }), NullConfigurationTelemetry.Instance);
+        var state = new ConfigurationState(settings, NullConfigurationTelemetry.Instance, wafIsNull: true);
+        using var security = new Security(settings, rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>(), configurationState: state);
+        try
+        {
+            Tracer.UnsafeSetTracerInstance(tracer);
+            Security.Instance = security;
+            IastRuntime.Instance = new IastRuntime(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+            state.AppsecEnabled = enabled;
+            using var root = (Scope)tracer.StartActive("web");
+            var traceContext = root.Span.Context.TraceContext.Should().BeOfType<TraceContext>().Which;
+            traceContext.WafExecuted = wafExecuted;
+            var span = localRoot ? root.Span : new Span(new SpanContext(root.Span.Context, traceContext, "child"), DateTimeOffset.UtcNow);
+            var appsec = new AppSecRequestContext();
+            appsec.AddWafSecurityEvents(appsecData);
+            appsec.CloseWebSpan(span);
+            var iast = new IastRequestContext();
+            iast.AddVulnerability(new Vulnerability("WEAK_HASH", new Location("Test.Hash"), new Evidence("MD5")));
+            iast.AddIastVulnerabilitiesToSpan(span);
+            var attributes = new List<KeyValue>();
+            var chunk = new TraceChunkModel(new SpanCollection([span]));
+            OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), chunk.GetSpanModel(0), limit: 128);
+
+            span.GetTag(Tags.AppSecJson).Should().Contain("crs-913-120");
+            span.GetTag(Tags.IastJson).Should().Contain("WEAK_HASH");
+            attributes.FindAll(kv => kv.Key == "appsec" && kv.Value is byte[]).Should().HaveCount(otlp ? 1 : 0);
+            attributes.FindAll(kv => kv.Key == "iast" && kv.Value is byte[]).Should().HaveCount(otlp ? 1 : 0);
+            if (enabled && wafExecuted && localRoot)
+            {
+                attributes.Should().ContainSingle(kv => kv.Key == Metrics.AppSecEnabled).Which.Value.Should().Be(1d);
+                attributes.Should().ContainSingle(kv => kv.Key == Tags.RuntimeFamily).Which.Value.Should().Be("dotnet");
+                attributes.Should().ContainSingle(kv => kv.Key == Tags.AppSecRuleFileVersion).Which.Value.Should().Be(security.WafRuleFileVersion);
+            }
+            else
+            {
+                attributes.Should().NotContain(kv => kv.Key == Metrics.AppSecEnabled || kv.Key == Tags.RuntimeFamily || kv.Key == Tags.AppSecRuleFileVersion);
+            }
+        }
+        finally
+        {
+            Tracer.UnsafeSetTracerInstance(previousTracer);
+            Security.Instance = previousSecurity;
+            IastRuntime.Instance = previousIast;
+        }
+    }
 
     [MemberData(nameof(Data), DisableDiscoveryEnumeration = true)]
     [Theory]

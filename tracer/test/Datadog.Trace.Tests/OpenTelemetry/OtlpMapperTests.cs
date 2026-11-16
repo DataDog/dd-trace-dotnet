@@ -215,33 +215,6 @@ public class OtlpMapperTests
         attributes.Should().NotContain(kv => kv.Key == "span.type");
     }
 
-    [Theory]
-    [CombinatorialData]
-    public void SecurityReportsTakePrecedenceOverCustomerTags(bool openTelemetrySemanticsEnabled)
-    {
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        foreach (var key in new[] { "appsec", "iast", "_dd.stack" })
-        {
-            span.SetMetaStruct(key, [0x80]);
-        }
-
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
-        var limit = attributes.Count;
-        attributes.Clear();
-        var traceContext = span.Context.TraceContext.Should().BeOfType<TraceContext>().Which;
-        for (var i = 0; i < 20; i++)
-        {
-            traceContext.Tags.SetTag($"trace.custom.{i}", "value");
-            span.SetTag($"span.custom.{i}", "value");
-        }
-
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit);
-
-        attributes.Should().HaveCount(limit);
-        attributes.FindAll(kv => kv.Value is byte[]).Should().HaveCount(3);
-    }
-
     [Fact]
     public void EmitAttributesFromSpan_EmitsStringTags()
     {
@@ -650,25 +623,31 @@ public class OtlpMapperTests
         dropped.Should().BeGreaterOrEqualTo(1);
     }
 
-    [Fact]
-    public void EmitAttributesFromSpan_SamplingPriorityIsKept_WhenTraceTagsExceedLimit()
+    [Theory]
+    [InlineData(false, 7)]
+    [InlineData(true, 3)]
+    public void EmitAttributesFromSpan_SamplingPriorityIsKept_WhenTraceTagsExceedLimit(bool openTelemetrySemanticsEnabled, int limit)
     {
-        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        byte[] report = [0x80];
+        span.SetMetaStruct("appsec", report);
         var traceContext = span.Context.TraceContext;
         traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
         for (var i = 0; i < 10; i++)
         {
             traceContext.Tags.SetTag($"_dd.p.custom{i}", "v");
+            span.SetTag($"span.custom.{i}", "v");
         }
 
         var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
 
         // fewer slots than trace tags: "_sampling_priority_v1" must still be written
         var attributes = new List<KeyValue>();
-        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 3);
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit);
 
-        attributes.Should().HaveCount(3);
+        attributes.Should().HaveCount(limit);
         attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be(SamplingPriorityValues.UserKeep);
+        attributes.Should().ContainSingle(kv => kv.Key == "appsec").Which.Value.Should().BeEquivalentTo(report);
         dropped.Should().BeGreaterOrEqualTo(8);
     }
 

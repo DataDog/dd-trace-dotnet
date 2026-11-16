@@ -31,21 +31,6 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 // cover the cases the fix specifically changes: nested arrays must stringify, not recurse.
 public class OtlpTracesJsonSerializerTests
 {
-    [Theory]
-    [CombinatorialData]
-    public void SecurityReportBytesArePreserved(bool openTelemetrySemanticsEnabled)
-    {
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        var report = MetaStructHelper.ObjectToByteArray(new Dictionary<string, object>
-        {
-            ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } },
-        });
-        span.SetMetaStruct("_dd.stack", report);
-
-        var encoded = WriteSpan(span).SelectToken("attributes[?(@.key == '_dd.stack')].value.bytesValue")?.Value<string>();
-        encoded.Should().Be(Convert.ToBase64String(report));
-    }
-
     [Fact]
     public void WriteAnyValue_SelfReferentialObjectArray_IsBoundedAtOneLevel()
     {
@@ -280,12 +265,19 @@ public class OtlpTracesJsonSerializerTests
         }
     }
 
-    [Fact]
-    public void WriteSpan_WithoutSamplingPriority_OmitsFlags()
+    [Theory]
+    [CombinatorialData]
+    public void WriteSpan_WithoutSamplingPriority_EmitsMetaStructAndOmitsFlags(bool openTelemetrySemanticsEnabled)
     {
-        var json = WriteSpan(CreateSpan());
+        var span = CreateSpan(openTelemetrySemanticsEnabled);
+        var report = MetaStructHelper.ObjectToByteArray(
+            new Dictionary<string, object> { ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } } });
+        span.SetMetaStruct("_dd.stack", report);
+        var json = WriteSpan(span);
 
         json["flags"].Should().BeNull();
+        var encoded = json.SelectToken("attributes[?(@.key == '_dd.stack')].value.bytesValue")?.Value<string>();
+        encoded.Should().Be(Convert.ToBase64String(report));
     }
 
     private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)

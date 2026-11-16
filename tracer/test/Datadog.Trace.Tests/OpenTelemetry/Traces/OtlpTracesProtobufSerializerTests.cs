@@ -27,21 +27,6 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 
 public class OtlpTracesProtobufSerializerTests
 {
-    [Theory]
-    [CombinatorialData]
-    public void SecurityReportBytesArePreserved(bool openTelemetrySemanticsEnabled)
-    {
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        var report = MetaStructHelper.ObjectToByteArray(new Dictionary<string, object>
-        {
-            ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } },
-        });
-        span.SetMetaStruct("_dd.stack", report);
-
-        SerializeAndParse(CreateChunk(span)).Attributes.Should().ContainSingle(kv => kv.Key == "_dd.stack")
-            .Which.Value.BytesValue.ToByteArray().Should().Equal(report);
-    }
-
     [Fact]
     public void FinishBody_ReturnsZero_WhenNothingSerialized()
     {
@@ -108,12 +93,18 @@ public class OtlpTracesProtobufSerializerTests
         spans[1].Name.Should().Be("resource_name2");
     }
 
-    [Fact]
-    public void SerializeSpans_EmitsCanonicalSpanShape()
+    [Theory]
+    [CombinatorialData]
+    public void SerializeSpans_EmitsCanonicalSpanShape(bool openTelemetrySemanticsEnabled)
     {
-        var span = SerializeAndParse(CreateChunk(CreateSpan()));
+        var report = MetaStructHelper.ObjectToByteArray(
+            new Dictionary<string, object> { ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } } });
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.SetMetaStruct("_dd.stack", report);
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.Name.Should().Be("resource_name");
+        span.Attributes.Should().ContainSingle(kv => kv.Key == "_dd.stack").Which.Value.BytesValue.ToByteArray().Should().Equal(report);
         span.Kind.Should().Be(OtlpSpan.Types.SpanKind.Internal);
         span.TraceId.Length.Should().Be(16);
         span.SpanId.Length.Should().Be(8);
