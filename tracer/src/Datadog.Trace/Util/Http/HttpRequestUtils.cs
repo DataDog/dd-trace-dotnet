@@ -134,10 +134,7 @@ namespace Datadog.Trace.Util.Http
         internal static string GetNormalizedHost(string? host) => StringUtil.IsNullOrEmpty(host) ? NoHostSpecified : host;
 
         /// <summary>
-        /// Resolves the relative <paramref name="relativeUri"/> against <paramref name="baseUri"/>, so that the result is safe
-        /// to pass to <see cref="GetUrl(Uri, QueryStringManager?)"/>. Some frameworks, such as ASP.NET Web API, allow a request
-        /// URI to be relative, and members such as <see cref="Uri.Query"/> and <see cref="Uri.AbsolutePath"/> throw
-        /// <see cref="InvalidOperationException"/> for a relative URI.
+        /// Resolves the relative <paramref name="relativeUri"/> against <paramref name="baseUri"/>.
         /// </summary>
         /// <param name="relativeUri">The relative URI to make absolute</param>
         /// <param name="baseUri">The absolute URI that <paramref name="relativeUri"/> is resolved against, if known</param>
@@ -148,31 +145,37 @@ namespace Datadog.Trace.Util.Http
                    : null;
 
         /// <summary>
-        /// Gets the path and the query string of the relative <paramref name="relativeUri"/>, which is needed because
-        /// <see cref="Uri.AbsolutePath"/> and <see cref="Uri.Query"/> throw <see cref="InvalidOperationException"/>
-        /// for a relative URI. Any fragment is discarded.
+        /// Splits the relative <paramref name="relativeUri"/> into its path and query string, discarding any fragment.
         /// </summary>
         /// <param name="relativeUri">The relative URI</param>
         /// <param name="path">The path, always starting with '/'</param>
         /// <param name="queryString">The query string including the leading '?', or an empty string if there is none</param>
-        internal static void GetRelativeUriPathAndQuery(Uri relativeUri, out string path, out string queryString)
+        /// <returns><c>false</c> for a network-path reference such as <c>//user:password@host/path</c>, whose authority
+        /// (which can include credentials) must not be reported as a path; otherwise <c>true</c>.</returns>
+        internal static bool TryGetRelativeUriPathAndQuery(Uri relativeUri, out string path, out string queryString)
         {
             var value = relativeUri.OriginalString;
 
-            var fragmentIndex = value.IndexOf('#');
-            if (fragmentIndex >= 0)
+            if (value.StartsWith("//", StringComparison.Ordinal))
             {
-                value = value.Substring(0, fragmentIndex);
+                path = string.Empty;
+                queryString = string.Empty;
+                return false;
             }
 
-            var queryIndex = value.IndexOf('?');
-            path = queryIndex >= 0 ? value.Substring(0, queryIndex) : value;
-            queryString = queryIndex >= 0 ? value.Substring(queryIndex) : string.Empty;
+            var fragmentIndex = value.IndexOf('#');
+            var end = fragmentIndex >= 0 ? fragmentIndex : value.Length;
+            var queryIndex = value.IndexOf('?', 0, end);
+
+            path = queryIndex >= 0 ? value.Substring(0, queryIndex) : value.Substring(0, end);
+            queryString = queryIndex >= 0 ? value.Substring(queryIndex, end - queryIndex) : string.Empty;
 
             if (path.Length == 0 || path[0] != '/')
             {
                 path = "/" + path;
             }
+
+            return true;
         }
     }
 }

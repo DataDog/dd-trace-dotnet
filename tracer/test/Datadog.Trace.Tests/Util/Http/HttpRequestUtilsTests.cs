@@ -304,12 +304,24 @@ public class HttpRequestUtilsTests
     // The fragment is discarded, even when it looks like a query
     [InlineData("/api/values?id=1#section", "/api/values", "?id=1")]
     [InlineData("/api/values#section?id=1", "/api/values", "")]
-    public void GetRelativeUriPathAndQuery_ShouldSplitPathAndQuery(string relativeUrl, string expectedPath, string expectedQuery)
+    public void TryGetRelativeUriPathAndQuery_ShouldSplitPathAndQuery(string relativeUrl, string expectedPath, string expectedQuery)
     {
-        HttpRequestUtils.GetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString);
+        HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeTrue();
 
         path.Should().Be(expectedPath);
         queryString.Should().Be(expectedQuery);
+    }
+
+    [Theory]
+    // Network-path references start with an authority, which can include credentials
+    [InlineData("//user:password@host/api/values?id=1")]
+    [InlineData("//host/api/values")]
+    public void TryGetRelativeUriPathAndQuery_RejectsNetworkPathReferences(string relativeUrl)
+    {
+        HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeFalse();
+
+        path.Should().BeEmpty();
+        queryString.Should().BeEmpty();
     }
 
     private class DerivedUri : Uri

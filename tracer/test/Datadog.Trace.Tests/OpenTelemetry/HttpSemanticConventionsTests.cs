@@ -365,6 +365,20 @@ public class HttpSemanticConventionsTests
     }
 
     [Fact]
+    public void SetHttpServerRequestValues_DoesNotReportTheAuthorityOfANetworkPathReference()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: null, hostHeader: "localhost", new Uri("//user:password@host/api/values?id=1", UriKind.Relative), QueryStringManager);
+
+        tags.UrlPath.Should().BeNull();
+        tags.UrlQuery.Should().BeNull();
+        tags.UrlScheme.Should().BeNull();
+        tags.ServerAddress.Should().Be("localhost");
+    }
+
+    [Fact]
     public void SetHttpServerRequestValues_OmitsTheProtocolVersionWhenTheHostDoesNotReportIt()
     {
         var span = CreateSpan();

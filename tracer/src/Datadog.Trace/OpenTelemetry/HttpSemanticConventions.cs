@@ -161,11 +161,9 @@ namespace Datadog.Trace.OpenTelemetry
                 tags.UrlPath = requestUri.AbsolutePath;
                 queryString = requestUri.Query;
             }
-            else if (requestUri is not null)
+            else if (requestUri is not null && HttpRequestUtils.TryGetRelativeUriPathAndQuery(requestUri, out var path, out queryString))
             {
-                // Some frameworks, such as ASP.NET Web API, allow the request URI to be relative. Most Uri members
-                // throw for a relative URI, and the scheme and host are unknown, but the path and query are not
-                HttpRequestUtils.GetRelativeUriPathAndQuery(requestUri, out var path, out queryString);
+                // relative URI: the scheme and server are unknown
                 tags.UrlPath = path;
             }
 
