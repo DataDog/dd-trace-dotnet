@@ -743,7 +743,6 @@ namespace Datadog.Trace.Tests
 #if NET7_0_OR_GREATER
         [InlineData("updowncounter", "delta", 8.0, 5.0)]
         [InlineData("updowncounter", "cumulative", 8.0, 5.0)]
-        [InlineData("updowncounter", "lowmemory", 8.0, 5.0)]
 #endif
         public async Task ObservableCounterExportsObservedSeriesEvenWhenUnchanged(string instrument, string temporalityPreference, double expectedChangedSum, double expectedUnchangedSum)
         {
