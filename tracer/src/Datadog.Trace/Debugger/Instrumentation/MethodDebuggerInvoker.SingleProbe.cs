@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return true;
             }
 
-            return MethodMetadataCollection.Instance.Get(methodMetadataIndex).InstrumentationVersion != instrumentationVersion;
+            return MethodMetadataCollection.Instance.Get(methodMetadataIndex).Probes.InstrumentationVersion != instrumentationVersion;
         }
 
         /// <summary>
