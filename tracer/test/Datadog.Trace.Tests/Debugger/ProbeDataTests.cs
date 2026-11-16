@@ -31,6 +31,6 @@ public class ProbeDataTests
     public void IsEmpty_ForEmptyAndClearedEntries()
     {
         ProbeData.Empty.IsEmpty().Should().BeTrue();
-        default(ProbeData).IsEmpty().Should().BeTrue("RemoveProbes clears an entry to its default value");
+        default(ProbeData).IsEmpty().Should().BeTrue();
     }
 }

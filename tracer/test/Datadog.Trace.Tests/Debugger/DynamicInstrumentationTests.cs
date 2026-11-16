@@ -1292,7 +1292,7 @@ public class DynamicInstrumentationTests
                 ProbeDataCollection.Instance.Get(methodIndex).Should().Be(default(ProbeData));
                 ProbeDataCollection.Instance.Get(overloadIndex).Should().Be(default(ProbeData));
                 ProbeDataCollection.Instance.Get(otherProbeIndex).ProbeId.Should().Be(otherProbe.Id);
-                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id).IsEmpty().Should().BeTrue("a hit on a removed probe must not cache it again");
+                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id).IsEmpty().Should().BeTrue();
 
                 updater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe] });
 

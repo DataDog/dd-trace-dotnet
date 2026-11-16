@@ -102,14 +102,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
         /// <summary>
         /// Clears the entries of the removed probes, so a probe added again with the same id gets a new <see cref="ProbeData"/>
-        /// with the processor and sampler registered at that time. The native side reuses the indices of a removed probe first,
-        /// so without this, a probe added again would usually find its old entry, with a removed processor and a disposed sampler.
+        /// with the processor and sampler registered at that time.
         /// </summary>
         /// <remarks>
-        /// Call it after the processors of these probes are removed and before their samplers are disposed, so no new entry can be
-        /// created for them afterwards. The native index of a probe isn't known here, and a method probe gets one index per
-        /// instrumented method (e.g. overloads), so every entry is checked. Each AppDomain has its own collection, cleared by the
-        /// Dynamic Instrumentation instance of that AppDomain.
+        /// Call it between removing the processors and disposing the samplers (see <c>DynamicInstrumentation.RemoveManagedProbeState</c>).
+        /// The native index of a probe isn't known here, and a method probe gets one index per instrumented method (e.g. overloads),
+        /// so every entry is checked.
         /// </remarks>
         /// <param name="probeIds">The ids of the removed probes</param>
         public void RemoveProbes(string[] probeIds)
@@ -145,7 +143,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override bool IsEmpty(ref ProbeData payload)
         {
-            return payload == default;
+            return payload.IsEmpty();
         }
 
         /// <summary>
@@ -162,8 +160,8 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 return ProbeData.Empty;
             }
 
-            // Read the entry once. RemoveProbes can clear it at the same time, and a copy torn by that write
-            // either has another ProbeId or misses its processor or sampler, which ProbeData.IsEmpty catches.
+            // Read the entry once. A copy torn by RemoveProbes clearing it either has another ProbeId or misses
+            // its processor or sampler, which ProbeData.IsEmpty catches.
             var probeData = items[index];
             if (probeData.ProbeId == probeId)
             {

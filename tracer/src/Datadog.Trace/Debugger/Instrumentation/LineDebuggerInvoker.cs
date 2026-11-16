@@ -194,8 +194,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
                 if (probeData.IsEmpty())
                 {
-                    // Expected after the probe is removed: a method that was already running (e.g. a loop) keeps hitting the reverted line,
-                    // so this stays at Debug to not log on every pass.
+                    // Expected while a running method (e.g. a loop) keeps hitting the line of a removed probe, so logged at Debug.
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
                         Log.Debug("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", property0: typeof(TTarget), property1: instance?.GetType().Name, property2: probeMetadataIndex, property3: probeId);
