@@ -878,7 +878,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         var metadata = evaluator.Evaluate("features-flag", ValueType.String, "default", new EvaluationContext("user")).FlagMetadata!;
 
-#if NETFRAMEWORK
+        // The tracer's first build with "R" is netcoreapp3.1; netcoreapp3.0 tests load its netstandard2.0 build.
+#if !NETCOREAPP3_1_OR_GREATER
         expected = value.ToString("G17", CultureInfo.InvariantCulture);
 #endif
         metadata["__dd_feature.ratio"].Should().Be(expected);

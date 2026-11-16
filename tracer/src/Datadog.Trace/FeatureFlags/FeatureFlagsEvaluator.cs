@@ -835,11 +835,11 @@ namespace Datadog.Trace.FeatureFlags
             return value switch
             {
                 bool b => b ? "true" : "false",
-#if NETFRAMEWORK
-                // "R" can fail to round-trip on .NET Framework; "G17" always does.
-                double d => d.ToString("G17", CultureInfo.InvariantCulture),
-#else
+#if NETCOREAPP3_0_OR_GREATER
                 double d => d.ToString("R", CultureInfo.InvariantCulture),
+#else
+                // "R" can fail to round-trip before .NET Core 3.0; "G17" always does.
+                double d => d.ToString("G17", CultureInfo.InvariantCulture),
 #endif
                 _ => (string)value,
             };
