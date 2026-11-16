@@ -5,12 +5,10 @@
 
 #nullable enable
 
-using System;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Telemetry.Metrics;
+using FluentAssertions;
 using Xunit;
+using static Datadog.Trace.Tests.Debugger.DebuggerSnapshotSerializerGuardrailTests;
 
 namespace Datadog.Trace.Tests.Debugger;
 
@@ -23,12 +21,12 @@ public class DebuggerSnapshotSerializerNullableTests
     {
         Point? point = new Point(7, 9);
 
-        var (snapshot, incompleteReasons) = Capture(point, typeof(Point?));
+        var (snapshot, incompleteReasons) = Capture(point, declaredType: typeof(Point?));
 
-        Assert.Contains("\"X\":{\"type\":\"Int32\",\"value\":\"7\"}", snapshot);
-        Assert.Contains("\"Y\":{\"type\":\"Int32\",\"value\":\"9\"}", snapshot);
-        Assert.DoesNotContain("hasValue", snapshot);
-        Assert.False(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError));
+        snapshot.Should().Contain("\"X\":{\"type\":\"Int32\",\"value\":\"7\"}");
+        snapshot.Should().Contain("\"Y\":{\"type\":\"Int32\",\"value\":\"9\"}");
+        snapshot.Should().NotContain("hasValue");
+        HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeFalse();
     }
 
     [Fact]
@@ -36,51 +34,33 @@ public class DebuggerSnapshotSerializerNullableTests
     {
         var holder = new PointHolder { Point = new Point(7, 9) };
 
-        var (snapshot, incompleteReasons) = Capture(holder, typeof(PointHolder));
+        var (snapshot, incompleteReasons) = Capture(holder);
 
-        Assert.Contains("\"X\":{\"type\":\"Int32\",\"value\":\"7\"}", snapshot);
-        Assert.Contains("\"Y\":{\"type\":\"Int32\",\"value\":\"9\"}", snapshot);
-        Assert.DoesNotContain("hasValue", snapshot);
-        Assert.False(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError));
+        snapshot.Should().Contain("\"X\":{\"type\":\"Int32\",\"value\":\"7\"}");
+        snapshot.Should().Contain("\"Y\":{\"type\":\"Int32\",\"value\":\"9\"}");
+        snapshot.Should().NotContain("hasValue");
+        HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeFalse();
     }
 
     [Fact]
     public void Capture_NullNullableStructArgument_CapturesIsNull()
     {
-        Point? point = null;
+        var (snapshot, incompleteReasons) = Capture(null, declaredType: typeof(Point?));
 
-        var (snapshot, incompleteReasons) = Capture(point, typeof(Point?));
-
-        Assert.Contains("\"isNull\":\"true\"", snapshot);
-        Assert.False(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError));
+        snapshot.Should().Contain("\"isNull\":\"true\"");
+        HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeFalse();
     }
 
-    private static (string Snapshot, uint IncompleteReasons) Capture<T>(T value, Type declaredType)
+    [Fact]
+    public void Capture_NonNullNullableStructWithSensitiveField_RedactsField()
     {
-        var limitInfo = new CaptureLimitInfo(
-            MaxReferenceDepth: 3,
-            MaxCollectionSize: 100,
-            MaxLength: 255,
-            MaxFieldCount: 20);
+        Credentials? credentials = new Credentials("hunter2");
 
-        var snapshotCreator = new DebuggerSnapshotCreator(
-            isFullSnapshot: true,
-            ProbeLocation.Method,
-            hasCondition: false,
-            tags: [],
-            limitInfo,
-            processTagsProvider: static () => null,
-            serviceNameProvider: static () => "test-service");
+        var (snapshot, _) = Capture(credentials, declaredType: typeof(Credentials?));
 
-        snapshotCreator.StartEntry();
-        snapshotCreator.CaptureArgument(value, "arg", declaredType);
-        snapshotCreator.EndEntry();
-        snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
-        return (snapshotCreator.GetSnapshotJson(), snapshotCreator.IncompleteReasons);
+        snapshot.Should().Contain("\"Password\":{\"type\":\"String\",\"notCapturedReason\":\"redactedIdent\"}");
+        snapshot.Should().NotContain("hunter2");
     }
-
-    private static bool HasReason(uint incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason reason)
-        => (incompleteReasons & (1u << (int)reason)) != 0;
 
     private readonly struct Point
     {
@@ -93,6 +73,13 @@ public class DebuggerSnapshotSerializerNullableTests
         public int X { get; }
 
         public int Y { get; }
+    }
+
+    private readonly struct Credentials
+    {
+        public Credentials(string password) => Password = password;
+
+        public string Password { get; }
     }
 
     private sealed class PointHolder
