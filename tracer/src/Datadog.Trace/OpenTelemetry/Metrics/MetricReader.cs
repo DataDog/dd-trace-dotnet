@@ -40,7 +40,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         {
             var listener = new MeterListener
             {
-                MeasurementsCompleted = static (_, _) => { },
+                MeasurementsCompleted = _handler.OnMeasurementsCompleted,
                 InstrumentPublished = _handler.OnInstrumentPublished
             };
 

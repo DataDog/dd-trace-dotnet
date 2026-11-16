@@ -19,12 +19,19 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
     private readonly double[] _runningBucketBounds = instrumentType == InstrumentType.Histogram ? (explicitBounds ?? DefaultHistogramBounds) : [];
     private readonly bool _isOverflow = isOverflow;
+
+    // OTel spec: a synchronous cumulative point exposed in a previous collection is exported on every
+    // collection, even without new measurements.
+    private readonly bool _carryForward = temporality == Metrics.AggregationTemporality.Cumulative
+        && instrumentType is InstrumentType.Counter or InstrumentType.UpDownCounter or InstrumentType.Histogram or InstrumentType.Gauge;
+
     private readonly object _histogramLock = new();
     private long _runningCountValue;
     private double _runningDoubleValue;
     private double _runningMin = double.PositiveInfinity;
     private double _runningMax = double.NegativeInfinity;
     private bool _hasMeasurements;
+    private bool _exported;
     private double _lastObservedCumulative = double.NaN;
 
     public string InstrumentName { get; } = instrumentName;
@@ -136,7 +143,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
         }
     }
 
-    public bool HasDataToExport() => _hasMeasurements;
+    public bool HasDataToExport() => _hasMeasurements || (_carryForward && _exported);
 
     private int FindBucketIndex(double value)
     {
@@ -249,6 +256,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             }
 
             _hasMeasurements = false;
+            _exported = true;
 
             return snapshot;
         }

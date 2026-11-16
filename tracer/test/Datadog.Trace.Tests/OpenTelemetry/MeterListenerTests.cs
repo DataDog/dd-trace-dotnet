@@ -804,6 +804,135 @@ namespace Datadog.Trace.Tests
                 });
         }
 
+        [Theory]
+        [InlineData("counter", "cumulative", true)]
+        [InlineData("histogram", "cumulative", true)]
+        [InlineData("counter", "delta", false)]
+        [InlineData("histogram", "delta", false)]
+#if NET7_0_OR_GREATER
+        [InlineData("updowncounter", "delta", true)]
+        [InlineData("updowncounter", "cumulative", true)]
+#endif
+#if NET9_0_OR_GREATER
+        [InlineData("gauge", "cumulative", true)]
+        [InlineData("gauge", "lowmemory", true)]
+        [InlineData("gauge", "delta", false)]
+#endif
+        public async Task SynchronousCumulativeSeriesIsExportedWithoutNewMeasurements(string instrument, string temporalityPreference, bool expectedExported)
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference },
+                });
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+            const string name = "test.sync.carried";
+            var tag = new KeyValuePair<string, object>("pool", "steady");
+            switch (instrument)
+            {
+                case "counter":
+                    meter.CreateCounter<long>(name).Add(5, tag);
+                    break;
+                case "histogram":
+                    meter.CreateHistogram<long>(name).Record(5, tag);
+                    break;
+#if NET7_0_OR_GREATER
+                case "updowncounter":
+                    meter.CreateUpDownCounter<long>(name).Add(5, tag);
+                    break;
+#endif
+#if NET9_0_OR_GREATER
+                case "gauge":
+                    meter.CreateGauge<long>(name).Record(5, tag);
+                    break;
+#endif
+            }
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(5.0);
+
+            // Two more collections without any new measurement.
+            for (var cycle = 2; cycle <= 3; cycle++)
+            {
+                var before = testExporter.ExportedMetrics.Count;
+                await pipeline.ForceCollectAndExportAsync();
+                var exported = testExporter.ExportedMetrics.Skip(before).Where(m => m.InstrumentName == name).ToList();
+
+                if (expectedExported)
+                {
+                    var point = exported.Should().ContainSingle().Subject;
+                    point.SnapshotSum.Should().Be(5.0);
+                    if (instrument == "histogram")
+                    {
+                        point.SnapshotCount.Should().Be(1);
+                    }
+                    else if (instrument == "gauge")
+                    {
+                        point.SnapshotGaugeValue.Should().Be(5.0);
+                    }
+                }
+                else
+                {
+                    exported.Should().BeEmpty();
+                }
+            }
+        }
+
+        [Fact]
+        public void SynchronousCumulativePointIsOnlyCarriedForwardOnceExported()
+        {
+            var point = new MetricPoint("test.sync.point", "TestMeter", string.Empty, [], InstrumentType.Counter, AggregationTemporality.Cumulative, new Dictionary<string, object>());
+
+            // A point can be collected after it is created but before its first measurement is recorded.
+            point.HasDataToExport().Should().BeFalse();
+
+            point.UpdateCounter(5);
+            point.HasDataToExport().Should().BeTrue();
+            point.CreateSnapshotAndReset().SnapshotSum.Should().Be(5.0);
+
+            point.HasDataToExport().Should().BeTrue();
+            point.CreateSnapshotAndReset().SnapshotSum.Should().Be(5.0);
+        }
+
+        [Fact]
+        public async Task RecreatedInstrumentIsSubscribedAgain()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, "cumulative" },
+                });
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string meterName = "TestMeter.Recreated";
+            const string name = "test.sync.recreated";
+            var oldMeter = new Meter(meterName);
+            oldMeter.CreateCounter<long>(name).Add(5);
+            await pipeline.ForceCollectAndExportAsync();
+            oldMeter.Dispose();
+
+            // A new instrument with the same identity is a new series, not the old one.
+            using var newMeter = new Meter(meterName);
+            newMeter.CreateCounter<long>(name).Add(3);
+
+            var before = testExporter.ExportedMetrics.Count;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(before).Where(m => m.InstrumentName == name).Select(m => m.SnapshotSum)
+                .Should().BeEquivalentTo([5.0, 3.0]);
+
+            before = testExporter.ExportedMetrics.Count;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(before).Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(3.0);
+        }
+
         [Fact]
         public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
         {
@@ -833,9 +962,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void CapturesAllMetricsWithCorrectTemporality_Default()
+        public async Task CapturesAllMetricsWithCorrectTemporality_Default()
         {
-            _ = CapturesAllMetricsWithCorrectTemporality(
+            await CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: null,
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -847,9 +976,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void CapturesAllMetricsWithCorrectTemporality_DeltaPreference()
+        public async Task CapturesAllMetricsWithCorrectTemporality_DeltaPreference()
         {
-            _ = CapturesAllMetricsWithCorrectTemporality(
+            await CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "delta",
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -861,9 +990,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void CapturesAllMetricsWithCorrectTemporality_CumulativePreference()
+        public async Task CapturesAllMetricsWithCorrectTemporality_CumulativePreference()
         {
-            _ = CapturesAllMetricsWithCorrectTemporality(
+            await CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "cumulative",
                 expectedCounterTemporality: AggregationTemporality.Cumulative,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -871,13 +1000,13 @@ namespace Datadog.Trace.Tests
                 expectedObservableCounterTemporality: AggregationTemporality.Cumulative,
                 expectedObservableGaugeTemporality: null,
                 expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
-                expectedGaugeTemporality: null);
+                expectedGaugeTemporality: AggregationTemporality.Cumulative);
         }
 
         [Fact]
-        public void CapturesAllMetricsWithCorrectTemporality_LowMemoryPreference()
+        public async Task CapturesAllMetricsWithCorrectTemporality_LowMemoryPreference()
         {
-            _ = CapturesAllMetricsWithCorrectTemporality(
+            await CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "lowmemory",
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -885,7 +1014,7 @@ namespace Datadog.Trace.Tests
                 expectedObservableCounterTemporality: AggregationTemporality.Cumulative,
                 expectedObservableGaugeTemporality: null,
                 expectedObservableUpDownTemporality: AggregationTemporality.Cumulative,
-                expectedGaugeTemporality: null);
+                expectedGaugeTemporality: AggregationTemporality.Cumulative);
         }
 
         private async Task CapturesAllMetricsWithCorrectTemporality(
