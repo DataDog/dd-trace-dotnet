@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (errorCount > 0)
             {
                 span.Error = true;
-                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Trace.Tags.ErrorMsg, StringUtil.Invariant($"{errorCount} error(s)"));
                 span.SetTag(Trace.Tags.ErrorType, errorType);
                 span.SetTag(Trace.Tags.ErrorStack, errors);
 

@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     if (GetFunctionMetadataTarget(activeScope) is { } targetSpan)
                     {
                         // The shortname is prefixed with "Functions.", so strip that off
-                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                        var remoteFunctionName = functionName?.StartsWithOrdinal("Functions.") == true
                                                      ? functionName.Substring(10)
                                                      : functionName;
                         AzureFunctionsTags.SetRootSpanTags(

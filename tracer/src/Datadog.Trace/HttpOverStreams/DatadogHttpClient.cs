@@ -89,7 +89,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    ThrowHelper.ThrowEndOfStreamException($"Unexpected end of stream at position {streamPosition}");
+                    ThrowHelper.ThrowEndOfStreamException(StringUtil.Invariant($"Unexpected end of stream at position {streamPosition}"));
                 }
 
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
@@ -112,7 +112,7 @@ namespace Datadog.Trace.HttpOverStreams
                     lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
                     if (lastBytesRead == 0)
                     {
-                        ThrowHelper.ThrowEndOfStreamException($"Unexpected end of stream at position {streamPosition}");
+                        ThrowHelper.ThrowEndOfStreamException(StringUtil.Invariant($"Unexpected end of stream at position {streamPosition}"));
                     }
 
                     bytesRemaining -= lastBytesRead;
@@ -180,7 +180,7 @@ namespace Datadog.Trace.HttpOverStreams
             var potentialStatusCode = stringBuilder.ToString();
             stringBuilder.Clear();
 
-            if (!int.TryParse(potentialStatusCode, out var statusCode))
+            if (!int.TryParseInvariant(potentialStatusCode, out var statusCode))
             {
                 DatadogHttpRequestException.Throw("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
             }
@@ -238,7 +238,7 @@ namespace Datadog.Trace.HttpOverStreams
                 }
             }
 
-            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
+            var length = long.TryParseInvariant(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
 
             var stream = isChunked ? new ChunkedEncodingReadStream(responseStream) : responseStream;
 

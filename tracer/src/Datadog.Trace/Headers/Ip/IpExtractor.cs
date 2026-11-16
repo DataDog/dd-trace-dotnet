@@ -24,7 +24,7 @@ namespace Datadog.Trace.Headers.Ip
                 var parts = currentCidrMask.Split('/');
 
                 var cidrAddr = BitConverter.ToInt32(IPAddress.Parse(parts[0]).GetAddressBytes(), 0);
-                var cidrMask = IPAddress.HostToNetworkOrder(-1 << (32 - int.Parse(parts[1])));
+                var cidrMask = IPAddress.HostToNetworkOrder(-1 << (32 - int.ParseInvariant(parts[1])));
                 _ipv4LocalCidrs.Add(new Tuple<int, int>(cidrAddr, cidrMask));
             }
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Headers.Ip
                 var parts = ip.Split(':');
                 if (parts.Length == 2)
                 {
-                    _ = int.TryParse(parts[1], out port);
+                    _ = int.TryParseInvariant(parts[1], out port);
                     return new IpInfo(parts[0], port);
                 }
             }
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Headers.Ip
             if (result.Success)
             {
                 ip = result.Groups[1].Captures[0].Value;
-                _ = int.TryParse(result.Groups[2].Captures[0].Value, out port);
+                _ = int.TryParseInvariant(result.Groups[2].Captures[0].Value, out port);
             }
 
             return new IpInfo(ip, port);

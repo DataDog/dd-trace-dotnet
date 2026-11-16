@@ -164,7 +164,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                     ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
                     var rid = Tracer.RuntimeId;
                     var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    var telemetryPath = Path.Combine(logDir, $"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log");
+                    var telemetryPath = Path.Combine(logDir, StringUtil.Invariant($"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log"));
                     Log.Debug("Requesting telemetry dump to {FileName}", telemetryPath);
                     await _telemetryController.DumpTelemetry(telemetryPath).ConfigureAwait(false);
                 }
@@ -333,7 +333,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
         static bool TryGetArg(JObject argsObject, string name, string configPath, [NotNullWhen(true)] out string? value, [NotNullWhen(false)] out ApplyDetails? error)
         {
-            if (argsObject.TryGetValue(name, out var token)
+            if (argsObject.TryGetValue(name, StringComparison.Ordinal, out var token)
              && token.Type == JTokenType.String
              && token.Value<string>() is { Length: > 0 } parsedValue)
             {

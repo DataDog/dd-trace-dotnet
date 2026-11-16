@@ -49,7 +49,7 @@ internal class GacGetCommand : CommandWithExamples
             AnsiConsole.WriteLine($"Assembly Found!");
             AnsiConsole.WriteLine($"  Flag={asmFlags}");
             AnsiConsole.WriteLine($"  Path={asmInfo.CurrentAssemblyPath}");
-            AnsiConsole.WriteLine($"  SizeInKb={asmInfo.AssemblySizeInKb}");
+            AnsiConsole.WriteLine(StringUtil.Invariant($"  SizeInKb={asmInfo.AssemblySizeInKb}"));
 
             foreach (var asmName in gacMethods.GetAssemblyNames(assemblyName!))
             {

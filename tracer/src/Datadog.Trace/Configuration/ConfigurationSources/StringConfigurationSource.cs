@@ -140,7 +140,7 @@ namespace Datadog.Trace.Configuration
                 return ConfigurationResult<int>.NotFound();
             }
 
-            if (int.TryParse(value, out var result))
+            if (int.TryParseInvariant(value, out var result))
             {
                 if (validator is null || validator(result))
                 {
