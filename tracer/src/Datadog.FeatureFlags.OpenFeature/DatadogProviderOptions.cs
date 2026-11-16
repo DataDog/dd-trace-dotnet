@@ -11,9 +11,10 @@ namespace Datadog.FeatureFlags.OpenFeature;
 public sealed class DatadogProviderOptions
 {
     /// <summary>
-    /// Gets or sets the flags to load. Unset, every flag loads. The selection is copied when the provider
-    /// is constructed, and the first provider constructed in a process decides the selection for every
-    /// provider in that process until they have all been shut down or disposed.
+    /// Gets or sets the flags to load. When FlagSelection is null or not set, every flag is loaded. The
+    /// selection is copied when the provider is constructed, and the first provider constructed in a
+    /// process decides the selection for every provider in that process until they have all been shut
+    /// down or disposed.
     /// </summary>
     public FlagSelection? FlagSelection { get; set; }
 }
