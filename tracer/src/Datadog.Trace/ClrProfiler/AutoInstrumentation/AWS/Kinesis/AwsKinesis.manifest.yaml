@@ -1,8 +1,8 @@
 _v: 1
 name: AwsKinesis
-display_name: AWS Kinesis
-description: Instruments AWS Kinesis record publishing and retrieval, injecting trace context into publish payloads and emitting
-  optional Data Streams Monitoring checkpoints.
+display_name: Amazon Kinesis
+description: Instruments Amazon Kinesis record publishing and retrieval through the AWS SDK, with trace-context injection
+  and optional Data Streams Monitoring checkpoints.
 packages:
 - name: AWSSDK.Kinesis
 category:

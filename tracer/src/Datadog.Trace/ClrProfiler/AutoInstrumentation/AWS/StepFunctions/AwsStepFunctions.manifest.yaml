@@ -1,12 +1,12 @@
 _v: 1
 name: AwsStepFunctions
 display_name: AWS Step Functions
-description: Instruments AWS Step Functions state-machine execution starts, creating producer spans and propagating trace
-  context in JSON inputs.
+description: Instruments AWS SDK calls that start asynchronous and synchronous AWS Step Functions state machine executions,
+  creating producer spans and injecting trace context into JSON input.
 packages:
 - name: AWSSDK.StepFunctions
 category:
-- workflow.durable_execution
+- messaging.producer
 systems:
 - aws.step_functions
 creation_date: '2025-02-12'
