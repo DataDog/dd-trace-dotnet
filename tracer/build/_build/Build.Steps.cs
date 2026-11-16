@@ -2829,9 +2829,6 @@ partial class Build
                knownPatterns.Add(new(
                    @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '.*Datadog\.Profiler\.Native\..*' cannot be loaded, file doesn't exist.*",
                    RegexOptions.Compiled));
-               knownPatterns.Add(new(
-                   @".*Skipping hands-off configuration: as LibDatadog is not available.*",
-                   RegexOptions.Compiled));
            }
 
            // We disable the profiler in crash tests, so we expect these logs
