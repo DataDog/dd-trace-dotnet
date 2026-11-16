@@ -9,8 +9,6 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Context;

@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -50,7 +49,6 @@ namespace Datadog.Trace.Configuration
 
             IntegrationName = integrationName;
 
-            // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance);
             Enabled = isExplicitlyDisabled
                           ? false

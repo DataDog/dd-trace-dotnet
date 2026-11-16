@@ -7,22 +7,14 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
 /// <summary>
-/// A version of <see cref="IConfigurationSource"/> that also allows reports the source of the telemetry
-/// when a value is retrieved using a key.
+/// Provides access to configuration values.
 /// </summary>
 public interface IConfigurationSource
 {
-    /// <summary>
-    /// Gets the origin of the configuration source.
-    /// </summary>
-    public ConfigurationOrigins Origin { get; }
-
     /// <summary>
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.
@@ -30,12 +22,10 @@ public interface IConfigurationSource
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
-    /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
     ConfigurationResult<string> GetString(
         string key,
-        Func<string, bool>? validator,
-        bool recordValue);
+        Func<string, bool>? validator);
 
     /// <summary>
     /// Gets the <see cref="int"/> value of
@@ -108,11 +98,9 @@ public interface IConfigurationSource
     /// <param name="converter">A converter that parses the "raw" string configuration value into the expected value.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
-    /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
     ConfigurationResult<T> GetAs<T>(
         string key,
         Func<string, ParsingResult<T>> converter,
-        Func<T, bool>? validator,
-        bool recordValue);
+        Func<T, bool>? validator);
 }

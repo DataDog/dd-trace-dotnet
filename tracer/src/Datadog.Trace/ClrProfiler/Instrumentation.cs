@@ -16,8 +16,6 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.ServiceFabric;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
@@ -89,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                        var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(enabledCategories, ConfigTelemetryData.TargetFramework);
+                        var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(enabledCategories, TargetFrameworkInfo.Current);
                         Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
 
                         var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
@@ -196,10 +194,6 @@ namespace Datadog.Trace.ClrProfiler
                   + "Datadog.Trace.Trimming NuGet package.");
             }
 #endif
-
-            // Eagerly initialize the root session ID so child processes
-            // inherit it even if spawned before the first telemetry flush.
-            _ = RuntimeId.GetRootSessionId();
 
             Log.Debug("Initializing tracer singleton instance.");
 
@@ -341,7 +335,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
 
-                var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, ConfigTelemetryData.TargetFramework);
+                var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, TargetFrameworkInfo.Current);
                 Log.Information<int>("IAST: {Aspects} Callsite Dataflow Aspects added to the profiler.", aspects);
 
                 if (sw != null)

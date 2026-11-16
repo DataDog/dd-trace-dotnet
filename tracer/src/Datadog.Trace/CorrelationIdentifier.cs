@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace
 {

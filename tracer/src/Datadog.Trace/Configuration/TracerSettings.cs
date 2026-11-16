@@ -10,13 +10,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -94,7 +91,7 @@ namespace Datadog.Trace.Configuration
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
-                                        defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
+                                        defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0),
                                         converter: x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
@@ -183,7 +180,7 @@ namespace Datadog.Trace.Configuration
             OtlpGeneralProtocol = config
                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                                 .GetAs(
-                                    defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                    defaultValue: new(OtlpProtocol.Grpc),
                                     converter: x => x switch
                                     {
                                         not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -195,7 +192,7 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                      defaultValue: new(OtlpProtocol.Grpc),
                                       converter: x => x switch
                                       {
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -210,7 +207,7 @@ namespace Datadog.Trace.Configuration
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
-                    defaultValue: new DefaultResult<Uri>(result: new Uri(defaultUri), telemetryValue: defaultUri),
+                    defaultValue: new DefaultResult<Uri>(new Uri(defaultUri)),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
@@ -218,19 +215,18 @@ namespace Datadog.Trace.Configuration
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint)
                 .GetAs(
                     defaultValue: new DefaultResult<Uri>(
-                        result: OtlpMetricsProtocol switch
+                        OtlpMetricsProtocol switch
                         {
                             OtlpProtocol.Grpc => OtlpEndpoint,
                             _ => new Uri(OtlpEndpoint, "/v1/metrics")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/metrics" : string.Empty)}"),
+                        }),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
             OtlpMetricsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
                             .AsDictionaryResult(separator: '=')
-                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>()))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
@@ -241,7 +237,7 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
-                                   defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
+                                   defaultValue: new(OtlpTemporalityPreference.Delta),
                                    converter: x => x switch
                                    {
                                        not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Cumulative,
@@ -254,7 +250,7 @@ namespace Datadog.Trace.Configuration
             OtlpLogsProtocol = config
                              .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
-                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  defaultValue: new(OtlpProtocol.Grpc),
                                   converter: x => x switch
                                   {
                                       not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -268,19 +264,18 @@ namespace Datadog.Trace.Configuration
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
                 .GetAs(
                     defaultValue: new DefaultResult<Uri>(
-                        result: OtlpLogsProtocol switch
+                        OtlpLogsProtocol switch
                         {
                             OtlpProtocol.Grpc => OtlpEndpoint,
                             _ => new Uri(OtlpEndpoint, "/v1/logs")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpLogsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/logs" : string.Empty)}"),
+                        }),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsDictionaryResult(separator: '=')
-                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>()))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
@@ -315,8 +310,6 @@ namespace Datadog.Trace.Configuration
 
             OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
 
-            // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
-            // When we do, we can insert that here
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             TraceBufferSize = config
@@ -339,7 +332,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
                                          .AsBool(defaultValue: false);
 #if !NET6_0_OR_GREATER
-            // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
+            // Single-span ASP.NET Core is only supported in .NET 6+.
             if (SingleSpanAspNetCoreEnabled)
             {
                 SingleSpanAspNetCoreEnabled = false;
@@ -398,8 +391,7 @@ namespace Datadog.Trace.Configuration
                         .ToArray();
 
             var getDefaultPropagationHeaders = () => new DefaultResult<string[]>(
-                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.W3CBaggage],
-                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
+                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.W3CBaggage]);
 
             // Same otel config is used for both injection and extraction
             var otelPropagation = config
@@ -419,7 +411,7 @@ namespace Datadog.Trace.Configuration
             PropagationBehaviorExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
-                                             defaultValue: new(ExtractBehavior.Continue, "continue"),
+                                             defaultValue: new(ExtractBehavior.Continue),
                                              converter: x => x.ToLowerInvariant() switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
@@ -480,7 +472,7 @@ namespace Datadog.Trace.Configuration
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
-                                     defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
+                                     defaultValue: new(DbmPropagationLevel.Disabled),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
@@ -546,33 +538,6 @@ namespace Datadog.Trace.Configuration
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
-            // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
-
-            // these are SSI variables that would be useful for correlation purposes
-
-            var installType = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallType);
-
-            var instrumentationSource = installType switch
-            {
-                "dd_dotnet_launcher" => "cmd_line",
-                "dd_trace_tool" => "cmd_line",
-                "dotnet_msi" => "env_var",
-                "windows_fleet_installer" => "ssi", // windows SSI on IIS
-                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)) => "ssi", // "normal" ssi
-                _ => "manual" // everything else
-            };
-
-#if NET6_0_OR_GREATER
-            var trimState = TrimmingDetector.DetectedTrimmingState;
-            var invalidTrimming = trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile;
-            var isTrimmed = invalidTrimming || trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile;
-
-#endif
-
-            if (AzureAppServiceMetadata is not null)
-            {
-            }
-
             PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
             PartialFlushMinSpans = config
                                   .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
@@ -595,7 +560,7 @@ namespace Datadog.Trace.Configuration
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
         /// <summary>
-        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Gets a value indicating whether traces should be tagged with git metadata.
         /// Default value is <c>true</c> (enabled).
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>

@@ -13,8 +13,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -270,7 +268,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> configurationResult,
         bool headerTagsNormalizationFixEnabled)
     {
-        var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!, "[]"));
+        var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!));
 
         if (configurationDictionary == null!)
         {
@@ -352,7 +350,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             // Checks that the value about to be used follows the `401-404` structure or single 3 digit number i.e. `401` else log the warning
             if (!Regex.IsMatch(statusConfiguration, @"^\d{3}-\d{3}$|^\d{3}$"))
             {
-                // TODO: this should be logged in telemetry or the ErrorLog override or something
+                // TODO: Log this invalid configuration value.
                 // Log.Warning("Wrong format '{0}' for DD_TRACE_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
             }
 
@@ -674,8 +672,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             initialSettings.ServiceNameMappings,
             removeGlobalTags: false);
 
-        // These behave differently depending on which source the telemetry came from, so inspect them separately
-        // Reading the manual value first is important to ensure correct telemetry
+        // These behave differently depending on the source, so inspect them separately.
+        // Reading the manual value first preserves configuration precedence.
         var manualConfig = new ConfigurationBuilder(manualSource);
         var dynamicConfig = new ConfigurationBuilder(dynamicSource);
         var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();

@@ -7,7 +7,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+namespace Datadog.Trace.Configuration;
 
 internal interface IConfigurationOverrideHandler
 {

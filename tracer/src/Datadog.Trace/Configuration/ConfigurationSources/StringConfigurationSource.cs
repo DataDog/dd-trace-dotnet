@@ -9,8 +9,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -21,8 +19,6 @@ namespace Datadog.Trace.Configuration
     internal abstract class StringConfigurationSource : IConfigurationSource
     {
         private static readonly char[] DictionarySeparatorChars = { ',' };
-
-        public abstract ConfigurationOrigins Origin { get; }
 
         /// <summary>
         /// Returns a <see cref="IDictionary{TKey, TValue}"/> from parsing
@@ -101,7 +97,7 @@ namespace Datadog.Trace.Configuration
         protected abstract string? GetString(string key);
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator)
         {
             var value = GetString(key);
 
@@ -189,7 +185,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator)
         {
             var value = GetString(key);
 
@@ -203,7 +199,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(result.Result))
                 {
-                    return ConfigurationResult<T>.Valid(result.Result, value);
+                    return ConfigurationResult<T>.Valid(result.Result);
                 }
 
                 return ConfigurationResult<T>.Invalid(result.Result);
@@ -226,14 +222,11 @@ namespace Datadog.Trace.Configuration
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }
 
-            // We record the original dictionary value here instead of serializing the _parsed_ value
-            // Currently we have no validation of the dictionary values during parsing, so there's no way to get
-            // a validation error that needs recording at this stage
             var result = ParseCustomKeyValues(value, allowOptionalMappings, separator);
 
             if (validator is null || validator(result))
             {
-                return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
             }
 
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
@@ -249,14 +242,11 @@ namespace Datadog.Trace.Configuration
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }
 
-            // We record the original dictionary value here instead of serializing the _parsed_ value
-            // Currently we have no validation of the dictionary values during parsing, so there's no way to get
-            // a validation error that needs recording at this stage
             var result = parser(value);
 
             if (validator is null || validator(result))
             {
-                return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
             }
 
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);

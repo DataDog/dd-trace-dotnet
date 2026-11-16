@@ -5,7 +5,6 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Settings;
 using FluentAssertions;

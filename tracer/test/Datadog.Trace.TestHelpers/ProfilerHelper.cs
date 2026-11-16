@@ -66,6 +66,9 @@ namespace Datadog.Trace.TestHelpers
                 externalRulesFile,
                 ignoreProfilerProcessesVar);
 
+            // Lets the sample exit by itself if this test host is killed/aborted before it can clean up
+            startInfo.Environment["DD_TEST_PARENT_PID"] = Process.GetCurrentProcess().Id.ToString();
+
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;

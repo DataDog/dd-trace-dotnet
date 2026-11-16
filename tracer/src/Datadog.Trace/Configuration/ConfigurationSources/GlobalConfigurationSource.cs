@@ -9,7 +9,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
@@ -38,7 +37,7 @@ internal static class GlobalConfigurationSource
 
 #if NETFRAMEWORK
         // on .NET Framework only, also read from app.config/web.config
-        configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
+        configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
 #endif
 
         // datadog.json
@@ -64,7 +63,7 @@ internal static class GlobalConfigurationSource
             if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                 File.Exists(configurationFileName))
             {
-                jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName, ConfigurationOrigins.DdConfig);
+                jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
                 return true;
             }
         }

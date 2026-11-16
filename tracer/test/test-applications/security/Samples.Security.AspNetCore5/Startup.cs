@@ -97,6 +97,9 @@ namespace Samples.Security.AspNetCore5
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            var lifetime = app.ApplicationServices.GetService<IHostApplicationLifetime>();
+            SampleHelpers.ExitWhenParentExits(() => lifetime.StopApplication());
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

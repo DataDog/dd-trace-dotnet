@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 #nullable enable

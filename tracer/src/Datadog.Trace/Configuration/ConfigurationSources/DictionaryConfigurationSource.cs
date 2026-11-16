@@ -6,7 +6,6 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
@@ -18,8 +17,6 @@ internal sealed class DictionaryConfigurationSource : StringConfigurationSource
     {
         _dictionary = dictionary;
     }
-
-    public override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
 
     protected override string? GetString(string key)
     {

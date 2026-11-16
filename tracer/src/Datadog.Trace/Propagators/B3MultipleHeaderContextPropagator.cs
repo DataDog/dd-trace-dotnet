@@ -6,8 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators

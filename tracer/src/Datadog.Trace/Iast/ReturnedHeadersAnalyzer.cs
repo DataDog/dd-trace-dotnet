@@ -13,7 +13,6 @@ using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 #endif
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 #nullable enable
 namespace Datadog.Trace.Iast;

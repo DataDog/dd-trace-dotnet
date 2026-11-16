@@ -9,10 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
 
@@ -29,8 +26,7 @@ internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualIns
 
     protected override bool TryGetValue(string key, out object? value)
     {
-        // Get the value for the given key, but also record telemetry
-        // This is also where any "remapping" should be done, in cases
+        // This is where any "remapping" should be done, in cases
         // where either the manual-instrumentation key differs or the
         // type stored in the dictionary differs
 
@@ -338,35 +334,6 @@ internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualIns
         "DD_TRACE_SESSIONTIMEOUT_ANALYTICS_SAMPLE_RATE" => IntegrationId.SessionTimeout,
         "DD_TRACE_DATADOGTRACEMANUAL_ANALYTICS_SAMPLE_RATE" => IntegrationId.DatadogTraceManual,
         "DD_TRACE_EMAILHTMLINJECTION_ANALYTICS_SAMPLE_RATE" => IntegrationId.EmailHtmlInjection,
-        _ => null,
-    };
-
-    // This list is fixed in time and doesn't need to be updated
-    [TestingAndPrivateOnly]
-    internal static PublicApiUsage? GetTelemetryKey(string key) => key switch
-    {
-        TracerSettingKeyConstants.AgentUriKey => PublicApiUsage.ExporterSettings_AgentUri_Set,
-        TracerSettingKeyConstants.AnalyticsEnabledKey => PublicApiUsage.TracerSettings_AnalyticsEnabled_Set,
-        TracerSettingKeyConstants.CustomSamplingRules => PublicApiUsage.TracerSettings_CustomSamplingRules_Set,
-        TracerSettingKeyConstants.DiagnosticSourceEnabledKey => PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Set,
-        TracerSettingKeyConstants.DisabledIntegrationNamesKey => PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set,
-        TracerSettingKeyConstants.EnvironmentKey => PublicApiUsage.TracerSettings_Environment_Set,
-        TracerSettingKeyConstants.GlobalSamplingRateKey => PublicApiUsage.TracerSettings_GlobalSamplingRate_Set,
-        TracerSettingKeyConstants.GrpcTags => PublicApiUsage.TracerSettings_GrpcTags_Set,
-        TracerSettingKeyConstants.HeaderTags => PublicApiUsage.TracerSettings_HeaderTags_Set,
-        TracerSettingKeyConstants.GlobalTagsKey => PublicApiUsage.TracerSettings_GlobalTags_Set,
-        TracerSettingKeyConstants.HttpClientErrorCodesKey => PublicApiUsage.TracerSettings_SetHttpClientErrorStatusCodes,
-        TracerSettingKeyConstants.HttpServerErrorCodesKey => PublicApiUsage.TracerSettings_SetHttpServerErrorStatusCodes,
-        TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey => PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Set,
-        TracerSettingKeyConstants.LogsInjectionEnabledKey => PublicApiUsage.TracerSettings_LogsInjectionEnabled_Set,
-        TracerSettingKeyConstants.ServiceNameKey => PublicApiUsage.TracerSettings_ServiceName_Set,
-        TracerSettingKeyConstants.ServiceNameMappingsKey => PublicApiUsage.TracerSettings_SetServiceNameMappings,
-        TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey => PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set,
-        TracerSettingKeyConstants.ServiceVersionKey => PublicApiUsage.TracerSettings_ServiceVersion_Set,
-        TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey => PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set,
-        TracerSettingKeyConstants.StatsComputationEnabledKey => PublicApiUsage.TracerSettings_StatsComputationEnabled_Set,
-        TracerSettingKeyConstants.TraceEnabledKey => PublicApiUsage.TracerSettings_TraceEnabled_Set,
-        TracerSettingKeyConstants.TracerMetricsEnabledKey => PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set,
         _ => null,
     };
 

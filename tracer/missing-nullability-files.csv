@@ -96,7 +96,6 @@ src/Datadog.Trace/Tagging/SqlTags.cs
 src/Datadog.Trace/Tagging/TraceAnnotationTags.cs
 src/Datadog.Trace/Tagging/WcfTags.cs
 src/Datadog.Trace/Tagging/WebTags.cs
-src/Datadog.Trace/Telemetry/TelemetryConstants.cs
 src/Datadog.Trace/Util/ArrayBuilder.cs
 src/Datadog.Trace/Util/ArraySlice.cs
 src/Datadog.Trace/Util/AsyncUtil.cs
@@ -120,7 +119,6 @@ src/Datadog.Trace/Headers/Ip/IpInfo.cs
 src/Datadog.Trace/Iast/Aspects/DebugAspects.cs
 src/Datadog.Trace/Iast/Dataflow/AspectFilter.cs
 src/Datadog.Trace/Iast/Dataflow/AspectType.cs
-src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
 src/Datadog.Trace/Util/Http/HttpRequestExtensions.Core.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs

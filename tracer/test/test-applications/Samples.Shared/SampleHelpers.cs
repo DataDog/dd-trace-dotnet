@@ -142,6 +142,50 @@ namespace Samples
             }
         }
 
+        /// <summary>
+        /// Test samples are launched by a test host that may be killed or aborted without running its cleanup.
+        /// If the test host passed its pid in DD_TEST_PARENT_PID, invoke <paramref name="onParentExit"/> once that
+        /// process is gone, so the sample doesn't linger and keep files (e.g. the monitoring home) locked.
+        /// </summary>
+        public static void ExitWhenParentExits(Action onParentExit)
+        {
+            if (!int.TryParse(Environment.GetEnvironmentVariable("DD_TEST_PARENT_PID"), out var parentPid))
+            {
+                return;
+            }
+
+            var thread = new System.Threading.Thread(
+                () =>
+                {
+                    try
+                    {
+                        using var parent = System.Diagnostics.Process.GetProcessById(parentPid);
+                        parent.WaitForExit();
+                    }
+                    catch (ArgumentException)
+                    {
+                        // parent already gone
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Parent watchdog failed: {ex.Message}");
+                        return;
+                    }
+
+                    Console.WriteLine($"Test host (pid {parentPid}) exited, shutting down sample.");
+                    onParentExit();
+
+                    // If graceful shutdown stalls, don't linger.
+                    System.Threading.Thread.Sleep(5_000);
+                    Environment.Exit(1);
+                })
+            {
+                IsBackground = true,
+                Name = "ParentProcessWatchdog"
+            };
+            thread.Start();
+        }
+
         public static void RunShutDownTasks(object caller)
         {
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();

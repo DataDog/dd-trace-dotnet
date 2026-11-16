@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 

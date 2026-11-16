@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
 
@@ -16,7 +15,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources;
 internal abstract class ManualInstrumentationConfigurationSourceBase : DictionaryObjectConfigurationSource
 {
     protected ManualInstrumentationConfigurationSourceBase(IReadOnlyDictionary<string, object?> dictionary, bool useDefaultSources)
-        : base(dictionary, ConfigurationOrigins.Code)
+        : base(dictionary)
     {
         UseDefaultSources = useDefaultSources;
     }

@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {

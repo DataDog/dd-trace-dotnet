@@ -9,8 +9,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Logging.Internal.Sinks;
@@ -288,7 +286,7 @@ internal static class DatadogLoggingFactory
         var maxLogFileSize = new ConfigurationBuilder(source)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
-                                 defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
+                                 defaultValue: new(DefaultMaxLogFileSize),
                                  converter: x => long.TryParse(x, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),

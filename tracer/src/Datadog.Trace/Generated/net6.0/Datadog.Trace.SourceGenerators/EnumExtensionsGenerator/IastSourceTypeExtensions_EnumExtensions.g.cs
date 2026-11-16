@@ -6,10 +6,10 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Iast;
 
 /// <summary>
-/// Extension methods for <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" />
+/// Extension methods for <see cref="Datadog.Trace.Iast.IastSourceType" />
 /// </summary>
 internal static partial class IastSourceTypeExtensions
 {
@@ -20,94 +20,94 @@ internal static partial class IastSourceTypeExtensions
     public const int Length = 14;
 
     /// <summary>
-    /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType"/> value.
+    /// Returns the string representation of the <see cref="Datadog.Trace.Iast.IastSourceType"/> value.
     /// If the attribute is decorated with a <c>[Description]</c> attribute, then
     /// uses the provided value. Otherwise uses the name of the member, equivalent to
     /// calling <c>ToString()</c> on <paramref name="value"/>.
     /// </summary>
     /// <param name="value">The value to retrieve the string value for</param>
     /// <returns>The string representation of the value</returns>
-    public static string ToStringFast(this Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType value)
+    public static string ToStringFast(this Datadog.Trace.Iast.IastSourceType value)
         => value switch
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestBody => "source_type:http.request.body",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestPath => "source_type:http.request.path",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterName => "source_type:http.request.parameter.name",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterValue => "source_type:http.request.parameter",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RoutedParameterValue => "source_type:http.request.path.parameter",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderValue => "source_type:http.request.header",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderName => "source_type:http.request.header.name",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestQuery => "source_type:http.request.query",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieName => "source_type:http.request.cookie.name",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieValue => "source_type:http.request.cookie.value",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.MatrixParameter => "source_type:http.request.matrix.parameter",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestUri => "source_type:http.request.uri",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.GrpcRequestBody => "source_type:grpc.request.body",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.SqlRowValue => "source_type:sql.row.value",
+            Datadog.Trace.Iast.IastSourceType.RequestBody => "source_type:http.request.body",
+            Datadog.Trace.Iast.IastSourceType.RequestPath => "source_type:http.request.path",
+            Datadog.Trace.Iast.IastSourceType.RequestParameterName => "source_type:http.request.parameter.name",
+            Datadog.Trace.Iast.IastSourceType.RequestParameterValue => "source_type:http.request.parameter",
+            Datadog.Trace.Iast.IastSourceType.RoutedParameterValue => "source_type:http.request.path.parameter",
+            Datadog.Trace.Iast.IastSourceType.RequestHeaderValue => "source_type:http.request.header",
+            Datadog.Trace.Iast.IastSourceType.RequestHeaderName => "source_type:http.request.header.name",
+            Datadog.Trace.Iast.IastSourceType.RequestQuery => "source_type:http.request.query",
+            Datadog.Trace.Iast.IastSourceType.CookieName => "source_type:http.request.cookie.name",
+            Datadog.Trace.Iast.IastSourceType.CookieValue => "source_type:http.request.cookie.value",
+            Datadog.Trace.Iast.IastSourceType.MatrixParameter => "source_type:http.request.matrix.parameter",
+            Datadog.Trace.Iast.IastSourceType.RequestUri => "source_type:http.request.uri",
+            Datadog.Trace.Iast.IastSourceType.GrpcRequestBody => "source_type:grpc.request.body",
+            Datadog.Trace.Iast.IastSourceType.SqlRowValue => "source_type:sql.row.value",
             _ => value.ToString(),
         };
 
     /// <summary>
     /// Retrieves an array of the values of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" />.
+    /// <see cref="Datadog.Trace.Iast.IastSourceType" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// </summary>
-    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" /></returns>
-    public static Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType[] GetValues()
+    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Iast.IastSourceType" /></returns>
+    public static Datadog.Trace.Iast.IastSourceType[] GetValues()
         => new []
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestBody,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestPath,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterName,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterValue,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RoutedParameterValue,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderValue,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderName,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestQuery,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieName,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieValue,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.MatrixParameter,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestUri,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.GrpcRequestBody,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.SqlRowValue,
+            Datadog.Trace.Iast.IastSourceType.RequestBody,
+            Datadog.Trace.Iast.IastSourceType.RequestPath,
+            Datadog.Trace.Iast.IastSourceType.RequestParameterName,
+            Datadog.Trace.Iast.IastSourceType.RequestParameterValue,
+            Datadog.Trace.Iast.IastSourceType.RoutedParameterValue,
+            Datadog.Trace.Iast.IastSourceType.RequestHeaderValue,
+            Datadog.Trace.Iast.IastSourceType.RequestHeaderName,
+            Datadog.Trace.Iast.IastSourceType.RequestQuery,
+            Datadog.Trace.Iast.IastSourceType.CookieName,
+            Datadog.Trace.Iast.IastSourceType.CookieValue,
+            Datadog.Trace.Iast.IastSourceType.MatrixParameter,
+            Datadog.Trace.Iast.IastSourceType.RequestUri,
+            Datadog.Trace.Iast.IastSourceType.GrpcRequestBody,
+            Datadog.Trace.Iast.IastSourceType.SqlRowValue,
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" />.
+    /// <see cref="Datadog.Trace.Iast.IastSourceType" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Ignores <c>[Description]</c> definitions.
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Iast.IastSourceType" /></returns>
     public static string[] GetNames()
         => new []
         {
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestBody),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestPath),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterName),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestParameterValue),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RoutedParameterValue),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderValue),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestHeaderName),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestQuery),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieName),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.CookieValue),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.MatrixParameter),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.RequestUri),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.GrpcRequestBody),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType.SqlRowValue),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestBody),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestPath),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestParameterName),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestParameterValue),
+            nameof(Datadog.Trace.Iast.IastSourceType.RoutedParameterValue),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestHeaderValue),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestHeaderName),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestQuery),
+            nameof(Datadog.Trace.Iast.IastSourceType.CookieName),
+            nameof(Datadog.Trace.Iast.IastSourceType.CookieValue),
+            nameof(Datadog.Trace.Iast.IastSourceType.MatrixParameter),
+            nameof(Datadog.Trace.Iast.IastSourceType.RequestUri),
+            nameof(Datadog.Trace.Iast.IastSourceType.GrpcRequestBody),
+            nameof(Datadog.Trace.Iast.IastSourceType.SqlRowValue),
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" />.
+    /// <see cref="Datadog.Trace.Iast.IastSourceType" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Uses <c>[Description]</c> definition if available, otherwise uses the name of the property
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Iast.IastSourceType" /></returns>
     public static string[] GetDescriptions()
         => new []
         {

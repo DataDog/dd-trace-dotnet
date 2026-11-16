@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Http;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -394,22 +393,6 @@ internal sealed class IastRequestContext
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.RequestHeaderValue, name, value));
         _taintedObjects.TaintInputString(name, new Source(SourceType.RequestHeaderName, name, name));
-    }
-
-    internal void OnExecutedSinkTelemetry(IastVulnerabilityType sink)
-    {
-    }
-
-    internal void OnExecutedSourceTelemetry(IastSourceType source)
-    {
-    }
-
-    internal void OnSupressedVulnerabilityTelemetry(IastVulnerabilityType sink)
-    {
-    }
-
-    internal void OnExecutedPropagationTelemetry()
-    {
     }
 
     internal string GetNextVulnerabilityStackId()

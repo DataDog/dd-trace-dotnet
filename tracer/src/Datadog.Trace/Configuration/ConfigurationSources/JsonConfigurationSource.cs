@@ -9,8 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util.Json;
@@ -28,38 +26,34 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
         private readonly JToken? _configuration;
 
-        internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
-            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
+        internal JsonConfigurationSource(string json)
+            : this(json, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
         }
 
-        internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
-            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
+        internal JsonConfigurationSource(string json, string? filename)
+            : this(json, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
             JsonConfigurationFilePath = filename;
         }
 
-        internal JsonConfigurationSource(JToken? configToken, ConfigurationOrigins origin, Func<JToken?, JToken?> extractConfig)
+        internal JsonConfigurationSource(JToken? configToken, Func<JToken?, JToken?> extractConfig)
         {
             if (configToken is null) { ThrowHelper.ThrowArgumentNullException(nameof(configToken)); }
 
             if (extractConfig is null) { ThrowHelper.ThrowArgumentNullException(nameof(extractConfig)); }
 
             _configuration = extractConfig(configToken);
-            Origin = origin;
         }
 
-        private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
+        private protected JsonConfigurationSource(string json, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
 
             if (deserialize is null) { ThrowHelper.ThrowArgumentNullException(nameof(deserialize)); }
 
             _configuration = deserialize(json);
-            Origin = origin;
         }
-
-        public ConfigurationOrigins Origin { get; }
 
         internal string? JsonConfigurationFilePath { get; }
 
@@ -70,12 +64,11 @@ namespace Datadog.Trace.Configuration
         /// by loading the JSON string from the specified file.
         /// </summary>
         /// <param name="filename">A JSON file that contains configuration values.</param>
-        /// <param name="origin">The origin to use for telemetry.</param>
         /// <returns>The newly created configuration source.</returns>
-        internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
+        internal static JsonConfigurationSource FromFile(string filename)
         {
             var json = File.ReadAllText(filename);
-            return new JsonConfigurationSource(json, origin, filename);
+            return new JsonConfigurationSource(json, filename);
         }
 
         /// <summary>
@@ -95,7 +88,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator)
         {
             var token = SelectToken(key);
 
@@ -199,7 +192,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator)
         {
             var token = SelectToken(key);
 
@@ -214,7 +207,7 @@ namespace Datadog.Trace.Configuration
                     {
                         if (validator is null || validator(value.Result))
                         {
-                            return ConfigurationResult<T>.Valid(value.Result, valueAsString);
+                            return ConfigurationResult<T>.Valid(value.Result);
                         }
 
                         return ConfigurationResult<T>.Invalid(value.Result);
@@ -298,7 +291,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
+                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
                 }
 
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
@@ -356,7 +349,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
+                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
                 }
 
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);

@@ -6,33 +6,22 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
 
 internal class DictionaryObjectConfigurationSource : IConfigurationSource
 {
     public DictionaryObjectConfigurationSource(IReadOnlyDictionary<string, object?> dictionary)
-        : this(dictionary, ConfigurationOrigins.Code)
-    {
-    }
-
-    public DictionaryObjectConfigurationSource(IReadOnlyDictionary<string, object?> dictionary, ConfigurationOrigins origin)
     {
         Dictionary = dictionary;
-        Origin = origin;
     }
-
-    public ConfigurationOrigins Origin { get; }
 
     protected IReadOnlyDictionary<string, object?> Dictionary { get; }
 
     protected virtual bool TryGetValue(string key, out object? value)
         => Dictionary.TryGetValue(key, out value);
 
-    public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
+    public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -124,26 +113,9 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
-            var dictAsString = string.Empty;
-            if (value.Count > 0)
-            {
-                var sb = StringBuilderCache.Acquire();
-                foreach (var kvp in value)
-                {
-                    sb.Append(kvp.Key)
-                      .Append(':')
-                      .Append(kvp.Value)
-                      .Append(separator);
-                }
-
-                // remove the final separator (we know there was at least one so this is safe)
-                sb.Remove(sb.Length - 1, 1);
-                dictAsString = StringBuilderCache.GetStringAndRelease(sb);
-            }
-
             if (validator is null || validator(value))
             {
-                return ConfigurationResult<IDictionary<string, string>>.Valid(value, dictAsString);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(value);
             }
 
             return ConfigurationResult<IDictionary<string, string>>.Invalid(value);
@@ -155,7 +127,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
     public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
         => GetDictionary(key, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+    public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -172,7 +144,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
             {
                 if (validator is null || validator(result.Result))
                 {
-                    return ConfigurationResult<T>.Valid(result.Result, valueAsString);
+                    return ConfigurationResult<T>.Valid(result.Result);
                 }
 
                 return ConfigurationResult<T>.Invalid(result.Result);

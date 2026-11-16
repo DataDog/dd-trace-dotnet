@@ -5,17 +5,12 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+namespace Datadog.Trace.Configuration;
 
-internal readonly struct DefaultResult<T>(T result, string telemetryValue)
+internal readonly struct DefaultResult<T>(T result)
 {
     /// <summary>
     /// Gets the value to use as the default result
     /// </summary>
     public T Result { get; } = result;
-
-    /// <summary>
-    /// Gets a string representation of the result to use in telemetry.
-    /// </summary>
-    public string TelemetryValue { get; } = telemetryValue;
 }

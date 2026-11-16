@@ -8,8 +8,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration
@@ -38,8 +36,6 @@ namespace Datadog.Trace.Configuration
         }
 #endif
 
-        public ConfigurationOrigins Origin => ConfigurationOrigins.Unknown;
-
         /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
@@ -58,33 +54,18 @@ namespace Datadog.Trace.Configuration
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
-            // We also have to keep track of whether the last value was the last _found_ value
-            // as we need to "restore" the telemetry if so.
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<string>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetString(key, validator, recordValue);
+                var value = source.GetString(key, validator);
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
             }
 
             return result;
@@ -93,11 +74,8 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<int> GetInt32(string key, Func<int, bool>? validator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<int>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
@@ -105,17 +83,7 @@ namespace Datadog.Trace.Configuration
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
             }
 
             return result;
@@ -124,11 +92,8 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<double> GetDouble(string key, Func<double, bool>? validator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<double>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
@@ -136,17 +101,7 @@ namespace Datadog.Trace.Configuration
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
             }
 
             return result;
@@ -155,11 +110,8 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<bool> GetBool(string key, Func<bool, bool>? validator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<bool>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
@@ -167,17 +119,7 @@ namespace Datadog.Trace.Configuration
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
             }
 
             return result;
@@ -197,11 +139,8 @@ namespace Datadog.Trace.Configuration
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
@@ -222,49 +161,25 @@ namespace Datadog.Trace.Configuration
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
-                // there should always be a telemetry override by convention, so just record a sentinel for now if there's not for some reason
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator)
         {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
+            // Iterate in reverse order and keep the last successful value so the first source has precedence.
             var result = ConfigurationResult<T>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetAs(key, converter, validator, recordValue);
+                var value = source.GetAs(key, converter, validator);
                 if (value.IsValid)
                 {
                     result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
                 }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
             }
 
             return result;

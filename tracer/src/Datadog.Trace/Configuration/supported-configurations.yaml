@@ -865,15 +865,6 @@ supportedConfigurations:
     documentation: |-
       Configuration key for controlling the percentage of requests
       to be analyzed by IAST, between 1 and 100. Defaults to 30.
-  DD_IAST_TELEMETRY_VERBOSITY:
-  - implementation: A
-    type: string
-    default: information
-    product: Iast
-    const_name: TelemetryVerbosity
-    documentation: |-
-      Configuration key for IAST verbosity.
-      Default value is INFORMATION
   DD_IAST_TRUNCATION_MAX_VALUE_LENGTH:
   - implementation: A
     type: int
@@ -931,69 +922,7 @@ supportedConfigurations:
     default: null
     documentation: |-
       SSI variable that allows unsupported runtimes to be instrumented.
-      Used for correlation purposes in telemetry.
-  DD_INSTRUMENTATION_INSTALL_ID:
-  - implementation: A
-    type: string
-    default: null
-    product: Telemetry
-    documentation: |-
-      SSI variable that provides a unique identifier for the instrumentation installation.
-      Used for tracking and correlation purposes in telemetry.
-  DD_INSTRUMENTATION_INSTALL_TIME:
-  - implementation: A
-    type: string
-    default: null
-    product: Telemetry
-    documentation: |-
-      SSI variable that indicates when the instrumentation was installed.
-      Used for tracking installation timeline in telemetry.
-  DD_INSTRUMENTATION_INSTALL_TYPE:
-  - implementation: A
-    type: string
-    default: null
-    product: Telemetry
-    documentation: |-
-      SSI variable that indicates the installation type (e.g., dd_dotnet_launcher, dd_trace_tool, dotnet_msi, windows_fleet_installer).
-      Used to determine the instrumentation source for telemetry.
-  DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'false'
-    product: Telemetry
-    const_name: AgentlessEnabled
-    documentation: |-
-      Configuration key for sending telemetry direct to telemetry intake. If enabled, and
-      <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
-      available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
-  DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: Telemetry
-    const_name: AgentProxyEnabled
-    documentation: |-
-      Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
-      via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
-      is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
-  DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD:
-  - implementation: A
-    type: string
-    default: gzip
-    product: Telemetry
-    const_name: TelemetryCompressionMethod
-    documentation: |-
-      Configuration key to allow telemetry compression.
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.CompressionMethod"/>
-  DD_INSTRUMENTATION_TELEMETRY_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: Telemetry
-    const_name: Enabled
-    documentation: |-
-      Configuration key for enabling or disabling internal telemetry.
-      Default value is <c>true</c> (enabled).
+      Used to allow instrumentation on unsupported runtimes.
   DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE:
   - implementation: A
     type: int
@@ -1011,15 +940,6 @@ supportedConfigurations:
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
-  DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'false'
-    product: Telemetry
-    const_name: DebugEnabled
-    documentation: |-
-      Configuration key for whether to enable debug mode of telemetry.
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DebugEnabled"/>
   DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH:
   - implementation: A
     type: string
@@ -1403,61 +1323,6 @@ supportedConfigurations:
       Supports multiple key key-value pairs which are comma-separated, and for which the key and
       value are colon-separated. For example Key1:Value1, Key2:Value2
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.GlobalTags"/>
-  DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: Telemetry
-    const_name: DependencyCollectionEnabled
-    documentation: |-
-      Configuration key for whether dependency data is sent via telemetry.
-      Required for some ASM features. Default value is <c>true</c> (enabled).
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DependencyCollectionEnabled"/>
-  DD_TELEMETRY_HEARTBEAT_INTERVAL:
-  - implementation: B
-    type: decimal
-    default: '60.0'
-    product: Telemetry
-    const_name: HeartbeatIntervalSeconds
-    documentation: |-
-      Configuration key for how often telemetry should be sent, in seconds. Must be between 1 and 3600.
-      For testing purposes. Defaults to 60
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.HeartbeatInterval"/>
-  DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL:
-  - implementation: A
-    type: int
-    default: '86400'
-    product: Telemetry
-    const_name: ExtendedHeartbeatIntervalSeconds
-    documentation: |-
-      Configuration key for how often the extended heartbeat telemetry should be sent, in seconds.
-      Must be between 1 and 604800 (7 days). For testing purposes. Defaults to 86400 (24 hours).
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.ExtendedHeartbeatInterval"/>
-  DD_TELEMETRY_LOG_COLLECTION_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: Telemetry
-    const_name: TelemetryLogsEnabled
-    documentation: Configuration key for whether to enable redacted error log collection.
-  DD_TELEMETRY_METRICS_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: Telemetry
-    const_name: MetricsEnabled
-    documentation: |-
-      Configuration key for whether telemetry metrics should be sent.
-      <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
-  _DD_ROOT_DOTNET_SESSION_ID:
-  - implementation: A
-    type: string
-    default: null
-    product: Telemetry
-    const_name: RootSessionId
-    documentation: |-
-      Internal env var for propagating the root session ID to child processes.
-      Set automatically by the tracer at init time; not user-configurable.
   DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES:
   - implementation: A
     type: int
@@ -1799,7 +1664,7 @@ supportedConfigurations:
     default: 'true'
     const_name: GitMetadataEnabled
     documentation: |-
-      Configuration key for enabling the tagging of every telemetry event with git metadata.
+      Configuration key for enabling trace tagging with git metadata.
       Default value is true (enabled).
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitMetadataEnabled"/>
   DD_TRACE_GRAPHQL_ERROR_EXTENSIONS:

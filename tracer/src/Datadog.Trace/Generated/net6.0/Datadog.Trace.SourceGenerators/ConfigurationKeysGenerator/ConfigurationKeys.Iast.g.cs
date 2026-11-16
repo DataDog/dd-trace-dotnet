@@ -86,12 +86,6 @@ internal static partial class ConfigurationKeys
         public const string RequestSampling = "DD_IAST_REQUEST_SAMPLING";
 
         /// <summary>
-        /// Configuration key for IAST verbosity.
-        /// Default value is INFORMATION
-        /// </summary>
-        public const string TelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
-
-        /// <summary>
         /// Configuration key for IAST evidence max lenght in chars.
         /// Default value is 250
         /// </summary>

@@ -123,7 +123,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// SSI variable that allows unsupported runtimes to be instrumented.
-    /// Used for correlation purposes in telemetry.
+    /// Used to allow instrumentation on unsupported runtimes.
     /// </summary>
     public const string InjectForce = "DD_INJECT_FORCE";
 
@@ -408,7 +408,7 @@ internal static partial class ConfigurationKeys
     public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
 
     /// <summary>
-    /// Configuration key for enabling the tagging of every telemetry event with git metadata.
+    /// Configuration key for enabling trace tagging with git metadata.
     /// Default value is true (enabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitMetadataEnabled"/>
