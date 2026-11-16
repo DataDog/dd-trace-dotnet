@@ -98,21 +98,17 @@ public class DebuggerSnapshotSerializerGuardrailTests
         Assert.True(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Other));
     }
 
-    internal static (string Snapshot, uint IncompleteReasons) Capture(
-        object? value,
+    private static (string Snapshot, uint IncompleteReasons) Capture(
+        object value,
         int maxReferenceDepth = 3,
         int maxCollectionSize = 100,
         int maxLength = 255,
-        int maxFieldCount = 20,
-        Type? declaredType = null)
+        int maxFieldCount = 20)
     {
         var snapshotCreator = CreateCreator(maxReferenceDepth, maxCollectionSize, maxLength, maxFieldCount);
-        CaptureInto(snapshotCreator, value, declaredType ?? value!.GetType());
+        CaptureInto(snapshotCreator, value);
         return (snapshotCreator.GetSnapshotJson(), snapshotCreator.IncompleteReasons);
     }
-
-    internal static bool HasReason(uint incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason reason)
-        => (incompleteReasons & (1u << (int)reason)) != 0;
 
     private static DebuggerSnapshotCreator CreateCreator(
         int maxReferenceDepth = 3,
@@ -136,13 +132,16 @@ public class DebuggerSnapshotSerializerGuardrailTests
             serviceNameProvider: static () => "test-service");
     }
 
-    private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object? value, Type type)
+    private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object value)
     {
         snapshotCreator.StartEntry();
-        snapshotCreator.CaptureArgument(value, "arg", type);
+        snapshotCreator.CaptureArgument(value, "arg", value.GetType());
         snapshotCreator.EndEntry();
         snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
     }
+
+    private static bool HasReason(uint incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason reason)
+        => (incompleteReasons & (1u << (int)reason)) != 0;
 
 #pragma warning disable CS0414
     private sealed class WideDepthTarget
