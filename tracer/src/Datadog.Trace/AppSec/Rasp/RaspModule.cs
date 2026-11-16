@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -219,7 +220,7 @@ internal static class RaspModule
         };
     }
 
-    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null)
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null, ulong? subcontextId = null)
     {
         var security = Security.Instance;
 
@@ -242,7 +243,7 @@ internal static class RaspModule
             return;
         }
 
-        RunWafRasp(arguments, rootSpan, address);
+        RunWafRasp(arguments, rootSpan, address, subcontextId);
     }
 
     internal static void RecordRaspOutcome(string address, WafOutcome outcome)
@@ -352,7 +353,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address, ulong? subcontextId)
     {
         var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
@@ -373,7 +374,7 @@ internal static class RaspModule
             return;
         }
 
-        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address, subcontextId: subcontextId);
 
         // a null result carries no return code to classify, and RunWaf has already reported it from the
         // outcome the failing step returned: the context it could not hand out, the run that produced
@@ -496,10 +497,9 @@ internal static class RaspModule
     }
 
 #if NETCOREAPP
-    internal static Dictionary<string, object>? ExtractHeaders(System.Net.Http.Headers.HttpHeaders headers)
+    internal static Dictionary<string, object>? ExtractHeaders(System.Net.Http.Headers.HttpHeaders headers, Dictionary<string, object>? headersDic = null)
     {
         var enumerator = headers.GetEnumerator();
-        Dictionary<string, object>? headersDic = null;
         while (enumerator.MoveNext())
         {
             var key = enumerator.Current.Key;
@@ -565,14 +565,18 @@ internal static class RaspModule
                     AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit).SafeWait();
                 }
 
+                // the response is evaluated in the same subcontext, so rules can combine request and response data
                 // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
-                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan);
+                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan, subcontextId: requestSpanId);
                 return true;
             }
         }
         catch (Exception ex) when (ex is not BlockException)
         {
             Log.Error(ex, "RASP: Error while checking downstream request body.");
+
+            // the run may have opened the subcontext before failing, and no response will close it
+            CloseDownstreamSubcontext(rootSpan?.Context.TraceContext, requestSpanId);
         }
 
         return false;
@@ -605,28 +609,57 @@ internal static class RaspModule
 
             var context = rootSpan.Context.TraceContext.AppSecRequestContext;
 
-            var wafArgs = new Dictionary<string, object>();
-            wafArgs[AddressesConstants.DownstreamResponseStatus] = responseMessage.StatusCode;
-            if (responseMessage is { Headers: var headers } && headers is not null)
-            {
-                var extractedHeaders = ExtractHeaders(headers);
-                if (extractedHeaders is not null)
-                {
-                    wafArgs.Add(AddressesConstants.DownstreamResponseHeaders, extractedHeaders);
-                }
-            }
+            var wafArgs = GetDownstreamResponseArgs(responseMessage);
 
             if (context.IsHttpClientRequestSampled(requestSpanId))
             {
                 AddBody(responseMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit).SafeWait();
             }
 
-            CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl);
+            CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, subcontextId: requestSpanId);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
             Log.Error(ex, "RASP: Error while checking downstream response body.");
         }
+    }
+
+    /// <summary>
+    /// Releases the subcontext kept for this outbound call since <see cref="OnDownstreamRequest"/>; a no-op if there is none.
+    /// </summary>
+    internal static void CloseDownstreamSubcontext(TraceContext? traceContext, ulong requestSpanId)
+    {
+        try
+        {
+            traceContext?.AppSecRequestContext.CloseSubcontext(requestSpanId);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "RASP: Error while closing a downstream subcontext.");
+        }
+    }
+
+    [TestingAndPrivateOnly]
+    internal static Dictionary<string, object> GetDownstreamResponseArgs(System.Net.Http.HttpResponseMessage responseMessage)
+    {
+        var wafArgs = new Dictionary<string, object>
+        {
+            [AddressesConstants.DownstreamResponseStatus] = IntStringCache.ToInvariantString((int)responseMessage.StatusCode),
+        };
+
+        // Content-Length and Content-Type live in the content headers
+        var headers = ExtractHeaders(responseMessage.Headers);
+        if (responseMessage.Content?.Headers is { } contentHeaders)
+        {
+            headers = ExtractHeaders(contentHeaders, headers);
+        }
+
+        if (headers is not null)
+        {
+            wafArgs.Add(AddressesConstants.DownstreamResponseHeaders, headers);
+        }
+
+        return wafArgs;
     }
 
     internal static async Task AddBody(System.Net.Http.HttpContent? content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)

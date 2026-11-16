@@ -172,7 +172,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, derivative.Value);
+                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, WafAttributeRedaction.Redact(derivative.Key, derivative.Value));
                 }
             }
         }
