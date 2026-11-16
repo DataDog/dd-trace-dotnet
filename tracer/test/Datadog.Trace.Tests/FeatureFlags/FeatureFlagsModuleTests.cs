@@ -1262,6 +1262,31 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public async Task SetFlagSelection_ReclaimingTheLoadedSelectionBeforeAnotherSelectionsConfigurationArrives_BecomesReady()
+    {
+        var mobile = FlagSelection.Create(["mobile"], null);
+        var beta = FlagSelection.Create(["beta"], null);
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, flagSelectionDiagnostics: NewDiagnostics());
+        module.SetFlagSelection(["mobile"], null);
+        module.Activate();
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), mobile).Should().Be(ConfigurationApplyResult.Applied);
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["beta"], null);
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
+
+        module.ReleaseFlagSelection();
+        module.SetFlagSelection(["mobile"], null);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue("the held configuration was loaded for the reclaimed selection");
+        var initialization = module.InitializeAsync(CancellationToken.None);
+        initialization.IsCompleted.Should().BeTrue();
+        await initialization;
+        source.Updates.Should().Equal(beta, mobile);
+        module.ApplyAgentlessConfiguration(CreatePlanFlagConfiguration(), beta).Should().Be(ConfigurationApplyResult.Superseded);
+    }
+
+    [Fact]
     public async Task SetFlagSelection_WithADroppedSelectionAfterAnUnfilteredLoad_BecomesReady()
     {
         // A dropped selection sends no selection, so the request URI is the one the unfiltered load

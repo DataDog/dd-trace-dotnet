@@ -551,7 +551,9 @@ namespace Datadog.Trace.FeatureFlags
         /// <summary>
         /// Makes readiness wait for configuration requested with <paramref name="selection"/>. When the
         /// held configuration was loaded for a released, different selection, the provider that made the
-        /// claim waits for its own configuration rather than becoming ready on the previous one.
+        /// claim waits for its own configuration rather than becoming ready on the previous one. A claim
+        /// for the selection the held configuration was loaded for is ready on it, even when a claim for
+        /// other flags made since then reset readiness.
         /// Callers hold <see cref="_stateLock"/>, and call this before the source requests the new selection,
         /// so a response to that request can never be discarded as one for the previous selection.
         /// </summary>
@@ -560,9 +562,16 @@ namespace Datadog.Trace.FeatureFlags
             lock (_handlerLock)
             {
                 _awaitedFlagSelection = selection;
-                if (Volatile.Read(ref _evaluator) is not null
-                 && !selection.Equals(_loadedFlagSelection)
-                 && _firstConfigReceived.Task.IsCompleted)
+                if (Volatile.Read(ref _evaluator) is null)
+                {
+                    return;
+                }
+
+                if (selection.Equals(_loadedFlagSelection))
+                {
+                    _firstConfigReceived.TrySetResult(true);
+                }
+                else if (_firstConfigReceived.Task.IsCompleted)
                 {
                     Volatile.Write(ref _firstConfigReceived, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
                     Interlocked.Exchange(ref _initializationTimedOut, 0);
