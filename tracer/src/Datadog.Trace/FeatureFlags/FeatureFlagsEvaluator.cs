@@ -47,20 +47,12 @@ namespace Datadog.Trace.FeatureFlags
         private static int _warnedDestinationCount;
 
         private readonly ReportExposureDelegate? _onExposureEvent;
-        private readonly PeekExposureDelegate? _isExposed;
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
 
-        [TestingOnly]
         public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
-            : this(onExposureEvent, config, spanEnrichmentEnabled, isExposed: null)
-        {
-        }
-
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled, PeekExposureDelegate? isExposed)
         {
             _onExposureEvent = onExposureEvent;
-            _isExposed = isExposed;
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
@@ -911,13 +903,8 @@ namespace Datadog.Trace.FeatureFlags
             {
                 if (metadata is DeferredExposureMetadata deferred)
                 {
-                    // The commit gives the final verdict. Stamp the cache's current answer for plain
-                    // OpenFeature hooks, as the Java SDK does.
+                    // The commit after the evaluation gives the one verdict, so none is stamped here.
                     deferred.SetPendingExposure(in exposure);
-                    if (_isExposed?.Invoke(in exposure) is { } seen)
-                    {
-                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = seen ? "true" : "false";
-                    }
                 }
                 else
                 {
@@ -992,9 +979,6 @@ namespace Datadog.Trace.FeatureFlags
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
         internal delegate Exposure.ExposureRecordResult ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
-
-        // Advisory cache answer; null once exposure reporting stops.
-        internal delegate bool? PeekExposureDelegate(in Exposure.Model.ExposureEvent ev);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }

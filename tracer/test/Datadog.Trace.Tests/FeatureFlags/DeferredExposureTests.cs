@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class DeferredExposureTests
 {
     [Fact]
-    public void ADeferredEvaluationWithoutAPeekLeavesTheExposurePendingAndStampsNothing()
+    public void ADeferredEvaluationLeavesTheExposurePendingAndStampsNothing()
     {
         var sent = new List<ExposureEvent>();
         var evaluator = new FeatureFlagsEvaluator(Record(sent), new ServerConfiguration { Flags = Flags(doLog: true) });
@@ -135,47 +135,42 @@ public class DeferredExposureTests
     }
 
     [Fact]
-    public void ADeferredEvaluationCarriesTheCacheAnswerWithoutRecordingIt()
+    public void DeferredEvaluationsStampNoCacheAnswerAndTheCommitGivesTheVerdict()
     {
         using var module = Module();
 
-        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
         var uncommitted = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
-
-        first.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
-        uncommitted.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false", "the advisory answer records nothing");
-        module.CommitExposure(uncommitted.FlagMetadata).Should().Be(ExposureCommitResult.New);
+        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        module.CommitExposure(first.FlagMetadata).Should().Be(ExposureCommitResult.New);
 
         var repeat = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
 
-        repeat.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("true");
+        uncommitted.FlagMetadata!.Keys.Should().NotContain(FeatureFlagMetadataKeys.ExposureCacheHit);
+        repeat.FlagMetadata!.Keys.Should().NotContain(FeatureFlagMetadataKeys.ExposureCacheHit);
         module.CommitExposure(repeat.FlagMetadata).Should().Be(ExposureCommitResult.Repeat);
     }
 
     [Fact]
-    public void TheAdvisoryAnswerRecordsNothingOnceExposuresAreRecorded()
+    public void AnUncommittedEvaluationLeavesTheSubjectsFirstExposureToTheCommit()
     {
         using var module = Module();
-        // Recording another subject first creates the exposure API, so the peeks below reach the cache.
         var other = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "other", null, deferExposure: true);
         module.CommitExposure(other.FlagMetadata).Should().Be(ExposureCommitResult.New);
 
         var uncommitted = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
         var later = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
 
-        uncommitted.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
-        later.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false", "the first peek recorded nothing");
         module.CommitExposure(later.FlagMetadata).Should().Be(ExposureCommitResult.New, "an uncommitted evaluation must not consume the subject's first exposure");
     }
 
     [Fact]
-    public void TheAdvisoryAnswerDoesNotCreateTheExposureApi()
+    public void ADeferredEvaluationDoesNotCreateTheExposureApi()
     {
         using var module = Module();
 
         var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
 
-        evaluation.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
+        evaluation.FlagMetadata.Should().BeOfType<DeferredExposureMetadata>().Which.IsPending.Should().BeTrue();
         module.HasExposureApi.Should().BeFalse("only a commit or an immediate report creates the exposure API and its transport");
     }
 

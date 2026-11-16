@@ -43,7 +43,7 @@ public sealed class ExposureEvaluation
         Context = context;
         Features = result?.HookFeatures ?? EmptyFeatures;
         SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
-        // A deferred exposure uses the committed verdict, not the advisory stamp; otherwise use the stamp.
+        // A committed exposure carries the final verdict; otherwise the tracer stamped it during evaluation.
         _cacheHit = result is not null && result.TryGetCommittedVerdict(out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 

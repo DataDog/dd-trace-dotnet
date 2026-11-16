@@ -476,7 +476,7 @@ namespace Datadog.Trace.FeatureFlags
             bool isFirst;
             try
             {
-                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled, IsExposed);
+                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled);
                 lock (_handlerLock)
                 {
                     // Keep first-configuration detection with installation so concurrent updates
@@ -912,12 +912,6 @@ namespace Datadog.Trace.FeatureFlags
                 _ => ExposureCommitResult.NothingPending,
             };
         }
-
-        // Never creates the exposure API; without it, nothing is recorded yet.
-        private bool? IsExposed(in ExposureEvent exposure)
-            => Volatile.Read(ref _exposureApi) is { } exposureApi ? exposureApi.IsExposed(in exposure)
-               : Volatile.Read(ref _disposed) ? null
-               : false;
 
         private void WarnIfExposuresStayUncommitted()
         {

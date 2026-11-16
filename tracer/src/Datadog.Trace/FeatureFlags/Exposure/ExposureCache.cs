@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.FeatureFlags.Exposure;
 
@@ -66,6 +67,7 @@ internal sealed class ExposureCache
     }
 
     /// <summary>True when the subject has this exact exposure recorded. Does not change the LRU order.</summary>
+    [TestingOnly]
     public bool Contains(ExposureEvent exposureEvent)
     {
         lock (_cache)

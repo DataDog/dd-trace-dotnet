@@ -499,7 +499,7 @@ internal static class FeatureFlagsSdk
 
         internal IReadOnlyDictionary<string, object?>? EvaluationFeatures { get; } = evaluationFeatures;
 
-        // True when the commit, not the advisory stamp, decides this result.
+        // True when the commit decides this result's verdict.
         internal bool OwesCommit { get; } = pendingExposure is not null;
 
         internal EvaluationContext? EvaluatedContext { get; set; }
