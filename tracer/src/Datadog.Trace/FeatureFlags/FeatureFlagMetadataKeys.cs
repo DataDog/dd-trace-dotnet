@@ -7,8 +7,8 @@
 
 namespace Datadog.Trace.FeatureFlags
 {
-    // Public contract (provider README, "Flag metadata"): SplitSerialId, DoLog, ExposureCacheHit, AllocationKey and
-    // FeaturePrefix. Do not change their names, types or encodings.
+    // FeaturePrefix entries are the public contract (provider README, "Flag metadata"). The other keys are internal,
+    // and released providers read them, so keep their names, types and encodings.
     internal static class FeatureFlagMetadataKeys
     {
         internal const string SplitSerialId = "__dd_split_serial_id";

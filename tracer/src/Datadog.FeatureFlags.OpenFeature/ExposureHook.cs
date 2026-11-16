@@ -21,8 +21,8 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// An OpenFeature hook that hands each completed flag evaluation to a callback, with the Datadog
 /// exposure decision, so an application can record exposures in its own data store.
 /// <para>
-/// The flag metadata also carries the exposure data; this hook reads it and applies the final
-/// exposure decision. Register it with <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only
+/// This hook is the supported way to get the exposure decision; the <c>__dd_</c> metadata keys other
+/// than <c>__dd_feature.&lt;key&gt;</c> are internal. Register it with <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only
 /// an API hook also gets evaluations from the experimental synchronous methods.
 /// The callback runs for every evaluation, including errors and repeats; use
 /// <see cref="ExposureEvaluation.ShouldSend"/> to keep new or changed exposures. When the provider is

@@ -76,13 +76,10 @@ Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/
 
 [//]: # (Maintainers: we plan to move the exposure sections, from here through Stop sending exposures to Datadog, to the public Datadog docs. Then we will remove them from this README and link to the docs.)
 
-The provider sends exposures to Datadog. It also puts exposure data and the selected split's
-features into the flag metadata, so any OpenFeature hook can record exposures in your own data
-store (see [Flag metadata](#flag-metadata)).
-
-This package ships `ExposureHook`, which reads that metadata for you and uses the final exposure
-decision, the one the provider uses for Datadog. It receives every completed evaluation, with the
-features of the selected split. Only an `ExposureHook` added with `Api.Instance.AddHooks` also
+The provider sends exposures to Datadog. To record exposures in your own data store, use
+`ExposureHook`. It receives every completed evaluation, with the same exposure decision that the
+provider uses for Datadog, the selected split's serial id, and the features of the selected split.
+Only an `ExposureHook` added with `Api.Instance.AddHooks` also
 receives the [synchronous evaluations](#synchronous-evaluation-experimental).
 
 ```csharp
@@ -174,23 +171,13 @@ does not know and logs a warning once for each one.
 
 ### Flag metadata
 
-The exposure data is also in the evaluation's flag metadata, for hooks that use only the OpenFeature
-API. Read it in the hook's `finally` stage, where the details match what the application receives,
-and skip details that have an error. `ExposureHook` reads it in the `finally` stage; for an
-evaluation with an error, `IsExposure` and `ShouldSend` are false.
+The public flag metadata is the `__dd_feature.<key>` entries. There is one entry for each feature of
+the selected split that lists the `HOOK` destination. The value is a `string`, `double` or `bool`.
+Read these entries in the hook's `finally` stage, and skip details that have an error.
 
-| Key | Type | Meaning |
-|---|---|---|
-| `__dd_allocation_key` | String | The selected allocation |
-| `__dd_do_log` | Boolean | Whether the allocation logs exposures. Present when the allocation logs exposures or span enrichment is on |
-| `__dd_exposure_cache_hit` | Boolean | The subject was already exposed when the flag was evaluated. Present only when `__dd_do_log` is true. When the tracer sends exposures after the evaluation, this is the exposure cache's answer at evaluation, not the final decision: it can differ when evaluations of one subject run at the same time, and it stays `false` when the provider's hooks never run for that subject (see [When exposures are sent](#when-exposures-are-sent)). `ExposureHook` uses the final decision |
-| `__dd_split_serial_id` | Integer | The split's serial id, an unsigned 32-bit value stored in an `int` (read it as `unchecked((uint)value)`). Present when `__dd_do_log` is present and the split has a serial id |
-| `__dd_feature.<key>` | String, Double or Boolean | One entry for each feature of the selected split that lists the `HOOK` destination |
-
-Other keys that start with `__dd_` are internal. They can change, and they can be missing.
-
-The tracer and this package ship separately, and the tracer fills the metadata. An older tracer
-emits fewer keys, and the hooks treat a missing key as its fail-safe value.
+Other keys that start with `__dd_` are internal. They can change, and they can be missing. Do not
+read the exposure decision from them. Use `ExposureHook` to get the exposure decision (`IsExposure`,
+`IsCacheHit` and `ShouldSend`) and the split's serial id (`SplitSerialId`).
 
 ### Stop sending exposures to Datadog
 
