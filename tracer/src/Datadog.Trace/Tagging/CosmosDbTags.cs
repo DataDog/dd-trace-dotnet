@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tagging
         public override void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.Host;
-            Port = endpoint?.Port.ToString();
+            Port = endpoint?.Port.ToStringInvariant();
         }
     }
 }

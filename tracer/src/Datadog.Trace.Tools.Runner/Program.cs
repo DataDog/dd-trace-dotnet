@@ -9,6 +9,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Help;
 using System.CommandLine.Parsing;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner
                 if (ddDotnet != null && File.Exists(ddDotnet))
                 {
                     // Make sure the dd-dotnet binary is executable
-                    System.Diagnostics.Process.Start("chmod", $"+x {ddDotnet}")!.WaitForExit();
+                    Process.Start(new ProcessStartInfo("chmod", $"+x {ddDotnet}") { UseShellExecute = false })!.WaitForExit();
                 }
             }
 

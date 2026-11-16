@@ -27,9 +27,14 @@ As this relates to downgrading runtime support, it implies:
 
 | **Engine**      | **.NET version** | **Support level**     | **Package version**  | **MICROSOFT END OF LIFE** |
 |-----------------|------------------|-----------------------|----------------------|---------------------------|
-| .NET Core       | .NET 6           | [GA](#support-ga)     | Latest (>= `2.0.0`)  |                           |
-|                 | .NET 5           | [GA](#support-ga)     | Latest (>= `1.27.0`) |                           |
-|                 | .NET Core 3.1    | [GA](#support-ga)     | Latest               | 12/03/2022                |
+| .NET Core       | .NET 11          | [GA](#support-ga)     | Latest               | 11/14/2028                |
+|                 | .NET 10          | [GA](#support-ga)     | Latest               | 11/14/2028                |
+|                 | .NET 9           | [GA](#support-ga)     | Latest               | 11/10/2026                |
+|                 | .NET 8           | [GA](#support-ga)     | Latest               | 11/10/2026                |
+|                 | .NET 7           | [GA](#support-ga)     | Latest               | 05/14/2024                |
+|                 | .NET 6           | [GA](#support-ga)     | Latest (>= `2.0.0`)  | 11/12/2024                |
+|                 | .NET 5           | [GA](#support-ga)     | Latest (>= `1.27.0`) | 05/10/2022                |
+|                 | .NET Core 3.1    | [GA](#support-ga)     | Latest               | 12/13/2022                |
 |                 | .NET Core 2.1    | [GA](#support-ga)     | Latest               | 08/21/2021                |
 | .NET FRAMEWORK  | 4.8              | [GA](#support-ga)     | Latest               |                           |
 |                 | 4.7.2            | [GA](#support-ga)     | Latest               |                           |
@@ -66,5 +71,5 @@ DEV:  Consider adding/removing links to other useful resources here.
 ```
 
 - [Datadog Customer support](https://www.datadoghq.com/support/)
-- [Datadog APM for .NET Setup Documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/ruby/)
-- [Datadog APM for .NET GitHub repository](https://github.com/DataDog/dd-trace-rb)
+- [Datadog APM for .NET Setup Documentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-core/)
+- [Datadog APM for .NET GitHub repository](https://github.com/DataDog/dd-trace-dotnet)
