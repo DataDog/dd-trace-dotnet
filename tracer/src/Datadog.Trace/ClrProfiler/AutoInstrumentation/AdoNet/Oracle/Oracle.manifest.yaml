@@ -1,8 +1,8 @@
 _v: 1
 name: Oracle
 display_name: Oracle
-description: Instruments ADO.NET non-query, scalar, and reader commands through Oracle provider implementations, with Database
-  Monitoring propagation and IAST database-value tracking when enabled.
+description: Instruments ADO.NET commands executed by Oracle provider implementations, with optional Database Monitoring SQL-comment
+  propagation, Application Security SQL-injection detection and protection, and IAST tracking of query results.
 packages:
 - name: Oracle.ManagedDataAccess
 - name: Oracle.ManagedDataAccess.Core

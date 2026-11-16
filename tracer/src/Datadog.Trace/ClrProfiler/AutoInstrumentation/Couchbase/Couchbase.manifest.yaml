@@ -1,7 +1,7 @@
 _v: 1
 name: Couchbase
 display_name: Couchbase
-description: Instruments Couchbase client key-value database operations.
+description: Instruments Couchbase client key-value document operations.
 packages:
 - name: CouchbaseNetClient
 category:

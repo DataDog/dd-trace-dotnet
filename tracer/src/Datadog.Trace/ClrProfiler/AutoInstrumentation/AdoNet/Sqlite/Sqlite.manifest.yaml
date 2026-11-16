@@ -1,8 +1,8 @@
 _v: 1
 name: Sqlite
 display_name: SQLite
-description: Instruments ADO.NET command execution on Microsoft.Data.Sqlite and System.Data.SQLite provider implementations,
-  with SQL-query RASP checks and IAST data tracking.
+description: Instruments ADO.NET command executions in Microsoft.Data.Sqlite and System.Data.SQLite to create SQLite database-query
+  spans and, when security products are enabled, perform SQL-injection checks and track returned data for IAST.
 packages:
 - name: Microsoft.Data.Sqlite
 - name: Microsoft.Data.Sqlite.Core

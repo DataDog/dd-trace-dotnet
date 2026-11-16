@@ -1,7 +1,8 @@
 _v: 1
 name: Aerospike
 display_name: Aerospike
-description: Instruments Aerospike client commands, including key-value reads and writes, batch operations, and queries.
+description: Instruments synchronous and asynchronous Aerospike client commands, including single-key and batch reads, writes,
+  existence checks, queries, and deletes.
 packages:
 - name: Aerospike.Client
 category:
