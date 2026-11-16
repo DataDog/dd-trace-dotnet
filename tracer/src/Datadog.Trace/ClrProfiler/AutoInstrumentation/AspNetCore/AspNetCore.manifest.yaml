@@ -1,0 +1,15 @@
+_v: 1
+name: AspNetCore
+display_name: ASP.NET Core
+description: Instruments ASP.NET Core inbound HTTP request handling and MVC action execution, including route-based resource
+  names and optional inferred API gateway spans, with Application Security request inspection, blocking, user-event tracking,
+  and API endpoint collection, and IAST tracking of request data.
+packages:
+- name: Microsoft.AspNetCore.Diagnostics
+- name: Microsoft.AspNetCore.Hosting
+- name: Microsoft.AspNetCore.Mvc.Core
+- name: Microsoft.AspNetCore.Routing
+category:
+- http.server
+systems: []
+creation_date: '2018-08-07'
