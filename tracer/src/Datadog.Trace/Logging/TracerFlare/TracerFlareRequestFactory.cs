@@ -86,7 +86,7 @@ internal static class TracerFlareRequestFactory
         // - caseid to make it easier to distinguish between the zip files when read
         await sw.WriteAsync(caseId).ConfigureAwait(false);
         await sw.WriteAsync('-').ConfigureAwait(false);
-        await sw.WriteAsync(timestamp.ToString()).ConfigureAwait(false);
+        await sw.WriteAsync(timestamp.ToStringInvariant()).ConfigureAwait(false);
 
         await sw.WriteAsync(RequestBodyFlareFile2).ConfigureAwait(false);
 

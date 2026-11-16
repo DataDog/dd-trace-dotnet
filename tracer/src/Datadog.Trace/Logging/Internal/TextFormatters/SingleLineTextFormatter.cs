@@ -22,7 +22,7 @@ internal sealed class SingleLineTextFormatter : ITextFormatter
         var logLevel = LevelOutputFormat.GetLevelMoniker(logEvent.Level, "u3");
 
         output.Write("[");
-        output.Write(utcTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
+        output.Write(utcTimestamp.ToStringInvariant("yyyy-MM-dd HH:mm:ss.fff zzz"));
         output.Write(" | DD-TRACE-DOTNET ");
         output.Write(TracerConstants.SemanticVersion);
         output.Write(" | ");

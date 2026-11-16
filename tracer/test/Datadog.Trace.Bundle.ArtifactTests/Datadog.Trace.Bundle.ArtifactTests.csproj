@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -39,7 +39,7 @@ namespace Datadog.Trace.Debugger
 
             signature = signature!.Replace(" ", string.Empty);
 
-            if (signature.StartsWith("(") && signature.EndsWith(")"))
+            if (signature.StartsWith('(') && signature.EndsWith(')'))
             {
                 signature = signature.Substring(1, signature.Length - 2);
             }

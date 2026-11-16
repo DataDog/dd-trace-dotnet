@@ -15,29 +15,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     {
         public static bool GetMetrics(HttpListenerRequest request)
         {
-            if (!request.ContentType.StartsWith("multipart/form-data"))
-            {
-                return false;
-            }
-
-            var mpReader = new MultiPartReader(request);
-            if (!mpReader.Parse())
-            {
-                return false;
-            }
-
-            var files = mpReader.Files;
-            var metricsFileInfo = files.FirstOrDefault(f => f.FileName == "metrics.json");
-            if (metricsFileInfo == null)
-            {
-                return false;
-            }
-
-            // TODO: when the file will be generated the right way, parse the json content to ensure that at least 1 metrics is sent
-            var metricsFileContent = mpReader.GetStringFile(metricsFileInfo.BytesPos, metricsFileInfo.BytesSize);
-            // Today, the content is not correct and with a binary format
-
-            return true;
+            // The on-wire metrics part is still a binary payload, so only its presence is checked.
+            return MultiPartReader.TryParse(request, out var upload)
+                && upload.ContainsFile("metrics.json");
         }
 
         public static List<Tuple<string, double>> GetMetrics(string metricsFile)

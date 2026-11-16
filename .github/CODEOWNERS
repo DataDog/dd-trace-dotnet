@@ -261,6 +261,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 /tracer/test/Datadog.Trace.IntegrationTests/ @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Tracer.Native.Tests/   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Bundle.ArtifactTests/ @DataDog/apm-lang-platform-dotnet @DataDog/apm-dotnet @DataDog/tracing-dotnet
 
 ## Single-owner projects
 /tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/ @DataDog/apm-sdk-capabilities
@@ -318,6 +319,8 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/Snapshots/                                 @DataDog/apm-sdk-capabilities
 /tracer/test/Datadog.Trace.Tests/Tagging/                                   @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/Telemetry/                                 @DataDog/apm-sdk-capabilities
+/tracer/test/Datadog.Trace.Tests/Telemetry/Metrics/common_metrics.json      @DataDog/apm-sdk-capabilities @DataDog/apm-dotnet
+/tracer/test/Datadog.Trace.Tests/Telemetry/Metrics/dotnet_metrics.json      @DataDog/apm-sdk-capabilities @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/TraceProcessors/                           @DataDog/apm-sdk-capabilities
 /tracer/test/Datadog.Trace.Tests/Util/                                      @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/Util/AppSec/                               @DataDog/apm-lang-platform-dotnet @DataDog/asm-dotnet

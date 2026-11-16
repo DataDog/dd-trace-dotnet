@@ -9,7 +9,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -367,7 +366,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array
-            else if (int.TryParse(statusConfiguration, out startStatus))
+            else if (int.TryParseInvariant(statusConfiguration, out startStatus))
             {
                 TrySetValue(startStatus);
             }
@@ -375,13 +374,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             {
                 string[] statusCodeLimitsRange = statusConfiguration.Split('-');
 
-                startStatus = int.Parse(statusCodeLimitsRange[0]);
-                int endStatus = int.Parse(statusCodeLimitsRange[1]);
+                startStatus = int.ParseInvariant(statusCodeLimitsRange[0]);
+                int endStatus = int.ParseInvariant(statusCodeLimitsRange[1]);
 
                 if (endStatus < startStatus)
                 {
                     startStatus = endStatus;
-                    endStatus = int.Parse(statusCodeLimitsRange[0]);
+                    endStatus = int.ParseInvariant(statusCodeLimitsRange[0]);
                 }
 
                 for (int statusCode = startStatus; statusCode <= endStatus; statusCode++)

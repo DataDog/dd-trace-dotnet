@@ -248,6 +248,18 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountApiSecMissingRoute(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountApiSecRequestSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountApiSecRequestNoSchema(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiSecFramework tag, int increment = 1)
+    {
+    }
+
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
     }

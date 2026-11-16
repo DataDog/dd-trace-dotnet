@@ -131,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 { Major: 8 } when packageVersion >= new Version(8, 0, 30) => new(2, 33),
                 { Major: 9 } when packageVersion >= new Version(9, 0, 19) => new(2, 33),
                 { Major: 10 } when packageVersion >= new Version(10, 0, 11) => new(2, 33),
+                { Major: >= 11 } => new(2, 34),
                 _ => null,
             };
         }

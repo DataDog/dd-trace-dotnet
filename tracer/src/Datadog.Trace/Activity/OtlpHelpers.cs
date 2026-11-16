@@ -330,7 +330,7 @@ namespace Datadog.Trace.Activity
                                     if (item?.ToString() is { } value)
                                     {
                                         attributes ??= new();
-                                        attributes.Add(new($"{kvp.Key}.{index}", value));
+                                        attributes.Add(new($"{kvp.Key}.{IntStringCache.ToInvariantString(index)}", value));
                                         index++;
                                     }
                                 }
@@ -470,7 +470,7 @@ namespace Datadog.Trace.Activity
                         foreach (var element in (enumerable))
                         {
                             // we are only supporting a single level of unrolling
-                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
+                            SetTagObject(span, $"{key}.{IntStringCache.ToInvariantString(index)}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
                             index++;
                         }
 

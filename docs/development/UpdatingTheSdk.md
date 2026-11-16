@@ -99,6 +99,17 @@ When updating to pre-release versions (RC, preview):
 - May require different container image tags or availability
 - By default we bail out of preview versions of the SDK in SSI environments in the native loader, need to consider whether that needs changing, or whether we should continue to bail out.
 
+## Pre-Release to GA Updates
+
+When moving from the final RC to the GA release, in addition to the version find-and-replace:
+
+- **SSI guard rails**: bump the supported major version ceiling in `shared/src/Datadog.Trace.ClrProfiler.Native/single_step_guard_rails.cpp`, so SSI no longer aborts on the new runtime.
+- **"Next version" preview tests**: update the `#if NETXX_0_OR_GREATER` condition and the expected `".NET XX or higher"` strings in `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TestInfrastructure/InstrumentationTests.cs` to point at the next major version.
+- **Log check patterns**: remove the "only while .NET XX is in preview" `Found incompatible runtime` known-error patterns in `tracer/build/_build/Build.Steps.cs`.
+- **Forced injection in tests**: remove any `DD_INJECT_FORCE` added for the preview framework, e.g. in `profiler/test/Datadog.Profiler.IntegrationTests/Helpers/EnvironmentHelper.cs` and `tracer/test/Datadog.Trace.Tools.dd_dotnet.IntegrationTests/Checks/ProcessBasicChecksTests.cs`.
+- **RC workarounds**: search for comments such as "Remove once we build with .NET XX GA" and for skips or allowed log patterns tied to specific RC SDK versions, and try re-enabling them.
+- **Smoke test images**: once the floating `XX.0-*` MCR tags point to the GA images, re-pin them with the `UpdateSmokeTestImageDigests` Nuke target. Check the image's `DOTNET_VERSION` environment variable to confirm the tag has moved. MCR can lag the SDK release by a day or so.
+
 ## Files Requiring Manual Review
 
 The following areas typically require manual attention during major upgrades:
