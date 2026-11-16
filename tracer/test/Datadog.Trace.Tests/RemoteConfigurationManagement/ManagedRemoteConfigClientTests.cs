@@ -27,9 +27,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
-/// <summary>
-/// The protocol tests of the managed client
-/// </summary>
 public class ManagedRemoteConfigClientTests
 {
     private static readonly RemoteConfigEndpoint Endpoint = new("http://localhost:8126/", TimeSpan.FromSeconds(1));

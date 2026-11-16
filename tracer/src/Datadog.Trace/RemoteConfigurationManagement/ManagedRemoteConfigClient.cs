@@ -28,8 +28,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 /// used when libdatadog's client is not available or can't be created, or is disabled with <see cref="Configuration.ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
 /// It does not verify the hashes of the files. Its transport keeps the discovery service of the remote configuration manager which created it,
 /// also after the tracer manager was replaced (TracerManager.ReplaceGlobalManager), which is fine while the endpoint path discovery reports doesn't change.
-/// Removed with it: its key and fallback, RemoteConfigEndpoint.ExporterSettings, Transport/*, Json/*, RemoteConfigurationCache, Base64DecodingStream
-/// and their tests. Protocol/*, except RcmClientTracer, goes back to the test helpers, with the string case of GetRcmRequestExtensions.DeserializeRcmRequest.
+/// Removed with it: its key and fallback, RemoteConfigEndpoint.ExporterSettings, Transport/*, RemoteConfigurationCache, Base64DecodingStream and their
+/// tests. Protocol/* and Json/*, except RcmClientTracer, move to the test helpers, Json/* decoding with Convert.FromBase64String.
 /// </summary>
 internal sealed class ManagedRemoteConfigClient : IRemoteConfigClient
 {

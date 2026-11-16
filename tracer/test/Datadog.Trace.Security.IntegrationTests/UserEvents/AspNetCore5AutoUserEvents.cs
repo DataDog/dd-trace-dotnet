@@ -121,7 +121,7 @@ namespace Datadog.Trace.Security.IntegrationTests.UserEvents
                 // libdatadog still caches the file this mock agent sends (a real agent only sends requested products),
                 // but the tracer doesn't apply it
                 request2.Client.Products.Should().NotContain(RcmProducts.AsmData);
-                request2.Client.State.ConfigStates.Should().NotContain(s => s.Product == RcmProducts.AsmData && s.ApplyState != ApplyStates.UNACKNOWLEDGED);
+                request2.Client.State.ConfigStates.Should().ContainSingle(s => s.Product == RcmProducts.AsmData).Which.ApplyState.Should().Be(ApplyStates.UNACKNOWLEDGED);
             }
 
             await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)), scrubCookiesFingerprint: true);

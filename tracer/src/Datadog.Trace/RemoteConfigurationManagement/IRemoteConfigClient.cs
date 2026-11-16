@@ -37,7 +37,7 @@ internal interface IRemoteConfigClient : IDisposable
     void SetApplyState(string path, ulong applyState, string? error);
 
     /// <summary>
-    /// Makes the ongoing fetch and all further fetches fail: libdatadog's client aborts the ongoing request, the managed client ignores its response.
+    /// Makes all further fetches fail, and the ongoing one unless its response was already received.
     /// Can be called from any thread, even while the client is in use.
     /// </summary>
     void Cancel();

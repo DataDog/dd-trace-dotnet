@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityDefault : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDefault(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefault))
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefault), managedClient: false)
         {
         }
     }
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityDisabled : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: false, testName: nameof(AspNetCore5AsmToggleSecurityDisabled))
+            : base(fixture, outputHelper, enableSecurity: false, testName: nameof(AspNetCore5AsmToggleSecurityDisabled), managedClient: false)
         {
         }
     }
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityEnabled : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleSecurityEnabled))
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleSecurityEnabled), managedClient: false)
         {
         }
     }
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     {
         private readonly bool _managedClient;
 
-        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName, bool managedClient = false)
+        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName, bool managedClient)
             : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
             _managedClient = managedClient;
@@ -92,7 +93,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             {
                 if (_managedClient)
                 {
-                    // Shows the managed client sent the request: it omits a missing apply error, libdatadog's client sends an empty one
+                    // Shows the managed client sent the request: it sends a null apply error, libdatadog's client an empty one
                     associatedRcmRequest.Client.State.ConfigStates.Should().NotContain(s => s.ApplyError != null);
                 }
 
@@ -106,7 +107,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                         associatedRcmRequest.Client.Products.Should().NotContain(asmProducts);
                         // libdatadog still caches the file this mock agent sends (a real agent only sends requested products),
                         // but the tracer doesn't apply it
-                        associatedRcmRequest.Client.State.ConfigStates.Should().NotContain(s => s.Product == RcmProducts.AsmFeatures && s.ApplyState != ApplyStates.UNACKNOWLEDGED);
+                        var asmFeatures = associatedRcmRequest.Client.State.ConfigStates.Where(s => s.Product == RcmProducts.AsmFeatures).ToList();
+                        asmFeatures.Should().HaveCount(fileNumberIfSecurityCanBeToggled);
+                        asmFeatures.Should().NotContain(s => s.ApplyState != ApplyStates.UNACKNOWLEDGED);
                     }
                     else
                     {

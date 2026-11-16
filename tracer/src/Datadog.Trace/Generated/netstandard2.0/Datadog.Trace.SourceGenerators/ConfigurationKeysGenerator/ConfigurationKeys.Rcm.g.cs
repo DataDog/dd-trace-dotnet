@@ -34,7 +34,7 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Temporary switch, to be removed in a future release. Selects the remote configuration client: when <c>true</c>
-        /// (the default), the client of libdatadog is used where libdatadog is available, and when <c>false</c>, the previous
+        /// (the default), the client of libdatadog is used where libdatadog is available, and when <c>false</c>, the
         /// managed client is used instead. The managed client is also used when the libdatadog client can't be created;
         /// if it is created but then fails, setting this to <c>false</c> is the remedy.
         /// </summary>
