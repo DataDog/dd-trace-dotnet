@@ -22,8 +22,9 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// exposure decision, so an application can record exposures in its own data store.
 /// <para>
 /// This hook is the supported way to get the exposure decision; the <c>__dd_</c> metadata keys other
-/// than <c>__dd_feature.&lt;key&gt;</c> are internal. Register it with <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only
-/// an API hook also gets evaluations from the experimental synchronous methods.
+/// than <c>__dd_feature.&lt;key&gt;</c> are internal. Register it with
+/// <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. Only an API hook also gets evaluations
+/// from the experimental synchronous methods.
 /// The callback runs for every evaluation, including errors and repeats; use
 /// <see cref="ExposureEvaluation.ShouldSend"/> to keep new or changed exposures. When the provider is
 /// registered directly and you evaluate through a client, these are the exposures sent to Datadog while

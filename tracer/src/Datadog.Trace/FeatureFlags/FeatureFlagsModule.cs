@@ -84,8 +84,8 @@ namespace Datadog.Trace.FeatureFlags
         private long _handlerDeliveredGeneration;
 
         // Only the provider's hooks commit deferred exposures. These detect hooks that never run, for
-        // example under a wrapper that drops them. Counting ends at the first commit call or the warning,
-        // so a healthy app writes neither field per exposure.
+        // example under a wrapper that drops them. Counting ends at the first commit call or the warning;
+        // after that, evaluations and commits only read _uncommittedExposureCheckDone.
         private int _exposuresDeferredWithoutCommit;
         private int _uncommittedExposureCheckDone;
 

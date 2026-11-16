@@ -176,9 +176,9 @@ The public flag metadata is the `__dd_feature.<key>` entries. There is one entry
 the selected split that lists the `HOOK` destination. The value is a `string`, `double` or `bool`.
 Read these entries in the hook's `finally` stage, and skip details that have an error.
 
-Other keys that start with `__dd_` are internal. They can change, and they can be missing. Do not
-read the exposure decision from them. Use `ExposureHook` to get the exposure decision (`IsExposure`,
-`IsCacheHit` and `ShouldSend`) and the split's serial id (`SplitSerialId`).
+Other keys that start with `__dd_` are internal. They can change, and they can be missing.
+`ExposureHook` gives the exposure decision (`IsExposure`, `IsCacheHit` and `ShouldSend`) and the
+split's serial id (`SplitSerialId`).
 
 ### Stop sending exposures to Datadog
 

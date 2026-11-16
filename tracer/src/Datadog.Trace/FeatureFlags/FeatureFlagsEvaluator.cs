@@ -907,7 +907,7 @@ namespace Datadog.Trace.FeatureFlags
             {
                 if (metadata is DeferredExposureMetadata deferred)
                 {
-                    // The commit after the evaluation gives the one verdict, so none is stamped here.
+                    // The commit after the evaluation gives the verdict.
                     deferred.SetPendingExposure(in exposure);
                 }
                 else

@@ -8,7 +8,7 @@
 namespace Datadog.Trace.FeatureFlags
 {
     // FeaturePrefix entries are the public contract (provider README, "Flag metadata"). The other keys are internal,
-    // and released providers read them, so keep their names, types and encodings.
+    // but the provider package ships separately and reads them, so keep their names, types and encodings.
     internal static class FeatureFlagMetadataKeys
     {
         internal const string SplitSerialId = "__dd_split_serial_id";
