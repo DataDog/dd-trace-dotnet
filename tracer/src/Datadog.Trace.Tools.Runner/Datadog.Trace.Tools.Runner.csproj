@@ -116,7 +116,7 @@
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'osx-x64'" Update="..\Datadog.Trace.Bundle\home\osx-x64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'osx-x64'" Update="..\Datadog.Trace.Bundle\home\osx\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
