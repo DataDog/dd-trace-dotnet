@@ -248,7 +248,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's clear the failed and skipped runs if we have at least one successful run
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
 
@@ -299,7 +299,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
                 }

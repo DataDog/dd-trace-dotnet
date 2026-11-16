@@ -67,7 +67,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (controlBlock.Perf.GC.ProcessID != _processId)
                 {
-                    throw new InvalidOperationException($"The PID in the IPC control block does not match (expected {_processId}, found {controlBlock.Perf.GC.ProcessID}");
+                    throw new InvalidOperationException(StringUtil.Invariant($"The PID in the IPC control block does not match (expected {_processId}, found {controlBlock.Perf.GC.ProcessID}"));
                 }
             }
             catch
@@ -131,7 +131,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (perf.GC.ProcessID != _processId)
             {
-                throw new InvalidOperationException($"The PID in the IPC control block does not match (expected {_processId}, found {controlBlock.Perf.GC.ProcessID}");
+                throw new InvalidOperationException(StringUtil.Invariant($"The PID in the IPC control block does not match (expected {_processId}, found {controlBlock.Perf.GC.ProcessID}"));
             }
 
             // if we can't send stats (e.g. we're shutting down), there's not much point in

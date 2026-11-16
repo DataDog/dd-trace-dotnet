@@ -194,7 +194,7 @@ internal static class DelegateInstrumentation
         {
             _wrapperType = wrapperType;
             _activator = DefaultActivator;
-            Task.Run(CreateCustomActivator);
+            _ = Task.Run(CreateCustomActivator);
         }
 
         public static ConcurrentDictionary<Type, ActivatorHelper<TCallbacks>> Cache => WrapperTypesCache;

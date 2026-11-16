@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
@@ -90,6 +91,25 @@ public sealed class HandlerWrapperSetHandlerIntegration
             else
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
+
+                // jsonString keeps the original payload (with _datadog) for the extension;
+                // only the stream the customer handler reads is replaced.
+                if (Tracer.Instance.Settings.AwsLambdaStripContextEnabled)
+                {
+                    try
+                    {
+                        var strippedJson = InjectedContextHelper.StripContext(jsonString);
+                        if (!ReferenceEquals(strippedJson, jsonString))
+                        {
+                            proxyInstance.InputStream = new MemoryStream(EncodingHelpers.Utf8NoBom.GetBytes(strippedJson));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LambdaCommon.Log("Unable to strip _datadog from Lambda payload; using original", ex, debug: false);
+                    }
+                }
+
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
                 requestId = proxyInstance.LambdaContext?.AwsRequestId;
             }

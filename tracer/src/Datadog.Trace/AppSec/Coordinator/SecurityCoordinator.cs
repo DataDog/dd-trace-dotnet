@@ -47,7 +47,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (lastTime && _httpTransport.StatusCode is { } statusCode)
         {
-            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+            args[AddressesConstants.ResponseStatus] = statusCode.ToStringInvariant();
         }
 
         return args.Count > 0 ? RunWaf(args, lastTime) : null;
@@ -64,7 +64,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal bool ShouldScanResponse() => _appsecRequestContext.ShouldScanResponse();
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null, ulong? subcontextId = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -90,12 +90,14 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
+            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
 
             // run the WAF and execute the results
             var outcome = WafOutcome.Success;
             result = runWithEphemeral
-                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
+                         ? subcontextId is { } id
+                               ? additiveContext.RunInSubcontext(id, args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
+                               : additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             if (raspAddress is not null)
@@ -107,6 +109,7 @@ internal readonly partial struct SecurityCoordinator
 
             SetErrorInformation(isRasp, result);
             SecurityReporter.RecordWafTelemetry(result, isRasp);
+            ApiSecurity.RecordSamplingTelemetry(samplingDecision, result, _localRootSpan, TelemetryFactory.Metrics);
         }
         catch (Exception ex) when (ex is not BlockException)
         {

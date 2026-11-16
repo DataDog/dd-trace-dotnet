@@ -65,7 +65,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public RuntimeEventListener(IStatsdManager statsd, TimeSpan delay)
         {
             _statsd = statsd;
-            _delayInSeconds = ((int)delay.TotalSeconds).ToString();
+            _delayInSeconds = ((int)delay.TotalSeconds).ToStringInvariant();
 
             EventSourceCreated += (_, e) => EnableEventSource(e.EventSource);
         }

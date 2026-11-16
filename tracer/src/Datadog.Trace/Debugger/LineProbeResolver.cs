@@ -286,7 +286,7 @@ namespace Datadog.Trace.Debugger
                         new LineProbeResolutionDiagnostics(ProbeFile: "<empty>", ProbeId: probe.Id));
                 }
 
-                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                if (probe.Where?.Lines?.Length != 1 || !int.TryParseInvariant(probe.Where.Lines[0], out var lineNum))
                 {
                     var invalidLineDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                      ? new LineProbeResolutionDiagnostics(
