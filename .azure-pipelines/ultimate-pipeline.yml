@@ -339,6 +339,8 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
+    - template: steps/upload-native-test-results.yml
+
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
@@ -384,6 +386,8 @@ stages:
       retryCountOnTaskFailure: 1
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - template: steps/upload-native-test-results.yml
 
     - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory

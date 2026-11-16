@@ -1,13 +1,25 @@
 # Uploads the gtest JUnit reports of the native unit tests to Datadog Test Optimization, so their
 # failures are reported as test failures (managed tests already report through the tracer).
-# datadog-ci is preinstalled on the Linux VM images; the step is skipped on VMs that don't have it yet.
+# datadog-ci is preinstalled on the Linux and Windows VM images; the step is skipped on VMs that don't have it yet.
 # Reporting only: it never fails the job.
 steps:
 - script: |
     command -v datadog-ci > /dev/null || { echo "datadog-ci is not installed on this VM, skipping"; exit 0; }
     datadog-ci junit upload profiler/build_data/tests/*.xml artifacts/build_data/tests/*.xml --service dd-trace-dotnet --env ci
   displayName: Upload native test results to Test Optimization
-  condition: succeededOrFailed()
+  condition: and(succeededOrFailed(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+  continueOnError: true
+  env:
+    DATADOG_SITE: datadoghq.com
+    DATADOG_API_KEY: $(ddApiKey)
+
+- powershell: |
+    if (-not (Get-Command datadog-ci -ErrorAction SilentlyContinue)) { Write-Host "datadog-ci is not installed on this VM, skipping"; exit 0 }
+    $reports = Get-ChildItem -Path profiler/build_data/tests/*.xml, artifacts/build_data/tests/*.xml -ErrorAction SilentlyContinue | ForEach-Object FullName
+    if (-not $reports) { Write-Host "No native test report found, nothing to upload"; exit 0 }
+    datadog-ci junit upload $reports --service dd-trace-dotnet --env ci
+  displayName: Upload native test results to Test Optimization
+  condition: and(succeededOrFailed(), eq(variables['Agent.OS'], 'Windows_NT'))
   continueOnError: true
   env:
     DATADOG_SITE: datadoghq.com
