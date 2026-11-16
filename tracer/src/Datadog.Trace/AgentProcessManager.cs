@@ -282,7 +282,7 @@ namespace Datadog.Trace
             var path = metadata.ProcessPath;
             if (await host.CheckHealthAsync(metadata).ConfigureAwait(false))
             {
-                if (await ExistingAgentStaysAsync(host, metadata).ConfigureAwait(false))
+                if (await ExistingAgentStaysAvailableAsync(host, metadata).ConfigureAwait(false))
                 {
                     metadata.ProcessState = ProcessState.Healthy;
                     Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
@@ -310,9 +310,9 @@ namespace Datadog.Trace
         /// <summary>
         /// Watches an agent found by the first check for about 2 seconds, with growing gaps between checks.
         /// Returns false if its pipe goes away, which means it was shutting down. A slow answer is not a shutdown,
-        /// so the agent counts as staying while its pipe exists.
+        /// so the agent counts as available while its pipe exists.
         /// </summary>
-        private static async Task<bool> ExistingAgentStaysAsync<THost>(THost host, ProcessMetadata metadata)
+        private static async Task<bool> ExistingAgentStaysAvailableAsync<THost>(THost host, ProcessMetadata metadata)
             where THost : struct, IAgentHost
         {
             var delay = 50d;
