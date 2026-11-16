@@ -18,6 +18,7 @@ using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
@@ -767,13 +768,16 @@ namespace Datadog.Trace.Configuration
                 explicitSpanMetrics ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled),
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
-            // Must match SecuritySettings.AppsecEnabled; recorded there, so use null telemetry
-            var appSecEnabled = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
-                               .WithKeys(ConfigurationKeys.AppSec.Enabled)
-                               .AsBool(false);
+            // Serverless is excluded because the out-of-process reader can't run there.
+            var otelThreadContextEnabledByDefault =
+                config.WithKeys(ConfigurationKeys.AppSec.Enabled).AsBool(false)
+             && OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
+             && !LambdaMetadata.IsRunningInLambda
+             && !IsRunningInAzureFunctions
+             && !IsRunningInGCPFunctions;
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
-                .AsBool(defaultValue: appSecEnabled);
+                .AsBool(defaultValue: otelThreadContextEnabledByDefault);
 
             if (OtelSemanticsEnabled)
             {
@@ -1284,8 +1288,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the active trace and span identifiers of each thread are published
         /// using the OpenTelemetry thread context protocol (OTEP 4947).
-        /// Only supported on Linux x64 and arm64. Defaults to the value of
-        /// <see cref="ConfigurationKeys.AppSec.Enabled"/>, so it is <c>false</c> unless AppSec is enabled.
+        /// Only supported on Linux x64 and arm64. Defaults to <c>true</c> when <see cref="ConfigurationKeys.AppSec.Enabled"/>
+        /// is enabled on a supported platform outside serverless, <c>false</c> otherwise.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
         internal bool OtelThreadContextEnabled { get; }

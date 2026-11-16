@@ -22,7 +22,7 @@ record.
 | | |
 | --- | --- |
 | Setting | `DD_TRACE_OTEL_CTX_ENABLED` (`TracerSettings.OtelThreadContextEnabled`) |
-| Default | the value of `DD_APPSEC_ENABLED`: on when AppSec is enabled through configuration, off otherwise. Enabling AppSec remotely doesn't turn it on. |
+| Default | on when `DD_APPSEC_ENABLED=true` on a supported platform outside serverless (AWS Lambda, Azure Functions, GCP Functions), off otherwise. Enabling AppSec remotely doesn't turn it on. |
 | Requires | Linux, x64 or arm64, and automatic instrumentation attached |
 
 The platform gate is `OtelThreadContextPublisher.IsPlatformSupported()`, shared by the publisher and the

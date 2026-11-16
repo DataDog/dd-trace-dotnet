@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -136,25 +137,34 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "true", false)]
         [InlineData("true", "false", true)]
         [InlineData("true", null, true)]
-        public void OtelThreadContextEnabled_DefaultsToAppSecEnabled(string otelThreadContextEnabled, string appSecEnabled, bool expected)
+        public void OtelThreadContextEnabled_DefaultsToAppSecEnabledOnSupportedPlatforms(string otelThreadContextEnabled, string appSecEnabled, bool expectedOnSupportedPlatform)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
                 (ConfigurationKeys.AppSec.Enabled, appSecEnabled));
             var settings = new TracerSettings(source);
 
+            var expected = otelThreadContextEnabled is not null
+                               ? expectedOnSupportedPlatform
+                               : expectedOnSupportedPlatform && OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance);
             settings.OtelThreadContextEnabled.Should().Be(expected);
         }
 
-        [Fact]
-        public void OtelThreadContextEnabled_DoesNotRecordAppSecEnabledTelemetry()
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("true", true)]
+        public void OtelThreadContextEnabled_IsNotEnabledByAppSecInServerless(string otelThreadContextEnabled, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, "true"));
-            var telemetry = new ConfigurationTelemetry();
-            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
+                (ConfigurationKeys.AppSec.Enabled, "true"),
+                (PlatformKeys.AzureAppService.SiteNameKey, "site"),
+                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated"),
+                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4"));
+            var settings = new TracerSettings(source);
 
-            settings.OtelThreadContextEnabled.Should().BeTrue();
-            telemetry.GetQueueForTesting().Should().NotContain(e => e.Key == ConfigurationKeys.AppSec.Enabled);
+            settings.IsRunningInAzureFunctions.Should().BeTrue();
+            settings.OtelThreadContextEnabled.Should().Be(expected);
         }
 
 #if NET6_0_OR_GREATER
