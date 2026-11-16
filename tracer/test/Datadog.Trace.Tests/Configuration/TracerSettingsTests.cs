@@ -128,6 +128,35 @@ namespace Datadog.Trace.Tests.Configuration
             settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
         }
 
+        [Theory]
+        [InlineData(null, null, false)]
+        [InlineData(null, "false", false)]
+        [InlineData(null, "true", true)]
+        [InlineData(null, "invalid", false)]
+        [InlineData("false", "true", false)]
+        [InlineData("true", "false", true)]
+        [InlineData("true", null, true)]
+        public void OtelThreadContextEnabled_DefaultsToAppSecEnabled(string otelThreadContextEnabled, string appSecEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
+                (ConfigurationKeys.AppSec.Enabled, appSecEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [Fact]
+        public void OtelThreadContextEnabled_DoesNotRecordAppSecEnabledTelemetry()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, "true"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            settings.OtelThreadContextEnabled.Should().BeTrue();
+            telemetry.GetQueueForTesting().Should().NotContain(e => e.Key == ConfigurationKeys.AppSec.Enabled);
+        }
+
 #if NET6_0_OR_GREATER
         [Theory]
         [InlineData(null, true, true)]

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             var settings = new TracerSettings();
 
-            settings.OtelThreadContextEnabled.Should().BeFalse("the feature must be opt-in");
+            settings.OtelThreadContextEnabled.Should().BeFalse("the feature is off unless it or AppSec is enabled");
             OtelThreadContextPublisher.Create(settings).Should().BeSameAs(NullOtelThreadContextPublisher.Instance);
         }
 
