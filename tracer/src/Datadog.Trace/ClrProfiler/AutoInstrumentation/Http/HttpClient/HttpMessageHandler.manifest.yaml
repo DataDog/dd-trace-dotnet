@@ -1,0 +1,15 @@
+_v: 1
+name: HttpMessageHandler
+display_name: HttpMessageHandler
+description: Instruments outbound HTTP requests through the built-in .NET HttpMessageHandler implementations (HttpClientHandler,
+  SocketsHttpHandler, WinHttpHandler, and CurlHandler), creating client spans, propagating context, recording responses and
+  errors, tracking data-streams transactions, and applying downstream RASP checks.
+packages:
+- name: Ocelot
+- name: System.Net.Http
+- name: System.Net.Http.WinHttpHandler
+- name: Yarp.ReverseProxy
+category:
+- http.client
+systems: []
+creation_date: '2019-03-04'
