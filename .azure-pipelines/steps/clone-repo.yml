@@ -10,8 +10,8 @@ steps:
   - checkout: none
   - bash: |
       # Constants
-      RETRY_INTERVAL=10
-      MAX_ATTEMPTS=5
+      RETRY_INTERVAL=$(GIT_RETRY_INTERVAL_SEC)
+      MAX_ATTEMPTS=$(GIT_RETRY_MAX_ATTEMPTS)
       
       # Azure devops _doesn't_ clean up the contents of the repo after the pipeline has finished
       # So we do it manually
@@ -115,8 +115,8 @@ steps:
       git config http.version HTTP/1.1
 
       # Attempt fetching and checking out
-      $retryInterval=10
-      $maxAttempts=5
+      $retryInterval=$(GIT_RETRY_INTERVAL_SEC)
+      $maxAttempts=$(GIT_RETRY_MAX_ATTEMPTS)
       for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
         echo "Attempt $attempt/${maxAttempts}: Fetching and checking out: ${{ parameters.targetBranch }} and $prBranch"
         git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}

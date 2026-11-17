@@ -122,6 +122,8 @@ variables:
   GIT_HTTP_MAX_RETRIES: 5
   GIT_HTTP_RETRY_AFTER: 2
   GIT_RETRY_CONFIG: '-c http.maxRetries=$(GIT_HTTP_MAX_RETRIES) -c http.retryAfter=$(GIT_HTTP_RETRY_AFTER)'
+  GIT_RETRY_MAX_ATTEMPTS: 5
+  GIT_RETRY_INTERVAL_SEC: 10
   PWSH_MAX_RETRY_COUNT: 5
   PWSH_RETRY_INTERVAL_SEC: 2
   PWSH_TIMEOUT_SEC: 120
@@ -271,8 +273,8 @@ stages:
 
         # Retry the clone to ride out transient network failures (e.g. DNS).
         # stderr is redirected because failOnStderr would otherwise fail the step on a failed attempt
-        RETRY_INTERVAL=10
-        MAX_ATTEMPTS=5
+        RETRY_INTERVAL=$(GIT_RETRY_INTERVAL_SEC)
+        MAX_ATTEMPTS=$(GIT_RETRY_MAX_ATTEMPTS)
         for attempt in $(seq 1 $MAX_ATTEMPTS)
         do
           rm -rf ./s
@@ -5307,8 +5309,8 @@ stages:
           displayName: Install python 3.12
 
         - script: |
-            RETRY_INTERVAL=10
-            MAX_ATTEMPTS=5
+            RETRY_INTERVAL=$(GIT_RETRY_INTERVAL_SEC)
+            MAX_ATTEMPTS=$(GIT_RETRY_MAX_ATTEMPTS)
             for attempt in $(seq 1 $MAX_ATTEMPTS)
             do
               rm -rf ./system-tests
@@ -5427,8 +5429,8 @@ stages:
         displayName: Install python 3.12
 
       - script: |
-          RETRY_INTERVAL=10
-          MAX_ATTEMPTS=5
+          RETRY_INTERVAL=$(GIT_RETRY_INTERVAL_SEC)
+          MAX_ATTEMPTS=$(GIT_RETRY_MAX_ATTEMPTS)
           for attempt in $(seq 1 $MAX_ATTEMPTS)
           do
             rm -rf ./system-tests
