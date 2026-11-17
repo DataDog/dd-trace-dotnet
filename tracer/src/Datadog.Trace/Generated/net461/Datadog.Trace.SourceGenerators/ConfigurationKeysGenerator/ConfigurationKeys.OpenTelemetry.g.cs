@@ -26,7 +26,7 @@ internal static partial class ConfigurationKeys
         /// Enables publishing the active trace and span identifiers of each thread using the OpenTelemetry
         /// thread context protocol (OTEP 4947), so out-of-process readers such as the OpenTelemetry eBPF
         /// profiler can correlate their observations with the active trace. Linux x64 and arm64 only.
-        /// Enabled by default when <see cref="ConfigurationKeys.AppSec.Enabled"/> is enabled, except in serverless environments.
+        /// Enabled by default when <see cref="ConfigurationKeys.AppSec.Enabled"/> is enabled, except in serverless environments and Azure App Service.
         /// </summary>
         /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtelThreadContextEnabled"/>
         public const string OtelThreadContextEnabled = "DD_TRACE_OTEL_CTX_ENABLED";

@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         private const int AttrsDataOffset = 28;
 
         [Fact]
-        public void IsDisabledUnlessTheSettingIsTurnedOn()
+        public void IsDisabledWithDefaultSettings()
         {
             var settings = new TracerSettings();
 

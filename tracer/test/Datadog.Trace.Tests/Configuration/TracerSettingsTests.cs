@@ -168,20 +168,41 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OtelThreadContextEnabled.Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData(null, false)]
-        [InlineData("true", true)]
-        public void OtelThreadContextEnabled_IsNotEnabledByAppSecInServerless(string otelThreadContextEnabled, bool expected)
+        [SkippableTheory]
+        [InlineData("azure-functions", null, false)]
+        [InlineData("azure-functions", "true", true)]
+        [InlineData("azure-app-service", null, false)]
+        [InlineData("azure-app-service", "true", true)]
+        [InlineData("gcp-functions", null, false)]
+        [InlineData("gcp-functions", "true", true)]
+        public void OtelThreadContextEnabled_IsNotEnabledByAppSecInServerlessOrAzureAppService(string environment, string otelThreadContextEnabled, bool expected)
         {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+            (string Key, string Value)[] environmentKeys = environment switch
+            {
+                "azure-functions" =>
+                [
+                    (PlatformKeys.AzureAppService.SiteNameKey, "site"),
+                    (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated"),
+                    (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4"),
+                ],
+                "azure-app-service" => [(PlatformKeys.AzureAppService.SiteNameKey, "site")],
+                "gcp-functions" =>
+                [
+                    (PlatformKeys.GcpFunction.FunctionNameKey, "function"),
+                    (PlatformKeys.GcpFunction.FunctionTargetKey, "target"),
+                ],
+                _ => throw new ArgumentOutOfRangeException(nameof(environment)),
+            };
             var source = CreateConfigurationSource(
+            [
                 (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
                 (ConfigurationKeys.AppSec.Enabled, "true"),
-                (PlatformKeys.AzureAppService.SiteNameKey, "site"),
-                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated"),
-                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4"));
+                .. environmentKeys,
+            ]);
             var settings = new TracerSettings(source);
 
-            settings.IsRunningInAzureFunctions.Should().BeTrue();
             settings.OtelThreadContextEnabled.Should().Be(expected);
         }
 

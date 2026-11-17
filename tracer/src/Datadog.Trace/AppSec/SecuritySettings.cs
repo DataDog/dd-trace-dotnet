@@ -40,14 +40,8 @@ namespace Datadog.Trace.AppSec
                                      .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
                                      .AsString();
 
-            // both should default to false
-            // TracerSettings also reads this key for the OtelThreadContextEnabled default; keep them in sync
-            var enabledEnvVar = config
-                               .WithKeys(ConfigurationKeys.AppSec.Enabled)
-                               .AsBoolResult();
-
-            CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
-            AppsecEnabled = enabledEnvVar.WithDefault(false);
+            AppsecEnabled = ReadAppsecEnabled(config, out var canBeToggled);
+            CanBeToggled = canBeToggled;
 
             // RFC-1113: read only to report the value verbatim in configuration telemetry (empty with origin=default when unset)
             config.WithKeys(ConfigurationKeys.AppSec.AgenticOnboarding).AsString(string.Empty);
@@ -325,6 +319,20 @@ namespace Datadog.Trace.AppSec
         public static SecuritySettings FromDefaultSources()
         {
             return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+        }
+
+        /// <summary>
+        /// Reads <see cref="ConfigurationKeys.AppSec.Enabled"/>. Also used by <see cref="TracerSettings"/>, so both
+        /// always agree on whether AppSec is enabled through configuration.
+        /// </summary>
+        /// <param name="config">The configuration to read from.</param>
+        /// <param name="canBeToggled"><c>true</c> when the key isn't set to a valid value, so remote configuration can enable AppSec.</param>
+        /// <returns>Whether AppSec is enabled through configuration; <c>false</c> by default.</returns>
+        internal static bool ReadAppsecEnabled(ConfigurationBuilder config, out bool canBeToggled)
+        {
+            var enabled = config.WithKeys(ConfigurationKeys.AppSec.Enabled).AsBoolResult();
+            canBeToggled = !enabled.ConfigurationResult.IsValid;
+            return enabled.WithDefault(false);
         }
 
         private static ParsingResult<int> ParseWafTimeout(string wafTimeoutString)

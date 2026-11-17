@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -337,7 +338,7 @@ namespace Datadog.Trace.Configuration
             // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
             // manually calls flush and waits for the result before ending execution.
             // This can artificially increase the execution time of functions.
-            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
+            var defaultTraceBatchInterval = IsRunningInServerless ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
@@ -768,13 +769,12 @@ namespace Datadog.Trace.Configuration
                 explicitSpanMetrics ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled),
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
-            // AppSec read must match SecuritySettings.AppsecEnabled; serverless is excluded because the out-of-process reader can't run there.
+            // Serverless and Azure App Service are excluded because the out-of-process reader can't run there.
             var otelThreadContextEnabledByDefault =
                 OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
-             && !LambdaMetadata.IsRunningInLambda
-             && !IsRunningInAzureFunctions
-             && !IsRunningInGCPFunctions
-             && config.WithKeys(ConfigurationKeys.AppSec.Enabled).AsBool(false);
+             && !IsRunningInServerless
+             && !IsRunningInAzureAppService
+             && SecuritySettings.ReadAppsecEnabled(config, out _);
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
                 .AsBool(defaultValue: otelThreadContextEnabledByDefault);
@@ -1289,7 +1289,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the active trace and span identifiers of each thread are published
         /// using the OpenTelemetry thread context protocol (OTEP 4947).
         /// Only supported on Linux x64 and arm64. Defaults to <c>true</c> when <see cref="ConfigurationKeys.AppSec.Enabled"/>
-        /// is enabled on a supported platform outside serverless, <c>false</c> otherwise.
+        /// is enabled on a supported platform outside serverless and Azure App Service, <c>false</c> otherwise.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
         internal bool OtelThreadContextEnabled { get; }
@@ -1393,6 +1393,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
         /// </summary>
         internal bool IsRunningInGCPFunctions { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in AWS Lambda, Azure Functions or Google Cloud Functions.
+        /// </summary>
+        internal bool IsRunningInServerless => LambdaMetadata.IsRunningInLambda || IsRunningInAzureFunctions || IsRunningInGCPFunctions;
 
         /// <summary>
         /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
