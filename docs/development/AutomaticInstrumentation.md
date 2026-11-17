@@ -7,6 +7,7 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
   - [`OnMethodEnd` and `OnMethodBegin` parameters](#onmethodend-and-onmethodbegin-parameters)
     - [`OnMethodBegin`](#onmethodbegin)
     - [`OnMethodEnd`](#onmethodend)
+  - [How `OnMethodEnd` and `OnAsyncMethodEnd` run on async targets](#how-onmethodend-and-onasyncmethodend-run-on-async-targets)
 - [Duck-typing, instrumentation classes, and constraints](#duck-typing-instrumentation-classes-and-constraints)
 - [Instrumentation attributes](#instrumentation-attributes)
 - [Instrumentable methods](#instrumentable-methods)
@@ -14,6 +15,8 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
   - [Properties](#properties)
 - [Interfaces](#interfaces)
 - [Current Limitations](#current-limitations)
+  - [.NET 11 runtime-async targets](#net-11-runtime-async-targets)
+- [AutoInstrumentation Generator](#autoinstrumentation-generator)
 - [Testing](#testing)
   - [General approach](#general-approach)
   - [Developing the integration test](#developing-the-integration-test)
@@ -96,7 +99,7 @@ public class ClientQueryIteratorsIntegrations
 
 #### `OnMethodEnd` and `OnMethodBegin` parameters
  
-The first parameter passed to the method is the instance on which the method is called (for `static` methods, this parameter should be omitted), and should be a _generic parameter_ type.  
+The first parameter passed to the method is the instance on which the method is called, and should be a _generic parameter_ type. The instance parameter is optional: CallTarget decides whether to pass it from the number of parameters your callback declares, so you can omit it for `static` methods, or whenever you don't need it. The `TTarget` generic parameter is always required.
 
 For parameters that are well-known types like `string`, `object`, or `Exception`, you can use the type directly in the `OnMethodBegin` or `OnMethodEnd` methods. For other types that can't be directly referenced, such as types in the target-library, you should use generic parameters. If you need to manipulate the generic parameters, for example to access values, use the duck-typing approach described below.
 
@@ -115,8 +118,8 @@ OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(ref TArg1 arg1, ref TArg2);
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
 ```
-The last four signatures are for static classes.
-> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. Note that you cannot use `in` or `ref` if you are using duck-typing constraints on the parameters ([which you should be, where possible](../DuckTyping.md#best-practices)).
+The last four signatures omit the instance. Use them for static methods, or when you don't need the instance.
+> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. Note that you cannot use `in` or `ref` if you are using duck-typing constraints on the parameters ([which you should be, where possible](./DuckTyping.md#best-practices)).
 
 
 ##### `OnMethodEnd`
@@ -155,7 +158,51 @@ OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
 In case the continuation is for a `Task` or `ValueTask`, the returnValue type will be an object and the value `null`.
 In case the continuation is for a `Task<T>` or `ValueTask<T>`, the returnValue type will be `T` with the instance value after the task completes.
 
+`OnAsyncMethodEnd` can also be `async` itself, returning `Task<TReturn>` (or `Task<[Type]>`). In that case, `CallTargetState` must be passed by value, because an `async` method can't take an `in` parameter:
+```csharp
+      async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+      async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+      async Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+```
+The task the caller receives doesn't complete until an `async` `OnAsyncMethodEnd` has finished, and it carries the callback's result. It only works on state-machine targets: see [limitation 5](#current-limitations).
+
+By default the continuation that calls `OnAsyncMethodEnd` uses `ConfigureAwait(false)`, so it does not run under the caller's `SynchronizationContext` or `TaskScheduler`. Apply [`[PreserveContext]`](../../tracer/src/Datadog.Trace/ClrProfiler/CallTarget/PreserveContextAttribute.cs) to `OnAsyncMethodEnd` when it must run under the captured context, for example to read `HttpContext.Current` on .NET Framework.
+
 > For performance reasons, it is recommended to use the `in` keyword in front of the `CallTargetState state` parameter.
+
+#### How `OnMethodEnd` and `OnAsyncMethodEnd` run on async targets
+
+For a method that returns `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`, an integration can declare `OnAsyncMethodEnd`, `OnMethodEnd`, or both. The target can be compiled in two ways, and integrations shouldn't have to care which:
+
+- **State machine**: the classic C# compiler output. CallTarget instruments the *stub* that creates the state machine and returns the task.
+- **Runtime-async**: .NET 11+, where the runtime drives suspension. See [.NET 11 runtime-async targets](#net-11-runtime-async-targets).
+
+|  | State-machine target | Runtime-async target |
+|---|---|---|
+| When `OnMethodEnd` runs | When the stub returns, which is at the first `await` that doesn't complete synchronously. The target may still be running. | When the method has completed. |
+| What `OnMethodEnd` receives on success | The task returned to the caller (the continuation task, if `OnAsyncMethodEnd` is declared). It may still be running. | A completed task carrying the result. |
+| What `OnMethodEnd` receives on failure | A task that has faulted, or been canceled, or will be later. `exception` is `null`. | A task that has already faulted or been canceled. `exception` is `null`. |
+| When `OnAsyncMethodEnd` runs | Inline if the task has already completed, otherwise in a continuation once it completes. | When the method has completed. |
+| What `OnAsyncMethodEnd` receives | The result (`T`, or `null` for non-generic `Task`/`ValueTask`), or the exception the target threw, including an `OperationCanceledException` for a canceled task.¹ | The same. |
+| Order when both are declared | `OnAsyncMethodEnd` first if the task had already completed, otherwise `OnMethodEnd` first. | `OnAsyncMethodEnd`, then `OnMethodEnd`. |
+
+¹ For a faulted `Task`/`Task<T>` state-machine target (and `ValueTask` on .NET Framework), the exception is `GetBaseException()` of the task's `AggregateException`. That is the exception the target threw, unless the target itself threw an `AggregateException` with a single inner exception, which is unwrapped. `ValueTask` state-machine targets on .NET Core, and runtime-async targets, pass the thrown exception unchanged.
+
+In both cases, **`OnMethodEnd` never receives the exception argument for an async target**: a failure always arrives inside the task. So for async targets:
+
+- Do completion and error handling (closing scopes, recording errors) in `OnAsyncMethodEnd`.
+- In `OnMethodEnd`, don't rely on `exception`, or on whether the task has completed. If you need to decide whether the target is async, check the type of `returnValue`, as [`TraceAnnotationsIntegration`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/TraceAnnotationsIntegration.cs) does.
+
+##### Exceptions thrown by callbacks
+
+- Most exceptions thrown by `OnMethodBegin`, `OnMethodEnd` or `OnAsyncMethodEnd` are logged and swallowed: the target's original result or exception reaches the caller.
+- A `DuckTypeException`, `CallTargetInvokerException` or `MissingMemberException` also disables the integration for that target.
+- A [`CallTargetBubbleUpException`](../../tracer/src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetBubbleUpException.cs), or any exception with one in its `InnerException` chain, is **not** swallowed: it reaches the caller instead of the target's result or exception. This is how AppSec blocks a request (`BlockException` derives from it).
+
+When `OnAsyncMethodEnd` throws a `CallTargetBubbleUpException`:
+
+- On a runtime-async target, `OnMethodEnd` still runs. It receives a task faulted by that exception, which is then rethrown. If `OnMethodEnd` itself throws, that exception is logged and the original block is still rethrown.
+- On a state-machine target, `OnMethodEnd` also runs, and receives a task that is (or will be) faulted by the block. The one difference is a `Task`/`Task<T>` target (or a `ValueTask` target on .NET Framework) whose task had *already completed successfully* by the time the stub returned. `OnAsyncMethodEnd` then runs inline, the block is thrown synchronously from the stub, and `OnMethodEnd` is **skipped**. A `ValueTask` target on .NET Core always runs `OnAsyncMethodEnd` inside the returned `ValueTask`, so the block faults that `ValueTask` and `OnMethodEnd` still runs.
 
 
 ### Duck-typing, instrumentation classes, and constraints
@@ -166,7 +213,7 @@ When creating instrumentation classes you often need to work with `Type`s in the
  
 You can use duck-typing imperatively at runtime to "cast" any object to a type you can manipulate directly, but if you know at call time that you need to work with one of the generic parameters passed to an `OnMethodBegin` or `OnMethodEnd`, you can use a more performant approach leveraging _constraints_. 
 
-Add a constraint to your method that the generic type implements your duck type. The value passed to your method will then be pre-duck-typed, and will have better performance than using duck-typing manually at a later point. For example, the integration below [(A GraphQL integration)](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/ExecuteAsyncIntegration.cs) takes a single parameter which is duck-typed using constraints to implement the type IExecutionContext
+Add a constraint to your method that the generic type implements your duck type. The value passed to your method will then be pre-duck-typed, and will have better performance than using duck-typing manually at a later point. For example, the integration below [(A GraphQL integration)](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegration.cs) takes a single parameter which is duck-typed using constraints to implement the type IExecutionContext
 
 ```csharp
 public class ExecuteAsyncIntegration
@@ -201,13 +248,20 @@ In most cases, you will want `[InstrumentMethod]`. You apply this to your instru
     ReturnTypeName = ClrNames.HttpResponseMessageTask,
     ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
     MinimumVersion = "4.0.0",
-    MaximumVersion = "6.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = IntegrationName)]
 public class HttpClientHandlerIntegration
 {
     // ...
 }
 ```
+
+Other useful [`[InstrumentMethod]`](../../tracer/src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs) properties:
+
+- `AssemblyNames` / `TypeNames`: target several assemblies or types with one attribute, instead of `AssemblyName` / `TypeName`.
+- `CallTargetIntegrationKind`: `CallTargetKind.Default`, `Derived` or `Interface`. See [Inheritance](#inheritance) and [Interfaces](#interfaces).
+- `InstrumentationCategory`: `Tracing` (the default), `AppSec`, `Iast`, `Rasp` or `IastRasp`. This controls which products enable the instrumentation.
+- `CallTargetType`: the integration class, when the attribute is applied somewhere other than the integration class itself.
 
 We also have a special case for ADO.NET method instrumentation, as this is generally more convoluted, and requires a lot of duplication. All new ADO.NET implementations will likely reuse existing instrumentation classes, such as [`CommandExecuteReaderIntegration`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteReaderIntegration.cs) for example. To save having to specify many `[InstrumentMethod]` attributes, you can instead use the  `[AdoNetClientInstrumentMethods]` _assembly_ attribute, to define some standard types, as well as which of the standard ADO.NET signatures to implement. For example:
 
@@ -245,11 +299,11 @@ The above attribute shows how to select which signatures to implement, via the  
 
 > ⚠️ Warning: This requires much more overhead because all of the types in a module must be inspected to determine if a module requires instrumentation. Carefully consider when to introduce this type of instrumentation.
 
-Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `Datadog.Trace.ClrProfiler.IntegrationType` as `IntegrationType.Derived`, but the same integration can be used since the methods will have the same signature. Example:
+Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `CallTargetIntegrationKind` to `CallTargetKind.Derived`, but the same integration can be used since the methods will have the same signature. Example:
 
 ```csharp
     [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
-    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName", CallTargetIntegrationKind = CallTargetKind.Derived  ...)]
     public class My_Integration
     {
 ```
@@ -268,27 +322,26 @@ void set_Name(string value);
 
 > ⚠️ Warning: This requires much more overhead because all of the types in a module must be inspected to determine if a module requires instrumentation. Carefully consider when to introduce this type of instrumentation.
 
-Interface methods can be instrumented by setting the `TypeName` to the name of the interface and setting `Datadog.Trace.ClrProfiler.IntegrationType` to `IntegrationType.Interface`. Instrumentation will occur on types that directly implement the specified interface. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added that sets the `TypeName` to the base class and sets the `Datadog.Trace.ClrProfiler.IntegrationType` to `IntegrationType.Derived`. Example:
+Interface methods can be instrumented by setting the `TypeName` to the name of the interface and setting `CallTargetIntegrationKind` to `CallTargetKind.Interface`. Instrumentation will occur on types that directly implement the specified interface. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added that sets the `TypeName` to the base class and sets `CallTargetIntegrationKind` to `CallTargetKind.Derived`. Example:
 
 ```csharp
-    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "InterfaceA", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Interface ...)]
-    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "TypeThatImplementsInterfaceA", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "InterfaceA", MethodName = "MethodName", CallTargetIntegrationKind = CallTargetKind.Interface ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "TypeThatImplementsInterfaceA", MethodName = "MethodName", CallTargetIntegrationKind = CallTargetKind.Derived  ...)]
     public class My_Integration
     {
 ```
 
 ### Current Limitations
 
-There are some current limitations with what types/methods with our `CallTarget` approach (refer to [method_rewriter.cpp](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L69) for more information):
+Our `CallTarget` approach has some limitations on which types and methods can be instrumented:
 
-1. Static methods in a ValueType (struct) cannot be instrumented.
-2. Generic ValueTypes (struct) cannot be instrumented.
-3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance willbe always null).
-4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an `object` type).
-5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
-6. An `OnAsyncMethodEnd` that is itself `async` (i.e. returns `Task<TReturn>`) will **not run** when the target is a .NET 11 runtime-async method. Write a synchronous `OnAsyncMethodEnd` if the integration may target one.
+1. Generic ValueTypes (struct) cannot be instrumented. Static methods on non-generic structs are supported, and receive a `default` instance.
+2. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance will be always null).
+3. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an `object` type).
+4. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
+5. An `OnAsyncMethodEnd` that is itself `async` (i.e. returns `Task<TReturn>`) will **not run** when the target is a .NET 11 runtime-async method. Write a synchronous `OnAsyncMethodEnd` if the integration may target one.
 
-Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
+Limitations 1-4 are described in the comment at the top of `TracerMethodRewriter::Rewrite` in [`tracer_method_rewriter.cpp`](../../tracer/src/Datadog.Tracer.Native/tracer_method_rewriter.cpp). Limitation 5 is covered in [.NET 11 runtime-async targets](#net-11-runtime-async-targets) below.
 
 #### .NET 11 runtime-async targets
 
@@ -296,14 +349,14 @@ A [runtime-async](https://github.com/dotnet/runtime/blob/main/docs/design/specs/
 
 CallTarget handles this by substituting an *effective* return type in the rewriter and calling `CallTargetInvoker.EndMethodRuntimeAsync`, which invokes the callback directly rather than attaching a continuation. Two consequences for integration authors:
 
-- **`OnAsyncMethodEnd` must be synchronous** (limitation 6 above). The epilog runs inside a `finally`, and the runtime-async spec forbids suspension points in handler blocks, so the callback cannot be awaited. The first call logs an error and disables the integration for that target, so it is cleanly uninstrumented from then on rather than left half-live with an `OnMethodBegin` whose cleanup never runs.
-- **`OnMethodEnd` cannot replace the returned *task*.** It is still bound against the declared `Task`/`Task<T>` and receives an already-completed instance carrying the real result. A runtime-async body returns the unwrapped value and lets the runtime build the task, so there is no task slot for a replacement to go into. What happens to a replacement depends on the shape:
+- **`OnAsyncMethodEnd` must be synchronous** (limitation 5 above). The epilog runs inside a `finally`, and the runtime-async spec forbids suspension points in handler blocks, so the callback cannot be awaited. The first call logs an error and disables the integration for that target, so it is cleanly uninstrumented from then on rather than left half-live with an `OnMethodBegin` whose cleanup never runs. `OnMethodEnd` is skipped on that call too.
+- **`OnMethodEnd` cannot replace the returned *task*.** It is still bound against the declared `Task`/`Task<T>`, and receives an already-completed instance: one carrying the real result on success, or a faulted or canceled one (with a `null` `exception` argument) on failure. A runtime-async body returns the unwrapped value and lets the runtime build the task, so there is no task slot for a replacement to go into. What happens to a replacement on success depends on the shape (on failure, the exception is rethrown and the return value is ignored):
   - `Task<T>`/`ValueTask<T>`: honoured if the replacement has **already completed successfully** — we take its result back out. This covers the ordinary case of returning `Task.FromResult(newValue)`.
-  - A still-running, faulted or cancelled replacement, or any replacement at all on a non-generic `Task`/`ValueTask`: cannot be honoured. The original result is kept and the attempt is logged as an error and reported to telemetry (the integration is *not* disabled).
+  - A still-running, faulted or cancelled replacement, or any replacement at all on a non-generic `Task`/`ValueTask`: cannot be honoured. The original result is kept. The first attempt for each target is logged as an error and reported to telemetry (the integration is *not* disabled).
 
-  Use `OnAsyncMethodEnd` to substitute a result; it is bound against the unwrapped `T` and works without restriction.
+  Use a synchronous `OnAsyncMethodEnd` to substitute a `Task<T>`/`ValueTask<T>` result; it is bound against the unwrapped `T`. For a non-generic `Task`/`ValueTask` there is no result to substitute, and the value `OnAsyncMethodEnd` returns is ignored.
 
-Everything else — duck typing, generic constraints, proxy creation, the exception path, and running both callbacks when an integration declares both — behaves identically to a state-machine target. See `RuntimeAsyncEndMethodHandler` and its tests under `tracer/test/Datadog.Trace.Tests/CallTarget/`.
+Duck typing, generic constraints and proxy creation behave the same as for a state-machine target. For when each callback runs and what it receives, including on failure and when blocking, see [How `OnMethodEnd` and `OnAsyncMethodEnd` run on async targets](#how-onmethodend-and-onasyncmethodend-run-on-async-targets). The implementation is in `RuntimeAsyncEndMethodHandler`, with tests under `tracer/test/Datadog.Trace.Tests/CallTarget/`.
 
 ### AutoInstrumentation Generator
 
