@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             var settings = new TracerSettings();
 
-            settings.OtelThreadContextEnabled.Should().BeFalse("the feature is off unless it or AppSec is enabled");
+            settings.OtelThreadContextEnabled.Should().BeFalse();
             OtelThreadContextPublisher.Create(settings).Should().BeSameAs(NullOtelThreadContextPublisher.Instance);
         }
 

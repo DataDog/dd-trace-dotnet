@@ -12,7 +12,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -130,24 +129,43 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, false)]
-        [InlineData(null, "false", false)]
-        [InlineData(null, "true", true)]
-        [InlineData(null, "invalid", false)]
         [InlineData("false", "true", false)]
         [InlineData("true", "false", true)]
         [InlineData("true", null, true)]
-        public void OtelThreadContextEnabled_DefaultsToAppSecEnabledOnSupportedPlatforms(string otelThreadContextEnabled, string appSecEnabled, bool expectedOnSupportedPlatform)
+        public void OtelThreadContextEnabled_ExplicitValueWinsOverAppSec(string otelThreadContextEnabled, string appSecEnabled, bool expected)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
                 (ConfigurationKeys.AppSec.Enabled, appSecEnabled));
             var settings = new TracerSettings(source);
 
-            var expected = otelThreadContextEnabled is not null
-                               ? expectedOnSupportedPlatform
-                               : expectedOnSupportedPlatform && OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance);
             settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [SkippableTheory]
+        [InlineData(null, false)]
+        [InlineData("false", false)]
+        [InlineData("true", true)]
+        [InlineData("invalid", false)]
+        public void OtelThreadContextEnabled_DefaultsToAppSecEnabledOnLinux(string appSecEnabled, bool expected)
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, appSecEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [SkippableFact]
+        public void OtelThreadContextEnabled_IsNotEnabledByAppSecOnWindows()
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().BeFalse();
         }
 
         [Theory]

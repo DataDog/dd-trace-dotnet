@@ -41,6 +41,7 @@ namespace Datadog.Trace.AppSec
                                      .AsString();
 
             // both should default to false
+            // TracerSettings also reads this key for the OtelThreadContextEnabled default; keep them in sync
             var enabledEnvVar = config
                                .WithKeys(ConfigurationKeys.AppSec.Enabled)
                                .AsBoolResult();

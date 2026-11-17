@@ -770,11 +770,11 @@ namespace Datadog.Trace.Configuration
 
             // AppSec read must match SecuritySettings.AppsecEnabled; serverless is excluded because the out-of-process reader can't run there.
             var otelThreadContextEnabledByDefault =
-                config.WithKeys(ConfigurationKeys.AppSec.Enabled).AsBool(false)
-             && OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
+                OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
              && !LambdaMetadata.IsRunningInLambda
              && !IsRunningInAzureFunctions
-             && !IsRunningInGCPFunctions;
+             && !IsRunningInGCPFunctions
+             && config.WithKeys(ConfigurationKeys.AppSec.Enabled).AsBool(false);
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
                 .AsBool(defaultValue: otelThreadContextEnabledByDefault);
