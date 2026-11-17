@@ -11,7 +11,7 @@ steps:
   - bash: |
       # Constants
       RETRY_INTERVAL=10
-      MAX_ATTEMPTS=3
+      MAX_ATTEMPTS=5
       
       # Azure devops _doesn't_ clean up the contents of the repo after the pipeline has finished
       # So we do it manually
@@ -30,8 +30,8 @@ steps:
       echo "Adding remote $BUILD_REPOSITORY_URI ..."
       git remote add origin "$BUILD_REPOSITORY_URI"
       git config gc.auto 0
-      git config http.retry $(GIT_HTTP_RETRY)
-      git config http.retryDelay $(GIT_HTTP_RETRY_DELAY)
+      git config http.maxRetries $(GIT_HTTP_MAX_RETRIES)
+      git config http.retryAfter $(GIT_HTTP_RETRY_AFTER)
       git config --get-all http.$BUILD_REPOSITORY_URI.extraheader
       git config --get-all http.extraheader
       git config --get-regexp .*extraheader
@@ -106,20 +106,33 @@ steps:
       git remote add origin "$repoUri"
 
       git config gc.auto 0
-      git config http.retry $(GIT_HTTP_RETRY)
-      git config http.retryDelay $(GIT_HTTP_RETRY_DELAY)
+      git config http.maxRetries $(GIT_HTTP_MAX_RETRIES)
+      git config http.retryAfter $(GIT_HTTP_RETRY_AFTER)
       git config --get-all http.$repoUri.extraheader
       git config --get-all http.extraheader
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
 
-      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
-      echo "git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}"
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
+      # Attempt fetching and checking out
+      $retryInterval=10
+      $maxAttempts=5
+      for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        echo "Attempt $attempt/${maxAttempts}: Fetching and checking out: ${{ parameters.targetBranch }} and $prBranch"
+        git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
+        if ($LASTEXITCODE -eq 0) {
+          git checkout --force $prBranch
+          if ($LASTEXITCODE -eq 0) { break }
+        }
 
-      echo "Checking out $prBranch..."
-      git checkout --force $prBranch
+        if ($attempt -lt $maxAttempts) {
+          echo "Fetch and checkout failed, retrying in $retryInterval seconds"
+          Start-Sleep -Seconds $retryInterval
+        } else {
+          echo "All attempts to fetch and checkout failed"
+          exit 1
+        }
+      }
 
       echo "Resetting $prBranch to origin/$prBranch ..."
       git reset origin/$prBranch --hard
@@ -163,5 +176,7 @@ steps:
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
+  # The built-in checkout retries the fetch itself, but only briefly; retry the whole step to ride out longer outages
   - checkout: self
     clean: true
+    retryCountOnTaskFailure: 3

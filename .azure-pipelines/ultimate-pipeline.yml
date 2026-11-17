@@ -119,9 +119,9 @@ variables:
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
   CURL_RETRY_FLAGS: '--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120'
-  GIT_RETRY_CONFIG: '-c http.retry=5 -c http.retryDelay=2'
-  GIT_HTTP_RETRY: 5
-  GIT_HTTP_RETRY_DELAY: 2
+  GIT_HTTP_MAX_RETRIES: 5
+  GIT_HTTP_RETRY_AFTER: 2
+  GIT_RETRY_CONFIG: '-c http.maxRetries=$(GIT_HTTP_MAX_RETRIES) -c http.retryAfter=$(GIT_HTTP_RETRY_AFTER)'
   PWSH_MAX_RETRY_COUNT: 5
   PWSH_RETRY_INTERVAL_SEC: 2
   PWSH_TIMEOUT_SEC: 120
@@ -269,8 +269,24 @@ stages:
         fi
         echo "Using target branch $TARGET_BRANCH"
 
-        rm -rf ./s
-        git $(GIT_RETRY_CONFIG) clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
+        # Retry the clone to ride out transient network failures (e.g. DNS).
+        # stderr is redirected because failOnStderr would otherwise fail the step on a failed attempt
+        RETRY_INTERVAL=10
+        MAX_ATTEMPTS=5
+        for attempt in $(seq 1 $MAX_ATTEMPTS)
+        do
+          rm -rf ./s
+          echo "Attempt $attempt/$MAX_ATTEMPTS: Cloning $TARGET_BRANCH"
+          git $(GIT_RETRY_CONFIG) clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s 2>&1 && break
+
+          if [ $attempt -lt $MAX_ATTEMPTS ]; then
+            echo "Clone failed, retrying in $RETRY_INTERVAL seconds"
+            sleep $RETRY_INTERVAL
+          else
+            echo "All attempts to clone failed"
+            exit 1
+          fi
+        done
         cd s
         TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
         rm -rf ./s
@@ -5290,7 +5306,23 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
+        - script: |
+            RETRY_INTERVAL=10
+            MAX_ATTEMPTS=5
+            for attempt in $(seq 1 $MAX_ATTEMPTS)
+            do
+              rm -rf ./system-tests
+              echo "Attempt $attempt/$MAX_ATTEMPTS: Cloning system-tests ($EFFECTIVE_SYSTEM_TESTS_BRANCH)"
+              git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git && break
+
+              if [ $attempt -lt $MAX_ATTEMPTS ]; then
+                echo "Clone failed, retrying in $RETRY_INTERVAL seconds"
+                sleep $RETRY_INTERVAL
+              else
+                echo "All attempts to clone failed"
+                exit 1
+              fi
+            done
           displayName: Get system tests repo ($(SystemTestsBranch))
           env:
             EFFECTIVE_SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
@@ -5394,7 +5426,23 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
+      - script: |
+          RETRY_INTERVAL=10
+          MAX_ATTEMPTS=5
+          for attempt in $(seq 1 $MAX_ATTEMPTS)
+          do
+            rm -rf ./system-tests
+            echo "Attempt $attempt/$MAX_ATTEMPTS: Cloning system-tests ($EFFECTIVE_SYSTEM_TESTS_BRANCH)"
+            git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git && break
+
+            if [ $attempt -lt $MAX_ATTEMPTS ]; then
+              echo "Clone failed, retrying in $RETRY_INTERVAL seconds"
+              sleep $RETRY_INTERVAL
+            else
+              echo "All attempts to clone failed"
+              exit 1
+            fi
+          done
         displayName: Get system tests repo ($(SystemTestsBranch))
         env:
           EFFECTIVE_SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
