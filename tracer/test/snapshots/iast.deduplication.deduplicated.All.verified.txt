@@ -12,28 +12,6 @@
   },
   {
     evidence: {
-      value: MD5
-    },
-    hash: -788071420,
-    location: {
-      method: ComputeHashNTimes,
-      path: Samples.Deduplication.Program
-    },
-    type: WEAK_HASH
-  },
-  {
-    evidence: {
-      value: System.Random
-    },
-    hash: -605200023,
-    location: {
-      method: ComputeHashNTimes,
-      path: Samples.Deduplication.Program
-    },
-    type: WEAK_RANDOMNESS
-  },
-  {
-    evidence: {
       value: System.Random
     },
     hash: -605200023,

@@ -50,23 +50,8 @@ public sealed class HashAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
-    }
-
-    /// <summary>
-    /// OnMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TReturn">Type of the return value</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="returnValue">the return value processce</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>CallTargetReturn</returns>
-    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-    {
-        state.Scope.DisposeWithException(exception);
-        return new CallTargetReturn<TReturn>(returnValue);
+        HashAlgorithmIntegrationCommon.OnHashAlgorithm(instance);
+        return CallTargetState.GetDefault();
     }
 }
 

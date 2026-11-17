@@ -123,20 +123,9 @@ namespace Datadog.Trace
             {
                 if (span.Type == SpanTypes.Web)
                 {
-                    var iastInstance = Iast.Iast.Instance;
-                    if (iastInstance.Settings.Enabled)
+                    if (Iast.Iast.Instance.Settings.Enabled)
                     {
-                        if (_iastRequestContext is { } iastRequestContext)
-                        {
-                            iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                            iastInstance.OverheadController.ReleaseRequest();
-                        }
-                        else
-                        {
-                            IastRequestContext.AddIastDisabledFlagToSpan(span);
-                        }
-
-                        IastLifecycle.EndRequest(span);
+                        IastLifecycle.EndRequest(span, _iastRequestContext);
                     }
                 }
             }

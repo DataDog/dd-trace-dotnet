@@ -108,11 +108,6 @@ namespace Datadog.Trace
         internal const string System = "system";
 
         /// <summary>
-        /// The span type for System integrations
-        /// </summary>
-        internal const string IastVulnerability = "vulnerability";
-
-        /// <summary>
         /// The span type for DynamoDB integrations
         /// </summary>
         internal const string DynamoDb = "dynamodb";

@@ -31,30 +31,10 @@ namespace Datadog.Trace.Iast;
 internal static partial class IastModule
 {
     public const string HeaderInjectionEvidenceSeparator = ": ";
-    private const string OperationNameStackTraceLeak = "stacktrace_leak";
-    private const string OperationNameWeakHash = "weak_hashing";
-    private const string OperationNameWeakCipher = "weak_cipher";
-    private const string OperationNameSqlInjection = "sql_injection";
-    private const string OperationNameNoSqlMongoDbInjection = "nosql_mongodb_injection";
-    private const string OperationNameCommandInjection = "command_injection";
-    private const string OperationNamePathTraversal = "path_traversal";
-    private const string OperationNameLdapInjection = "ldap_injection";
-    private const string OperationNameSsrf = "ssrf";
-    private const string OperationNameWeakRandomness = "weak_randomness";
-    private const string OperationNameDirectoryListingLeak = "directory_listing_leak";
-    private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
-    private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
-    private const string OperationNameHeaderInjection = "header_injection";
-    private const string OperationNameXPathInjection = "xpath_injection";
-    private const string OperationNameReflectionInjection = "reflection_injection";
-    private const string OperationNameXss = "xss";
-    private const string OperationNameSessionTimeout = "session_timeout";
-    private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
     private const int VulnerabilityStatsRouteLimit = 4096;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly IastSettings IastSettings = Iast.Instance.Settings;
-    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
@@ -134,7 +114,7 @@ internal static partial class IastModule
                 return IastModuleResponse.Empty;
             }
 
-            return GetScope(evidence, integrationId, VulnerabilityTypeUtils.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
+            return GetScope(evidence, integrationId, VulnerabilityTypeUtils.UnvalidatedRedirect, HasInvalidOrigin);
         }
         catch (Exception ex)
         {
@@ -152,7 +132,7 @@ internal static partial class IastModule
                 return IastModuleResponse.Empty;
             }
 
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeUtils.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeUtils.TrustBoundaryViolation, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -170,7 +150,7 @@ internal static partial class IastModule
                 return IastModuleResponse.Empty;
             }
 
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeUtils.LdapInjection, OperationNameLdapInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeUtils.LdapInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -188,7 +168,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeUtils.Ssrf, OperationNameSsrf, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Ssrf);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeUtils.Ssrf, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Ssrf);
         }
         catch (Exception ex)
         {
@@ -197,7 +177,7 @@ internal static partial class IastModule
         }
     }
 
-    internal static IastModuleResponse OnWeakRandomness(string evidence, bool autoCloseScopeWhenSingleSpan = true)
+    internal static IastModuleResponse OnWeakRandomness(string evidence)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -206,7 +186,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeUtils.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeUtils.WeakRandomness);
         }
         catch (Exception ex)
         {
@@ -224,7 +204,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeUtils.PathTraversal, OperationNamePathTraversal, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeUtils.PathTraversal, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -242,7 +222,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(query, integrationId, VulnerabilityTypeUtils.SqlInjection, OperationNameSqlInjection, Always);
+            return GetScope(query, integrationId, VulnerabilityTypeUtils.SqlInjection, Always);
         }
         catch (Exception ex)
         {
@@ -260,7 +240,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(query, integrationId, VulnerabilityTypeUtils.NoSqlMongoDbInjection, OperationNameNoSqlMongoDbInjection, Always);
+            return GetScope(query, integrationId, VulnerabilityTypeUtils.NoSqlMongoDbInjection, Always);
         }
         catch (Exception ex)
         {
@@ -279,7 +259,7 @@ internal static partial class IastModule
         try
         {
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeUtils.CommandInjection, OperationNameCommandInjection, taintValidator: Always, safeSources: _dbSources);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeUtils.CommandInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -292,7 +272,7 @@ internal static partial class IastModule
     {
         try
         {
-            return GetScope(param, integrationId, VulnerabilityTypeUtils.ReflectionInjection, OperationNameReflectionInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(param, integrationId, VulnerabilityTypeUtils.ReflectionInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -396,7 +376,7 @@ internal static partial class IastModule
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameDirectoryListingLeak, vulnerability);
+        VulnerabilityReporter.Report(vulnerability);
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)
@@ -413,10 +393,10 @@ internal static partial class IastModule
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability);
+        VulnerabilityReporter.Report(vulnerability);
     }
 
-    public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan = true)
+    public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -430,7 +410,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakCipher, OperationNameWeakCipher, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakCipher);
     }
 
     public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
@@ -443,10 +423,10 @@ internal static partial class IastModule
         var evidence = $"{ex.Source},{ex.GetType().Name}";
         // We report the stack of the exception instead of the current stack
         var stack = new StackTrace(ex, true);
-        return GetScope(evidence, integrationId, VulnerabilityTypeUtils.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
+        return GetScope(evidence, integrationId, VulnerabilityTypeUtils.StackTraceLeak, externalStack: stack);
     }
 
-    public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan = true)
+    public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -458,7 +438,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakHash, OperationNameWeakHash, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakHash);
     }
 
     public static IastModuleResponse OnXss(string? text)
@@ -470,7 +450,7 @@ internal static partial class IastModule
                 return IastModuleResponse.Empty;
             }
 
-            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeUtils.Xss, OperationNameXss, Always, exclusionSecureMarks: SecureMarks.Xss);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeUtils.Xss, Always, exclusionSecureMarks: SecureMarks.Xss);
         }
         catch (Exception ex)
         {
@@ -488,11 +468,6 @@ internal static partial class IastModule
         }
 
         return IastLifecycle.CurrentContext;
-    }
-
-    internal static VulnerabilityBatch GetVulnerabilityBatch()
-    {
-        return new VulnerabilityBatch(IastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
@@ -574,14 +549,12 @@ internal static partial class IastModule
         string evidenceValue,
         IntegrationId integrationId,
         string vulnerabilityType,
-        string operationName,
         Func<TaintedObject, bool>? taintValidator = null,
         bool addLocation = true,
         int? hash = null,
         StackTrace? externalStack = null,
         SecureMarks exclusionSecureMarks = SecureMarks.None,
-        SourceType[]? safeSources = null,
-        bool autoCloseScopeWhenSingleSpan = true)
+        SourceType[]? safeSources = null)
     {
         var tracer = Tracer.Instance;
         if (!IastSettings.Enabled || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId))
@@ -662,12 +635,9 @@ internal static partial class IastModule
                 traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
 
                 requestContext?.AddVulnerability(vulnerability);
-                return IastModuleResponse.Vulnerable;
             }
-            else
-            {
-                return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, vulnerability, autoCloseScopeWhenSingleSpan);
-            }
+
+            return IastModuleResponse.Vulnerable;
         }
 
         return IastModuleResponse.Empty;
@@ -688,36 +658,6 @@ internal static partial class IastModule
         }
 
         return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
-    }
-
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)
-    {
-        // we either are not in a request or the distributed tracer returned a scope that cannot be cast to Scope, and we cannot access the root span.
-        var batch = GetVulnerabilityBatch();
-        batch.Add(vulnerability);
-
-        var tags = new IastTags { IastEnabled = "1" };
-        var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        var span = scope.Span;
-
-        tags.IastJson = batch.ToJson();
-        if (batch.IsTruncated())
-        {
-            span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
-        }
-
-        var traceContext = span.Context.TraceContext;
-        span.Type = SpanTypes.IastVulnerability;
-        traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-        traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
-        VulnerabilityReporter.Report(vulnerability, traceContext?.RootSpan ?? span);
-
-        if (closeAfterCreation)
-        {
-            scope.Dispose();
-        }
-
-        return new IastModuleResponse(scope);
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)
@@ -783,7 +723,7 @@ internal static partial class IastModule
 
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
-        GetScope(evidence, integrationId, VulnerabilityTypeUtils.HeaderInjection, OperationNameHeaderInjection, taintValidator: Always, safeSources: _dbSources, addLocation: false, hash: hash);
+        GetScope(evidence, integrationId, VulnerabilityTypeUtils.HeaderInjection, taintValidator: Always, safeSources: _dbSources, addLocation: false, hash: hash);
     }
 
     internal static IastModuleResponse OnXpathInjection(string xpath)
@@ -795,7 +735,7 @@ internal static partial class IastModule
 
         try
         {
-            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeUtils.XPathInjection, OperationNameXPathInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeUtils.XPathInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -817,7 +757,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     internal static void OnEmailHtmlInjection(object? message, EmailInjectionType type)
@@ -840,7 +780,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     private static void ExtractProperties(object mail, EmailInjectionType type, out string? body, out bool isHtml)

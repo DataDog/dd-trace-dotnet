@@ -35,7 +35,7 @@ public sealed class HashAlgorithmAspect
     {
         try
         {
-            var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
+            HashAlgorithmIntegrationCommon.OnHashAlgorithm(target);
             return target;
         }
         catch (global::System.Exception ex)

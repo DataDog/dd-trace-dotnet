@@ -23,7 +23,7 @@ namespace Datadog.Trace.Iast;
 internal sealed class IastRequestContext
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastRequestContext));
-    private VulnerabilityBatch? _vulnerabilityBatch;
+    private readonly List<Vulnerability> _vulnerabilities = new();
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded;
@@ -34,17 +34,13 @@ internal sealed class IastRequestContext
     private VulnerabilityStats _routeVulnerabilityStats;
     private VulnerabilityStats _requestVulnerabilityStats;
 
-    internal static void AddIastDisabledFlagToSpan(Span span)
-    {
-        span.Tags.SetTag(Tags.IastEnabled, "0");
-    }
-
-    internal void AddIastVulnerabilitiesToSpan(Span span)
+    /// <summary>
+    /// Called once when the request finishes: updates the per-route vulnerability stats used by the route sampler.
+    /// </summary>
+    internal void OnRequestEnded()
     {
         try
         {
-            span.Tags.SetTag(Tags.IastEnabled, "1");
-
             if (_routeVulnerabilityStatsDirty)
             {
                 if (AddVulnerabilitiesAllowed())
@@ -62,26 +58,25 @@ internal sealed class IastRequestContext
 
                 IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
             }
-
-            if (_vulnerabilityBatch != null)
-            {
-                span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
-                if (_vulnerabilityBatch.IsTruncated())
-                {
-                    span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
-                }
-            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error in IAST AddIastVulnerabilitiesToSpan");
+            Log.Error(ex, "Error in IAST OnRequestEnded");
         }
     }
 
     internal bool AddVulnerabilitiesAllowed()
     {
         // Check global budget
-        return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
+        return (GetVulnerabilityCount() < Iast.Instance.Settings.VulnerabilitiesPerRequest);
+    }
+
+    private int GetVulnerabilityCount()
+    {
+        lock (_vulnerabilityLock)
+        {
+            return _vulnerabilities.Count;
+        }
     }
 
     internal bool AddVulnerabilityTypeAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
@@ -105,7 +100,7 @@ internal sealed class IastRequestContext
                 string debugTxt = string.Empty;
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    var currentVulns = (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) + 1;
+                    var currentVulns = GetVulnerabilityCount() + 1;
                     debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest}";
                 }
 
@@ -131,8 +126,7 @@ internal sealed class IastRequestContext
     {
         lock (_vulnerabilityLock)
         {
-            _vulnerabilityBatch ??= IastModule.GetVulnerabilityBatch();
-            _vulnerabilityBatch.Add(vulnerability);
+            _vulnerabilities.Add(vulnerability);
         }
     }
 

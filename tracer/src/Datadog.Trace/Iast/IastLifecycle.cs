@@ -54,10 +54,22 @@ internal static class IastLifecycle
     }
 
     /// <summary>
-    /// Marks the end of a web request. Does nothing if another request is the current one.
+    /// Marks the end of a web request: updates the route stats and releases the overhead controller slot taken
+    /// when the request began, then clears the ambient state if it still belongs to this request.
     /// </summary>
-    internal static void EndRequest(Span rootSpan)
+    /// <param name="rootSpan">The web span of the request</param>
+    /// <param name="context">
+    /// The request context, passed explicitly because the ambient value may not be visible where the request ends
+    /// (e.g. the IIS pipeline can finish a request on a different execution context). Null when the request was not analyzed.
+    /// </param>
+    internal static void EndRequest(Span rootSpan, IastRequestContext? context)
     {
+        if (context is not null)
+        {
+            context.OnRequestEnded();
+            Iast.Instance.OverheadController.ReleaseRequest();
+        }
+
         if (ReferenceEquals(Current.Value?.RootSpan, rootSpan))
         {
             Current.Value = null;

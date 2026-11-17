@@ -34,7 +34,6 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _markType = Type.GetType("Datadog.Trace.Iast.SecureMarks, Datadog.Trace");
     private static readonly Type _vulnerabilityType = Type.GetType("Datadog.Trace.Iast.Vulnerability, Datadog.Trace");
     private static readonly Type _rangeType = Type.GetType("Datadog.Trace.Iast.Range, Datadog.Trace");
-    private static readonly Type _vulnerabilityBatchType = Type.GetType("Datadog.Trace.Iast.VulnerabilityBatch, Datadog.Trace");
     private static readonly Type _evidenceType = Type.GetType("Datadog.Trace.Iast.Evidence, Datadog.Trace");
     private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _contextProperty = _spanType.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
@@ -44,7 +43,6 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _sourceProperty = _rangeType.GetProperty("Source", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _secureMarksProperty = _rangeType.GetProperty("SecureMarks", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
@@ -53,7 +51,7 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _beginRequestMethod = Type.GetType("Datadog.Trace.Iast.IastLifecycle, Datadog.Trace").GetMethod("BeginRequest", BindingFlags.Static | BindingFlags.NonPublic);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _vulnerabilitiesField = _iastRequestContextType.GetField("_vulnerabilities", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceRangesField = _evidenceType.GetField("_ranges", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _sourceOriginField = _sourceType.GetField("_origin", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -227,15 +225,16 @@ public class InstrumentationTestsBase : IDisposable
 
     private List<object> GetGeneratedVulnerabilities()
     {
-        var vulnerabilityBatchField = _vulnerabilityBatchField.GetValue(_iastRequestContext);
-
-        if (vulnerabilityBatchField == null)
+        var vulnerabilities = _vulnerabilitiesField.GetValue(_iastRequestContext);
+        if (vulnerabilities == null)
         {
             return new List<object>();
         }
 
-        var vulnerabilities = _vulnerabilitiesProperty.Invoke(vulnerabilityBatchField, Array.Empty<object>());
-        return ((vulnerabilities as IEnumerable).Cast<object>()).ToList();
+        lock (vulnerabilities)
+        {
+            return ((vulnerabilities as IEnumerable).Cast<object>()).ToList();
+        }
     }
 
     protected object AssertTaintedFormat(object expected, object instrumented)

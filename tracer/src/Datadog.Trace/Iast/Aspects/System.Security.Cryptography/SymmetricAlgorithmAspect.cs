@@ -25,7 +25,7 @@ public sealed class SymmetricAlgorithmAspect
     {
         try
         {
-            var scope = SymmetricAlgorithmIntegrationCommon.CreateScope(target);
+            SymmetricAlgorithmIntegrationCommon.OnSymmetricAlgorithm(target);
         }
         catch (Exception ex)
         {

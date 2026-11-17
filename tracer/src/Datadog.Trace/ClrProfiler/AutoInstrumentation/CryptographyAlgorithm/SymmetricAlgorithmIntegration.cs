@@ -45,21 +45,8 @@ public sealed class SymmetricAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance, false));
-    }
-
-    /// <summary>
-    /// OnMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>CallTargetReturn</returns>
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
-    {
-        state.Scope.DisposeWithException(exception);
-        return CallTargetReturn.GetDefault();
+        SymmetricAlgorithmIntegrationCommon.OnSymmetricAlgorithm(instance);
+        return CallTargetState.GetDefault();
     }
 }
 

@@ -14,17 +14,8 @@ internal readonly struct IastModuleResponse
 
     public IastModuleResponse(bool vulnAdded = true)
     {
-        SingleSpan = null;
         VulnerabilityAdded = vulnAdded;
     }
-
-    public IastModuleResponse(Scope? singleSpan)
-    {
-        SingleSpan = singleSpan;
-        VulnerabilityAdded = true;
-    }
-
-    public Scope? SingleSpan { get; }
 
     public bool VulnerabilityAdded { get; }
 }

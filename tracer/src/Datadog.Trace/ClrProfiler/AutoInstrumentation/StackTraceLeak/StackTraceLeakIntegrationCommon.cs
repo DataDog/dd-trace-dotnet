@@ -27,7 +27,7 @@ internal static class StackTraceLeakIntegrationCommon
         {
             if (exception is not null)
             {
-                return new CallTargetState(IastModule.OnStackTraceLeak(exception, integrationId).SingleSpan);
+                IastModule.OnStackTraceLeak(exception, integrationId);
             }
         }
         catch (Exception ex)

@@ -17,23 +17,22 @@ internal static class SymmetricAlgorithmIntegrationCommon
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
 
-    internal static Scope? CreateScope<TTarget>(TTarget instance, bool autoCloseScopeWhenSingleSpan = true)
+    internal static void OnSymmetricAlgorithm<TTarget>(TTarget instance)
     {
         var iast = Iast.Iast.Instance;
 
-        if (!iast.Settings.Enabled)
+        if (!iast.Settings.Enabled || instance is null)
         {
-            return null;
+            return;
         }
 
         try
         {
-            return ((instance is null) ? null : IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, autoCloseScopeWhenSingleSpan).SingleSpan);
+            IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
-            return null;
+            Log.Error(ex, "Error analyzing SymmetricAlgorithm.");
         }
     }
 }

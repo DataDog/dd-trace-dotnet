@@ -155,8 +155,21 @@ shared/bin/monitoring-home/
 
 | Test Suite | Result | Notes |
 |---|---|---|
-| **IAST Unit Tests** | **527/527 pass** | All IAST unit tests pass after RASP removal |
-| **IAST Integration Tests** | **94 passed**, some skipped | DB tests require Docker; some flaky tests skipped via `SkipException` in constructors |
+| **IAST Unit Tests** | **456/456 pass** (net6.0) | Count dropped from 527 as tests were removed with telemetry/RASP cleanup |
+| **IAST Integration Tests (non-IIS)** | **230/230 pass** (net6.0) | ASP.NET Core 2/5, gRPC, weak cipher, dedup, instrumented tests (89). Sqlite DB tests run; other DB tests need Docker |
+| **IAST Integration Tests (IIS)** | **48/48 pass** (net48) | `AspNetMvc5*` and `AspNetWebForms*`. Needs the GAC prerequisite below. Seen intermittently failing one test in the first runs after a fresh GAC install; not reproduced afterwards |
+
+### Test environment prerequisites (Windows)
+
+| Prerequisite | Why |
+|---|---|
+| Re-run `.\tracer\build.cmd BuildTracerHome` after changing managed code | Integration tests load the tracer from `shared/bin/monitoring-home`, not from the project output |
+| Rebuild sample apps that reflect on tracer internals (`Samples.InstrumentedTests`) | The test run does not rebuild them; a stale binary calls removed members |
+| Elevated `.\tracer\build.cmd GacAdd --framework net461` after every rebuild of the net461 `Datadog.Trace.dll` | IIS Express does not raise `AssemblyResolve`, so the rewritten MVC code can only bind `Datadog.Trace` from the GAC. A stale or missing version gives HTTP 500 and `Couldn't verify the application is ready` |
+| No stale `iast-vulns-*.jsonl` under `C:\ProgramData\Datadog .NET Tracer\logs\*Logs\` created by an elevated run | A file whose ACL denies the current user makes the reporter fail with `UnauthorizedAccessException` (logged, not thrown), and snapshots then receive `[]` |
+| No running sample servers from earlier runs | They keep `monitoring-home\net6.0\Datadog.Trace.dll` open and make `PublishManagedTracer` fail with MSB3027 |
+
+**Orphaned sample servers:** the test host used to leave `Samples.Security.AspNetCore5/2` processes behind when it was killed before `Dispose` ran. `ProfilerHelper` now passes `DD_TEST_PARENT_PID`, and `SampleHelpers.ExitWhenParentExits` (Samples.Shared) stops the sample when that process exits (graceful stop, then `Environment.Exit` after 5 s). Wired in both ASP.NET Core samples. IIS Express hosted apps are not covered yet.
 
 ---
 
@@ -639,6 +652,53 @@ Removed hardcoded secrets detection entirely — both managed and native sides. 
 
 ---
 
+## IastLifecycle (per-request context)
+
+The IAST request context no longer has to be reached through `Tracer.Instance.ActiveScope → Span → TraceContext`.
+`Iast/IastLifecycle.cs` keeps an `AsyncLocal` request state (root web span + `IastRequestContext`).
+
+| Member | Purpose |
+|---|---|
+| `BeginRequest(Span rootSpan, bool sampled)` | Called by the request entry points. Creates the `IastRequestContext` only when the overhead controller acquired the request, and always records that we are inside a request |
+| `EndRequest(Span rootSpan, IastRequestContext? context)` | Called from `TraceContext.CloseSpan` for the root web span. Runs `context.OnRequestEnded()` (route vulnerability stats), releases the overhead-controller slot, and clears the ambient state if it still belongs to this request. The context is passed explicitly (taken from the `TraceContext` mirror) because the ambient value is not reliable where the request ends under IIS |
+| `InRequest` | True for any web request, including ones IAST decided not to analyze. Replaces the old "root span type is web" check |
+| `CurrentContext` | The analyzed request's context, or null (not in a request / not sampled) |
+| `CurrentRootSpan` | Temporary: root span used for route stats and request metadata in the reporter |
+
+**Entry points:** `AspNetCoreHttpRequestHandler.StartAspNetCorePipelineScope` (ASP.NET Core, both span modes) and `TracingHttpModule.OnBeginRequest` (ASP.NET Framework). `TraceContext.EnableIastInRequest` was replaced by `SetIastRequestContext`.
+
+**Readers moved to the lifecycle:** `IastModule` (`GetIastContext`, `AddWebVulnerability`, `AddRequestVulnerabilitiesAllowed`, `GetScope`, `GetLocation`, DB row tainting), `IastModule.Escape`, `ReturnedHeadersAnalyzer`.
+
+**Still on `TraceContext.IastRequestContext` (transitional mirror):** code that holds the root span explicitly because ambient state is unreliable there — `ControllerContextExtensions.Framework`, `DefaultModelBindingContext_SetResult_Integration`, the ASP.NET Core diagnostic observers, and the span-close hook (`TraceContext.CloseSpan` → `IastLifecycle.EndRequest`).
+
+**Fallback:** in the IIS integrated pipeline the `AsyncLocal` set in `OnBeginRequest` is not visible in the MVC action (the web span is re-activated there). `IastLifecycle.GetState()` therefore falls back to the active scope's root web span (`InternalActiveScope.Root`). Without it `AspNetMvc5IntegratedWithIast.TestRequestBodyTainting` reports no vulnerability. Both the mirror and the fallback go away with the spans (Phase 5), or earlier if the MVC/WebApi integrations resume the lifecycle explicitly.
+
+**Behavior change:** `isRequest` is now "a request entry point called `BeginRequest`" instead of "root span type is web". Identical for ASP.NET / ASP.NET Core; other web-typed roots are treated as non-request. The `Samples.InstrumentedTests` harness calls `IastLifecycle.BeginRequest` by reflection.
+
+---
+
+## Span output removal (Phase 2)
+
+IAST no longer writes anything to spans. Vulnerabilities go only to the JSONL reporter.
+
+| Change | Details |
+|---|---|
+| `IastRequestContext` | `_vulnerabilityBatch` replaced by a plain `List<Vulnerability>` (used for the per-request budget). `AddIastVulnerabilitiesToSpan` / `AddIastDisabledFlagToSpan` removed; `OnRequestEnded()` keeps the route-stats update |
+| `TraceContext.CloseSpan` | Calls `IastLifecycle.EndRequest(span, _iastRequestContext)`; no tags are set |
+| `IastModule` | Removed `AddVulnerabilityAsSingleSpan`, `GetVulnerabilityBatch`, `EvidenceRedactorLazy`, the 19 `OperationName*` constants, and the `operationName` / `autoCloseScopeWhenSingleSpan` parameters. Non-request vulnerabilities (console apps, startup checks such as directory listing and session timeout) are reported directly |
+| `IastModuleResponse` | `SingleSpan` removed |
+| Integrations | `SymmetricAlgorithmIntegration`, `HashAlgorithmIntegration` (+`Bis`, `Ter`) and the three `StackTraceLeak` integrations only report in `OnMethodBegin`; their `OnMethodEnd` (scope disposal) is gone. `SymmetricAlgorithmAspect` / `HashAlgorithmAspect` call the new `OnSymmetricAlgorithm` / `OnHashAlgorithm` helpers |
+| Removed | `Tags.IastJson`, `Tags.IastJsonTagSizeExceeded`, `Tags.IastEnabled`, `SpanTypes.IastVulnerability`, `Iast/IastTags.cs` and its four checked-in generated files |
+| Test harness | `InstrumentationTestsBase` reads `IastRequestContext._vulnerabilities` |
+
+**Bug fixed on the way:** non-request vulnerabilities were written to the JSONL twice (`GetScope` reported, then `AddVulnerabilityAsSingleSpan` reported again, even with deduplication on). Four snapshots had encoded the duplicates and were re-accepted at half their size: `WeakCipherTests.SubmitsTraces` (12→6), `iast.deduplication.deduplicated` (2→1), `.deduplicated.All` (4→2), `.duplicated` (10→5).
+
+**Known:** `WeakCipherTests` still shows two records per algorithm. The callsite aspect and the CallTarget integration both detect the same instantiation and the test disables deduplication. Making one skip when the other fired would give one record per instantiation; not done.
+
+**Left in place:** `VulnerabilityBatch` and its converters, because the evidence-redaction suite (`VulnerabilityBatchTests*`) is the only redaction coverage. Not used by production code. Decide together with Phase 3.
+
+---
+
 ## JSONL Vulnerability Reporter
 
 Vulnerabilities are now written to a JSONL file (one JSON object per line) instead of span tags sent to the Datadog Agent.
@@ -772,7 +832,7 @@ Current IAST-relevant environment variables:
 | Variable | Default | Notes |
 |---|---|---|
 | `DD_IAST_ENABLED` | `true` | Master switch. Default flipped from `false` to `true`; runtime still honors the env var |
-| `DD_IAST_VULNERABILITY_LOG_PATH` | `''` | Output file. Bare filename → log dir. Full path → verbatim. Empty → `iast-vulnerabilities-<pid>.jsonl` in log dir |
+| `DD_IAST_VULNERABILITY_LOG_PATH` | `''` | Output file. Bare filename → log dir. Full path → verbatim. Empty → `dotnet-iast-vulns-<processname>-<pid>.jsonl` in log dir |
 | `DD_IAST_DEDUPLICATION_ENABLED` | `true` | Hash-based dedup |
 | `DD_IAST_VULNERABILITIES_PER_REQUEST` | `2` | Max vulnerabilities per request |
 | `DD_IAST_MAX_CONCURRENT_REQUESTS` | `2` | Overhead control — max concurrent analyzed requests |
@@ -790,9 +850,9 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 
 | Dependency | Where Used | How |
 |---|---|---|
-| **`Tracer.Instance.ActiveScope`** | `IastModule.cs` (~10 call sites) | Gets the current span to reach `TraceContext` and then `IastRequestContext` |
+| **`Tracer.Instance.ActiveScope`** | `IastModule.cs` (`GetScope` still reads it for the current span / location), `IastLifecycle` fallback | ✅ Request context lookups moved to `IastLifecycle`; remaining uses are for span data and the IIS fallback |
 | **`Span` / `Scope`** | `IastModule.cs`, `IastRequestContext.cs` | Vulnerabilities stored as span tags; standalone spans created for startup vulnerabilities (directory listing, session timeout) |
-| **`TraceContext`** | `TraceContext.cs:38,111,133` | Holds `IastRequestContext` as a field; `EnableIastInRequest()` initializes it |
+| **`TraceContext`** | `TraceContext.cs` | Still mirrors `IastRequestContext` (set by `IastLifecycle.BeginRequest` via `SetIastRequestContext`) for the span-close hook and explicit-root-span callers |
 | **`SamplingPriority`** | `IastModule.cs` | Force-keeps traces with vulnerabilities |
 | **Agent transport** | Indirect via span pipeline | ✅ Neutralised — `NullAgentWriter` discards all traces; no agent needed |
 
@@ -817,7 +877,7 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 | **Agent discovery service** | ✅ Deleted — `DiscoveryService`, `AgentConfiguration`, `StatsAggregator`, `SpanEventsManager` all gone |
 | **Agent transport layer** | ✅ Deleted — entire `Agent/` (59 files), `HttpOverStreams/` (5 files), `Logging/DirectSubmission/` (20 files) |
 | **Sampling infrastructure** | Pending (no traces to sample once spans are removed) |
-| **Span tags / MetaStruct serialization** | Partial — MetaStruct branch removed; falls back to plain JSON tags. Still pending: remove span tags entirely |
+| **Span tags / MetaStruct serialization** | ✅ Done — no IAST data is written to spans any more (`_dd.iast.*` tags, `vulnerability` span type, `IastTags` removed) |
 | **`InstrumentationCategory.IastRasp`** aspects | ✅ Done |
 
 ---
@@ -838,15 +898,19 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 
 ## Implementation Phases
 
-### Phase 1 — Replace per-request context (pending)
-- Introduce `AsyncLocal<IastRequestContext>` in new `IastLifecycle` class
-- Replace all `Tracer.Instance.ActiveScope` chains in `IastModule.cs` with `IastLifecycle.GetCurrentContext()`
-- Keep ASP.NET/Core request start/end CallTarget integrations, wire them to `IastLifecycle`
+### Phase 1 — Replace per-request context (partially done)
+- ~~Introduce `AsyncLocal` request state in new `IastLifecycle` class~~ ✅ Done
+- ~~Replace `Tracer.Instance.ActiveScope` chains in `IastModule`, `IastModule.Escape`, `ReturnedHeadersAnalyzer` with `IastLifecycle`~~ ✅ Done
+- ~~Wire the ASP.NET / ASP.NET Core request entry points to `IastLifecycle.BeginRequest`~~ ✅ Done
+- Still pending: remove the `TraceContext.IastRequestContext` mirror (explicit-root-span callers: `ControllerContextExtensions.Framework`, `DefaultModelBindingContext_SetResult`, diagnostic observers, span-close hook)
+- Still pending: remove the active-scope fallback in `IastLifecycle.GetState()` (needs explicit resume in the MVC/WebApi integrations, or the span removal)
 
-### Phase 2 — File-based output ✅ Done (parallel to spans)
+### Phase 2 — File-based output ✅ Done
 - ~~Create `VulnerabilityFileWriter` with JSON serialization~~ → `VulnerabilityReporter.cs` writes JSONL
-- Still pending: replace `IastRequestContext.AddIastVulnerabilitiesToSpan()` with `IastRequestContext.FlushToFile()` (currently both run)
-- Still pending: remove MessagePack serialization from `VulnerabilityBatch`
+- ~~Replace `IastRequestContext.AddIastVulnerabilitiesToSpan()`~~ ✅ Done — removed; end-of-request work is `IastRequestContext.OnRequestEnded()` called from `IastLifecycle.EndRequest`
+- ~~Remove MessagePack serialization from `VulnerabilityBatch`~~ ✅ N/A — it was Newtonsoft JSON (the MessagePack helper was already gone); the batch is no longer used by production code
+- ~~Stop creating IAST spans (`AddVulnerabilityAsSingleSpan`)~~ ✅ Done
+- Still pending: delete `VulnerabilityBatch` and its converters/tests once the Phase 3 redaction decision is made (the evidence-redaction suite runs through the batch's JSON output)
 
 ### Phase 3 — Remove evidence redaction (pending, optional)
 - Delete `Iast/SensitiveData/` (9 files)
@@ -883,7 +947,9 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - ~~Remove `MockTracerAgent` from test fixtures~~ ✅ Done (`NullAgentWriter` handles transport; fixtures no longer create or expose agents)
 - ~~Remove `MockTracerAgent` from `SendRequestsAsync` call sites~~ ✅ Done (86 call sites updated)
 - ~~Extract shared JSONL helpers~~ ✅ Done (`VulnerabilityJsonl.cs` — `ReadRecords`, `VerifyRecordsAsync`, `Sanitize`)
+- ~~Prevent orphaned sample servers when the test host is killed~~ ✅ Done (`DD_TEST_PARENT_PID` watchdog; ASP.NET Core samples only)
 - Still pending: fix unit tests to work without tracer mocks
+- Still pending: same parent-exit protection for IIS Express hosted samples (`IisFixture`)
 
 ---
 
