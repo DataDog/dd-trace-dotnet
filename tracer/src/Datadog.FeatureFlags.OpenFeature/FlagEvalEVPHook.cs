@@ -112,7 +112,7 @@ internal sealed class FlagEvalEVPHook : Hook
             }
 
             var consent = metadata?.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData) == true;
-            var allocationKey = metadata?.GetString("__dd_allocation_key");
+            var allocationKey = metadata?.GetString(FeatureFlagMetadataKeys.AllocationKey);
             var timestamp = metadata?.GetDouble(FeatureFlagMetadataKeys.EvaluationTimestampMs);
             // Missing metadata is possible when OpenFeature terminates before provider resolution.
             var evalTimeMs = timestamp is >= 0 and <= MaxUnixTimeMilliseconds && timestamp == Math.Truncate(timestamp.Value)
