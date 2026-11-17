@@ -27,7 +27,9 @@ internal sealed class MetricReaderHandler
     private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
     // Number of registered streams per stream name: different identities can share a name.
     private readonly Dictionary<string, int> _streamNames = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentQueue<MetricState> _completedStreams = new();
+    // Guarded by _completionLock.
+    private readonly Queue<MetricState> _completedStreams = new();
+    private readonly object _completionLock = new();
 
     public MetricReaderHandler(TracerSettings settings)
     {
@@ -138,14 +140,22 @@ internal sealed class MetricReaderHandler
     /// </summary>
     public void OnMeasurementsCompleted(Instrument instrument, object? state)
     {
-        if (state is not MetricState metricState
-            || !_streams.TryRemove(new KeyValuePair<MetricStreamIdentity, MetricState>(metricState.Identity, metricState)))
+        if (state is not MetricState metricState)
         {
             return;
         }
 
+        lock (_completionLock)
+        {
+            if (!_streams.TryRemove(new KeyValuePair<MetricStreamIdentity, MetricState>(metricState.Identity, metricState)))
+            {
+                return;
+            }
+
+            _completedStreams.Enqueue(metricState);
+        }
+
         ReleaseStreamName(metricState.Identity.MetricStreamName);
-        _completedStreams.Enqueue(metricState);
     }
 
     /// <summary>
@@ -155,14 +165,20 @@ internal sealed class MetricReaderHandler
     public List<MetricPoint> GetMetricPointsSnapshot()
     {
         var list = new List<MetricPoint>();
+        KeyValuePair<MetricStreamIdentity, MetricState>[] pairs;
 
-        // Last export of the streams whose instrument completed since the previous collection.
-        while (_completedStreams.TryDequeue(out var completed))
+        // Streams are chosen under the lock, so a stream completing meanwhile is either still in _streams or
+        // already queued, never missed. A stream completing after this point is exported again next time.
+        lock (_completionLock)
         {
-            completed.BuildPoints(list);
-        }
+            // Last export of the streams whose instrument completed since the previous collection.
+            while (_completedStreams.TryDequeue(out var completed))
+            {
+                completed.BuildPoints(list);
+            }
 
-        var pairs = _streams.ToArray();
+            pairs = _streams.ToArray();
+        }
 
         foreach (var (_, state) in pairs)
         {
