@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -32,9 +33,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 {
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
-
-    // The Agent cuts a service to 100 bytes of UTF-8.
-    private const int MaxServiceLength = 100;
 
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan FirstRetryMax = TimeSpan.FromSeconds(10);
@@ -202,116 +200,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// Returns the name APM shows for a service. <c>My Service</c> becomes <c>my_service</c>.
-    /// The result can be empty or not plain ASCII, such as <c>café-api</c>. Then no header is sent.
-    /// </summary>
-    /// <remarks>
-    /// This is a port of <c>NormalizeService</c> in the current Agent (pkg/trace/traceutil/normalize).
-    /// <c>NormalizerTraceProcessor.NormalizeService</c> follows an older Agent. That version removes
-    /// the characters before the first letter, so it changes <c>_svc</c> to <c>svc</c> and
-    /// <c>2fa-service</c> to <c>fa-service</c>. APM does not show these names.
-    /// </remarks>
-    internal static string CleanUpService(string service)
-    {
-        // Most names do not change. The method copies the name only when the result stops being a
-        // prefix of it.
-        char[]? cleaned = null;
-        var length = 0;
-        var bytes = 0;
-
-        // A run of replaced characters becomes one _ before the next kept character. At the end of
-        // the name, the run is removed.
-        var pending = false;
-
-        var i = 0;
-        while (i < service.Length)
-        {
-            var c = service[i];
-            var width = char.IsSurrogatePair(service, i) ? 2 : 1;
-
-            // The Agent first cuts the name to 100 bytes of UTF-8, and never splits a character.
-            // A lone surrogate is sent as U+FFFD, which has 3 bytes.
-            bytes += c switch
-            {
-                < '\u0080' => 1,
-                < '\u0800' => 2,
-                _ => width == 2 ? 4 : 3,
-            };
-
-            if (bytes > MaxServiceLength)
-            {
-                break;
-            }
-
-            bool kept;
-            if (c < 0x80)
-            {
-                // Only ASCII letters are lowercased. The Agent also lowercases most other letters.
-                // That has no effect on the header, because a name with a non-ASCII character is
-                // not sent.
-                if (c is >= 'A' and <= 'Z')
-                {
-                    c = (char)(c + ('a' - 'A'));
-                }
-
-                kept = c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or ':' or '.' or '/' or '-';
-            }
-            else
-            {
-                kept = char.IsLetter(service, i) || char.IsDigit(service, i);
-            }
-
-            if (kept)
-            {
-                if (pending)
-                {
-                    Append(service, ref cleaned, ref length, '_');
-                    pending = false;
-                }
-
-                Append(service, ref cleaned, ref length, c);
-                if (width == 2)
-                {
-                    Append(service, ref cleaned, ref length, service[i + 1]);
-                }
-            }
-            else
-            {
-                pending = true;
-            }
-
-            i += width;
-        }
-
-        if (cleaned is not null)
-        {
-            return new string(cleaned, 0, length);
-        }
-
-        return length == service.Length ? service : service.Substring(0, length);
-
-        // Adds a character to the result. While the result is a prefix of the name, it only counts
-        // the character. Each character of the result comes from at least one character of the name
-        // before the cut, so the result has at most MaxServiceLength characters.
-        static void Append(string service, ref char[]? cleaned, ref int length, char value)
-        {
-            if (cleaned is null)
-            {
-                if (length < service.Length && service[length] == value)
-                {
-                    length++;
-                    return;
-                }
-
-                cleaned = new char[Math.Min(service.Length, MaxServiceLength)];
-                service.CopyTo(0, cleaned, 0, length);
-            }
-
-            cleaned[length++] = value;
-        }
-    }
-
-    /// <summary>
     /// Sets the service to send as DD-Service. The poll loop uses it on its next request.
     /// </summary>
     private void UpdateService(string? service)
@@ -328,20 +216,21 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         string? sent = null;
         if (!StringUtil.IsNullOrEmpty(service))
         {
-            // The header uses the name APM shows, so usage and APM name the same service. For
-            // example, My Service is sent as my_service. The tracer's own service does not change.
-            var shown = CleanUpService(service);
+            // The header uses the tracer's own service normalization, so usage and APM name the
+            // same service. For example, My Service is sent as my_service. The tracer's own service
+            // does not change.
+            var normalized = NormalizerTraceProcessor.NormalizeService(service);
 
             // The CDN decides which names it attributes usage to. The source skips only an empty
             // name and a name that HttpClient refuses, such as café-api. A refused name makes every
-            // poll fail. The source never sends a different name, because APM does not show it.
-            if (IsAsciiHeaderValue(shown))
+            // poll fail.
+            if (IsAsciiHeaderValue(normalized))
             {
-                sent = shown;
+                sent = normalized;
             }
             else
             {
-                _log.Debug<string>("Feature Flags: service {Service} has no ASCII APM name; DD-Service header not sent", service);
+                _log.Debug<string>("Feature Flags: service {Service} has no ASCII normalized name; DD-Service header not sent", service);
             }
         }
 

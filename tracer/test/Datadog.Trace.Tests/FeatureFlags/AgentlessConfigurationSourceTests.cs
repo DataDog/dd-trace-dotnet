@@ -21,6 +21,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -42,59 +43,6 @@ public class AgentlessConfigurationSourceTests
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
 
     private const string ServiceRejection = "DD-Service header not sent";
-
-    // Each row is a service and its DD-Service header. Null means that the request has no header.
-    // The values come from NormalizeService in the Agent v0.82.3. NormalizeService gives the name
-    // APM shows. The source sends that name only when it is ASCII.
-    public static TheoryData<string, string?> ServiceHeaders => new()
-    {
-        { "checkout", "checkout" },
-        { "My Service", "my_service" },
-        { "My-API", "my-api" },
-        { "UPPER", "upper" },
-        { "bad\nvalue", "bad_value" },
-        { "a\tb", "a_b" },
-        { "a  b!", "a_b" },
-        { "svc ", "svc" },
-        { " svc", "_svc" },
-        { "a_", "a" },
-        { "svc-", "svc-" },
-        { "a..b", "a..b" },
-        { "2fa-service", "2fa-service" },
-        { "9lives", "9lives" },
-        { "unnamed-service", "unnamed-service" },
-        { "svc_name.v2:api/edge-1", "svc_name.v2:api/edge-1" },
-        { "my__service", "my_service" },
-        { "a🐶b", "a_b" },
-
-        // The tracer infers this name for an IIS application in the default site.
-        { "Default Web Site/Shop", "default_web_site/shop" },
-
-        // The Agent cuts a service to 100 bytes of UTF-8, and never splits a character.
-        { "a" + new string('b', 99), "a" + new string('b', 99) },
-        { "a" + new string('b', 100), "a" + new string('b', 99) },
-        { new string('a', 100) + " b", new string('a', 100) },
-        { new string('a', 99) + "\u00e9", new string('a', 99) },
-
-        // The source sends these names as APM shows them. The CDN decides if it accepts them.
-        { "_svc", "_svc" },
-        { "-svc", "-svc" },
-        { ".svc", ".svc" },
-        { ":svc", ":svc" },
-        { "-", "-" },
-
-        // APM shows these names, but they are not ASCII. HttpClient refuses them.
-        { "caf\u00e9-api", null },
-        { "Caf\u00e9", null },
-        { "支付", null },
-        { "\u0130stanbul", null },
-        { new string('\u00e9', 60), null },
-
-        // Nothing is left of these names.
-        { "___", null },
-        { string.Empty, null },
-        { "   ", null },
-    };
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -190,9 +138,15 @@ public class AgentlessConfigurationSourceTests
         RejectedServices(logger).Should().BeEmpty();
     }
 
+    // The tracer's own tests cover the normalization rules. These rows check only that the source
+    // sends the normalized name, and that it sends no header when that name is empty or not ASCII.
     [Theory]
-    [MemberData(nameof(ServiceHeaders))]
-    public async Task SendsTheNameApmShowsOrNoHeader(string service, string? header)
+    [InlineData("checkout", "checkout")]
+    [InlineData("My Service", "my_service")]
+    [InlineData("Default Web Site/Shop", "default_web_site/shop")]
+    [InlineData("caf\u00e9-api", null)]
+    [InlineData("___", null)]
+    public async Task SendsTheNormalizedServiceOrNoHeader(string service, string? header)
     {
         var logger = CreateDebugLogger();
         var applied = new List<ServerConfiguration>();
@@ -218,18 +172,16 @@ public class AgentlessConfigurationSourceTests
             factory.RequestsSent.Should().AllSatisfy(r => r.ExtraHeaders.Should().NotContainKey("DD-Service"));
 
             // The source logs each name that it does not send. It logs the name once, not for each
-            // poll. An empty service has no name to log.
-            RejectedServices(logger).Should().Equal(service.Length == 0 ? Array.Empty<object?>() : new object?[] { service });
+            // poll.
+            RejectedServices(logger).Should().Equal(service);
         }
     }
 
     // The customer sets DD_SERVICE, and the test checks the request that goes to the CDN.
     [Theory]
     [InlineData("My Service", "my_service")]
-    [InlineData("Default Web Site/Shop", "default_web_site/shop")]
-    [InlineData("_svc", "_svc")]
     [InlineData("caf\u00e9-api", null)]
-    public async Task SendsTheNameApmShowsForTheConfiguredServiceAndKeepsTheTracerService(string service, string? header)
+    public async Task SendsTheNormalizedConfiguredServiceAndKeepsTheTracerService(string service, string? header)
     {
         var logger = CreateDebugLogger();
         var settings = CreateTracerSettings(service);
@@ -282,11 +234,11 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        // The spans use this name when DD_SERVICE is not set. The header sends it as APM shows it.
-        // The name of the test host is ASCII, so the source sends it.
+        // The spans use this name when DD_SERVICE is not set. The header sends it normalized. The
+        // name of the test host is ASCII, so the source sends it.
         var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
         inferred.Should().NotBeNullOrEmpty();
-        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", AgentlessConfigurationSource.CleanUpService(inferred));
+        factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", NormalizerTraceProcessor.NormalizeService(inferred));
     }
 
     [Fact]
