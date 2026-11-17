@@ -45,7 +45,7 @@ Creating a new instrumentation implementation typically uses the following proce
    4. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
    5. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
    6. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
-7. Add an integration manifest, `<IntegrationId>.manifest.yaml`, next to your instrumentation class. Its `packages` must cover the NuGet packages you mapped in `IntegrationGroups.cs` in step 6. See [Integration manifests](#integration-manifests) for the field rules.
+7. Add an integration manifest, `<IntegrationId>.manifest.yaml`, next to your instrumentation class. Its `packages` lists the NuGet packages that ship the assemblies you instrument; [`IntegrationGroups.cs`](../../tracer/build/_build/Honeypot/IntegrationGroups.cs) maps assemblies to packages. See [Integration manifests](#integration-manifests) for the field rules.
 8. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch. For more details, see [Testing in CI](#testing-in-ci).
    1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
    2. Click `Run Pipeline`
