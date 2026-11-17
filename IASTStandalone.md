@@ -157,7 +157,7 @@ shared/bin/monitoring-home/
 |---|---|---|
 | **IAST Unit Tests** | **456/456 pass** (net6.0) | Count dropped from 527 as tests were removed with telemetry/RASP cleanup |
 | **IAST Integration Tests (non-IIS)** | **230/230 pass** (net6.0) | ASP.NET Core 2/5, gRPC, weak cipher, dedup, instrumented tests (89). Sqlite DB tests run; other DB tests need Docker |
-| **IAST Integration Tests (IIS)** | **48/48 pass** (net48) | `AspNetMvc5*` and `AspNetWebForms*`. Needs the GAC prerequisite below. Seen intermittently failing one test in the first runs after a fresh GAC install; not reproduced afterwards |
+| **IAST Integration Tests (IIS)** | **48/48 pass** (net48; last run before Phase 5a — re-run after the next GAC refresh) | `AspNetMvc5*` and `AspNetWebForms*`. Needs the GAC prerequisite below. Seen intermittently failing one test in the first runs after a fresh GAC install; not reproduced afterwards |
 
 ### Test environment prerequisites (Windows)
 
@@ -428,7 +428,7 @@ Removed 25 APM-only `ClrProfiler/AutoInstrumentation` directories that have no I
 
 **Deleted:** AWS, Azure, Aerospike, Couchbase, CosmosDb, Elasticsearch, GraphQL, Hangfire, IbmMq, Kafka, Logging, ManualInstrumentation, MongoDb, Msmq, Protobuf, Quartz, RabbitMQ, Redis, Remoting, ServiceFabric, Testing, TraceAnnotations, VersionConflict, Wcf.
 
-**Kept (IAST-relevant):** AdoNet, AspNet, AspNetCore, Http, Process, Grpc, RestSharp, CryptographyAlgorithm, HashAlgorithm, StackTraceLeak, Proxy.
+**Kept (IAST-relevant):** AdoNet, AspNet, AspNetCore, Process, RestSharp, CryptographyAlgorithm, HashAlgorithm, StackTraceLeak, Proxy, plus the single gRPC file `Grpc/GrpcDotNet/GrpcAspNetCoreServer/IAST/ParsingPrimitivesReadRawStringIntegration.cs`. (`Http` and the rest of `Grpc` were APM span integrations with no IAST code and were removed later — see "Dead code removal".)
 
 Two small helpers were preserved from deleted directories because other parts of the tracer still depend on them:
 - `ManualInstrumentation/TracerSettingKeyConstants.cs` — used by configuration sources
@@ -544,13 +544,13 @@ Deleted all test helper code that existed solely to support the old span-based v
 | `IAST/IastVerifyScrubberExtensions.cs` | Span-based IAST scrubbers (no longer needed) |
 | ~142 lines from `AspNetBase.cs` | Span-reading methods (`WaitForSpansAsync`, `VerifySpans`, etc.) |
 
-**Vendored library removals:**
+**Vendored library removals (historical — see "Dead code removal" below for the current state):**
 
 | Library | Notes |
 |---|---|
-| `Vendors/Newtonsoft.Json/` | Replaced by direct `Newtonsoft.Json` NuGet package reference |
-| `System.Memory` vendored source | Runtime provides it |
-| `System.Collections.Immutable` vendored source | Runtime provides it |
+| `Vendors/Newtonsoft.Json/` | Removal was reverted (commit `a8ce3211f`); still vendored and used by Serilog/IAST JSON |
+| `System.Memory` vendored source | Removal was reverted; still compiled for net461 / netstandard2.0 |
+| `System.Collections.Immutable` vendored source | Removed |
 
 ### DiscoveryService and StatsAggregator removal
 
@@ -674,6 +674,37 @@ The IAST request context no longer has to be reached through `Tracer.Instance.Ac
 **Fallback:** in the IIS integrated pipeline the `AsyncLocal` set in `OnBeginRequest` is not visible in the MVC action (the web span is re-activated there). `IastLifecycle.GetState()` therefore falls back to the active scope's root web span (`InternalActiveScope.Root`). Without it `AspNetMvc5IntegratedWithIast.TestRequestBodyTainting` reports no vulnerability. Both the mirror and the fallback go away with the spans (Phase 5), or earlier if the MVC/WebApi integrations resume the lifecycle explicitly.
 
 **Behavior change:** `isRequest` is now "a request entry point called `BeginRequest`" instead of "root span type is web". Identical for ASP.NET / ASP.NET Core; other web-typed roots are treated as non-request. The `Samples.InstrumentedTests` harness calls `IastLifecycle.BeginRequest` by reflection.
+
+---
+
+## Dead code removal (Phase 5a)
+
+Removed everything the compiler and a reachability analysis show is not needed, without touching `Span` / `Scope` / `Tracer` / `TraceContext` (that is the redesign in Phase 5b). Every step was built for net461, netstandard2.0, netcoreapp3.1 and net6.0.
+
+| Removed | Size |
+|---|---|
+| `Vendors/Microsoft.OpenApi` (no users) | 109 files |
+| `Vendors/Datadog.Sketches` (no users) | 15 files |
+| `ClrProfiler/AutoInstrumentation/Http` (HttpClient + WebRequest span integrations; SSRF detection comes from `Iast/Aspects`, not from these) | 25 files |
+| `ClrProfiler/AutoInstrumentation/Grpc`, all except the IAST file `ParsingPrimitivesReadRawStringIntegration.cs` | 49 files |
+| `ClrProfiler/ScopeFactory.cs`, `ClrProfiler/Helpers/HttpBypassHelper.cs` (orphaned by the above) | 2 files |
+| 49 unreferenced files in the project itself: `Util` (delegate instrumentation callbacks, streams, array/arena helpers, `Md5Helper`, `PeerServiceHelpers`, …), `Headers`, `PlatformHelpers/HostMetadata`, `Configuration/ApmTracingConfig` and `NullGitMetadataProvider`, `Iast/EvidenceDictionaryConverter`, `CorrelationIdentifier`, a few extension classes and AspNet/gRPC duck-type interfaces | ~3.9k lines |
+
+Regenerated as a side effect of the build (checked in): `InstrumentationDefinitions.g.cs` (4 TFMs), `Datadog.Tracer.Native/Generated/generated_calltargets.g.cpp` (~700 lines smaller), `tracer/build/supported_calltargets.g.json`.
+
+**Kept on purpose**
+
+| Item | Why |
+|---|---|
+| `Vendors/Serilog.Sinks.File` | Logging uses its `.File(...)` extension, which lives in the plain `Serilog` namespace (a namespace-only check misses it) |
+| `Vendors/System.Memory`, `System.Runtime.CompilerServices.Unsafe`, `System.Private.CoreLib` | Compiled for net461 / netstandard2.0 (`Compile Remove` only applies to netcoreapp3.1+); used via `GlobalUsings.cs` and `VulnerabilityStats.cs` under the `VendoredMicrosoftCode` namespace |
+| `Util/TestingOnlyAttribute.cs`, `TestingAndPrivateOnlyAttribute.cs` | Applied by short name (`[TestingOnly]`) |
+| `AutoInstrumentation/Proxy`, `AutoInstrumentation/Logging` | `TracingHttpModule`, the ASP.NET Core handler and AspNet MVC use them |
+| Dead files inside `Newtonsoft.Json` (15) and `Serilog` (5) | Left so the vendored libraries stay identical to the originals re-imported by `tracer/build/_build/UpdateVendors` |
+
+**How dead files were found:** a throw-away tool (not in the repo) treated tests, samples, native sources and attribute-driven files (`InstrumentMethod`, `AspectClass`, `DuckCopy`, `[Tag]`, …) as roots and followed type/extension-method names transitively. Known blind spots, both caught by the compiler: attribute classes used by their short name, and extension methods living in a different namespace than their class. Vendored libraries redefine BCL type names (`Scope`, `Utils`, `DisplayAttribute`, …), so name matching cannot prune them.
+
+**What is left:** the remaining ~1,300 files are reachable only because `Tracer`, `TraceContext`, `Span` and `Scope` are alive (sampling, propagators, tagging, `TracerSettings`, diagnostic observers, CallTarget scope state). Removing them needs the request metadata (method, URL, route) that the reporter reads from the root span to live elsewhere — see Phase 5b.
 
 ---
 
@@ -927,13 +958,18 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - ~~Delete `Logging/DirectSubmission/` (20 files)~~ ✅ Done
 - ~~Remove `IsMetaStructSupported()` and MetaStruct branch from `IastRequestContext`~~ ✅ Done
 
-### Phase 5 — Gut non-IAST code (mostly done)
+### Phase 5 — Gut non-IAST code (5a done, 5b pending)
 - ~~Delete DataStreamsMonitoring~~ ✅ Done
 - ~~Delete non-IAST ClrProfiler integrations (~25 directories)~~ ✅ Done
 - ~~Delete RCM, CI, PDBs, DogStatsd, DBM, ContinuousProfiler, Debugger, OpenTelemetry, RuntimeMetrics, FeatureFlags, ApiSec, AttackerFingerprint, WAF~~ ✅ Done
 - ~~Delete non-IAST tracer/src projects (~10 projects)~~ ✅ Done (20 projects removed)
 - ~~Delete hardcoded secrets analyzer (managed + native)~~ ✅ Done
-- Still pending: remove `Span.cs`, `Scope.cs`, `Tracer.cs`, `TraceContext.cs` or replace with stubs
+- ~~Delete unreferenced code, unused vendored libraries and APM-only integrations (`Http`, `Grpc`)~~ ✅ Done (see "Dead code removal")
+
+### Phase 5b — Remove `Span` / `Scope` / `Tracer` / `TraceContext` (pending, design open)
+- Open choice: keep a minimal root-only metadata object, or remove spans entirely and introduce an `IastRequest` object (method, URL, route) set by the request entry points
+- Depends on: replacing `TraceContext.IastRequestContext` mirror and the `IastLifecycle.GetState()` active-scope fallback, `TraceContext.CloseSpan` → `IastLifecycle.EndRequest`, `VulnerabilityReporter` / route stats reading `http.*` tags, CallTarget `CallTargetState.Scope`
+- Then removable: sampling, propagators, tagging, `TracerSettings` / `ExporterSettings` / `IntegrationSettings` (Phase 6), diagnostic observers' span logic
 
 ### Phase 6 — Simplify configuration (pending)
 - Create standalone `StandaloneIastSettings` reading only IAST env vars
