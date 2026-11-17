@@ -170,6 +170,15 @@ public class LocationTests
     }
 
     [Fact]
+    public async Task GivenAGenericAsyncMethodOfAReferenceType_WhenCreatedFromItsFrame_TheSourceMethodIsReported()
+    {
+        var location = await GetLocationFromGenericAsyncMethod<string>();
+
+        location.Class.Should().Be(typeof(LocationTests).FullName);
+        location.Method.Should().Be(nameof(GetLocationFromGenericAsyncMethod));
+    }
+
+    [Fact]
     public async Task GivenAnAsyncMethod_WhenCreatedFromItsFrame_TheHashStillComesFromTheStateMachine()
     {
         var location = await GetLocationFromAsyncMethod();
