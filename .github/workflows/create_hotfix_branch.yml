@@ -3,12 +3,12 @@ name: Create hotfix branch
 on:
   workflow_dispatch:
     inputs:
-      base_tag:
-        description: 'Release tag to branch from (for example, v3.55.0). Run this workflow from master.'
+      base_version:
+        description: 'Released version to branch from, without a "v" prefix (for example, 3.55.0). Run this workflow from master.'
         required: true
         type: string
       version:
-        description: 'Hotfix Version Number (x.x.x)'
+        description: 'Hotfix version number, without a "v" prefix (for example, 3.55.1)'
         required: true
       is_prerelease:
         description: 'Is Prerelease version? (true/false)'
@@ -38,16 +38,22 @@ jobs:
           echo "::error::This workflow must be run from master, but was run from $GITHUB_REF"
           exit 1
 
-      - name: Validate release tag name
+      - name: Compute release tag
+        id: base_tag
         env:
-          BASE_TAG: ${{ inputs.base_tag }}
-        run: git check-ref-format "refs/tags/$BASE_TAG"
+          BASE_VERSION: ${{ inputs.base_version }}
+        run: |
+          if ! [[ "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::base_version must be a version without a 'v' prefix (for example, 3.55.0), but was '$BASE_VERSION'"
+            exit 1
+          fi
+          echo "tag=v$BASE_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: refs/tags/${{ inputs.base_tag }}
+          ref: refs/tags/${{ steps.base_tag.outputs.tag }}
 
       - name: Record base commit
         id: base
@@ -109,7 +115,7 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
-          BASE_TAG: ${{ inputs.base_tag }}
+          BASE_TAG: ${{ steps.base_tag.outputs.tag }}
           COMMIT_SHA: ${{ steps.commit.outputs.pushed_ref }}
           FULL_VERSION: ${{ steps.versions.outputs.full_version }}
         run: |
