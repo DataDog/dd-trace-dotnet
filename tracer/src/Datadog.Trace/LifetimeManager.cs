@@ -195,17 +195,34 @@ namespace Datadog.Trace
 
                     while (_shutdownHooks.TryDequeue(out var actionOrFunc))
                     {
-                        if (actionOrFunc is Action<Exception?> action)
+                        try
                         {
-                            action(exception);
+                            if (actionOrFunc is Action<Exception?> action)
+                            {
+                                action(exception);
+                            }
+                            else if (actionOrFunc is Func<Exception?, Task> func)
+                            {
+                                AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
+                            }
+                            else
+                            {
+                                Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
+                            }
                         }
-                        else if (actionOrFunc is Func<Exception?, Task> func)
+                        catch (ThreadAbortException)
                         {
-                            AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
+                            throw;
                         }
-                        else
+                        catch (TimeoutException)
                         {
-                            Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
+                            // Stop on any timeout, so hung hooks can't each add another TaskTimeout to shutdown
+                            throw;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Don't let a failing hook prevent the remaining hooks from running
+                            Log.Error(ex, "Error running shutdown hook");
                         }
                     }
                 }

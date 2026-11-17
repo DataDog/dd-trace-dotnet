@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
@@ -34,17 +36,7 @@ public sealed class OpenFeatureSdkEnqueueEVPWithFeaturesIntegration
     {
         try
         {
-            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(
-                TracerManager.Instance.FeatureFlags?.EvaluationWriter,
-                (string)(object)flagKey!,
-                (string?)(object?)variant,
-                (string?)(object?)allocationKey,
-                (string?)(object?)targetingKey,
-                (long)(object)evalTimeMs!,
-                (string?)(object?)errorCode,
-                (IReadOnlyDictionary<string, object?>?)(object?)attrs,
-                (int)(object)flags!,
-                (IReadOnlyDictionary<string, object?>?)(object?)features);
+            Enqueue(TracerManager.Instance.FeatureFlags?.EvaluationWriter, flagKey, variant, allocationKey, targetingKey, evalTimeMs, errorCode, attrs, features, flags);
         }
         catch (Exception)
         {
@@ -53,4 +45,18 @@ public sealed class OpenFeatureSdkEnqueueEVPWithFeaturesIntegration
 
         return CallTargetState.GetDefault();
     }
+
+    [TestingAndPrivateOnly]
+    internal static void Enqueue<TFlagKey, TVariant, TAllocationKey, TTargetingKey, TEvalTimeMs, TErrorCode, TAttrs, TFeatures, TFlags>(FlagEvaluationWriter? writer, TFlagKey flagKey, TVariant variant, TAllocationKey allocationKey, TTargetingKey targetingKey, TEvalTimeMs evalTimeMs, TErrorCode errorCode, TAttrs attrs, TFeatures features, TFlags flags)
+        => OpenFeatureSdkEnqueueEVPIntegration.Enqueue(
+            writer,
+            (string)(object)flagKey!,
+            (string?)(object?)variant,
+            (string?)(object?)allocationKey,
+            (string?)(object?)targetingKey,
+            (long)(object)evalTimeMs!,
+            (string?)(object?)errorCode,
+            (IReadOnlyDictionary<string, object?>?)(object?)attrs,
+            (int)(object)flags!,
+            (IReadOnlyDictionary<string, object?>?)(object?)features);
 }
