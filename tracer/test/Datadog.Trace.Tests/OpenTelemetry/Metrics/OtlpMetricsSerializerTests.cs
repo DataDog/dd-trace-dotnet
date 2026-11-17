@@ -48,6 +48,32 @@ public class OtlpMetricsSerializerTests
     }
 #endif
 
+    [Fact]
+    public async Task IntegerAndFloatingPointInstrumentsWithTheSameNameAreExportedAsSeparateMetrics()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        using var meter = new Meter("TestMeter.NumberType");
+        meter.CreateCounter<long>("test.numbertype.counter").Add(10);
+        meter.CreateCounter<double>("test.numbertype.counter").Add(2.5);
+        await pipeline.ForceCollectAndExportAsync();
+
+        var metrics = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                 .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                 .Where(s => s.Scope.Name == "TestMeter.NumberType")
+                                 .SelectMany(s => s.Metrics)
+                                 .ToList();
+
+        metrics.Should().HaveCount(2);
+        metrics.Should().OnlyContain(m => m.Name == "test.numbertype.counter" && m.Sum.DataPoints.Count == 1);
+        metrics.Select(m => m.Sum.DataPoints.Single())
+               .Select(p => p.ValueCase == NumberDataPoint.ValueOneofCase.AsInt ? (object)p.AsInt : p.AsDouble)
+               .Should().BeEquivalentTo<object>([10L, 2.5]);
+    }
+
     [Theory]
     [InlineData("cumulative", "Cumulative", "Cumulative")]
     [InlineData("delta", "Delta", "Delta")]

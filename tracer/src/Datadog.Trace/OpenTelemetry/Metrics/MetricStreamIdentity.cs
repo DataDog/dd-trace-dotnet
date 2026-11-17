@@ -43,9 +43,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                          instrumentGenericType == typeof(short) ||
                          instrumentGenericType == typeof(byte);
 
-            // Covers the whole meter identity, so distinct meters never share a stream name.
-            var meterTags = string.Join(",", MeterTags.Select(t => $"{t.Key}={t.Value}"));
-            MetricStreamName = $"{MeterName}.{MeterVersion}.{meterTags}.{MeterSchemaUrl}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
+            // Includes the meter version, tags and schema URL, so streams from different meters don't collide.
+            MetricStreamName = $"{MeterName}.{MeterVersion}.{OtlpMetricsSerializer.JoinMeterTags(MeterTags)}.{MeterSchemaUrl}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
         }
 
         public string InstrumentName { get; }

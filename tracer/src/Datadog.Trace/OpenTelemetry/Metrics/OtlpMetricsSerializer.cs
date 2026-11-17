@@ -48,10 +48,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         }
 
         /// <summary>
-        /// Creates a deterministic string key from meter tags for grouping.
+        /// Creates a deterministic string key from meter tags, used for scope grouping and the metric stream name.
         /// Sorts a copy to avoid mutating the original array.
         /// </summary>
-        private static string JoinMeterTags(KeyValuePair<string, object?>[] tags)
+        internal static string JoinMeterTags(KeyValuePair<string, object?>[] tags)
         {
             if (tags.Length == 0)
             {
@@ -211,7 +211,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             for (int i = 0; i < metrics.Count; i++)
             {
                 var metric = metrics[i];
-                var key = $"{metric.InstrumentName}|{metric.InstrumentType}|{metric.Unit}|{metric.Description}";
+                // IsLongType is part of the stream identity: integer and floating-point instruments
+                // that otherwise match are separate streams and must be exported as separate metrics.
+                var key = $"{metric.InstrumentName}|{metric.InstrumentType}|{metric.Unit}|{metric.Description}|{metric.IsLongType}";
 
                 if (!metricGroups.TryGetValue(key, out var group))
                 {

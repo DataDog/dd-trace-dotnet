@@ -5,6 +5,7 @@
 
 #if NET6_0_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -933,7 +934,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
+        public async Task InstrumentsWhoseNamesDifferOnlyInCaseShareTheFirstSeenNameStream()
         {
             // Arrange
             var settings = TracerSettings.Create(new());
@@ -1035,6 +1036,12 @@ namespace Datadog.Trace.Tests
             // As in OTel .NET, the last observation wins: the values are not summed.
             await pipeline.ForceCollectAndExportAsync();
             testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().BeOneOf(100.0, 5.0);
+
+            // The second instrument records into the shared stream: it keeps reporting once the first meter is disposed.
+            meter1.Dispose();
+            var before = testExporter.ExportedMetrics.Count;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(before).Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(5.0);
         }
 
 #if NET8_0_OR_GREATER
@@ -1056,6 +1063,25 @@ namespace Datadog.Trace.Tests
 
             await pipeline.ForceCollectAndExportAsync();
             testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(3.0);
+        }
+
+        [Fact]
+        public async Task MeterTagValueThatThrowsDoesNotEscapeIntoTheApplication()
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string name = "test.throwing.meter.tag";
+            using var meter = new Meter("TestMeter.ThrowingTag", null, [new KeyValuePair<string, object>("meter.tag", new ThrowingTagValue())]);
+
+            var createCounter = () => meter.CreateCounter<long>(name).Add(1);
+            createCounter.Should().NotThrow();
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Should().NotContain(m => m.InstrumentName == name);
         }
 #endif
 
@@ -1239,6 +1265,15 @@ namespace Datadog.Trace.Tests
             gaugeMetric.SnapshotGaugeValue.Should().Be(77.0);
             gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 #endif
+        }
+
+        private sealed class ThrowingTagValue
+        {
+            public override string ToString() => throw new InvalidOperationException("ToString");
+
+            public override bool Equals(object obj) => throw new InvalidOperationException("Equals");
+
+            public override int GetHashCode() => 0;
         }
     }
 }
