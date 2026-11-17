@@ -206,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri originalRequestUri = request.RequestUri;
-                Uri requestUri = GetAbsoluteRequestUri(originalRequestUri);
+                Uri requestUri = GetAbsoluteRequestUri(originalRequestUri, tracerSettings);
 
                 string method = StringUtil.ToUpperInvariant(request.Method.Method) ?? "GET";
                 string route = GetRouteTemplate(controllerContext);
@@ -332,14 +332,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// against the URL of the System.Web request.
         /// </summary>
         /// <param name="requestUri">The URI of the request being traced</param>
-        private static Uri GetAbsoluteRequestUri(Uri requestUri)
+        /// <param name="tracerSettings">The tracer settings, which control whether reading the System.Web request URL may cache it</param>
+        private static Uri GetAbsoluteRequestUri(Uri requestUri, TracerSettings tracerSettings)
         {
             if (requestUri is null || requestUri.IsAbsoluteUri)
             {
                 return requestUri;
             }
 
-            var baseUri = System.Web.HttpContext.Current?.Request is { } currentRequest ? RequestDataHelper.GetUrl(currentRequest) : null;
+            Uri baseUri = null;
+            if (System.Web.HttpContext.Current?.Request is { } currentRequest)
+            {
+                baseUri = tracerSettings.BypassHttpRequestUrlCachingEnabled
+                              ? RequestDataHelper.BuildUrl(currentRequest)
+                              : RequestDataHelper.GetUrl(currentRequest);
+            }
+
             return HttpRequestUtils.GetAbsoluteUri(requestUri, baseUri);
         }
 
