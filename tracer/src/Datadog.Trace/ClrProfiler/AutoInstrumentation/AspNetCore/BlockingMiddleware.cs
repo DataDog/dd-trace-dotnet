@@ -97,6 +97,7 @@ internal sealed class BlockingMiddleware
                     {
                         if (result.ShouldBlock)
                         {
+                            securityCoordinator.MarkBlocked();
                             var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                             await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         }
@@ -108,7 +109,7 @@ internal sealed class BlockingMiddleware
                     }
                     finally
                     {
-                        securityCoordinator.MarkBlockAndReport(result, endedResponse);
+                        securityCoordinator.ReportBlockOutcome(result, endedResponse);
                     }
 
                     // security will be disposed in endrequest of diagnostic observer in any case
@@ -129,6 +130,9 @@ internal sealed class BlockingMiddleware
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
+                // before writing, see SecurityCoordinator.MarkBlocked
+                new SecurityCoordinator.HttpTransport(context).MarkBlocked();
+
                 // Use blockinfo here
                 var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
                 try
