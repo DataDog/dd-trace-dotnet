@@ -27,7 +27,6 @@ internal sealed class MetricReaderHandler
     private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
     // Number of registered streams per stream name: different identities can share a name.
     private readonly Dictionary<string, int> _streamNames = new(StringComparer.OrdinalIgnoreCase);
-    // Guarded by _registrationLock.
     private readonly Queue<MetricState> _completedStreams = new();
     // Guards stream registration and removal, _streamNames, _completedStreams and the instrument count of each stream.
     private readonly object _registrationLock = new();
@@ -38,6 +37,20 @@ internal sealed class MetricReaderHandler
     }
 
     public void OnInstrumentPublished(Instrument instrument, MeterListener listener)
+    {
+        // Runs synchronously in the application's Meter.CreateXxx call, and calls ToString, Equals and GetHashCode
+        // on the application's meter tag values: never let an exception escape into the application.
+        try
+        {
+            RegisterInstrument(instrument, listener);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error registering instrument '{InstrumentName}' from meter '{MeterName}'. Its measurements will not be exported.", instrument.Name, instrument.Meter.Name);
+        }
+    }
+
+    private void RegisterInstrument(Instrument instrument, MeterListener listener)
     {
         var meterName = instrument.Meter.Name;
 
@@ -102,7 +115,7 @@ internal sealed class MetricReaderHandler
         }
 
         // OTel metrics SDK spec, "Name conflict": names that differ only in case are exported under the first-seen
-        // name, and an error is logged.
+        // name. The spec asks for an error to be logged; a warning is logged instead.
         if (firstSeenName is not null && !string.Equals(firstSeenName, instrument.Name, StringComparison.Ordinal))
         {
             Log.Warning("Duplicate instrument registration: '{InstrumentName}' from meter '{MeterName}' differs only in case from the first-seen name '{FirstSeenName}', under which its measurements are exported.", instrument.Name, meterName, firstSeenName);
@@ -205,7 +218,7 @@ internal sealed class MetricReaderHandler
             pairs = _streams.ToArray();
         }
 
-        // Last export of the streams whose instrument completed since the previous collection.
+        // Last export of the streams whose last instrument completed since the previous collection.
         if (completed is not null)
         {
             foreach (var completedState in completed)
