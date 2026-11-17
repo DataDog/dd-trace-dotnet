@@ -76,7 +76,7 @@ public class RedactionBenchmark
         var redacted = 0;
         for (var i = 0; i < keys.Length; i++)
         {
-            if (redaction.ShouldRedactDataKey(keys[i], typeof(string), out _))
+            if (redaction.ShouldRedactDataKey(keys[i], typeof(string)))
             {
                 redacted++;
             }

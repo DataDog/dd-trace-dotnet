@@ -45,10 +45,12 @@ namespace Datadog.Trace.Debugger.Snapshots
         private const int MaxCachedTypes = 2048;
 
         // Longer names are still checked but never cached, so large customer strings are not retained.
-        private const int MaxCachedNameLength = 512;
+        [TestingAndPrivateOnly]
+        internal const int MaxCachedNameLength = 512;
 
         // 256 chars is 512 bytes, the stackalloc limit. Longer normalized names use a pooled buffer.
-        private const int MaxStackAllocChars = 256;
+        [TestingAndPrivateOnly]
+        internal const int MaxStackAllocChars = 256;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
 
@@ -118,7 +120,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private RedactionCache<string> _dataKeyCache = new(MaxCachedDataKeys);
 
-        private Redaction()
+        [TestingAndPrivateOnly]
+        internal Redaction()
         {
             _typeTrie = new Trie();
             _redactedTypes = [];
@@ -215,6 +218,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static Redaction Instance => _instnace;
 
+#pragma warning disable DD0002 // Test-only accessors over the test-only RedactionCache.Count
         [TestingOnly]
         internal int CachedTypesCount => Volatile.Read(ref _typeCache).Count;
 
@@ -223,6 +227,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         [TestingOnly]
         internal int CachedDataKeysCount => Volatile.Read(ref _dataKeyCache).Count;
+#pragma warning restore DD0002
 
         internal static bool IsSafeToCallToString(Type? type)
         {
@@ -329,26 +334,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        private static void AddToCache<TKey>(ref RedactionCache<TKey> field, RedactionCache<TKey> cache, TKey key, bool value)
-            where TKey : notnull
-        {
-            if (cache.TryAdd(key, value))
-            {
-                return;
-            }
-
-            // Full: start over so new hot keys can be cached again. Skip it if the cache was already replaced, by
-            // another thread or by SetConfig; the compare-exchange covers a replacement after this check.
-            if (!ReferenceEquals(Volatile.Read(ref field), cache))
-            {
-                return;
-            }
-
-            var fresh = new RedactionCache<TKey>(cache.Capacity);
-            fresh.TryAdd(key, value);
-            Interlocked.CompareExchange(ref field, fresh, cache);
-        }
-
         private static int GetMaxLength(HashSet<string> values)
         {
             var max = 0;
@@ -379,14 +364,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             redacted = CheckForRedactedType(type);
 #if NETCOREAPP3_1_OR_GREATER
             // Caching a collectible type would keep its AssemblyLoadContext from unloading.
-            if (!type.IsCollectible)
+            if (type.IsCollectible)
             {
-                AddToCache(ref _typeCache, cache, type, redacted);
+                return redacted;
             }
-#else
-            AddToCache(ref _typeCache, cache, type, redacted);
 #endif
 
+            cache.AddOrReplace(ref _typeCache, type, redacted);
             return redacted;
         }
 
@@ -452,10 +436,25 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         internal bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
-            => ShouldRedactCore(IsRedactedKeyword(name), type, out redactionReason);
+        {
+            if (IsRedactedKeyword(name))
+            {
+                redactionReason = RedactionReason.Identifier;
+                return true;
+            }
 
-        internal bool ShouldRedactDataKey(string? key, Type type, out RedactionReason redactionReason)
-            => ShouldRedactCore(IsRedactedDataKey(key), type, out redactionReason);
+            if (IsRedactedType(type))
+            {
+                redactionReason = RedactionReason.Type;
+                return true;
+            }
+
+            redactionReason = RedactionReason.None;
+            return false;
+        }
+
+        internal bool ShouldRedactDataKey(string? key, Type type)
+            => IsRedactedDataKey(key) || IsRedactedType(type);
 
         private static string Normalize(string identifier)
         {
@@ -467,7 +466,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         /// Lowercases <paramref name="identifier"/> and removes separator characters. Returns false, without
         /// allocating, when the result would be longer than <paramref name="maxLength"/>.
         /// </summary>
-        private static unsafe bool TryNormalize(string identifier, int maxLength, out string result)
+        private static bool TryNormalize(string identifier, int maxLength, out string result)
         {
             result = identifier;
             var normalizedLength = 0;
@@ -496,7 +495,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (normalizedLength <= MaxStackAllocChars)
             {
-                var buffer = stackalloc char[normalizedLength];
+                Span<char> buffer = stackalloc char[normalizedLength];
                 result = WriteNormalized(identifier, buffer);
             }
             else
@@ -504,10 +503,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var rented = ArrayPool<char>.Shared.Rent(normalizedLength);
                 try
                 {
-                    fixed (char* buffer = rented)
-                    {
-                        result = WriteNormalized(identifier, buffer);
-                    }
+                    result = WriteNormalized(identifier, rented.AsSpan(0, normalizedLength));
                 }
                 finally
                 {
@@ -518,23 +514,28 @@ namespace Datadog.Trace.Debugger.Snapshots
             return true;
         }
 
-        private static unsafe string WriteNormalized(string identifier, char* buffer)
+        /// <summary>
+        /// Writes the chars that <see cref="TryNormalize"/> counted, with the same predicate, into <paramref name="buffer"/>,
+        /// which must be exactly that long.
+        /// </summary>
+        private static string WriteNormalized(string identifier, Span<char> buffer)
         {
             var written = 0;
             for (var i = 0; i < identifier.Length; i++)
             {
                 var c = identifier[i];
-                if (char.IsUpper(c))
+                if (!IsRemovableChar(c))
                 {
-                    buffer[written++] = char.ToLowerInvariant(c);
-                }
-                else if (!IsRemovableChar(c))
-                {
-                    buffer[written++] = c;
+                    buffer[written++] = char.IsUpper(c) ? char.ToLowerInvariant(c) : c;
                 }
             }
 
-            return new string(buffer, 0, written);
+            Debug.Assert(written == buffer.Length, "WriteNormalized must fill the buffer TryNormalize sized");
+#if NETCOREAPP
+            return new string(buffer);
+#else
+            return buffer.ToString();
+#endif
         }
 
         private static bool IsRemovableChar(char c)
@@ -553,7 +554,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (Volatile.Read(ref _longNameLogged) == 0 && Interlocked.Exchange(ref _longNameLogged, 1) == 0)
                 {
-                    Log.Warning("Name length {Length} exceeds {MaxLength} characters, so its redaction result is not cached. Further occurrences are not logged.", name.Length, property1: MaxCachedNameLength);
+                    Log.Debug("Name length {Length} exceeds {MaxLength} characters, so its redaction result is not cached. Further occurrences are not logged.", name.Length, property1: MaxCachedNameLength);
                 }
 
                 return CheckForRedactedKeyword(name);
@@ -566,26 +567,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             redacted = CheckForRedactedKeyword(name);
-            AddToCache(ref cacheField, cache, name, redacted);
+            cache.AddOrReplace(ref cacheField, name, redacted);
             return redacted;
-        }
-
-        private bool ShouldRedactCore(bool isRedactedName, Type type, out RedactionReason redactionReason)
-        {
-            if (isRedactedName)
-            {
-                redactionReason = RedactionReason.Identifier;
-                return true;
-            }
-
-            if (IsRedactedType(type))
-            {
-                redactionReason = RedactionReason.Type;
-                return true;
-            }
-
-            redactionReason = RedactionReason.None;
-            return false;
         }
 
         internal void SetConfig(HashSet<string> redactedIdentifiers, HashSet<string> redactedExcludedIdentifiers, HashSet<string> redactedTypes)
@@ -595,15 +578,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 #endif
             foreach (var identifier in redactedIdentifiers)
             {
-                var normalized = Normalize(identifier);
-
-                // Raise the bound before adding, so a concurrent lookup never rejects the new keyword by length.
-                if (normalized.Length > _maxKeywordLength)
-                {
-                    _maxKeywordLength = normalized.Length;
-                }
-
-                _redactKeywords.Add(normalized);
+                _redactKeywords.Add(Normalize(identifier));
             }
 
             foreach (var excluded in redactedExcludedIdentifiers)

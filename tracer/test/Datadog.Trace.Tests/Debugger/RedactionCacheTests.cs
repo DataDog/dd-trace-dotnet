@@ -60,6 +60,63 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void AddOrReplace_WhenNotFull_AddsToTheSameCache()
+        {
+            var cache = new RedactionCache<string>(capacity: 2);
+            var field = cache;
+
+            cache.AddOrReplace(ref field, "a", true);
+
+            field.Should().BeSameAs(cache);
+            cache.TryGetValue("a", out var a).Should().BeTrue();
+            a.Should().BeTrue();
+        }
+
+        [Fact]
+        public void AddOrReplace_WhenFull_StartsANewCache()
+        {
+            var full = new RedactionCache<string>(capacity: 1);
+            full.TryAdd("a", false).Should().BeTrue();
+            var field = full;
+
+            full.AddOrReplace(ref field, "b", true);
+
+            field.Should().NotBeSameAs(full);
+            field.Capacity.Should().Be(1);
+            field.TryGetValue("b", out var b).Should().BeTrue();
+            b.Should().BeTrue();
+            field.TryGetValue("a", out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public void AddOrReplace_WhenFullCacheWasAlreadyReplaced_KeepsTheReplacement()
+        {
+            var full = new RedactionCache<string>(capacity: 1);
+            full.TryAdd("a", false).Should().BeTrue();
+            var installed = new RedactionCache<string>(capacity: 1);
+            var field = installed;
+
+            full.AddOrReplace(ref field, "b", true);
+
+            field.Should().BeSameAs(installed);
+            installed.TryGetValue("b", out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public void TryReplace_WhenAnotherCacheWasInstalled_KeepsIt()
+        {
+            // The replacement raced with another thread or a configuration change that installed a new cache first.
+            var full = new RedactionCache<string>(capacity: 1);
+            var installed = new RedactionCache<string>(capacity: 1);
+            var field = installed;
+
+            full.TryReplace(ref field, "b", true).Should().BeFalse();
+
+            field.Should().BeSameAs(installed);
+            installed.TryGetValue("b", out _).Should().BeFalse();
+        }
+
+        [Fact]
         public void TryAdd_Concurrent_NeverExceedsCapacity()
         {
             const int capacity = 100;
