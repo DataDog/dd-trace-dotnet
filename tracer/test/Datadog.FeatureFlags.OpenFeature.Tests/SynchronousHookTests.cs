@@ -35,7 +35,7 @@ public class SynchronousHookTests
         var context = new HookContext<bool>("flag", false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
         var resolution = new ResolutionDetails<bool>("flag", false, errorType);
 
-        DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), context, resolution);
+        DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(hook), context, resolution);
 
         // Each stage records after a 50 ms delay. A runner that does not wait normally returns before any stage records.
         hook.Completed.Should().Equal(resultStage, "Finally");
@@ -47,7 +47,7 @@ public class SynchronousHookTests
         var hook = new SlowRecordingHook { ThrowInAfter = true };
         var context = new HookContext<bool>("flag", false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
 
-        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), context, new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
+        var result = DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(hook), context, new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
 
         // Same as FeatureClient: the default value, a general error, then the Error and Finally hooks.
         result.Should().BeEquivalentTo(new { FlagKey = "flag", Value = false, ErrorType = ErrorType.General, Reason = Reason.Error, ErrorMessage = "after failed" });
@@ -68,7 +68,7 @@ public class SynchronousHookTests
         };
         var hook = new FaultingAfterHook(exception, faultAfterAwait: false);
 
-        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
+        var result = DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
 
         result.ErrorType.Should().Be(expected);
         result.Value.Should().BeFalse();
@@ -79,7 +79,7 @@ public class SynchronousHookTests
     {
         var hook = new FaultingAfterHook(new InvalidOperationException("after failed"), faultAfterAwait: true);
 
-        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
+        var result = DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
 
         result.Should().BeEquivalentTo(new { Value = false, ErrorType = ErrorType.General, Reason = Reason.Error });
     }
@@ -89,7 +89,7 @@ public class SynchronousHookTests
     {
         var hook = new FaultingAfterHook(new InvalidOperationException("after failed"), faultAfterAwait: false);
 
-        DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static", "on"));
+        DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static", "on"));
 
         // Finally hooks must see the error result, not the discarded successful evaluation.
         hook.FinallyDetails.Should().BeEquivalentTo(new { Value = false, ErrorType = ErrorType.General, Reason = Reason.Error, Variant = string.Empty });
@@ -125,7 +125,7 @@ public class SynchronousHookTests
         var resolution = new ResolutionDetails<bool>("flag", true, ErrorType.None, "static");
 
         // Hooks run in reverse order, so the failing hook runs first.
-        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(recording, failing), context, resolution);
+        var result = DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(recording, failing), context, resolution);
 
         result.Should().BeSameAs(resolution);
         recording.Completed.Should().Equal("After", "Finally");
@@ -139,7 +139,7 @@ public class SynchronousHookTests
         var context = new HookContext<bool>("flag", false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
         var resolution = new ResolutionDetails<bool>("flag", false, ErrorType.FlagNotFound);
 
-        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(recording, failing), context, resolution);
+        var result = DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(recording, failing), context, resolution);
 
         result.Should().BeSameAs(resolution);
         recording.Completed.Should().Equal("Error", "Finally");
@@ -156,7 +156,7 @@ public class SynchronousHookTests
         var second = new SlowRecordingHook("second-", completed);
         var context = new HookContext<bool>("flag", false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
 
-        DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(first, second), context, new ResolutionDetails<bool>("flag", false, errorType));
+        DatadogProvider.RunPostResolutionHooks(ImmutableList.Create<Hook>(first, second), context, new ResolutionDetails<bool>("flag", false, errorType));
 
         completed.Should().Equal($"second-{resultStage}", $"first-{resultStage}", "second-Finally", "first-Finally");
     }

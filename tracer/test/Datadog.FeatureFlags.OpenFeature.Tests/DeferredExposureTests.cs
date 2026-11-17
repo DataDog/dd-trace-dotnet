@@ -107,6 +107,73 @@ public class DeferredExposureTests
         tracer.Commits.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData("true", ExposureCommitResult.New, true, false)]
+    [InlineData("false", ExposureCommitResult.Repeat, false, true)]
+    [InlineData("false", ExposureCommitResult.NothingPending, false, false)]
+    public async Task TheCommittedVerdictDecidesOverAStamp(string stamp, int commit, bool expectedShouldSend, bool expectedCacheHit)
+    {
+        using var provider = new DatadogProvider(
+            (f, t, d, k, a) => throw new InvalidOperationException("immediate path must not run"),
+            (f, t, d, k, a) => new FakeEvaluation(
+                new Dictionary<string, string>
+                {
+                    [FeatureFlagMetadataKeys.AllocationKey] = "alloc",
+                    [FeatureFlagMetadataKeys.DoLog] = "true",
+                    [FeatureFlagMetadataKeys.ExposureCacheHit] = stamp,
+                },
+                null),
+            () => true,
+            _ => commit);
+        var client = await ClientAsync(provider);
+        var received = new List<ExposureEvaluation>();
+        client.AddHooks(new ExposureHook(e => received.Add(e)));
+
+        await client.GetBooleanDetailsAsync("flag", false, Context());
+
+        received.Should().ContainSingle().Which.IsExposure.Should().BeTrue();
+        received[0].ShouldSend.Should().Be(expectedShouldSend);
+        received[0].IsCacheHit.Should().Be(expectedCacheHit);
+    }
+
+    [Theory]
+    [InlineData("false", false, true, false)]
+    [InlineData("true", false, false, true)]
+    [InlineData("false", true, true, false)]
+    [InlineData("true", true, false, true)]
+    public async Task WithoutDeferralTheStampedVerdictDecidesEvenWhenTheResultHasSideState(string stamped, bool withFeature, bool expectedShouldSend, bool expectedCacheHit)
+    {
+        // An older tracer stamped the verdict during evaluation. The ExposureHook and the HOOK feature each make
+        // a side-table entry that owes no commit.
+        var metadata = new Dictionary<string, string>
+        {
+            [FeatureFlagMetadataKeys.AllocationKey] = "alloc",
+            [FeatureFlagMetadataKeys.DoLog] = "true",
+            [FeatureFlagMetadataKeys.ExposureCacheHit] = stamped,
+        };
+        if (withFeature)
+        {
+            metadata[FeatureFlagMetadataKeys.FeaturePrefix + "holdout.key"] = "h1";
+        }
+
+        using var provider = new DatadogProvider(
+            (f, t, d, k, a) => new FakeEvaluation(new Dictionary<string, string>(metadata), null),
+            (f, t, d, k, a) => throw new InvalidOperationException("deferred path must not run"),
+            () => false,
+            _ => throw new InvalidOperationException("nothing is owed a commit"));
+        var client = await ClientAsync(provider);
+        var received = new List<ExposureEvaluation>();
+        client.AddHooks(new ExposureHook(e => received.Add(e)));
+
+        await client.GetBooleanDetailsAsync("flag", false, Context());
+
+        var evaluation = received.Should().ContainSingle().Subject;
+        evaluation.IsExposure.Should().BeTrue();
+        evaluation.ShouldSend.Should().Be(expectedShouldSend);
+        evaluation.IsCacheHit.Should().Be(expectedCacheHit);
+        evaluation.Features.ContainsKey("holdout.key").Should().Be(withFeature);
+    }
+
 #pragma warning disable DDFF001 // Exercise the experimental synchronous API.
     [Fact]
     public void TheSynchronousApiCommitsSuccessfulEvaluationsOnly()
@@ -122,7 +189,7 @@ public class DeferredExposureTests
     }
 #pragma warning restore DDFF001
 
-    private static EvaluationContext Context() => EvaluationContext.Builder().SetTargetingKey("user").Build();
+    internal static EvaluationContext Context() => EvaluationContext.Builder().SetTargetingKey("user").Build();
 
     private static async Task<FeatureClient> ClientAsync(DatadogProvider provider)
     {
