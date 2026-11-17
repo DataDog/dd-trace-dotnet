@@ -26,8 +26,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly int _exportIntervalMs;
         private readonly MetricReaderHandler _handler;
         private readonly MetricExporter _exporter;
+        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private MeterListener? _listener;
-        private Timer? _timer;
+        private Task? _exportLoopTask;
 
         public MetricReader(TracerSettings settings, MetricReaderHandler handler, MetricExporter exporter)
         {
@@ -56,31 +57,19 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             _listener = listener;
 
             var interval = TimeSpan.FromMilliseconds(_exportIntervalMs);
-            _timer = new Timer(
-                callback: async void (_) =>
-                {
-                    try
-                    {
-                        await ForceCollectAndExportAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Failed to export metrics");
-                    }
-                },
-                state: null,
-                dueTime: interval,
-                period: interval);
+            _exportLoopTask = Task.Run(() => ExportLoopAsync(interval));
 
             Log.Debug<int>("MetricReader started with {IntervalMs}ms export interval", _exportIntervalMs);
         }
 
         public async Task StopAsync()
         {
-            if (_timer != null)
+            if (_exportLoopTask != null)
             {
-                await _timer.DisposeAsync().ConfigureAwait(false);
-                _timer = null;
+                // Stop the periodic exports, and wait for any in-flight export to complete
+                _processExit.TrySetResult(true);
+                await _exportLoopTask.ConfigureAwait(false);
+                _exportLoopTask = null;
             }
 
             try
@@ -136,6 +125,25 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in metrics export process");
+            }
+        }
+
+        private async Task ExportLoopAsync(TimeSpan interval)
+        {
+            // PeriodicTimer only waits for the next tick once the previous export has completed,
+            // so exports never overlap, and ticks missed during a slow export are coalesced.
+            // Disposing the timer on exit even if there's a pending WaitForNextTickAsync() task is safe.
+            using var timer = new PeriodicTimer(interval);
+            while (true)
+            {
+                var completed = await Task.WhenAny(_processExit.Task, timer.WaitForNextTickAsync().AsTask()).ConfigureAwait(false);
+                if (completed == _processExit.Task)
+                {
+                    // StopAsync was called
+                    return;
+                }
+
+                await ForceCollectAndExportAsync().ConfigureAwait(false);
             }
         }
     }

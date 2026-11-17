@@ -52,8 +52,13 @@ internal sealed class MsTestRetryContext : IDisposable
         }
 
         Task<T>? task = null;
-        using var context = _executionContext.CreateCopy();
-        ExecutionContext.Run(context, _ => task = RunWithTestContextAsync(retry), null);
+
+        // The copy is only needed while Run starts the retry; the async method captures its own context.
+        using (var context = _executionContext.CreateCopy())
+        {
+            ExecutionContext.Run(context, _ => task = RunWithTestContextAsync(retry), null);
+        }
+
         return task!;
     }
 

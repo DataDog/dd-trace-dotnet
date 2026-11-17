@@ -12,9 +12,13 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.
     /// </summary>
-    internal record struct MethodMetadataInfo
+    /// <remarks>
+    /// A class, so <see cref="MethodMetadataCollection"/> stores and copies an entry as one reference:
+    /// a thread that reads it without a lock never sees it half written, and growing the collection can't lose an <see cref="Update"/>.
+    /// </remarks>
+    internal sealed class MethodMetadataInfo
     {
-        private readonly object _locker = new();
+        private volatile InstrumentedProbes _probes = InstrumentedProbes.None;
 
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
             : this(parameterNames, localVariableNames, null, null, type, method, null, null)
@@ -73,35 +77,51 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         public MethodBase KickoffMethod { get; }
 
         /// <summary>
-        /// Gets the probe ids actively instrumented
+        /// Gets the probes of the active instrumentation. Read it once and use that snapshot,
+        /// so the probe ids, their indices and the version all come from the same <see cref="Update"/>.
         /// </summary>
-        public string[] ProbeIds { get; private set; }
+        public InstrumentedProbes Probes => _probes;
 
         /// <summary>
-        /// Gets the indices of the probes, used to lookup for <see cref="ProbeData"/> from <see cref="ProbeDataCollection"/>.
-        /// </summary>
-        public int[] ProbeMetadataIndices { get; private set; }
-
-        /// <summary>
-        /// Gets the unique version of the active instrumentation that is being applied. It basically identifies the probe ids combination that is currently applied.
-        /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new version number, "hard-coded" by the instrumentation.
-        /// </summary>
-        public int InstrumentationVersion { get; private set; } = -1;
-
-        /// <summary>
-        /// Updates, atomically using a locking object for syncing, <see cref="ProbeIds"/> and <see cref="ProbeMetadataIndices"/>.
+        /// Publishes a new <see cref="Probes"/> snapshot.
         /// </summary>
         /// <param name="probeIds">Updated probe ids.</param>
         /// <param name="probeMetadataIndices">Updated probe metadata indices.</param>
         /// <param name="instrumentationVersion">The (new) unique identifier of the instrumentation that is currently applied.</param>
         public void Update(string[] probeIds, int[] probeMetadataIndices, int instrumentationVersion)
         {
-            lock (_locker)
+            _probes = new InstrumentedProbes(probeIds, probeMetadataIndices, instrumentationVersion);
+        }
+
+        /// <summary>
+        /// The probes applied by one instrumentation of the method.
+        /// </summary>
+        internal sealed class InstrumentedProbes
+        {
+            internal static readonly InstrumentedProbes None = new([], [], -1);
+
+            public InstrumentedProbes(string[] probeIds, int[] probeMetadataIndices, int instrumentationVersion)
             {
                 ProbeIds = probeIds;
                 ProbeMetadataIndices = probeMetadataIndices;
                 InstrumentationVersion = instrumentationVersion;
             }
+
+            /// <summary>
+            /// Gets the probe ids actively instrumented
+            /// </summary>
+            public string[] ProbeIds { get; }
+
+            /// <summary>
+            /// Gets the indices of the probes, used to lookup for <see cref="ProbeData"/> from <see cref="ProbeDataCollection"/>.
+            /// </summary>
+            public int[] ProbeMetadataIndices { get; }
+
+            /// <summary>
+            /// Gets the unique version of the active instrumentation that is being applied. It basically identifies the probe ids combination that is currently applied.
+            /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new version number, "hard-coded" by the instrumentation.
+            /// </summary>
+            public int InstrumentationVersion { get; }
         }
     }
 }

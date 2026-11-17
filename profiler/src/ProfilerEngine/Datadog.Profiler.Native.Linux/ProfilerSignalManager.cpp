@@ -159,8 +159,12 @@ bool ProfilerSignalManager::IsProfilerSignalHandlerInstalled()
 
     sigaction(_signalToSend, nullptr, &currentAction);
 
-    return (currentAction.sa_flags & SA_SIGINFO) == SA_SIGINFO &&
-           currentAction.sa_sigaction == ProfilerSignalManager::SignalHandler;
+    return IsProfilerSignalHandler(currentAction);
+}
+
+bool ProfilerSignalManager::IsProfilerSignalHandler(const struct sigaction& action)
+{
+    return (action.sa_flags & SA_SIGINFO) == SA_SIGINFO && action.sa_sigaction == ProfilerSignalManager::SignalHandler;
 }
 
 bool ProfilerSignalManager::IsHandlerInPlace() const
@@ -170,18 +174,50 @@ bool ProfilerSignalManager::IsHandlerInPlace() const
 
 bool ProfilerSignalManager::SetupSignalHandler()
 {
+    struct sigaction currentAction;
+    if (sigaction(_signalToSend, nullptr, &currentAction) != 0)
+    {
+        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to get the signal handler for ", strsignal(_signalToSend), " signals. Reason: ",
+                   strerror(errno), ".");
+        return false;
+    }
+
+    // A fault on another thread can reach the handler as soon as it is installed: what it chains to must be set before.
+    // Installed again over itself, it must keep chaining to the action it replaced the first time.
+    if (!IsProfilerSignalHandler(currentAction))
+    {
+        _previousAction = currentAction;
+    }
+
     struct sigaction sampleAction;
     sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
     sampleAction.sa_sigaction = ProfilerSignalManager::SignalHandler;
     sigemptyset(&sampleAction.sa_mask);
+    if (_signalToSend == SIGSEGV || _signalToSend == SIGBUS)
+    {
+        // The previous handler (the CLR one) is called from this one: it must run on the stack and with the signals
+        // blocked it was registered with. The CLR SIGSEGV handler runs on the alternate stack, with its suspension signal
+        // (SIGRTMIN) blocked. Called from the thread stack, the .NET 6 one executes its worker just below the faulting
+        // frame, where our frames and the signal frame are: it overwrites them, and the process crashes when it returns.
+        // The CLR SIGBUS handler runs on the thread stack.
+        sampleAction.sa_flags |= _previousAction.sa_flags & SA_ONSTACK;
+        sampleAction.sa_mask = _previousAction.sa_mask;
+    }
     sigaddset(&sampleAction.sa_mask, _signalToSend);
 
-    int32_t result = sigaction(_signalToSend, &sampleAction, &_previousAction);
+    struct sigaction replacedAction;
+    int32_t result = sigaction(_signalToSend, &sampleAction, &replacedAction);
     if (result != 0)
     {
         Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to setup signal handler for ", strsignal(_signalToSend), " signals. Reason: ",
                    strerror(errno), ".");
         return false;
+    }
+
+    // Replaced by another thread between the two calls
+    if (!IsProfilerSignalHandler(replacedAction) && replacedAction.sa_sigaction != _previousAction.sa_sigaction)
+    {
+        _previousAction = replacedAction;
     }
 
     Log::Info("ProfilerSignalManager::SetupSignalHandler: Successfully setup signal handler for ", strsignal(_signalToSend), " signal.");
@@ -211,16 +247,40 @@ bool ProfilerSignalManager::CallCustomHandler(int32_t signal, siginfo_t* info, v
 
 void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
-    // This thread local variable helps in detecting the case where the profiler handler and
-    // the previous handler are referencing/calling each other.
-    // As it's synchchronous, we can check if we already executed the previous handler and
-    // stop if it's the case.
-    static thread_local bool isExecuting = false;
-
-    if (isExecuting)
+    if (_previousAction.sa_handler == SIG_DFL || _previousAction.sa_handler == SIG_IGN || IsProfilerSignalHandler(_previousAction))
+    {
+        // Nothing to chain to. A fault raised by the CPU happens again when this handler returns: the thread would
+        // loop on the faulting instruction (https://github.com/DataDog/dd-trace-dotnet/issues/9563). Like the CLR,
+        // put the default action back, so that the fault ends the process as it would without the profiler.
+        if ((signal == SIGSEGV || signal == SIGBUS) && info != nullptr && info->si_code > 0)
+        {
+            struct sigaction defaultAction = {};
+            defaultAction.sa_handler = SIG_DFL;
+            sigemptyset(&defaultAction.sa_mask);
+            sigaction(signal, &defaultAction, nullptr);
+        }
         return;
+    }
 
-    isExecuting = true;
+    // For the signals that are sent by the profiler (SIGUSR1, SIGPROF), this thread local variable helps in detecting
+    // the case where the profiler handler and the previous handler are referencing/calling each other.
+    // As it's synchronous, we can check if we already executed the previous handler and stop if it's the case.
+    //
+    // It cannot be used for SIGSEGV and SIGBUS: the previous handler (the CLR one) does not return for
+    // a hardware exception in managed code (a null reference for example). It leaves the alternate stack and
+    // dispatches the managed exception on the faulting thread's stack (see also Datadog.Linux.ApiWrapper/functions_to_wrap.c).
+    // The flag would never be cleared: the next fault on this thread would not be chained, and the faulting instruction
+    // would be restarted forever (https://github.com/DataDog/dd-trace-dotnet/issues/9563).
+    static thread_local bool isExecuting = false;
+    const bool useRecursionFlag = signal != SIGSEGV && signal != SIGBUS;
+
+    if (useRecursionFlag)
+    {
+        if (isExecuting)
+            return;
+
+        isExecuting = true;
+    }
 
     try
     {
@@ -240,7 +300,10 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
     {
     }
 
-    isExecuting = false;
+    if (useRecursionFlag)
+    {
+        isExecuting = false;
+    }
 }
 
 int32_t ProfilerSignalManager::GetSignal() const

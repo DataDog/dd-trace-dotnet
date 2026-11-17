@@ -298,9 +298,9 @@ namespace Datadog.Trace.ClrProfiler
 #pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
                 // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                Log.Information(StringUtil.Invariant($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}"));
 #else
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                Log.Information(StringUtil.Invariant($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}"));
 #endif
 #pragma warning restore DDLOG004 // Message templates should be constant
             }

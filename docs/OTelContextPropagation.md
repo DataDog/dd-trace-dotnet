@@ -26,9 +26,9 @@ record.
 | Requires | Linux, x64 or arm64, and automatic instrumentation attached |
 
 The platform gate is `OtelThreadContextPublisher.IsPlatformSupported()`, shared by the publisher and the
-announcer. OTEP 4947 is deliberately Linux-only: it relies on ELF thread-local storage, and its readers are
-themselves Linux-specific. Automatic instrumentation is required because that is what rewrites the P/Invoke
-map to point at the deployed native library.
+process-metadata builder. OTEP 4947 is deliberately Linux-only: it relies on ELF thread-local storage,
+and its readers are themselves Linux-specific. Automatic instrumentation is required because that is what
+rewrites the P/Invoke map to point at the deployed native library.
 
 ## How it works
 
@@ -37,8 +37,11 @@ map to point at the deployed native library.
 ```
 TracerManager.OneTimeSetup
         |
-        +--> ServiceDiscoveryHelper.StoreTracerMetadata(...)   libdatadog publishes the process context
-        +--> OtelProcessContextAnnouncer.Announce(settings)    appends the threadlocal.* keys to it
+        +--> ServiceDiscoveryHelper.StoreTracerMetadata(...)
+                 |
+                 +--> ddog_tracer_metadata_include_otel_thread_context(builder)
+                 +--> ddog_tracer_metadata_store(builder)
+                              libdatadog publishes one process context
 ```
 
 ### On every span activation
@@ -199,57 +202,16 @@ advertises `threadlocal.schema_version`. Two attributes are needed:
 | `threadlocal.attribute_key_map` | `["datadog.local_root_span_id"]` |
 
 The tracer already publishes a process context through libdatadog (`ServiceDiscoveryHelper.StoreTracerMetadata`),
-and the spec says there is at most one per process. So `OtelProcessContextAnnouncer` **extends the existing
-one** rather than publishing another. It runs once, from `TracerManager.OneTimeSetup`, immediately after
-the call that publishes the context:
+and the spec says there is at most one per process. Before that builder is stored,
+`ServiceDiscoveryHelper` calls `ddog_tracer_metadata_include_otel_thread_context`. libdatadog adds its
+default thread-local metadata to the builder and emits the two attributes as part of the same process
+context publication.
 
-1. Locate the mapping by reading `/proc/self/maps` and matching `[anon_shmem:OTEL_CTX]`, `[anon:OTEL_CTX]`
-   or `/memfd:OTEL_CTX`.
-2. Validate the header signature and version, and check the publication timestamp is non-zero (zero means
-   another writer is mid-update). This is our own address space, so this and everything below is plain
-   pointer access — no `process_vm_readv`, no interop.
-3. Build a longer payload: the existing bytes, plus the two attributes appended. **Nothing is parsed.**
-   `ProcessContext.attributes` is a repeated field and protobuf defines concatenation as merging, so
-   appending is equivalent to having encoded them originally — and fields we know nothing about survive
-   untouched.
-4. Point the header at the new buffer using the OTEP 4719 update protocol: timestamp `0`, barrier, new
-   pointer and size, barrier, new timestamp.
-
-libdatadog keeps owning the mapping (it holds it in a Rust `static` for the life of the process) and its
-own payload buffer, which we copy from but never modify or free. The only field we take over is the 8-byte
-`payload` pointer in the header. The announcer never throws: on any unexpected state it logs and leaves the
-process context exactly as libdatadog published it, and thread context records are still written — they
-just will not be discovered.
-
-### Two deliberate deviations
-
-- **`prctl(PR_SET_VMA_ANON_NAME)` is not re-issued after the update.** The spec says a writer MUST re-name
-  the mapping on every update; managed code cannot call `prctl`. The mapping is already named from
-  libdatadog's original publication, so it stays discoverable — what is lost is the wake-up for readers
-  that hook `prctl` to detect changes. Polling readers are unaffected.
-- **The timestamp is not `CLOCK_BOOTTIME`.** The spec recommends it but only requires a non-zero value that
-  is strictly later than the previous one, since readers use the field purely to detect change and torn
-  reads. We use a monotonic reading where it is already ahead of the existing value, and otherwise simply
-  advance the existing value by one — which satisfies the ordering requirement even on a machine that has
-  been suspended, where a `CLOCK_BOOTTIME` value written by libdatadog can exceed our monotonic clock.
-
-Both disappear with one `DllImport("libc")` each, if strict conformance is ever wanted.
-
-### Why not fix this in libdatadog
-
-That would be cleaner, and it is a small change: `TracerMetadata` already has a `ThreadLocalMetadata`
-struct, and `to_otel_process_ctx()` already emits both keys from it. It is purely an FFI surface gap —
-`ddog_tracer_metadata_set` exposes only `MetadataKind::RuntimeId..ContainerId`, with no way to populate
-`threadlocal_metadata`, and the section sits behind the `otel-thread-ctx` cargo feature. Changing
-libdatadog was ruled out, hence the approach above.
-
-### The risk to know about
-
-We mutate a header libdatadog owns, with no coordination. Nothing triggers a conflict today — the C ABI
-only offers `ddog_tracer_metadata_store`, and the tracer calls it exactly once — but if a future libdatadog
-calls `update()` on that handle, it overwrites the payload pointer and the two keys disappear silently. The
-announcer also skips its work if the payload already contains `threadlocal.schema_version`, so a future
-libdatadog that emits the keys itself will not end up with duplicates.
+The include operation is enabled only when `DD_TRACE_OTEL_CTX_ENABLED` is on and the process is on a
+supported Linux architecture. If it returns an error, the tracer logs the owned error, releases it, and
+continues storing the ordinary service-discovery metadata. libdatadog owns the process-context mapping,
+payload, publication timestamp, update protocol, and lifetime; managed code does not inspect or mutate
+that memory.
 
 `tlsdesc_v1_dev` is the value libdatadog's own writer uses and the one current readers match on. OTEP 4947
 anticipates renaming it to `tls_v1`; that has to move in step with the readers rather than ahead of them.
@@ -299,9 +261,9 @@ next restore. `Reset` on a null scope covers normal completion.
 
 | Path | Role |
 | --- | --- |
-| `.../OtelThreadContext/OtelProcessContextAnnouncer.cs` | Locates the mapping and applies the 4719 update protocol |
-| `.../OtelThreadContext/ThreadLocalMetadataPayload.cs` | Protobuf encoding of the two attributes |
-| `tracer/src/Datadog.Trace/TracerManager.cs` | Calls the announcer from `OneTimeSetup` |
+| `.../LibDatadog/ServiceDiscovery/ServiceDiscoveryHelper.cs` | Includes the thread-local metadata on libdatadog's builder before storing it |
+| `.../LibDatadog/ServiceDiscovery/VoidResult.cs` | Maps the include operation's success/error result |
+| `.../LibDatadog/NativeInterop.cs` | Declares the libdatadog builder include operation |
 
 ### Supporting
 
@@ -314,20 +276,14 @@ next restore. `Reset` on a null scope covers normal completion.
 ## Tests
 
 Managed unit tests are runnable on any platform — the native record provider is stood in for by
-`FakeOtelThreadContextRecordProvider`, and the process context by a hand-built header laid out like the
-real mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
+`FakeOtelThreadContextRecordProvider`. They live in
+`tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
 
 - `OtelThreadContextRecordTests.cs` — the record layout, with offsets hard-coded from the spec rather than
   read back from the implementation, since the layout is an inter-process contract.
 - `OtelThreadContextPublisherTests.cs` — that the record is acquired exactly once per thread, that each
   thread gets its own record, that `Reset` only clears `valid`, that acquisition failure is isolated and
   cached per thread, and that publishing does not force a sampling decision.
-- `ThreadLocalMetadataPayloadTests.cs` — the protobuf wire format, asserted against tags, lengths and
-  offsets worked out by hand rather than round-tripped through the same encoder.
-- `OtelProcessContextAnnouncerTests.cs` — `/proc/self/maps` parsing, and the update protocol: that unknown
-  payload bytes survive, that libdatadog's buffer is not modified, that the timestamp always advances
-  (including when the existing one is already ahead of our clock), and that a bad signature, wrong version
-  or in-progress update is refused without touching anything.
 
 Plus `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OtelThreadContextTests.cs`, Linux only. It
 keeps a real instrumented process alive, reads its `OTEL_CTX` mapping with `process_vm_readv`, and decodes
@@ -339,6 +295,10 @@ root span id against the spans received by the mock agent. This verifies that li
 metadata survives, that the two `threadlocal.*` attributes are externally readable exactly once, that the
 native TLS slot and record contain the expected active context, that tracing is undisturbed, and that the
 attributes are absent when the feature is off.
+
+That Linux test also exercises the real by-value `VoidResult` P/Invoke on the success path. The native
+null/error arm, panic containment, and owned-error contract are tested in libdatadog; the tracer does not
+add an interop abstraction solely to synthesize an otherwise unreachable builder error.
 
 `tracer/test/Datadog.Tracer.Native.Tests/otel_thread_ctx_test.cpp` creates and joins real pthreads to verify
 that an address is stable for an owning thread, concurrent threads receive distinct records, and thread
@@ -367,5 +327,5 @@ Confirming the announcement itself takes more than a grep: the `threadlocal.*` k
 payload, which the header only points at, so it has to be read from `/proc/<pid>/mem` at the address the
 header carries. The [`ctx-sharing-demo` reader](https://github.com/scottgerring/ctx-sharing-demo/tree/main/context-reader)
 does both halves — process context and thread context — and is the quickest way to see the whole chain end
-to end. In-process, the tracer log line `Announced the OpenTelemetry thread context schema` says the same
-thing, and the integration test asserts on it.
+to end. The integration test independently decodes the published payload; a successful builder call alone
+is not treated as proof that the process context was published.
