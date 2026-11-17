@@ -46,6 +46,9 @@ extern "C" char hybrid_unwinder_test_fp_based_frame_return[];
 extern "C" char hybrid_unwinder_test_spin_with_cfi[];
 extern "C" char hybrid_unwinder_test_spin_with_cfi_end[];
 extern "C" char hybrid_unwinder_test_sane_frame_return[];
+extern "C" void hybrid_unwinder_test_bad_x29_loc_frame(SpinControl* control, std::uintptr_t poisonFp);
+extern "C" char hybrid_unwinder_test_bad_x29_loc_leaf[];
+extern "C" char hybrid_unwinder_test_bad_x29_loc_leaf_end[];
 
 asm(R"(
     .text
@@ -221,6 +224,54 @@ hybrid_unwinder_test_sane_frame_return:
     ret
     .cfi_endproc
     .size hybrid_unwinder_test_sane_frame, .-hybrid_unwinder_test_sane_frame
+
+    .p2align 2
+    .globl hybrid_unwinder_test_bad_x29_loc_frame
+    .type hybrid_unwinder_test_bad_x29_loc_frame, %function
+hybrid_unwinder_test_bad_x29_loc_frame:
+    .cfi_startproc
+    stp x29, x30, [sp, #-16]!
+    .cfi_def_cfa_offset 16
+    .cfi_offset 29, -16
+    .cfi_offset 30, -8
+    mov x29, sp
+    .cfi_def_cfa w29, 16
+    bl hybrid_unwinder_test_bad_x29_loc_leaf
+    .globl hybrid_unwinder_test_bad_x29_loc_frame_return
+hybrid_unwinder_test_bad_x29_loc_frame_return:
+    ldp x29, x30, [sp], #16
+    .cfi_def_cfa sp, 0
+    .cfi_restore 29
+    .cfi_restore 30
+    ret
+    .cfi_endproc
+    .size hybrid_unwinder_test_bad_x29_loc_frame, .-hybrid_unwinder_test_bad_x29_loc_frame
+
+    .p2align 2
+    .globl hybrid_unwinder_test_bad_x29_loc_leaf
+    .type hybrid_unwinder_test_bad_x29_loc_leaf, %function
+hybrid_unwinder_test_bad_x29_loc_leaf:
+    .cfi_startproc
+    stp x29, x30, [sp, #-16]!
+    .cfi_def_cfa_offset 16
+    .cfi_offset 30, -8
+    // DW_CFA_expression x29 = DW_OP_const8u 0xffffff80a2419420
+    .cfi_escape 0x10, 0x1d, 0x09, 0x0e, 0x20, 0x94, 0x41, 0xa2, 0x80, 0xff, 0xff, 0xff
+    mov w1, #1
+    stlr w1, [x0]
+    add x2, x0, #4
+8:
+    ldar w1, [x2]
+    cbz w1, 8b
+    ldp x29, x30, [sp], #16
+    .cfi_def_cfa_offset 0
+    .cfi_restore 29
+    .cfi_restore 30
+    ret
+    .cfi_endproc
+    .size hybrid_unwinder_test_bad_x29_loc_leaf, .-hybrid_unwinder_test_bad_x29_loc_leaf
+    .globl hybrid_unwinder_test_bad_x29_loc_leaf_end
+hybrid_unwinder_test_bad_x29_loc_leaf_end:
 )");
 
 namespace {
@@ -317,7 +368,7 @@ TEST(HybridUnwinderTest, StopsAtInvalidFramePointerAfterFramePointerFallback)
     EXPECT_EQ(frames[2], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_poisoned_frame_return));
 }
 
-TEST(HybridUnwinderTest, StopsBeforeSteppingWithFramePointerOutsideStack)
+TEST(HybridUnwinderTest, StopsAtInvalidFramePointerFromCfi)
 {
     auto frames = UnwindSpinningThread(hybrid_unwinder_test_fp_based_frame);
 
@@ -335,6 +386,15 @@ TEST(HybridUnwinderTest, UnwindsPastWellFormedFrames)
     EXPECT_GE(frames[0], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_spin_with_cfi));
     EXPECT_LT(frames[0], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_spin_with_cfi_end));
     EXPECT_EQ(frames[1], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_sane_frame_return));
+}
+
+TEST(HybridUnwinderTest, StopsAtUnmappedFramePointerSaveSlot)
+{
+    auto frames = UnwindSpinningThread(hybrid_unwinder_test_bad_x29_loc_frame);
+
+    ASSERT_EQ(frames.size(), 1);
+    EXPECT_GE(frames[0], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_bad_x29_loc_leaf));
+    EXPECT_LT(frames[0], reinterpret_cast<std::uintptr_t>(hybrid_unwinder_test_bad_x29_loc_leaf_end));
 }
 
 #endif
