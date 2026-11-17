@@ -99,6 +99,9 @@ internal static class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_rc_client_rebind", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientRebind(RemoteConfigClientHandle client, ref RcTarget target, IntPtr endpoint);
 
+        [DllImport(DllName, EntryPoint = "ddog_rc_client_set_tags", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern VoidResult ClientSetTags(RemoteConfigClientHandle client, CharSlices tags);
+
         [DllImport(DllName, EntryPoint = "ddog_rc_client_set_products", CallingConvention = CallingConvention.Cdecl)]
         internal static extern VoidResult ClientSetProducts(RemoteConfigClientHandle client, CharSlices products, ulong capabilities);
 

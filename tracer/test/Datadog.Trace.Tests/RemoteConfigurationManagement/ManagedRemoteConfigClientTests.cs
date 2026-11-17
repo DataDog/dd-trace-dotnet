@@ -520,6 +520,21 @@ public class ManagedRemoteConfigClientTests
     }
 
     [Fact]
+    public void SetTags_SwitchesTheTarget_KeepingTheState()
+    {
+        var api = new FakeApi();
+        var client = CreateClient(api, RcmProducts.AsmFeatures);
+        Fetch(client, api, CreateSingleProductResponse([MakeConfig(RcmProducts.AsmFeatures, "config-1")], targetsVersion: 4, backendClientState: "state"));
+
+        var tagged = CreateTracer();
+        client.SetTags(tagged);
+        var captured = CaptureRequest(client, api);
+
+        captured.Client.ClientTracer.Should().BeSameAs(tagged);
+        captured.Client.State.TargetsVersion.Should().Be(4);
+    }
+
+    [Fact]
     public void BuildRequest_ReusesTheRequest_AndUpdatesItWhenInputsChange()
     {
         var api = new FakeApi();

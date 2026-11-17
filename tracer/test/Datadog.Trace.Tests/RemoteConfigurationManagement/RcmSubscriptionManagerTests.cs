@@ -175,7 +175,24 @@ public class RcmSubscriptionManagerTests
         var longerTimeout = new RemoteConfigEndpoint(Endpoint.Url, TimeSpan.FromSeconds(2));
         manager.Poll((_, _, _) => client, withProcessTags, longerTimeout, []).Should().BeTrue();
 
-        client.Rebinds.Should().Equal((tagged, null), (withProcessTags, null), (withProcessTags, longerTimeout));
+        client.TagUpdates.Should().Equal(tagged);
+        client.Rebinds.Should().Equal((withProcessTags, null), (withProcessTags, longerTimeout));
+    }
+
+    [Fact]
+    public void Poll_OtherTagsAndService_OnlyRebinds()
+    {
+        var manager = new RcmSubscriptionManager();
+        var client = new FakeRemoteConfigClient();
+        Poll(manager, client);
+
+        var gitTags = new ReadOnlyDictionary<string, string>(new Dictionary<string, string> { ["git.commit.sha"] = "abc" });
+        var otherServiceAndTags = RcmClientTracer.Create("runtime-id", "1.2.3", "other-service", "env", null, gitTags, null);
+        manager.Poll((_, _, _) => client, otherServiceAndTags, Endpoint, []).Should().BeTrue();
+
+        // The rebind sends the tags too
+        client.Rebinds.Should().Equal((otherServiceAndTags, null));
+        client.TagUpdates.Should().BeEmpty();
     }
 
     [Fact]
@@ -376,6 +393,8 @@ public class RcmSubscriptionManagerTests
 
         public List<(RcmClientTracer Target, RemoteConfigEndpoint Endpoint)> Rebinds { get; } = [];
 
+        public List<RcmClientTracer> TagUpdates { get; } = [];
+
         public List<string[]> ExtraServices { get; } = [];
 
         public bool Cancelled { get; private set; }
@@ -387,6 +406,8 @@ public class RcmSubscriptionManagerTests
         public void SetExtraServices(string[] services) => ExtraServices.Add(services);
 
         public void Rebind(RcmClientTracer target, RemoteConfigEndpoint endpoint) => Rebinds.Add((target, endpoint));
+
+        public void SetTags(RcmClientTracer target) => TagUpdates.Add(target);
 
         public RemoteConfigurationChanges Fetch()
         {

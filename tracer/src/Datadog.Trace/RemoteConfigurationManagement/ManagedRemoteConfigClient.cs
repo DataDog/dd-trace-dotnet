@@ -116,6 +116,8 @@ internal sealed class ManagedRemoteConfigClient : IRemoteConfigClient
         }
     }
 
+    public void SetTags(RcmClientTracer target) => _target = target;
+
     public RemoteConfigurationChanges Fetch()
     {
         ThrowIfCancelled();

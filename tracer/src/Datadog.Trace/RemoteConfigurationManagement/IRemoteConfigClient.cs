@@ -30,6 +30,12 @@ internal interface IRemoteConfigClient : IDisposable
     void Rebind(RcmClientTracer target, RemoteConfigEndpoint? endpoint);
 
     /// <summary>
+    /// Sends the tags of <paramref name="target"/> from now on, keeping the client session, unlike <see cref="Rebind"/>.
+    /// Only its tags may differ from the current target.
+    /// </summary>
+    void SetTags(RcmClientTracer target);
+
+    /// <summary>
     /// Polls the agent once, blocking until the response is processed.
     /// </summary>
     RemoteConfigurationChanges Fetch();

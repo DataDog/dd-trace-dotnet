@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -209,9 +210,14 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             {
                 // A rebind starts a new client session, so only for an actual change, not for every settings update
                 var isSameEndpoint = IsSameEndpoint(endpoint, _clientEndpoint);
-                if (!isSameEndpoint || !IsSameTarget(tracer, _clientTracer))
+                if (!isSameEndpoint || !IsSameTargetExceptTags(tracer, _clientTracer))
                 {
                     client.Rebind(tracer, isSameEndpoint ? null : endpoint);
+                }
+                else if (!ReferenceEquals(tracer, _clientTracer) && !tracer.Tags.SequenceEqual(_clientTracer.Tags))
+                {
+                    // e.g. the git metadata, once available
+                    client.SetTags(tracer);
                 }
             }
 
@@ -239,14 +245,13 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    // The fields NativeRemoteConfigClient.ToTarget sends: keep both lists in sync
-    private static bool IsSameTarget(RcmClientTracer tracer, RcmClientTracer? previous)
+    // The fields NativeRemoteConfigClient.ToTarget sends, except the tags: keep both lists in sync
+    private static bool IsSameTargetExceptTags(RcmClientTracer tracer, [NotNullWhen(true)] RcmClientTracer? previous)
         => ReferenceEquals(tracer, previous)
         || (previous is not null
          && tracer.Service == previous.Service
          && tracer.Env == previous.Env
          && tracer.AppVersion == previous.AppVersion
-         && tracer.Tags.SequenceEqual(previous.Tags)
          && (tracer.ProcessTags ?? []).SequenceEqual(previous.ProcessTags ?? []));
 
     private static bool IsSameEndpoint(RemoteConfigEndpoint endpoint, RemoteConfigEndpoint? previous)

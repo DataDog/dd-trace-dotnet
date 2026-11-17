@@ -103,6 +103,12 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         }
     }
 
+    public void SetTags(RcmClientTracer target)
+    {
+        using var strings = new NativeStrings();
+        NativeInterop.RemoteConfig.ClientSetTags(_handle, strings.AddAll(target.Tags)).ThrowIfError();
+    }
+
     public unsafe RemoteConfigurationChanges Fetch()
     {
         NativeInterop.RemoteConfig.ClientFetch(_handle, _fetchCancellation, out var changes).ThrowIfError();
@@ -187,7 +193,7 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         return nativeEndpoint;
     }
 
-    // RcmSubscriptionManager.IsSameTarget compares these fields: keep both lists in sync
+    // RcmSubscriptionManager.IsSameTargetExceptTags compares these fields but the tags: keep both lists in sync
     private static RcTarget ToTarget(NativeStrings strings, RcmClientTracer target)
         => new()
         {

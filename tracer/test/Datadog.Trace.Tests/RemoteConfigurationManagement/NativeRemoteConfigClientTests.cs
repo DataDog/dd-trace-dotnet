@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -151,6 +152,30 @@ public class NativeRemoteConfigClientTests
         request.Client.ClientTracer.Service.Should().Be("service");
         request.Client.State.TargetsVersion.Should().Be(0);
         request.CachedTargetFiles.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void SetsTagsKeepingTheSession()
+    {
+        var response = AllResponses().First();
+        using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
+        agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(response);
+        var endpoint = new RemoteConfigEndpoint($"http://127.0.0.1:{agent.Port}/", TimeSpan.FromSeconds(10));
+        var noTags = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+
+        using var client = NativeRemoteConfigClient.Create("client-id", RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, noTags, null), endpoint);
+        client.SetProducts([RcmProducts.Asm, RcmProducts.AsmDd, RcmProducts.AsmFeatures], 0);
+        client.Fetch().Updated.Should().NotBeEmpty();
+        client.Fetch();
+        var targetsVersion = GetRcmRequestExtensions.DeserializeRcmRequest(agent.RemoteConfigRequests.Last()).Client.State.TargetsVersion;
+        targetsVersion.Should().NotBe(0);
+
+        var gitTags = new ReadOnlyDictionary<string, string>(new Dictionary<string, string> { ["git.commit.sha"] = "abc" });
+        client.SetTags(RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, gitTags, null));
+        client.Fetch().IsEmpty.Should().BeTrue();
+        var request = GetRcmRequestExtensions.DeserializeRcmRequest(agent.RemoteConfigRequests.Last());
+        request.Client.ClientTracer.Tags.Should().Contain("git.commit.sha:abc");
+        request.Client.State.TargetsVersion.Should().Be(targetsVersion);
     }
 
     [Fact]
