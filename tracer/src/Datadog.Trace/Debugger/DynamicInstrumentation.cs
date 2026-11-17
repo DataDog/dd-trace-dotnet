@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
@@ -319,8 +320,8 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             SetRateLimit(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
                                             // Unbound line probes remain retryable on future assembly loads. Some retryable
@@ -358,8 +359,8 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                         SetRateLimit(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                     }
 
                                     break;
@@ -396,6 +397,11 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Registers the probe's sampler. Call it before the processor is registered: a probe added again with the id of a removed one
+        /// can be hit as soon as its processor exists, by a method still running the removed probe's instrumentation, and that hit
+        /// would otherwise cache a default-rate sampler (see <see cref="ProbeDataCollection.TryCreateProbeDataIfNotExists"/>).
+        /// </summary>
         private static void SetRateLimit(ProbeDefinition probe)
         {
             switch (probe)
@@ -497,9 +503,6 @@ namespace Datadog.Trace.Debugger
                         _unboundProbes.RemoveAll(pd => pd.Id == id);
                         _lastReportedUnboundProbeErrors.Remove(id);
 
-                        ProbeRateLimiter.Instance.ResetRate(id);
-                        ProbeExpressionsProcessor.Instance.Remove(id);
-
                         if (boundedProbes.Contains(id))
                         {
                             probesToRemoveFromNative.Add(id);
@@ -511,16 +514,66 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (probesToRemoveFromNative.Count != 0)
+                try
                 {
-                    var revertProbes = probesToRemoveFromNative
-                       .Select(probeId => new NativeRemoveProbeRequest(probeId));
+                    if (probesToRemoveFromNative.Count != 0)
+                    {
+                        var revertProbes = probesToRemoveFromNative
+                           .Select(probeId => new NativeRemoveProbeRequest(probeId));
 
-                    _instrumentProbes([], [], [], revertProbes.ToArray());
+                        _instrumentProbes([], [], [], revertProbes.ToArray());
+                    }
+                }
+                finally
+                {
+                    RemoveManagedProbeState(removedProbesIds);
                 }
 
                 // This log entry is being checked in integration test
                 Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
+            }
+        }
+
+        /// <summary>
+        /// Removes the processors, cached probe data and samplers of these probes. Methods that were already running when their
+        /// instrumentation was reverted keep calling it, so the order matters:
+        /// 1. Remove the processors, so these calls can't cache a new entry for a removed probe.
+        /// 2. Clear the cached entries (see <see cref="ProbeDataCollection.RemoveProbes"/>).
+        /// 3. Dispose the samplers, once no new entry can pick them up.
+        /// </summary>
+        private static void RemoveManagedProbeState(string[] probeIds)
+        {
+            foreach (var id in probeIds)
+            {
+                try
+                {
+                    ProbeExpressionsProcessor.Instance.Remove(id);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing the processor of probe {ID}", id);
+                }
+            }
+
+            try
+            {
+                ProbeDataCollection.Instance.RemoveProbes(probeIds);
+            }
+            catch (Exception e)
+            {
+                Log.Error<int>(e, "Error clearing the cached probe data of {Count} removed probes", probeIds.Length);
+            }
+
+            foreach (var id in probeIds)
+            {
+                try
+                {
+                    ProbeRateLimiter.Instance.ResetRate(id);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing the sampler of probe {ID}", id);
+                }
             }
         }
 
@@ -699,8 +752,8 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                         SetRateLimit(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                     }
 
                     _instrumentProbes([], lineProbes.ToArray(), [], []);
@@ -1002,19 +1055,7 @@ namespace Datadog.Trace.Debugger
             {
                 try
                 {
-                    // Only the native instrumentation is reverted. Unlike a probe deleted in the UI (UpdateRemovedProbeInstrumentations),
-                    // the probe processors and samplers stay registered on purpose: ProbeDataCollection caches them by native probe index
-                    // and probe ID, and when DI is enabled again the native side usually gives the same probe the same index back.
-                    // Removing them would leave that cached entry with a removed processor and a disposed sampler, which never refills
-                    // its budget, so the probe would stop capturing. Kept, they are updated in place when the probes are added again.
-                    // TODO: revisit by clearing the ProbeDataCollection entries of removed probes, which would also fix a probe
-                    // removed by remote configuration and later added back with the same ID (see DataDog/dd-trace-dotnet#9560).
-                    var probeIds = _probeStatusPoller.GetBoundedProbes();
-                    if (!IsDisposed && probeIds.Length != 0)
-                    {
-                        Log.Information<int>("Dynamic Instrumentation is disabled, reverting the instrumentation of {Count} probes.", probeIds.Length);
-                        _instrumentProbes([], [], [], probeIds.Select(probeId => new NativeRemoveProbeRequest(probeId)).ToArray());
-                    }
+                    UpdateRemovedProbeInstrumentations(_probeStatusPoller.GetBoundedProbes());
                 }
                 catch (Exception e)
                 {

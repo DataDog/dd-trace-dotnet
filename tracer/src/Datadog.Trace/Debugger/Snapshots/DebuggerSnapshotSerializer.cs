@@ -233,7 +233,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
-            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
+            // A boxed T? is a boxed T. Nullable<T>'s own fields can't be read from it, so walk T's fields instead.
+            var fieldsType = Nullable.GetUnderlyingType(type) ?? type;
+            WriteFields(source, fieldsType, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
         private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized, ref uint incompleteReasons)
