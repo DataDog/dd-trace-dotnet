@@ -35,6 +35,13 @@ namespace Datadog.Trace.Tests.CallTarget;
 /// </remarks>
 public class RuntimeAsyncEndMethodHandlerGenericTests
 {
+    public enum TokenKind
+    {
+        Default,
+        NotCanceled,
+        Canceled,
+    }
+
     [Fact]
     public void OnAsyncMethodEnd_OnSuccess_ReceivesTheUnwrappedResult()
     {
@@ -116,23 +123,17 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     }
 
     [Theory]
-    [InlineData(false, 0)]
-    [InlineData(false, 1)]
-    [InlineData(false, 2)]
-    [InlineData(true, 0)]
-    [InlineData(true, 1)]
-    [InlineData(true, 2)]
-    public void OnMethodEnd_OnCancellation_PreservesTheExceptionAndToken(bool useValueTask, int tokenKind)
+    [CombinatorialData]
+    public void OnMethodEnd_OnCancellation_PreservesTheExceptionAndToken(bool useValueTask, TokenKind tokenKind)
     {
         MethodEndIntegration.Reset();
         using var source = new CancellationTokenSource();
-        if (tokenKind == 2)
+        if (tokenKind == TokenKind.Canceled)
         {
             source.Cancel();
         }
 
-        // Exercise a default token, an uncanceled token, and a canceled token.
-        var token = tokenKind == 0 ? default : source.Token;
+        var token = tokenKind == TokenKind.Default ? default : source.Token;
         var exception = new ContinuationGeneratorTestHelpers.CustomCancellationException(token);
         var task = InvokeFailingMethodEnd(useValueTask, exception);
 

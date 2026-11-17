@@ -167,12 +167,19 @@ partial class Program
     {
         // Exceptions thrown by the target method, before and after it first suspends.
         var exceptions = new RuntimeAsyncExceptions();
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsBeforeSuspendingTask), () => exceptions.ThrowsBeforeSuspendingTask());
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsBeforeSuspendingTaskOfInt), () => exceptions.ThrowsBeforeSuspendingTaskOfInt());
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsBeforeSuspendingValueTask), () => exceptions.ThrowsBeforeSuspendingValueTask().AsTask());
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsBeforeSuspendingValueTaskOfInt), () => exceptions.ThrowsBeforeSuspendingValueTaskOfInt().AsTask());
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsAfterSuspendingTaskOfInt), () => exceptions.ThrowsAfterSuspendingTaskOfInt());
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsAfterSuspendingTask), () => exceptions.ThrowsAfterSuspendingTask());
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsAfterSuspendingValueTask), () => exceptions.ThrowsAfterSuspendingValueTask().AsTask());
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.ThrowsAfterSuspendingValueTaskOfInt), () => exceptions.ThrowsAfterSuspendingValueTaskOfInt().AsTask());
 
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsBeforeSuspendingTask), () => exceptions.CancelsBeforeSuspendingTask(), canceled: true);
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsBeforeSuspendingTaskOfInt), () => exceptions.CancelsBeforeSuspendingTaskOfInt(), canceled: true);
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsBeforeSuspendingValueTask), () => exceptions.CancelsBeforeSuspendingValueTask().AsTask(), canceled: true);
+        RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsBeforeSuspendingValueTaskOfInt), () => exceptions.CancelsBeforeSuspendingValueTaskOfInt().AsTask(), canceled: true);
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsAfterSuspendingTask), () => exceptions.CancelsAfterSuspendingTask(), canceled: true);
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsAfterSuspendingTaskOfInt), () => exceptions.CancelsAfterSuspendingTaskOfInt(), canceled: true);
         RunAsyncThrows(typeof(RuntimeAsyncExceptions), nameof(RuntimeAsyncExceptions.CancelsAfterSuspendingValueTask), () => exceptions.CancelsAfterSuspendingValueTask().AsTask(), canceled: true);
@@ -253,7 +260,8 @@ partial class Program
             Task task => canceled ? task.IsCanceled : task.IsFaulted,
             ValueTask task => canceled ? task.IsCanceled : task.IsFaulted,
             ValueTask<int> task => canceled ? task.IsCanceled : task.IsFaulted,
-            _ => false,
+            null => false,
+            var value => throw new NotSupportedException($"ValidateAsyncFailure has no case for {value.GetType()}; add one"),
         };
 
         if (!carriesFailure)
@@ -387,6 +395,51 @@ internal class RuntimeAsyncExceptions
 {
     public const string Message = "Expected exception from the target method";
 
+    public async Task ThrowsBeforeSuspendingTask()
+    {
+        Throw();
+        await Task.Yield();
+    }
+
+    public async ValueTask ThrowsBeforeSuspendingValueTask()
+    {
+        Throw();
+        await Task.Yield();
+    }
+
+    public async ValueTask<int> ThrowsBeforeSuspendingValueTaskOfInt()
+    {
+        Throw();
+        await Task.Yield();
+        return 42;
+    }
+
+    public async Task CancelsBeforeSuspendingTask()
+    {
+        Cancel();
+        await Task.Yield();
+    }
+
+    public async Task<int> CancelsBeforeSuspendingTaskOfInt()
+    {
+        Cancel();
+        await Task.Yield();
+        return 42;
+    }
+
+    public async ValueTask CancelsBeforeSuspendingValueTask()
+    {
+        Cancel();
+        await Task.Yield();
+    }
+
+    public async ValueTask<int> CancelsBeforeSuspendingValueTaskOfInt()
+    {
+        Cancel();
+        await Task.Yield();
+        return 42;
+    }
+
     public async Task<int> ThrowsBeforeSuspendingTaskOfInt()
     {
         Throw();
@@ -445,6 +498,8 @@ internal class RuntimeAsyncExceptions
     }
 
     private static void Throw() => throw new InvalidOperationException(Message);
+
+    private static void Cancel() => throw new OperationCanceledException();
 }
 
 internal class RuntimeAsyncThrowOnBegin

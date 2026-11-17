@@ -368,9 +368,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
 
             var output = processResult.StandardOutput;
-            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(69 + skipMethodBodyCalls);
-            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(58 + skipMethodBodyCalls);
-            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(65 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(76 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(65 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(72 + skipMethodBodyCalls);
             Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
 
             VerifyInstrumentation(processResult.Process);
@@ -387,9 +387,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             processResult.ExitCode.Should().Be(0);
 
             var output = processResult.StandardOutput;
-            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(9);
-            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(9);
-            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(9);
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(16);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(16);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(16);
 
             VerifyInstrumentation(processResult.Process);
         }
