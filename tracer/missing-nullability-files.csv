@@ -45,7 +45,6 @@ src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
 src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs
-src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
 src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
@@ -64,7 +63,6 @@ src/Datadog.Trace/Headers/WebHeadersCollection.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/OverheadController.cs
 src/Datadog.Trace/Iast/SourceType.cs
-src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/ServiceFabric/ServiceRemotingConstants.cs
 src/Datadog.Trace/Tagging/AerospikeTags.cs

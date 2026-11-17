@@ -16,13 +16,13 @@ internal sealed class IastRequestState
 {
     private int _ended;
 
-    internal IastRequestState(Span rootSpan, IastRequestContext? context)
+    internal IastRequestState(Span? rootSpan, IastRequestContext? context)
     {
         RootSpan = rootSpan;
         Context = context;
     }
 
-    internal Span RootSpan { get; }
+    internal Span? RootSpan { get; }
 
     internal IastRequestContext? Context { get; }
 

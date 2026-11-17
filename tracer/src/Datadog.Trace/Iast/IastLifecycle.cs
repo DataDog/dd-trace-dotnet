@@ -52,7 +52,7 @@ internal static class IastLifecycle
     /// <param name="httpMethod">The HTTP method of the request</param>
     /// <param name="httpUrl">The full URL of the request</param>
     /// <returns>The state of the request. The caller stores it in the HttpContext items under <see cref="HttpContextKey"/></returns>
-    internal static IastRequestState BeginRequest(Span rootSpan, bool sampled, string? httpMethod, string? httpUrl)
+    internal static IastRequestState BeginRequest(Span? rootSpan, bool sampled, string? httpMethod, string? httpUrl)
     {
         var context = sampled ? new IastRequestContext() : null;
         context?.SetRequestInfo(httpMethod, httpUrl);

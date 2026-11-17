@@ -301,20 +301,9 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if !NETFRAMEWORK
-#if NET6_0_OR_GREATER
-        private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
-#else
-        private static AspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
-#endif
+        private static IastAspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
         {
-#if NET6_0_OR_GREATER
-            if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
-            {
-                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Iast.Iast.Instance);
-            }
-#endif // #if NET6_0_OR_GREATER
-
-            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Iast.Iast.Instance);
+            return new IastAspNetCoreDiagnosticObserver(Iast.Iast.Instance);
         }
 
         [Pure]

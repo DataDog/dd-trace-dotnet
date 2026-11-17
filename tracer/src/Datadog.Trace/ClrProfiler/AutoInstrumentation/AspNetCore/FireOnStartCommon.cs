@@ -64,13 +64,12 @@ public static class FireOnStartCommon
 
             if (responseHeaders is not null)
             {
-                var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
-                if (span is not null)
+                if (IastLifecycle.InRequest)
                 {
                     var statusCode = instance.DuckCast<HttpProtocolStruct>().StatusCode;
                     var scheme = instance.DuckCast<HttpProtocolStruct>().Scheme;
 
-                    ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName, statusCode, scheme);
+                    ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, Tracer.Instance.DefaultServiceName, statusCode, scheme);
                     InsecureAuthAnalyzer.AnalyzeInsecureAuth(requestHeaders, IntegrationId.AspNetCore, statusCode);
                 }
 
