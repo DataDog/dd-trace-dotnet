@@ -24,6 +24,7 @@
 /docker/                                  @DataDog/apm-dotnet
 /docs/                                    @DataDog/apm-dotnet
 /shared/                                  @DataDog/apm-dotnet
+/tooling/                                 @DataDog/apm-lang-platform-dotnet
 /tools/                                   @DataDog/apm-dotnet
 
 # Tracer
