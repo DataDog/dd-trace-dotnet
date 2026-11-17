@@ -340,13 +340,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 return requestUri;
             }
 
-            Uri baseUri = null;
-            if (System.Web.HttpContext.Current?.Request is { } currentRequest)
-            {
-                baseUri = tracerSettings.BypassHttpRequestUrlCachingEnabled
-                              ? RequestDataHelper.BuildUrl(currentRequest)
-                              : RequestDataHelper.GetUrl(currentRequest);
-            }
+            var baseUri = System.Web.HttpContext.Current?.Request is { } currentRequest
+                              ? RequestDataHelper.GetUrl(currentRequest, tracerSettings.BypassHttpRequestUrlCachingEnabled)
+                              : null;
 
             return HttpRequestUtils.GetAbsoluteUri(requestUri, baseUri);
         }

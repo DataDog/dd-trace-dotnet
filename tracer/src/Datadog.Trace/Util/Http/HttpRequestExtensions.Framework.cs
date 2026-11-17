@@ -37,7 +37,7 @@ namespace Datadog.Trace.Util.Http
         /// <seealso cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>
         internal static string? GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
         {
-            var url = bypassHttpRequestUrl ? RequestDataHelper.BuildUrl(request) : RequestDataHelper.GetUrl(request);
+            var url = RequestDataHelper.GetUrl(request, bypassHttpRequestUrl);
 
             if (url is not null)
             {

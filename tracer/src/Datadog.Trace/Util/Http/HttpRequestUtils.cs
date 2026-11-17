@@ -156,7 +156,8 @@ namespace Datadog.Trace.Util.Http
         {
             var value = relativeUri.OriginalString;
 
-            if (value.StartsWith("//", StringComparison.Ordinal))
+            // System.Uri treats '\' as '/' here, so "\\host", "/\host" and "\/host" are network-path references too
+            if (value.Length >= 2 && value[0] is '/' or '\\' && value[1] is '/' or '\\')
             {
                 path = string.Empty;
                 queryString = string.Empty;

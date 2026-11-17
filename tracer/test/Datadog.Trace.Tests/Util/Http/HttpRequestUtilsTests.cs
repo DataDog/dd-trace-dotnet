@@ -316,6 +316,9 @@ public class HttpRequestUtilsTests
     // Network-path references start with an authority, which can include credentials
     [InlineData("//user:password@host/api/values?id=1")]
     [InlineData("//host/api/values")]
+    [InlineData(@"\\user:password@host/api/values")]
+    [InlineData(@"/\host/api/values")]
+    [InlineData(@"\/host/api/values")]
     public void TryGetRelativeUriPathAndQuery_RejectsNetworkPathReferences(string relativeUrl)
     {
         HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeFalse();
