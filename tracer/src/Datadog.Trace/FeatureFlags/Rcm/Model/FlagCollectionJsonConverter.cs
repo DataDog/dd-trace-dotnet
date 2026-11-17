@@ -40,6 +40,12 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
         {
             try
             {
+                if (!HasValidAllocationLogging(property.Value))
+                {
+                    result.MarkInvalid(property.Name);
+                    continue;
+                }
+
                 var flag = property.Value.ToObject<Flag>(serializer);
                 if (flag is not null && IsValid(flag))
                 {
@@ -81,6 +87,26 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
         }
 
         writer.WriteEndObject();
+    }
+
+    private static bool HasValidAllocationLogging(JToken flag)
+    {
+        if (flag is not JObject flagObject || flagObject.GetValue("allocations", StringComparison.OrdinalIgnoreCase) is not JArray allocations)
+        {
+            return true;
+        }
+
+        // Validate the wire value before deserialization can coerce a string or number to bool.
+        // Check every allocation, including those after an unconditional match.
+        foreach (var allocation in allocations)
+        {
+            if (allocation is not JObject allocationObject || allocationObject.GetValue("doLog", StringComparison.OrdinalIgnoreCase)?.Type != JTokenType.Boolean)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsValid(Flag flag)

@@ -1,0 +1,186 @@
+[
+  {
+    "description": "Explicit doLog=true remains a valid allocation.",
+    "flag": "valid-flag-after-invalid-config",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "expected",
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "Explicit doLog=false remains a valid allocation; false is not a missing value.",
+    "flag": "new-user-onboarding",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {
+      "email": "alice@mycompany.com",
+      "country": "US"
+    },
+    "result": {
+      "value": "green",
+      "reason": "TARGETING_MATCH"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-missing",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-null",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-string-true",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-string-false",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-number-zero",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-number-one",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-array",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Malformed doLog must reject this flag without affecting other flags.",
+    "flag": "invalid-dolog-object",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Reject the whole flag during ingestion, regardless of which allocation would match.",
+    "flag": "invalid-dolog-before-fallback",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "Reject the whole flag during ingestion, regardless of which allocation would match.",
+    "flag": "invalid-dolog-after-match",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "default",
+      "reason": "ERROR",
+      "errorCode": "PARSE_ERROR"
+    }
+  },
+  {
+    "description": "The valid doLog=true flag still evaluates after all malformed flags.",
+    "flag": "valid-flag-after-invalid-config",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {},
+    "result": {
+      "value": "expected",
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The valid doLog=false allocation still evaluates after all malformed flags.",
+    "flag": "new-user-onboarding",
+    "variationType": "STRING",
+    "defaultValue": "default",
+    "targetingKey": "dolog-subject",
+    "attributes": {
+      "email": "alice@mycompany.com",
+      "country": "US"
+    },
+    "result": {
+      "value": "green",
+      "reason": "TARGETING_MATCH"
+    }
+  }
+]
