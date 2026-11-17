@@ -39,9 +39,27 @@ internal readonly partial struct SecurityCoordinator
 
     public SecurityReporter Reporter { get; }
 
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
-
     public void MarkBlockFailed() => _appsecRequestContext.MarkBlockFailed();
+
+    /// <summary>
+    /// Records the outcome of a WAF run whose block, if it asked for one, was attempted, and reports the result
+    /// </summary>
+    /// <param name="result">the result of the WAF run</param>
+    /// <param name="blocked">whether the blocking response could be applied</param>
+    public void MarkBlockAndReport(IResult result, bool blocked)
+    {
+        if (result.ShouldBlock)
+        {
+            // even when the block failed, so that the following WAF runs don't try to block again
+            _httpTransport.MarkBlocked();
+            if (!blocked)
+            {
+                MarkBlockFailed();
+            }
+        }
+
+        Reporter.TryReport(result, blocked);
+    }
 
     public IResult? Scan(bool lastTime = false)
     {

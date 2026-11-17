@@ -89,29 +89,26 @@ internal sealed partial class AppSecRequestContext
     /// Reports the request telemetry of a local root span that isn't a web span, such as the HTTP root of an Azure
     /// Function, which is typed serverless and so never reaches CloseWebSpan. Nothing is reported if the WAF didn't run.
     /// </summary>
-    internal void CloseNonWebRootSpan(Span span)
-    {
-        lock (_sync)
-        {
-            ReportWafRequests(span, TelemetryFactory.Metrics);
-        }
-    }
+    internal void CloseNonWebRootSpan(Span span) => ReportWafRequests(span, TelemetryFactory.Metrics);
 
-    // must be called with _sync held, once per request
     private void ReportWafRequests(Span span, IMetricsTelemetryCollector metrics)
     {
-        if (_blockFailed)
+        // CloseWebSpan already holds _sync, the lock is reentrant
+        lock (_sync)
         {
-            span.Tags.SetMetric(Metrics.AppSecBlockFailed, 1);
-        }
+            if (_blockFailed)
+            {
+                span.Tags.SetMetric(Metrics.AppSecBlockFailed, 1);
+            }
 
-        if (!_wafRan || _wafRequestsReported)
-        {
-            return;
-        }
+            if (!_wafRan || _wafRequestsReported)
+            {
+                return;
+            }
 
-        _wafRequestsReported = true;
-        metrics.RecordCountWafRequests(GetWafAnalysisTag());
+            _wafRequestsReported = true;
+            metrics.RecordCountWafRequests(GetWafAnalysisTag());
+        }
     }
 
     private MetricTags.WafAnalysis GetWafAnalysisTag()

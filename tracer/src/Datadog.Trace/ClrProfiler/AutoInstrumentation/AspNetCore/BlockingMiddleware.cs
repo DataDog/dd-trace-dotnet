@@ -97,14 +97,9 @@ internal sealed class BlockingMiddleware
                     {
                         var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                        securityCoordinator.MarkBlocked();
-                        if (!endedResponse)
-                        {
-                            securityCoordinator.MarkBlockFailed();
-                        }
                     }
 
-                    securityCoordinator.Reporter.TryReport(result, endedResponse);
+                    securityCoordinator.MarkBlockAndReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
             }
