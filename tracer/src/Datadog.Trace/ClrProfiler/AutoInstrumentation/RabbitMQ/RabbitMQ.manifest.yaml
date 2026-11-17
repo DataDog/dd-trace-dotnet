@@ -1,8 +1,8 @@
 _v: 1
 name: RabbitMQ
 display_name: RabbitMQ
-description: Instruments RabbitMQ.Client message publication and consumption plus exchange and queue management, with trace-context
-  propagation and optional Data Streams checkpoints.
+description: Instruments RabbitMQ message publishing and consumption, queue and exchange configuration, context propagation,
+  and Data Streams Monitoring.
 packages:
 - name: RabbitMQ.Client
 category:

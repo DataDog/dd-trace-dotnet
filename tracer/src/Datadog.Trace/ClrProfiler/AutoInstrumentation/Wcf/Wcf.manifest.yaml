@@ -1,7 +1,7 @@
 _v: 1
 name: Wcf
 display_name: WCF
-description: Instruments Windows Communication Foundation (WCF) server service operations and Web HTTP endpoints.
+description: Instruments WCF service operations and WCF Web HTTP requests.
 packages: []
 category:
 - http.server

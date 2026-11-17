@@ -1,7 +1,7 @@
 _v: 1
 name: Remoting
 display_name: .NET Remoting
-description: Instruments .NET Remoting client invocations and server request handling.
+description: Instruments .NET Remoting client calls and server-side remote procedure handling.
 packages: []
 category:
 - rpc.client

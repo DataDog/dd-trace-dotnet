@@ -1,7 +1,7 @@
 _v: 1
 name: ServiceRemoting
-display_name: Service Fabric Service Remoting
-description: Instruments client calls to and server handling of Service Fabric Service Remoting service methods.
+display_name: Azure Service Fabric Service Remoting
+description: Instruments Service Fabric Service Remoting client and server requests.
 packages:
 - name: Microsoft.ServiceFabric.Services.Remoting
 category:

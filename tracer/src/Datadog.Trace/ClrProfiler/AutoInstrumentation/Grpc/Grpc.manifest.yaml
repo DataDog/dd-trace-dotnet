@@ -1,8 +1,7 @@
 _v: 1
 name: Grpc
 display_name: gRPC
-description: Instruments gRPC client calls and server handlers for unary and streaming RPCs, recording RPC metadata and status
-  and optionally tainting request-body strings for IAST.
+description: Instruments gRPC client and server RPC calls, including unary and streaming methods.
 packages:
 - name: Grpc
 - name: Grpc.AspNetCore

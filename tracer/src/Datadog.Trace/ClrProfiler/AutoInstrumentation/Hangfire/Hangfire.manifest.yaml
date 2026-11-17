@@ -1,7 +1,7 @@
 _v: 1
 name: Hangfire
 display_name: Hangfire
-description: Instruments Hangfire background job processing and propagates trace context from job creation to execution.
+description: Instruments Hangfire background job execution and propagates trace context to queued jobs.
 packages:
 - name: Hangfire.Core
 category:

@@ -1,7 +1,7 @@
 _v: 1
 name: Msmq
-display_name: MSMQ
-description: Instruments Microsoft Message Queuing (MSMQ) message sends, receives and peeks, and queue purges.
+display_name: Microsoft Message Queuing
+description: Instruments Microsoft Message Queuing message sends, receives, peeks, and queue purges.
 packages: []
 category:
 - messaging.consumer

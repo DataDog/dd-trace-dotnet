@@ -1,8 +1,8 @@
 _v: 1
 name: AzureServiceBus
 display_name: Azure Service Bus
-description: Instruments Azure Service Bus message creation, publishing, scheduling, receiving, processing, settlement, receiver/session
-  control, and administration operations.
+description: Instruments Azure Service Bus message creation, sending and scheduling, receiving, processing, and settlement,
+  with Data Streams Monitoring.
 packages:
 - name: Azure.Messaging.ServiceBus
 category:
