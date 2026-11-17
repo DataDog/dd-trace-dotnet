@@ -112,7 +112,7 @@ internal static class ServiceDiscoveryHelper
                 {
                     // OTel thread context metadata is optional, so its failure should not prevent
                     // the remaining tracer metadata from being stored.
-                    Log.Error("Failed to include OpenTelemetry thread context metadata due to an unexpected error: {Error}", e.Message);
+                    Log.Error(e, "Failed to include OpenTelemetry thread context metadata due to an unexpected error");
                 }
             }
 
