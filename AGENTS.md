@@ -95,6 +95,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Implement `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` handlers
 - Use duck typing constraints (`where TReq : IMyShape, IDuckType`) or `obj.DuckCast<IMyShape>()` for third-party types
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
+- Manifest: add `<IntegrationId>.manifest.yaml` next to the instrumentation classes for every new customer-visible integration; existing manifests rarely change. See [Integration manifests](docs/development/AutomaticInstrumentation.md#integration-manifests) for the fields and when to update them.
 - Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
 - Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
 - Generators only scaffold code: copy GUI output or use CLI `--output-path <file>`, then implement handlers and add samples/tests.
@@ -267,7 +268,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/RUNTIME_SUPPORT_POLICY.md` — Supported runtimes
 
 **Development guides:**
-- `docs/development/AutomaticInstrumentation.md` — Creating integrations
+- `docs/development/AutomaticInstrumentation.md` — Creating integrations, including integration manifests (`<IntegrationId>.manifest.yaml`)
 - `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
 - `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
 - `docs/development/DuckTyping.md` — Duck typing guide

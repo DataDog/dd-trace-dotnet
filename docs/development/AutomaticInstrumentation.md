@@ -14,6 +14,7 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
   - [Properties](#properties)
 - [Interfaces](#interfaces)
 - [Current Limitations](#current-limitations)
+- [Integration manifests](#integration-manifests)
 - [Testing](#testing)
   - [General approach](#general-approach)
   - [Developing the integration test](#developing-the-integration-test)
@@ -41,9 +42,10 @@ Creating a new instrumentation implementation typically uses the following proce
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
    2. Add a new entry in the SpanMetadataRules files (see the /tracer/test/Datadog.Trace.TestHelpers/SpanMetadata*Rules.cs files) that define the expected Name, Type, and Tags for the new integration spans, and run build target `GenerateSpanDocumentation` to generate the updated Markdown file. For new instrumentation, you should add the definitions for all existing schema versions.
    3. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples. You may need to add an entry in the [tracer/build/_build/Honeypot/IntegrationGroups.cs](../../tracer/build/_build/Honeypot/IntegrationGroups.cs) to specify the Nuget Package instrumented by the integration. 
-   4. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
-   5. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
-   6. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
+   4. Add an integration manifest, `<IntegrationId>.manifest.yaml`, next to your instrumentation class. Its `packages` must cover the NuGet packages you mapped in `IntegrationGroups.cs` in the previous step. See [Integration manifests](#integration-manifests) for the field rules.
+   5. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests.
+   6. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
+   7. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
 7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch. For more details, see [Testing in CI](#testing-in-ci).
    1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
    2. Click `Run Pipeline`
@@ -332,6 +334,64 @@ dotnet run --project tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstru
 ![tool main window](./images/gen02.jpg)
 
 ![tool main window](./images/gen03.jpg)
+
+### Integration manifests
+
+Every customer-visible integration ships a manifest next to its instrumentation classes, at `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/<IntegrationId>.manifest.yaml`. It is declarative, machine-readable metadata describing what the integration instruments, so that tools listing Datadog integrations do not have to parse tracer code. It has no effect at runtime, and it is neither copied to the monitoring home nor packed into the NuGet packages.
+
+The file name includes the `IntegrationId` because several integrations can share a folder. For example, `AutoInstrumentation/AspNet/` contains `AspNet.manifest.yaml`, `AspNetMvc.manifest.yaml`, and `AspNetWebApi2.manifest.yaml`.
+
+Here is the `Npgsql` manifest:
+
+```yaml
+_v: 1
+name: Npgsql
+display_name: Npgsql
+description: Instruments Npgsql's ADO.NET command methods as PostgreSQL queries, with Database Monitoring trace-context comment
+  injection, Application Security and IAST SQL-injection checks, and IAST tracking of values read through its data reader.
+packages:
+- name: Npgsql
+category:
+- db.client
+systems:
+- postgresql
+creation_date: '2020-02-21'
+```
+
+Keep the fields in this order:
+
+- **`_v`**: the manifest schema version. Always `1`.
+- **`name`**: the exact [`IntegrationId`](../../tracer/src/Datadog.Trace/Configuration/IntegrationId.cs) member, including case (`AspNetCore`, `StackExchangeRedis`). This is the name customers use in `DD_TRACE_<IntegrationId>_ENABLED` and `DD_DISABLED_INTEGRATIONS`. Write one manifest per customer-visible integration. `IntegrationId` members that are not standalone integrations do not get a manifest: implementation switches of another integration (`HttpSocketsHandler`, `WinHttpHandler`, and `CurlHandler` belong to `HttpMessageHandler`), IAST and RASP detectors, and bridges into Datadog-owned assemblies such as `DatadogTraceManual`.
+- **`display_name`**: the product's official name and capitalization, for example `ASP.NET Core`, `Amazon S3`, `Npgsql`, or `log4net`. Use the vendor's branding rather than the PascalCase `IntegrationId`.
+- **`description`**: one sentence, normally starting with "Instruments", describing the behavior the integration instruments. Describe each distinct operation family once, for example "message publishing and consumption", instead of listing individual instrumented methods. Also name the Datadog features the integration enables for that library, such as Database Monitoring comment injection, Data Streams Monitoring, Application Security, IAST, Test Optimization, or direct log submission. Describe only what the instrumentation covers, not everything the library can do.
+- **`packages`**: the NuGet packages that ship the assemblies targeted by the integration's tracing `[InstrumentMethod]` attributes (listed in [`supported_calltargets.g.json`](../../tracer/build/supported_calltargets.g.json)), as a sorted list of `- name: <package>` entries. Start from the assembly-to-package mapping in [`IntegrationGroups.cs`](../../tracer/build/_build/Honeypot/IntegrationGroups.cs). When applications usually reference the instrumented assembly through another package, also list the packages in that dependency chain down to the one that ships the DLL. Instrumentation used only by Application Security, IAST, or RASP does not add a package. Use `[]` when every instrumented assembly ships with .NET or .NET Framework itself, as for `AspNet` (`System.Web`) or `Process`.
+- **`category`**: a sorted, non-empty list of every kind of operation the integration instruments, such as `db.client`, `http.client`, `http.server`, `messaging.consumer`, `messaging.producer`, `graphql.server`, `log.emission`, or `test.execution`. Each category must correspond to behavior the instrumentation produces. Client and server, or producer and consumer, must each be proven separately. Prefer the specific category over the underlying protocol: an AWS SDK call made over HTTP is the service's category, not `http.client`. Security checks, taint tracking, Database Monitoring comments, and Data Streams checkpoints do not add a category. Use `other`, on its own, only when nothing else fits.
+- **`systems`**: a sorted list of the concrete backends or providers the integration is bound to, such as `postgresql`, `redis`, `aws.sqs`, or `aws.s3`. A backend counts only when the integration's code is tied to it, for example through a dedicated client. A dedicated AWS service integration uses that service's system (`AwsSqs` uses `aws.sqs`), while the generic `AwsSdk` integration uses `aws`. Use `[]` when the backend is chosen at runtime, as with the generic `AdoNet` integration, HTTP clients, web frameworks, and logging libraries.
+- **`creation_date`**: the quoted `'YYYY-MM-DD'` author date of the first commit that added working automatic instrumentation for this integration. For a new integration, this is the author date of the commit that adds the instrumentation. For an existing integration, start from:
+
+  ```bash
+  git --no-pager log --follow --diff-filter=A --date=short --format='%H %ad %s' -- tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/<File>.cs
+  ```
+
+  Many integrations were rewritten when the tracer moved from CallSite to CallTarget instrumentation, so this often returns the CallTarget rewrite (for example, `Npgsql CallTarget integration (#1164)` on 2021-01-29) rather than the original instrumentation. Search the older source trees as well, and read the candidates in order:
+
+  ```bash
+  git --no-pager log --reverse -S'<IntegrationId>' --date=short --format='%H %ad %s' -- src/ tracer/src/
+  ```
+
+  Use the first commit that adds working instrumentation for this integration (for `Npgsql`, `Postgres Database Instrumentation Support (#641)` on 2020-02-21). Commits that only add samples, tests, configuration, generic support shared with other integrations, file moves, or the CallSite to CallTarget rewrite do not count.
+
+`category` and `systems` values come from a shared taxonomy that is not part of this repository. Only use values that already appear in other manifests under `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/`, and never introduce a new one. If no category fits, use `other`; if no system fits, use `[]`. If you think a new value is needed, or you are unsure which value applies, say so in the pull request description so a reviewer can confirm it.
+
+Most changes to an existing integration do not touch its manifest. Bug fixes, refactors, new tags, configuration options, and supported-version changes leave it as is. Update the manifest only when:
+
+- The packages that activate the integration change. Update `packages` together with `IntegrationGroups.cs`.
+- The integration starts or stops instrumenting a kind of operation, for example a client-only integration that adds server spans. Add or remove the `category`.
+- The integration adds or drops dedicated support for a backend or provider. Add or remove the `systems` entry.
+- `description` no longer matches what the integration instruments, for example because a behavior it names was removed. Update `description`.
+- The integration is renamed, or an `IntegrationId` is split. Update `name` and `display_name`, or add a manifest for the new `IntegrationId`.
+
+Never change `creation_date` on an existing manifest. When an integration is removed, delete its manifest along with its instrumentation classes.
 
 ### Testing
 
