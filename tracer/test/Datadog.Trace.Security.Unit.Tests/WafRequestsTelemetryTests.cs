@@ -170,7 +170,7 @@ public class WafRequestsTelemetryTests
         => (await CloseWithSpanAsync(requestContext)).Metrics;
 
     private static void Record(AppSecRequestContext requestContext, IResult result)
-        => SecurityReporter.RecordWafTelemetry(result, isRasp: false, requestContext, new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan));
+        => SecurityReporter.RecordWafTelemetry(result, isRasp: false, requestContext, NullMetricsTelemetryCollector.Instance);
 
     private static async Task<string[]> CloseAndGetWafRequestsTagsAsync(AppSecRequestContext requestContext)
         => GetWafRequestsTags(await CloseAsync(requestContext));

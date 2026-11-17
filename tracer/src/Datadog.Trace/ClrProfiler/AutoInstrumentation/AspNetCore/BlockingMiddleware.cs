@@ -93,13 +93,24 @@ internal sealed class BlockingMiddleware
                 var result = securityCoordinator.Scan(_endPipeline);
                 if (result is not null)
                 {
-                    if (result.ShouldBlock)
+                    try
                     {
-                        var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
-                        await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
+                        if (result.ShouldBlock)
+                        {
+                            var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
+                            await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
+                        }
+                    }
+                    catch
+                    {
+                        endedResponse = false;
+                        throw;
+                    }
+                    finally
+                    {
+                        securityCoordinator.MarkBlockAndReport(result, endedResponse);
                     }
 
-                    securityCoordinator.MarkBlockAndReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
             }
@@ -120,31 +131,48 @@ internal sealed class BlockingMiddleware
             {
                 // Use blockinfo here
                 var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
-                await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                if (security.AppsecEnabled)
+                try
                 {
-                    if (Tracer.Instance?.ActiveScope?.Span is Span span)
-                    {
-                        if (!endedResponse)
-                        {
-                            span.Context.TraceContext?.AppSecRequestContext.MarkBlockFailed();
-                        }
-
-                        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context));
-                        if (!blockException.Reported)
-                        {
-                            securityReporter.TryReport(blockException.Result, endedResponse);
-                        }
-
-                        securityReporter.AddResponseHeadersToSpan();
-                    }
-                    else
-                    {
-                        Log.Debug("No span available, can't report the request");
-                    }
+                    await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
+                }
+                catch
+                {
+                    endedResponse = false;
+                    throw;
+                }
+                finally
+                {
+                    ReportBlockException(security, context, blockException, endedResponse);
                 }
             }
         }
+    }
+
+    private static void ReportBlockException(Security security, HttpContext context, BlockException blockException, bool endedResponse)
+    {
+        if (!security.AppsecEnabled)
+        {
+            return;
+        }
+
+        if (Tracer.Instance?.ActiveScope?.Span is not Span span)
+        {
+            Log.Debug("No span available, can't report the request");
+            return;
+        }
+
+        if (!endedResponse)
+        {
+            span.Context.TraceContext?.AppSecRequestContext.MarkBlockFailed();
+        }
+
+        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context));
+        if (!blockException.Reported)
+        {
+            securityReporter.TryReport(blockException.Result, endedResponse);
+        }
+
+        securityReporter.AddResponseHeadersToSpan();
     }
 
     private static BlockException? GetBlockException(Exception? exception)

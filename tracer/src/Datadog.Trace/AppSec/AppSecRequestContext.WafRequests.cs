@@ -53,6 +53,18 @@ internal sealed partial class AppSecRequestContext
     }
 
     /// <summary>
+    /// Records a non-RASP WAF run that failed without producing a result, such as a binding error
+    /// </summary>
+    internal void RecordWafRunFailure()
+    {
+        lock (_sync)
+        {
+            _wafRan = true;
+            _wafFailed = true;
+        }
+    }
+
+    /// <summary>
     /// Records that the AppSec rate limiter kept the trace
     /// </summary>
     internal void MarkTraceKept()

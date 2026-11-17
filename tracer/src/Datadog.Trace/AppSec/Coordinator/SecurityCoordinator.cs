@@ -142,6 +142,7 @@ internal readonly partial struct SecurityCoordinator
                 else
                 {
                     TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                    _appsecRequestContext.RecordWafRunFailure();
                 }
             }
 
@@ -220,6 +221,7 @@ internal readonly partial struct SecurityCoordinator
             if (result is null)
             {
                 TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                _appsecRequestContext.RecordWafRunFailure();
             }
 
             if (addresses is not null)
