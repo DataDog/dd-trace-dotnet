@@ -87,8 +87,10 @@ namespace Datadog.Trace.Configuration
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
+            var untrackedConfig = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
+
             // We don't want/need to record this value, so explicitly use null telemetry
-            IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
+            IsRunningInCiVisibility = untrackedConfig
                                      .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
                                      .AsBool(false);
 
@@ -770,11 +772,12 @@ namespace Datadog.Trace.Configuration
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
             // Serverless and Azure App Service are excluded because the out-of-process reader can't run there.
+            // DD_APPSEC_ENABLED is read untracked: SecuritySettings already records it, and a second record duplicates it in telemetry.
             var otelThreadContextEnabledByDefault =
                 OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
              && !IsRunningInServerless
              && !IsRunningInAzureAppService
-             && SecuritySettings.ReadAppsecEnabled(config, out _);
+             && SecuritySettings.ReadAppsecEnabled(untrackedConfig, out _);
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
                 .AsBool(defaultValue: otelThreadContextEnabledByDefault);
