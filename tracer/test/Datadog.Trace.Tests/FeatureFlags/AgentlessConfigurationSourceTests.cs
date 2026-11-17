@@ -139,12 +139,12 @@ public class AgentlessConfigurationSourceTests
     }
 
     // The tracer's own tests cover the normalization rules. These rows check only that the source
-    // sends the normalized name, and that it sends no header when that name is empty or not ASCII.
+    // sends the normalized name, and that it sends no header when that name is empty.
     [Theory]
     [InlineData("checkout", "checkout")]
     [InlineData("My Service", "my_service")]
     [InlineData("Default Web Site/Shop", "default_web_site/shop")]
-    [InlineData("caf\u00e9-api", null)]
+    [InlineData("caf\u00e9-api", "caf\u00e9-api")]
     [InlineData("___", null)]
     public async Task SendsTheNormalizedServiceOrNoHeader(string service, string? header)
     {
@@ -180,7 +180,7 @@ public class AgentlessConfigurationSourceTests
     // The customer sets DD_SERVICE, and the test checks the request that goes to the CDN.
     [Theory]
     [InlineData("My Service", "my_service")]
-    [InlineData("caf\u00e9-api", null)]
+    [InlineData("___", null)]
     public async Task SendsTheNormalizedConfiguredServiceAndKeepsTheTracerService(string service, string? header)
     {
         var logger = CreateDebugLogger();
@@ -190,7 +190,7 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        // The source sends the request also when the name is not ASCII. That request has no header.
+        // The source sends the request also when the normalized name is empty. That request has no header.
         var headers = factory.RequestsSent.Should().ContainSingle().Subject.ExtraHeaders;
         if (header is not null)
         {
@@ -235,7 +235,7 @@ public class AgentlessConfigurationSourceTests
         await source.PollAsync();
 
         // The spans use this name when DD_SERVICE is not set. The header sends it normalized. The
-        // name of the test host is ASCII, so the source sends it.
+        // name of the test host is not empty, so the source sends it.
         var inferred = settings.Manager.InitialMutableSettings.DefaultServiceName;
         inferred.Should().NotBeNullOrEmpty();
         factory.RequestsSent[0].ExtraHeaders.Should().Contain("DD-Service", NormalizerTraceProcessor.NormalizeService(inferred));
@@ -245,14 +245,14 @@ public class AgentlessConfigurationSourceTests
     public void ReportsARejectedServiceOnlyWhenTheServiceChanges()
     {
         var logger = CreateDebugLogger();
-        var settings = CreateTracerSettings(service: "支付");
+        var settings = CreateTracerSettings(service: "___");
         using var source = CreateConfiguredSource(settings, new TestRequestFactory(), logger.Object);
 
         // Every settings change goes to the source. This includes a change that keeps the service.
         UpdateSettingsInCode(settings, TracerSettingKeyConstants.EnvironmentKey, "staging");
-        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "caf\u00e9-api");
+        UpdateSettingsInCode(settings, TracerSettingKeyConstants.ServiceNameKey, "!!!");
 
-        RejectedServices(logger).Should().Equal("支付", "caf\u00e9-api");
+        RejectedServices(logger).Should().Equal("___", "!!!");
     }
 
     [Fact]

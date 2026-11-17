@@ -178,34 +178,12 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     }
 
     /// <summary>
-    /// Returns true when the value is not empty and has only printable ASCII (0x21 to 0x7E).
-    /// HttpClient refuses a header value that is not ASCII, so the request fails.
-    /// </summary>
-    private static bool IsAsciiHeaderValue(string value)
-    {
-        if (value.Length == 0)
-        {
-            return false;
-        }
-
-        foreach (var c in value)
-        {
-            if (!char.IsBetween(c, '!', '~'))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// Sets the service to send as DD-Service. The poll loop uses it on its next request.
     /// </summary>
     private void UpdateService(string? service)
     {
         // Every settings change calls this method. It does work only when the service setting
-        // changes, so it logs a rejected name only once.
+        // changes, so it logs an empty name only once.
         if (string.Equals(_serviceSetting, service, StringComparison.Ordinal))
         {
             return;
@@ -221,16 +199,15 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // does not change.
             var normalized = NormalizerTraceProcessor.NormalizeService(service);
 
-            // The source skips only an empty name and a name that HttpClient refuses. HttpClient
-            // throws on any non-ASCII header value, such as café-api, so that name would make every
-            // poll fail.
-            if (IsAsciiHeaderValue(normalized))
+            // The source sends the normalized name as it is. Only an empty result, for example from
+            // ___, sends no header.
+            if (normalized.Length > 0)
             {
                 sent = normalized;
             }
             else
             {
-                _log.Debug<string>("Feature Flags: service {Service} has no ASCII normalized name; DD-Service header not sent", service);
+                _log.Debug<string>("Feature Flags: service {Service} has an empty normalized name; DD-Service header not sent", service);
             }
         }
 
