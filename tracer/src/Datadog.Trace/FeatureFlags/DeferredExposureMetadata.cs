@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 
 namespace Datadog.Trace.FeatureFlags
@@ -21,13 +22,63 @@ namespace Datadog.Trace.FeatureFlags
         private const int Taken = 2;
 
         private ExposureEvent _exposure;
+        private PendingExposureBatch? _batch;
+        private IReadOnlyList<IDictionary<string, object?>>? _dependencyTelemetry;
         private int _state; // 0 until an exposure is pending
 
+        internal DeferredExposureMetadata()
+        {
+        }
+
+        internal DeferredExposureMetadata(IDictionary<string, string> metadata)
+            : base(metadata)
+        {
+        }
+
         internal bool IsPending => Volatile.Read(ref _state) == Pending;
+
+        internal IReadOnlyList<IDictionary<string, object?>>? DependencyTelemetry => _dependencyTelemetry;
+
+        internal void SetDependencyTelemetry(IReadOnlyList<IDictionary<string, object?>> dependencyTelemetry)
+        {
+            _dependencyTelemetry = dependencyTelemetry;
+        }
+
+        internal void RecordDependencyExposureResult(string flagKey, ExposureRecordResult result)
+        {
+            if (_dependencyTelemetry is not { } telemetry)
+            {
+                return;
+            }
+
+            for (var i = 0; i < telemetry.Count; i++)
+            {
+                var record = telemetry[i];
+                if (record.TryGetValue("flagKey", out var key)
+                 && string.Equals(key as string, flagKey, System.StringComparison.Ordinal)
+                 && record.TryGetValue("exposureEligible", out var eligible)
+                 && eligible is true)
+                {
+                    record["exposureCommitted"] = result != ExposureRecordResult.NotRecorded;
+                    if (result != ExposureRecordResult.NotRecorded)
+                    {
+                        record["exposureCacheHit"] = result == ExposureRecordResult.Repeat;
+                    }
+
+                    return;
+                }
+            }
+        }
 
         internal void SetPendingExposure(in ExposureEvent exposure)
         {
             _exposure = exposure;
+            Volatile.Write(ref _state, Pending);
+        }
+
+        internal void SetPendingExposureBatch(string rootFlagKey, IReadOnlyList<ExposureEvent> exposures)
+        {
+            _batch = new PendingExposureBatch(rootFlagKey, exposures);
             Volatile.Write(ref _state, Pending);
         }
 
@@ -42,6 +93,20 @@ namespace Datadog.Trace.FeatureFlags
 
             exposure = _exposure;
             // Free the context attributes now, not with the metadata.
+            _exposure = default;
+            return true;
+        }
+
+        internal bool TryTakePendingExposureBatch(out PendingExposureBatch batch)
+        {
+            if (Interlocked.CompareExchange(ref _state, Taken, Pending) != Pending)
+            {
+                batch = null!;
+                return false;
+            }
+
+            batch = _batch ?? new PendingExposureBatch(_exposure.Flag.Key, in _exposure);
+            _batch = null;
             _exposure = default;
             return true;
         }

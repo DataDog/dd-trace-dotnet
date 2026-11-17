@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature;
@@ -40,14 +41,33 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         IReadOnlyDictionary<string, object>? hints = null,
         CancellationToken cancellationToken = default)
     {
+        if (FeatureFlagsSdk.GetResult(details.FlagMetadata)?.DependencyEvaluations is { } dependencies)
+        {
+            for (var i = 0; i < dependencies.Count; i++)
+            {
+                try
+                {
+                    var dependency = dependencies[i];
+                    _metrics.Record(
+                        dependency.FlagKey,
+                        dependency.Variant,
+                        ToTelemetryReason((Datadog.Trace.FeatureFlags.EvaluationReason)dependency.Reason),
+                        ErrorCodeToString(dependency.ErrorCode),
+                        dependency.AllocationKey);
+                }
+                catch (Exception)
+                {
+                    // A malformed dependency record must not suppress later dependencies or the root.
+                }
+            }
+        }
+
         try
         {
             var flagKey = context.FlagKey;
             var variant = details.Variant ?? string.Empty;
 
-            // Reason is already in lower_snake_case format from the provider
-            // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-            var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
+            var reason = ToTelemetryReason(details.Reason);
 
             // Extract error type if present
             string? errorType = null;
@@ -61,10 +81,9 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
 
             _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Metrics recording should never break flag evaluation.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex}");
         }
 
         return default;
@@ -75,6 +94,47 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
     {
         _metrics.Dispose();
     }
+
+    // OpenFeature reasons are canonical uppercase strings, while the Datadog telemetry
+    // convention uses lower_snake_case tags. Cache the standard mappings on this hot path.
+    private static string ToTelemetryReason(string? reason) => reason switch
+    {
+        null or "" => "unknown",
+        Reason.TargetingMatch => "targeting_match",
+        Reason.Split => "split",
+        Reason.Disabled => "disabled",
+        Reason.Default => "default",
+        Reason.Static => "static",
+        Reason.Cached => "cached",
+        Reason.Unknown => "unknown",
+        Reason.Error => "error",
+        _ => reason.ToLower(CultureInfo.InvariantCulture)
+    };
+
+    private static string ToTelemetryReason(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
+    {
+        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
+        _ => "unknown",
+    };
+
+    private static string? ErrorCodeToString(string? errorCode) => errorCode switch
+    {
+        null or "" => null,
+        "PROVIDER_NOT_READY" => "provider_not_ready",
+        "FLAG_NOT_FOUND" => "flag_not_found",
+        "PARSE_ERROR" => "parse_error",
+        "TYPE_MISMATCH" => "type_mismatch",
+        "TARGETING_KEY_MISSING" => "targeting_key_missing",
+        "INVALID_CONTEXT" => "invalid_context",
+        "PROVIDER_FATAL" => "provider_fatal",
+        _ => "general",
+    };
 
     private static string ErrorTypeToString(ErrorType errorType)
     {

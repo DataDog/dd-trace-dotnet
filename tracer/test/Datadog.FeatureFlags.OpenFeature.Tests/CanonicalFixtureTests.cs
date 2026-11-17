@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using FluentAssertions;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 using Tracer::Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -29,6 +30,8 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 public class CanonicalFixtureTests
 {
     private const string CasesPrefix = "Fixtures.evaluation-cases.";
+    private const string DependentCasesResource = "Fixtures.evaluation-suites.dependent-flags.cases.dependent-flags.json";
+    private const string DependentConfigResource = "Fixtures.evaluation-suites.dependent-flags.ufc-config.json";
     private static readonly TracerModel.ServerConfiguration Configuration =
         Json.JsonConvert.DeserializeObject<TracerModel.ServerConfiguration>(ReadResource("Fixtures.ufc-config.json"))!;
 
@@ -42,7 +45,7 @@ public class CanonicalFixtureTests
 
         foreach (var resource in resources)
         {
-            var cases = JsonLinq.JArray.Parse(ReadResource(resource));
+            var cases = (JsonLinq.JArray)ParseFixtureJson(ReadResource(resource));
             Assert.NotEmpty(cases);
             for (var index = 0; index < cases.Count; index++)
             {
@@ -59,7 +62,7 @@ public class CanonicalFixtureTests
     public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync)
     {
         Assert.False(string.IsNullOrEmpty(description));
-        var testCase = JsonLinq.JObject.Parse(json);
+        var testCase = (JsonLinq.JObject)ParseFixtureJson(json);
         var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, Configuration);
         using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
             new EvaluationAdapter(evaluator.Evaluate(
@@ -121,6 +124,174 @@ public class CanonicalFixtureTests
         }
     }
 
+    [Fact]
+    public void DependentFlagTraceMatchesCanonicalSuite()
+    {
+        var configuration = Json.JsonConvert.DeserializeObject<TracerModel.ServerConfiguration>(ReadResource(DependentConfigResource))!;
+        var cases = (JsonLinq.JArray)ParseFixtureJson(ReadResource(DependentCasesResource));
+        cases.Should().HaveCount(16);
+
+        foreach (var token in cases)
+        {
+            var testCase = (JsonLinq.JObject)token;
+            var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, configuration);
+            TracerFlags.EvaluationTrace? trace = null;
+            var context = EvaluationContext.Builder().SetTargetingKey(testCase["targetingKey"]!.Value<string>()!);
+            foreach (var attribute in ((JsonLinq.JObject)testCase["attributes"]!).Properties())
+            {
+                context.Set(attribute.Name, ToOpenFeatureValue(attribute.Value));
+            }
+
+            var resolution = FeatureFlagsSdk.Resolve(
+                testCase["flag"]!.Value<string>()!,
+                Datadog.Trace.FeatureFlags.ValueType.String,
+                testCase["defaultValue"]!.Value<string>()!,
+                context.Build(),
+                deferredExposure: false,
+                evaluate: (key, type, fallback, targetingKey, attributes) =>
+                {
+                    trace = evaluator.EvaluateWithTrace(key, (TracerFlags.ValueType)type, fallback, new TracerFlags.EvaluationContext(targetingKey, attributes));
+                    return new EvaluationAdapter(trace.Details);
+                });
+
+            AssertResolution(testCase, resolution);
+            trace.Should().NotBeNull();
+            if (testCase["expectations"] is not JsonLinq.JObject expectations)
+            {
+                continue;
+            }
+
+            var exposures = trace!.DependencyExposures.Select(exposure => new JsonLinq.JObject
+            {
+                ["flag"] = exposure.Flag.Key,
+                ["allocation"] = exposure.Allocation.Key,
+                ["variant"] = exposure.Variant.Key,
+            });
+            var evaluations = trace.DependencyEvaluations.Select(item => item.Evaluation)
+                                   .Append(trace.Details)
+                                   .Select(evaluation => new JsonLinq.JObject
+                                   {
+                                       ["flag"] = evaluation.FlagKey,
+                                       ["errorCode"] = TracerFlags.FeatureFlagsEvaluator.ErrorCode(evaluation) is { } errorCode
+                                                           ? new JsonLinq.JValue(errorCode)
+                                                           : JsonLinq.JValue.CreateNull(),
+                                   });
+            AssertExpectedEvents((JsonLinq.JArray?)expectations["exposures"], exposures, expectations["noUnmatchedEvents"]?.Value<bool>() == true);
+            AssertExpectedEvents((JsonLinq.JArray?)expectations["evaluationEvents"], evaluations, expectations["noUnmatchedEvents"]?.Value<bool>() == true);
+        }
+
+        static void AssertExpectedEvents(JsonLinq.JArray? expectedEvents, IEnumerable<JsonLinq.JObject> actualEvents, bool noUnmatchedEvents)
+        {
+            if (expectedEvents is null)
+            {
+                return;
+            }
+
+            var remaining = actualEvents.ToList();
+            foreach (var expectedToken in expectedEvents)
+            {
+                var expected = (JsonLinq.JObject)expectedToken;
+                var count = expected["_count"]?.Value<int>() ?? 1;
+                for (var occurrence = 0; occurrence < count; occurrence++)
+                {
+                    var index = remaining.FindIndex(actual => expected.Properties()
+                        .Where(property => property.Name != "_count")
+                        .All(property => JsonLinq.JToken.DeepEquals(actual[property.Name], property.Value)));
+                    index.Should().BeGreaterThanOrEqualTo(0, "expected event {0} should be present", expected);
+                    remaining.RemoveAt(index);
+                }
+            }
+
+            if (noUnmatchedEvents)
+            {
+                remaining.Should().BeEmpty();
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProviderTargetingPreservesScalarsAfterLargeAndBudgetHeavyAttributes()
+    {
+        var flags = new TracerModel.FlagCollection
+        {
+            ["flag"] = new TracerModel.Flag
+            {
+                Key = "flag",
+                Enabled = true,
+                VariationType = TracerFlags.ValueType.String,
+                Variations = new Dictionary<string, TracerModel.Variant>
+                {
+                    ["matched"] = new("matched", "matched"),
+                    ["fallback"] = new("fallback", "fallback"),
+                },
+                Allocations =
+                [
+                    new TracerModel.Allocation
+                    {
+                        Key = "targeted",
+                        Rules =
+                        [
+                            new TracerModel.Rule(
+                            [
+                                new TracerModel.ConditionConfiguration
+                                {
+                                    Attribute = "match",
+                                    Operator = TracerModel.ConditionOperator.ONE_OF,
+                                    Value = new[] { "paid" },
+                                },
+                            ]),
+                        ],
+                        Splits = [new TracerModel.Split { VariationKey = "matched", Shards = [] }],
+                    },
+                    new TracerModel.Allocation
+                    {
+                        Key = "default",
+                        Splits = [new TracerModel.Split { VariationKey = "fallback", Shards = [] }],
+                    },
+                ],
+            },
+        };
+        var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, new TracerModel.ServerConfiguration { Flags = flags });
+        IDictionary<string, object?>? captured = null;
+        using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
+        {
+            captured = attributes;
+            return new EvaluationAdapter(evaluator.Evaluate(key, (TracerFlags.ValueType)type, fallback, new TracerFlags.EvaluationContext(targetingKey, attributes)));
+        });
+
+        foreach (var (context, expectedCount) in new[]
+                 {
+                     (CreateContext(includeBudgetHeavyNestedValue: false), 301),
+                     (CreateContext(includeBudgetHeavyNestedValue: true), 302),
+                 })
+        {
+            var resolution = await provider.ResolveStringValueAsync("flag", "caller-default", context);
+
+            resolution.Value.Should().Be("matched");
+            captured!["match"].Should().Be("paid");
+            captured.Count.Should().Be(expectedCount);
+        }
+
+        static EvaluationContext CreateContext(bool includeBudgetHeavyNestedValue)
+        {
+            var builder = EvaluationContext.Builder();
+            for (var i = 0; i < 300; i++)
+            {
+                builder.Set("field" + i, i);
+            }
+
+            if (includeBudgetHeavyNestedValue)
+            {
+                var branches = Enumerable.Range(0, 256).ToDictionary(
+                    i => i.ToString(),
+                    _ => new Value(Enumerable.Repeat(new Value("item"), 256).ToList()));
+                builder.Set("nested", new Value(new Structure(branches)));
+            }
+
+            return builder.Set("match", "paid").Build();
+        }
+    }
+
     private static void AssertResolution<T>(JsonLinq.JObject testCase, ResolutionDetails<T> actual)
     {
         var expected = testCase["result"]!;
@@ -129,7 +300,7 @@ public class CanonicalFixtureTests
         actualValue = NormalizeNumbers(actualValue);
         Assert.True(JsonLinq.JToken.DeepEquals(expectedValue, actualValue), $"Expected {expectedValue}, got {actualValue}");
         Assert.Equal(testCase["flag"]!.Value<string>(), actual.FlagKey);
-        Assert.Equal(expected["reason"]!.Value<string>()!.ToLowerInvariant(), actual.Reason);
+        actual.Reason.Should().Be(expected["reason"]!.Value<string>());
 
         var errorCode = expected["errorCode"]?.Value<string>();
         if (errorCode is null && expected["reason"]!.Value<string>() == "ERROR")
@@ -175,6 +346,13 @@ public class CanonicalFixtureTests
                         ?? throw new InvalidOperationException($"Missing canonical fixture: {name}");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
+    }
+
+    private static JsonLinq.JToken ParseFixtureJson(string json)
+    {
+        using var stringReader = new StringReader(json);
+        using var jsonReader = new Json.JsonTextReader(stringReader) { DateParseHandling = Json.DateParseHandling.None };
+        return JsonLinq.JToken.ReadFrom(jsonReader);
     }
 
     private static Value ToOpenFeatureValue(JsonLinq.JToken token) => token.Type switch

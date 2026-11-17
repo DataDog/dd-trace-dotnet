@@ -3,7 +3,10 @@
 These files are copied from the canonical FFE fixture repository.
 
 Canonical source: https://github.com/DataDog/ffe-system-test-data
-Source commit: 2c0c8d55f665fe4a847fc0ded3abf59b7e2896fc
+Source commit: b57eac6711204a906f0b24e127124a03314e35a9
+
+The dependent-flags suite was refreshed separately from source commit:
+ba0f36eb6ddd20483bf79759baedd7e6b67fc791
 
 Do not edit these fixtures directly in dd-trace-dotnet. Add or update shared FFE behavior in ffe-system-test-data first, then refresh this snapshot.
 

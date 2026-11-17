@@ -98,6 +98,16 @@ internal sealed class FlagEvaluationWriter
         return true;
     }
 
+    // Same admission snapshot as HasCapacity, without recording a dropped row.
+    internal bool CanAdmit() => !Volatile.Read(ref _closed) && _queue.Count < _queueCap;
+
+    internal void CountUnadmitted(long count)
+        => _telemetry.Dropped(
+            Volatile.Read(ref _closed)
+                ? MetricTags.FlagEvaluationDropReason.Closed
+                : MetricTags.FlagEvaluationDropReason.PreQueueOverflow,
+            count);
+
     internal bool TryEnqueue(FlagEvalEvent observation, int omissionReasons = 0)
     {
         // Provider and defensive event normalization may report the same reason.

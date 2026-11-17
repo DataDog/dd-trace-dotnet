@@ -50,7 +50,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
     // Startup gate: enabling events later requires a new provider (or application restart).
     private readonly FlagEvalEVPHook? _evpHook;
-
     // Hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
     private readonly IImmutableList<Hook> _providerHooks;
 
@@ -259,7 +258,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook);
         return Task.FromResult(res);
     }
 
@@ -272,7 +271,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook);
         return Task.FromResult(res);
     }
 
@@ -285,7 +284,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook);
         return Task.FromResult(res);
     }
 
@@ -298,7 +297,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook);
         return Task.FromResult(res);
     }
 
@@ -311,7 +310,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook);
         return Task.FromResult(res);
     }
 

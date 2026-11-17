@@ -9,10 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -255,6 +258,93 @@ public class DeferredExposureTests
         UncommittedWarnings(replacementLogger).Should().Be(1, "a module that replaces it after Tracer.Configure warns again");
     }
 
+    [Fact]
+    public void DependencyBatchRemainsPendingWhenRootDisablesExposureLogging()
+    {
+        var flags = Flags(doLog: true);
+        flags["root"] = DependentRoot(doLog: false);
+        using var module = Module(flags);
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        evaluation.FlagMetadata![FeatureFlagMetadataKeys.PendingExposure].Should().Be("true");
+        module.CommitExposure(evaluation.FlagMetadata).Should().Be(
+            ExposureCommitResult.NothingPending,
+            "the dependency was recorded but the root itself did not authorize an exposure verdict");
+        module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null)
+              .FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("true");
+    }
+
+    [Fact]
+    public void DependencyTelemetryCrossesDeferredBoundaryOnceAndReceivesCommitVerdict()
+    {
+        var flags = Flags(doLog: true);
+        var root = DependentRoot(doLog: true);
+        var conditions = root.Allocations![0].Rules![0].Conditions!;
+        conditions.Add(conditions[0]);
+        flags["root"] = root;
+        using var module = Module(flags);
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        var metadata = evaluation.FlagMetadata.Should().BeOfType<DeferredExposureMetadata>().Subject;
+        var dependency = metadata.DependencyTelemetry.Should().ContainSingle("memoized prerequisites cross the boundary once").Subject;
+        dependency["flagKey"].Should().Be("flag");
+        dependency["exposureEligible"].Should().Be(true);
+        dependency["exposureCommitted"].Should().Be(false);
+
+        module.CommitExposure(metadata).Should().Be(ExposureCommitResult.New);
+        dependency["exposureCommitted"].Should().Be(true);
+        dependency["exposureCacheHit"].Should().Be(false);
+    }
+
+    [Fact]
+    public void FailedGraphCarriesReachedDependencyTelemetryButNoExposureCandidate()
+    {
+        var flags = new FlagCollection { ["root"] = DependentRoot(doLog: true) };
+        using var module = Module(flags);
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        evaluation.Error.Should().Be("GENERAL");
+        var metadata = evaluation.FlagMetadata.Should().BeOfType<DeferredExposureMetadata>().Subject;
+        metadata.IsPending.Should().BeFalse();
+        var dependency = metadata.DependencyTelemetry.Should().ContainSingle().Subject;
+        dependency["flagKey"].Should().Be("flag");
+        dependency["errorCode"].Should().Be("FLAG_NOT_FOUND");
+        dependency.Keys.Should().NotContain("exposureEligible");
+    }
+
+    [Fact]
+    public void CommitContinuesAfterDependencyReporterFailureAndReturnsRootVerdict()
+    {
+        var flags = Flags(doLog: true);
+        flags["root"] = DependentRoot(doLog: true);
+        var settings = Settings(exposuresDatadogLoggingEnabled: true);
+        using var transport = new FeatureFlagsEvpTransport(settings, NullDiscoveryService.Instance);
+        var attempts = 0;
+        var exposures = new ExposureApi(
+            settings,
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(5),
+            () =>
+            {
+                if (Interlocked.Increment(ref attempts) == 1)
+                {
+                    throw new InvalidOperationException("dependency reporter failed");
+                }
+            });
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
+        module.SetExposureApiForTesting(exposures);
+        module.ApplyConfiguration(new ServerConfiguration { Flags = flags }).Should().BeTrue();
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.New);
+        attempts.Should().Be(2, "the root exposure must still be attempted after its dependency fails");
+    }
+
     private static void Defer(FeatureFlagsModule module, int count)
     {
         for (var i = 0; i < count; i++)
@@ -279,6 +369,21 @@ public class DeferredExposureTests
         return module;
     }
 
+    private static FeatureFlagsModule Module(FlagCollection flags)
+    {
+        var settings = Settings(exposuresDatadogLoggingEnabled: false);
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
+        module.ApplyConfiguration(new ServerConfiguration { Flags = flags }).Should().BeTrue();
+        return module;
+    }
+
+    private static TracerSettings Settings(bool exposuresDatadogLoggingEnabled)
+        => new(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
+            { "DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED", exposuresDatadogLoggingEnabled ? "true" : "false" },
+        }));
+
     private static FeatureFlagsEvaluator.ReportExposureDelegate Record(List<ExposureEvent> sent)
         => (in ExposureEvent e) =>
         {
@@ -294,4 +399,34 @@ public class DeferredExposureTests
         var flag = new Flag { Key = "flag", Enabled = true, VariationType = FeatureFlagsValueType.String, Variations = variants, Allocations = new List<Allocation> { allocation } };
         return new FlagCollection { ["flag"] = flag };
     }
+
+    private static Flag DependentRoot(bool doLog)
+        => new()
+        {
+            Key = "root",
+            Enabled = true,
+            VariationType = FeatureFlagsValueType.String,
+            Variations = new Dictionary<string, Variant> { ["on"] = new("on", "root-value") },
+            Allocations =
+            [
+                new Allocation
+                {
+                    Key = "root-allocation",
+                    DoLog = doLog,
+                    Rules =
+                    [
+                        new Rule(
+                        [
+                            new ConditionConfiguration
+                            {
+                                FlagEvaluation = new FlagEvaluationConfiguration { Key = "flag" },
+                                Operator = ConditionOperator.ONE_OF,
+                                Value = new[] { "on" },
+                            },
+                        ]),
+                    ],
+                    Splits = [new Split { VariationKey = "on", Shards = [] }],
+                },
+            ],
+        };
 }
