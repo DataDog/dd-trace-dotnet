@@ -145,38 +145,39 @@ namespace Datadog.Trace.Util.Http
                    : null;
 
         /// <summary>
-        /// Splits the relative <paramref name="relativeUri"/> into its path and query string, discarding any fragment.
+        /// Gets the path and query string of the relative <paramref name="relativeUri"/>, escaped and normalized the same
+        /// way as <see cref="Uri.AbsolutePath"/> and <see cref="Uri.Query"/> of an absolute URI. Any fragment is discarded.
         /// </summary>
         /// <param name="relativeUri">The relative URI</param>
         /// <param name="path">The path, always starting with '/'</param>
         /// <param name="queryString">The query string including the leading '?', or an empty string if there is none</param>
-        /// <returns><c>false</c> for a network-path reference such as <c>//user:password@host/path</c>, whose authority
-        /// (which can include credentials) must not be reported as a path; otherwise <c>true</c>.</returns>
+        /// <returns><c>false</c> if <paramref name="relativeUri"/> starts with an authority, as in <c>//user:password@host/path</c>,
+        /// which can include credentials and must not be reported as a path; otherwise <c>true</c>.</returns>
         internal static bool TryGetRelativeUriPathAndQuery(Uri relativeUri, out string path, out string queryString)
         {
-            var value = relativeUri.OriginalString;
-
-            // System.Uri treats '\' as '/' here, so "\\host", "/\host" and "\/host" are network-path references too
-            if (value.Length >= 2 && value[0] is '/' or '\\' && value[1] is '/' or '\\')
+            // Let System.Uri resolve the reference rather than parsing it by hand: it ignores leading whitespace and treats
+            // '\' as '/', so " //host", "\/host" and similar are network-path references, which change the host. "\\host"
+            // and "/\host" keep the host but produce a path starting with "//", which still contains the authority
+            var placeholderBase = RelativeUriBase.Instance;
+            if (Uri.TryCreate(placeholderBase, relativeUri, out var resolved)
+             && resolved.Host == placeholderBase.Host
+             && !resolved.AbsolutePath.StartsWith("//", StringComparison.Ordinal))
             {
-                path = string.Empty;
-                queryString = string.Empty;
-                return false;
+                path = resolved.AbsolutePath;
+                queryString = resolved.Query;
+                return true;
             }
 
-            var fragmentIndex = value.IndexOf('#');
-            var end = fragmentIndex >= 0 ? fragmentIndex : value.Length;
-            var queryIndex = value.IndexOf('?', 0, end);
+            path = string.Empty;
+            queryString = string.Empty;
+            return false;
+        }
 
-            path = queryIndex >= 0 ? value.Substring(0, queryIndex) : value.Substring(0, end);
-            queryString = queryIndex >= 0 ? value.Substring(queryIndex, end - queryIndex) : string.Empty;
-
-            if (path.Length == 0 || path[0] != '/')
-            {
-                path = "/" + path;
-            }
-
-            return true;
+        // Created on first use only, as relative request URIs are rare
+        private static class RelativeUriBase
+        {
+            // ".invalid" is reserved (RFC 2606), so it can't be the host of a real network-path reference
+            internal static readonly Uri Instance = new("http://relative.invalid/");
         }
     }
 }

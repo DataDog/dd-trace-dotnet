@@ -304,6 +304,11 @@ public class HttpRequestUtilsTests
     // The fragment is discarded, even when it looks like a query
     [InlineData("/api/values?id=1#section", "/api/values", "?id=1")]
     [InlineData("/api/values#section?id=1", "/api/values", "")]
+    // The path is escaped and normalized like Uri.AbsolutePath, so it matches what an absolute URI would report
+    [InlineData("/api/my values", "/api/my%20values", "")]
+    [InlineData("/api/../values", "/values", "")]
+    [InlineData(@"api\values", "/api/values", "")]
+    [InlineData("  /api/values?id=1", "/api/values", "?id=1")]
     public void TryGetRelativeUriPathAndQuery_ShouldSplitPathAndQuery(string relativeUrl, string expectedPath, string expectedQuery)
     {
         HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeTrue();
@@ -319,6 +324,10 @@ public class HttpRequestUtilsTests
     [InlineData(@"\\user:password@host/api/values")]
     [InlineData(@"/\host/api/values")]
     [InlineData(@"\/host/api/values")]
+    // Leading whitespace is ignored when the reference is resolved
+    [InlineData(" //user:password@host/api/values")]
+    [InlineData("\t//user:password@host/api/values")]
+    [InlineData(@" \\user:password@host/api/values")]
     public void TryGetRelativeUriPathAndQuery_RejectsNetworkPathReferences(string relativeUrl)
     {
         HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeFalse();
