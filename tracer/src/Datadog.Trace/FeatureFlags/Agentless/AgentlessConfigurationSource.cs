@@ -221,8 +221,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // does not change.
             var normalized = NormalizerTraceProcessor.NormalizeService(service);
 
-            // The CDN decides which names it attributes usage to. The source skips only an empty
-            // name and a name that HttpClient refuses, such as café-api. A refused name makes every
+            // The source skips only an empty name and a name that HttpClient refuses. HttpClient
+            // throws on any non-ASCII header value, such as café-api, so that name would make every
             // poll fail.
             if (IsAsciiHeaderValue(normalized))
             {
