@@ -9,8 +9,11 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.PE;
 using FluentAssertions;
 using Xunit;
 
@@ -78,20 +81,33 @@ namespace Datadog.Trace.Tests.CallTarget
             GetTypesMatchingTargets(typeof(SqlCommand).Assembly.Location, targetTypes, targetAssemblies)
                .Should().Contain(match => match.Contains(typeof(SqlCommand).FullName));
 
-            var skippedModules = GetFrameworkDirectories()
-                                .SelectMany(directory => Directory.GetFiles(directory, "*.dll"))
-                                .Where(file => isSkipped(Path.GetFileNameWithoutExtension(file)))
-                                .ToList();
-
-            skippedModules.Should().NotBeEmpty();
-
-            var matches = skippedModules.SelectMany(file => GetTypesMatchingTargets(file, targetTypes, targetAssemblies));
+            var matches = GetSkippedFrameworkModules(isSkipped).SelectMany(file => GetTypesMatchingTargets(file, targetTypes, targetAssemblies));
 
             string.Join(Environment.NewLine, matches).Should().BeEmpty("the native tracer never instruments types in modules skipped by dd_profiler_constants.h; don't skip these modules");
         }
 
-        private static IEnumerable<Match> GetCallTargetDefinitions()
-            => CallTargetDefinition.Matches(File.ReadAllText(Path.Combine(NativeSourceDirectory, "Generated", "generated_calltargets.g.cpp"))).Cast<Match>();
+        [Fact]
+        public void SkippedModulesAreThirdPartyForTheDebugger()
+        {
+            var constants = File.ReadAllText(Path.Combine(NativeSourceDirectory, "dd_profiler_constants.h"));
+
+            ThirdPartyModules.NativeSkippedPrefixes.Should().BeEquivalentTo(GetStringArray(constants, "skip_assembly_prefixes"), "probes can't bind in modules the native tracer skips, so the debugger treats them as third-party");
+
+            // ShouldSkipAssembly skips dynamic assemblies before it checks names.
+            var userCode = GetStringArray(constants, "skip_assemblies")
+                          .Where(name => name != "Anonymously Hosted DynamicMethods Assembly" && !AssemblyFilter.IsThirdPartyCode(name));
+
+            string.Join(Environment.NewLine, userCode).Should().BeEmpty("probes can't bind in modules the native tracer skips; add these names to ThirdPartyModules.Names.cs");
+        }
+
+        private static List<Match> GetCallTargetDefinitions()
+        {
+            var source = File.ReadAllText(Path.Combine(NativeSourceDirectory, "Generated", "generated_calltargets.g.cpp"));
+            var definitions = CallTargetDefinition.Matches(source).Cast<Match>().ToList();
+
+            definitions.Count.Should().Be(Regex.Matches(source, "CallTargetKind::").Count, "a row CallTargetDefinition doesn't parse would hide its target from these tests");
+            return definitions;
+        }
 
         private static Func<string, bool> GetSkippedModuleFilter()
         {
@@ -117,20 +133,36 @@ namespace Datadog.Trace.Tests.CallTarget
 #endif
         }
 
+        private static List<string> GetSkippedFrameworkModules(Func<string, bool> isSkipped)
+        {
+            // The native tracer matches assembly names, which can differ from file names (System.XML.dll). A netmodule
+            // (System.EnterpriseServices.Wrapper.dll) has no manifest, so this scan can't name it and skips it; the native
+            // tracer skips it as part of System.EnterpriseServices.
+            var modules = GetFrameworkDirectories()
+                         .SelectMany(directory => Directory.GetFiles(directory, "*.dll"))
+                         .Where(file => IsManagedModule(file) && GetAssemblyName(file) is { } name && isSkipped(name))
+                         .ToList();
+
+            modules.Should().NotBeEmpty();
+            return modules;
+        }
+
+        // Native binaries ship next to the managed assemblies. They have no CLI header.
+        private static bool IsManagedModule(string path)
+        {
+            using var image = new PEImage(path);
+            return image.ImageNTHeaders.OptionalHeader.DataDirectories[14].VirtualAddress != 0;
+        }
+
+        private static string GetAssemblyName(string path)
+        {
+            using var module = ModuleDefMD.Load(path);
+            return module.Assembly?.Name.String;
+        }
+
         private static List<string> GetTypesMatchingTargets(string path, HashSet<string> targetTypes, HashSet<string> targetAssemblies)
         {
-            ModuleDefMD module;
-            try
-            {
-                module = ModuleDefMD.Load(path);
-            }
-            catch (BadImageFormatException)
-            {
-                // Native binaries ship next to the managed assemblies.
-                return [];
-            }
-
-            using (module)
+            using (var module = ModuleDefMD.Load(path))
             {
                 // The ReJIT preprocessor only matches base types and interfaces in the target assembly itself or in modules that reference it.
                 var moduleName = module.Assembly?.Name.String;
