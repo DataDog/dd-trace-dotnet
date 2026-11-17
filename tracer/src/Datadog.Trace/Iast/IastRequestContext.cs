@@ -35,6 +35,54 @@ internal sealed class IastRequestContext
     private VulnerabilityStats _requestVulnerabilityStats;
 
     /// <summary>
+    /// Gets the HTTP method of the request
+    /// </summary>
+    internal string? HttpMethod { get; private set; }
+
+    /// <summary>
+    /// Gets the full URL of the request
+    /// </summary>
+    internal string? HttpUrl { get; private set; }
+
+    /// <summary>
+    /// Gets the route template matched for the request
+    /// </summary>
+    internal string? HttpRoute { get; private set; }
+
+    /// <summary>
+    /// Gets the ASP.NET (Framework) route, only when the MVC/WebApi span was the root of the request
+    /// </summary>
+    internal string? AspNetRoute { get; private set; }
+
+    /// <summary>
+    /// Gets the endpoint that handled the request: the ASP.NET Core endpoint display name or, on ASP.NET, "controller.action"
+    /// </summary>
+    internal string? Endpoint { get; private set; }
+
+    internal void SetRequestInfo(string? method, string? url)
+    {
+        HttpMethod = method;
+        HttpUrl = url;
+    }
+
+    internal void SetRoute(string? route)
+    {
+        HttpRoute = route;
+    }
+
+    internal void SetEndpoint(string? endpoint)
+    {
+        Endpoint = endpoint;
+    }
+
+    // Only called when the MVC/WebApi span is the root span of the request, so the values match what used to be on the root span
+    internal void SetAspNetMvcInfo(string? route, string? controller, string? action)
+    {
+        AspNetRoute = route;
+        Endpoint = controller is not null && action is not null ? $"{controller}.{action}" : controller ?? action;
+    }
+
+    /// <summary>
     /// Called once when the request finishes: updates the per-route vulnerability stats used by the route sampler.
     /// </summary>
     internal void OnRequestEnded()
@@ -79,7 +127,7 @@ internal sealed class IastRequestContext
         }
     }
 
-    internal bool AddVulnerabilityTypeAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
+    internal bool AddVulnerabilityTypeAllowed(string vulnerabilityType, Func<IastRequestContext, VulnerabilityStats> getForCurrentRoute)
     {
         // Check global budget
         if (AddVulnerabilitiesAllowed())
@@ -87,7 +135,7 @@ internal sealed class IastRequestContext
             if (_requestVulnerabilityStats.Route is null)
             {
                 // Init the route vulnerability stats
-                _routeVulnerabilityStats = getForCurrentRoute(span);
+                _routeVulnerabilityStats = getForCurrentRoute(this);
                 _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
             }
 

@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec
 {
     internal static class ControllerContextExtensions
     {
-        internal static void MonitorBodyAndPathParams(this IControllerContext controllerContext, IDictionary<string, object>? parameters, string peekScopeKey)
+        internal static void MonitorBodyAndPathParams(this IControllerContext controllerContext, IDictionary<string, object>? parameters)
         {
             if (parameters is null or { Count: 0 })
             {
@@ -31,18 +31,12 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            var scope = SharedItems.TryPeekScope(context, peekScopeKey);
-            if (scope == null)
-            {
-                return;
-            }
-
             if (!Iast.Iast.Instance.Settings.Enabled)
             {
                 return;
             }
 
-            var iastRequestContext = scope.Span?.Context?.TraceContext?.IastRequestContext;
+            var iastRequestContext = IastLifecycle.GetContext(context.Items);
             if (iastRequestContext is null)
             {
                 return;

@@ -9,6 +9,7 @@
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -42,6 +43,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 rawAccess.Active = null;
             }
+
+            IastLifecycle.Suspend();
 
             return CallTargetState.GetDefault();
         }

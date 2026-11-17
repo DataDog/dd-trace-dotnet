@@ -391,6 +391,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
+                IastLifecycle.GetContext(httpContext.Items)?.SetRoute(aspNetRoute);
                 rootSpan.ResourceName = span.ResourceName;
             }
 
@@ -487,6 +488,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
+                    IastLifecycle.GetContext(httpContext.Items)?.SetEndpoint(routeEndpoint.Value.DisplayName);
                 }
 
                 var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
@@ -530,11 +532,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
+                    IastLifecycle.GetContext(httpContext.Items)?.SetRoute(normalizedRoute);
                 }
 
                 if (_iast.Settings.Enabled)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    IastLifecycle.GetContext(httpContext.Items)?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -569,7 +572,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (iastEnabled)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                    IastLifecycle.GetContext(httpContext.Items)?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }

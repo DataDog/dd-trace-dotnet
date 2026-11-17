@@ -12,7 +12,6 @@ using System.Globalization;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -24,8 +23,6 @@ namespace Datadog.Trace
     internal sealed class TraceContext
     {
         private int _openSpans;
-
-        private IastRequestContext? _iastRequestContext;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -96,15 +93,6 @@ namespace Datadog.Trace
         /// </summary>
         internal string? AdditionalW3CTraceState { get; set; }
 
-        /// <summary> Gets the IAST context </summary>
-        internal IastRequestContext? IastRequestContext => _iastRequestContext;
-
-        // Set by IastLifecycle.BeginRequest. Temporary mirror of the ambient IAST request context
-        internal void SetIastRequestContext(IastRequestContext? context)
-        {
-            Volatile.Write(ref _iastRequestContext, context);
-        }
-
         public void AddSpan(Span span)
         {
             // first span added is the local root span
@@ -118,18 +106,6 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            // Propagate the resource name to the profiler for root web spans
-            if (span.IsRootSpan)
-            {
-                if (span.Type == SpanTypes.Web)
-                {
-                    if (Iast.Iast.Instance.Settings.Enabled)
-                    {
-                        IastLifecycle.EndRequest(span, _iastRequestContext);
-                    }
-                }
-            }
-
             if (span.ServiceName is not null &&
                 !string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {

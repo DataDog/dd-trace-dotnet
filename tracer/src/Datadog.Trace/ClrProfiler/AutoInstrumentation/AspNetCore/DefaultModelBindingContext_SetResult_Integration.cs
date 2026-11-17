@@ -11,6 +11,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -53,16 +54,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 {
                     if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
                     {
-                        var span = (state.Scope ?? state.PreviousScope)?.Span;
-
-                        if (span is null)
-                        {
-                            return CallTargetReturn.GetDefault();
-                        }
-
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
+                            IastLifecycle.CurrentContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
                         }
                         else if (defaultModelBindingContext.ValueProvider is IList valueProviderList)
                         {
@@ -71,14 +65,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 var provider = valueProviderList[i];
                                 if (provider.TryDuckCast(out BindingSourceValueProvider prov) && prov.BindingSource.Id is "Form" or "Body")
                                 {
-                                    span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
+                                    IastLifecycle.CurrentContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
                                     break;
                                 }
                             }
                         }
                         else if (defaultModelBindingContext.ValueProvider.TryDuckCast(out BindingSourceValueProvider prov) && prov.BindingSource.Id is "Form" or "Body")
                         {
-                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
+                            IastLifecycle.CurrentContext?.AddRequestBody(defaultModelBindingContext.Result.Model, null);
                         }
                     }
                 }

@@ -149,7 +149,7 @@ namespace Datadog.Trace.PlatformHelpers
             if (iast.Settings.Enabled)
             {
                 // If the overheadController disables the vulnerability detection for this request, no iast context is created
-                IastLifecycle.BeginRequest(scope.Span, iast.OverheadController.AcquireRequest());
+                httpContext.Items[IastLifecycle.HttpContextKey] = IastLifecycle.BeginRequest(scope.Span, iast.OverheadController.AcquireRequest(), httpMethod, url);
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
@@ -198,6 +198,7 @@ namespace Datadog.Trace.PlatformHelpers
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
+                IastLifecycle.EndRequest(IastLifecycle.GetState(httpContext.Items));
                 rootScope.Dispose();
                 proxyScope?.Dispose();
             }

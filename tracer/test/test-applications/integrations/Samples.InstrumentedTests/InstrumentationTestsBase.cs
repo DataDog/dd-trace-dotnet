@@ -50,6 +50,7 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _beginRequestMethod = Type.GetType("Datadog.Trace.Iast.IastLifecycle, Datadog.Trace").GetMethod("BeginRequest", BindingFlags.Static | BindingFlags.NonPublic);
+    private static MethodInfo _requestStateContextProperty = Type.GetType("Datadog.Trace.Iast.IastRequestState, Datadog.Trace").GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilitiesField = _iastRequestContextType.GetField("_vulnerabilities", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -78,7 +79,9 @@ public class InstrumentationTestsBase : IDisposable
         var span = _spanProperty.Invoke(Scope, Array.Empty<object>());
         span.Should().NotBeNull();
         _setSpanTypeProperty.Invoke(span, new object[] { "web" });
-        _iastRequestContext = _beginRequestMethod.Invoke(null, new object[] { span, true });
+        var requestState = _beginRequestMethod.Invoke(null, new object[] { span, true, null, null });
+        requestState.Should().NotBeNull();
+        _iastRequestContext = _requestStateContextProperty.Invoke(requestState, Array.Empty<object>());
         _iastRequestContext.Should().NotBeNull();
         _taintedObjects = _taintedObjectsField.GetValue(_iastRequestContext);
         _taintedObjects.Should().NotBeNull();

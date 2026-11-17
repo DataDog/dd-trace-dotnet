@@ -210,8 +210,9 @@ namespace Datadog.Trace.AspNet
                 var iastInstance = Iast.Iast.Instance;
                 if (iastInstance.Settings.Enabled)
                 {
-                    var iastContext = IastLifecycle.BeginRequest(scope.Span, iastInstance.OverheadController.AcquireRequest());
-                    iastContext?.AddRequestData(httpRequest);
+                    var iastState = IastLifecycle.BeginRequest(scope.Span, iastInstance.OverheadController.AcquireRequest(), httpMethod, url);
+                    httpContext.Items[IastLifecycle.HttpContextKey] = iastState;
+                    iastState.Context?.AddRequestData(httpRequest);
                 }
             }
             catch (Exception ex)
@@ -340,6 +341,7 @@ namespace Datadog.Trace.AspNet
                     }
                     finally
                     {
+                        IastLifecycle.EndRequest(IastLifecycle.GetState(app.Context.Items));
                         scope.Dispose();
                         proxyScope?.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope

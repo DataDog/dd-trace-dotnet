@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -182,6 +183,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
                     var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+                    if (span.IsRootSpan)
+                    {
+                        IastLifecycle.GetContext(httpContext.Items)?.SetAspNetMvcInfo(routeUrl, controllerName, actionName);
+                    }
 
                     // in case of a transfered request, the child request shouldnt set a new http route.
                     if (rootspanTags is AspNetTags rootAspNetTags)
@@ -189,11 +194,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
                         {
                             rootAspNetTags.HttpRoute = routeUrl;
+                            IastLifecycle.GetContext(httpContext.Items)?.SetRoute(routeUrl);
                         }
                     }
                     else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
                     {
                         span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                        IastLifecycle.GetContext(httpContext.Items)?.SetRoute(routeUrl);
                     }
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);

@@ -157,7 +157,7 @@ shared/bin/monitoring-home/
 |---|---|---|
 | **IAST Unit Tests** | **456/456 pass** (net6.0) | Count dropped from 527 as tests were removed with telemetry/RASP cleanup |
 | **IAST Integration Tests (non-IIS)** | **230/230 pass** (net6.0) | ASP.NET Core 2/5, gRPC, weak cipher, dedup, instrumented tests (89). Sqlite DB tests run; other DB tests need Docker |
-| **IAST Integration Tests (IIS)** | **48/48 pass** (net48; last run before Phase 5a — re-run after the next GAC refresh) | `AspNetMvc5*` and `AspNetWebForms*`. Needs the GAC prerequisite below. Seen intermittently failing one test in the first runs after a fresh GAC install; not reproduced afterwards |
+| **IAST Integration Tests (IIS)** | **48/48 pass** (net48; verified after Phase 5b Steps A and B, 3 consecutive runs) | `AspNetMvc5*` and `AspNetWebForms*`. Needs the GAC prerequisite below. Seen intermittently failing one test in the first runs after a fresh GAC install; not reproduced afterwards |
 
 ### Test environment prerequisites (Windows)
 
@@ -654,26 +654,25 @@ Removed hardcoded secrets detection entirely — both managed and native sides. 
 
 ## IastLifecycle (per-request context)
 
-The IAST request context no longer has to be reached through `Tracer.Instance.ActiveScope → Span → TraceContext`.
-`Iast/IastLifecycle.cs` keeps an `AsyncLocal` request state (root web span + `IastRequestContext`).
+`Iast/IastLifecycle.cs` owns the request that IAST is currently analyzing. A request is described by an `IastRequestState` (`Iast/IastRequestState.cs`): `Context` (the `IastRequestContext`, or null when the overhead controller declined to analyze the request) plus what is needed to end it. A state exists for **every** web request, so "inside a request but not analyzed" is distinguishable from "not in a request".
 
 | Member | Purpose |
 |---|---|
-| `BeginRequest(Span rootSpan, bool sampled)` | Called by the request entry points. Creates the `IastRequestContext` only when the overhead controller acquired the request, and always records that we are inside a request |
-| `EndRequest(Span rootSpan, IastRequestContext? context)` | Called from `TraceContext.CloseSpan` for the root web span. Runs `context.OnRequestEnded()` (route vulnerability stats), releases the overhead-controller slot, and clears the ambient state if it still belongs to this request. The context is passed explicitly (taken from the `TraceContext` mirror) because the ambient value is not reliable where the request ends under IIS |
-| `InRequest` | True for any web request, including ones IAST decided not to analyze. Replaces the old "root span type is web" check |
-| `CurrentContext` | The analyzed request's context, or null (not in a request / not sampled) |
-| `CurrentRootSpan` | Temporary: root span used for route stats and request metadata in the reporter |
+| `BeginRequest(rootSpan, sampled, httpMethod, httpUrl)` | Called by the request entry points. Creates the `IastRequestContext` (with method and URL) only when `sampled`, makes the state current and returns it. The caller stores it in `HttpContext.Items[IastLifecycle.HttpContextKey]` |
+| `Resume(state)` / `Suspend()` | Set / clear the ambient state. Used by the `ThreadContext.AssociateWithCurrentThread` / `DisassociateFromCurrentThread` hooks (ASP.NET Framework) |
+| `EndRequest(state)` | Updates the route vulnerability stats, releases the overhead-controller slot and clears the ambient state if it is still this request. Idempotent (`IastRequestState.TryEnd`) |
+| `InRequest`, `CurrentContext`, `CurrentRootSpan` | Ambient accessors used by the sinks and sources. `CurrentRootSpan` is temporary |
+| `GetState(items)` / `GetContext(items)` | Read the state from `HttpContext.Items` (overloads for `IDictionary` on .NET Framework and `IDictionary<object, object?>` on .NET Core) |
 
-**Entry points:** `AspNetCoreHttpRequestHandler.StartAspNetCorePipelineScope` (ASP.NET Core, both span modes) and `TracingHttpModule.OnBeginRequest` (ASP.NET Framework). `TraceContext.EnableIastInRequest` was replaced by `SetIastRequestContext`.
+**Where the state comes from**
+- ASP.NET Core: `AspNetCoreHttpRequestHandler.StartAspNetCorePipelineScope` (both span modes) begins the request; `StopAspNetCorePipelineScope` ends it before the root scope is disposed. The diagnostic observers read the context from `httpContext.Items`. Model binding (`DefaultModelBindingContext_SetResult_Integration`) uses the ambient value, which flows in the request's async flow.
+- ASP.NET Framework: `TracingHttpModule.OnBeginRequest` begins it, `OnEndRequest` (in its `finally`) ends it. IIS does not flow the execution context between pipeline steps, so the ambient value is restored from `HttpContext.Items` by the existing `ThreadContext_AssociateWithCurrentThread_Integration` (the same hook the tracer uses to restore its scope) and cleared by `ThreadContext_DisassociateFromCurrentThread_Integration`. `MonitorBodyAndPathParams` and the MVC / WebApi integrations read the context from `HttpContext.Items`.
 
-**Readers moved to the lifecycle:** `IastModule` (`GetIastContext`, `AddWebVulnerability`, `AddRequestVulnerabilitiesAllowed`, `GetScope`, `GetLocation`, DB row tainting), `IastModule.Escape`, `ReturnedHeadersAnalyzer`.
+**Request metadata:** `IastRequestContext` carries `HttpMethod`, `HttpUrl`, `HttpRoute`, `AspNetRoute` and `Endpoint`. They are set where the span tags used to be set (entry points for method and URL; observers and MVC/WebApi integrations for route and endpoint; the MVC/WebApi controller/action only when that span was the root, to keep the output identical). `VulnerabilityReporter` and the route vulnerability stats read them instead of span tags.
 
-**Still on `TraceContext.IastRequestContext` (transitional mirror):** code that holds the root span explicitly because ambient state is unreliable there — `ControllerContextExtensions.Framework`, `DefaultModelBindingContext_SetResult_Integration`, the ASP.NET Core diagnostic observers, and the span-close hook (`TraceContext.CloseSpan` → `IastLifecycle.EndRequest`).
+**Removed in Phase 5b Step B:** the `TraceContext.IastRequestContext` mirror, the `CloseSpan` hook and the active-scope fallback in `IastLifecycle`.
 
-**Fallback:** in the IIS integrated pipeline the `AsyncLocal` set in `OnBeginRequest` is not visible in the MVC action (the web span is re-activated there). `IastLifecycle.GetState()` therefore falls back to the active scope's root web span (`InternalActiveScope.Root`). Without it `AspNetMvc5IntegratedWithIast.TestRequestBodyTainting` reports no vulnerability. Both the mirror and the fallback go away with the spans (Phase 5), or earlier if the MVC/WebApi integrations resume the lifecycle explicitly.
-
-**Behavior change:** `isRequest` is now "a request entry point called `BeginRequest`" instead of "root span type is web". Identical for ASP.NET / ASP.NET Core; other web-typed roots are treated as non-request. The `Samples.InstrumentedTests` harness calls `IastLifecycle.BeginRequest` by reflection.
+**Behavior notes:** `isRequest` means "a request entry point called `BeginRequest`" rather than "root span type is web". With `TransferRequest` each request now releases its own overhead slot (before, only the root span released one). The `Samples.InstrumentedTests` harness calls `IastLifecycle.BeginRequest` by reflection and reads `IastRequestState.Context`.
 
 ---
 
@@ -929,12 +928,11 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 
 ## Implementation Phases
 
-### Phase 1 — Replace per-request context (partially done)
-- ~~Introduce `AsyncLocal` request state in new `IastLifecycle` class~~ ✅ Done
+### Phase 1 — Replace per-request context ✅ Done
+- ~~Introduce an ambient request state in new `IastLifecycle` class~~ ✅ Done
 - ~~Replace `Tracer.Instance.ActiveScope` chains in `IastModule`, `IastModule.Escape`, `ReturnedHeadersAnalyzer` with `IastLifecycle`~~ ✅ Done
 - ~~Wire the ASP.NET / ASP.NET Core request entry points to `IastLifecycle.BeginRequest`~~ ✅ Done
-- Still pending: remove the `TraceContext.IastRequestContext` mirror (explicit-root-span callers: `ControllerContextExtensions.Framework`, `DefaultModelBindingContext_SetResult`, diagnostic observers, span-close hook)
-- Still pending: remove the active-scope fallback in `IastLifecycle.GetState()` (needs explicit resume in the MVC/WebApi integrations, or the span removal)
+- ~~Remove the `TraceContext.IastRequestContext` mirror and the active-scope fallback~~ ✅ Done in Phase 5b Step B
 
 ### Phase 2 — File-based output ✅ Done
 - ~~Create `VulnerabilityFileWriter` with JSON serialization~~ → `VulnerabilityReporter.cs` writes JSONL
@@ -966,10 +964,12 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - ~~Delete hardcoded secrets analyzer (managed + native)~~ ✅ Done
 - ~~Delete unreferenced code, unused vendored libraries and APM-only integrations (`Http`, `Grpc`)~~ ✅ Done (see "Dead code removal")
 
-### Phase 5b — Remove `Span` / `Scope` / `Tracer` / `TraceContext` (pending, design open)
-- Open choice: keep a minimal root-only metadata object, or remove spans entirely and introduce an `IastRequest` object (method, URL, route) set by the request entry points
-- Depends on: replacing `TraceContext.IastRequestContext` mirror and the `IastLifecycle.GetState()` active-scope fallback, `TraceContext.CloseSpan` → `IastLifecycle.EndRequest`, `VulnerabilityReporter` / route stats reading `http.*` tags, CallTarget `CallTargetState.Scope`
-- Then removable: sampling, propagators, tagging, `TracerSettings` / `ExporterSettings` / `IntegrationSettings` (Phase 6), diagnostic observers' span logic
+### Phase 5b — Remove `Span` / `Scope` / `Tracer` / `TraceContext` (in progress)
+Decision: remove spans entirely; the request metadata lives in `IastRequestContext` and the request state is carried by `IastLifecycle`.
+- ~~Step A — move request metadata (method, URL, route, endpoint) from span tags to `IastRequestContext`; reporter and route stats read it~~ ✅ Done (snapshots unchanged)
+- ~~Step B — drop the `TraceContext` mirror and the active-scope fallback; carry the state in `HttpContext.Items`, restore it on thread association, end it explicitly~~ ✅ Done (see "IastLifecycle")
+- Step C — stop creating the ASP.NET / ASP.NET Core request spans. Planned order: C1 ASP.NET Core (replace the span-based diagnostic observers and `AspNetCoreHttpRequestHandler` with an IAST-only observer), C2 ASP.NET Framework (`TracingHttpModule`, MVC/WebApi integrations), C3 remaining integrations that create spans (`AdoNet` `DbScopeFactory`, `RestSharp`, `Process`) and `CallTargetState.Scope`, C4 `IastModule` sampling-priority / trace-source calls and `IastRequestState.RootSpan`
+- Step D — delete `Span`, `Scope`, `Tracer`, `TraceContext`, `TracerManager`, sampling, propagators, tagging and their settings; re-run the dead-file finder (Phase 5a); then Phase 6
 
 ### Phase 6 — Simplify configuration (pending)
 - Create standalone `StandaloneIastSettings` reading only IAST env vars

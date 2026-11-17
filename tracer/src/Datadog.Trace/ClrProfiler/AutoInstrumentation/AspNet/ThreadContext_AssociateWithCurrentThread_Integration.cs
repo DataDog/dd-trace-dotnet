@@ -9,6 +9,7 @@
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -49,6 +50,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 rawAccess.Active = scope;
             }
+
+            // Restore the IAST request of this HttpContext on the thread it was just associated with
+            IastLifecycle.Resume(IastLifecycle.GetState(httpContext.Items));
 
             return CallTargetState.GetDefault();
         }

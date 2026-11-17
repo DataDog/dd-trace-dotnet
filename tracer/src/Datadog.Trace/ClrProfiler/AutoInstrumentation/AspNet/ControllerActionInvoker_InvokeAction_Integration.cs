@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                controllerContext.MonitorBodyAndPathParams(parameters, AspNetMvcIntegration.HttpContextKey);
+                controllerContext.MonitorBodyAndPathParams(parameters);
             }
             catch (Exception ex)
             {

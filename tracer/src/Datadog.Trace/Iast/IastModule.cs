@@ -484,7 +484,7 @@ internal static partial class IastModule
         var rootSpan = IastLifecycle.CurrentRootSpan;
         var traceContext = rootSpan?.Context?.TraceContext;
 
-        if (requestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (requestContext?.AddVulnerabilityTypeAllowed(vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -499,7 +499,7 @@ internal static partial class IastModule
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            VulnerabilityReporter.Report(vulnerability, rootSpan);
+            VulnerabilityReporter.Report(vulnerability, requestContext);
             requestContext.AddVulnerability(vulnerability);
             traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
@@ -516,22 +516,19 @@ internal static partial class IastModule
         return IastLifecycle.CurrentContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static VulnerabilityStats GetRouteVulnerabilityStats(Span? span)
+    private static VulnerabilityStats GetRouteVulnerabilityStats(IastRequestContext request)
     {
         if (_vulnerabilityStats.Count >= VulnerabilityStatsRouteLimit)
         {
             _vulnerabilityStats.Clear(); // Poor man's LRU cache
         }
 
-        if (span?.Type == SpanTypes.Web)
+        var route = request.HttpRoute ?? string.Empty;
+        var method = request.HttpMethod ?? string.Empty;
+        var key = $"{method}#{route}";
+        if (key.Length > 1)
         {
-            var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
-            var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
-            var key = $"{method}#{route}";
-            if (key.Length > 1)
-            {
-                return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
-            }
+            return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
         }
 
         return new VulnerabilityStats(string.Empty);
@@ -608,7 +605,7 @@ internal static partial class IastModule
             ranges = unsafeRanges;
         }
 
-        if (isRequest && requestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (isRequest && requestContext?.AddVulnerabilityTypeAllowed(vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -627,7 +624,7 @@ internal static partial class IastModule
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            VulnerabilityReporter.Report(vulnerability, rootSpan);
+            VulnerabilityReporter.Report(vulnerability, requestContext);
 
             if (isRequest)
             {

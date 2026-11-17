@@ -10,6 +10,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
@@ -214,6 +215,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
+                    IastLifecycle.GetContext(httpContext.Items)?.SetEndpoint(routeEndpoint.Value.DisplayName);
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
                     // No need to ToLowerInvariant() these strings, as we lower case
                     // the whole route later
@@ -231,11 +233,12 @@ namespace Datadog.Trace.DiagnosticListeners
                                                 : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                    IastLifecycle.GetContext(httpContext.Items)?.SetRoute(routePattern.RawText?.ToLowerInvariant());
                 }
 
                 if (_iast.Settings.Enabled)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    IastLifecycle.GetContext(httpContext.Items)?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -251,7 +254,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                rootSpan.Context.TraceContext.IastRequestContext?.AddRequestData(httpContext.Request, typedArg.RouteData?.Values);
+                IastLifecycle.GetContext(httpContext.Items)?.AddRequestData(httpContext.Request, typedArg.RouteData?.Values);
             }
         }
 

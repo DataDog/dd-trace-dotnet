@@ -12,6 +12,7 @@ using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -205,13 +206,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
+                    if (span.IsRootSpan)
+                    {
+                        IastLifecycle.GetContext(System.Web.HttpContext.Current?.Items)?.SetAspNetMvcInfo(route, controller, action);
+                    }
+
                     if (span.Context.TraceContext.RootSpan.Tags is AspNetTags rootAspNetTags)
                     {
                         rootAspNetTags.HttpRoute = route;
+                        IastLifecycle.GetContext(System.Web.HttpContext.Current?.Items)?.SetRoute(route);
                     }
                     else
                     {
                         span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                        IastLifecycle.GetContext(System.Web.HttpContext.Current?.Items)?.SetRoute(route);
                     }
                 }
 
