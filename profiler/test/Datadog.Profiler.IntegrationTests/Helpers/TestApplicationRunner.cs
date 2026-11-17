@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         // The max test duration is _really_ big on some runners the test(s) can
         // take long time to start and to end.
-        private readonly TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
+        private TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
 
         private string _appListenerPort;
 
@@ -79,6 +79,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
 
         public int ProfilingExportsIntervalInSeconds { get; } = 3;
+
+        // The application is killed (and the test fails) if it runs for longer than that.
+        public TimeSpan MaxTestRunDuration
+        {
+            get => _maxTestRunDuration;
+            set => _maxTestRunDuration = value;
+        }
 
         public string ProcessOutput { get; set; }
 
