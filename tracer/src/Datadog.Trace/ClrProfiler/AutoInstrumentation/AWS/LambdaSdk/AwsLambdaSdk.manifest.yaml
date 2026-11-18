@@ -1,0 +1,11 @@
+_v: 1
+name: AwsLambdaSdk
+display_name: AWS Lambda SDK
+description: Instruments synchronous AWS Lambda Invoke requests, creating client spans and propagating trace context through ClientContext.
+packages:
+- name: AWSSDK.Lambda
+category:
+- rpc.client
+systems:
+- aws.lambda
+creation_date: '2026-11-18'

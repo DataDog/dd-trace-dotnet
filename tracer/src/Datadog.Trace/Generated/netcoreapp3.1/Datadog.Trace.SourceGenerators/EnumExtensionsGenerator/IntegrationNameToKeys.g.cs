@@ -268,6 +268,9 @@ namespace Datadog.Trace.Configuration
             "DD_TRACE_SERVERLESSCOMPAT_ENABLED", "DD_TRACE_ServerlessCompat_ENABLED", "DD_ServerlessCompat_ENABLED",
             "DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_ENABLED", "DD_TRACE_ServerlessCompat_ANALYTICS_ENABLED", "DD_ServerlessCompat_ANALYTICS_ENABLED",
             "DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_SAMPLE_RATE", "DD_TRACE_ServerlessCompat_ANALYTICS_SAMPLE_RATE", "DD_ServerlessCompat_ANALYTICS_SAMPLE_RATE", 
+            "DD_TRACE_AWSLAMBDASDK_ENABLED", "DD_TRACE_AwsLambdaSdk_ENABLED", "DD_AwsLambdaSdk_ENABLED",
+            "DD_TRACE_AWSLAMBDASDK_ANALYTICS_ENABLED", "DD_TRACE_AwsLambdaSdk_ANALYTICS_ENABLED", "DD_AwsLambdaSdk_ANALYTICS_ENABLED",
+            "DD_TRACE_AWSLAMBDASDK_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AwsLambdaSdk_ANALYTICS_SAMPLE_RATE", "DD_AwsLambdaSdk_ANALYTICS_SAMPLE_RATE", 
         ];
         /// <summary>
         /// Gets the configuration keys for the specified integration name.
@@ -360,6 +363,7 @@ namespace Datadog.Trace.Configuration
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ENABLED", ["DD_TRACE_OpenFeature_ENABLED", "DD_OpenFeature_ENABLED"]),
                 "Quartz" => new("DD_TRACE_QUARTZ_ENABLED", ["DD_TRACE_Quartz_ENABLED", "DD_Quartz_ENABLED"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ENABLED", ["DD_TRACE_ServerlessCompat_ENABLED", "DD_ServerlessCompat_ENABLED"]),
+                "AwsLambdaSdk" => new("DD_TRACE_AWSLAMBDASDK_ENABLED", ["DD_TRACE_AwsLambdaSdk_ENABLED", "DD_AwsLambdaSdk_ENABLED"]),
                 _ => GetIntegrationEnabledKeysFallback(integrationName) // we should never get here
             };
         /// <summary>
@@ -454,6 +458,7 @@ namespace Datadog.Trace.Configuration
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_ENABLED", ["DD_TRACE_OpenFeature_ANALYTICS_ENABLED", "DD_OpenFeature_ANALYTICS_ENABLED"]),
                 "Quartz" => new("DD_TRACE_QUARTZ_ANALYTICS_ENABLED", ["DD_TRACE_Quartz_ANALYTICS_ENABLED", "DD_Quartz_ANALYTICS_ENABLED"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_ENABLED", ["DD_TRACE_ServerlessCompat_ANALYTICS_ENABLED", "DD_ServerlessCompat_ANALYTICS_ENABLED"]),
+                "AwsLambdaSdk" => new("DD_TRACE_AWSLAMBDASDK_ANALYTICS_ENABLED", ["DD_TRACE_AwsLambdaSdk_ANALYTICS_ENABLED", "DD_AwsLambdaSdk_ANALYTICS_ENABLED"]),
                 _ => GetIntegrationAnalyticsEnabledKeysFallback(integrationName) // we should never get here
             };
         /// <summary>
@@ -548,6 +553,7 @@ namespace Datadog.Trace.Configuration
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_OpenFeature_ANALYTICS_SAMPLE_RATE", "DD_OpenFeature_ANALYTICS_SAMPLE_RATE"]),
                 "Quartz" => new("DD_TRACE_QUARTZ_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_Quartz_ANALYTICS_SAMPLE_RATE", "DD_Quartz_ANALYTICS_SAMPLE_RATE"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_ServerlessCompat_ANALYTICS_SAMPLE_RATE", "DD_ServerlessCompat_ANALYTICS_SAMPLE_RATE"]),
+                "AwsLambdaSdk" => new("DD_TRACE_AWSLAMBDASDK_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AwsLambdaSdk_ANALYTICS_SAMPLE_RATE", "DD_AwsLambdaSdk_ANALYTICS_SAMPLE_RATE"]),
                 _ => GetIntegrationAnalyticsSampleRateKeysFallback(integrationName) // we should never get here
             };
 

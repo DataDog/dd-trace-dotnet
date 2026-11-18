@@ -93,6 +93,7 @@ namespace Datadog.Trace.Configuration
         Hangfire,
         OpenFeature,
         Quartz,
-        ServerlessCompat
+        ServerlessCompat,
+        AwsLambdaSdk
     }
 }

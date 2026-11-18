@@ -173,6 +173,19 @@
     ]
   },
   {
+    "IntegrationName": "AwsLambdaSdk",
+    "SampleProjectName": "Samples.AWS.Lambda.Invoke",
+    "NugetPackageSearchName": "AWSSDK.Lambda",
+    "MinVersion": "3.3.0",
+    "MaxVersionExclusive": "5.0.0",
+    "SpecificVersions": [
+      "3.3.*",
+      "3.5.*",
+      "3.7.*",
+      "4.*.*"
+    ]
+  },
+  {
     "IntegrationName": "AwsStepFunctions",
     "SampleProjectName": "Samples.AWS.StepFunctions",
     "NugetPackageSearchName": "AWSSDK.StepFunctions",
