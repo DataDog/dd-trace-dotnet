@@ -140,6 +140,14 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return assemblyFromSharedFramework;
         }
 
+        // Package assets declared by the output directory's deps.json files, like the search directories, match by file name.
+        IEnumerable<string> packageAssemblyPaths = name.IsWindowsRuntime ? [] : PackageAssemblyLocator.GetCandidatePaths(_preferredSearchDirectory, name.Name);
+        var assemblyFromPackages = ResolveFromFiles(name, packageAssemblyPaths, requireMatchingIdentity: false);
+        if (assemblyFromPackages is not null)
+        {
+            return assemblyFromPackages;
+        }
+
         if (IsTracerAssembly(name, tracerAssemblyName))
         {
             return ReadAndCache(name.FullName, TracerAssembly.Location);
@@ -164,32 +172,33 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity)
     {
         var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
-        foreach (var directory in directories)
+        return ResolveFromFiles(name, directories.SelectMany(directory => extensions.Select(extension => Path.Combine(directory, name.Name + extension))), requireMatchingIdentity);
+    }
+
+    private AssemblyDefinition? ResolveFromFiles(AssemblyNameReference name, IEnumerable<string> paths, bool requireMatchingIdentity)
+    {
+        foreach (var path in paths)
         {
-            foreach (var extension in extensions)
+            _logger.Debug($"Looking for: {path}");
+            if (!File.Exists(path))
             {
-                var path = Path.Combine(directory, name.Name + extension);
-                _logger.Debug($"Looking for: {path}");
-                if (!File.Exists(path))
+                continue;
+            }
+
+            try
+            {
+                var assembly = ReadAssembly(path);
+                if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
                 {
+                    assembly.Dispose();
                     continue;
                 }
 
-                try
-                {
-                    var assembly = ReadAssembly(path);
-                    if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
-                    {
-                        assembly.Dispose();
-                        continue;
-                    }
-
-                    return CacheAssembly(name.FullName, assembly);
-                }
-                catch (BadImageFormatException)
-                {
-                    continue;
-                }
+                return CacheAssembly(name.FullName, assembly);
+            }
+            catch (BadImageFormatException)
+            {
+                continue;
             }
         }
 
