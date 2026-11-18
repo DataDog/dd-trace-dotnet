@@ -313,6 +313,29 @@ public class OtlpMapperTests
         droppedCount.Should().Be(0);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(128)]
+    public void EmitAttributesFromSpan_ReportKeyCollisionsDoNotConsumeExtraSlots(int limit)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        span.SetMetaStruct("appsec", [0x80]);
+        span.SetTag("ordinary", "kept");
+        var model = CreateSpanModel(span);
+        var expected = new List<KeyValue>();
+        var expectedDropped = OtlpMapper.EmitAttributesFromSpan(expected.Add, in model, limit);
+
+        span.Context.TraceContext.Tags.SetTag("appsec", "trace-tag");
+        span.SetTag("appsec", "span-tag");
+        span.SetMetric("appsec", 42);
+        var actual = new List<KeyValue>();
+        var actualDropped = OtlpMapper.EmitAttributesFromSpan(actual.Add, CreateSpanModel(span), limit);
+
+        actual.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
+        actualDropped.Should().Be(expectedDropped);
+    }
+
     [Fact]
     public void EmitAttributesFromSpan_ReturnsDroppedCount_WhenLimitExceeded()
     {

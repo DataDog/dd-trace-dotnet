@@ -280,6 +280,34 @@ public class OtlpTracesJsonSerializerTests
         encoded.Should().Be(Convert.ToBase64String(report));
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void WriteSpan_SecurityReportTakesPrecedenceOverTagsAndMetrics(
+        [CombinatorialValues("appsec", "iast", "_dd.stack", "another-report")] string key,
+        bool hasReport,
+        bool openTelemetrySemanticsEnabled)
+    {
+        byte[] report = [0x81, 0xa1, 0x61, 0x01];
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        span.SetTag(key, "ordinary-tag");
+        if (hasReport)
+        {
+            span.SetMetric(key, 42);
+            span.SetMetaStruct(key, report);
+        }
+
+        var attributes = WriteSpan(span)["attributes"].Should().BeOfType<JArray>().Which;
+        var value = attributes.Should().ContainSingle(kv => (string?)kv["key"] == key).Which["value"].Should().BeOfType<JObject>().Which;
+        if (hasReport)
+        {
+            ((string?)value["bytesValue"]).Should().Be(Convert.ToBase64String(report));
+        }
+        else
+        {
+            ((string?)value["stringValue"]).Should().Be("ordinary-tag");
+        }
+    }
+
     private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
     {
         var context = new SpanContext(parent: null, new TraceContext(new StubDatadogTracer()), serviceName: "service_name");

@@ -23,6 +23,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 
@@ -131,7 +132,12 @@ namespace Datadog.Trace.AppSec
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult is { Status: LibraryInitializationResult.LoadStatus.ExportError };
 
-        internal string? WafRuleFileVersion { get; private set; }
+        internal string? WafRuleFileVersion
+        {
+            get;
+            [TestingAndPrivateOnly]
+            set;
+        }
 
         internal InitResult? WafInitResult => _wafInitResult;
 

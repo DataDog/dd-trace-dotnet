@@ -115,13 +115,13 @@ public class SpanMetaStructTests
        };
 
     [Theory]
-    [InlineData(true, true, true)]
-    [InlineData(false, true, true)]
-    [InlineData(true, false, true)]
-    [InlineData(true, true, false)]
-    public static async Task OtlpExportsMetaStructAndSecurityMetadata(bool enabled, bool wafExecuted, bool localRoot)
+    [InlineData(true, true, true, "1.2.3")]
+    [InlineData(true, true, true, null)]
+    [InlineData(false, true, true, "1.2.3")]
+    [InlineData(true, false, true, "1.2.3")]
+    [InlineData(true, true, false, "1.2.3")]
+    public static async Task OtlpExportsMetaStructAndSecurityMetadata(bool enabled, bool wafExecuted, bool localRoot, string? ruleVersion)
     {
-        var previousTracer = Tracer.Instance;
         var previousSecurity = Security.Instance;
         await using var tracer = TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()));
         var settings = new SecuritySettings(new DictionaryConfigurationSource(new Dictionary<string, string> { [ConfigurationKeys.AppSec.Enabled] = "0" }), NullConfigurationTelemetry.Instance);
@@ -129,7 +129,8 @@ public class SpanMetaStructTests
         using var security = new Security(settings, rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>(), configurationState: state);
         try
         {
-            Tracer.UnsafeSetTracerInstance(tracer);
+            // Supply the version normally populated during native WAF initialization.
+            security.WafRuleFileVersion = ruleVersion;
             Security.Instance = security;
             state.AppsecEnabled = enabled;
             using var root = (Scope)tracer.StartActive("web");
@@ -140,6 +141,12 @@ public class SpanMetaStructTests
             var iastReport = MetaStructHelper.ObjectToByteArray(new Dictionary<string, object> { ["vulnerabilities"] = new List<object>() });
             span.SetMetaStruct(AppsecKey, appsecReport);
             span.SetMetaStruct("iast", iastReport);
+            if (enabled && wafExecuted && localRoot)
+            {
+                span.SetTag(Tags.RuntimeFamily, "ordinary-tag");
+                span.SetMetric(Metrics.AppSecEnabled, 0d);
+            }
+
             var attributes = new List<KeyValue>();
             var chunk = new TraceChunkModel(new SpanCollection([span]));
             OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), chunk.GetSpanModel(0), limit: 128);
@@ -157,13 +164,17 @@ public class SpanMetaStructTests
                 attributes.Should().NotContain(kv => kv.Key == Metrics.AppSecEnabled || kv.Key == Tags.RuntimeFamily);
             }
 
-            // The WAF is not initialized here, so there is no ruleset version to report.
-            security.WafRuleFileVersion.Should().BeNull();
-            attributes.Should().NotContain(kv => kv.Key == Tags.AppSecRuleFileVersion);
+            if (enabled && wafExecuted && localRoot && ruleVersion is not null)
+            {
+                attributes.Should().ContainSingle(kv => kv.Key == Tags.AppSecRuleFileVersion).Which.Value.Should().Be(ruleVersion);
+            }
+            else
+            {
+                attributes.Should().NotContain(kv => kv.Key == Tags.AppSecRuleFileVersion);
+            }
         }
         finally
         {
-            Tracer.UnsafeSetTracerInstance(previousTracer);
             Security.Instance = previousSecurity;
         }
     }

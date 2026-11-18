@@ -271,31 +271,31 @@ internal static class OtlpMapper
         }
 
         // Preserve security reports and serializer-generated metadata before customer tags can exhaust the limit.
+        var securityWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors: null, count, limit);
         if (!spanModel.TraceChunk.IsApmEnabled)
         {
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.ApmEnabled, 0.0), limit, ref count, ref droppedAttributesCount);
+            securityWriter.WriteSecurityAttribute(new KeyValue(Trace.Metrics.ApmEnabled, 0.0));
         }
 
         if (spanModel.IsLocalRoot && spanModel.Span.Context.TraceContext?.WafExecuted is true && Security.Instance.AppsecEnabled)
         {
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.AppSecEnabled, 1.0), limit, ref count, ref droppedAttributesCount);
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.RuntimeFamily, TracerConstants.Language), limit, ref count, ref droppedAttributesCount);
+            securityWriter.WriteSecurityAttribute(new KeyValue(Trace.Metrics.AppSecEnabled, 1.0));
+            securityWriter.WriteSecurityAttribute(new KeyValue(Trace.Tags.RuntimeFamily, TracerConstants.Language));
             if (Security.Instance.WafRuleFileVersion is { } ruleFileVersion)
             {
-                WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Tags.AppSecRuleFileVersion, ruleFileVersion), limit, ref count, ref droppedAttributesCount);
+                securityWriter.WriteSecurityAttribute(new KeyValue(Trace.Tags.AppSecRuleFileVersion, ruleFileVersion));
             }
         }
 
-        var metaStructWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors: null, count, limit);
-        spanModel.Span.Tags.EnumerateMetaStruct(ref metaStructWriter);
-        count = metaStructWriter.Count;
-        droppedAttributesCount += metaStructWriter.DroppedCount;
-        state = metaStructWriter.State;
+        spanModel.Span.Tags.EnumerateMetaStruct(ref securityWriter);
+        count = securityWriter.Count;
+        droppedAttributesCount += securityWriter.DroppedCount;
+        state = securityWriter.State;
 
         if (spanModel.TraceChunk.Tags is { Count: > 0 } traceTags &&
             (spanModel.IsFirstSpanInChunk || spanModel.IsLocalRoot))
         {
-            var traceTagWriter = new TraceTagWriter<TState>(state, writeKeyValue, tagProcessors, spanModel.IsLocalRoot, spanModel.IsFirstSpanInChunk, count, limit);
+            var traceTagWriter = new TraceTagWriter<TState>(state, writeKeyValue, tagProcessors, spanModel.IsLocalRoot, spanModel.IsFirstSpanInChunk, count, limit, securityWriter.ReservedKeys);
             traceTags.Enumerate(ref traceTagWriter);
             count = traceTagWriter.Count;
             droppedAttributesCount += traceTagWriter.DroppedCount;
@@ -342,20 +342,12 @@ internal static class OtlpMapper
         // SCI tags will be sent only once per trace
         // AAS tags need to be set on any span for the backend to properly handle the billing.
 
-        // Write span tags
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled, resourceGlobalTags);
+        // Span tags and metrics share the remaining slots and must not repeat security attribute keys.
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled, resourceGlobalTags, securityWriter.ReservedKeys);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter, openTelemetrySemanticsEnabled);
-        count = tagWriter.Count;
+        spanModel.Span.Tags.EnumerateMetrics(ref tagWriter);
         droppedAttributesCount += tagWriter.DroppedCount;
         state = tagWriter.State;
-
-        // Write span metrics
-        // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
-        count = metricsWriter.Count;
-        droppedAttributesCount += metricsWriter.DroppedCount;
-        state = metricsWriter.State;
 
         // add "_dd.top_level" to top-level spans (aka service-entry spans)
 
@@ -376,10 +368,47 @@ internal static class OtlpMapper
         }
     }
 
+    // Keep the security keys emitted by today's tracer in a bit mask. Other MetaStruct keys
+    // still participate in collision handling without allocating on the common paths.
+    internal struct SecurityAttributeKeys
+    {
+        private byte _known;
+        private HashSet<string>? _other;
+
+        public void Add(string key)
+        {
+            var bit = GetBit(key);
+            if (bit != 0)
+            {
+                _known |= bit;
+            }
+            else
+            {
+                (_other ??= new(StringComparer.Ordinal)).Add(key);
+            }
+        }
+
+        public readonly bool Contains(string key) =>
+            (_known != 0 && (_known & GetBit(key)) != 0) || _other?.Contains(key) == true;
+
+        private static byte GetBit(string key) => key switch
+        {
+            Trace.Metrics.ApmEnabled => 1 << 0,
+            Trace.Metrics.AppSecEnabled => 1 << 1,
+            Trace.Tags.RuntimeFamily => 1 << 2,
+            Trace.Tags.AppSecRuleFileVersion => 1 << 3,
+            "appsec" => 1 << 4,
+            "iast" => 1 << 5,
+            "_dd.stack" => 1 << 6,
+            _ => 0,
+        };
+    }
+
     internal struct TraceTagWriter<TState> : TraceTagCollection.ITagEnumerator
     {
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
+        private readonly SecurityAttributeKeys _reservedKeys;
         private readonly bool _isLocalRoot;
         private readonly bool _isFirstSpanInChunk;
         private readonly int _limit;
@@ -389,11 +418,12 @@ internal static class OtlpMapper
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TraceTagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, bool isLocalRoot, bool isFirstSpanInChunk, int count, int limit)
+        internal TraceTagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, bool isLocalRoot, bool isFirstSpanInChunk, int count, int limit, SecurityAttributeKeys reservedKeys = default)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
+            _reservedKeys = reservedKeys;
             _isLocalRoot = isLocalRoot;
             _isFirstSpanInChunk = isFirstSpanInChunk;
             _limit = limit;
@@ -410,7 +440,7 @@ internal static class OtlpMapper
             // injection in TagPropagation still compare ordinally.
 
             // the upper 64 bits of the trace id are already part of the 128-bit OTLP traceId
-            if (string.Equals(item.Key, Tags.Propagated.TraceIdUpper, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(item.Key, Tags.Propagated.TraceIdUpper, StringComparison.OrdinalIgnoreCase) || _reservedKeys.Contains(item.Key))
             {
                 return;
             }
@@ -452,13 +482,14 @@ internal static class OtlpMapper
         private readonly int _limit;
         private readonly bool _openTelemetrySemanticsEnabled;
         private readonly OtlpResourceGlobalTags? _resourceGlobalTags;
+        public SecurityAttributeKeys ReservedKeys;
 
         public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false, OtlpResourceGlobalTags? resourceGlobalTags = null)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false, OtlpResourceGlobalTags? resourceGlobalTags = null, SecurityAttributeKeys reservedKeys = default)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
@@ -466,6 +497,7 @@ internal static class OtlpMapper
             _limit = limit;
             _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
             _resourceGlobalTags = resourceGlobalTags;
+            ReservedKeys = reservedKeys;
 
             Count = count;
             DroppedCount = 0;
@@ -510,7 +542,7 @@ internal static class OtlpMapper
             // already carries the same key and value, before it counts against the attribute limit.
             // A span-level override (different value) is kept. Only string tags are compared,
             // so numeric tags keep their type on the span.
-            if (_resourceGlobalTags?.Contains(key, value) == true)
+            if (_resourceGlobalTags?.Contains(key, value) == true || ReservedKeys.Contains(key))
             {
                 return;
             }
@@ -537,6 +569,11 @@ internal static class OtlpMapper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Process(TagItem<int> item)
         {
+            if (ReservedKeys.Contains(item.Key))
+            {
+                return;
+            }
+
             if (Count < _limit)
             {
                 // We are using the original key since we're not serializing MessagePack
@@ -563,6 +600,11 @@ internal static class OtlpMapper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Process(TagItem<double> item)
         {
+            if (ReservedKeys.Contains(item.Key))
+            {
+                return;
+            }
+
             if (Count < _limit)
             {
                 // We are using the original key since we're not serializing MessagePack
@@ -587,17 +629,13 @@ internal static class OtlpMapper
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Process(TagItem<byte[]> item)
+        public void Process(TagItem<byte[]> item) => WriteSecurityAttribute(new KeyValue(item.Key, item.Value));
+
+        public void WriteSecurityAttribute(KeyValue attribute)
         {
-            if (Count < _limit)
-            {
-                _writeKeyValue(ref State, new KeyValue(item.Key, item.Value));
-                Count++;
-            }
-            else
-            {
-                DroppedCount++;
-            }
+            // A collision isn't a second dropped attribute, even when the limit drops the report itself.
+            ReservedKeys.Add(attribute.Key);
+            WriteAttribute(ref State, _writeKeyValue, attribute, _limit, ref Count, ref DroppedCount);
         }
     }
 }

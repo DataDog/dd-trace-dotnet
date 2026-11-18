@@ -110,6 +110,34 @@ public class OtlpTracesProtobufSerializerTests
         span.SpanId.Length.Should().Be(8);
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void SerializeSpans_SecurityReportTakesPrecedenceOverTagsAndMetrics(
+        [CombinatorialValues("appsec", "iast", "_dd.stack", "another-report")] string key,
+        bool hasReport,
+        bool openTelemetrySemanticsEnabled)
+    {
+        byte[] report = [0x81, 0xa1, 0x61, 0x01];
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        span.SetTag(key, "ordinary-tag");
+        if (hasReport)
+        {
+            span.SetMetric(key, 42);
+            span.SetMetaStruct(key, report);
+        }
+
+        var attributes = SerializeAndParse(CreateChunk(span), openTelemetrySemanticsEnabled).Attributes;
+        var value = attributes.Should().ContainSingle(kv => kv.Key == key).Which.Value;
+        if (hasReport)
+        {
+            value.BytesValue.ToByteArray().Should().Equal(report);
+        }
+        else
+        {
+            value.StringValue.Should().Be("ordinary-tag");
+        }
+    }
+
     [Fact]
     public void SerializeSpans_EmitsTraceIdAndSpanIdInBigEndianBytes()
     {
