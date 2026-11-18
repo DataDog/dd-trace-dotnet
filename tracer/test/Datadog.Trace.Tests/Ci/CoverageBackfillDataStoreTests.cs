@@ -1622,9 +1622,9 @@ public class CoverageBackfillDataStoreTests
             var resultIds = new HashSet<string>();
             var deadline = TimeSpan.FromSeconds(waitForFallback ? 5 : 1);
             var elapsedReads = 0;
-            var timeProvider = new Mock<ITimeProvider>(MockBehavior.Strict);
-            timeProvider.SetupGet(p => p.Elapsed).Returns(() => elapsedReads++ == 0 ? deadline - TimeSpan.FromTicks(1) : deadline);
-            timeProvider.Setup(p => p.Sleep(TimeSpan.FromMilliseconds(10)));
+            var readTimer = new Mock<CoverageBackfillDataStore.IReadTimer>(MockBehavior.Strict);
+            readTimer.SetupGet(p => p.Elapsed).Returns(() => elapsedReads++ == 0 ? deadline - TimeSpan.FromTicks(1) : deadline);
+            readTimer.Setup(p => p.WaitForRetry());
 
             CoverageBackfillDataStore.ReadCoverageIpcResultFolder(
                 CreateTestOptimization(workspacePath).Object,
@@ -1635,9 +1635,9 @@ public class CoverageBackfillDataStoreTests
                 waitForResultFiles: waitForResults,
                 waitForCoverletXmlFallback: waitForFallback,
                 readTimeout: TimeSpan.FromSeconds(1),
-                timeProvider: timeProvider.Object).Should().BeFalse();
+                readTimer: readTimer.Object).Should().BeFalse();
 
-            timeProvider.Verify(p => p.Sleep(TimeSpan.FromMilliseconds(10)), Times.Once);
+            readTimer.Verify(p => p.WaitForRetry(), Times.Once);
 
             results.Should().BeEmpty();
             resultIds.Should().BeEmpty();
@@ -1658,8 +1658,8 @@ public class CoverageBackfillDataStoreTests
             File.WriteAllText(Path.Combine(workspacePath, "Coverlet-first.json"), CreateCoverageIpcResultJson("first-result", CodeCoverageReportSource.Coverlet, 25, false, 4, 1, "first"));
             var results = new List<CodeCoverageAggregationResult>();
             var resultIds = new HashSet<string>();
-            var timeProvider = new Mock<ITimeProvider>(MockBehavior.Strict);
-            timeProvider.SetupGet(p => p.Elapsed).Returns(TimeSpan.FromSeconds(1));
+            var readTimer = new Mock<CoverageBackfillDataStore.IReadTimer>(MockBehavior.Strict);
+            readTimer.SetupGet(p => p.Elapsed).Returns(TimeSpan.FromSeconds(1));
 
             CoverageBackfillDataStore.ReadCoverageIpcResultFolder(
                 CreateTestOptimization(workspacePath).Object,
@@ -1670,7 +1670,7 @@ public class CoverageBackfillDataStoreTests
                 waitForResultFiles: waitForResults,
                 waitForCoverletXmlFallback: false,
                 readTimeout: TimeSpan.FromSeconds(1),
-                timeProvider: timeProvider.Object).Should().BeTrue();
+                readTimer: readTimer.Object).Should().BeTrue();
 
             var result = results.Should().ContainSingle().Subject;
             result.Percentage.Should().Be(25);

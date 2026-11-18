@@ -694,7 +694,7 @@ internal static class CoverageBackfillDataStore
         var recoveredResultIds = new HashSet<string>(StringComparer.Ordinal);
         try
         {
-            var timeProvider = waitForResultFolder ? new DefaultTimeProvider() : null;
+            var readTimer = waitForResultFolder ? new ReadTimer() : null;
             var lastRecoveredResultTime = TimeSpan.Zero;
             while (true)
             {
@@ -719,7 +719,7 @@ internal static class CoverageBackfillDataStore
                             waitForResultFolder,
                             waitForCoverletXmlFallback,
                             resultFolderReadTimeout,
-                            timeProvider))
+                            readTimer))
                     {
                         results = [];
                         readFailed = true;
@@ -729,7 +729,7 @@ internal static class CoverageBackfillDataStore
 
                 if (waitForResultFolder && recoveredResults.Count > recoveredResultCountBeforePass)
                 {
-                    lastRecoveredResultTime = timeProvider!.Elapsed;
+                    lastRecoveredResultTime = readTimer!.Elapsed;
                 }
 
                 var shouldWaitLongerForCoverletXmlFallback = ShouldWaitLongerForCoverletXmlFallback(waitForCoverletXmlFallback, recoveredResults);
@@ -737,15 +737,15 @@ internal static class CoverageBackfillDataStore
                                       CoverletXmlFallbackResultTimeout :
                                       ReadRetryTimeout;
                 if (!waitForResultFolder ||
-                    timeProvider!.Elapsed >= readTimeout ||
+                    readTimer!.Elapsed >= readTimeout ||
                     (recoveredResults.Count > 0 &&
                      !shouldWaitLongerForCoverletXmlFallback &&
-                     timeProvider.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
+                     readTimer.Elapsed - lastRecoveredResultTime >= ResultSetQuietPeriod))
                 {
                     break;
                 }
 
-                timeProvider!.Sleep(ReadRetryDelay);
+                readTimer!.WaitForRetry();
             }
         }
         catch (Exception ex)
@@ -1410,9 +1410,9 @@ internal static class CoverageBackfillDataStore
         bool waitForResultFiles,
         bool waitForCoverletXmlFallback,
         TimeSpan readTimeout,
-        ITimeProvider? timeProvider = null)
+        IReadTimer? readTimer = null)
     {
-        timeProvider ??= new DefaultTimeProvider();
+        readTimer ??= new ReadTimer();
         var sawTemporaryFile = false;
         string? previousSnapshot = null;
         var previousSnapshotTime = TimeSpan.Zero;
@@ -1456,17 +1456,17 @@ internal static class CoverageBackfillDataStore
                 if (!string.Equals(snapshot, previousSnapshot, StringComparison.Ordinal))
                 {
                     previousSnapshot = snapshot;
-                    previousSnapshotTime = timeProvider.Elapsed;
+                    previousSnapshotTime = readTimer.Elapsed;
                     canReadCurrentSnapshot = false;
                 }
-                else if (timeProvider.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
+                else if (readTimer.Elapsed - previousSnapshotTime < ResultFolderQuietPeriod)
                 {
                     canReadCurrentSnapshot = false;
                 }
             }
 
             if (canReadCurrentSnapshot ||
-                timeProvider.Elapsed >= effectiveReadTimeout)
+                readTimer.Elapsed >= effectiveReadTimeout)
             {
                 // Reaching the deadline may end the quiet-period wait, but it must never
                 // turn an incomplete snapshot into publishable coverage.
@@ -1493,7 +1493,7 @@ internal static class CoverageBackfillDataStore
                 return true;
             }
 
-            timeProvider.Sleep(ReadRetryDelay);
+            readTimer.WaitForRetry();
         }
     }
 
@@ -1726,6 +1726,23 @@ internal static class CoverageBackfillDataStore
         }
 
         return testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
+    }
+
+    internal interface IReadTimer
+    {
+        /// <summary>Gets monotonic time elapsed since the coverage read started.</summary>
+        TimeSpan Elapsed { get; }
+
+        void WaitForRetry();
+    }
+
+    private sealed class ReadTimer : IReadTimer
+    {
+        private readonly long _started = Stopwatch.GetTimestamp();
+
+        public TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started);
+
+        public void WaitForRetry() => Thread.Sleep(ReadRetryDelay);
     }
 
     private sealed class PersistedCoverageIpcResult
