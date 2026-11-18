@@ -275,35 +275,16 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
         IntegrationOptions<ThrowingAsyncEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
     }
 
-    [Theory]
-    [CombinatorialData]
-    public void WhenOnAsyncMethodEndBubblesUp_OnMethodEndSeesTheBlockAndTheBlockReachesTheCaller(bool bodyThrew)
+    [Fact]
+    public void WhenOnAsyncMethodEndBubblesUp_TheExceptionReachesTheCaller()
     {
         BubblingUpAsyncEndIntegration.Reset();
-        var bodyException = bodyThrew ? new InvalidOperationException("Body failed") : null;
 
-        Action act = () => InvokeBubblingUpAsyncEnd(bodyThrew ? null : "value", bodyException);
+        Action act = () => InvokeBubblingUpAsyncEnd("value");
 
         // AppSec blocks this way, so it must reach the application rather than be logged
-        act.Should().Throw<InvalidOperationException>().Which.Should().BeSameAs(BubblingUpAsyncEndIntegration.Blocked);
-        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(1);
-        BubblingUpAsyncEndIntegration.SyncException.Should().BeNull();
-        var task = BubblingUpAsyncEndIntegration.SyncReturnValue.Should().BeAssignableTo<Task<string>>().Subject;
-        task.IsFaulted.Should().BeTrue();
-        task.Exception.InnerException.Should().BeSameAs(BubblingUpAsyncEndIntegration.Blocked, "the block replaces any exception from the body, as it does on a state-machine target");
-    }
-
-    [Fact]
-    public void WhenOnMethodEndThrowsWhileBlocked_TheBlockStillReachesTheCaller()
-    {
-        BubblingUpAsyncEndIntegration.Reset();
-        BubblingUpAsyncEndIntegration.ThrowFromOnMethodEnd = true;
-
-        Action act = () => InvokeBubblingUpAsyncEnd("value", null);
-
-        act.Should().Throw<InvalidOperationException>().Which.Should().BeSameAs(BubblingUpAsyncEndIntegration.Blocked);
-        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(1);
-        IntegrationOptions<BubblingUpAsyncEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+        act.Should().Throw<InvalidOperationException>().WithInnerException<BubbleUpException>();
+        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(0);
     }
 
     [Fact]
@@ -364,10 +345,10 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
               .GetReturnValue();
     }
 
-    private static void InvokeBubblingUpAsyncEnd(string returnValue, Exception exception)
+    private static void InvokeBubblingUpAsyncEnd(string returnValue)
     {
         var state = CallTargetState.GetDefault();
-        CallTargetInvoker.EndMethodRuntimeAsync<BubblingUpAsyncEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, exception, in state);
+        CallTargetInvoker.EndMethodRuntimeAsync<BubblingUpAsyncEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, null, in state);
     }
 
     private static void InvokeMethodEndWithTask(string returnValue, Exception exception)
@@ -546,39 +527,17 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     {
         public static int SyncCalls { get; private set; }
 
-        public static object SyncReturnValue { get; private set; }
-
-        public static Exception SyncException { get; private set; }
-
-        public static Exception Blocked { get; private set; }
-
-        public static bool ThrowFromOnMethodEnd { get; set; }
-
         public static void Reset()
         {
             SyncCalls = 0;
-            SyncReturnValue = null;
-            SyncException = null;
-            Blocked = null;
-            ThrowFromOnMethodEnd = false;
         }
 
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-        {
-            Blocked = new InvalidOperationException("Blocked", new BubbleUpException());
-            throw Blocked;
-        }
+            => throw new InvalidOperationException("Blocked", new BubbleUpException());
 
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             SyncCalls++;
-            SyncReturnValue = returnValue;
-            SyncException = exception;
-            if (ThrowFromOnMethodEnd)
-            {
-                throw new InvalidOperationException("OnMethodEnd failed");
-            }
-
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

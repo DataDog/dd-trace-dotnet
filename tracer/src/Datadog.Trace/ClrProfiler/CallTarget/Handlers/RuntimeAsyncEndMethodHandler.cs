@@ -9,7 +9,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -130,11 +129,10 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
             return CallTargetReturn.GetDefault();
         }
 
-        ExceptionDispatchInfo? blocked = null;
         if (OnAsyncMethodEnd is not null)
         {
             // As in the continuation generators, a failing OnAsyncMethodEnd is logged rather than
-            // allowed to skip OnMethodEnd.
+            // allowed to skip OnMethodEnd, unless it is a CallTargetBubbleUpException (e.g. an AppSec block)
             try
             {
                 OnAsyncMethodEnd(instance, null, exception, in state);
@@ -143,64 +141,24 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }
-            catch (Exception ex)
-            {
-                // A CallTargetBubbleUpException (e.g. an AppSec block) must reach the caller, but only
-                // after OnMethodEnd has run, so that OnMethodEnd runs exactly once on every path.
-                blocked = ExceptionDispatchInfo.Capture(ex);
-            }
         }
 
         if (OnMethodEnd is not null)
         {
-            if (blocked is not null)
-            {
-                InvokeOnMethodEndWhileBlocked(instance, blocked.SourceException, in state);
-            }
-            else
-            {
-                // A state-machine async method returns a task even if its body throws before its first
-                // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
-                var handed = exception is null ? CompletedValue : RuntimeAsyncHelper.CreateFailed<TDeclaredReturn>(exception);
-                var returned = OnMethodEnd(instance, handed, null, in state).GetReturnValue();
+            // A state-machine async method returns a task even if its body throws before its first
+            // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
+            var handed = exception is null ? CompletedValue : RuntimeAsyncHelper.CreateFailed<TDeclaredReturn>(exception);
+            var returned = OnMethodEnd(instance, handed, null, in state).GetReturnValue();
 
-                // When an exception is propagating the rewritten method rethrows it, so the return
-                // value never reaches the caller and there is nothing to honour.
-                if (exception is null && !RuntimeAsyncHelper.IsUnchanged(returned, handed))
-                {
-                    ReportUnsupportedSubstitution();
-                }
+            // When an exception is propagating the rewritten method rethrows it, so the return
+            // value never reaches the caller and there is nothing to honour.
+            if (exception is null && !RuntimeAsyncHelper.IsUnchanged(returned, handed))
+            {
+                ReportUnsupportedSubstitution();
             }
         }
 
-        blocked?.Throw();
         return CallTargetReturn.GetDefault();
-    }
-
-    /// <summary>
-    /// Runs OnMethodEnd after OnAsyncMethodEnd threw a <see cref="CallTargetBubbleUpException"/>.
-    /// </summary>
-    /// <remarks>
-    /// A state-machine target that is still running when its stub returns hands OnMethodEnd the
-    /// continuation task, which the block later faults. The closest equivalent here is a task that
-    /// has already faulted with the block. That block replaces any exception from the body, as it
-    /// does in the continuation generators. The return value is ignored because the block is
-    /// rethrown, and an OnMethodEnd exception must not replace the block.
-    /// </remarks>
-    private static void InvokeOnMethodEndWhileBlocked(TTarget? instance, Exception blocked, in CallTargetState state)
-    {
-        try
-        {
-            OnMethodEnd!(instance, RuntimeAsyncHelper.CreateFailed<TDeclaredReturn>(blocked), null, in state);
-        }
-        catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
-        {
-            IntegrationOptions<TIntegration, TTarget>.LogException(ex);
-        }
-        catch (Exception)
-        {
-            // Another block. The caller already gets the first one, so there is nothing more to do.
-        }
     }
 
     /// <summary>

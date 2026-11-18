@@ -9,7 +9,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -126,13 +125,12 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        ExceptionDispatchInfo? blocked = null;
         if (OnAsyncMethodEnd is not null)
         {
             // Feeding the substituted value forward mirrors EndMethodHandler, where OnMethodEnd
             // receives whatever the continuation generator produced rather than the original.
             // As there, a failing OnAsyncMethodEnd is logged and leaves the original result, rather
-            // than skipping OnMethodEnd.
+            // than skipping OnMethodEnd, unless it is a CallTargetBubbleUpException (e.g. an AppSec block)
             try
             {
                 returnValue = OnAsyncMethodEnd(instance, returnValue, exception, in state);
@@ -141,75 +139,38 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }
-            catch (Exception ex)
-            {
-                // A CallTargetBubbleUpException (e.g. an AppSec block): rethrown after OnMethodEnd runs,
-                // as in the non-generic handler.
-                blocked = ExceptionDispatchInfo.Capture(ex);
-            }
         }
 
         if (OnMethodEnd is not null)
         {
-            if (blocked is not null)
-            {
-                InvokeOnMethodEndWhileBlocked(instance, blocked.SourceException, in state);
-            }
-            else
-            {
-                // A state-machine async method returns a task even if its body throws before its first
-                // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
-                var declared = exception is null
-                                   ? RuntimeAsyncHelper.CreateCompletedFromResult<TReturn, TDeclaredReturn>(returnValue)
-                                   : RuntimeAsyncHelper.CreateFailed<TReturn, TDeclaredReturn>(exception);
-                var returned = OnMethodEnd(instance, declared, null, in state).GetReturnValue();
+            // A state-machine async method returns a task even if its body throws before its first
+            // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
+            var declared = exception is null
+                               ? RuntimeAsyncHelper.CreateCompletedFromResult<TReturn, TDeclaredReturn>(returnValue)
+                               : RuntimeAsyncHelper.CreateFailed<TReturn, TDeclaredReturn>(exception);
+            var returned = OnMethodEnd(instance, declared, null, in state).GetReturnValue();
 
-                // When an exception is propagating the rewritten method rethrows it, so the return value
-                // never reaches the caller and there is nothing to honour.
-                if (exception is null)
+            // When an exception is propagating the rewritten method rethrows it, so the return value
+            // never reaches the caller and there is nothing to honour.
+            if (exception is null)
+            {
+                // A runtime-async body returns the unwrapped T and the runtime builds the task from
+                // it, so a replacement task can only be honoured by taking its result back out -
+                // which needs it to be complete already. That covers the ordinary case, where
+                // OnMethodEnd either returns the completed task we handed it or a new completed one
+                // carrying a different result.
+                if (RuntimeAsyncHelper.TryGetCompletedResult<TReturn, TDeclaredReturn>(returned, out var unwrapped))
                 {
-                    // A runtime-async body returns the unwrapped T and the runtime builds the task from
-                    // it, so a replacement task can only be honoured by taking its result back out -
-                    // which needs it to be complete already. That covers the ordinary case, where
-                    // OnMethodEnd either returns the completed task we handed it or a new completed one
-                    // carrying a different result.
-                    if (RuntimeAsyncHelper.TryGetCompletedResult<TReturn, TDeclaredReturn>(returned, out var unwrapped))
-                    {
-                        returnValue = unwrapped;
-                    }
-                    else
-                    {
-                        ReportUnsupportedSubstitution();
-                    }
+                    returnValue = unwrapped;
+                }
+                else
+                {
+                    ReportUnsupportedSubstitution();
                 }
             }
         }
 
-        blocked?.Throw();
         return new CallTargetReturn<TReturn>(returnValue);
-    }
-
-    /// <summary>
-    /// Runs OnMethodEnd after OnAsyncMethodEnd threw a <see cref="CallTargetBubbleUpException"/>.
-    /// </summary>
-    /// <remarks>
-    /// Mirrors <c>InvokeOnMethodEndWhileBlocked</c> on
-    /// <see cref="RuntimeAsyncEndMethodHandler{TIntegration, TTarget, TDeclaredReturn}"/>, which explains the behaviour.
-    /// </remarks>
-    private static void InvokeOnMethodEndWhileBlocked(TTarget? instance, Exception blocked, in CallTargetState state)
-    {
-        try
-        {
-            OnMethodEnd!(instance, RuntimeAsyncHelper.CreateFailed<TReturn, TDeclaredReturn>(blocked), null, in state);
-        }
-        catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
-        {
-            IntegrationOptions<TIntegration, TTarget>.LogException(ex);
-        }
-        catch (Exception)
-        {
-            // Another block. The caller already gets the first one, so there is nothing more to do.
-        }
     }
 
     /// <summary>
