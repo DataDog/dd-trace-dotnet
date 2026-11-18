@@ -456,7 +456,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 if (!instructionsByOffset.TryGetValue(sequencePoint.Offset, out var sequencePointInstruction))
                                 {
-                                    throw new InvalidOperationException($"Sequence point at IL offset {sequencePoint.Offset} of {moduleTypeMethod.FullName} does not start an instruction.");
+                                    throw new InvalidOperationException($"Sequence point at IL offset {sequencePoint.Offset.ToString(CultureInfo.InvariantCulture)} of {moduleTypeMethod.FullName} does not start an instruction.");
                                 }
 
                                 probes.Add(new CoverageProbe(sequencePointInstruction, sequencePoint.StartLine, slot));
