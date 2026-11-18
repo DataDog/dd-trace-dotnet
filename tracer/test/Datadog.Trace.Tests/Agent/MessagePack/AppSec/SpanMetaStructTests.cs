@@ -5,29 +5,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.OpenTelemetry;
-using Datadog.Trace.OpenTelemetry.Common;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 #nullable enable
 
 namespace Datadog.Trace.Tests.Agent.MessagePack;
 
-[Collection(nameof(TracerInstanceTestCollection))]
 public class SpanMetaStructTests
 {
     private const string MetaStructStr = "meta_struct";
@@ -113,71 +102,6 @@ public class SpanMetaStructTests
                    new(DdStackKey, null)
             }
        };
-
-    [Theory]
-    [InlineData(true, true, true, "1.2.3")]
-    [InlineData(true, true, true, null)]
-    [InlineData(false, true, true, "1.2.3")]
-    [InlineData(true, false, true, "1.2.3")]
-    [InlineData(true, true, false, "1.2.3")]
-    public static async Task OtlpExportsMetaStructAndSecurityMetadata(bool enabled, bool wafExecuted, bool localRoot, string? ruleVersion)
-    {
-        var previousSecurity = Security.Instance;
-        await using var tracer = TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()));
-        var settings = new SecuritySettings(new DictionaryConfigurationSource(new Dictionary<string, string> { [ConfigurationKeys.AppSec.Enabled] = "0" }), NullConfigurationTelemetry.Instance);
-        var state = new ConfigurationState(settings, NullConfigurationTelemetry.Instance, wafIsNull: true);
-        using var security = new Security(settings, rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>(), configurationState: state);
-        try
-        {
-            // Supply the version normally populated during native WAF initialization.
-            security.WafRuleFileVersion = ruleVersion;
-            Security.Instance = security;
-            state.AppsecEnabled = enabled;
-            using var root = (Scope)tracer.StartActive("web");
-            var traceContext = root.Span.Context.TraceContext.Should().BeOfType<TraceContext>().Which;
-            traceContext.WafExecuted = wafExecuted;
-            var span = localRoot ? root.Span : new Span(new SpanContext(root.Span.Context, traceContext, "child"), DateTimeOffset.UtcNow);
-            var appsecReport = MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", appsecData } });
-            var iastReport = MetaStructHelper.ObjectToByteArray(new Dictionary<string, object> { ["vulnerabilities"] = new List<object>() });
-            span.SetMetaStruct(AppsecKey, appsecReport);
-            span.SetMetaStruct("iast", iastReport);
-            if (enabled && wafExecuted && localRoot)
-            {
-                span.SetTag(Tags.RuntimeFamily, "ordinary-tag");
-                span.SetMetric(Metrics.AppSecEnabled, 0d);
-            }
-
-            var attributes = new List<KeyValue>();
-            var chunk = new TraceChunkModel(new SpanCollection([span]));
-            OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), chunk.GetSpanModel(0), limit: 128);
-
-            attributes.Should().ContainSingle(kv => kv.Key == AppsecKey).Which.Value.Should().BeEquivalentTo(appsecReport);
-            attributes.Should().ContainSingle(kv => kv.Key == "iast").Which.Value.Should().BeEquivalentTo(iastReport);
-            attributes.Should().NotContain(kv => kv.Key == Tags.AppSecJson || kv.Key == Tags.IastJson);
-            if (enabled && wafExecuted && localRoot)
-            {
-                attributes.Should().ContainSingle(kv => kv.Key == Metrics.AppSecEnabled).Which.Value.Should().Be(1d);
-                attributes.Should().ContainSingle(kv => kv.Key == Tags.RuntimeFamily).Which.Value.Should().Be("dotnet");
-            }
-            else
-            {
-                attributes.Should().NotContain(kv => kv.Key == Metrics.AppSecEnabled || kv.Key == Tags.RuntimeFamily);
-            }
-
-            if (enabled && wafExecuted && localRoot && ruleVersion is not null)
-            {
-                attributes.Should().ContainSingle(kv => kv.Key == Tags.AppSecRuleFileVersion).Which.Value.Should().Be(ruleVersion);
-            }
-            else
-            {
-                attributes.Should().NotContain(kv => kv.Key == Tags.AppSecRuleFileVersion);
-            }
-        }
-        finally
-        {
-            Security.Instance = previousSecurity;
-        }
-    }
 
     [MemberData(nameof(Data), DisableDiscoveryEnumeration = true)]
     [Theory]

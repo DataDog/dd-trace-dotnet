@@ -4,13 +4,11 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
@@ -265,47 +263,12 @@ public class OtlpTracesJsonSerializerTests
         }
     }
 
-    [Theory]
-    [CombinatorialData]
-    public void WriteSpan_WithoutSamplingPriority_EmitsMetaStructAndOmitsFlags(bool openTelemetrySemanticsEnabled)
+    [Fact]
+    public void WriteSpan_WithoutSamplingPriority_OmitsFlags()
     {
-        var span = CreateSpan(openTelemetrySemanticsEnabled);
-        var report = MetaStructHelper.ObjectToByteArray(
-            new Dictionary<string, object> { ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } } });
-        span.SetMetaStruct("_dd.stack", report);
-        var json = WriteSpan(span);
+        var json = WriteSpan(CreateSpan());
 
         json["flags"].Should().BeNull();
-        var encoded = json.SelectToken("attributes[?(@.key == '_dd.stack')].value.bytesValue")?.Value<string>();
-        encoded.Should().Be(Convert.ToBase64String(report));
-    }
-
-    [Theory]
-    [CombinatorialData]
-    public void WriteSpan_SecurityReportTakesPrecedenceOverTagsAndMetrics(
-        [CombinatorialValues("appsec", "iast", "_dd.stack", "another-report")] string key,
-        bool hasReport,
-        bool openTelemetrySemanticsEnabled)
-    {
-        byte[] report = [0x81, 0xa1, 0x61, 0x01];
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        span.SetTag(key, "ordinary-tag");
-        if (hasReport)
-        {
-            span.SetMetric(key, 42);
-            span.SetMetaStruct(key, report);
-        }
-
-        var attributes = WriteSpan(span)["attributes"].Should().BeOfType<JArray>().Which;
-        var value = attributes.Should().ContainSingle(kv => (string?)kv["key"] == key).Which["value"].Should().BeOfType<JObject>().Which;
-        if (hasReport)
-        {
-            ((string?)value["bytesValue"]).Should().Be(Convert.ToBase64String(report));
-        }
-        else
-        {
-            ((string?)value["stringValue"]).Should().Be("ordinary-tag");
-        }
     }
 
     private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)

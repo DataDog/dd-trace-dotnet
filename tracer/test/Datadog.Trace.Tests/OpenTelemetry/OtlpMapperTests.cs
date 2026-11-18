@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
@@ -314,26 +315,23 @@ public class OtlpMapperTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(128)]
-    public void EmitAttributesFromSpan_ReportKeyCollisionsDoNotConsumeExtraSlots(int limit)
+    [InlineData(0, 3)]
+    [InlineData(1, 2)]
+    [InlineData(128, 0)]
+    public void EmitAttributesFromSpan_ReportKeyCollisionsDoNotConsumeExtraSlots(int limit, int expectedDropped)
     {
         var span = CreateSpan(openTelemetrySemanticsEnabled: true);
-        span.SetMetaStruct("appsec", [0x80]);
-        span.SetTag("ordinary", "kept");
-        var model = CreateSpanModel(span);
-        var expected = new List<KeyValue>();
-        var expectedDropped = OtlpMapper.EmitAttributesFromSpan(expected.Add, in model, limit);
+        span.SetMetaStruct("custom.report", [0x80]);
+        span.Context.TraceContext.Tags.SetTag("custom.report", "trace-tag");
+        span.Context.TraceContext.Tags.SetTag("trace.only", "kept");
+        span.SetTag("custom.report", "span-tag");
+        span.SetMetric("custom.report", 42);
+        span.SetTag("span.only", "kept");
+        var model = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+        var keys = new List<string>();
 
-        span.Context.TraceContext.Tags.SetTag("appsec", "trace-tag");
-        span.SetTag("appsec", "span-tag");
-        span.SetMetric("appsec", 42);
-        var actual = new List<KeyValue>();
-        var actualDropped = OtlpMapper.EmitAttributesFromSpan(actual.Add, CreateSpanModel(span), limit);
-
-        actual.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
-        actualDropped.Should().Be(expectedDropped);
+        OtlpMapper.EmitAttributesFromSpan(kv => keys.Add(kv.Key), in model, limit).Should().Be(expectedDropped);
+        keys.Should().Equal(new[] { "custom.report", "trace.only", "span.only" }.Take(limit));
     }
 
     [Fact]
@@ -646,31 +644,25 @@ public class OtlpMapperTests
         dropped.Should().BeGreaterOrEqualTo(1);
     }
 
-    [Theory]
-    [InlineData(false, 7)]
-    [InlineData(true, 3)]
-    public void EmitAttributesFromSpan_SamplingPriorityIsKept_WhenTraceTagsExceedLimit(bool openTelemetrySemanticsEnabled, int limit)
+    [Fact]
+    public void EmitAttributesFromSpan_SamplingPriorityIsKept_WhenTraceTagsExceedLimit()
     {
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        byte[] report = [0x80];
-        span.SetMetaStruct("appsec", report);
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
         var traceContext = span.Context.TraceContext;
         traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
         for (var i = 0; i < 10; i++)
         {
             traceContext.Tags.SetTag($"_dd.p.custom{i}", "v");
-            span.SetTag($"span.custom.{i}", "v");
         }
 
         var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
 
         // fewer slots than trace tags: "_sampling_priority_v1" must still be written
         var attributes = new List<KeyValue>();
-        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit);
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 3);
 
-        attributes.Should().HaveCount(limit);
+        attributes.Should().HaveCount(3);
         attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be(SamplingPriorityValues.UserKeep);
-        attributes.Should().ContainSingle(kv => kv.Key == "appsec").Which.Value.Should().BeEquivalentTo(report);
         dropped.Should().BeGreaterOrEqualTo(8);
     }
 

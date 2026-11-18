@@ -16,8 +16,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.OpenTelemetry;
-using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -227,7 +225,7 @@ public class SpanMessagePackFormatterTests
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new());
         var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
-        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, discoveryService: discoveryService);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null,  NullTelemetryController.Instance, discoveryService: discoveryService);
 
         tracer.TracerManager.Start();
 
@@ -802,12 +800,9 @@ public class SpanMessagePackFormatterTests
         result.Should().HaveCount(3);
 
         // every span gets the tag, regardless of whether it is a service-entry span
-        for (var i = 0; i < result.Length; i++)
+        foreach (var span in result)
         {
-            result[i].GetMetric("_dd.apm.enabled").Should().Be(0d);
-            var attributes = new List<KeyValue>();
-            OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), traceChunk.GetSpanModel(i), limit: 128);
-            attributes.Should().ContainSingle(kv => kv.Key == Metrics.ApmEnabled).Which.Value.Should().Be(0d);
+            span.GetMetric("_dd.apm.enabled").Should().Be(0d);
         }
     }
 

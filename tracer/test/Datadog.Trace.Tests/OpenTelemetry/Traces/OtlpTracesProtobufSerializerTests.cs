@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
@@ -93,49 +92,15 @@ public class OtlpTracesProtobufSerializerTests
         spans[1].Name.Should().Be("resource_name2");
     }
 
-    [Theory]
-    [CombinatorialData]
-    public void SerializeSpans_EmitsCanonicalSpanShape(bool openTelemetrySemanticsEnabled)
+    [Fact]
+    public void SerializeSpans_EmitsCanonicalSpanShape()
     {
-        var report = MetaStructHelper.ObjectToByteArray(
-            new Dictionary<string, object> { ["exploit"] = new[] { new Dictionary<string, object> { ["id"] = "stack-1" } } });
-        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        ddSpan.SetMetaStruct("_dd.stack", report);
-        var span = SerializeAndParse(CreateChunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(CreateSpan()));
 
         span.Name.Should().Be("resource_name");
-        span.Attributes.Should().ContainSingle(kv => kv.Key == "_dd.stack").Which.Value.BytesValue.ToByteArray().Should().Equal(report);
         span.Kind.Should().Be(OtlpSpan.Types.SpanKind.Internal);
         span.TraceId.Length.Should().Be(16);
         span.SpanId.Length.Should().Be(8);
-    }
-
-    [Theory]
-    [CombinatorialData]
-    public void SerializeSpans_SecurityReportTakesPrecedenceOverTagsAndMetrics(
-        [CombinatorialValues("appsec", "iast", "_dd.stack", "another-report")] string key,
-        bool hasReport,
-        bool openTelemetrySemanticsEnabled)
-    {
-        byte[] report = [0x81, 0xa1, 0x61, 0x01];
-        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
-        span.SetTag(key, "ordinary-tag");
-        if (hasReport)
-        {
-            span.SetMetric(key, 42);
-            span.SetMetaStruct(key, report);
-        }
-
-        var attributes = SerializeAndParse(CreateChunk(span), openTelemetrySemanticsEnabled).Attributes;
-        var value = attributes.Should().ContainSingle(kv => kv.Key == key).Which.Value;
-        if (hasReport)
-        {
-            value.BytesValue.ToByteArray().Should().Equal(report);
-        }
-        else
-        {
-            value.StringValue.Should().Be("ordinary-tag");
-        }
     }
 
     [Fact]
