@@ -84,6 +84,18 @@ public class WafRequestsTelemetryTests
         span.GetMetric(Metrics.AppSecBlockFailed).Should().Be(1);
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    public void GivenAWafRun_WhenItAsksToBlock_ThenTheBlockIsRequested(bool block, bool isRasp, bool expectedBlockRequested)
+    {
+        var requestContext = new AppSecRequestContext();
+        SecurityReporter.RecordWafTelemetry(CreateResult(block: block), isRasp, requestContext, NullMetricsTelemetryCollector.Instance);
+
+        requestContext.BlockRequested.Should().Be(expectedBlockRequested);
+    }
+
     [Fact]
     public async Task GivenARaspBlockThatFailed_WhenTheRequestEnds_ThenOnlyTheSpanReportsIt()
     {

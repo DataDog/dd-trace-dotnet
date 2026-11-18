@@ -42,23 +42,20 @@ internal readonly partial struct SecurityCoordinator
     public void MarkBlockFailed() => _appsecRequestContext.MarkBlockFailed();
 
     /// <summary>
-    /// Marks the request blocked, before the blocking response is written: writing it starts the response, which
-    /// runs the response WAF scan unless the request is blocked. It stays marked even when the block fails, so that
-    /// the following WAF runs don't try to block again.
-    /// </summary>
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
-
-    /// <summary>
-    /// Records the outcome of a WAF run whose block, if it asked for one, was attempted, and reports the result.
-    /// A blocking result must have been marked with <see cref="MarkBlocked"/> before its response was written.
+    /// Records the outcome of a WAF run whose block, if it asked for one, was attempted, and reports the result
     /// </summary>
     /// <param name="result">the result of the WAF run</param>
     /// <param name="blocked">whether the blocking response could be applied</param>
-    public void ReportBlockOutcome(IResult result, bool blocked)
+    public void MarkBlockAndReport(IResult result, bool blocked)
     {
-        if (result.ShouldBlock && !blocked)
+        if (result.ShouldBlock)
         {
-            MarkBlockFailed();
+            // even when the block failed, so that the following WAF runs don't try to block again
+            _httpTransport.MarkBlocked();
+            if (!blocked)
+            {
+                MarkBlockFailed();
+            }
         }
 
         Reporter.TryReport(result, blocked);
@@ -113,7 +110,7 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
+            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData, _appsecRequestContext.BlockRequested);
 
             // run the WAF and execute the results
             var outcome = WafOutcome.Success;

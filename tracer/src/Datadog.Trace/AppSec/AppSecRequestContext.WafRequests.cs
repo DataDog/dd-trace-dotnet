@@ -37,6 +37,21 @@ internal sealed partial class AppSecRequestContext
     private bool _wafRequestsReported;
 
     /// <summary>
+    /// Gets a value indicating whether a non-RASP WAF run of the request asked to block it, whether or not the block
+    /// could be applied. API Security also reads it, to not report the missing route of a blocked request.
+    /// </summary>
+    internal bool BlockRequested
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _blockRequested;
+            }
+        }
+    }
+
+    /// <summary>
     /// Records a non-RASP WAF run of the request
     /// </summary>
     internal void RecordWafRun(IResult result)

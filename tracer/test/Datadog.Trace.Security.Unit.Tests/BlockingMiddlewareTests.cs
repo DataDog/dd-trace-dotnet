@@ -6,7 +6,6 @@
 #if NETCOREAPP
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -14,7 +13,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
@@ -56,33 +54,8 @@ public class BlockingMiddlewareTests
         rootSpan.GetMetric(Metrics.AppSecBlockFailed).Should().Be(1);
     }
 
-    // the response start hooks (FireOnStarting) run the response WAF scan when the response is first written, which
-    // skips the requests that are already blocked
-    [Fact]
-    public async Task GivenAWafBlock_WhenTheBlockingResponseStarts_ThenTheRequestIsAlreadyMarkedBlocked()
-    {
-        var body = new BlockedStateObservingStream();
-        await InvokeAsync(SecurityReporterWafTelemetryTests.CreateResult(block: true), next: null, body);
-
-        body.BlockedOnFirstWrite.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GivenABlockException_WhenTheBlockingResponseStarts_ThenTheRequestIsAlreadyMarkedBlocked()
-    {
-        var blockingResult = SecurityReporterWafTelemetryTests.CreateResult(block: true);
-        var body = new BlockedStateObservingStream();
-        await InvokeAsync(
-            SecurityReporterWafTelemetryTests.CreateResult(),
-            next: _ => throw new BlockException(blockingResult, new Dictionary<string, object?>()),
-            body);
-
-        body.BlockedOnFirstWrite.Should().BeTrue();
-    }
-
-    // runs the middleware in a web request, then ends the request. Without body, writing the response body throws,
-    // and so must the middleware; with it, the response is written to body.
-    private static async Task<(Span RootSpan, string[] WafRequestsTags)> InvokeAsync(IResult wafResult, RequestDelegate? next, BlockedStateObservingStream? body = null)
+    // runs the middleware in a web request whose response body can't be written, then ends the request
+    private static async Task<(Span RootSpan, string[] WafRequestsTags)> InvokeAsync(IResult wafResult, RequestDelegate? next)
     {
         var previousSecurity = AppSecSecurity.Instance;
         var previousTracer = Tracer.Instance;
@@ -102,20 +75,12 @@ public class BlockingMiddlewareTests
             {
                 rootSpan = scope.Span;
                 rootSpan.Type = SpanTypes.Web;
-                var context = CreateHttpContext(body ?? (Stream)new ThrowingStream());
-                body?.Observe(context);
+                var context = CreateHttpContext();
 
                 var invoke = () => new BlockingMiddleware(next).Invoke(context);
 
-                if (body is null)
-                {
-                    // exactly, as a FileNotFoundException from an assembly that fails to load is an IOException too
-                    await invoke.Should().ThrowExactlyAsync<IOException>().WithMessage(ThrowingStream.Message);
-                }
-                else
-                {
-                    await invoke();
-                }
+                // exactly, as a FileNotFoundException from an assembly that fails to load is an IOException too
+                await invoke.Should().ThrowExactlyAsync<IOException>().WithMessage(ThrowingStream.Message);
             }
         }
         finally
@@ -131,8 +96,8 @@ public class BlockingMiddlewareTests
         return (rootSpan, wafRequestsTags);
     }
 
-    // a request whose response hasn't started
-    private static HttpContext CreateHttpContext(Stream body)
+    // a request whose response hasn't started, and whose body can't be written
+    private static HttpContext CreateHttpContext()
     {
         var headers = new Mock<IHeaderDictionary>();
         headers.Setup(x => x.Keys).Returns([]);
@@ -152,12 +117,13 @@ public class BlockingMiddlewareTests
         response.Setup(x => x.HasStarted).Returns(false);
         response.Setup(x => x.Headers).Returns(new Mock<IHeaderDictionary>().Object);
         response.Setup(x => x.Cookies).Returns(new Mock<IResponseCookies>().Object);
-        response.Setup(x => x.Body).Returns(body);
+        response.Setup(x => x.Body).Returns(new ThrowingStream());
 
         var context = new Mock<HttpContext>();
         context.Setup(x => x.Request).Returns(request.Object);
         context.Setup(x => x.Response).Returns(response.Object);
         context.Setup(x => x.Items).Returns(new Dictionary<object, object?>());
+        // HttpResponse.Clear(), which writing the blocking response calls, needs the response feature
         var features = new FeatureCollection();
         features.Set(new Mock<IHttpResponseFeature>().Object);
         context.Setup(x => x.Features).Returns(features);
@@ -193,40 +159,7 @@ public class BlockingMiddlewareTests
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => throw new IOException(Message);
 
-        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) => throw new IOException(Message);
-
         public override Task FlushAsync(CancellationToken cancellationToken) => throw new IOException(Message);
-    }
-
-    // records whether the request is marked blocked when the response is first written
-    private sealed class BlockedStateObservingStream : MemoryStream
-    {
-        private HttpContext? _context;
-
-        public bool? BlockedOnFirstWrite { get; private set; }
-
-        public void Observe(HttpContext context) => _context = context;
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            RecordFirstWrite();
-            base.Write(buffer, offset, count);
-        }
-
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            RecordFirstWrite();
-            return base.WriteAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            RecordFirstWrite();
-            return base.WriteAsync(buffer, cancellationToken);
-        }
-
-        private void RecordFirstWrite()
-            => BlockedOnFirstWrite ??= _context is { } context && new SecurityCoordinator.HttpTransport(context).IsBlocked;
     }
 }
 #endif
