@@ -446,9 +446,9 @@ namespace Foo
 
         // We have different behaviour depending on whether the framework is in preview
         // This condition should always point to the "next" version of .NET
-        // e.g. if .NET 11 is in preview, use NET11_0_OR_GREATER.
-        // Once .NET 11 goes GA, update this to NET12_0_OR_GREATER
-#if NET11_0_OR_GREATER
+        // e.g. if .NET 12 is in preview, use NET12_0_OR_GREATER.
+        // Once .NET 12 goes GA, update this to NET13_0_OR_GREATER
+#if NET12_0_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]
@@ -478,7 +478,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 11 or higher", "success_forced");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 12 or higher", "success_forced");
         }
 
         [SkippableFact]
@@ -511,7 +511,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 11 or higher", "incompatible_runtime");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 12 or higher", "incompatible_runtime");
         }
 
         [SkippableFact]

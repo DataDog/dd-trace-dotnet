@@ -29,9 +29,10 @@ public class FeatureFlagsTests : TestHelper
     {
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.OpenFeature), MemberType = typeof(PackageVersions))]
     [Trait("RunOnWindows", "True")]
-    public async Task FfeEnabled()
+    public async Task FfeEnabled(string packageVersion)
     {
         int eventsReceived = 0;
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -57,7 +58,7 @@ public class FeatureFlagsTests : TestHelper
             }
         };
 
-        var output = await RunTest(agent, enabled: true);
+        var output = await RunTest(agent, enabled: true, packageVersion: packageVersion);
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
@@ -83,13 +84,13 @@ public class FeatureFlagsTests : TestHelper
         Assert.Contains("FeatureFlagsSdk is disabled", output);
     }
 
-    private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
+    private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false, string packageVersion = "")
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
         SetEnvironmentVariable("DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED", enabled ? "1" : "0");
         using var telemetry = this.ConfigureTelemetry();
         using var assert = new AssertionScope();
-        using var process = await RunSampleAndWaitForExit(agent, usePublishWithRID: usePublishWithRID);
+        using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, usePublishWithRID: usePublishWithRID);
 
         return process.StandardOutput.ToString();
     }

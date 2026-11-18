@@ -103,13 +103,13 @@ internal static class EventGridCommon
 
             if (port is not -1)
             {
-                tags.NetworkDestinationPort = port.ToString();
+                tags.NetworkDestinationPort = port.ToStringInvariant();
             }
 
             var messageCount = singleEvent is not null ? 1 : events is ICollection collection ? collection.Count : 0;
             if (messageCount > 1)
             {
-                tags.MessagingBatchMessageCount = messageCount.ToString();
+                tags.MessagingBatchMessageCount = messageCount.ToStringInvariant();
             }
 
             var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventGrid);
@@ -250,7 +250,7 @@ internal static class EventGridCommon
             {
                 if (!_knownCount.HasValue && count > 1)
                 {
-                    _scope.Span.SetTag(Tags.MessagingBatchMessageCount, count.ToString());
+                    _scope.Span.SetTag(Tags.MessagingBatchMessageCount, count.ToStringInvariant());
                 }
 
                 if (!_knownCount.HasValue && count == 1 && firstItem is not null)

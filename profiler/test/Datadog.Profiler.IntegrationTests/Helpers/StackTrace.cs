@@ -4,12 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    internal class StackTrace : IComparable<StackTrace>
+    internal class StackTrace : IComparable<StackTrace>, IEnumerable<StackFrame>
     {
         private readonly IReadOnlyList<StackFrame> _stackFrames;
 
@@ -116,6 +117,89 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Compares the leading frames of this stack to <paramref name="other"/> (prefix check).
+        /// Same rule as <see cref="EndWith(StackTrace)"/>.
+        /// </summary>
+        public bool StartsWith(StackTrace other) => StartsWith(other, out _);
+
+        /// <inheritdoc cref="StartsWith(StackTrace)"/>
+        public bool StartsWith(StackTrace other, out string failureMessage) => EndWith(other, out failureMessage);
+
+        /// <summary>
+        /// Returns whether <paramref name="other"/> appears as a contiguous sequence of frames.
+        /// </summary>
+        public bool ContainsSequence(StackTrace other) => ContainsSequence(other, out _);
+
+        /// <inheritdoc cref="ContainsSequence(StackTrace)"/>
+        public bool ContainsSequence(StackTrace other, out string failureMessage)
+        {
+            failureMessage = string.Empty;
+            if (other._stackFrames.Count == 0)
+            {
+                return true;
+            }
+
+            var lastStart = _stackFrames.Count - other._stackFrames.Count;
+            if (lastStart < 0)
+            {
+                failureMessage = DescribeMissingSequence(other, -1, 0);
+                return false;
+            }
+
+            var bestStart = -1;
+            var bestMatch = -1;
+            for (var start = 0; start <= lastStart; start++)
+            {
+                var matched = 0;
+                for (; matched < other._stackFrames.Count; matched++)
+                {
+                    if (!_stackFrames[start + matched].Equals(other._stackFrames[matched]))
+                    {
+                        break;
+                    }
+                }
+
+                if (matched == other._stackFrames.Count)
+                {
+                    return true;
+                }
+
+                if (matched > bestMatch)
+                {
+                    bestMatch = matched;
+                    bestStart = start;
+                }
+            }
+
+            failureMessage = DescribeMissingSequence(other, bestStart, bestMatch);
+            return false;
+        }
+
+        public IEnumerator<StackFrame> GetEnumerator() => _stackFrames.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        private string DescribeMissingSequence(StackTrace other, int start, int matched)
+        {
+            var expectedText = "Expected sequence (" + other._stackFrames.Count + " frames):\n" + other;
+            var actualText = "Actual stack (" + _stackFrames.Count + " frames):\n" + this;
+            if (start < 0)
+            {
+                return "Stack does not contain the expected contiguous frames.\n\n" +
+                       "The actual stack is shorter than the expected sequence.\n\n" +
+                       expectedText + "\n\n" +
+                       actualText;
+            }
+
+            return "Stack does not contain the expected contiguous frames.\n\n" +
+                   "First mismatch at expected frame index " + matched + " (actual frame index " + (start + matched) + ").\n\n" +
+                   "Expected frame:\n" + other._stackFrames[matched] + "\n\n" +
+                   "Actual frame:\n" + _stackFrames[start + matched] + "\n\n" +
+                   expectedText + "\n\n" +
+                   actualText;
         }
     }
 }

@@ -36,6 +36,9 @@ internal static class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_set")]
         internal static extern void TracerMetadataSet(IntPtr metadata, MetadataKind kind, CString value);
 
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_include_otel_thread_context")]
+        internal static extern VoidResult IncludeOtelThreadContext(IntPtr metadata);
+
         [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_store")]
         internal static extern TracerMemfdHandleResult StoreTracerMetadata(IntPtr metadata);
 

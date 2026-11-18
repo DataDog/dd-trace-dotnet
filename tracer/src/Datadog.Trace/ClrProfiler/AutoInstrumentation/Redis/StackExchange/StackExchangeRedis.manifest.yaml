@@ -1,0 +1,13 @@
+_v: 1
+name: StackExchangeRedis
+display_name: StackExchange.Redis
+description: Instruments StackExchange.Redis synchronous and asynchronous command execution as Redis client operations, tagged
+  with the server endpoint and database index.
+packages:
+- name: StackExchange.Redis
+- name: StackExchange.Redis.StrongName
+category:
+- db.client
+systems:
+- redis
+creation_date: '2018-09-17'

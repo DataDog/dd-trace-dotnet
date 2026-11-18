@@ -1,0 +1,11 @@
+_v: 1
+name: Serilog
+display_name: Serilog
+description: Instruments Serilog log-record emission by enriching events with trace-correlation and service metadata, and
+  optionally submitting formatted logs directly to Datadog.
+packages:
+- name: Serilog
+category:
+- log.emission
+systems: []
+creation_date: '2019-06-19'

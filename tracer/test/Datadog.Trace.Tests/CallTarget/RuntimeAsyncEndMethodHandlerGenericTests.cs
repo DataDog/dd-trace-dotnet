@@ -212,6 +212,32 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     }
 
     [Fact]
+    public async Task WhenOnAsyncMethodEndThrows_OnMethodEndStillRunsWithTheOriginalResult()
+    {
+        ThrowingAsyncEndIntegration.Reset();
+
+        var returned = InvokeThrowingAsyncEnd("value");
+
+        ThrowingAsyncEndIntegration.SyncCalls.Should().Be(1);
+        returned.Should().Be("value");
+        var declared = ThrowingAsyncEndIntegration.SyncReturnValue.Should().BeAssignableTo<Task<string>>().Subject;
+        (await declared).Should().Be("value");
+        IntegrationOptions<ThrowingAsyncEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void WhenOnAsyncMethodEndBubblesUp_TheExceptionReachesTheCaller()
+    {
+        BubblingUpAsyncEndIntegration.Reset();
+
+        Action act = () => InvokeBubblingUpAsyncEnd("value");
+
+        // AppSec blocks this way, so it must reach the application rather than be logged
+        act.Should().Throw<InvalidOperationException>().WithInnerException<BubbleUpException>();
+        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(0);
+    }
+
+    [Fact]
     public void WhenOnAsyncMethodEndIsItselfAsync_DisablesTheIntegrationAndLeavesTheResultUnchanged()
     {
         AsyncCallbackIntegration.Reset();
@@ -259,6 +285,20 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
         return CallTargetInvoker
               .EndMethodRuntimeAsync<BothCallbacksIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, null, in state)
               .GetReturnValue();
+    }
+
+    private static string InvokeThrowingAsyncEnd(string returnValue)
+    {
+        var state = CallTargetState.GetDefault();
+        return CallTargetInvoker
+              .EndMethodRuntimeAsync<ThrowingAsyncEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, null, in state)
+              .GetReturnValue();
+    }
+
+    private static void InvokeBubblingUpAsyncEnd(string returnValue)
+    {
+        var state = CallTargetState.GetDefault();
+        CallTargetInvoker.EndMethodRuntimeAsync<BubblingUpAsyncEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), returnValue, null, in state);
     }
 
     private static void InvokeMethodEndWithTask(string returnValue, Exception exception)
@@ -387,6 +427,52 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
             SyncReturnValue = returnValue;
             return new CallTargetReturn<TReturn>(returnValue);
         }
+    }
+
+    internal class ThrowingAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static object SyncReturnValue { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+            SyncReturnValue = null;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Integration Exception");
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            SyncReturnValue = returnValue;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubblingUpAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Blocked", new BubbleUpException());
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubbleUpException : CallTargetBubbleUpException
+    {
     }
 
     internal class AsyncCallbackIntegration

@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tools.Runner
             if (_applicationContext.Platform == Platform.Linux)
             {
                 // Make sure the dd-dotnet binary is executable
-                Process.Start("chmod", $"+x {ddDotnet}")!.WaitForExit();
+                Process.Start(new ProcessStartInfo("chmod", $"+x {ddDotnet}") { UseShellExecute = false })!.WaitForExit();
             }
 
             var startInfo = new ProcessStartInfo(ddDotnet) { UseShellExecute = false };

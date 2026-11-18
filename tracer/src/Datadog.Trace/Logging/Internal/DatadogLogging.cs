@@ -39,7 +39,7 @@ namespace Datadog.Trace.Logging
 
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {
-                    Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
+                    _ = Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
                 }
 
                 var domainMetadata = DomainMetadata.Instance;

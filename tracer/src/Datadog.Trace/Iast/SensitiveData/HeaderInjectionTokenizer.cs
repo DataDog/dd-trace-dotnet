@@ -34,7 +34,7 @@ internal sealed class HeaderInjectionTokenizer : ITokenizer
         var value = evidence.Value;
         if (value is null) { return []; }
 
-        var separatorStart = value.IndexOf(IastModule.HeaderInjectionEvidenceSeparator);
+        var separatorStart = value.IndexOfOrdinal(IastModule.HeaderInjectionEvidenceSeparator);
 
         if (separatorStart > 0)
         {
