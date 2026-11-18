@@ -276,8 +276,14 @@ namespace Datadog.Trace.DatabaseMonitoring
                         }
 
                         // SqlClient accepts names without '@' for RPC, but both sides of the EXEC assignment need it.
-                        var parameterPrefix = parameterName[0] == '@' ? string.Empty : "@";
-                        paramList.Append(parameterPrefix).Append(parameterName).Append('=').Append(parameterPrefix).Append(parameterName);
+                        if (parameterName[0] == '@')
+                        {
+                            paramList.Append(parameterName).Append('=').Append(parameterName);
+                        }
+                        else
+                        {
+                            paramList.Append('@').Append(parameterName).Append("=@").Append(parameterName);
+                        }
                     }
                 }
 

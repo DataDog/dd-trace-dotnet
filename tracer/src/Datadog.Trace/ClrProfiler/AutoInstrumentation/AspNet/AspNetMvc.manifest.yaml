@@ -1,0 +1,11 @@
+_v: 1
+name: AspNetMvc
+display_name: ASP.NET MVC
+description: Instruments ASP.NET MVC controller actions as inbound HTTP server requests, including optional application-security
+  and IAST monitoring.
+packages:
+- name: Microsoft.AspNet.Mvc
+category:
+- http.server
+systems: []
+creation_date: '2018-06-18'

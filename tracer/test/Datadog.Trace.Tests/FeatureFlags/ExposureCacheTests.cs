@@ -12,6 +12,7 @@ using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
@@ -230,14 +231,65 @@ public partial class ExposureCacheTests
         Assert.Equal(1, cache.Size);
     }
 
-    private static ExposureEvent CreateSerialIdEvent(long? serialId)
+    [Fact]
+    public void ARepeatRefreshesTheLeastRecentlyUsedOrder()
+    {
+        var cache = new ExposureCache(2);
+
+        cache.Add(Exposure("a")).Should().BeTrue();
+        cache.Add(Exposure("b")).Should().BeTrue();
+        cache.Add(Exposure("a")).Should().BeFalse();
+        cache.Add(Exposure("c")).Should().BeTrue();
+
+        cache.Contains(Exposure("a")).Should().BeTrue();
+        cache.Contains(Exposure("b")).Should().BeFalse("the repeat of a left b least recently used");
+        cache.Size.Should().Be(2);
+    }
+
+    [Fact]
+    public void AChangedExposureReplacesTheEntryAndRefreshesIt()
+    {
+        var cache = new ExposureCache(2);
+
+        cache.Add(Exposure("a")).Should().BeTrue();
+        cache.Add(Exposure("b")).Should().BeTrue();
+        cache.Add(Exposure("a", "other-variant")).Should().BeTrue();
+        cache.Add(Exposure("c")).Should().BeTrue();
+
+        cache.Contains(Exposure("a", "other-variant")).Should().BeTrue();
+        cache.Contains(Exposure("a")).Should().BeFalse();
+        cache.Contains(Exposure("b")).Should().BeFalse();
+        cache.Size.Should().Be(2);
+    }
+
+    [Fact]
+    public void ContainsPeeksWithoutRecordingOrRefreshing()
+    {
+        var cache = new ExposureCache(2);
+
+        cache.Contains(Exposure("a")).Should().BeFalse();
+        cache.Size.Should().Be(0);
+
+        cache.Add(Exposure("a")).Should().BeTrue();
+        cache.Add(Exposure("b")).Should().BeTrue();
+        cache.Contains(Exposure("a")).Should().BeTrue();
+        cache.Contains(Exposure("a", "other-variant")).Should().BeFalse("a different variant is a changed exposure");
+        cache.Add(Exposure("c")).Should().BeTrue();
+
+        cache.Contains(Exposure("a")).Should().BeFalse("the peek did not make a recently used");
+        cache.Contains(Exposure("b")).Should().BeTrue();
+    }
+
+    private static ExposureEvent CreateSerialIdEvent(long? serialId) => Exposure(serialId: serialId);
+
+    private static ExposureEvent Exposure(string subject = "subject", string variant = "variant", long? serialId = null)
     {
         return new ExposureEvent(
             new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
             new Trace.FeatureFlags.Exposure.Model.Allocation("allocation"),
             new Trace.FeatureFlags.Exposure.Model.Flag("flag"),
-            new Trace.FeatureFlags.Exposure.Model.Variant("variant"),
-            new Subject("subject", new Dictionary<string, object?>()),
+            new Trace.FeatureFlags.Exposure.Model.Variant(variant),
+            new Subject(subject, new Dictionary<string, object?>()),
             serialId);
     }
 }

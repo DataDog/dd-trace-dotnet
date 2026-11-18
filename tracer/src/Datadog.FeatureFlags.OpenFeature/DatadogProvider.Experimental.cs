@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -25,8 +26,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as bool. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and returns after they complete.
-    /// Hooks registered on the OpenFeature API or client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveBooleanValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -42,8 +43,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as double. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and returns after they complete.
-    /// Hooks registered on the OpenFeature API or client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveDoubleValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -59,8 +60,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as int. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and returns after they complete.
-    /// Hooks registered on the OpenFeature API or client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveIntegerValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -76,8 +77,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as string. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and returns after they complete.
-    /// Hooks registered on the OpenFeature API or client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveStringValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -93,8 +94,8 @@ public sealed partial class DatadogProvider
     /// <summary>Synchronously resolves a flag as Value. Experimental Datadog extension.</summary>
     /// <remarks>
     /// Initialize the provider asynchronously before evaluation. This method uses only the supplied
-    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and returns after they complete.
-    /// Hooks registered on the OpenFeature API or client do not run.
+    /// context. It runs the hooks from <see cref="GetProviderHooks"/> and any <see cref="ExposureHook"/> on the
+    /// OpenFeature API, and returns after they complete. Other API or client hooks do not run.
     /// It has the same resolution contract as <see cref="ResolveStructureValueAsync"/>.
     /// It will be deprecated when an equivalent stable OpenFeature API is supported by this package.
     /// </remarks>
@@ -108,9 +109,9 @@ public sealed partial class DatadogProvider
         => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.Json, FlagValueType.Object, defaultValue, context, cancellationToken);
 
     // FeatureClient runs these hooks around the async methods. The sync methods bypass the client, so they run the
-    // client's post-resolution stages here, in its order and with its failure handling, and return only after every
-    // hook completes. Before hooks are skipped because they can change the context, which these methods take as given.
-    internal static ResolutionDetails<T> RunProviderHooks<T>(IImmutableList<Hook> hooks, HookContext<T> context, ResolutionDetails<T> resolution)
+    // client's post-resolution stages here, in its order (last hook first) and with its failure handling, and return
+    // only after every hook completes. Before hooks are skipped: they could change the given context.
+    internal static ResolutionDetails<T> RunPostResolutionHooks<T>(IReadOnlyList<Hook> hooks, HookContext<T> context, ResolutionDetails<T> resolution)
     {
         if (hooks.Count == 0)
         {
@@ -185,12 +186,42 @@ public sealed partial class DatadogProvider
         }
     }
 
+    // Adds API ExposureHooks, which miss sync evaluations otherwise (no client). They go first because hooks run last
+    // first, so their finally stage runs after the provider's commit. Other API hooks stay out: they would run without
+    // their before stage, and could block on async work.
+    private static IReadOnlyList<Hook> WithApiExposureHooks(IImmutableList<Hook> providerHooks)
+    {
+        // Api.GetHooks() allocates; skip it until an ExposureHook exists.
+        if (!FeatureFlagsSdk.ExposureHookCreated)
+        {
+            return providerHooks;
+        }
+
+        List<Hook>? hooks = null;
+        foreach (var hook in global::OpenFeature.Api.Instance.GetHooks())
+        {
+            if (hook is ExposureHook)
+            {
+                (hooks ??= new List<Hook>(providerHooks.Count + 1)).Add(hook);
+            }
+        }
+
+        if (hooks is null)
+        {
+            return providerHooks;
+        }
+
+        hooks.AddRange(providerHooks);
+        return hooks;
+    }
+
     private ResolutionDetails<T> ResolveSync<T>(string flagKey, Trace.FeatureFlags.ValueType valueType, FlagValueType flagValueType, T defaultValue, EvaluationContext? context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
-        return _providerHooks.Count == 0
+        var hooks = WithApiExposureHooks(_providerHooks);
+        return hooks.Count == 0
             ? resolution
-            : RunProviderHooks(_providerHooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
+            : RunPostResolutionHooks(hooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
     }
 }

@@ -52,6 +52,7 @@ stages:
       - dotnet_tool
       - tool_artifacts_tests_windows
       - tool_artifacts_tests_linux
+      - bundle_artifacts_tests
       - store_ssi_artifacts
       - store_serverless_artifacts
       - upload_to_azure
@@ -134,6 +135,7 @@ stages:
          in(dependencies.dotnet_tool.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tool_artifacts_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tool_artifacts_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.bundle_artifacts_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.store_ssi_artifacts.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.store_serverless_artifacts.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.upload_to_azure.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -228,6 +230,7 @@ stages:
       - dotnet_tool
       - tool_artifacts_tests_windows
       - tool_artifacts_tests_linux
+      - bundle_artifacts_tests
       - store_ssi_artifacts
       - store_serverless_artifacts
       - upload_to_azure
@@ -310,6 +313,7 @@ stages:
          in(dependencies.dotnet_tool.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tool_artifacts_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tool_artifacts_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.bundle_artifacts_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.store_ssi_artifacts.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.store_serverless_artifacts.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.upload_to_azure.result, 'Succeeded','SucceededWithIssues','Skipped'),

@@ -63,7 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
             // That's because performance counters may rely on wmiApSrv being started,
             // and the windows service manager only allows one service at a time to be starting: https://docs.microsoft.com/en-us/windows/win32/services/service-startup
             _initializationTask = Task.Run(InitializePerformanceCounters);
-            _initializationTask.ContinueWith(t => Log.ErrorSkipTelemetry(t.Exception, "Error in performance counter initialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _initializationTask.ContinueWith(t => Log.ErrorSkipTelemetry(t.Exception, "Error in performance counter initialization task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public Task WaitForInitialization() => _initializationTask;
@@ -192,11 +192,11 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private Tuple<string, bool> GetInstanceName()
         {
-            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWith(_processName)).ToArray();
+            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWithOrdinal(_processName)).ToArray();
 
             // The instance can contain the pid, which will avoid looking through multiple processes that would have the same name
             // See https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/performance-counters-and-in-process-side-by-side-applications#performance-counters-for-in-process-side-by-side-applications
-            var fullName = instanceNames.FirstOrDefault(n => n.StartsWith($"{_processName}_p{_processId}_r"));
+            var fullName = instanceNames.FirstOrDefault(n => n.StartsWithOrdinal(StringUtil.Invariant($"{_processName}_p{_processId}_r")));
 
             if (fullName != null)
             {
@@ -213,7 +213,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private string GetSimpleInstanceName()
         {
-            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWith(_processName)).ToArray();
+            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWithOrdinal(_processName)).ToArray();
 
             if (instanceNames.Length == 1)
             {

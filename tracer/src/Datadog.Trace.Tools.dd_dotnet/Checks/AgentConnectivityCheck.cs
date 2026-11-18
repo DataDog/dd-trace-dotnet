@@ -89,11 +89,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         }
 
         private static string Combine(string baseUri, string relativePath)
-            => baseUri.EndsWith("/")
-                   ? (relativePath.StartsWith("/")
+            => baseUri.EndsWith('/')
+                   ? (relativePath.StartsWith('/')
                           ? $"{baseUri.Substring(0, baseUri.Length - 1)}{relativePath}"
                           : $"{baseUri}{relativePath}")
-                   : (relativePath.StartsWith("/")
+                   : (relativePath.StartsWith('/')
                           ? $"{baseUri}{relativePath}"
                           : $"{baseUri}/{relativePath}");
 

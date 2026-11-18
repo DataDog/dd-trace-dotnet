@@ -1,0 +1,10 @@
+_v: 1
+name: Process
+display_name: Process
+description: Instruments .NET System.Diagnostics.Process.Start calls that launch child processes, tracing command execution
+  and optionally collecting command details while enabling command-injection analysis and protection.
+packages: []
+category:
+- task.execution
+systems: []
+creation_date: '2022-09-12'

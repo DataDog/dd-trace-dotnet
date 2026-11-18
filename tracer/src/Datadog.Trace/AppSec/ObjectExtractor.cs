@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -163,7 +164,7 @@ namespace Datadog.Trace.AppSec
             var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             if (!bodyType.GetTypeInfo().IsAnonymous())
             {
-                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
+                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWithOrdinal("__BackingField")).ToArray();
             }
 
             var fieldExtractors = new MemberExtractor[fields.Length];
@@ -522,8 +523,8 @@ namespace Datadog.Trace.AppSec
                 // would be silently dropped (encoded as an empty string) by the modern WAF encoder.
                 var underlying = Enum.GetUnderlyingType(itemType);
                 return underlying == typeof(byte) || underlying == typeof(ushort) || underlying == typeof(uint) || underlying == typeof(ulong)
-                    ? (object)Convert.ToUInt64(value)
-                    : (object)Convert.ToInt64(value);
+                    ? (object)Convert.ToUInt64(value, CultureInfo.InvariantCulture)
+                    : (object)Convert.ToInt64(value, CultureInfo.InvariantCulture);
             }
 
 #if NETFRAMEWORK
