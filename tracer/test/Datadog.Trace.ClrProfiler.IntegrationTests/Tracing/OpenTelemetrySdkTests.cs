@@ -529,8 +529,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
 
+            // OpenTelemetry.Exporter.OpenTelemetryProtocol 1.21.0 dropped its net8.0 target, so .NET 8 now gets the
+            // netstandard build of the exporter, which (like on .NET 6/7) can't send insecure gRPC.
             _ = runtimeMajor switch
             {
+                8 when parsedVersion >= new Version("1.21.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry v{parsedVersion} in .NET {runtimeMajor}."),
                 >= 8 when parsedVersion >= new Version("1.9.0") => string.Empty,
                 6 or 7 when parsedVersion >= new Version("1.9.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry in .NET {runtimeMajor}."),
                 6 or 7 when parsedVersion >= new Version("1.9.0") => string.Empty,

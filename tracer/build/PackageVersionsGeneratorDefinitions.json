@@ -959,7 +959,11 @@
       "1.3.2",
       "1.5.1",
       "1.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "1.21.0",
+      "ExcludeTargetFrameworks": ["net9.0"]
+    }]
   },
   {
     "IntegrationName": "Yarp",
