@@ -1,0 +1,12 @@
+_v: 1
+name: AwsS3
+display_name: Amazon S3
+description: Instruments Amazon S3 bucket and object operations, including multipart uploads, through the AWS SDK for .NET
+  S3 client, and adds S3 span pointers for successful object writes, copies, and completed multipart uploads when enabled.
+packages:
+- name: AWSSDK.S3
+category:
+- object_store.client
+systems:
+- aws.s3
+creation_date: '2025-02-10'

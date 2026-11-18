@@ -166,7 +166,7 @@ namespace Datadog.Trace.Agent
             }
 
             _flushTask = Task.Run(Flush);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
             if (_isOtlp)
             {
@@ -232,6 +232,9 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>Processes a trace whose spans have already been normalized.</summary>
+        /// <param name="spans">The normalized spans to filter, obfuscate, and sample.</param>
+        /// <returns>The keep state of the trace.</returns>
         public TraceKeepState ProcessTrace(ref SpanCollection spans)
         {
             // Follow the same processing steps as the Go tracer
@@ -441,7 +444,7 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 span.GetHttpStatusCode() ?? 0,
-                span.Context.Origin?.StartsWith("synthetics") == true,
+                span.Context.Origin?.StartsWithOrdinal("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
                 _isOtlp ? span.IsTopLevel : false,

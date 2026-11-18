@@ -26,6 +26,7 @@ internal sealed class CoverageContextContainer : IDisposable
     private CoverageContextAdmission? _deferredAdmission;
     private int _activeExecutionContexts;
     private int _closed;
+    private int _probeDataIncomplete;
     private int _disposeRequested;
     private int _disposed;
 
@@ -39,7 +40,14 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public bool IsClosed => Volatile.Read(ref _closed) != 0;
 
+    /// <summary>
+    /// Gets a value indicating whether a probe of this context ran without counters, so its coverage misses lines.
+    /// </summary>
+    public bool IsProbeDataIncomplete => Volatile.Read(ref _probeDataIncomplete) != 0;
+
     public bool HasActiveExecutionContexts => Volatile.Read(ref _activeExecutionContexts) != 0;
+
+    public void MarkProbeDataIncomplete() => Volatile.Write(ref _probeDataIncomplete, 1);
 
     public void OnExecutionContextEntered() => Interlocked.Increment(ref _activeExecutionContexts);
 

@@ -73,6 +73,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+    /// For Oracle in service mode, the Base Hash is written to the session ACTION instead of SQL comments.
     /// Default value is false (disabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
@@ -82,6 +83,7 @@ internal static partial class ConfigurationKeys
     /// Configuration key for setting DBM propagation mode
     /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
     /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
+    /// For Oracle, dynamic_service writes the Base Hash to the session ACTION instead of injecting SQL comments
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";

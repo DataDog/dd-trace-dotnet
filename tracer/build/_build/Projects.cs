@@ -33,6 +33,7 @@ public static class Projects
     public const string DdTraceArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
     public const string DdDotnetIntegrationTests = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests";
     public const string DdDotnetArtifactsTests = "Datadog.Trace.Tools.dd_dotnet.ArtifactTests";
+    public const string BundleArtifactsTests = "Datadog.Trace.Bundle.ArtifactTests";
 
     public const string DataDogThreadTest = "DataDogThreadTest";
 

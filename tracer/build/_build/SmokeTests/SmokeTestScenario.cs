@@ -77,6 +77,7 @@ public record NuGetScenario : SmokeTestScenario
 {
     public required string RuntimeId { get; init; }
     public required string NuGetPackageName { get; init; }
+    public bool IncludeDdDotnetScenario { get; init; }
     public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
     public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
 

@@ -51,7 +51,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IStatsAggregator _statsAggregator;
         private readonly NormalizerTraceProcessor _normalizerProcessor = new();
-        private readonly bool _isOtlp;
+        private readonly bool _alwaysProcessTrace;
 
         private readonly bool _apmTracingEnabled;
 
@@ -122,7 +122,8 @@ namespace Datadog.Trace.Agent
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
             _api = api;
-            _isOtlp = api.TracesEncoding is TracesEncoding.OtlpJson or TracesEncoding.OtlpProtobuf;
+            var isOtlp = api.TracesEncoding is TracesEncoding.OtlpJson or TracesEncoding.OtlpProtobuf;
+            _alwaysProcessTrace = apmTracingEnabled && isOtlp;
             _statsd = statsd;
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
@@ -147,10 +148,10 @@ namespace Datadog.Trace.Agent
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
             _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private enum TraceDropReason
@@ -589,14 +590,9 @@ namespace Datadog.Trace.Agent
             int? chunkSamplingPriority = null;
             var chunk = spans;
             var canComputeStats = CanComputeStats;
-            var shouldProcessTrace = canComputeStats || (_apmTracingEnabled && _isOtlp);
-            if (shouldProcessTrace)
+            if (canComputeStats || _alwaysProcessTrace)
             {
                 chunk = NormalizeTrace(in chunk);
-            }
-
-            if (shouldProcessTrace)
-            {
                 var keepState = canComputeStats
                                     ? _statsAggregator.ProcessTrace(ref chunk)
                                     : SamplingHelpers.IsKeptBySamplingPriority(in chunk) ? TraceKeepState.AggregateAndExport : TraceKeepState.AggregateOnly;

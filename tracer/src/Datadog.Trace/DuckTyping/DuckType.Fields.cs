@@ -220,10 +220,7 @@ namespace Datadog.Trace.DuckTyping
                     return conversionError;
                 }
 
-                // Call IDuckType.Instance property to get the actual value
-                il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod!, null!);
-
-                currentValueType = typeof(object);
+                currentValueType = MethodIlHelper.AddIlToGetDuckTypeInstance(il);
             }
             else
             {

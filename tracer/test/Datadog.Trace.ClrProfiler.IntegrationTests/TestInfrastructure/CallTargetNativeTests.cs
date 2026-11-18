@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // File may only contain a single type
+
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -22,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        protected virtual bool IsRuntimeAsyncBuild => false;
+
         public static IEnumerable<object[]> MethodArgumentsData()
         {
             for (var i = 0; i < 9; i++)
@@ -39,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: numberOfArguments.ToString()))
+            using (var processResult = await RunCallTargetSample(agent, numberOfArguments.ToString()))
             {
                 string beginMethodString = $"ProfilerOK: BeginMethod\\({numberOfArguments}\\)";
                 if (!fastPath)
@@ -98,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "withref"))
+            using (var processResult = await RunCallTargetSample(agent, "withref"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
@@ -130,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "without"))
+            using (var processResult = await RunCallTargetSample(agent, "without"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
@@ -161,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "abstract"))
+            using (var processResult = await RunCallTargetSample(agent, "abstract"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
                 int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
@@ -193,7 +197,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "interface"))
+            using (var processResult = await RunCallTargetSample(agent, "interface"))
             {
                 int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
@@ -221,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "remove"))
+            using (var processResult = await RunCallTargetSample(agent, "remove"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
@@ -245,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "extras"))
+            using (var processResult = await RunCallTargetSample(agent, "extras"))
             {
                 int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
@@ -266,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "calltargetbubbleupexceptions");
+            using var processResult = await RunCallTargetSample(agent, "calltargetbubbleupexceptions");
             processResult.ExitCode.Should().Be(0);
             var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration").Count;
             var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration, CallTargetNativeTest").Count;
@@ -281,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "instrumentationexceptions");
+            using var processResult = await RunCallTargetSample(agent, "instrumentationexceptions");
             processResult.ExitCode.Should().Be(0);
             var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
             var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
@@ -296,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "categories"))
+            using (var processResult = await RunCallTargetSample(agent, "categories"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
@@ -318,7 +322,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "withrefstruct"))
+            using (var processResult = await RunCallTargetSample(agent, "withrefstruct"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
@@ -346,5 +350,54 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 VerifyInstrumentation(processResult.Process);
             }
         }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task AsyncMethods()
+        {
+            // The same async targets compile to state machines in the default build and to runtime-async methods in
+            // the runtime-async build, and integrations should not be able to tell the difference.
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "runtimeasync");
+            processResult.ExitCode.Should().Be(0);
+
+            // Skipping the body of a state-machine target returns a null task, so only the runtime-async build runs
+            // the two skip-method-body calls.
+            var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
+
+            var output = processResult.StandardOutput;
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(64 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(53 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(60 + skipMethodBodyCalls);
+            Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
+
+            VerifyInstrumentation(processResult.Process);
+        }
+
+        private async Task<ProcessResult> RunCallTargetSample(MockTracerAgent agent, string arguments)
+        {
+            var processResult = await RunSampleAndWaitForExit(agent, arguments: arguments);
+#if NET11_0_OR_GREATER
+            // The sample verifies that it was compiled the way we expect, this check confirms we ran the right sample!
+            processResult.StandardOutput.Should().Contain($"RuntimeAsyncCompiled: {IsRuntimeAsyncBuild}");
+#endif
+            return processResult;
+        }
     }
+
+#if NET11_0_OR_GREATER
+    public class CallTargetNativeRuntimeAsyncTests : CallTargetNativeTests
+    {
+        public CallTargetNativeRuntimeAsyncTests(ITestOutputHelper output)
+            : base(output)
+        {
+            // Built by CompileTrimmingSamples with DD_RuntimeAsync=true, see CallTargetNativeTest.csproj
+            EnvironmentHelper.ArtifactsPivotSuffix = "_runtime_async";
+        }
+
+        protected override bool IsRuntimeAsyncBuild => true;
+    }
+#endif
 }

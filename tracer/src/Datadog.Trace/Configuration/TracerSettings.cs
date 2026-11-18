@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -18,6 +19,7 @@ using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
@@ -85,8 +87,10 @@ namespace Datadog.Trace.Configuration
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
+            var untrackedConfig = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
+
             // We don't want/need to record this value, so explicitly use null telemetry
-            IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
+            IsRunningInCiVisibility = untrackedConfig
                                      .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
                                      .AsBool(false);
 
@@ -126,6 +130,9 @@ namespace Datadog.Trace.Configuration
             SpanPointersEnabled = config
                .WithKeys(ConfigurationKeys.SpanPointersEnabled)
                .AsBool(defaultValue: true);
+            AwsLambdaStripContextEnabled = config
+               .WithKeys(ConfigurationKeys.Aws.LambdaStripContextEnabled)
+               .AsBool(defaultValue: false);
 
             PeerServiceNameMappings = TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.PeerServiceNameMappings));
 
@@ -229,7 +236,7 @@ namespace Datadog.Trace.Configuration
 
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
-                            .AsInt32(defaultValue: 10_000);
+                            .AsInt32(defaultValue: 10_000, validator: x => x > 0).Value;
 
             OtelMetricExportTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
@@ -333,7 +340,7 @@ namespace Datadog.Trace.Configuration
             // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
             // manually calls flush and waits for the result before ending execution.
             // This can artificially increase the execution time of functions.
-            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
+            var defaultTraceBatchInterval = IsRunningInServerless ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
@@ -758,9 +765,16 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool(defaultValue: false),
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
+            // Serverless and Azure App Service are excluded because the out-of-process reader can't run there.
+            // DD_APPSEC_ENABLED is read untracked: SecuritySettings already records it, and a second record duplicates it in telemetry.
+            var otelThreadContextEnabledByDefault =
+                OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance)
+             && !IsRunningInServerless
+             && !IsRunningInAzureAppService
+             && SecuritySettings.ReadAppsecEnabled(untrackedConfig, out _);
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
-                .AsBool(defaultValue: false);
+                .AsBool(defaultValue: otelThreadContextEnabledByDefault);
 
             if (OtelSemanticsEnabled)
             {
@@ -1265,7 +1279,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the active trace and span identifiers of each thread are published
         /// using the OpenTelemetry thread context protocol (OTEP 4947).
-        /// Only supported on Linux x64 and arm64. Default is <c>false</c>.
+        /// Only supported on Linux x64 and arm64. Defaults to <c>true</c> when <see cref="ConfigurationKeys.AppSec.Enabled"/>
+        /// is enabled on a supported platform outside serverless and Azure App Service, <c>false</c> otherwise.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
         internal bool OtelThreadContextEnabled { get; }
@@ -1371,6 +1386,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer is running in AWS Lambda, Azure Functions or Google Cloud Functions.
+        /// </summary>
+        internal bool IsRunningInServerless => LambdaMetadata.IsRunningInLambda || IsRunningInAzureFunctions || IsRunningInGCPFunctions;
+
+        /// <summary>
         /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
         /// </summary>
         internal LambdaMetadata LambdaMetadata { get; }
@@ -1442,6 +1462,13 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to add span pointers on AWS requests.
         /// </summary>
         internal bool SpanPointersEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the _datadog trace context injected into AWS Lambda
+        /// event payloads is removed before the customer handler reads them.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.Aws.LambdaStripContextEnabled"/>
+        internal bool AwsLambdaStripContextEnabled { get; }
 
         /// <summary>
         /// Gets the metadata schema version

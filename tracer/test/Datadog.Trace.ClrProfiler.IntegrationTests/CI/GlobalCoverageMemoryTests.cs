@@ -58,6 +58,7 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "LoadTest")]
+    [Flaky("Identified as flaky in CI")]
     public void SixThousandNUnitContextsDoNotRetainNativeCoverageBuffers()
     {
         RunStress(expectedCaseCount: 6_000);

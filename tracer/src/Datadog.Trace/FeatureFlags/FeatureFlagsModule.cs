@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -30,6 +29,9 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsModule : IDisposable
     {
+        // Deferred exposures without any commit call before the one-time warning.
+        private const int UncommittedExposureWarningThreshold = 1_000;
+
         // Static, so the warning that debug logs include raw evaluation data is written once per
         // process even when the tracer is reconfigured and a new module is created.
         private static int _rawEvaluationDataWarningLogged;
@@ -71,9 +73,6 @@ namespace Datadog.Trace.FeatureFlags
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
-        // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
-        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<ExposureEvent>> _deferredExposures = new();
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -83,6 +82,12 @@ namespace Datadog.Trace.FeatureFlags
         // the registration replay and the delivery path both hand the handler the same configuration.
         private long _configGeneration;
         private long _handlerDeliveredGeneration;
+
+        // Only the provider's hooks commit deferred exposures. These detect hooks that never run, for
+        // example under a wrapper that drops them. Counting ends at the first commit call or the warning;
+        // after that, evaluations and commits only read _uncommittedExposureCheckDone.
+        private int _exposuresDeferredWithoutCommit;
+        private int _uncommittedExposureCheckDone;
 
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
@@ -131,6 +136,9 @@ namespace Datadog.Trace.FeatureFlags
 
         [TestingAndPrivateOnly]
         internal FeatureFlagsSettings Settings => _settings;
+
+        [TestingAndPrivateOnly]
+        internal bool HasExposureApi => Volatile.Read(ref _exposureApi) is not null;
 
         /// <summary>
         /// Gets a value indicating whether configuration is currently held, so evaluations can resolve
@@ -452,9 +460,9 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = deferExposure
                                  ? evaluator.EvaluateWithDeferredExposure(flagKey, resultType, defaultValue, context)
                                  : evaluator.Evaluate(flagKey, resultType, defaultValue, context);
-            if (evaluation.PendingExposure is { } pending && evaluation.FlagMetadata is { } metadata)
+            if (evaluation.FlagMetadata is DeferredExposureMetadata { IsPending: true })
             {
-                _deferredExposures.Add(metadata, new StrongBox<ExposureEvent>(pending));
+                WarnIfExposuresStayUncommitted();
             }
 
             LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
@@ -889,20 +897,41 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
         {
-            if (evaluationMetadata is null
-                || !_deferredExposures.TryGetValue(evaluationMetadata, out var pending)
-                || !_deferredExposures.Remove(evaluationMetadata))
+            // A commit call proves the provider's hooks run.
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) == 0)
+            {
+                Volatile.Write(ref _uncommittedExposureCheckDone, 1);
+            }
+
+            if (evaluationMetadata is not DeferredExposureMetadata deferred
+                || !deferred.TryTakePendingExposure(out var pending))
             {
                 return ExposureCommitResult.NothingPending;
             }
 
-            return ReportExposure(pending.Value) switch
+            return ReportExposure(in pending) switch
             {
                 ExposureRecordResult.New => ExposureCommitResult.New,
                 ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
                 // Reporting has stopped, so nothing was recorded and there is no verdict to give.
                 _ => ExposureCommitResult.NothingPending,
             };
+        }
+
+        private void WarnIfExposuresStayUncommitted()
+        {
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) != 0)
+            {
+                return;
+            }
+
+            if (Interlocked.Increment(ref _exposuresDeferredWithoutCommit) == UncommittedExposureWarningThreshold
+                && Interlocked.Exchange(ref _uncommittedExposureCheckDone, 1) == 0)
+            {
+                _log.Warning<int>(
+                    "Feature Flags: {Count} flag evaluations left their exposure uncommitted. The Datadog provider's OpenFeature hooks record and send exposures: evaluate flags through an OpenFeature client, and when you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
+                    UncommittedExposureWarningThreshold);
+            }
         }
 
         private ExposureRecordResult ReportExposure(in ExposureEvent exposure)

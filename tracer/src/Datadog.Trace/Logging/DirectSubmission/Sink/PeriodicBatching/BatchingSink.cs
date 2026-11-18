@@ -65,7 +65,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             if (startBackgroundLoop)
             {
                 _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
-                _flushTask.ContinueWith(
+                _ = _flushTask.ContinueWith(
                     t =>
                     {
                         _log.Error(t.Exception, "Error in flush task");

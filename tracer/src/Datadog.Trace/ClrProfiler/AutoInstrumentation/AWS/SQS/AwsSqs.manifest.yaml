@@ -1,0 +1,12 @@
+_v: 1
+name: AwsSqs
+display_name: Amazon SQS
+description: Instruments Amazon SQS queue creation and deletion and single and batch message send, receive, and delete operations.
+packages:
+- name: AWSSDK.SQS
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- aws.sqs
+creation_date: '2021-06-08'
