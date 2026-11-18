@@ -78,6 +78,28 @@ public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase
     }
 
     [SkippableFact]
+    public void CreateLogDirectory_WhenParentIsJunction_ReturnsFalseAndDoesNotModifyTarget()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var target = Path.Combine(root, "target");
+        var junction = Path.Combine(root, "junction");
+        Directory.CreateDirectory(target);
+
+        // Junctions don't require elevation
+        using (var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{junction}\" \"{target}\"") { CreateNoWindow = true, UseShellExecute = false }))
+        {
+            process!.WaitForExit();
+            process.ExitCode.Should().Be(0);
+        }
+
+        var logDirectory = Path.Combine(junction, "logs");
+
+        FileHelper.CreateLogDirectory(Log, logDirectory).Should().BeFalse();
+
+        Directory.Exists(Path.Combine(target, "logs")).Should().BeFalse();
+    }
+
+    [SkippableFact]
     public void CreateLogDirectory_WhenInvalidPath_ReturnsFalse()
     {
         var tempDirectory = Path.Combine("X:", "-1");
