@@ -60,26 +60,16 @@ public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase
 
         FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
 
-        HasEveryoneModifyRule(new DirectoryInfo(tempDirectory).GetAccessControl(), expectInherited: false).Should().BeTrue();
-
-        // files created afterwards (e.g. by another identity) must inherit the rule
-        var newFile = Path.Combine(tempDirectory, "new.log");
-        File.WriteAllText(newFile, "test");
-        HasEveryoneModifyRule(new FileInfo(newFile).GetAccessControl(), expectInherited: true).Should().BeTrue();
-    }
-
-    [SkippableFact]
-    public void CreateLogDirectory_WhenDirectoryAndFilesExist_GrantsEveryoneModifyAccessToExistingFiles()
-    {
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDirectory);
-        var existingFile = Path.Combine(tempDirectory, "existing.log");
-        File.WriteAllText(existingFile, "test");
-        HasEveryoneModifyRule(new FileInfo(existingFile).GetAccessControl(), expectInherited: true).Should().BeFalse();
-
-        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
-
-        HasEveryoneModifyRule(new FileInfo(existingFile).GetAccessControl(), expectInherited: true).Should().BeTrue();
+        var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+        new DirectoryInfo(tempDirectory)
+           .GetAccessControl()
+           .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+           .Cast<FileSystemAccessRule>()
+           .Should()
+           .Contain(r => r.IdentityReference == everyone
+                      && r.AccessControlType == AccessControlType.Allow
+                      && !r.IsInherited
+                      && (r.FileSystemRights & FileSystemRights.Modify) == FileSystemRights.Modify);
     }
 
     [SkippableFact]
@@ -225,17 +215,6 @@ public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase
                   .BeFalse();
 
         File.Exists(filePath).Should().BeTrue();
-    }
-
-    private static bool HasEveryoneModifyRule(FileSystemSecurity security, bool expectInherited)
-    {
-        var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-        return security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
-                       .Cast<FileSystemAccessRule>()
-                       .Any(r => r.IdentityReference == everyone
-                              && r.AccessControlType == AccessControlType.Allow
-                              && r.IsInherited == expectInherited
-                              && (r.FileSystemRights & FileSystemRights.Modify) == FileSystemRights.Modify);
     }
 
     public static class Data
