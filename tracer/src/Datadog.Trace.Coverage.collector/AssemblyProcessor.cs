@@ -23,6 +23,7 @@ using Mono.Cecil.Cil;
 using CallSite = Mono.Cecil.CallSite;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
+using MethodBody = Mono.Cecil.Cil.MethodBody;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace Datadog.Trace.Coverage.Collector
@@ -342,7 +343,7 @@ namespace Datadog.Trace.Coverage.Collector
                             if (attrFullName == ExcludeFromCodeCoverageAttributeFullName)
                             {
                                 _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by: {ExcludeFromCodeCoverageAttributeFullName}");
-                                skipType = true;
+                                skipMethod = true;
                                 break;
                             }
                         }
@@ -399,122 +400,171 @@ namespace Datadog.Trace.Coverage.Collector
                              */
 
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
-
-                            string? filePath = null;
-                            foreach (var pt in sequencePoints)
-                            {
-                                if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
-                                {
-                                    continue;
-                                }
-
-                                var documentUrl = pt.Document.Url;
-                                if (string.IsNullOrEmpty(documentUrl))
-                                {
-                                    continue;
-                                }
-
-                                if (filePath is null)
-                                {
-                                    filePath = documentUrl;
-                                    break;
-                                }
-                            }
-
-                            if (filePath is null)
-                            {
-                                continue;
-                            }
-
-                            if (FiltersHelper.FilteredBySourceFile(filePath, _settings.ExcludeSourceFiles))
-                            {
-                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
-                                continue;
-                            }
-
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
+
+                            // Step 1 - Select the sequence points to instrument.
+                            // Each point is reported against its own document: a method can span several files
+                            // (field initializers from another partial declaration, #line directives), and source
+                            // exclusions apply to each document.
+                            var instructionsByOffset = new Dictionary<int, Instruction>(instructions.Count);
+                            foreach (var instruction in instructions)
+                            {
+                                instructionsByOffset[instruction.Offset] = instruction;
+                            }
+
+                            var probes = new List<CoverageProbe>();
+                            var methodFiles = new List<FileMetadata>();
+                            Dictionary<string, int>? methodFileSlots = null;
+                            var hasExcludedDocument = false;
+                            foreach (var sequencePoint in sequencePoints)
+                            {
+                                // Line 0 is a valid visible line in portable PDBs (e.g. VB #ExternalSource), but the
+                                // line bitmap is one-based, so there is nothing to report for it.
+                                if (sequencePoint.IsHidden || sequencePoint.StartLine <= 0 || sequencePoint.Document?.Url is not { } documentUrl || string.IsNullOrWhiteSpace(documentUrl))
+                                {
+                                    continue;
+                                }
+
+                                methodFileSlots ??= new Dictionary<string, int>();
+                                if (!methodFileSlots.TryGetValue(documentUrl, out var slot))
+                                {
+                                    if (FiltersHelper.FilteredBySourceFile(documentUrl, _settings.ExcludeSourceFiles))
+                                    {
+                                        slot = -1;
+                                    }
+                                    else
+                                    {
+                                        if (!fileDictionaryIndex.TryGetValue(documentUrl, out var fileMetadata))
+                                        {
+                                            fileMetadata = new FileMetadata(fileMetadataIndex++, documentUrl);
+                                            fileDictionaryIndex[documentUrl] = fileMetadata;
+                                        }
+
+                                        slot = methodFiles.Count;
+                                        methodFiles.Add(fileMetadata);
+                                    }
+
+                                    methodFileSlots[documentUrl] = slot;
+                                }
+
+                                if (slot < 0)
+                                {
+                                    hasExcludedDocument = true;
+                                    continue;
+                                }
+
+                                if (!instructionsByOffset.TryGetValue(sequencePoint.Offset, out var sequencePointInstruction))
+                                {
+                                    throw new InvalidOperationException($"Sequence point at IL offset {sequencePoint.Offset} of {moduleTypeMethod.FullName} does not start an instruction.");
+                                }
+
+                                probes.Add(new CoverageProbe(sequencePointInstruction, sequencePoint.StartLine, slot));
+                            }
+
+                            if (probes.Count == 0)
+                            {
+                                if (hasExcludedDocument)
+                                {
+                                    _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
+                                }
+
+                                continue;
+                            }
+
                             var instructionsOriginalLength = instructions.Count;
                             if (instructions.Capacity < instructionsOriginalLength * 2)
                             {
                                 instructions.Capacity = instructionsOriginalLength * 2;
                             }
 
-                            // Step 1 - Remove Short OpCodes
+                            // Step 2 - Remove Short OpCodes
                             foreach (var instruction in instructions)
                             {
                                 RemoveShortOpCodes(instruction);
                             }
 
-                            // Step 2 - Clone sequence points
-                            var instructionsWithValidSequencePoints = new List<(Instruction Instruction, SequencePoint? SequencePoint)>();
-                            for (var i = 0; i < sequencePoints.Count; i++)
+                            // Step 3 - Skip probes that repeat the line of the previous probe.
+                            // A probe can only be skipped when every path to it passes through the previous probe of the
+                            // same line and document, i.e. no branch, switch or exception handler enters the code between
+                            // them. Otherwise (e.g. `if (x) throw ...;` when x is false) the line would be lost.
+                            var entryPoints = GetControlFlowEntryPoints(methodBody);
+                            var originalIndexes = new Dictionary<Instruction, int>(instructions.Count);
+                            for (var i = 0; i < instructions.Count; i++)
                             {
-                                var currentSequencePoint = sequencePoints[i];
-                                if (!currentSequencePoint.IsHidden)
-                                {
-                                    instructionsWithValidSequencePoints.Add((instructions.First(i => i.Offset == currentSequencePoint.Offset), currentSequencePoint));
-                                }
+                                originalIndexes[instructions[i]] = i;
                             }
 
-                            VariableDefinition? countersVariable = null;
-                            // Exception regions require an empty stack at try entry. Keep the counter
-                            // in a local even when the method has only one visible sequence point.
-                            if (methodBody.HasExceptionHandlers ||
-                                instructionsWithValidSequencePoints.Count > 1 ||
-                                instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
+                            for (var i = 1; i < probes.Count; i++)
                             {
-                                // Step 3 - Modify local var to add the Coverage counters instance.
-                                if (_coverageMode == CoverageMode.LineExecution)
+                                var previousProbe = probes[i - 1];
+                                var currentProbe = probes[i];
+                                if (previousProbe.Line != currentProbe.Line || previousProbe.FileSlot != currentProbe.FileSlot)
                                 {
-                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Byte));
-                                }
-                                else
-                                {
-                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
-                                }
-
-                                methodBody.Variables.Add(countersVariable);
-                            }
-
-                            // Step 4 - Insert the counter retriever
-                            FileMetadata fileMetadata;
-                            if (!fileDictionaryIndex.TryGetValue(filePath, out fileMetadata))
-                            {
-                                fileMetadata = new FileMetadata(fileMetadataIndex++, filePath);
-                                fileDictionaryIndex[filePath] = fileMetadata;
-                            }
-
-                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
-                            instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
-                            if (countersVariable is not null)
-                            {
-                                instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
-                            }
-
-                            // Step 5 - Insert line reporter
-                            for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
-                            {
-                                var currentInstructionAndSequencePoint = instructionsWithValidSequencePoints[i];
-                                var currentInstruction = currentInstructionAndSequencePoint.Instruction;
-                                var currentSequencePoint = currentInstructionAndSequencePoint.SequencePoint;
-                                if (currentSequencePoint is null)
-                                {
-                                    // If is null is because we already wrote the line reporter for this instruction in an optimization.
                                     continue;
                                 }
 
-                                // let's check if the next sequence point is for the same line, so we can optimize the line reporter
-                                if (i + 1 < instructionsWithValidSequencePoints.Count)
+                                var previousIndex = originalIndexes[previousProbe.Instruction];
+                                var currentIndex = originalIndexes[currentProbe.Instruction];
+
+                                // Sequence points are ordered by offset; never skip a probe if that does not hold.
+                                var hasEntryPoint = currentIndex <= previousIndex;
+                                for (var index = previousIndex + 1; index <= currentIndex; index++)
                                 {
-                                    var nextSequencePoint = instructionsWithValidSequencePoints[i + 1].SequencePoint;
-                                    if (currentSequencePoint.StartLine == nextSequencePoint?.StartLine)
+                                    if (entryPoints.Contains(instructions[index]))
                                     {
-                                        // next sequence point is for the same line, so we can skip this one.
-                                        continue;
+                                        hasEntryPoint = true;
+                                        break;
                                     }
                                 }
 
+                                currentProbe.IsRedundant = !hasEntryPoint;
+                            }
+
+                            // Step 4 - Add a counters local per document.
+                            // The single-probe optimization keeps the counters pointer on the evaluation stack for the
+                            // first instruction, which is only valid when that instruction is reached once, from method
+                            // entry: exception regions require an empty stack at try entry, and a branch back to the
+                            // first instruction would arrive with a different stack.
+                            VariableDefinition[]? countersVariables = null;
+                            if (methodBody.HasExceptionHandlers ||
+                                probes.Count > 1 ||
+                                instructions[0] != probes[0].Instruction ||
+                                entryPoints.Contains(instructions[0]))
+                            {
+                                countersVariables = new VariableDefinition[methodFiles.Count];
+                                for (var i = 0; i < countersVariables.Length; i++)
+                                {
+                                    countersVariables[i] = _coverageMode == CoverageMode.LineExecution
+                                                               ? new VariableDefinition(new PointerType(module.TypeSystem.Byte))
+                                                               : new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                    methodBody.Variables.Add(countersVariables[i]);
+                                }
+                            }
+
+                            // Step 5 - Insert the counter retrievers
+                            var prologueIndex = 0;
+                            for (var i = 0; i < methodFiles.Count; i++)
+                            {
+                                instructions.Insert(prologueIndex++, Instruction.Create(OpCodes.Ldc_I4, methodFiles[i].Index));
+                                instructions.Insert(prologueIndex++, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
+                                if (countersVariables is not null)
+                                {
+                                    instructions.Insert(prologueIndex++, Instruction.Create(OpCodes.Stloc, countersVariables[i]));
+                                }
+                            }
+
+                            // Step 6 - Insert line reporter
+                            foreach (var probe in probes)
+                            {
+                                if (probe.IsRedundant)
+                                {
+                                    continue;
+                                }
+
+                                var currentInstruction = probe.Instruction;
+                                var countersVariable = countersVariables?[probe.FileSlot];
+                                var fileMetadata = methodFiles[probe.FileSlot];
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
@@ -525,8 +575,8 @@ namespace Datadog.Trace.Coverage.Collector
                                 }
 
                                 var optIdx = currentInstructionIndex;
-                                var indexValue = currentSequencePoint.StartLine - 1;
-                                fileMetadata.Lines.Add(currentSequencePoint.StartLine);
+                                var indexValue = probe.Line - 1;
+                                fileMetadata.Lines.Add(probe.Line);
 
                                 switch (_coverageMode)
                                 {
@@ -1312,7 +1362,58 @@ namespace Datadog.Trace.Coverage.Collector
             return TracerTarget.Net461;
         }
 
+        private static HashSet<Instruction> GetControlFlowEntryPoints(MethodBody methodBody)
+        {
+            // Instructions that can be reached other than by falling through from the previous instruction.
+            var entryPoints = new HashSet<Instruction>();
+            foreach (var instruction in methodBody.Instructions)
+            {
+                switch (instruction.Operand)
+                {
+                    case Instruction target:
+                        entryPoints.Add(target);
+                        break;
+                    case Instruction[] targets:
+                        foreach (var target in targets)
+                        {
+                            entryPoints.Add(target);
+                        }
+
+                        break;
+                }
+            }
+
+            foreach (var exceptionHandler in methodBody.ExceptionHandlers)
+            {
+                entryPoints.Add(exceptionHandler.HandlerStart);
+                if (exceptionHandler.FilterStart is not null)
+                {
+                    entryPoints.Add(exceptionHandler.FilterStart);
+                }
+            }
+
+            return entryPoints;
+        }
+
 #pragma warning disable SA1201
+        private sealed class CoverageProbe
+        {
+            public CoverageProbe(Instruction instruction, int line, int fileSlot)
+            {
+                Instruction = instruction;
+                Line = line;
+                FileSlot = fileSlot;
+            }
+
+            public Instruction Instruction { get; }
+
+            public int Line { get; }
+
+            public int FileSlot { get; }
+
+            public bool IsRedundant { get; set; }
+        }
+
         private struct FileMetadata
         {
             public FileMetadata(int index, string fileName)
