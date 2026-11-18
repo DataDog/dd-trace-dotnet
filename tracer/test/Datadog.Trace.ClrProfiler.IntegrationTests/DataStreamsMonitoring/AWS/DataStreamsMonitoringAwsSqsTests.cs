@@ -4,11 +4,12 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using VerifyXunit;
@@ -17,15 +18,16 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS;
 
-[Collection(nameof(AwsSqsTests.AwsSqsTestsCollection))]
+[Collection(LocalStackCollection.Name)]
 [Trait("RequiresDockerDependency", "true")]
 [Trait("DockerGroup", "2")]
 [UsesVerify]
 public class DataStreamsMonitoringAwsSqsTests : TestHelper
 {
-    public DataStreamsMonitoringAwsSqsTests(ITestOutputHelper output)
+    public DataStreamsMonitoringAwsSqsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
         : base("AWS.SQS", output)
     {
+        ConfigureContainers(localStackFixture);
     }
 
     public static IEnumerable<object[]> GetEnabledConfig()

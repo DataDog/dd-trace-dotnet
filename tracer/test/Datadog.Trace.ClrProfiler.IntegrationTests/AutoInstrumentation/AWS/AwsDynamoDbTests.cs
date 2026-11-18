@@ -3,12 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -18,12 +19,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(LocalStackCollection.Name)]
     [UsesVerify]
     public class AwsDynamoDbTests : TracingIntegrationTest
     {
-        public AwsDynamoDbTests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public AwsDynamoDbTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.DynamoDBv2", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -58,22 +64,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 dynamoDbSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(dynamoDbSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsDynamoDbTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_dynamodb");
-                settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_dynamodb");
-                settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_dynamodb");
+                settings.AddSimpleScrubber($"out.host: {_localStackFixture.Host}", "out.host: aws_dynamodb");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_dynamodb");
-                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_dynamodb");
-                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_dynamodb");
+                settings.AddSimpleScrubber($"peer.service: {_localStackFixture.Host}", "peer.service: aws_dynamodb");
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
 
                 settings.DisableRequireUniquePrefix();
 

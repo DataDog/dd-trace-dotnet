@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -19,12 +20,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(LocalStackCollection.Name)]
     [UsesVerify]
     public class AwsSnsTests : TracingIntegrationTest
     {
-        public AwsSnsTests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public AwsSnsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.SimpleNotificationService", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -64,25 +70,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 snsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var suffix = GetSnapshotSuffix(packageVersion);
 
                 settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sns");
-                settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sns");
-                settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sns");
+                settings.AddSimpleScrubber($"out.host: {_localStackFixture.Host}", "out.host: aws_sns");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sns");
-                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sns");
-                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sns");
+                settings.AddSimpleScrubber($"peer.service: {_localStackFixture.Host}", "peer.service: aws_sns");
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
-
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
 
                 settings.DisableRequireUniquePrefix();
 

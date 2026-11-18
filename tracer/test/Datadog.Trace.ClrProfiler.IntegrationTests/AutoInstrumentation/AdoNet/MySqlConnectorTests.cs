@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,12 +19,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(MySqlCollection.Name)]
     public class MySqlConnectorTests : TracingIntegrationTest
     {
-        public MySqlConnectorTests(ITestOutputHelper output)
+        public MySqlConnectorTests(ITestOutputHelper output, MySql8Fixture mySqlFixture)
             : base("MySqlConnector", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mySqlFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);

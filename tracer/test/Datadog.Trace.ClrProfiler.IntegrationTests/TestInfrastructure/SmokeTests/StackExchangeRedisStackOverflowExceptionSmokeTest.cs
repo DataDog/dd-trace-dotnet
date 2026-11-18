@@ -6,6 +6,7 @@
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,21 +17,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisStackOverflowExceptionSmokeTest : SmokeTestBase
     {
-        public StackExchangeRedisStackOverflowExceptionSmokeTest(ITestOutputHelper output)
+        public StackExchangeRedisStackOverflowExceptionSmokeTest(ITestOutputHelper output, StackExchangeRedisFixture redisFixture)
             : base(output, "StackExchange.Redis.StackOverflowException", maxTestRunSeconds: 30)
         {
+            foreach (var variable in redisFixture.GetEnvironmentVariables())
+            {
+                SetEnvironmentVariable(variable.Key, variable.Value);
+            }
         }
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
         public async Task NoExceptions()
         {
-            if (EnvironmentTools.IsWindows())
-            {
-                Output.WriteLine("Ignored for Windows");
-                return;
-            }
-
+            Skip.If(EnvironmentTools.IsWindows(), "Ignored for Windows");
             await CheckForSmoke(shouldDeserializeTraces: false);
         }
     }

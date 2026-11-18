@@ -35,10 +35,15 @@ namespace Samples.RabbitMQ
             return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         }
 
+        private static int Port()
+        {
+            return int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port) ? port : 5672;
+        }
+
         public static async Task Main(string[] args)
         {
             // connecting takes 2 to 3 seconds, we re-use the connection to save time
-            var factory = new ConnectionFactory() { HostName = Host() };
+            var factory = new ConnectionFactory() { HostName = Host(), Port = Port() };
 #if RABBITMQ_5_0 && !RABBITMQ_7_0
             factory.DispatchConsumersAsync = true;
 #endif
@@ -51,7 +56,7 @@ namespace Samples.RabbitMQ
                 await RunProducersAndConsumers(asyncConnection, useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
             }
 
-            factory = new ConnectionFactory() { HostName = Host() };
+            factory = new ConnectionFactory() { HostName = Host(), Port = Port() };
             using (var syncConnection = await Helper.CreateConnectionAsync(factory))
             {
                 // Test a derived type for the sync consumer from the library
