@@ -1250,8 +1250,8 @@
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "1.21.0",
-        "maxVersionAvailableInclusive": "1.21.0",
+        "maxVersionSupportedInclusive": "1.20.1",
+        "maxVersionAvailableInclusive": "1.20.1",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1267,9 +1267,9 @@
         "minVersionAvailableInclusive": "1.0.1",
         "minVersionSupportedInclusive": "1.0.1",
         "minVersionTestedInclusive": "1.0.1",
-        "maxVersionSupportedInclusive": "1.21.0",
-        "maxVersionAvailableInclusive": "1.21.0",
-        "maxVersionTestedInclusive": "1.21.0"
+        "maxVersionSupportedInclusive": "1.20.1",
+        "maxVersionAvailableInclusive": "1.20.1",
+        "maxVersionTestedInclusive": "1.20.1"
       }
     ]
   },
