@@ -107,11 +107,13 @@ internal static class FileHelper
         {
             try
             {
-                // Give write access to "Everyone"
+                // Give write access to "Everyone", matching the MSI's GenericWrite grant on the same directory
+                // (FILE_GENERIC_WRITE = Write | ReadPermissions | Synchronize). This deliberately excludes Delete and
+                // DeleteSubdirectoriesAndFiles so unrelated users can't delete other processes' logs.
                 var dSecurity = directoryInfo.GetAccessControl();
                 dSecurity.AddAccessRule(new FileSystemAccessRule(
                     new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                    FileSystemRights.Modify | FileSystemRights.Synchronize,
+                    FileSystemRights.Write | FileSystemRights.ReadPermissions | FileSystemRights.Synchronize,
                     InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
                     PropagationFlags.NoPropagateInherit,
                     AccessControlType.Allow));

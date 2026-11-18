@@ -61,15 +61,20 @@ public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase
         FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
 
         var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-        new DirectoryInfo(tempDirectory)
-           .GetAccessControl()
-           .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
-           .Cast<FileSystemAccessRule>()
-           .Should()
-           .Contain(r => r.IdentityReference == everyone
-                      && r.AccessControlType == AccessControlType.Allow
-                      && !r.IsInherited
-                      && (r.FileSystemRights & FileSystemRights.Modify) == FileSystemRights.Modify);
+        var everyoneRules = new DirectoryInfo(tempDirectory)
+                           .GetAccessControl()
+                           .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+                           .Cast<FileSystemAccessRule>()
+                           .Where(r => r.IdentityReference == everyone && r.AccessControlType == AccessControlType.Allow && !r.IsInherited)
+                           .ToList();
+
+        // Matches the MSI's GenericWrite grant
+        const FileSystemRights genericWrite = FileSystemRights.Write | FileSystemRights.ReadPermissions | FileSystemRights.Synchronize;
+        everyoneRules.Should().Contain(r => (r.FileSystemRights & genericWrite) == genericWrite);
+
+        // ...but must not allow deleting other processes' logs
+        const FileSystemRights deleteRights = FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles;
+        everyoneRules.Should().NotContain(r => (r.FileSystemRights & deleteRights) != 0);
     }
 
     [SkippableFact]
