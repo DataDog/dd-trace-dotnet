@@ -45,7 +45,7 @@ namespace Datadog.Trace.Agent
         /// Apply filtering, obfuscation, and sampling to a normalized trace chunk
         /// to understand if the trace should be kept
         /// </summary>
-        /// <param name="spans">The spans chunk to process</param>
+        /// <param name="spans">The normalized spans chunk to process</param>
         /// <returns>The keep state of the chunk after processing</returns>
         TraceKeepState ProcessTrace(ref SpanCollection spans);
 

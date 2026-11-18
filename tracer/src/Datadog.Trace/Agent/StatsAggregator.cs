@@ -231,6 +231,9 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>Processes a trace whose spans have already been normalized.</summary>
+        /// <param name="spans">The normalized spans to filter, obfuscate, and sample.</param>
+        /// <returns>The keep state of the trace.</returns>
         public TraceKeepState ProcessTrace(ref SpanCollection spans)
         {
             // Follow the same processing steps as the Go tracer

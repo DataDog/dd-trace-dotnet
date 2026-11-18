@@ -586,14 +586,9 @@ namespace Datadog.Trace.Agent
 
             int? chunkSamplingPriority = null;
             var chunk = spans;
-            var canComputeStats = CanComputeStats;
-            if (canComputeStats)
+            if (CanComputeStats)
             {
                 chunk = NormalizeTrace(in chunk);
-            }
-
-            if (canComputeStats)
-            {
                 var keepState = _statsAggregator.ProcessTrace(ref chunk);
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
