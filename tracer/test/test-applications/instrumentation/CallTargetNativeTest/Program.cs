@@ -384,11 +384,6 @@ namespace CallTargetNativeTest
                     RuntimeAsync();
                     break;
                 }
-                case "runtimeasyncfailures":
-                {
-                    RuntimeAsyncFailures();
-                    break;
-                }
                 case "all":
                     {
                         Argument0();
@@ -478,7 +473,7 @@ namespace CallTargetNativeTest
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/runtimeasync/runtimeasyncfailures/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/runtimeasync/all as an argument.");
                     return;
             }
 

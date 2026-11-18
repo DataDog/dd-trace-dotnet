@@ -357,7 +357,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task AsyncMethods()
         {
             // The same async targets compile to state machines in the default build and to runtime-async methods in
-            // the runtime-async build, and integrations should not be able to tell the difference.
+            // the runtime-async build, and integrations should not be able to tell the difference. The sample also checks
+            // what each callback receives when a target fails, and exits non-zero if a check fails.
             SetInstrumentationVerification();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = await RunCallTargetSample(agent, "runtimeasync");
@@ -372,24 +373,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(65 + skipMethodBodyCalls);
             Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(72 + skipMethodBodyCalls);
             Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
-
-            VerifyInstrumentation(processResult.Process);
-        }
-
-        [SkippableFact]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        [Trait("RunOnWindows", "True")]
-        public async Task AsyncMethodFailures()
-        {
-            SetInstrumentationVerification();
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = await RunCallTargetSample(agent, "runtimeasyncfailures");
-            processResult.ExitCode.Should().Be(0);
-
-            var output = processResult.StandardOutput;
-            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(16);
-            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(16);
-            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(16);
 
             VerifyInstrumentation(processResult.Process);
         }
