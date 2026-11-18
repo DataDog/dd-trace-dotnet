@@ -14,6 +14,7 @@
 #include <csignal>
 #include <mutex>
 #include <pthread.h>
+#include <ucontext.h>
 
 #include "ProfilerSignalManager.h"
 #endif
@@ -84,6 +85,7 @@ inline int MemoryFaultFilter(DWORD exceptionCode)
 namespace details
 {
 inline thread_local sigjmp_buf t_jmpBuf;
+inline thread_local sigset_t t_maskBeforeFault;
 inline thread_local volatile sig_atomic_t t_inGuardedRegion = 0;
 
 // Clears the flag on every way out of the guarded body that still unwinds C++ frames:
@@ -106,26 +108,23 @@ struct InGuardedRegionScope
 
 // The guard is entered at least twice per traversed root, and sigsetjmp with
 // savemask = 1 costs an rt_sigprocmask syscall every time. Using savemask = 0 instead
-// moves that cost to the (rare) recovery path: undo the handler's mask change here so
-// a later fault is still deliverable. ProfilerSignalManager installs its handlers
-// without SA_NODEFER and with an sa_mask holding only the handled signal, so unblocking
-// SIGSEGV and SIGBUS restores exactly what was blocked. This runs after the handler
-// frame has been abandoned, i.e. in normal context, so pthread_sigmask is safe to call.
-inline void UnblockFaultSignals()
+// moves that cost to the (rare) recovery path: siglongjmp leaves the handler's mask in
+// place, so put back the mask the fault interrupted (FaultHandler saves it). It is more
+// than the faulting signal: ProfilerSignalManager also blocks what the CLR handler blocks
+// (SIGRTMIN for SIGSEGV). This runs after the handler frame has been abandoned, i.e. in
+// normal context, so pthread_sigmask is safe to call.
+inline void RestoreSignalMask()
 {
-    sigset_t faultSignals;
-    sigemptyset(&faultSignals);
-    sigaddset(&faultSignals, SIGSEGV);
-    sigaddset(&faultSignals, SIGBUS);
-    pthread_sigmask(SIG_UNBLOCK, &faultSignals, nullptr);
+    pthread_sigmask(SIG_SETMASK, &t_maskBeforeFault, nullptr);
 }
 
 // ProfilerSignalManager: return false to chain to the CLR's previous SIGSEGV/SIGBUS
 // handler. Inside a guarded region we siglongjmp and do not return.
-inline bool FaultHandler(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
+inline bool FaultHandler(int /*signal*/, siginfo_t* /*info*/, void* context)
 {
     if (t_inGuardedRegion != 0)
     {
+        t_maskBeforeFault = static_cast<ucontext_t*>(context)->uc_sigmask;
         siglongjmp(t_jmpBuf, 1);
     }
     return false;
@@ -221,7 +220,7 @@ RunResult Run(TBody&& body)
 #else
     if (sigsetjmp(details::t_jmpBuf, 0) != 0)
     {
-        details::UnblockFaultSignals();
+        details::RestoreSignalMask();
         details::t_inGuardedRegion = 0;
         return RunResult::Faulted;
     }

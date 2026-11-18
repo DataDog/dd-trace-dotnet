@@ -119,9 +119,11 @@ variables:
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
   CURL_RETRY_FLAGS: '--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120'
-  GIT_RETRY_CONFIG: '-c http.retry=5 -c http.retryDelay=2'
-  GIT_HTTP_RETRY: 5
-  GIT_HTTP_RETRY_DELAY: 2
+  GIT_HTTP_MAX_RETRIES: 5
+  GIT_HTTP_RETRY_AFTER: 2
+  GIT_RETRY_CONFIG: '-c http.maxRetries=$(GIT_HTTP_MAX_RETRIES) -c http.retryAfter=$(GIT_HTTP_RETRY_AFTER)'
+  GIT_RETRY_MAX_ATTEMPTS: 5
+  GIT_RETRY_INTERVAL_SEC: 10
   PWSH_MAX_RETRY_COUNT: 5
   PWSH_RETRY_INTERVAL_SEC: 2
   PWSH_TIMEOUT_SEC: 120
@@ -268,11 +270,20 @@ stages:
           TARGET_BRANCH=master
         fi
         echo "Using target branch $TARGET_BRANCH"
+        echo "##vso[task.setvariable variable=mergeTargetBranch]$TARGET_BRANCH"
+      failOnStderr: true
+      displayName: Determine target branch
 
-        rm -rf ./s
-        git $(GIT_RETRY_CONFIG) clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
-        cd s
-        TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
+    - template: steps/git-clone.yml
+      parameters:
+        displayName: Clone target branch
+        repository: $(Build.Repository.Uri)
+        branch: $(mergeTargetBranch)
+        directory: ./s
+        cloneArgs: --quiet --no-checkout --depth 1
+
+    - bash: |
+        TARGET_SHA=$(git -C ./s rev-parse origin/$TARGET_BRANCH)
         rm -rf ./s
         echo "Using master commit ID $TARGET_SHA"
         echo "##vso[task.setvariable variable=sha;isOutput=true]$TARGET_SHA"
@@ -280,6 +291,8 @@ stages:
       failOnStderr: true
       displayName: Fetch master id
       name: set_sha
+      env:
+        TARGET_BRANCH: $(mergeTargetBranch)
 
 - stage: generate_variables
   dependsOn: [merge_commit_id]
@@ -5290,10 +5303,12 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
-          displayName: Get system tests repo ($(SystemTestsBranch))
-          env:
-            EFFECTIVE_SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
+        - template: steps/git-clone.yml
+          parameters:
+            displayName: Get system tests repo ($(SystemTestsBranch))
+            repository: https://github.com/DataDog/system-tests.git
+            branch: $(SystemTestsBranch)
+            directory: system-tests
 
         - script: |
             ./build.sh -i runner
@@ -5394,10 +5409,12 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$EFFECTIVE_SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
-        displayName: Get system tests repo ($(SystemTestsBranch))
-        env:
-          EFFECTIVE_SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
+      - template: steps/git-clone.yml
+        parameters:
+          displayName: Get system tests repo ($(SystemTestsBranch))
+          repository: https://github.com/DataDog/system-tests.git
+          branch: $(SystemTestsBranch)
+          directory: system-tests
 
       - template: steps/download-artifact.yml
         parameters:

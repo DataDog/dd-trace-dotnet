@@ -336,7 +336,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
 
                     span.Tags.SetTag(_tags.Type, "exit");
-                    span.Tags.SetTag(_tags.Index[i], info.FrameIndex.ToString());
+                    span.Tags.SetTag(_tags.Index[i], info.FrameIndex.ToStringInvariant());
                     span.Tags.SetTag(_tags.Method[i], method.Name);
                     span.Tags.SetTag(_tags.TypeName[i], typeName);
 
@@ -349,10 +349,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     span.Tags.SetTag(_tags.File[i], fileName);
 
                     var line = info.Frame.GetFileLineNumber();
-                    span.Tags.SetTag(_tags.Line[i], line.ToString());
+                    span.Tags.SetTag(_tags.Line[i], line.ToStringInvariant());
 
                     var column = info.Frame.GetFileColumnNumber();
-                    span.Tags.SetTag(_tags.Column[i], column.ToString());
+                    span.Tags.SetTag(_tags.Column[i], column.ToStringInvariant());
                 }
             }
             catch (Exception ex)
@@ -495,12 +495,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                 for (var i = 0; i < maxFrames; i++)
                 {
-                    Index[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.index";
-                    Method[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.method";
-                    TypeName[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.type";
-                    File[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.file";
-                    Line[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.line";
-                    Column[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.column";
+                    Index[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.index");
+                    Method[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.method");
+                    TypeName[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.type");
+                    File[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.file");
+                    Line[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.line");
+                    Column[i] = StringUtil.Invariant($"{CodeOriginTag}.{FramesPrefix}.{i}.column");
                 }
             }
         }

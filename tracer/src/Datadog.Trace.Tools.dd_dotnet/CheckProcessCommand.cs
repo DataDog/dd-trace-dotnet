@@ -32,7 +32,7 @@ internal class CheckProcessCommand : Command
     {
         var pid = _pidArgument.GetValue(context);
 
-        AnsiConsole.WriteLine("Running checks on process " + pid);
+        AnsiConsole.WriteLine("Running checks on process " + pid.ToStringInvariant());
 
         ProcessInfo process;
 
@@ -42,7 +42,7 @@ internal class CheckProcessCommand : Command
         }
         catch (Exception ex)
         {
-            var errorCode = ex is Win32Exception win32Exception ? $" (native error code: {win32Exception.NativeErrorCode})" : string.Empty;
+            var errorCode = ex is Win32Exception win32Exception ? StringUtil.Invariant($" (native error code: {win32Exception.NativeErrorCode})") : string.Empty;
             Utils.WriteError($"Error while trying to fetch process information{errorCode}: {ex.Message}");
             Utils.WriteException(ex);
             Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");

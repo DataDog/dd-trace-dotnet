@@ -45,8 +45,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var cacheKey = new CommitBacklogTagCacheKey(GroupId ?? string.Empty, clusterId ?? string.Empty, item.Partition.Value, item.Topic ?? string.Empty);
                     var backlogTags = dataStreams.GetOrCreateBacklogTags(cacheKey, static k =>
                         k.ClusterId.Length == 0
-                            ? $"consumer_group:{k.GroupId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit"
-                            : $"consumer_group:{k.GroupId},kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit");
+                            ? StringUtil.Invariant($"consumer_group:{k.GroupId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit")
+                            : StringUtil.Invariant($"consumer_group:{k.GroupId},kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit"));
                     dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }
