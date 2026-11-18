@@ -69,18 +69,17 @@ public class AgentlessEndpointTests
                                   .Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + new string('a', 200));
 
     [Theory]
-    // A configured base URL is opaque: the operator may have scoped it themselves, and it may carry
-    // credentials or routing, so it is requested exactly as written. Java, JS, Go and Python all
-    // treat a custom endpoint the same way.
-    [InlineData("https://flags.example.com/ufc")]
-    [InlineData("https://flags.example.com/ufc?token=abc")]
-    [InlineData("https://flags.example.com/ufc?dd_env=staging")]
-    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging")]
-    public void DoesNotAddDdEnvToACustomEndpoint(string baseUrl)
+    [InlineData("https://flags.example.com/ufc", "?cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb", "?token=a%2Bb&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?dd_env=staging", "?dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "?token=abc&dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb&&scope=one%2Ftwo&", "?token=a%2Bb&&scope=one%2Ftwo&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=old&scope=one%2Ftwo", "?token=abc&cap_dependent-flags-variant-key=v1&scope=one%2Ftwo")]
+    public void AddsCapabilityWithoutAddingEnvironmentToACustomEndpoint(string baseUrl, string expectedQuery)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
 
-        endpoint.BuildRequestUri("production").Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri("production").Query.Should().Be(expectedQuery);
     }
 
     [Theory]

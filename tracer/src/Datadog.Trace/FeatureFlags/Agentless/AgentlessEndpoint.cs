@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
@@ -39,7 +40,12 @@ internal sealed class AgentlessEndpoint
     /// <summary>
     /// The query parameter selecting UFCs that can contain dependent flag conditions.
     /// </summary>
-    internal const string DependentFlagsParameter = "cap_dependent-flags-variant-key=v1";
+    internal const string DependentFlagsParameterName = "cap_dependent-flags-variant-key";
+
+    /// <summary>
+    /// The complete dependent-flags capability query parameter.
+    /// </summary>
+    internal const string DependentFlagsParameter = DependentFlagsParameterName + "=v1";
 
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
@@ -237,28 +243,22 @@ internal sealed class AgentlessEndpoint
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// A configured base URL is opaque: it is requested exactly as the operator wrote it, since it
-    /// may hold credentials, routing, or a scope of its own. Only the managed endpoint carries
-    /// <c>dd_env</c>, which matches the other tracers.
+    /// A configured base URL retains its existing query parameters, which may hold credentials,
+    /// routing, or a scope of its own. Only the managed endpoint carries <c>dd_env</c>, which
+    /// matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (!IsManaged)
-        {
-            return Uri;
-        }
-
         var normalized = RequestEnvironment(env);
         var builder = new UriBuilder(Uri);
 
         // The getter returns the query with its leading "?", while the setter prepends one of its
-        // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
-        // ending in a bare "?" reports a query of "?", which the length check treats as no query.
-        var query = builder.Query.Length > 1 ? builder.Query.TrimStart('?') + "&" : string.Empty;
-        query += DependentFlagsParameter;
+        // own on .NET Framework, so the helper removes it before updating the query. A URL ending
+        // in a bare "?" is treated as having no query.
+        var query = AddOrReplaceDependentFlagsParameter(builder.Query);
         if (normalized is not null)
         {
             query += "&" + EnvParameterName + "=" + Uri.EscapeDataString(normalized);
@@ -266,5 +266,60 @@ internal sealed class AgentlessEndpoint
 
         builder.Query = query;
         return builder.Uri;
+    }
+
+    private static string AddOrReplaceDependentFlagsParameter(string query)
+    {
+        var existing = query.Length > 0 && query[0] == '?' ? query.Substring(1) : query;
+        if (existing.Length == 0)
+        {
+            return DependentFlagsParameter;
+        }
+
+        var result = new StringBuilder(existing.Length + DependentFlagsParameter.Length + 1);
+        var segmentStart = 0;
+        var replaced = false;
+        while (segmentStart <= existing.Length)
+        {
+            var segmentEnd = existing.IndexOf('&', segmentStart);
+            if (segmentEnd < 0)
+            {
+                segmentEnd = existing.Length;
+            }
+
+            var equals = existing.IndexOf('=', segmentStart, segmentEnd - segmentStart);
+            var nameEnd = equals < 0 ? segmentEnd : equals;
+            var isDependentFlagsParameter = nameEnd - segmentStart == DependentFlagsParameterName.Length
+                                         && string.CompareOrdinal(existing, segmentStart, DependentFlagsParameterName, 0, DependentFlagsParameterName.Length) == 0;
+            if (isDependentFlagsParameter)
+            {
+                result.Append(DependentFlagsParameter);
+                replaced = true;
+            }
+            else
+            {
+                result.Append(existing, segmentStart, segmentEnd - segmentStart);
+            }
+
+            if (segmentEnd == existing.Length)
+            {
+                break;
+            }
+
+            result.Append('&');
+            segmentStart = segmentEnd + 1;
+        }
+
+        if (!replaced)
+        {
+            if (existing[existing.Length - 1] != '&')
+            {
+                result.Append('&');
+            }
+
+            result.Append(DependentFlagsParameter);
+        }
+
+        return result.ToString();
     }
 }
