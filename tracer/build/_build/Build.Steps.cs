@@ -1914,6 +1914,16 @@ partial class Build
                 {
                     DotnetBuild(project, framework: Framework);
                 }
+
+                // Build for runtime-async tests on .NET 11.
+                // DD_RuntimeAsync gives this build its own artifacts pivot (see CallTargetNativeTest.csproj)
+                if (Framework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
+                {
+                    DotnetBuild(
+                        Solution.GetProject("CallTargetNativeTest"),
+                        framework: Framework,
+                        properties: new Dictionary<string, object> { ["DD_RuntimeAsync"] = "true" });
+                }
             }
         });
 
@@ -2502,6 +2512,34 @@ partial class Build
            }
        });
 
+    Target BuildBundleArtifactTests => _ => _
+       .Description("Builds the Datadog.Trace.Bundle artifacts tests")
+       .After(CompileManagedTestHelpers)
+       .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.BundleArtifactsTests));
+        });
+
+    Target RunBundleArtifactTests => _ => _
+       .Description("Runs the Datadog.Trace.Bundle artifacts tests, using the Datadog.Trace.Bundle and Datadog.Trace packages found in the nuget artifacts directory")
+       .After(BuildBundleArtifactTests)
+       .Executes(() =>
+        {
+            var isDebugRun = IsDebugRun();
+            var project = Solution.GetProject(Projects.BundleArtifactsTests);
+
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetIsDebugRun(isDebugRun)
+                .SetProcessEnvironmentVariable("NugetArtifactsDirectory", ArtifactsDirectory / "nuget")
+                .SetLogsDirectory(TestLogsDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project))
+                .WithDatadogLogger());
+        });
+
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
@@ -2996,17 +3034,19 @@ partial class Build
         Project project,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true
+        bool noDependencies = true,
+        IDictionary<string, object> properties = null
         )
     {
-        DotnetBuild(new[] { project.Path }, framework, noRestore, noDependencies);
+        DotnetBuild(new[] { project.Path }, framework, noRestore, noDependencies, properties);
     }
 
     private void DotnetBuild(
         IEnumerable<AbsolutePath> projPaths,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true)
+        bool noDependencies = true,
+        IDictionary<string, object> properties = null)
     {
         DotNetBuild(s => s
             .SetConfiguration(BuildConfiguration)
@@ -3019,6 +3059,7 @@ partial class Build
             .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
             .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
             .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            .When(properties is not null, o => properties.Aggregate(o, (settings, property) => settings.SetProperty(property.Key, property.Value)))
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));

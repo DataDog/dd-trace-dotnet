@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
@@ -687,7 +688,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -713,7 +714,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -739,7 +740,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -765,7 +766,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -791,7 +792,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -921,7 +922,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }
@@ -973,7 +974,7 @@ public sealed class StringBuilderAspects
         {
             if (target is not null)
             {
-                var val = value.ToString();
+                var val = value.ToString(CultureInfo.CurrentCulture);
                 var previousLength = target.Length - val.Length;
                 StringBuilderModuleImpl.OnStringBuilderInsert(target!, previousLength, index, value);
             }

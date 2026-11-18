@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -21,7 +22,13 @@ internal sealed class ModuleValue : IDisposable
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ModuleValue>();
     private static readonly NativeMemoryDebugMetrics ContextBufferMetrics = new();
     private static readonly NativeMemoryDebugMetrics GlobalFallbackBufferMetrics = new();
+
+    // Context buffers are recycled instead of freed; see NativeBufferPool for why. Byte and int counters are pooled
+    // separately: a stale int counter increment rewrites four bytes, which could clear byte counters set by a later owner.
+    private static readonly NativeBufferPool ByteCounterBufferPool = new();
+    private static readonly NativeBufferPool IntCounterBufferPool = new();
     private readonly BufferKind _bufferKind;
+    private readonly NativeBufferPool? _contextBufferPool;
     private readonly bool _recordNativeMemoryDiagnostics;
     private IntPtr _filesLines;
     private int _allocatedByteLength;
@@ -31,16 +38,24 @@ internal sealed class ModuleValue : IDisposable
         Metadata = metadata;
         Module = module;
         _bufferKind = bufferKind;
+        _contextBufferPool = bufferKind == BufferKind.Context ? GetContextBufferPool(metadata.CoverageMode) : null;
         // Keep allocation and free accounting paired even if debug logging changes while this value is alive.
         _recordNativeMemoryDiagnostics = Log.IsEnabled(LogEventLevel.Debug);
 
         var pointer = IntPtr.Zero;
         try
         {
-            pointer = Marshal.AllocHGlobal(fileLinesMemorySize);
-            unsafe
+            if (_contextBufferPool is not null)
             {
-                Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)fileLinesMemorySize);
+                pointer = _contextBufferPool.Rent(fileLinesMemorySize);
+            }
+            else
+            {
+                pointer = Marshal.AllocHGlobal(fileLinesMemorySize);
+                unsafe
+                {
+                    Unsafe.InitBlockUnaligned((byte*)pointer, 0, (uint)fileLinesMemorySize);
+                }
             }
 
             _allocatedByteLength = fileLinesMemorySize;
@@ -55,7 +70,7 @@ internal sealed class ModuleValue : IDisposable
         {
             if (pointer != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(pointer);
+                ReleaseNativeBuffer(pointer, fileLinesMemorySize);
             }
         }
     }
@@ -81,6 +96,12 @@ internal sealed class ModuleValue : IDisposable
 
     public int AllocatedByteLength => _allocatedByteLength;
 
+    [TestingOnly]
+    internal static NativeBufferPool ByteCounterContextBuffers => ByteCounterBufferPool;
+
+    [TestingOnly]
+    internal static NativeBufferPool IntCounterContextBuffers => IntCounterBufferPool;
+
     public static void LogNativeMemoryDiagnostics(int processId)
     {
         if (!Log.IsEnabled(LogEventLevel.Debug))
@@ -91,6 +112,10 @@ internal sealed class ModuleValue : IDisposable
         LogNativeMemoryDiagnostics(processId, BufferKind.Context, ContextBufferMetrics.GetSnapshot());
         LogNativeMemoryDiagnostics(processId, BufferKind.GlobalFallback, GlobalFallbackBufferMetrics.GetSnapshot());
     }
+
+    // Mode 0 (line execution) uses one byte per line; the line call count mode uses an int per line.
+    private static NativeBufferPool GetContextBufferPool(int coverageMode)
+        => coverageMode == 0 ? ByteCounterBufferPool : IntCounterBufferPool;
 
     private static NativeMemoryDebugMetrics GetMetrics(BufferKind bufferKind)
         => bufferKind == BufferKind.Context ? ContextBufferMetrics : GlobalFallbackBufferMetrics;
@@ -112,6 +137,11 @@ internal sealed class ModuleValue : IDisposable
                 diagnostics.AllocationCount,
                 diagnostics.FreeCount,
                 diagnostics.MaximumBufferBytes);
+            Log.Debug<int, long, long>(
+                "Global coverage native context-buffer pool diagnostics: pid={ProcessId}, pooledBuffers={PooledBuffers}, pooledBytes={PooledBytes}.",
+                processId,
+                ByteCounterBufferPool.PooledBuffers + IntCounterBufferPool.PooledBuffers,
+                ByteCounterBufferPool.PooledBytes + IntCounterBufferPool.PooledBytes);
             return;
         }
 
@@ -136,13 +166,25 @@ internal sealed class ModuleValue : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private void ReleaseNativeBuffer(IntPtr pointer, int byteLength)
+    {
+        if (_contextBufferPool is not null)
+        {
+            _contextBufferPool.Return(pointer, byteLength);
+        }
+        else
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
     private void FreeBuffer()
     {
         var filesLines = Interlocked.Exchange(ref _filesLines, IntPtr.Zero);
         if (filesLines != IntPtr.Zero)
         {
             var byteLength = Volatile.Read(ref _allocatedByteLength);
-            Marshal.FreeHGlobal(filesLines);
+            ReleaseNativeBuffer(filesLines, byteLength);
             Volatile.Write(ref _allocatedByteLength, 0);
             if (_recordNativeMemoryDiagnostics)
             {

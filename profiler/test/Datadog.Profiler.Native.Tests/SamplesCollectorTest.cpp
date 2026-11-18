@@ -301,9 +301,20 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
 
     auto [exporter, mockExporter] = CreateExporter();
 
-    // the provider and exporter are supposed to be called once AFTER Stop()
-    EXPECT_CALL(mockExporter, Add(_)).Times(2);
-    EXPECT_CALL(mockExporter, Export(_)).Times(1).WillRepeatedly(Return(true));
+    // The worker can collect more than once before Stop, so Add has no fixed count.
+    int addCount = 0;
+    int exportCount = 0;
+    EXPECT_CALL(mockExporter, Add(_))
+        .WillRepeatedly(Invoke([&addCount](std::shared_ptr<Sample> const&) {
+            ++addCount;
+        }));
+    // The exporter thread waits out the upload interval, so only Stop exports.
+    EXPECT_CALL(mockExporter, Export(false)).Times(0);
+    EXPECT_CALL(mockExporter, Export(true))
+        .WillRepeatedly(Invoke([&exportCount](bool) {
+            ++exportCount;
+            return true;
+        }));
 
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
@@ -321,8 +332,17 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
 
     collector.Stop();
 
-    // Stop() is supposed call Export one last time
+    ASSERT_EQ(exportCount, 1);
     ASSERT_TRUE(metricsSender.WasCounterCalled());
+
+    auto addCountAfterStop = addCount;
+    auto exportCountAfterStop = exportCount;
+
+    // Nothing signals "no further calls"; wait longer than CollectingPeriod.
+    std::this_thread::sleep_for(200ms);
+
+    ASSERT_EQ(addCount, addCountAfterStop);
+    ASSERT_EQ(exportCount, exportCountAfterStop);
 }
 
 TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)

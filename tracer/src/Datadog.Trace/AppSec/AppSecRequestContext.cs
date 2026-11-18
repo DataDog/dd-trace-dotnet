@@ -207,6 +207,17 @@ internal partial class AppSecRequestContext
         }
     }
 
+    internal void CloseSubcontext(ulong subcontextId)
+    {
+        lock (_contextSync)
+        {
+            if (!_isAdditiveContextDisposed)
+            {
+                _context?.CloseSubcontext(subcontextId);
+            }
+        }
+    }
+
     // raspAddress is set for a RASP run only, and a context that cannot be handed out is then reported
     // under it. The cause is captured while _contextSync is held because it is not observable
     // afterwards: a concurrent disposal would make an ended request and a failed creation look alike.

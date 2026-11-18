@@ -1,0 +1,14 @@
+_v: 1
+name: HotChocolate
+display_name: Hot Chocolate
+description: Instruments Hot Chocolate server-side GraphQL query and mutation request execution, including validation and
+  execution errors.
+packages:
+- name: HotChocolate
+- name: HotChocolate.AspNetCore
+- name: HotChocolate.Execution
+- name: HotChocolate.Types
+category:
+- graphql.server
+systems: []
+creation_date: '2022-09-02'

@@ -197,6 +197,22 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
             Assert.Equal(ObscureObject.DummyFieldObject.Default, ((IDuckType)duckVirtual.PrivateGetSelfType).Instance);
         }
 
+        [Fact]
+        public void ValueWithTypePropertySetterCanClearAndReplaceChainedProxy()
+        {
+            var target = new ObscureObject.PropertyPublicObject();
+            var proxy = target.DuckCast<IObscureDuckType>();
+
+            proxy.PublicGetSetSelfTypeWithType = ValueWithType<IDummyFieldObject>.Create(null, typeof(ObscureObject.DummyFieldObject));
+
+            Assert.Null(target.PublicGetSetSelfType);
+
+            var child = new ObscureObject.DummyFieldObject();
+            proxy.PublicGetSetSelfTypeWithType = ValueWithType<IDummyFieldObject>.Create(child.DuckCast<IDummyFieldObject>(), typeof(ObscureObject.DummyFieldObject));
+
+            Assert.Same(child, target.PublicGetSetSelfType);
+        }
+
         [Theory]
         [MemberData(nameof(Data))]
         public void Properties(string obscureObjectName)

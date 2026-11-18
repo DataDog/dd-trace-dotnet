@@ -1,0 +1,12 @@
+_v: 1
+name: AwsDynamoDb
+display_name: Amazon DynamoDB
+description: Instruments AWS SDK for .NET DynamoDB item reads, writes, scans, and batch operations, with optional span pointers
+  for item updates and deletes.
+packages:
+- name: AWSSDK.DynamoDBv2
+category:
+- db.client
+systems:
+- aws.dynamodb
+creation_date: '2023-10-03'

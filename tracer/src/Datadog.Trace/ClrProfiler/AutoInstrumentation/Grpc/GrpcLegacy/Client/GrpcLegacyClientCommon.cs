@@ -192,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 metadata.Add(TemporaryHeaders.Service, serviceName);
             }
 
-            metadata.Add(TemporaryHeaders.StartTime, startTime.ToUnixTimeMilliseconds().ToString());
+            metadata.Add(TemporaryHeaders.StartTime, startTime.ToUnixTimeMilliseconds().ToStringInvariant());
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
@@ -225,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             methodName = metadata.Get(TemporaryHeaders.MethodName)?.DuckCast<MetadataEntryStruct>().Value;
             serviceName = metadata.Get(TemporaryHeaders.Service)?.DuckCast<MetadataEntryStruct>().Value;
             var unixTimeMilliseconds = metadata.Get(TemporaryHeaders.StartTime)?.DuckCast<MetadataEntryStruct>().Value;
-            startTime = long.TryParse(unixTimeMilliseconds, out var milliseconds)
+            startTime = long.TryParseInvariant(unixTimeMilliseconds, out var milliseconds)
                 ? DateTimeOffset.FromUnixTimeMilliseconds(milliseconds)
                 : DateTimeOffset.UtcNow;
 

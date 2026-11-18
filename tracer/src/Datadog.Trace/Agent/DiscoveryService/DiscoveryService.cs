@@ -96,7 +96,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             if (autoStartLoop)
             {
                 _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
-                _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
+                _ = _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
             }
             else
             {

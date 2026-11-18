@@ -130,7 +130,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override bool IsEmpty(ref MethodMetadataInfo payload)
         {
-            return payload == default;
+            return payload is null;
         }
     }
 }

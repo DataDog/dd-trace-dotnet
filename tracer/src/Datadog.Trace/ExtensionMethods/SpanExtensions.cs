@@ -111,7 +111,7 @@ namespace Datadog.Trace.ExtensionMethods
             else
             {
                 var rawHttpStatusCode = span.GetHttpStatusCodeString();
-                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                if (rawHttpStatusCode == null || !int.TryParseInvariant(rawHttpStatusCode, out var httpStatusCode))
                 {
                     return null;
                 }

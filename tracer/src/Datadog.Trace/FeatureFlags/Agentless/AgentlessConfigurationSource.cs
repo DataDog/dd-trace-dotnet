@@ -555,8 +555,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         // line, so only its type is named here.
         var failure = result.StatusCode switch
         {
-            401 or 403 => $"HTTP {result.StatusCode}; verify endpoint authentication",
-            not null => $"HTTP {result.StatusCode}",
+            401 or 403 => StringUtil.Invariant($"HTTP {result.StatusCode.Value}; verify endpoint authentication"),
+            not null => StringUtil.Invariant($"HTTP {result.StatusCode.Value}"),
             _ => result.Error?.GetType().Name ?? "request was not sent",
         };
 
