@@ -199,10 +199,7 @@ In both cases, **`OnMethodEnd` never receives the exception argument for an asyn
 - A `DuckTypeException`, `CallTargetInvokerException` or `MissingMemberException` also disables the integration for that target.
 - A [`CallTargetBubbleUpException`](../../tracer/src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetBubbleUpException.cs), or any exception with one in its `InnerException` chain, is **not** swallowed: it reaches the caller instead of the target's result or exception. This is how AppSec blocks a request (`BlockException` derives from it).
 
-When `OnAsyncMethodEnd` throws a `CallTargetBubbleUpException`:
-
-- On a runtime-async target, `OnMethodEnd` still runs. It receives a task faulted by that exception, which is then rethrown. If `OnMethodEnd` itself throws, that exception is logged and the original block is still rethrown.
-- On a state-machine target, `OnMethodEnd` also runs, and receives a task that is (or will be) faulted by the block. The one difference is a `Task`/`Task<T>` target (or a `ValueTask` target on .NET Framework) whose task had *already completed successfully* by the time the stub returned. `OnAsyncMethodEnd` then runs inline, the block is thrown synchronously from the stub, and `OnMethodEnd` is **skipped**. A `ValueTask` target on .NET Core always runs `OnAsyncMethodEnd` inside the returned `ValueTask`, so the block faults that `ValueTask` and `OnMethodEnd` still runs.
+> ⚠️ If an integration declares both `OnMethodEnd` and `OnAsyncMethodEnd`, `OnAsyncMethodEnd` must not throw a `CallTargetBubbleUpException`. That includes blocking through AppSec. Whether `OnMethodEnd` still runs after such a block is undefined: it depends on whether the target is runtime-async, its return type, the runtime, and whether the target's task had already completed. To block, use an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`. Reviews check this as [COR-5.4](./for-ai/Coding-Requirements/Correctness.md#cor-54-dont-block-throw-a-calltargetbubbleupexception-from-onasyncmethodend-in-an-integration-that-also-declares-onmethodend).
 
 
 ### Duck-typing, instrumentation classes, and constraints
