@@ -128,6 +128,84 @@ namespace Datadog.Trace.Tests.Configuration
             settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
         }
 
+        [Theory]
+        [InlineData("false", "true", false)]
+        [InlineData("true", "false", true)]
+        [InlineData("true", null, true)]
+        public void OtelThreadContextEnabled_ExplicitValueWinsOverAppSec(string otelThreadContextEnabled, string appSecEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
+                (ConfigurationKeys.AppSec.Enabled, appSecEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [SkippableTheory]
+        [InlineData(null, false)]
+        [InlineData("false", false)]
+        [InlineData("true", true)]
+        [InlineData("invalid", false)]
+        public void OtelThreadContextEnabled_DefaultsToAppSecEnabledOnLinux(string appSecEnabled, bool expected)
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, appSecEnabled));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [SkippableFact]
+        public void OtelThreadContextEnabled_IsNotEnabledByAppSecOnWindows()
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().BeFalse();
+        }
+
+        [SkippableTheory]
+        [InlineData("azure-functions", null, false)]
+        [InlineData("azure-functions", "true", true)]
+        [InlineData("azure-app-service", null, false)]
+        [InlineData("azure-app-service", "true", true)]
+        [InlineData("gcp-functions", null, false)]
+        [InlineData("gcp-functions", "true", true)]
+        public void OtelThreadContextEnabled_IsNotEnabledByAppSecInServerlessOrAzureAppService(string environment, string otelThreadContextEnabled, bool expected)
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+            (string Key, string Value)[] environmentKeys = environment switch
+            {
+                "azure-functions" =>
+                [
+                    (PlatformKeys.AzureAppService.SiteNameKey, "site"),
+                    (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated"),
+                    (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4"),
+                ],
+                "azure-app-service" => [(PlatformKeys.AzureAppService.SiteNameKey, "site")],
+                "gcp-functions" =>
+                [
+                    (PlatformKeys.GcpFunction.FunctionNameKey, "function"),
+                    (PlatformKeys.GcpFunction.FunctionTargetKey, "target"),
+                ],
+                _ => throw new ArgumentOutOfRangeException(nameof(environment)),
+            };
+            var source = CreateConfigurationSource(
+            [
+                (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled),
+                (ConfigurationKeys.AppSec.Enabled, "true"),
+                .. environmentKeys,
+            ]);
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
 #if NET6_0_OR_GREATER
         [Theory]
         [InlineData(null, true, true)]
@@ -186,6 +264,16 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.StatsComputationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void AwsLambdaStripContextEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Aws.LambdaStripContextEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.AwsLambdaStripContextEnabled.Should().Be(expected);
         }
 
         [Theory]
