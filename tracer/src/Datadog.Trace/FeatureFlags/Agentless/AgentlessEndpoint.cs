@@ -279,6 +279,7 @@ internal sealed class AgentlessEndpoint
         var result = new StringBuilder(existing.Length + DependentFlagsParameter.Length + 1);
         var segmentStart = 0;
         var replaced = false;
+        var hasRetainedSegment = false;
         while (segmentStart <= existing.Length)
         {
             var segmentEnd = existing.IndexOf('&', segmentStart);
@@ -291,14 +292,24 @@ internal sealed class AgentlessEndpoint
             var nameEnd = equals < 0 ? segmentEnd : equals;
             var isDependentFlagsParameter = nameEnd - segmentStart == DependentFlagsParameterName.Length
                                          && string.CompareOrdinal(existing, segmentStart, DependentFlagsParameterName, 0, DependentFlagsParameterName.Length) == 0;
-            if (isDependentFlagsParameter)
+            if (!isDependentFlagsParameter || !replaced)
             {
-                result.Append(DependentFlagsParameter);
-                replaced = true;
-            }
-            else
-            {
-                result.Append(existing, segmentStart, segmentEnd - segmentStart);
+                if (hasRetainedSegment)
+                {
+                    result.Append('&');
+                }
+
+                if (isDependentFlagsParameter)
+                {
+                    result.Append(DependentFlagsParameter);
+                    replaced = true;
+                }
+                else
+                {
+                    result.Append(existing, segmentStart, segmentEnd - segmentStart);
+                }
+
+                hasRetainedSegment = true;
             }
 
             if (segmentEnd == existing.Length)
@@ -306,7 +317,6 @@ internal sealed class AgentlessEndpoint
                 break;
             }
 
-            result.Append('&');
             segmentStart = segmentEnd + 1;
         }
 
