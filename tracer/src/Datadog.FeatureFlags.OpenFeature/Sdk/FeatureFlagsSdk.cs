@@ -219,7 +219,10 @@ internal static class FeatureFlagsSdk
         if (consumeNode && remainingNodes <= 0)
         {
             omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
-            return null;
+            // Preserve whether a supplied top-level container is null when the bounded snapshot
+            // budget is exhausted. Targeting still needs to distinguish an omitted expansion from
+            // an explicitly null attribute (for example, for IS_NULL conditions).
+            return EmptyContainer(value);
         }
 
         if (consumeNode)
@@ -268,6 +271,11 @@ internal static class FeatureFlagsSdk
 
         return result;
     }
+
+    private static object? EmptyContainer(Value? value)
+        => value?.IsStructure == true ? new Dictionary<string, object?>()
+         : value?.IsList == true ? Array.Empty<object?>()
+         : null;
 
     private static object?[] ConvertList(IReadOnlyList<Value> list, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
     {

@@ -524,9 +524,7 @@ namespace Datadog.Trace.FeatureFlags
                 ReportEvaluation(evaluation, evaluationTime, context);
             }
 
-            if (deferExposure
-             && trace.DependencyEvaluations.Count > 0
-             && evaluation.FlagMetadata is { } metadata)
+            if (deferExposure && evaluation.FlagMetadata is { } metadata)
             {
                 var deferred = new DeferredExposureMetadata(metadata);
                 deferred.SetDependencyTelemetry(CreateDependencyTelemetry(flagKey, trace.DependencyEvaluations, trace.DependencyExposures));

@@ -24,6 +24,7 @@ namespace Datadog.Trace.FeatureFlags
         private ExposureEvent _exposure;
         private PendingExposureBatch? _batch;
         private IReadOnlyList<IDictionary<string, object?>>? _dependencyTelemetry;
+        private Dictionary<string, IDictionary<string, object?>>? _eligibleDependencyTelemetry;
         private int _state; // 0 until an exposure is pending
 
         internal DeferredExposureMetadata()
@@ -42,31 +43,37 @@ namespace Datadog.Trace.FeatureFlags
         internal void SetDependencyTelemetry(IReadOnlyList<IDictionary<string, object?>> dependencyTelemetry)
         {
             _dependencyTelemetry = dependencyTelemetry;
+            Dictionary<string, IDictionary<string, object?>>? eligible = null;
+            for (var i = 0; i < dependencyTelemetry.Count; i++)
+            {
+                var record = dependencyTelemetry[i];
+                if (record.TryGetValue("flagKey", out var key)
+                 && key is string flagKey
+                 && record.TryGetValue("exposureEligible", out var isEligible)
+                 && isEligible is true)
+                {
+                    eligible ??= new Dictionary<string, IDictionary<string, object?>>(System.StringComparer.Ordinal);
+                    // Memoized prerequisites normally produce one record. Keep the first record
+                    // if a malformed batch contains a duplicate, matching the previous scan.
+                    eligible.TryAdd(flagKey, record);
+                }
+            }
+
+            _eligibleDependencyTelemetry = eligible;
         }
 
         internal void RecordDependencyExposureResult(string flagKey, ExposureRecordResult result)
         {
-            if (_dependencyTelemetry is not { } telemetry)
+            var eligible = _eligibleDependencyTelemetry;
+            if (eligible is null || !eligible.TryGetValue(flagKey, out var record))
             {
                 return;
             }
 
-            for (var i = 0; i < telemetry.Count; i++)
+            record["exposureCommitted"] = result != ExposureRecordResult.NotRecorded;
+            if (result != ExposureRecordResult.NotRecorded)
             {
-                var record = telemetry[i];
-                if (record.TryGetValue("flagKey", out var key)
-                 && string.Equals(key as string, flagKey, System.StringComparison.Ordinal)
-                 && record.TryGetValue("exposureEligible", out var eligible)
-                 && eligible is true)
-                {
-                    record["exposureCommitted"] = result != ExposureRecordResult.NotRecorded;
-                    if (result != ExposureRecordResult.NotRecorded)
-                    {
-                        record["exposureCacheHit"] = result == ExposureRecordResult.Repeat;
-                    }
-
-                    return;
-                }
+                record["exposureCacheHit"] = result == ExposureRecordResult.Repeat;
             }
         }
 

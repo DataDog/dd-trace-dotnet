@@ -299,6 +299,62 @@ public class DeferredExposureTests
     }
 
     [Fact]
+    public void DependencyExposureVerdictUsesTheAttachedMemoizedRecordIndex()
+    {
+        var first = new Dictionary<string, object?>
+        {
+            ["flagKey"] = "dependency",
+            ["exposureEligible"] = true,
+            ["exposureCommitted"] = false,
+        };
+        var duplicate = new Dictionary<string, object?>
+        {
+            ["flagKey"] = "dependency",
+            ["exposureEligible"] = true,
+            ["exposureCommitted"] = false,
+        };
+        var telemetry = Enumerable.Range(0, 1_000)
+                                  .Select(i => (IDictionary<string, object?>)new Dictionary<string, object?> { ["flagKey"] = $"other-{i}" })
+                                  .Prepend(first)
+                                  .Append(duplicate)
+                                  .ToList();
+        var metadata = new DeferredExposureMetadata();
+        metadata.SetDependencyTelemetry(telemetry);
+
+        // Changing the lookup key after attachment proves the commit path uses the bounded index
+        // rather than rescanning every record for every exposure.
+        first["flagKey"] = "changed-after-attachment";
+        metadata.RecordDependencyExposureResult("dependency", ExposureRecordResult.New);
+
+        first["exposureCommitted"].Should().Be(true);
+        first["exposureCacheHit"].Should().Be(false);
+        duplicate["exposureCommitted"].Should().Be(false, "memoized prerequisites attach one canonical record");
+    }
+
+    [Fact]
+    public void RootOnlyDependentBatchWaitsForProviderCommit()
+    {
+        var flags = Flags(doLog: true);
+        flags["root"] = ShortCircuitRoot();
+        using var module = Module(flags);
+
+        var evaluation = module.Evaluate(
+            "root",
+            FeatureFlagsValueType.String,
+            "default",
+            "user",
+            new Dictionary<string, object?> { ["plan"] = "free" },
+            deferExposure: true);
+
+        var metadata = evaluation.FlagMetadata.Should().BeOfType<DeferredExposureMetadata>().Subject;
+        metadata.DependencyTelemetry.Should().BeEmpty("the prerequisite was short-circuited");
+        metadata.IsPending.Should().BeTrue("a provider After hook must decide whether to commit the root exposure");
+        module.HasExposureApi.Should().BeFalse("nothing is published before the provider commits");
+
+        module.CommitExposure(metadata).Should().Be(ExposureCommitResult.New);
+    }
+
+    [Fact]
     public void FailedGraphCarriesReachedDependencyTelemetryButNoExposureCandidate()
     {
         var flags = new FlagCollection { ["root"] = DependentRoot(doLog: true) };
@@ -425,6 +481,43 @@ public class DeferredExposureTests
                             },
                         ]),
                     ],
+                    Splits = [new Split { VariationKey = "on", Shards = [] }],
+                },
+            ],
+        };
+
+    private static Flag ShortCircuitRoot()
+        => new()
+        {
+            Key = "root",
+            Enabled = true,
+            VariationType = FeatureFlagsValueType.String,
+            Variations = new Dictionary<string, Variant> { ["on"] = new("on", "root-value") },
+            Allocations =
+            [
+                new Allocation
+                {
+                    Key = "short-circuited",
+                    DoLog = true,
+                    Rules =
+                    [
+                        new Rule(
+                        [
+                            new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } },
+                            new ConditionConfiguration
+                            {
+                                FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" },
+                                Operator = ConditionOperator.ONE_OF,
+                                Value = new[] { "on" },
+                            },
+                        ]),
+                    ],
+                    Splits = [new Split { VariationKey = "on", Shards = [] }],
+                },
+                new Allocation
+                {
+                    Key = "fallback",
+                    DoLog = true,
                     Splits = [new Split { VariationKey = "on", Shards = [] }],
                 },
             ],

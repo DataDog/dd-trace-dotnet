@@ -269,6 +269,28 @@ public class FeatureFlagsSdkTests
     }
 
     [Fact]
+    public void BoundedNormalizationPreservesIsNullTargetingForSuppliedContainers()
+    {
+        var builder = global::OpenFeature.Model.EvaluationContext.Builder();
+        for (var i = 0; i < 6; i++)
+        {
+            builder.Set($"list-{i}", new Value(Enumerable.Repeat(new Value("item"), 256).ToList()));
+        }
+
+        var result = FeatureFlagsSdk.Resolve(
+            "flag",
+            Trace.FeatureFlags.ValueType.Boolean,
+            false,
+            builder.Build(),
+            deferredExposure: false,
+            evaluate: (_, _, _, _, attributes) =>
+                new TestEvaluation(null, attributes!["list-5"] is null ? "GENERAL" : null));
+
+        result.ErrorType.Should().Be(ErrorType.None, "a supplied non-null list must remain non-null for IS_NULL targeting");
+        result.Value.Should().BeTrue();
+    }
+
+    [Fact]
     public void NestedContextNormalizationSharesNodeBudgetAndRetainsLaterScalars()
     {
         IDictionary<string, object?>? captured = null;
@@ -295,7 +317,7 @@ public class FeatureFlagsSdkTests
         captured!["later-scalar"].Should().Be("retained");
         captured.Where(pair => pair.Key.StartsWith("nested-", StringComparison.Ordinal))
                 .Sum(pair => CountExpandedNodes(pair.Value))
-                .Should().BeLessOrEqualTo(1_280);
+                .Should().BeLessOrEqualTo(1_290, "the 1,280 expanded-node budget may leave one empty type-preserving container per top-level attribute");
         ((ContextOmissionReason)((FeatureFlagsSdk.ContextAttributes)captured).ContextOmissionReasons)
            .Should().HaveFlag(ContextOmissionReason.MaxVisitedNodes);
 
