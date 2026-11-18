@@ -13,6 +13,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
@@ -1622,9 +1623,9 @@ public class CoverageBackfillDataStoreTests
             var resultIds = new HashSet<string>();
             var deadline = TimeSpan.FromSeconds(waitForFallback ? 5 : 1);
             var elapsedReads = 0;
-            var readTimer = new Mock<CoverageBackfillDataStore.IReadTimer>(MockBehavior.Strict);
+            var readTimer = new Mock<ICoverageReadTimer>(MockBehavior.Strict);
             readTimer.SetupGet(p => p.Elapsed).Returns(() => elapsedReads++ == 0 ? deadline - TimeSpan.FromTicks(1) : deadline);
-            readTimer.Setup(p => p.WaitForRetry());
+            readTimer.Setup(p => p.Sleep(TimeSpan.FromMilliseconds(10)));
 
             CoverageBackfillDataStore.ReadCoverageIpcResultFolder(
                 CreateTestOptimization(workspacePath).Object,
@@ -1637,7 +1638,7 @@ public class CoverageBackfillDataStoreTests
                 readTimeout: TimeSpan.FromSeconds(1),
                 readTimer: readTimer.Object).Should().BeFalse();
 
-            readTimer.Verify(p => p.WaitForRetry(), Times.Once);
+            readTimer.Verify(p => p.Sleep(TimeSpan.FromMilliseconds(10)), Times.Once);
 
             results.Should().BeEmpty();
             resultIds.Should().BeEmpty();
@@ -1658,7 +1659,7 @@ public class CoverageBackfillDataStoreTests
             File.WriteAllText(Path.Combine(workspacePath, "Coverlet-first.json"), CreateCoverageIpcResultJson("first-result", CodeCoverageReportSource.Coverlet, 25, false, 4, 1, "first"));
             var results = new List<CodeCoverageAggregationResult>();
             var resultIds = new HashSet<string>();
-            var readTimer = new Mock<CoverageBackfillDataStore.IReadTimer>(MockBehavior.Strict);
+            var readTimer = new Mock<ICoverageReadTimer>(MockBehavior.Strict);
             readTimer.SetupGet(p => p.Elapsed).Returns(TimeSpan.FromSeconds(1));
 
             CoverageBackfillDataStore.ReadCoverageIpcResultFolder(

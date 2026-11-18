@@ -12,6 +12,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
@@ -694,7 +695,7 @@ internal static class CoverageBackfillDataStore
         var recoveredResultIds = new HashSet<string>(StringComparer.Ordinal);
         try
         {
-            var readTimer = waitForResultFolder ? new ReadTimer() : null;
+            var readTimer = waitForResultFolder ? new CoverageReadTimer() : null;
             var lastRecoveredResultTime = TimeSpan.Zero;
             while (true)
             {
@@ -745,7 +746,7 @@ internal static class CoverageBackfillDataStore
                     break;
                 }
 
-                readTimer!.WaitForRetry();
+                readTimer!.Sleep(ReadRetryDelay);
             }
         }
         catch (Exception ex)
@@ -1410,9 +1411,9 @@ internal static class CoverageBackfillDataStore
         bool waitForResultFiles,
         bool waitForCoverletXmlFallback,
         TimeSpan readTimeout,
-        IReadTimer? readTimer = null)
+        ICoverageReadTimer? readTimer = null)
     {
-        readTimer ??= new ReadTimer();
+        readTimer ??= new CoverageReadTimer();
         var sawTemporaryFile = false;
         string? previousSnapshot = null;
         var previousSnapshotTime = TimeSpan.Zero;
@@ -1493,7 +1494,7 @@ internal static class CoverageBackfillDataStore
                 return true;
             }
 
-            readTimer.WaitForRetry();
+            readTimer.Sleep(ReadRetryDelay);
         }
     }
 
@@ -1726,23 +1727,6 @@ internal static class CoverageBackfillDataStore
         }
 
         return testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-    }
-
-    internal interface IReadTimer
-    {
-        /// <summary>Gets monotonic time elapsed since the coverage read started.</summary>
-        TimeSpan Elapsed { get; }
-
-        void WaitForRetry();
-    }
-
-    private sealed class ReadTimer : IReadTimer
-    {
-        private readonly long _started = Stopwatch.GetTimestamp();
-
-        public TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started);
-
-        public void WaitForRetry() => Thread.Sleep(ReadRetryDelay);
     }
 
     private sealed class PersistedCoverageIpcResult
