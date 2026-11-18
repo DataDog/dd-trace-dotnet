@@ -485,12 +485,13 @@
     "SampleProjectName": "Samples.MySqlConnector",
     "NugetPackageSearchName": "MySqlConnector",
     "MinVersion": "0.61.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "0.61.*",
       "1.0.*",
       "1.*.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ]
   },
   {
