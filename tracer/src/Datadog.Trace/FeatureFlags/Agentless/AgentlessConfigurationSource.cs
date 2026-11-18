@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -57,7 +58,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
 
-    private readonly IDisposable? _environmentSubscription;
+    private readonly IDisposable? _settingsSubscription;
     private readonly FlagSelectionDiagnostics _flagSelectionDiagnostics;
 
     // Serializes the rebuilds of the request target: the environment changes on a settings callback,
@@ -80,6 +81,13 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // that claimed it waits for a configuration delivered for its claim, which a 304 never applies.
     private int _requestUnconditionally;
 
+    // The settings-change callback writes this value, and the poll loop reads it. It is null when
+    // requests send no DD-Service header.
+    private string? _service;
+
+    // The setting that gives _service. Only the constructor and the settings-change callback use it.
+    private string? _serviceSetting;
+
     // Only ever touched from the poll loop.
     private bool _hasApplied;
     private bool _malformedPayloadLogged;
@@ -95,6 +103,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         TimeSpan pollInterval,
         Func<ServerConfiguration, FlagSelection, ConfigurationApplyResult> applyConfiguration,
         string? environment = null,
+        string? service = null,
         TracerSettings.SettingsManager? settingsManager = null,
         Func<TimeSpan, Task>? waitAsync = null,
         IDatadogLogger? logger = null,
@@ -109,15 +118,17 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         _applyConfiguration = applyConfiguration;
         _requestTarget = new RequestTarget(endpoint, environment, flagSelection ?? FlagSelection.AllFlags);
         _waitAsync = waitAsync ?? Task.Delay;
+        UpdateService(service);
 
-        // Subscribed last, so every field the callback touches is already set. The environment is
-        // tracked rather than captured: customers can change it in code while the application runs,
-        // and flags are targeted per environment.
-        _environmentSubscription = settingsManager?.SubscribeToChanges(changes =>
+        // The source subscribes last, so the callback finds every field set. Code can change the
+        // environment and the service while the application runs, so the source tracks both. The CDN
+        // targets flags per environment and attributes usage per service.
+        _settingsSubscription = settingsManager?.SubscribeToChanges(changes =>
         {
             if (changes.UpdatedMutable is { } mutable)
             {
                 UpdateEnvironment(mutable.Environment);
+                UpdateService(mutable.DefaultServiceName);
             }
         });
     }
@@ -135,7 +146,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         Func<ServerConfiguration, FlagSelection, ConfigurationApplyResult> applyConfiguration,
         IDatadogLogger? logger = null,
         FlagSelection? flagSelection = null,
-        FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
+        FlagSelectionDiagnostics? flagSelectionDiagnostics = null,
+        IApiRequestFactory? requestFactory = null)
     {
         var log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
 
@@ -159,10 +171,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         return new AgentlessConfigurationSource(
             endpoint,
-            CreateRequestFactory(endpoint, settings),
+            requestFactory ?? CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
             applyConfiguration,
             manager.InitialMutableSettings.Environment,
+            manager.InitialMutableSettings.DefaultServiceName,
             manager,
             logger: log,
             flagSelection: flagSelection,
@@ -224,6 +237,43 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         }
 
         _log.Debug("Feature Flags: agentless configuration source now requests a different flag selection");
+    }
+
+    /// <summary>
+    /// Sets the service to send as DD-Service. The poll loop uses it on its next request.
+    /// </summary>
+    private void UpdateService(string? service)
+    {
+        // Every settings change calls this method. It does work only when the service setting
+        // changes, so it logs an empty name only once.
+        if (string.Equals(_serviceSetting, service, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _serviceSetting = service;
+
+        string? sent = null;
+        if (!StringUtil.IsNullOrEmpty(service))
+        {
+            // The header uses the tracer's own service normalization, so usage and APM name the
+            // same service. For example, My Service is sent as my_service. The tracer's own service
+            // does not change.
+            var normalized = NormalizerTraceProcessor.NormalizeService(service);
+
+            // The source sends the normalized name as it is. Only an empty result, for example from
+            // ___, sends no header.
+            if (normalized.Length > 0)
+            {
+                sent = normalized;
+            }
+            else
+            {
+                _log.Debug<string>("Feature Flags: service {Service} has an empty normalized name; DD-Service header not sent", service);
+            }
+        }
+
+        Volatile.Write(ref _service, sent);
     }
 
     /// <summary>
@@ -310,7 +360,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         try
         {
-            _environmentSubscription?.Dispose();
+            _settingsSubscription?.Dispose();
         }
         catch (Exception ex)
         {
@@ -427,6 +477,14 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             _etagUri = uri;
 
             var request = _requestFactory.Create(uri);
+
+            // The header lets the CDN attribute the usage of this request to the service. The source
+            // reads the service for each request, because code can change it after startup.
+            if (Volatile.Read(ref _service) is { } service)
+            {
+                request.AddHeader("DD-Service", service);
+            }
+
             if (_etag is { } etag)
             {
                 request.AddHeader("If-None-Match", etag);
