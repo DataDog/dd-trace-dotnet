@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -15,7 +16,7 @@ internal static class TypeExtensions
     {
         return type.GetCustomAttribute<CompilerGeneratedAttribute>() != null
             && type.IsGenericType && type.Name.Contains("AnonymousType")
-            && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
+            && (type.Name.StartsWithOrdinal("<>") || type.Name.StartsWithOrdinal("VB$"))
             && (type.Attributes & TypeAttributes.Public) != TypeAttributes.Public;
     }
 }

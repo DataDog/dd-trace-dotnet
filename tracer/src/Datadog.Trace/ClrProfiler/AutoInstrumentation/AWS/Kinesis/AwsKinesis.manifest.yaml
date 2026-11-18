@@ -1,0 +1,13 @@
+_v: 1
+name: AwsKinesis
+display_name: Amazon Kinesis
+description: Instruments Amazon Kinesis record publishing and retrieval through the AWS SDK, with trace-context injection
+  and optional Data Streams Monitoring checkpoints.
+packages:
+- name: AWSSDK.Kinesis
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- aws.kinesis
+creation_date: '2023-08-31'

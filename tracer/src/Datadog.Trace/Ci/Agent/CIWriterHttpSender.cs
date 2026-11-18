@@ -206,7 +206,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 agentlessMemoryStream.TryGetBuffer(out payloadArraySegment);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0"), uncompressedSize.ToString("N0"));
+                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToStringInvariant("N0"), uncompressedSize.ToStringInvariant("N0"));
                 }
             }
             else
@@ -214,7 +214,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 payloadArraySegment = new ArraySegment<byte>(payload.ToArray());
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0"));
+                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToStringInvariant("N0"));
                 }
             }
 

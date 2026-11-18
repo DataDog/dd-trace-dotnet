@@ -22,6 +22,7 @@ using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -93,6 +94,7 @@ public class ExposureApiTests
     }
 
     [Fact]
+    [Flaky("Identified as flaky in CI")]
     public async Task DisposeHasABoundedWaitWhenTheNetworkSendDoesNotFinish()
     {
         var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

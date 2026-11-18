@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// </summary>
     internal readonly record struct ProbeData(string ProbeId, IAdaptiveSampler Sampler, IProbeProcessor Processor)
     {
-        internal static ProbeData Empty = new(string.Empty, null, null);
+        internal static readonly ProbeData Empty = new(string.Empty, null, null);
 
         public string ProbeId { get; } = ProbeId;
 
@@ -24,6 +24,11 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
         public IProbeProcessor Processor { get; } = Processor;
 
-        public bool IsEmpty() => this == Empty;
+        /// <summary>
+        /// Checks whether there is nothing to run for this probe: <see cref="Empty"/>, a cleared entry,
+        /// or an entry copied while it was being cleared, which can miss only some of its fields.
+        /// </summary>
+        /// <returns>true if the entry has no processor or no sampler</returns>
+        public bool IsEmpty() => Processor is null || Sampler is null;
     }
 }

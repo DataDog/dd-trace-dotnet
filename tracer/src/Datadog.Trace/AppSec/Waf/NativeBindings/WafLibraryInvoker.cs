@@ -293,8 +293,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return false;
             }
 
-            var canParse = int.TryParse(versionWafSplit[1], out _);
-            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
+            var canParse = int.TryParseInvariant(versionWafSplit[1], out _);
+            canParse &= int.TryParseInvariant(versionWafSplit[0], out var wafMajor);
             if (!canParse)
             {
                 Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);

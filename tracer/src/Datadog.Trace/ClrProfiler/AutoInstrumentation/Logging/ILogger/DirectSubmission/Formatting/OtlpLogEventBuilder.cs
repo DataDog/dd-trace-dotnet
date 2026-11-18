@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                     Message = message,
                     LogLevel = logLevel,
                     CategoryName = categoryName,
-                    Timestamp = DateTimeOffset.UtcNow.DateTime,
+                    Timestamp = DateTimeOffset.UtcNow,
                     Exception = exception,
                     Attributes = attributes,
                     TraceId = traceId,

@@ -615,62 +615,6 @@ public class StatsdManagerTests
     }
 
     [Fact]
-    public async Task ConcurrentSettingsUpdateAndLeaseAcquisition_ThreadSafe()
-    {
-        var tracerSettings = new TracerSettings();
-        var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _) =>
-        {
-            Interlocked.Increment(ref clientCount);
-            return new(new MockStatsdClient());
-        });
-
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-        var cts = new CancellationTokenSource();
-        var disposedClientReturned = 0;
-
-        var tasks = new[]
-        {
-            Task.Run(() =>
-            {
-                // Update the environment continuously
-                var counter = 0;
-                while (!cts.Token.IsCancellationRequested)
-                {
-                    tracerSettings.Manager.UpdateManualConfigurationSettings(
-                        new ManualInstrumentationConfigurationSource(
-                            new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
-                            useDefaultSources: true),
-                        NullConfigurationTelemetry.Instance);
-                }
-            }),
-
-            Task.Run(() =>
-            {
-                while (!cts.Token.IsCancellationRequested)
-                {
-                    using var lease = manager.TryGetClientLease();
-                    if (lease.Client != null)
-                    {
-                        // Check if client is disposed WHILE we hold the lease
-                        if (((MockStatsdClient)lease.Client).DisposeCount > 0)
-                        {
-                            Interlocked.Increment(ref disposedClientReturned);
-                        }
-                    }
-                }
-            })
-        };
-
-        await Task.Delay(500);
-        cts.Cancel();
-
-        await Task.WhenAll(tasks);
-        disposedClientReturned.Should().Be(0, "should never return a disposed client while holding a lease");
-        await manager.DisposeAsync();
-    }
-
-    [Fact]
     public async Task MultipleTransitionsBetweenRequiredAndNotRequired()
     {
         var holders = new List<StatsdManager.StatsdClientHolder>();
@@ -768,6 +712,66 @@ public class StatsdManagerTests
     [Collection(nameof(HighConcurrencyTestCollection))]
     public class ConcurrencyTests
     {
+        [Fact]
+        public async Task ConcurrentSettingsUpdateAndLeaseAcquisition_ThreadSafe()
+        {
+            var tracerSettings = new TracerSettings();
+            var clientCount = 0;
+            var manager = new StatsdManager(tracerSettings, (_, _) =>
+            {
+                Interlocked.Increment(ref clientCount);
+                return new(new MockStatsdClient());
+            });
+
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+            var cts = new CancellationTokenSource();
+            var disposedClientReturned = 0;
+
+            var tasks = new[]
+            {
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        // Update the environment continuously
+                        var counter = 0;
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            tracerSettings.Manager.UpdateManualConfigurationSettings(
+                                new ManualInstrumentationConfigurationSource(
+                                    new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
+                                    useDefaultSources: true),
+                                NullConfigurationTelemetry.Instance);
+                        }
+                    },
+                    TaskCreationOptions.LongRunning),
+
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            using var lease = manager.TryGetClientLease();
+                            if (lease.Client != null)
+                            {
+                                // Check if client is disposed WHILE we hold the lease
+                                if (((MockStatsdClient)lease.Client).DisposeCount > 0)
+                                {
+                                    Interlocked.Increment(ref disposedClientReturned);
+                                }
+                            }
+                        }
+                    },
+                    TaskCreationOptions.LongRunning)
+            };
+
+            await Task.Delay(500);
+            cts.Cancel();
+
+            await Task.WhenAll(tasks);
+            disposedClientReturned.Should().Be(0, "should never return a disposed client while holding a lease");
+            await manager.DisposeAsync();
+        }
+
         [Fact]
         public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
         {

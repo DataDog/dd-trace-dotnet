@@ -47,7 +47,7 @@ public partial class ExporterSettings
         var agentPortStr = GetValue(configuration, ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT");
         var unixDomainSocketPath = GetValue(configuration, ConfigurationKeys.TracesUnixDomainSocketPath);
 
-        int? agentPort = int.TryParse(agentPortStr, out var port) ? port : null;
+        int? agentPort = int.TryParseInvariant(agentPortStr, out var port) ? port : null;
 
         var traceSettings = GetTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
         TracesTransport = traceSettings.Transport;

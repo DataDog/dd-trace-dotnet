@@ -546,9 +546,9 @@ namespace Datadog.Trace.Propagators
                        1 when samplingPriority[0] == '0' => 0,
                        2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
 #if NETCOREAPP
-                       _ => int.TryParse(samplingPriority, out var result) ? result : null,
+                       _ => int.TryParseInvariant(samplingPriority, out var result) ? result : null,
 #else
-                       _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
+                       _ => int.TryParseInvariant(samplingPriority.ToString(), out var result) ? result : null,
 #endif
                    };
         }

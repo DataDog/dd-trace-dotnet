@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -25,6 +26,7 @@ internal sealed class BuddyEnvironmentValues<TValueProvider>(TValueProvider valu
         Tag = ValueProvider.GetValue(PlatformKeys.Ci.Buddy.ExecutionTag);
 
         PipelineId = string.Format(
+            CultureInfo.InvariantCulture,
             "{0}/{1}",
             ValueProvider.GetValue(PlatformKeys.Ci.Buddy.PipelineId),
             ValueProvider.GetValue(PlatformKeys.Ci.Buddy.ExecutionId));
