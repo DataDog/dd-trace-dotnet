@@ -128,7 +128,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
 
         if (messageCount > 1)
         {
-            tags.MessagingBatchMessageCount = messageCount.ToString();
+            tags.MessagingBatchMessageCount = messageCount.ToStringInvariant();
         }
 
         if (messageCount == 1)

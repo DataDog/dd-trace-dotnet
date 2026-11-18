@@ -188,7 +188,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
             /// </summary>
             public static Rule? ParseGitHub(string raw)
             {
-                if (raw.StartsWith("\\#"))
+                if (raw.StartsWithOrdinal("\\#"))
                 {
                     return null;
                 }
@@ -241,7 +241,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
 
             private static bool IsUnsupportedGitHubPattern(string patternToken)
             {
-                if (patternToken.StartsWith("!"))
+                if (patternToken.StartsWith('!'))
                 {
                     return true;
                 }

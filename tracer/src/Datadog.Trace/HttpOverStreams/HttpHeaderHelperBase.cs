@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.HttpOverStreams
         public Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
             var contentLengthHeader = request.Content?.Length is { } contentLength
-                                    ? $"Content-Length: {contentLength}{DatadogHttpValues.CrLf}"
+                                    ? StringUtil.Invariant($"Content-Length: {contentLength}{DatadogHttpValues.CrLf}")
                                     : string.Empty;
 
             var leadingHeaders = $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}{contentLengthHeader}{HttpSerializedDefaultHeaders}";

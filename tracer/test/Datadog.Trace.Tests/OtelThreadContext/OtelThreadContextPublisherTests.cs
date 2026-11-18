@@ -32,11 +32,11 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         private const int AttrsDataOffset = 28;
 
         [Fact]
-        public void IsDisabledUnlessTheSettingIsTurnedOn()
+        public void IsDisabledWithDefaultSettings()
         {
             var settings = new TracerSettings();
 
-            settings.OtelThreadContextEnabled.Should().BeFalse("the feature must be opt-in");
+            settings.OtelThreadContextEnabled.Should().BeFalse();
             OtelThreadContextPublisher.Create(settings).Should().BeSameAs(NullOtelThreadContextPublisher.Instance);
         }
 

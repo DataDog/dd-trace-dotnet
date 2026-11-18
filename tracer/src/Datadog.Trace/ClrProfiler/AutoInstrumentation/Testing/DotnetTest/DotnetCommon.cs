@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                             continue;
                         }
 
-                        if (stackFrame.GetMethod()?.DeclaringType?.FullName?.StartsWith("Coverlet.MSbuild.Tasks") == true)
+                        if (stackFrame.GetMethod()?.DeclaringType?.FullName?.StartsWithOrdinal("Coverlet.MSbuild.Tasks") == true)
                         {
                             _isMsBuildTaskCache = true;
                             return true;
@@ -355,7 +355,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             try
             {
-                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
+                var outputPath = Path.Combine(codeCoveragePath, StringUtil.Invariant($"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json"));
                 var runId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) ?? TestOptimization.Instance.RunId;
                 var runToken = GlobalCoverageProtocol.GetRunToken(runId);
                 if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, runToken, out var globalCoverage) ||
@@ -2632,7 +2632,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     for (var i = 0; i < args.Length; i++)
                     {
-                        sb.AppendLine($"\t{i}:{args[i]}");
+                        sb.Append('\t').Append(i.ToStringInvariant()).Append(':').AppendLine(args[i]);
                     }
                 }
 

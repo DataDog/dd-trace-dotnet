@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 // Run-owned configuration fixture; never modifies a shared staging configuration.
 internal sealed class FlagEvaluationConfigurationServer : IDisposable
 {
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly Task _loop;
     private Tuple<byte[], string> _response;
     private bool _stopping;
@@ -24,9 +24,8 @@ internal sealed class FlagEvaluationConfigurationServer : IDisposable
     public FlagEvaluationConfigurationServer(string response)
     {
         _response = CreateResponse(response);
-        Url = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        _listener.Prefixes.Add(Url);
-        _listener.Start();
+        _listener = TcpPortProvider.StartHttpListenerOnFreePort(out var url);
+        Url = url;
         _loop = Task.Run(ServeAsync);
     }
 

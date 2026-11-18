@@ -326,7 +326,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         {
                             if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                             {
-                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                                joinedLocations.Add(StringUtil.Invariant($"{locationProxy.Line}:{locationProxy.Column}"));
                             }
                         }
 

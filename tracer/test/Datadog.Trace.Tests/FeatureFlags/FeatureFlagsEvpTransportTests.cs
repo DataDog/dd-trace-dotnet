@@ -75,10 +75,7 @@ public class FeatureFlagsEvpTransportTests
     public async Task RuntimeEndpointChangeRequiresCapabilitiesFromReplacementAgent(bool discoverBeforeTransportUpdate, bool replacementSupportsIdentity, bool sendBeforeUpdate)
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var replacement = new HttpListener();
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        replacement.Prefixes.Add(replacementUrl);
-        replacement.Start();
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var received = replacement.GetContextAsync();
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
@@ -162,10 +159,7 @@ public class FeatureFlagsEvpTransportTests
     public async Task DelayedOldAgentDiscoveryCannotAuthorizeReplacementAgent()
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var replacement = new HttpListener();
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        replacement.Prefixes.Add(replacementUrl);
-        replacement.Start();
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var received = replacement.GetContextAsync();
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
@@ -232,14 +226,8 @@ public class FeatureFlagsEvpTransportTests
     public async Task LateOldAgentResponseDoesNotSuppressReplacementAgent(int oldStatus)
     {
         const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
-        using var oldAgent = new HttpListener();
-        using var replacement = new HttpListener();
-        var oldUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        oldAgent.Prefixes.Add(oldUrl);
-        replacement.Prefixes.Add(replacementUrl);
-        oldAgent.Start();
-        replacement.Start();
+        using var oldAgent = TcpPortProvider.StartHttpListenerOnFreePort(out var oldUrl);
+        using var replacement = TcpPortProvider.StartHttpListenerOnFreePort(out var replacementUrl);
         var settings = CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
             (ConfigurationKeys.AgentUri, oldUrl));
@@ -791,14 +779,8 @@ public class FeatureFlagsEvpTransportTests
     [Fact]
     public async Task LocalRedirectIsNotFollowedOrReplayedAndOnlyFutureBatchUsesDirect()
     {
-        using var relay = new HttpListener();
-        using var destination = new HttpListener();
-        var relayUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        relay.Prefixes.Add(relayUrl);
-        relay.Start();
-        var destinationUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
-        destination.Prefixes.Add(destinationUrl);
-        destination.Start();
+        using var relay = TcpPortProvider.StartHttpListenerOnFreePort(out var relayUrl);
+        using var destination = TcpPortProvider.StartHttpListenerOnFreePort(out var destinationUrl);
         var receivedAtDestination = destination.GetContextAsync();
         var receivedAtRelay = relay.GetContextAsync();
         var local = FeatureFlagsEvpTransport.CreateLocalRequestFactory(CreateSettings((ConfigurationKeys.AgentUri, relayUrl)).Manager.InitialExporterSettings);

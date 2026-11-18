@@ -1,0 +1,153 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Opt-in filtering of the datadog/ folder on publish.
+
+    Nothing is inferred from the build: filtering only happens when the customer sets DatadogPlatforms, and the
+    folders we keep are derived exclusively from DatadogPlatforms and DatadogRuntimes (which defaults to the
+    TargetFramework being published). Customers are responsible for listing every platform and runtime the
+    application may run on, including runtimes reached through roll-forward.
+
+      DatadogPlatforms: one or more of win-x64;win-x86;linux-x64;linux-arm64;linux-musl-x64;linux-musl-arm64;osx-x64;osx-arm64
+      DatadogRuntimes:  one or more runtime TFMs, e.g. net48 or net6.0;net8.0
+  -->
+
+  <!-- Kept in its own target so the version check runs before any property functions that need MSBuild 16.7+ -->
+  <Target Name="_DatadogValidateMSBuildVersion"
+          Condition="'$(DatadogPlatforms)' != ''">
+    <Error Code="DDBUNDLE001"
+           Condition="$([System.Version]::Parse('$(MSBuildVersion)').CompareTo($([System.Version]::Parse('16.7')))) &lt; 0"
+           Text="[Datadog.Trace.Bundle] DatadogPlatforms requires MSBuild 16.7 or later (.NET SDK 3.1.400 or later), but MSBuild $(MSBuildVersion) is in use. Update the SDK, or remove the DatadogPlatforms property to publish all Datadog files." />
+  </Target>
+
+  <Target Name="_DatadogValidateFilterInputs"
+          DependsOnTargets="_DatadogValidateMSBuildVersion"
+          Condition="'$(DatadogPlatforms)' != ''">
+    <PropertyGroup>
+      <!-- Defaulted here rather than in a props file, as buildTransitive props are imported before TargetFramework is set.
+           Publish always runs in an inner build, so TargetFramework is a single value. -->
+      <_DatadogRuntimes>$(DatadogRuntimes)</_DatadogRuntimes>
+      <_DatadogRuntimes Condition="'$(_DatadogRuntimes)' == ''">$(TargetFramework)</_DatadogRuntimes>
+      <!-- Property function results are stored escaped, so Unescape must be the outermost call for the lists to split on ';' -->
+      <_DatadogPlatforms>$([MSBuild]::Unescape('$(DatadogPlatforms.ToLowerInvariant())'))</_DatadogPlatforms>
+      <_DatadogRuntimes>$([MSBuild]::Unescape('$(_DatadogRuntimes)'))</_DatadogRuntimes>
+      <!-- The SDK gives .NET Framework apps a default RuntimeIdentifier that doesn't reflect where they run,
+           so for .NET Framework we check PlatformTarget instead (DDBUNDLE012) -->
+      <_DatadogRuntimeIdentifier Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">$(RuntimeIdentifier.ToLowerInvariant())</_DatadogRuntimeIdentifier>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <!-- These must match the native directories in the package -->
+      <_DatadogSupportedPlatform Include="win-x64;win-x86;linux-x64;linux-arm64;linux-musl-x64;linux-musl-arm64;osx-x64;osx-arm64" />
+      <_DatadogPlatform Include="$(_DatadogPlatforms)" />
+      <_DatadogUnsupportedPlatform Include="@(_DatadogPlatform)" Exclude="@(_DatadogSupportedPlatform)" />
+
+      <_DatadogRuntime Include="$(_DatadogRuntimes)" />
+      <_DatadogRuntime>
+        <TargetFrameworkIdentifier>$([MSBuild]::GetTargetFrameworkIdentifier('%(Identity)'))</TargetFrameworkIdentifier>
+        <TargetFrameworkVersion>$([MSBuild]::GetTargetFrameworkVersion('%(Identity)', 3))</TargetFrameworkVersion>
+      </_DatadogRuntime>
+      <!-- This mapping must match the directory selection in the managed loader, in ComputeTfmDirectory()
+           (tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.NetCore.cs and Startup.NetFramework.cs) -->
+      <!-- Any .NET Framework version maps to net461, as what matters is the .NET Framework installed where the
+           application runs, not the version it targets -->
+      <_DatadogRuntime>
+        <ManagedDirectory Condition="'%(TargetFrameworkIdentifier)' == '.NETFramework'">net461</ManagedDirectory>
+        <ManagedDirectory Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp' AND
+                                     $([MSBuild]::VersionGreaterThanOrEquals('%(TargetFrameworkVersion)', '6.0'))">net6.0</ManagedDirectory>
+        <ManagedDirectory Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp' AND
+                                     $([MSBuild]::VersionGreaterThanOrEquals('%(TargetFrameworkVersion)', '3.1')) AND
+                                     $([MSBuild]::VersionLessThan('%(TargetFrameworkVersion)', '6.0'))">netcoreapp3.1</ManagedDirectory>
+        <ManagedDirectory Condition="'%(TargetFrameworkIdentifier)' == '.NETCoreApp' AND
+                                     $([MSBuild]::VersionGreaterThanOrEquals('%(TargetFrameworkVersion)', '2.1')) AND
+                                     $([MSBuild]::VersionLessThan('%(TargetFrameworkVersion)', '3.1'))">netstandard2.0</ManagedDirectory>
+      </_DatadogRuntime>
+      <_DatadogUnsupportedRuntime Include="@(_DatadogRuntime)" Condition="'%(_DatadogRuntime.ManagedDirectory)' == ''" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_DatadogPlatformList>;@(_DatadogPlatform);</_DatadogPlatformList>
+      <_DatadogSupportedPlatformList>;@(_DatadogSupportedPlatform);</_DatadogSupportedPlatformList>
+    </PropertyGroup>
+
+    <Error Code="DDBUNDLE002"
+           Condition="'@(_DatadogUnsupportedPlatform)' != ''"
+           Text="[Datadog.Trace.Bundle] Unsupported DatadogPlatforms value(s) '@(_DatadogUnsupportedPlatform)'. Supported values are: @(_DatadogSupportedPlatform, ', '). Remove the DatadogPlatforms property to publish all Datadog files." />
+
+    <Error Code="DDBUNDLE003"
+           Condition="'@(_DatadogUnsupportedRuntime)' != ''"
+           Text="[Datadog.Trace.Bundle] Invalid DatadogRuntimes value(s) '@(_DatadogUnsupportedRuntime)'. DatadogRuntimes defaults to the TargetFramework being published, and must list the runtime(s) the application runs on, for example net48 or net6.0;net8.0. Valid values are .NET Framework target frameworks, and .NET Core target frameworks for .NET Core 2.1 or later. Set DatadogRuntimes explicitly, or remove the DatadogPlatforms property to publish all Datadog files." />
+
+    <!-- The RuntimeIdentifier is only validated when it is one of the supported platforms. Other RIDs, such as
+         version-specific or distro-specific RIDs (e.g. win10-x64 or alpine.3.18-x64), aren't mapped to a platform -->
+    <Warning Code="DDBUNDLE010"
+             Condition="'$(_DatadogRuntimeIdentifier)' != '' AND
+                        $(_DatadogSupportedPlatformList.Contains(';$(_DatadogRuntimeIdentifier);')) AND
+                        !$(_DatadogPlatformList.Contains(';$(_DatadogRuntimeIdentifier);'))"
+             Text="[Datadog.Trace.Bundle] The application is published for RuntimeIdentifier '$(RuntimeIdentifier)', but DatadogPlatforms ('$(DatadogPlatforms)') does not include it. Automatic instrumentation will not work on that platform." />
+
+    <Warning Code="DDBUNDLE013"
+             Condition="'$(_DatadogRuntimeIdentifier)' != '' AND
+                        !$(_DatadogSupportedPlatformList.Contains(';$(_DatadogRuntimeIdentifier);'))"
+             Text="[Datadog.Trace.Bundle] The application is published for RuntimeIdentifier '$(RuntimeIdentifier)', which can't be validated against DatadogPlatforms ('$(DatadogPlatforms)'). Make sure DatadogPlatforms includes the platform the application runs on, or automatic instrumentation will not work. Supported values are: @(_DatadogSupportedPlatform, ', ')." />
+
+    <Warning Code="DDBUNDLE011"
+             Condition="'@(_DatadogRuntime->WithMetadataValue('ManagedDirectory', 'net461'))' != '' AND !$(_DatadogPlatformList.Contains(';win-'))"
+             Text="[Datadog.Trace.Bundle] DatadogRuntimes includes .NET Framework, but DatadogPlatforms ('$(DatadogPlatforms)') does not include a Windows platform. Automatic instrumentation will not work for .NET Framework." />
+
+    <Warning Code="DDBUNDLE012"
+             Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' AND
+                        (('$(PlatformTarget)' == 'x86' AND !$(_DatadogPlatformList.Contains(';win-x86;'))) OR
+                         ('$(PlatformTarget)' == 'x64' AND !$(_DatadogPlatformList.Contains(';win-x64;'))))"
+             Text="[Datadog.Trace.Bundle] The application is built for PlatformTarget '$(PlatformTarget)', but DatadogPlatforms ('$(DatadogPlatforms)') does not include win-$(PlatformTarget). Automatic instrumentation will not work." />
+  </Target>
+
+  <!-- ResolvedFileToPublish is populated in ComputeResolvedFilesToPublishList,
+       see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
+       This target removes the datadog/ files we don't need from it, so they are never copied.
+       BeforeTargets is a fallback in case the files are copied without ComputeResolvedFilesToPublishList running,
+       as the Web SDK does in its _FilterIISAssets target -->
+  <Target Name="_DatadogFilterPublishFiles"
+          AfterTargets="ComputeResolvedFilesToPublishList"
+          BeforeTargets="CopyFilesToPublishDirectory"
+          DependsOnTargets="_DatadogValidateFilterInputs"
+          Condition="'$(DatadogPlatforms)' != ''">
+    <ItemGroup>
+      <_DatadogKeepDirectory Include="@(_DatadogPlatform)" />
+      <!-- The osx directory contains universal binaries shared by all macOS architectures -->
+      <_DatadogKeepDirectory Include="osx" Condition="$(_DatadogPlatformList.Contains(';osx-'))" />
+      <_DatadogKeepDirectory Include="@(_DatadogRuntime->'%(ManagedDirectory)')" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_DatadogKeepDirectoryList>;@(_DatadogKeepDirectory);</_DatadogKeepDirectoryList>
+      <!-- dd-dotnet.cmd always runs win-x64/dd-dotnet.exe, as there is no x86 build -->
+      <_DatadogKeepWinX64DdDotnet>$(_DatadogPlatformList.Contains(';win-x86;'))</_DatadogKeepWinX64DdDotnet>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_DatadogPublishFile Include="@(ResolvedFileToPublish)"
+                           Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').Replace('\', '/').ToLowerInvariant().StartsWith('datadog/'))" />
+      <_DatadogPublishFile>
+        <_DatadogPath>$([System.String]::Copy('%(RelativePath)').Replace('\', '/').ToLowerInvariant())</_DatadogPath>
+      </_DatadogPublishFile>
+      <!-- The top-level directory under datadog/. Empty for files in the root of datadog/, which are always kept -->
+      <_DatadogPublishFile>
+        <_DatadogDirectory Condition="$([System.String]::Copy('%(_DatadogPath)').IndexOf('/', 8)) &gt; 0">$([System.String]::Copy('%(_DatadogPath)').Substring(8, $([MSBuild]::Subtract($([System.String]::Copy('%(_DatadogPath)').IndexOf('/', 8)), 8))))</_DatadogDirectory>
+      </_DatadogPublishFile>
+
+      <_DatadogFileToRemove Include="@(_DatadogPublishFile)"
+                            Condition="'%(_DatadogPublishFile._DatadogDirectory)' != '' AND
+                                       !$(_DatadogKeepDirectoryList.Contains(';%(_DatadogPublishFile._DatadogDirectory);')) AND
+                                       !('$(_DatadogKeepWinX64DdDotnet)' == 'true' AND '%(_DatadogPublishFile._DatadogPath)' == 'datadog/win-x64/dd-dotnet.exe')" />
+
+      <ResolvedFileToPublish Remove="@(_DatadogFileToRemove)" />
+
+      <!-- Used for the message below. Only the kept directories are listed, as that list is short -->
+      <_DatadogKeptFile Include="@(_DatadogPublishFile)" Exclude="@(_DatadogFileToRemove)" />
+      <_DatadogKeptDirectory Include="@(_DatadogKeptFile->'%(_DatadogDirectory)'->Distinct())" />
+    </ItemGroup>
+
+    <Message Importance="High"
+             Text="[Datadog.Trace.Bundle] Published Datadog directories: @(_DatadogKeptDirectory, ', ')" />
+  </Target>
+</Project>
