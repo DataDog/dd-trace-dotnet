@@ -59,7 +59,6 @@ namespace CoverageRewriterAssembly
 				fileCounter[11]++;
 				Console.WriteLine(num);
 				fileCounter[12]++;
-				fileCounter[9]++;
 				num++;
 			}
 			fileCounter[14]++;
