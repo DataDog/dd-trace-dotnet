@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
+using Xunit.Sdk;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -63,9 +64,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var logDirectory = runner.Environment.LogDir;
             var profileDirectory = runner.Environment.PprofDir;
-            var profiles = Directory.Exists(profileDirectory)
-                ? ProfileReader.Read(profileDirectory)
-                : new ProfileOutput(Array.Empty<PprofProfile>());
+            // An existing directory with no profiles is a real read (zero samples).
+            // A missing directory means the profiler never started.
+            if (!Directory.Exists(profileDirectory))
+            {
+                throw new XunitException(
+                    "The profiler did not create the profile directory '" + profileDirectory + "'." + Environment.NewLine
+                    + "Process output:" + Environment.NewLine
+                    + runner.ProcessOutput);
+            }
+
+            var profiles = ProfileReader.Read(profileDirectory);
 
             return new ProfilerTestRun(
                 agent,
