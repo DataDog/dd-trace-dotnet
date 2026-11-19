@@ -40,13 +40,15 @@ public class ApiSecurityTelemetryTests
     }
 
     [Theory]
-    [InlineData(null, 404, false, true, SamplingPriorityValues.AutoKeep)]
-    [InlineData(null, 403, true, true, SamplingPriorityValues.AutoKeep)]
-    [InlineData(null, 200, false, false, SamplingPriorityValues.AutoKeep)]
-    [InlineData(null, 200, false, true, SamplingPriorityValues.AutoReject)]
-    public async Task GivenARequestThatHasNoRouteToMiss_WhenSampling_ThenNothingIsReported(string? route, int statusCode, bool blocked, bool lastWafCall, int samplingPriority)
+    [InlineData(null, 404, false, false, true, SamplingPriorityValues.AutoKeep)]
+    [InlineData(null, 403, true, false, true, SamplingPriorityValues.AutoKeep)]
+    // the response WAF scan that writing the blocking response runs comes before the blocked tag is set
+    [InlineData(null, 403, false, true, true, SamplingPriorityValues.AutoKeep)]
+    [InlineData(null, 200, false, false, false, SamplingPriorityValues.AutoKeep)]
+    [InlineData(null, 200, false, false, true, SamplingPriorityValues.AutoReject)]
+    public async Task GivenARequestThatHasNoRouteToMiss_WhenSampling_ThenNothingIsReported(string? route, int statusCode, bool blocked, bool blockRequested, bool lastWafCall, int samplingPriority)
     {
-        var metrics = await SampleAsync(route, statusCode, blocked: blocked, lastWafCall: lastWafCall, samplingPriority: samplingPriority);
+        var metrics = await SampleAsync(route, statusCode, blocked: blocked, blockRequested: blockRequested, lastWafCall: lastWafCall, samplingPriority: samplingPriority);
 
         metrics.Should().BeEmpty();
     }
@@ -93,7 +95,7 @@ public class ApiSecurityTelemetryTests
                .Which.Should().BeEquivalentTo(("api_security.request.no_schema", new[] { "framework:aspnet_core" }));
     }
 
-    private static async Task<List<(string Name, string[] Tags)>> SampleAsync(string? route, int statusCode, string? component = "aspnet_core", bool blocked = false, bool lastWafCall = true, int samplingPriority = SamplingPriorityValues.AutoKeep, IResult? result = null)
+    private static async Task<List<(string Name, string[] Tags)>> SampleAsync(string? route, int statusCode, string? component = "aspnet_core", bool blocked = false, bool lastWafCall = true, int samplingPriority = SamplingPriorityValues.AutoKeep, IResult? result = null, bool blockRequested = false)
     {
         var config = new Dictionary<string, object> { { ConfigurationKeys.AppSec.ApiSecurityEnabled, true } };
         await using var tracer = TracerHelper.Create(TracerSettings.Create(config));
@@ -107,7 +109,7 @@ public class ApiSecurityTelemetryTests
         }
 
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
-        var decision = apiSecurity.GetSamplingDecision(lastWafCall, span, new Dictionary<string, object>(), statusCode, routeValues: null);
+        var decision = apiSecurity.GetSamplingDecision(lastWafCall, span, new Dictionary<string, object>(), statusCode, routeValues: null, blockRequested);
         ApiSecurity.RecordSamplingTelemetry(decision, result, span, collector);
         return await GetMetricsAsync(collector);
     }
