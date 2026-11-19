@@ -14826,6 +14826,30 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "GetDependencyTelemetry",
+    "TargetReturnType": "System.Collections.Generic.IReadOnlyList`1[System.Collections.Generic.IDictionary`2[System.String,System.Object]]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkGetDependencyTelemetryIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "HasConfiguration",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],

@@ -19,6 +19,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFe
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -42,6 +43,7 @@ public class FlagEvaluationBridgeTests
     [InlineData(typeof(OpenFeatureSdkCanDeferExposuresIntegration))]
     [InlineData(typeof(OpenFeatureSdkEvaluateDeferredIntegration))]
     [InlineData(typeof(OpenFeatureSdkCommitExposureIntegration))]
+    [InlineData(typeof(OpenFeatureSdkGetDependencyTelemetryIntegration))]
     [InlineData(typeof(OpenFeatureSdkRecordEVPHookErrorIntegration))]
     [InlineData(typeof(OpenFeatureSdkIsEvaluationEventsEnabledIntegration))]
     public void GeneratedDefinitionsRegisterCallbacksAsOpenFeature(Type integration)
@@ -61,6 +63,54 @@ public class FlagEvaluationBridgeTests
         var flags = 0;
         Action call = () => invoke(null, ref flag, ref variant, ref allocation, ref subject, ref time, ref error, ref attributes, ref flags);
         call.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DependencyTelemetryCallbackReturnsBatchFromDeferredMetadata(bool stubThrew)
+    {
+        IReadOnlyList<IDictionary<string, object?>> batch =
+        [
+            new Dictionary<string, object?>
+            {
+                ["flagKey"] = "dependency",
+                ["variant"] = "on",
+            },
+        ];
+        var metadata = new DeferredExposureMetadata();
+        metadata.SetDependencyTelemetry(batch);
+        IDictionary<string, string>? argument = metadata;
+
+        var state = OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodBegin<object>(ref argument);
+        var result = OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodEnd<object>(
+            returnValue: null,
+            stubThrew ? new InvalidOperationException("stub failure") : null,
+            in state);
+
+        result.GetReturnValue().Should().BeSameAs(batch, "the provider must receive the detached batch carried by the deferred evaluation metadata");
+    }
+
+    [Fact]
+    public void DependencyTelemetryCallbackSafelyIgnoresNonDeferredOrMissingMetadata()
+    {
+        IReadOnlyList<IDictionary<string, object?>> unexpectedStubValue =
+        [
+            new Dictionary<string, object?> { ["flagKey"] = "unexpected" },
+        ];
+        IDictionary<string, string>? ordinary = new Dictionary<string, string>();
+        var ordinaryState = OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodBegin<object>(ref ordinary);
+        OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodEnd<object>(unexpectedStubValue, new InvalidOperationException("stub failure"), in ordinaryState)
+                                                       .GetReturnValue()
+                                                       .Should()
+                                                       .BeNull();
+
+        IDictionary<string, string>? missing = null;
+        var missingState = OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodBegin<object>(ref missing);
+        OpenFeatureSdkGetDependencyTelemetryIntegration.OnMethodEnd<object>(unexpectedStubValue, null, in missingState)
+                                                       .GetReturnValue()
+                                                       .Should()
+                                                       .BeNull();
     }
 
     [Theory]
