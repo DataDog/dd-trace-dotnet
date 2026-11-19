@@ -23,6 +23,11 @@ namespace Datadog.Trace.FeatureFlags
         private ExposureEvent _exposure;
         private int _state; // 0 until an exposure is pending
 
+        internal DeferredExposureMetadata(IDictionary<string, string> metadata)
+            : base(metadata)
+        {
+        }
+
         internal bool IsPending => Volatile.Read(ref _state) == Pending;
 
         internal void SetPendingExposure(in ExposureEvent exposure)
