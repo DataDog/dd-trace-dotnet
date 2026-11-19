@@ -82,6 +82,8 @@ internal sealed class OtlpResourceGlobalTags
         Tags.ClientAddress,
         Tags.NetworkClientIp,
         Tags.NetworkPeerAddress,
+        Tags.AwsQueueUrl,
+        Tags.AwsSqsQueueUrl,
     };
 
     // never mutated after construction
