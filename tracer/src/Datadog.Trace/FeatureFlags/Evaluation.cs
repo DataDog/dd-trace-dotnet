@@ -27,5 +27,7 @@ internal sealed class Evaluation(string flagKey, object? value, EvaluationReason
 
     public string? Error { get; } = error;
 
-    public IDictionary<string, string>? FlagMetadata { get; } = metadata;
+    public IDictionary<string, string>? FlagMetadata { get; internal set; } = metadata;
+
+    internal Exposure.Model.ExposureEvent? PendingExposure { get; set; }
 }
