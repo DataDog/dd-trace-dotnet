@@ -41,6 +41,8 @@ pr:
       - docs/
       - tracer/samples/
       - tracer/tools/*.ps*1
+      # Only changed by itself in [Version Bump] PRs (auto_create_version_bump_pr.yml); the post-merge CI build still runs
+      - tracer/build/_build/version.props
       - AGENTS.md
       - CLAUDE.md
       - LICENSE
