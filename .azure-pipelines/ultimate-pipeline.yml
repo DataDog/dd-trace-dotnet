@@ -5293,12 +5293,10 @@ stages:
       timeoutInMinutes: 60
       displayName: Compute system-tests scenarios
       pool:
-          vmImage: ubuntu-latest
+          vmImage: ubuntu-24.04
 
       steps:
         - checkout: none
-
-        - template: steps/use-classic-docker-storage.yml
 
         - task: UsePythonVersion@0
           inputs:
@@ -5397,7 +5395,7 @@ stages:
       displayName: ""
       timeoutInMinutes: 60
       pool:
-          vmImage: ubuntu-latest
+          vmImage: ubuntu-24.04
       dependsOn: compute_scenarios
 
       strategy:
@@ -5405,8 +5403,6 @@ stages:
 
       steps:
       - checkout: none
-
-      - template: steps/use-classic-docker-storage.yml
 
       - task: UsePythonVersion@0
         inputs:
