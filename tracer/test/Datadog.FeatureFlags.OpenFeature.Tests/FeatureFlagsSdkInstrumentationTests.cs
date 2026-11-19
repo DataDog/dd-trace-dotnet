@@ -36,7 +36,13 @@ public class FeatureFlagsSdkInstrumentationTests
     [Fact]
     public void TheDeferredExposureStubsAreInstrumented()
     {
-        Integrations().Select(row => (string)row[0]).Should().Contain(["OpenFeatureSdkEvaluateDeferredIntegration", "OpenFeatureSdkCommitExposureIntegration", "OpenFeatureSdkCanDeferExposuresIntegration"]);
+        Integrations().Select(row => (string)row[0]).Should().Contain(
+        [
+            "OpenFeatureSdkEvaluateDeferredIntegration",
+            "OpenFeatureSdkCommitExposureIntegration",
+            "OpenFeatureSdkCanDeferExposuresIntegration",
+            "OpenFeatureSdkGetDependencyTelemetryIntegration",
+        ]);
     }
 
     [Fact]
