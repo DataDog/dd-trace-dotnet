@@ -44,6 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
                 profileDirectory: string.Empty);
 
             run.Dispose();
+            // Dispose clears the agent field before disposing it, so a second call must not throw. The request below checks the agent is still stopped.
             run.Dispose();
 
             // On Windows, a refused connection is only reported after about 2s of retries: use a longer timeout.
