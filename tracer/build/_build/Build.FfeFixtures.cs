@@ -11,20 +11,6 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
-    private static readonly HashSet<string> FfeFixtureCopyDisallowList = new(StringComparer.Ordinal)
-    {
-        ".git",
-        ".github",
-        ".gitignore",
-        "ci",
-        "CONTRIBUTING.md",
-        "LICENSE",
-        "LICENSE-3rdparty.csv",
-        "NOTICE",
-        "README.md",
-        "SOURCE.md",
-    };
-
     [Parameter("Branch, tag, or commit to copy from DataDog/ffe-system-test-data")]
     readonly string FfeFixtureRef = "main";
 
@@ -131,15 +117,11 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
 
     private static void CopyFixtureSnapshot(AbsolutePath source, AbsolutePath snapshot)
     {
-        foreach (var entry in new DirectoryInfo(source).EnumerateFileSystemInfos())
-        {
-            if (FfeFixtureCopyDisallowList.Contains(entry.Name))
-            {
-                continue;
-            }
-
-            CopyEntry(entry, Path.Combine(snapshot, entry.Name));
-        }
+        CopyEntry(new FileInfo(source / "ufc-config.json"), snapshot / "ufc-config.json");
+        CopyEntry(new DirectoryInfo(source / "evaluation-cases"), snapshot / "evaluation-cases");
+        CopyEntry(
+            new DirectoryInfo(source / "evaluation-suites" / "dependent-flags"),
+            snapshot / "evaluation-suites" / "dependent-flags");
     }
 
     private static void CopyEntry(FileSystemInfo source, string destination)
