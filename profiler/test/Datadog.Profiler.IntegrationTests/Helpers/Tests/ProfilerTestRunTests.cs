@@ -12,6 +12,7 @@ using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
 {
@@ -51,6 +52,42 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var act = () => client.GetAsync($"http://127.0.0.1:{port}/");
             await act.Should().ThrowAsync<HttpRequestException>();
+        }
+
+        [Fact]
+        public void From_MissingProfileDirectory_FailsWithProcessOutput()
+        {
+            var runner = new TestApplicationRunner("Samples.Computer01", "net8.0", "Samples.Computer01", _output);
+            const string processOutput = "demo-process-output";
+            runner.ProcessOutput = processOutput;
+            var profileDirectory = runner.Environment.PprofDir;
+            Directory.Exists(profileDirectory).Should().BeFalse();
+
+            var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            try
+            {
+                var act = () => ProfilerTestRun.From(runner, agent);
+                var exception = act.Should().Throw<XunitException>().Which;
+                exception.Message.Should().Contain(profileDirectory);
+                exception.Message.Should().Contain(processOutput);
+            }
+            finally
+            {
+                agent.Dispose();
+            }
+        }
+
+        [Fact]
+        public void From_EmptyProfileDirectory_ReturnsNoProfiles()
+        {
+            var runner = new TestApplicationRunner("Samples.Computer01", "net8.0", "Samples.Computer01", _output);
+            var profileDirectory = runner.Environment.PprofDir;
+            Directory.CreateDirectory(profileDirectory);
+
+            var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = ProfilerTestRun.From(runner, agent);
+
+            run.Profiles.Profiles.Should().BeEmpty();
         }
     }
 }
