@@ -12,6 +12,9 @@ using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+#if NETCOREAPP
+using Microsoft.Extensions.Primitives;
+#endif
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
 
@@ -333,6 +336,20 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         result.Truncation.ContainerSize.Should().Be(300);
         result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
     }
+
+#if NETCOREAPP
+    [SkippableFact]
+    public void GivenAMultiValueHeaderLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        // ASP.NET Core headers with several values are sent to the WAF as StringValues
+        var header = new StringValues(Enumerable.Range(0, 300).Select(i => $"value{i}").ToArray());
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", header } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+#endif
 
     [SkippableFact]
     public void GivenAnObjectDeeperThanTheLimit_WhenEncoded_ThenTheDepthWhereItWasCutIsRecorded()

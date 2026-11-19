@@ -85,22 +85,25 @@ internal sealed partial class AppSecRequestContext
         }
     }
 
-    // must be called with _sync held
     private void SetTruncationMetrics(Span span)
     {
-        if (_truncation.StringLength > 0)
+        // CloseWebSpan already holds _sync, the lock is reentrant
+        lock (_sync)
         {
-            span.Tags.SetMetric(Metrics.AppSecTruncatedStringLength, _truncation.StringLength);
-        }
+            if (_truncation.StringLength > 0)
+            {
+                span.Tags.SetMetric(Metrics.AppSecTruncatedStringLength, _truncation.StringLength);
+            }
 
-        if (_truncation.ContainerSize > 0)
-        {
-            span.Tags.SetMetric(Metrics.AppSecTruncatedContainerSize, _truncation.ContainerSize);
-        }
+            if (_truncation.ContainerSize > 0)
+            {
+                span.Tags.SetMetric(Metrics.AppSecTruncatedContainerSize, _truncation.ContainerSize);
+            }
 
-        if (_truncation.ContainerDepth > 0)
-        {
-            span.Tags.SetMetric(Metrics.AppSecTruncatedContainerDepth, _truncation.ContainerDepth);
+            if (_truncation.ContainerDepth > 0)
+            {
+                span.Tags.SetMetric(Metrics.AppSecTruncatedContainerDepth, _truncation.ContainerDepth);
+            }
         }
     }
 
