@@ -86,6 +86,27 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        public async Task GivenAWafRunThatFailsToBind_WhenTheRequestEnds_ThenWafRequestsReportsAWafError()
+        {
+            // reading the route data throws, inside the try of RunWaf and before the WAF runs
+            var contextMoq = new Mock<HttpContext>();
+            contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
+            var traceContext = new TraceContext(new EmptyDatadogTracer());
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+            var waf = CreateWaf().Waf;
+            waf.Should().NotBeNull();
+            var security = new AppSec.Security(waf: waf);
+            var securityCoordinator = Get(security, span, new HttpTransport(contextMoq.Object));
+
+            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } });
+
+            result.Should().BeNull();
+            var metrics = await WafRequestsTelemetryTests.CloseAsync(traceContext.AppSecRequestContext);
+            metrics.Should().ContainSingle(m => m.Name == "waf.requests").Which.Tags.Should().Contain("waf_error:true");
+        }
+
+        [Fact]
         public void GivenHttpTransportInstanceWithUninitializedContext_WhenGetItems_ThenItemsIsNull()
         {
             var contextMoq = new Mock<HttpContext>();
