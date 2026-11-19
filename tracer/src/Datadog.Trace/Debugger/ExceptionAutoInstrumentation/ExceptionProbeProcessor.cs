@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionProbeProcessor(ExceptionReplayProbe probe, HashSet<Type> exceptionTypes, ExceptionReplayProbe[] parentProbes, ExceptionReplayProbe[] childProbes)
         {
-            ExceptionReplayProcessor = probe.ExceptionReplayProcessor ?? throw new ArgumentException($"probe.ExceptionReplayProcessor is null. Probe: {probe}");
+            ExceptionReplayProcessor = probe.ExceptionReplayProcessor ?? throw new ArgumentException($"probe.ExceptionReplayProcessor is null. Probe: {probe}", nameof(probe));
             _exceptionTypes = exceptionTypes;
             _singleExceptionType = _exceptionTypes.Count == 1 ? _exceptionTypes.Single() : null;
             _childProbes = childProbes;

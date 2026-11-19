@@ -587,7 +587,7 @@ namespace Datadog.Trace.FeatureFlags
                 return value;
             }
 
-            throw new ArgumentException($"Type not supported: {target}");
+            throw new ArgumentException($"Type not supported: {target}", nameof(target));
 
             static object? ConvertToken(JToken token) => token.Type switch
             {

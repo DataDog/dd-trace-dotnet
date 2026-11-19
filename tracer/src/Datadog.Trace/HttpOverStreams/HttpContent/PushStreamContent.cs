@@ -50,6 +50,6 @@ internal sealed class PushStreamContent : IHttpContent
     {
         // This CopyToAsync overload is only used to read responses
         // And we never use PushStreamContent for that
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }

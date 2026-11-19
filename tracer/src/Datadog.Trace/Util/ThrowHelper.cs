@@ -37,11 +37,6 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         [DebuggerHidden]
         [DoesNotReturn]
-        internal static void ThrowArgumentException(string message) => throw new ArgumentException(message);
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        [DebuggerHidden]
-        [DoesNotReturn]
         internal static void ThrowArgumentException(string message, string paramName) => throw new ArgumentException(message, paramName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]

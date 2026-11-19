@@ -28,7 +28,7 @@ internal sealed class AppEndpointData
     {
         if (!ValidMethods.Contains(method))
         {
-            throw new ArgumentException($"Invalid method {nameof(method)}");
+            throw new ArgumentException($"Invalid method {method}", nameof(method));
         }
 
         Type = "REST";
