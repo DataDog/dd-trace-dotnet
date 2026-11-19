@@ -151,6 +151,19 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     }
 
     [SkippableTheory]
+    [InlineData(WafConstants.MaxContainerSize, false)]
+    [InlineData(WafConstants.MaxContainerSize + 1, true)]
+    public void GivenANonIListEnumerableAtTheLimit_WhenEncoded_ThenItIsOnlyTruncatedPastIt(int length, bool truncated)
+    {
+        Skip.If(_encoder is not Encoder, "The legacy encoder encodes a non-IList enumerable with its ToString()");
+
+        using var result = _encoder.Encode(Enumerable.Repeat((object)"test", length), applySafetyLimits: true);
+
+        result.Truncation.Truncated.Should().Be(truncated);
+        result.Truncation.ContainerSize.Should().Be(truncated ? length : 0);
+    }
+
+    [SkippableTheory]
     [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
     [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
     [InlineData(WafConstants.MaxContainerSize + 10000, WafConstants.MaxContainerSize)]
