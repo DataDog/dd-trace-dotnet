@@ -324,11 +324,7 @@ internal sealed class Baggage : IDictionary<string, string?>
                 // check if items fit into the array
                 if (array.Length - arrayIndex < items.Count)
                 {
-                    ThrowHelper.ThrowArgumentException(
-                        """
-                        The number of elements in the source collection is greater than 
-                        the available space from arrayIndex to the end of the destination array.
-                        """);
+                    ThrowHelper.ThrowArgumentException("The number of elements in the source collection is greater than the available space from arrayIndex to the end of the destination array.");
                 }
 
                 for (int i = 0; i < items.Count; i++)
