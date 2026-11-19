@@ -1,0 +1,54 @@
+# Adapted from https://github.com/DataDog/system-tests/blob/0fb2912395a734299c48b453977632ef3cd3d7ae/.github/actions/disable_containerd_image_store/action.yml
+# Docker 29's containerd image store retains both compressed and unpacked layers.
+# Run before pulling, building, or loading images: switching stores hides existing images.
+# https://github.com/actions/runner-images/issues/15233
+steps:
+- bash: |
+    set -euo pipefail
+
+    driver_type() {
+      docker info --format '{{range .DriverStatus}}{{if eq (index . 0) "driver-type"}}{{index . 1}}{{end}}{{end}}'
+    }
+
+    current_driver_type=$(driver_type)
+    if [[ "$current_driver_type" != "io.containerd.snapshotter.v1" ]]; then
+      echo "The Docker daemon does not use the containerd image store, nothing to do"
+      exit 0
+    fi
+
+    if [[ "$AGENT_OS" != "Linux" ]] || ! command -v systemctl >/dev/null || ! sudo -n true 2>/dev/null; then
+      echo "##vso[task.logissue type=error]The Docker daemon uses the containerd image store, and it cannot be reconfigured here"
+      exit 1
+    fi
+
+    # Preinstalled images remain on disk but are hidden after switching stores.
+    echo "Images that won't be visible after the switch:"
+    docker images --format '  {{.Repository}}:{{.Tag}}'
+
+    config=/etc/docker/daemon.json
+    sudo mkdir -p /etc/docker
+    if sudo test -f "$config"; then
+      current=$(sudo cat "$config")
+    else
+      current='{}'
+    fi
+
+    # Docker accepts empty configuration files; jq needs a JSON value to update.
+    if [[ -z "${current//[[:space:]]/}" ]]; then
+      current='{}'
+    fi
+
+    # Finish parsing before overwriting the existing configuration.
+    updated=$(printf '%s\n' "$current" | jq '.features = ((.features // {}) + {"containerd-snapshotter": false})')
+    echo "$config:"
+    printf '%s\n' "$updated" | sudo tee "$config"
+
+    sudo systemctl restart docker
+
+    current_driver_type=$(driver_type)
+    if [[ "$current_driver_type" == "io.containerd.snapshotter.v1" ]]; then
+      echo "##vso[task.logissue type=error]The Docker daemon still uses the containerd image store"
+      exit 1
+    fi
+    docker info --format 'Storage driver: {{.Driver}}'
+  displayName: Use classic Docker storage driver

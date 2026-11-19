@@ -5298,6 +5298,8 @@ stages:
       steps:
         - checkout: none
 
+        - template: steps/use-classic-docker-storage.yml
+
         - task: UsePythonVersion@0
           inputs:
             versionSpec: '3.12'
@@ -5403,6 +5405,8 @@ stages:
 
       steps:
       - checkout: none
+
+      - template: steps/use-classic-docker-storage.yml
 
       - task: UsePythonVersion@0
         inputs:
