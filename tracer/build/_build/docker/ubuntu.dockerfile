@@ -130,6 +130,18 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
 # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
+# The .NET SDK ships its own NuGet signing trust bundles (sdk/*/trustedroots/*.pem) that still contain the
+# distrusted eMudhra / AAA Certificate Services roots (IR-62343): strip those certificates from them.
+RUN for f in /usr/share/dotnet/sdk/*/trustedroots/*.pem; do \
+        d=$(mktemp -d) \
+        && awk -v d="$d" '/-----BEGIN CERTIFICATE-----/ { n++; out = sprintf("%s/%05d.pem", d, n); incert = 1 } incert { print > out } /-----END CERTIFICATE-----/ { incert = 0; close(out) }' "$f" \
+        && : > "$f" \
+        && for c in "$d"/*.pem; do \
+            openssl x509 -noout -subject -in "$c" | grep -qE 'CN ?= ?(emSign ECC Root CA - G3|emSign Root CS CA - G3|AAA Certificate Services)' || cat "$c" >> "$f"; \
+        done \
+        && rm -rf "$d" || exit 1; \
+    done
+
 ENV \
     DOTNET_ROOT=/usr/share/dotnet \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
