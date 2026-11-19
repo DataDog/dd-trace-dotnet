@@ -17,6 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using FluentAssertions;
 using Moq;
 using OpenFeature.Constant;
@@ -162,6 +163,15 @@ public class CanonicalFixtureTests
                 new Dictionary<string, string>());
             try
             {
+            var evaluationHook = new FlagEvalEVPHook(
+                writer.CanAdmit,
+                (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, flags) =>
+                    EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features: null, flags),
+                () => { },
+                FlagEvaluationContextSnapshot.Capture,
+                writer.CanAdmit,
+                (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags) =>
+                    EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags));
             using var module = new TracerFlags.FeatureFlagsModule(
                 new Tracer::Datadog.Trace.Configuration.TracerSettings(
                     new Tracer::Datadog.Trace.Configuration.NameValueConfigurationSource(new NameValueCollection())),
@@ -178,14 +188,15 @@ public class CanonicalFixtureTests
             using var provider = new DatadogProvider(
                 (key, type, fallback, targetingKey, attributes) => throw new InvalidOperationException("the provider must use deferred graph evaluation"),
                 (key, type, fallback, targetingKey, attributes) => new EvaluationAdapter(
-                    module.Evaluate(key, (TracerFlags.ValueType)type, fallback, targetingKey, attributes, deferExposure: true, reportRootEvaluation: true)),
+                    module.Evaluate(key, (TracerFlags.ValueType)type, fallback, targetingKey, attributes, deferExposure: true, reportRootEvaluation: false)),
                 () => true,
                 metadata =>
                 {
                     commitCalls++;
                     return module.CommitExposure(metadata);
                 },
-                metadata => (metadata as TracerFlags.DeferredExposureMetadata)?.DependencyTelemetry);
+                metadata => (metadata as TracerFlags.DeferredExposureMetadata)?.DependencyTelemetry,
+                evaluationHook);
             await global::OpenFeature.Api.Instance.SetProviderAsync(domain, provider);
             var exposures = new List<JsonLinq.JObject>();
             var client = global::OpenFeature.Api.Instance.GetClient(domain);
@@ -224,6 +235,32 @@ public class CanonicalFixtureTests
             finally
             {
                 await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            }
+
+            void EnqueueRoot(
+                string flagKey,
+                string? variant,
+                string? allocationKey,
+                string? targetingKey,
+                long evaluationTimeMs,
+                string? errorCode,
+                IReadOnlyDictionary<string, object?>? attributes,
+                IReadOnlyDictionary<string, object?>? features,
+                int flags)
+            {
+                var consent = (flags & FlagEvaluationBridge.ObserveFullEvaluationData) != 0;
+                writer.TryEnqueue(
+                    new TracerFlagEvaluation.FlagEvalEvent(
+                        flagKey,
+                        variant,
+                        allocationKey,
+                        targetingKey,
+                        evaluationTimeMs,
+                        attributes,
+                        errorCode,
+                        consent,
+                        features),
+                    flags & ~FlagEvaluationBridge.ObserveFullEvaluationData);
             }
         }
     }
