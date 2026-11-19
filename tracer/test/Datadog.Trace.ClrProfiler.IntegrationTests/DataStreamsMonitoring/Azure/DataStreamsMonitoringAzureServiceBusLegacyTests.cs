@@ -41,8 +41,17 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
 
         processResult.StandardOutput.Should().Contain("Messages with dd-pathway-ctx-base64: 5 of 5");
 
-        var payloads = await agent.WaitForDataStreamsPointsAsync(statsCount: 4);
-        var points = payloads.SelectMany(p => p.Stats).SelectMany(b => b.Stats ?? []).ToList();
+        var expectedEdges = new[]
+        {
+            EdgeTags("direction:out", $"topic:{Queue}"),
+            EdgeTags("direction:in", $"topic:{Queue}"),
+            EdgeTags("direction:out", $"topic:{Topic}"),
+            EdgeTags("direction:in", $"topic:{Subscription}"),
+        };
+        var payloads = await agent.WaitForDataStreamsAsync(
+            timeoutInMilliseconds: 20_000,
+            waitFunc: received => expectedEdges.All(edge => Points(received).Any(p => p.EdgeTags.SequenceEqual(edge))));
+        var points = Points(payloads);
 
         var queueProduce = SinglePoint(points, "direction:out", $"topic:{Queue}");
         var queueConsume = SinglePoint(points, "direction:in", $"topic:{Queue}");
@@ -69,9 +78,14 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
         agent.DataStreams.Should().BeEmpty();
     }
 
+    private static string[] EdgeTags(string direction, string topic) => [direction, topic, "type:servicebus"];
+
+    private static List<MockDataStreamsStatsPoint> Points(IEnumerable<MockDataStreamsPayload> payloads)
+        => payloads.SelectMany(p => p.Stats).SelectMany(b => b.Stats ?? []).ToList();
+
     private static MockDataStreamsStatsPoint SinglePoint(IEnumerable<MockDataStreamsStatsPoint> points, string direction, string topic)
     {
-        var expectedTags = new[] { direction, topic, "type:servicebus" };
+        var expectedTags = EdgeTags(direction, topic);
         var matching = points.Where(p => p.EdgeTags.SequenceEqual(expectedTags))
                              .GroupBy(p => (p.Hash, p.ParentHash))
                              .Select(g => g.First())
