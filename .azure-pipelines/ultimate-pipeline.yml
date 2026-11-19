@@ -5295,7 +5295,7 @@ stages:
       timeoutInMinutes: 60
       displayName: Compute system-tests scenarios
       pool:
-          vmImage: ubuntu-latest
+          vmImage: ubuntu-24.04
 
       steps:
         - checkout: none
@@ -5397,7 +5397,7 @@ stages:
       displayName: ""
       timeoutInMinutes: 60
       pool:
-          vmImage: ubuntu-latest
+          vmImage: ubuntu-24.04
       dependsOn: compute_scenarios
 
       strategy:
