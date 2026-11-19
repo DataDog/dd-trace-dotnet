@@ -128,6 +128,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        internal static bool IsDataSource(ProfilerFeature feature)
+        {
+            switch (feature)
+            {
+                case ProfilerFeature.Cpu:
+                case ProfilerFeature.WallTime:
+                case ProfilerFeature.Exceptions:
+                case ProfilerFeature.Allocations:
+                case ProfilerFeature.LockContention:
+                case ProfilerFeature.GarbageCollection:
+                case ProfilerFeature.LiveHeap:
+                case ProfilerFeature.Timeline:
+                case ProfilerFeature.Network:
+                case ProfilerFeature.GcThreadsCpuTime:
+                case ProfilerFeature.HeapSnapshot:
+                case ProfilerFeature.WaitHandleContention:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         internal void EnableTracer()
         {
             AddTracerEnvironmentVariables();
@@ -178,28 +200,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             foreach (var feature in features)
             {
                 CustomEnvironmentVariables.Remove(VariableName(feature));
-            }
-        }
-
-        internal static bool IsDataSource(ProfilerFeature feature)
-        {
-            switch (feature)
-            {
-                case ProfilerFeature.Cpu:
-                case ProfilerFeature.WallTime:
-                case ProfilerFeature.Exceptions:
-                case ProfilerFeature.Allocations:
-                case ProfilerFeature.LockContention:
-                case ProfilerFeature.GarbageCollection:
-                case ProfilerFeature.LiveHeap:
-                case ProfilerFeature.Timeline:
-                case ProfilerFeature.Network:
-                case ProfilerFeature.GcThreadsCpuTime:
-                case ProfilerFeature.HeapSnapshot:
-                case ProfilerFeature.WaitHandleContention:
-                    return true;
-                default:
-                    return false;
             }
         }
 
