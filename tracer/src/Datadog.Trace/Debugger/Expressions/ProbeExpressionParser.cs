@@ -377,7 +377,7 @@ internal partial class ProbeExpressionParser<T>
                                 if (itParameter == null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
-                                    return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
+                                    return Expression.Parameter(UndefinedValueType, UndefinedValueDump);
                                 }
 
                                 return itParameter;
@@ -579,7 +579,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            var ex = new ArgumentException("Method has been called with an invalid argument");
+            var ex = new InvalidOperationException("Method has been called with an invalid argument");
             Log.Error(
                 ex,
                 "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",

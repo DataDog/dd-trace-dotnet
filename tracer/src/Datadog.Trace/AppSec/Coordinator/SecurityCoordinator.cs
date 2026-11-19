@@ -39,7 +39,27 @@ internal readonly partial struct SecurityCoordinator
 
     public SecurityReporter Reporter { get; }
 
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
+    public void MarkBlockFailed() => _appsecRequestContext.MarkBlockFailed();
+
+    /// <summary>
+    /// Records the outcome of a WAF run whose block, if it asked for one, was attempted, and reports the result
+    /// </summary>
+    /// <param name="result">the result of the WAF run</param>
+    /// <param name="blocked">whether the blocking response could be applied</param>
+    public void MarkBlockAndReport(IResult result, bool blocked)
+    {
+        if (result.ShouldBlock)
+        {
+            // even when the block failed, so that the following WAF runs don't try to block again
+            _httpTransport.MarkBlocked();
+            if (!blocked)
+            {
+                MarkBlockFailed();
+            }
+        }
+
+        Reporter.TryReport(result, blocked);
+    }
 
     public IResult? Scan(bool lastTime = false)
     {
@@ -90,7 +110,7 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
+            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData, _appsecRequestContext.BlockRequested);
 
             // run the WAF and execute the results
             var outcome = WafOutcome.Success;
@@ -108,7 +128,7 @@ internal readonly partial struct SecurityCoordinator
             }
 
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordWafTelemetry(result, isRasp);
+            SecurityReporter.RecordWafTelemetry(result, isRasp, _appsecRequestContext);
             ApiSecurity.RecordSamplingTelemetry(samplingDecision, result, _localRootSpan, TelemetryFactory.Metrics);
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -122,6 +142,7 @@ internal readonly partial struct SecurityCoordinator
                 else
                 {
                     TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                    _appsecRequestContext.RecordWafRunFailure();
                 }
             }
 
@@ -187,7 +208,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                SecurityReporter.RecordWafTelemetry(result, isRasp: false);
+                SecurityReporter.RecordWafTelemetry(result, isRasp: false, _appsecRequestContext);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {
@@ -200,6 +221,7 @@ internal readonly partial struct SecurityCoordinator
             if (result is null)
             {
                 TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                _appsecRequestContext.RecordWafRunFailure();
             }
 
             if (addresses is not null)

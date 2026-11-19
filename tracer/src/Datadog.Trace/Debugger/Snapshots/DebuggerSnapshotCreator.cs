@@ -674,7 +674,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     ExitAsyncMethodStart(ref info);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -802,7 +802,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     EndAsyncLine(ref info);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -844,7 +844,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         CaptureBeginLine(ref captureInfo);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
+                        throw new InvalidOperationException($"Unexpected method state: {captureInfo.MethodState}");
                 }
 
                 CaptureScopeMembers(MethodScopeMembers?.Members);

@@ -36,7 +36,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
             if (Length > buffer.Length)
             {
-                ThrowHelper.ThrowArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}");
+                ThrowHelper.ThrowArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}", nameof(buffer));
             }
 
             var length = 0;

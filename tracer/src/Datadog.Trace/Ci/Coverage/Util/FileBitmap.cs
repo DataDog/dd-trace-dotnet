@@ -145,7 +145,7 @@ internal readonly unsafe ref struct FileBitmap
 
         if (fromLine <= 0 || toLine < fromLine)
         {
-            ThrowHelper.ThrowArgumentException("Invalid range");
+            ThrowHelper.ThrowArgumentException("Invalid range", fromLine <= 0 ? nameof(fromLine) : nameof(toLine));
         }
 
         for (var i = fromLine; i <= toLine; i++)
