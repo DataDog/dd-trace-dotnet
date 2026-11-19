@@ -94,6 +94,12 @@ internal static class SecurityCoordinatorHelpers
             var args = BuildResponseArgs(httpContext.Response.StatusCode, httpContext.Response.Headers);
             if (securityCoordinator.RunWaf(args, true) is { } result)
             {
+                if (result.ShouldBlock)
+                {
+                    // the response is already on the wire, so the block can't be applied
+                    securityCoordinator.MarkBlockFailed();
+                }
+
                 securityCoordinator.Reporter.TryReport(result, blocked: false);
             }
         }
