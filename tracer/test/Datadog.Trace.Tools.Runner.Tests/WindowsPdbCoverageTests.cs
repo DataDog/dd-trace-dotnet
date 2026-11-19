@@ -10,10 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Attributes;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Coverage.Collector;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -130,9 +127,10 @@ public class WindowsPdbCoverageTests
         }
     }
 
-    [SkippableTheory]
-    [CombinatorialData]
-    public void ProcessingInterdependentWindowsPdbAssembliesWritesTheConfiguredPdbFormat(bool portablePdbEnabled)
+    // With the default settings, so no Windows PDB writer runs. Keeping Windows PDBs is covered with a single write by
+    // WindowsPdbWritesAreSerializedOnlyWhenTheyKeepTheWindowsPdb, because that writer is the one that crashes.
+    [SkippableFact]
+    public void ProcessingInterdependentWindowsPdbAssembliesWritesPortablePdbs()
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
@@ -140,14 +138,14 @@ public class WindowsPdbCoverageTests
         try
         {
             var assemblyPaths = CompileInterdependentWindowsPdbAssemblies(directory);
-            var settings = CreateCoverageSettings(portablePdbEnabled);
+            var settings = new CoverageSettings(null, string.Empty);
 
             // Same shape as CoverageCollector.ProcessFolder: every assembly of the folder is rewritten in parallel.
             Parallel.ForEach(assemblyPaths, path => new AssemblyProcessor(path, settings).Process());
 
             foreach (var assemblyPath in assemblyPaths)
             {
-                AssertPdbFormat(assemblyPath, portablePdbEnabled ? PortablePdbSignature : WindowsPdbSignature);
+                AssertPdbFormat(assemblyPath, PortablePdbSignature);
                 using var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
                 assembly.CustomAttributes.Should().Contain(attribute => attribute.AttributeType.FullName == typeof(CoveredAssemblyAttribute).FullName);
                 assembly.MainModule.GetTypes().SelectMany(type => type.Methods).Should().Contain(method => method.DebugInformation.HasSequencePoints);
@@ -215,15 +213,6 @@ public class WindowsPdbCoverageTests
         }
 
         return assemblyPaths;
-    }
-
-    private static CoverageSettings CreateCoverageSettings(bool portablePdbEnabled)
-    {
-        var source = new DictionaryConfigurationSource(new Dictionary<string, string>
-        {
-            [ConfigurationKeys.CIVisibility.CodeCoveragePortablePdbEnabled] = portablePdbEnabled ? "true" : "false",
-        });
-        return new CoverageSettings(null, string.Empty, new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance));
     }
 
     private static void AssertPdbFormat(string assemblyPath, byte[] expectedSignature)
