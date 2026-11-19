@@ -326,10 +326,10 @@ internal static class FeatureFlagsSdk
         Dictionary<string, object?>? evaluationFeatures = null;
         if (metadata is not null)
         {
-            var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
+            var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? FeatureFlagTypeCodec.Parse(encodedTypes) : null;
             foreach (var pair in metadata)
             {
-                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes || pair.Key == FeatureFlagMetadataKeys.PendingExposure)
                 {
                     continue;
                 }
@@ -372,7 +372,9 @@ internal static class FeatureFlagsSdk
 
         var immutable = new ImmutableMetadata(dic);
         // Keeps the tracer's own dictionary instance, not a copy, for CommitExposure.
-        var pendingExposure = deferredExposure && metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"
+        var pendingExposure = deferredExposure && metadata is not null
+                           && ((metadata.TryGetValue(FeatureFlagMetadataKeys.PendingExposure, out var pending) && pending == "true")
+                            || (metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"))
                                   ? metadata
                                   : null;
         if (hookFeatures is not null || evaluationFeatures is not null || pendingExposure is not null)
@@ -429,36 +431,6 @@ internal static class FeatureFlagsSdk
         'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
         _ => value,
     };
-
-    // Reads FeatureFlagMetadataKeys.FeatureTypes. A malformed item never fails the evaluation: an
-    // unknown type letter skips that item, and a broken length prefix ends parsing, so the remaining
-    // values stay strings.
-    private static Dictionary<string, char>? ParseFeatureTypes(string encoded)
-    {
-        Dictionary<string, char>? types = null;
-        var position = 0;
-        while (position < encoded.Length)
-        {
-            var colon = encoded.IndexOf(':', position);
-            if (colon <= position
-                || !int.TryParse(encoded.Substring(position, colon - position), NumberStyles.None, CultureInfo.InvariantCulture, out var length)
-                || length > encoded.Length - colon - 2)
-            {
-                break;
-            }
-
-            var key = encoded.Substring(colon + 1, length);
-            var type = encoded[colon + 1 + length];
-            position = colon + 2 + length;
-            if (type is 'b' or 'n')
-            {
-                types ??= new Dictionary<string, char>(StringComparer.Ordinal);
-                types[key] = type;
-            }
-        }
-
-        return types;
-    }
 
     public static Value JsonToValue(object? obj)
     {

@@ -119,20 +119,11 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var trace = EvaluateWithoutDependencyTelemetry(flagKey, resultType, defaultValue, context);
-            if (deferExposure)
+            if (deferExposure && trace.DependencyExposures.Count > 0 && trace.Details.FlagMetadata is { } traceMetadata)
             {
-                for (var i = trace.DependencyExposures.Count - 1; i >= 0; i--)
-                {
-                    var exposure = trace.DependencyExposures[i];
-                    if (exposure.Flag.Key == flagKey && trace.Details.FlagMetadata is { } traceMetadata)
-                    {
-                        var deferred = new DeferredExposureMetadata(traceMetadata);
-                        deferred.SetPendingExposure(in exposure);
-                        trace.Details.FlagMetadata = deferred;
-                        break;
-                    }
-                }
-
+                var deferred = new DeferredExposureMetadata(traceMetadata);
+                deferred.SetPendingExposureBatch(flagKey, trace.DependencyExposures);
+                trace.Details.FlagMetadata = deferred;
                 return trace.Details;
             }
 
@@ -156,11 +147,6 @@ namespace Datadog.Trace.FeatureFlags
 
             return trace.Details;
         }
-
-        // Compatibility entrypoint retained until the publication layer moves the caller to the
-        // returned trace and batched exposure path.
-        public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
-            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
 
         internal bool TryEvaluateIndependent(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, out Evaluation? evaluation)
         {
