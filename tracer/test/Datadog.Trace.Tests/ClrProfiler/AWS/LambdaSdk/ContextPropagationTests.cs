@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.LambdaSdk;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
@@ -18,6 +20,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.ClrProfiler.AWS.LambdaSdk;
 
+[Collection(nameof(BaggageTestCollection))]
+[BaggageRestorer]
 public class ContextPropagationTests
 {
     [Theory]
@@ -108,6 +112,72 @@ public class ContextPropagationTests
 
         request.ClientContextBase64.Should().NotBe(previous);
         Decode(request.ClientContextBase64)["custom"]["x-datadog-parent-id"].Value<string>().Should().Be(second.Span.SpanId.ToString(CultureInfo.InvariantCulture));
+    }
+
+    [Theory]
+    [InlineData("datadog,baggage")]
+    [InlineData("datadog,tracecontext,baggage")]
+    [InlineData("datadog")]
+    [InlineData("baggage")]
+    [InlineData("tracecontext")]
+    [InlineData("none")]
+    public async Task ReusingARequestClearsOptionalFieldsOnlyForEnabledInjectors(string propagationStyle)
+    {
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.PropagationStyleInject, propagationStyle },
+        });
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+        var request = CreateRequest("{\"custom\":{\"application\":\"value\",\"x-datadog-origin\":\"application-origin\",\"x-datadog-sampling-priority\":\"2\",\"x-datadog-tags\":\"_dd.p.application=value\",\"baggage\":\"application=value\"},\"env\":{\"name\":\"example\"}}");
+        var first = new SpanContext((TraceId)1, 2, samplingPriority: 1, serviceName: null, origin: "synthetics")
+        {
+            PropagatedTags = new TraceTagCollection(),
+        };
+        first.PropagatedTags.SetTag("_dd.p.previous", "value");
+        Baggage.Current = new Baggage { { "previous", "value" } };
+
+        ContextPropagation.Inject(tracer, request.DuckCast<IInvokeRequest>(), first);
+
+        var firstCustom = Decode(request.ClientContextBase64)["custom"];
+        var injectsDatadog = propagationStyle.Contains("datadog");
+        var injectsBaggage = propagationStyle.Contains("baggage");
+        firstCustom[HttpHeaderNames.Origin].Value<string>().Should().Be(injectsDatadog ? "synthetics" : "application-origin");
+        firstCustom[HttpHeaderNames.SamplingPriority].Value<string>().Should().Be(injectsDatadog ? "1" : "2");
+        firstCustom[HttpHeaderNames.PropagatedTags].Value<string>().Should().Be(injectsDatadog ? "_dd.p.previous=value" : "_dd.p.application=value");
+        firstCustom["baggage"].Value<string>().Should().Be(injectsBaggage ? "previous=value" : "application=value");
+
+        Baggage.Current.Clear();
+        var second = new SpanContext((TraceId)3, 4, samplingPriority: null, serviceName: null, origin: null);
+        ContextPropagation.Inject(tracer, request.DuckCast<IInvokeRequest>(), second);
+
+        var context = Decode(request.ClientContextBase64);
+        var custom = context["custom"].ToObject<Dictionary<string, string>>();
+        if (injectsDatadog)
+        {
+            custom.Should().NotContainKey(HttpHeaderNames.Origin)
+                  .And.NotContainKey(HttpHeaderNames.SamplingPriority)
+                  .And.NotContainKey(HttpHeaderNames.PropagatedTags);
+            custom[HttpHeaderNames.TraceId].Should().Be("3");
+            custom[HttpHeaderNames.ParentId].Should().Be("4");
+        }
+        else
+        {
+            custom[HttpHeaderNames.Origin].Should().Be("application-origin");
+            custom[HttpHeaderNames.SamplingPriority].Should().Be("2");
+            custom[HttpHeaderNames.PropagatedTags].Should().Be("_dd.p.application=value");
+        }
+
+        if (injectsBaggage)
+        {
+            custom.Should().NotContainKey("baggage");
+        }
+        else
+        {
+            custom["baggage"].Should().Be("application=value");
+        }
+
+        custom["application"].Should().Be("value");
+        context["env"]["name"].Value<string>().Should().Be("example");
     }
 
     private static ClientContextCarrier CreateRequest(string json) => new()

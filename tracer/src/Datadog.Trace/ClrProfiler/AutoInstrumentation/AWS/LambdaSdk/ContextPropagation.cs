@@ -57,7 +57,22 @@ internal static class ContextPropagation
             }
 
             var custom = customToken as JObject ?? new JObject();
-            tracer.TracerManager.SpanContextPropagator.Inject(new PropagationContext(spanContext, Baggage.Current), custom, default(CarrierSetter));
+            var propagator = tracer.TracerManager.SpanContextPropagator;
+            // Optional fields may not be written for the new context when a request is reused.
+            // Only enabled injectors own their fields; preserve other application data.
+            if (propagator.IsInjectorEnabled(DatadogContextPropagator.Instance))
+            {
+                custom.Remove(HttpHeaderNames.Origin);
+                custom.Remove(HttpHeaderNames.SamplingPriority);
+                custom.Remove(HttpHeaderNames.PropagatedTags);
+            }
+
+            if (propagator.IsInjectorEnabled(W3CBaggagePropagator.Instance))
+            {
+                custom.Remove(W3CBaggagePropagator.BaggageHeaderName);
+            }
+
+            propagator.Inject(new PropagationContext(spanContext, Baggage.Current), custom, default(CarrierSetter));
             context["custom"] = custom;
 
             var json = JsonHelper.TokenToString(context, Formatting.None);

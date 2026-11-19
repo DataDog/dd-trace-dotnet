@@ -130,6 +130,7 @@ public class AwsLambdaSdkTests : TracingIntegrationTest
         SetEnvironmentVariable(disabledKey, "false");
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
+        agent.Spans.Should().NotContain(s => s.Name == "lambda.request" || s.Name == "aws.lambda.invoke");
         foreach (var wire in ReadRequests(process.StandardOutput))
         {
             var encoded = wire.Value<string>("clientContext");
