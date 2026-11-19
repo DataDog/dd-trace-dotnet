@@ -1,0 +1,275 @@
+[
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-2",
+    "attributes": {},
+    "result": {
+      "value": "treatment",
+      "reason": "SPLIT",
+      "serialId": 31002,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-2",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 32003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-2",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 33003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-20",
+    "attributes": {},
+    "result": {
+      "value": "control",
+      "reason": "SPLIT",
+      "serialId": 31001,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-20",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 32003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-20",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 33003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-1",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 31003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-1",
+    "attributes": {},
+    "result": {
+      "value": "treatment",
+      "reason": "SPLIT",
+      "serialId": 32002,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-1",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 33003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-3",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 31003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-3",
+    "attributes": {},
+    "result": {
+      "value": "control",
+      "reason": "SPLIT",
+      "serialId": 32001,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-3",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 33003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-4",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 31003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-4",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 32003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-4",
+    "attributes": {},
+    "result": {
+      "value": "control",
+      "reason": "SPLIT",
+      "serialId": 33001,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-12",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 31003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-12",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 32003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-12",
+    "attributes": {},
+    "result": {
+      "value": "treatment",
+      "reason": "SPLIT",
+      "serialId": 33002,
+      "doLog": true
+    }
+  },
+  {
+    "flag": "layer-checkout-layout",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-6",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 31003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-pricing",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-6",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 32003,
+      "doLog": false
+    }
+  },
+  {
+    "flag": "layer-checkout-messaging",
+    "variationType": "STRING",
+    "defaultValue": "runtime-default",
+    "targetingKey": "layer-subject-6",
+    "attributes": {},
+    "result": {
+      "value": "not-enrolled",
+      "reason": "STATIC",
+      "serialId": 33003,
+      "doLog": false
+    }
+  }
+]
