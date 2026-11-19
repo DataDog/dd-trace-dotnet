@@ -36,11 +36,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             ProfileDirectory = profileDirectory;
         }
 
-        private ProfilerTestRun(MockDatadogAgent agent)
-        {
-            _agent = agent;
-        }
-
         public ProfileOutput Profiles { get; }
 
         public ProfilerLogSet Logs { get; }
@@ -62,11 +57,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var agent = _agent;
             _agent = null;
             agent?.Dispose();
-        }
-
-        internal static ProfilerTestRun Owning(MockDatadogAgent agent)
-        {
-            return new ProfilerTestRun(agent);
         }
 
         internal static ProfilerTestRun From(TestApplicationRunner runner, MockDatadogAgent agent)
