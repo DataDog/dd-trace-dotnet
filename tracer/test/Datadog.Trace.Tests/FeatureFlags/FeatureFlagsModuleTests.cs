@@ -1334,8 +1334,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [CombinatorialData]
     public async Task SetFlagSelection_AfterTheLastReleaseWithTheSameSelection_StaysReady(bool withSelection)
     {
         string[]? tags = withSelection ? ["mobile"] : null;

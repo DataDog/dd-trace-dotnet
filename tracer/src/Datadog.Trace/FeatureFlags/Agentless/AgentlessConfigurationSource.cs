@@ -19,6 +19,7 @@ using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -536,11 +537,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 }
             }
 
-            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null, errorDescription: null, requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: ignoredSelection);
+            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, errorDescription: null, requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: ignoredSelection);
         }
         catch (Exception ex)
         {
-            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex, errorDescription: DescribeError(ex, target.Uri), requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: null);
+            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, errorDescription: DescribeError(ex, target.Uri), requestedEnvironment: target.Environment, requestedSelection: target.Selection, ignoredSelection: null);
         }
     }
 
@@ -648,6 +649,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// Replaces <paramref name="requestUri"/> in <paramref name="message"/> with its origin, in each form
     /// a transport may print it, and then its query alone, in case the message names only the path.
     /// </summary>
+    [TestingAndPrivateOnly]
     internal static string RedactUri(string message, Uri requestUri)
     {
         var origin = RedactedOrigin(requestUri);
@@ -681,7 +683,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// </summary>
     private void LogAttemptOutcome(in PollResult result, int attempt)
     {
-        // Describing a failure allocates, so it is skipped unless the line is actually written.
         if (!_log.IsEnabled(LogEventLevel.Debug))
         {
             return;
@@ -755,7 +756,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             failure);
     }
 
-    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? errorDescription, string? requestedEnvironment, FlagSelection requestedSelection, MetricTags.FlagSelectionIgnoredReason? ignoredSelection)
+    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, string? errorDescription, string? requestedEnvironment, FlagSelection requestedSelection, MetricTags.FlagSelectionIgnoredReason? ignoredSelection)
     {
         public int? StatusCode { get; } = statusCode;
 
@@ -765,10 +766,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         public string? ParseError { get; } = parseError;
 
-        public Exception? Error { get; } = error;
-
         /// <summary>
-        /// Gets <see cref="Error"/> described with the request URI redacted, or <c>null</c> when the
+        /// Gets the request failure, described with the request URI redacted, or <c>null</c> when the
         /// request did not fail.
         /// </summary>
         public string? ErrorDescription { get; } = errorDescription;

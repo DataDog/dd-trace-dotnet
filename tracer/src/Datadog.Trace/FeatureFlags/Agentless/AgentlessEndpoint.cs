@@ -50,7 +50,7 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
-    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri(string?)"/> to get the
+    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri(string?, FlagSelection, out bool)"/> to get the
     /// URI to request.
     /// </summary>
     public Uri Uri { get; }
@@ -69,7 +69,7 @@ internal sealed class AgentlessEndpoint
     /// is an origin receives the canonical path; one that carries a path is used verbatim.
     /// <para>
     /// The environment is not part of the endpoint: it can be changed in code while the application
-    /// runs, so it is applied per request by <see cref="BuildRequestUri(string?)"/> instead.
+    /// runs, so it is applied per request by <see cref="BuildRequestUri(string?, FlagSelection, out bool)"/> instead.
     /// </para>
     /// </summary>
     /// <param name="site">The Datadog site, for example <c>datadoghq.com</c>.</param>

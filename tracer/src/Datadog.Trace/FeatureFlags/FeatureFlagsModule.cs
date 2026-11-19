@@ -662,6 +662,7 @@ namespace Datadog.Trace.FeatureFlags
         /// A response to a request made before the current claim is discarded: installing it would make a
         /// provider that claimed other flags ready on the previous selection's configuration.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal ConfigurationApplyResult ApplyAgentlessConfiguration(ServerConfiguration configuration, FlagSelection? requestedSelection)
         {
             FeatureFlagsEvaluator? previous;

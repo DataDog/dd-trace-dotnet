@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Datadog.Trace.SourceGenerators;
 using OpenFeature;
 using OpenFeature.Constant;
 using OpenFeature.Error;
@@ -72,6 +73,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     }
 
     // Unit tests stand in for the tracer's flag selection entry points.
+    [TestingOnly]
     internal DatadogProvider(DatadogProviderOptions options, Func<string?[]?, string?[]?, bool> setFlagSelection, Action releaseFlagSelection)
         : this(options, setFlagSelection, releaseFlagSelection, FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
     {
