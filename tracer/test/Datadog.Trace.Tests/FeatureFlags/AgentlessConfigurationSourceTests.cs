@@ -845,21 +845,20 @@ public class AgentlessConfigurationSourceTests
     }
 
 #if NETCOREAPP3_1_OR_GREATER
-    [Theory]
-    [InlineData("too_many_values", "invalid_tag")]
-    [InlineData("too_many_values", "too_many_values")]
-    [InlineData("", "invalid_tag")]
-    public async Task ReportsRepeatedIgnoredHeadersAsUnknown(string first, string second)
+    // The service sends one header; a repeated one is reported by the value HttpClient returns first.
+    [Fact]
+    public async Task ReportsTheFirstOfRepeatedIgnoredHeaders()
     {
         var metrics = new Mock<IMetricsTelemetryCollector>();
         var logger = new Mock<IDatadogLogger>();
-        var factory = new TestRequestFactory(uri => new HttpClientApiRequest(uri, Body, first, second));
+        var factory = new TestRequestFactory(uri => new HttpClientApiRequest(uri, Body, "too_many_values", "invalid_tag"));
         using var source = CreateSource(factory, [], logger: logger.Object, selection: Mobile, diagnostics: new FlagSelectionDiagnostics(metrics.Object));
 
         await source.PollAsync();
 
-        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UnknownIgnored);
-        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.Unknown, 1), Times.Once);
+        FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.TooManyValuesIgnored);
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.TooManyValues, 1), Times.Once);
+        metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.InvalidTag, It.IsAny<int>()), Times.Never);
     }
 
 #endif

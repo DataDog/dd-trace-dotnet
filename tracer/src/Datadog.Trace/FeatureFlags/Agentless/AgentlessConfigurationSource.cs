@@ -505,14 +505,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 // Only a response to a request that carried the selection can say it was ignored.
                 if (target.SelectionSent)
                 {
-#if NETCOREAPP
-                    var ignoredHeader = response is HttpClientResponse httpResponse
-                                            ? httpResponse.GetCombinedHeader(FlagSelectionDiagnostics.IgnoredHeaderName)
-                                            : response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName);
-#else
-                    var ignoredHeader = response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName);
-#endif
-                    ignoredSelection = FlagSelectionDiagnostics.ParseIgnoredReason(ignoredHeader);
+                    ignoredSelection = FlagSelectionDiagnostics.ParseIgnoredReason(response.GetHeader(FlagSelectionDiagnostics.IgnoredHeaderName));
                 }
 
                 using var stream = await response.GetStreamAsync().ConfigureAwait(false);
