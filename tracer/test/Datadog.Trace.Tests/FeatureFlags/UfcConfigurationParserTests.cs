@@ -7,10 +7,14 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
+using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -132,6 +136,135 @@ public class UfcConfigurationParserTests
         configuration!.Flags.Should().NotBeNull();
         configuration!.Flags!.Should().ContainKey("test-flag");
         configuration!.Flags!["test-flag"].Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParsesOptionalEvaluatorParamsAndFlagEvaluationCondition()
+    {
+        var body = """
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "evaluatorParams": {},
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": { "key": "prerequisite" }, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        ((JObject)configuration.EvaluatorParams!).Should().NotContainKey("maxDependencyDepth");
+        var condition = configuration.Flags!["root"].Allocations![0].Rules![0].Conditions![0];
+        condition.Attribute.Should().BeNull();
+        condition.FlagEvaluation!.Key.Should().Be("prerequisite");
+    }
+
+    [Fact]
+    public void PreservesExplicitNullMaximumDependencyDepth()
+    {
+        var body = ValidEnvelope.Replace("\"flags\": {}", "\"evaluatorParams\": { \"maxDependencyDepth\": null }, \"flags\": {}");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!["maxDependencyDepth"]!.Type.Should().Be(JTokenType.Null);
+    }
+
+    [Theory]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("\"invalid\"")]
+    [InlineData("[]")]
+    public void RetainsInvalidNonObjectEvaluatorParamsForLazyFallback(string token)
+    {
+        var body = ValidEnvelope.Replace("\"flags\": {}", $"\"evaluatorParams\": {token}, \"flags\": {{}}");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParamsField.IsPresent.Should().BeTrue();
+        configuration.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.Type.Should().NotBe(JTokenType.Object);
+    }
+
+    [Theory]
+    [InlineData("{ \"key\": 123 }", "ONE_OF")]
+    [InlineData("{ \"key\": \"\" }", "ONE_OF")]
+    [InlineData("{ \"property\": \"variant\" }", "ONE_OF")]
+    [InlineData("{ \"key\": \"dependency\" }", "MATCHES")]
+    [InlineData("{ \"key\": \"dependency\" }", "NOT_MATCHES")]
+    public void RejectsMalformedFlagEvaluationDescriptor(string descriptor, string operatorName)
+    {
+        var body = $$"""
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": {{descriptor}}, "operator": "{{operatorName}}", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
+    public void RejectsObjectFlagEvaluationOperand()
+    {
+        var body = ValidEnvelope.Replace(
+            "\"flags\": {}",
+            "\"flags\": { \"root\": { \"key\": \"root\", \"enabled\": true, \"variationType\": \"STRING\", \"allocations\": [{ \"key\": \"allocation\", \"rules\": [{ \"conditions\": [{ \"flagEvaluation\": { \"key\": \"dependency\" }, \"operator\": \"ONE_OF\", \"value\": {} }] }], \"splits\": [] }] } }");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
+    public void RejectsConditionWithoutAttributeOrFlagEvaluation()
+    {
+        var body = ValidEnvelope.Replace(
+            "\"flags\": {}",
+            "\"flags\": { \"root\": { \"key\": \"root\", \"enabled\": true, \"variationType\": \"STRING\", \"allocations\": [{ \"key\": \"allocation\", \"rules\": [{ \"conditions\": [{ \"operator\": \"ONE_OF\", \"value\": [\"on\"] }] }], \"splits\": [] }] } }");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
+    public void IgnoresUnknownFlagEvaluationFields()
+    {
+        var body = """
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": { "key": "dependency", "property": "variant" }, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags.Should().ContainKey("root");
+        configuration.Flags!["root"].Allocations![0].Rules![0].Conditions![0].FlagEvaluation!.Key.Should().Be("dependency");
     }
 
     [Fact]
