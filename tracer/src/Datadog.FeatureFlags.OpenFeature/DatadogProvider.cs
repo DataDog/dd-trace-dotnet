@@ -78,11 +78,22 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     // Unit tests can exercise the complete profiler bridge without exposing tracer-private metadata.
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure, FeatureFlagsSdk.DependencyTelemetryCallback getDependencyTelemetry)
+        : this(evaluate, evaluateDeferred, canDeferExposures, commitExposure, getDependencyTelemetry, evaluationEventsHook: null)
+    {
+    }
+
+    // Canonical tests can inject the real evaluation hook while routing its events to an isolated writer.
+    internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure, FeatureFlagsSdk.DependencyTelemetryCallback getDependencyTelemetry, FlagEvalEVPHook? evaluationEventsHook)
         : this(canDeferExposures, commitExposure)
     {
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
         _evaluateDeferred = evaluateDeferred ?? throw new ArgumentNullException(nameof(evaluateDeferred));
         _getDependencyTelemetry = getDependencyTelemetry ?? throw new ArgumentNullException(nameof(getDependencyTelemetry));
+        if (evaluationEventsHook is not null)
+        {
+            _evpHook = evaluationEventsHook;
+            _providerHooks = CreateProviderHooks();
+        }
     }
 
     private DatadogProvider(Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
