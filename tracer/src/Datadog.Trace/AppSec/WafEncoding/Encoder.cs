@@ -309,9 +309,15 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     if (context.ApplySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                     {
                         // an element past the limit: the enumeration stops here, so the original count is only known
-                        // from collections that expose it, such as the StringValues of ASP.NET Core headers, which
-                        // isn't a non-generic IList. Otherwise it is at least one more than the limit.
-                        context.Truncation.AddContainer(enumerable is ICollection<string> strings ? strings.Count : childrenCount + 1);
+                        // from collections that expose it, such as a LinkedList or the StringValues of ASP.NET Core
+                        // headers, which only implements the generic interfaces. Otherwise it is at least the limit plus one.
+                        var originalCount = enumerable switch
+                        {
+                            ICollection collection => collection.Count,
+                            ICollection<string> strings => strings.Count,
+                            _ => childrenCount + 1,
+                        };
+                        context.Truncation.AddContainer(originalCount);
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
                             Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);

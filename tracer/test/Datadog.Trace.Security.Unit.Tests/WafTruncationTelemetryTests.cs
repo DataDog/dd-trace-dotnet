@@ -47,13 +47,22 @@ public class WafTruncationTelemetryTests : WafLibraryRequiredTest
 
     [SkippableTheory]
     [CombinatorialData]
+    public async Task GivenARaspRunWithTruncation_WhenItRuns_ThenNoInputTruncatedPointIsReported(bool useUnsafeEncoder)
+    {
+        var metrics = await RecordAsync(useUnsafeEncoder, new Dictionary<string, object> { { AddressesConstants.DBStatement, new string('a', 5000) } }, isRasp: true);
+
+        metrics.Should().NotContain(m => m.Name == "waf.input_truncated");
+    }
+
+    [SkippableTheory]
+    [CombinatorialData]
     public void GivenTruncatedRuns_WhenTheWebSpanCloses_ThenTheLargestTruncationsOfTheRequestAreSetOnIt(bool useUnsafeEncoder)
     {
         using var context = CreateWaf(useUnsafeEncoder).Waf!.CreateContext(out _)!;
         var requestContext = new AppSecRequestContext();
 
-        requestContext.AddTruncation(context.Run(CreateTruncatedPayload(), TimeoutMicroSeconds)!.Truncation);
-        requestContext.AddTruncation(context.Run(new Dictionary<string, object> { { AddressesConstants.RequestQuery, new string('b', 6000) } }, TimeoutMicroSeconds)!.Truncation);
+        requestContext.CheckWAFError(context.Run(CreateTruncatedPayload(), TimeoutMicroSeconds)!, isRasp: false);
+        requestContext.CheckWAFError(context.Run(new Dictionary<string, object> { { AddressesConstants.RequestQuery, new string('b', 6000) } }, TimeoutMicroSeconds)!, isRasp: false);
         var span = new Span(new SpanContext(SpanContext.None, null, "Test"), DateTimeOffset.Now);
         requestContext.CloseWebSpan(span);
 
@@ -107,7 +116,7 @@ public class WafTruncationTelemetryTests : WafLibraryRequiredTest
         };
     }
 
-    private async Task<List<(string Name, string Tags, int Points)>> RecordAsync(bool useUnsafeEncoder, Dictionary<string, object> args)
+    private async Task<List<(string Name, string Tags, int Points)>> RecordAsync(bool useUnsafeEncoder, Dictionary<string, object> args, bool isRasp = false)
     {
         using var context = CreateWaf(useUnsafeEncoder).Waf!.CreateContext(out _)!;
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
@@ -115,7 +124,14 @@ public class WafTruncationTelemetryTests : WafLibraryRequiredTest
 
         try
         {
-            context.Run(args, TimeoutMicroSeconds);
+            if (isRasp)
+            {
+                context.RunWithEphemeral(args, TimeoutMicroSeconds, isRasp: true, out _);
+            }
+            else
+            {
+                context.Run(args, TimeoutMicroSeconds);
+            }
         }
         finally
         {

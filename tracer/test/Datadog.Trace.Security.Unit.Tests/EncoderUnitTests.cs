@@ -163,6 +163,19 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         result.Truncation.ContainerSize.Should().Be(truncated ? length : 0);
     }
 
+    [SkippableFact]
+    public void GivenACountedCollectionThatIsNotAnIListLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        Skip.If(_encoder is not Encoder, "The legacy encoder encodes a non-IList enumerable with its ToString()");
+
+        // LinkedList exposes its count through the non-generic ICollection, without being an IList
+        var list = new LinkedList<int>(Enumerable.Range(0, 300));
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", list } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+    }
+
     [SkippableTheory]
     [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
     [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]

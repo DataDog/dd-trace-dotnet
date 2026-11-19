@@ -167,9 +167,7 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            var requestContext = _localRootSpan.Context.TraceContext.AppSecRequestContext;
-            requestContext.CheckWAFError(result, isRasp);
-            requestContext.AddTruncation(result.Truncation);
+            _localRootSpan.Context.TraceContext.AppSecRequestContext.CheckWAFError(result, isRasp);
         }
     }
 

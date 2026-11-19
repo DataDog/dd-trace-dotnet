@@ -229,9 +229,9 @@ internal sealed class Context : IContext
             var start = Stopwatch.GetTimestamp();
             var args = _encoder.Encode(addressData!, applySafetyLimits: true);
             var truncation = args.Truncation;
-            if (truncation.Reason is { } truncationReason)
+            if (!isRasp && truncation.Reason is { } truncationReason)
             {
-                // one point per WAF run, whose reason holds every kind of truncation of the run
+                // one point per non-RASP WAF run, whose reason holds every kind of truncation of the run
                 TelemetryFactory.Metrics.RecordCountInputTruncated(truncationReason);
             }
 

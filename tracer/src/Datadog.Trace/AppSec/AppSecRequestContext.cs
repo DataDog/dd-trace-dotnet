@@ -143,6 +143,8 @@ internal sealed partial class AppSecRequestContext
                 _wafError = code;
             }
         }
+
+        AddTruncation(result.Truncation);
     }
 
     internal void AddRaspSpanMetrics(ulong totalDuration, ulong totalDurationWithBindings, bool timeout)
