@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.QueueName)]
         public string? QueueName { get; set; }
 
-        [Tag(Trace.Tags.AwsQueueUrl)]
+        [Tag(Trace.Tags.AwsQueueUrl, OtelName = Trace.Tags.AwsSqsQueueUrl)]
         public string? QueueUrl { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]

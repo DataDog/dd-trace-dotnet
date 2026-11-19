@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -42,5 +43,31 @@ public class AwsKinesisCommonTests
         request.Setup(x => x.StreamARN).Returns(streamArn);
 
         AwsKinesisCommon.GetStreamName(request.Object).Should().Be(expected);
+    }
+
+    [Fact]
+    public void TagStream_WithStreamArn_TagsStreamNameAndArn()
+    {
+        const string streamArn = "arn:aws:kinesis:us-east-2:123456789012:stream/mystream";
+        var tags = new AwsKinesisTags(SpanKinds.Producer);
+
+        AwsKinesisCommon.TagStream(tags, "mystream", streamArn);
+
+        tags.StreamName.Should().Be("mystream");
+        tags.StreamArn.Should().Be(streamArn);
+        tags.GetTag("aws.stream.arn").Should().Be(streamArn);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void TagStream_WithoutStreamArn_DoesNotTagArn(string streamArn)
+    {
+        var tags = new AwsKinesisTags(SpanKinds.Producer);
+
+        AwsKinesisCommon.TagStream(tags, "mystream", streamArn);
+
+        tags.StreamName.Should().Be("mystream");
+        tags.StreamArn.Should().BeNull();
     }
 }

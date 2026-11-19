@@ -34,6 +34,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.AwsTopicArn)]
         public string? TopicArn { get; set; }
 
+        [Tag(Trace.Tags.AwsSnsTopicArn)]
+        public string? SnsTopicArn => TopicArn;
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }

@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -29,6 +30,16 @@ public class AwsSqsCommonTests
             new object[] { "v1", "consumer", "aws.sqs.process" },
             new object[] { "v1", "server", "aws.sqs.request" }
         };
+
+    [Fact]
+    public void QueueUrl_IsReadableUnderOtelName()
+    {
+        const string queueUrl = "https://localhost:8080/00000000/my-queue-name";
+        var tags = new AwsSqsTags(SpanKinds.Producer) { QueueUrl = queueUrl };
+
+        tags.GetTag("aws.queue.url").Should().Be(queueUrl);
+        tags.GetTag("aws.sqs.queue.url").Should().Be(queueUrl);
+    }
 
     [Fact]
     public void GetCorrectQueueName()

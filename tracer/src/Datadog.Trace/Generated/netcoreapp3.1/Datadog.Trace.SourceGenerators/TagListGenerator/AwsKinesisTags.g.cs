@@ -17,6 +17,9 @@ namespace Datadog.Trace.Tagging
         // StreamNameBytes = MessagePack.Serialize("streamname");
         private static ReadOnlySpan<byte> StreamNameBytes => [170, 115, 116, 114, 101, 97, 109, 110, 97, 109, 101];
 
+        // StreamArnBytes = MessagePack.Serialize("aws.stream.arn");
+        private static ReadOnlySpan<byte> StreamArnBytes => [174, 97, 119, 115, 46, 115, 116, 114, 101, 97, 109, 46, 97, 114, 110];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
@@ -25,6 +28,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "streamname" => StreamName,
+                "aws.stream.arn" => StreamArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -36,6 +40,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "streamname": 
                     StreamName = value;
+                    break;
+                case "aws.stream.arn": 
+                    StreamArn = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsKinesisTags));
@@ -53,6 +60,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("streamname", StreamName, StreamNameBytes));
             }
 
+            if (StreamArn is not null)
+            {
+                processor.Process(new TagItem<string>("aws.stream.arn", StreamArn, StreamArnBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -67,6 +79,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("streamname (tag):")
                   .Append(StreamName)
+                  .Append(',');
+            }
+
+            if (StreamArn is not null)
+            {
+                sb.Append("aws.stream.arn (tag):")
+                  .Append(StreamArn)
                   .Append(',');
             }
 

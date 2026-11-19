@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -90,6 +91,31 @@ public class AwsStepFunctionsCommonTests
     public void GetStateMachineName_FallsBackToTrailingSegment_ForUnrecognizedArn(string stateMachineArn, string expected)
     {
         AwsStepFunctionsCommon.GetStateMachineName(stateMachineArn).Should().Be(expected);
+    }
+
+    [Fact]
+    public void TagStateMachine_TagsStateMachineNameAndArn()
+    {
+        const string stateMachineArn = "arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine";
+        var tags = new AwsStepFunctionsTags(SpanKinds.Producer);
+
+        AwsStepFunctionsCommon.TagStateMachine(tags, stateMachineArn);
+
+        tags.StateMachineName.Should().Be("MyStateMachine");
+        tags.StateMachineArn.Should().Be(stateMachineArn);
+        tags.GetTag("aws.state_machine.arn").Should().Be(stateMachineArn);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void TagStateMachine_WithoutArn_DoesNotTagArn(string stateMachineArn)
+    {
+        var tags = new AwsStepFunctionsTags(SpanKinds.Producer);
+
+        AwsStepFunctionsCommon.TagStateMachine(tags, stateMachineArn);
+
+        tags.StateMachineArn.Should().BeNull();
     }
 
     private static ScopedTracer GetTracer(string schemaVersion)

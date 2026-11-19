@@ -23,6 +23,9 @@ namespace Datadog.Trace.Tagging
         // QueueUrlBytes = MessagePack.Serialize("aws.queue.url");
         private static ReadOnlySpan<byte> QueueUrlBytes => [173, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108];
 
+        // QueueUrlOtelBytes = MessagePack.Serialize("aws.sqs.queue.url");
+        private static ReadOnlySpan<byte> QueueUrlOtelBytes => [177, 97, 119, 115, 46, 115, 113, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
@@ -32,7 +35,7 @@ namespace Datadog.Trace.Tagging
             {
                 "aws.queue.name" => AwsQueueName,
                 "queuename" => QueueName,
-                "aws.queue.url" => QueueUrl,
+                "aws.queue.url" or "aws.sqs.queue.url" => QueueUrl,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -45,7 +48,8 @@ namespace Datadog.Trace.Tagging
                 case "queuename": 
                     QueueName = value;
                     break;
-                case "aws.queue.url": 
+                case "aws.queue.url":
+                case "aws.sqs.queue.url":
                     QueueUrl = value;
                     break;
                 case "aws.queue.name": 
@@ -72,7 +76,14 @@ namespace Datadog.Trace.Tagging
 
             if (QueueUrl is not null)
             {
-                processor.Process(new TagItem<string>("aws.queue.url", QueueUrl, QueueUrlBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("aws.sqs.queue.url", QueueUrl, QueueUrlOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("aws.queue.url", QueueUrl, QueueUrlBytes));
+                }
             }
 
             if (SpanKind is not null)

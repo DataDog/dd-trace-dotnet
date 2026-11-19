@@ -16,6 +16,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.TableName)]
         public string? TableName { get; set; }
 
+        [Tag(Trace.Tags.AwsTableArn)]
+        public string? TableArn { get; set; }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
     }
