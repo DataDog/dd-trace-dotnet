@@ -5,9 +5,18 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using Datadog.Trace.RemoteConfigurationManagement;
+
 namespace Datadog.Trace.FeatureFlags;
 
 internal static class FeatureFlagCapabilities
 {
     internal const string DependentFlagVariantKeyV1 = "dependent-flag-variant-key-v1";
+
+    internal static BigInteger RemoteConfigMask(IReadOnlyCollection<string> capabilities)
+        => RcmCapabilitiesIndices.FfeFlagConfigurationRules
+         | (capabilities.Contains(DependentFlagVariantKeyV1) ? RcmCapabilitiesIndices.FfeFlagDependentFlagVariantKeyV1 : BigInteger.Zero);
 }

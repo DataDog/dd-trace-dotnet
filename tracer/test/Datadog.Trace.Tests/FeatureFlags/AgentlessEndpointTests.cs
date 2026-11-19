@@ -36,7 +36,7 @@ public class AgentlessEndpointTests
 
     [Fact]
     public void AddsDdEnvWhenEnvIsConfigured()
-        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?dd_env=production");
+        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=production");
 
     [Theory]
     [InlineData(null)]
@@ -46,7 +46,7 @@ public class AgentlessEndpointTests
     // normalizes away. Spans are tagged the same way, so no environment is reported either.
     [InlineData("2024")]
     public void DoesNotAddDdEnvWhenEnvIsNotConfigured(string? env)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().BeEmpty();
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1");
 
     [Theory]
     // Normalized exactly as the tracer normalizes the environment before tagging spans: lowercased,
@@ -56,31 +56,31 @@ public class AgentlessEndpointTests
     [InlineData("  staging  ", "staging")]
     [InlineData("my env&test", "my_env_test")]
     public void NormalizesDdEnvValue(string env, string expected)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?dd_env=" + expected);
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + expected);
 
     [Fact]
     public void EscapesDdEnvValue()
         // "/" survives normalization but cannot be carried unescaped in a query value.
-        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?dd_env=team%2Fa");
+        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=team%2Fa");
 
     [Fact]
     public void TruncatesAnOverlongDdEnvValue()
         => Create("datadoghq.com").BuildRequestUri(new string('a', 500))
-                                  .Query.Should().Be("?dd_env=" + new string('a', 200));
+                                  .Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + new string('a', 200));
 
     [Theory]
-    // A configured base URL is opaque: the operator may have scoped it themselves, and it may carry
-    // credentials or routing, so it is requested exactly as written. Java, JS, Go and Python all
-    // treat a custom endpoint the same way.
-    [InlineData("https://flags.example.com/ufc")]
-    [InlineData("https://flags.example.com/ufc?token=abc")]
-    [InlineData("https://flags.example.com/ufc?dd_env=staging")]
-    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging")]
-    public void DoesNotAddDdEnvToACustomEndpoint(string baseUrl)
+    [InlineData("https://flags.example.com/ufc", "?cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb", "?token=a%2Bb&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?dd_env=staging", "?dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "?token=abc&dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb&&scope=one%2Ftwo&", "?token=a%2Bb&&scope=one%2Ftwo&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=old&scope=one%2Ftwo", "?token=abc&cap_dependent-flags-variant-key=v1&scope=one%2Ftwo")]
+    [InlineData("https://flags.example.com/ufc?cap_dependent-flags-variant-key=old&token=a%2Bb&cap_dependent-flags-variant-key=v2&scope=one%2Ftwo&cap_dependent-flags-variant-key", "?cap_dependent-flags-variant-key=v1&token=a%2Bb&scope=one%2Ftwo")]
+    public void AddsCapabilityWithoutAddingEnvironmentToACustomEndpoint(string baseUrl, string expectedQuery)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
 
-        endpoint.BuildRequestUri("production").Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri("production").Query.Should().Be(expectedQuery);
     }
 
     [Theory]
