@@ -43,6 +43,16 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const int MaxRequestUrlBytes = 8192;
 
+    /// <summary>
+    /// The query parameter selecting UFCs that can contain dependent flag conditions.
+    /// </summary>
+    internal const string DependentFlagsParameterName = "cap_dependent-flags-variant-key";
+
+    /// <summary>
+    /// The complete dependent-flags capability query parameter.
+    /// </summary>
+    internal const string DependentFlagsParameter = DependentFlagsParameterName + "=v1";
+
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
@@ -239,9 +249,9 @@ internal sealed class AgentlessEndpoint
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// Without a flag selection, a configured base URL is opaque: it is requested exactly as the
-    /// operator wrote it, since it may hold credentials, routing, or a scope of its own. Only the
-    /// managed endpoint carries <c>dd_env</c>, which matches the other tracers.
+    /// A configured base URL retains its existing query parameters, which may hold credentials,
+    /// routing, or a scope of its own. Only the managed endpoint carries <c>dd_env</c>, which
+    /// matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
@@ -249,7 +259,8 @@ internal sealed class AgentlessEndpoint
     public Uri BuildRequestUri(string? env)
     {
         var normalized = RequestEnvironment(env);
-        return normalized is null ? Uri : AppendQuery(Uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
+        var uri = AppendQuery(Uri, DependentFlagsParameter);
+        return normalized is null ? uri : AppendQuery(uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
     }
 
     /// <summary>
@@ -295,5 +306,70 @@ internal sealed class AgentlessEndpoint
         };
 
         return new Uri(uri.GetLeftPart(UriPartial.Query) + separator + parameters + uri.Fragment);
+    }
+
+    private static string AddOrReplaceDependentFlagsParameter(string query)
+    {
+        var existing = query.Length > 0 && query[0] == '?' ? query.Substring(1) : query;
+        if (existing.Length == 0)
+        {
+            return DependentFlagsParameter;
+        }
+
+        var result = new StringBuilder(existing.Length + DependentFlagsParameter.Length + 1);
+        var segmentStart = 0;
+        var replaced = false;
+        var hasRetainedSegment = false;
+        while (segmentStart <= existing.Length)
+        {
+            var segmentEnd = existing.IndexOf('&', segmentStart);
+            if (segmentEnd < 0)
+            {
+                segmentEnd = existing.Length;
+            }
+
+            var equals = existing.IndexOf('=', segmentStart, segmentEnd - segmentStart);
+            var nameEnd = equals < 0 ? segmentEnd : equals;
+            var isDependentFlagsParameter = nameEnd - segmentStart == DependentFlagsParameterName.Length
+                                         && string.CompareOrdinal(existing, segmentStart, DependentFlagsParameterName, 0, DependentFlagsParameterName.Length) == 0;
+            if (!isDependentFlagsParameter || !replaced)
+            {
+                if (hasRetainedSegment)
+                {
+                    result.Append('&');
+                }
+
+                if (isDependentFlagsParameter)
+                {
+                    result.Append(DependentFlagsParameter);
+                    replaced = true;
+                }
+                else
+                {
+                    result.Append(existing, segmentStart, segmentEnd - segmentStart);
+                }
+
+                hasRetainedSegment = true;
+            }
+
+            if (segmentEnd == existing.Length)
+            {
+                break;
+            }
+
+            segmentStart = segmentEnd + 1;
+        }
+
+        if (!replaced)
+        {
+            if (existing[existing.Length - 1] != '&')
+            {
+                result.Append('&');
+            }
+
+            result.Append(DependentFlagsParameter);
+        }
+
+        return result.ToString();
     }
 }
