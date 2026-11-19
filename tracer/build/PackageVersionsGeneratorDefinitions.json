@@ -488,8 +488,6 @@
     "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "0.61.*",
-      "1.0.*",
-      "1.*.*",
       "2.*.*",
       "3.*.*"
     ]
