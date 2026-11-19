@@ -111,10 +111,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             catch
             {
                 // The caller does not receive a run on failure, so dispose one here. That dispose stops the agent.
-                using (CreateFailedRun(agent))
-                {
-                    throw;
-                }
+                agent.Dispose();
+                throw;
             }
         }
 
@@ -167,19 +165,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
             return match.Success ? match.Groups[1].Value : null;
-        }
-
-        private ProfilerTestRun CreateFailedRun(MockDatadogAgent agent)
-        {
-            try
-            {
-                return ProfilerTestRun.From(this, agent);
-            }
-            catch
-            {
-                // Building the full run can throw (logs or profiles). A run that only owns the agent still stops it.
-                return ProfilerTestRun.Owning(agent);
-            }
         }
 
         private void PrintTestInfo()
