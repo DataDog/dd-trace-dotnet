@@ -83,15 +83,9 @@ public class MyBenchmark
 }
 ```
 
-### 3. Use `[IterationSetup]` with GC.Collect() for Unmanaged Memory
+### 3. Never Use `[IterationSetup]` (or `[IterationCleanup]`)
 
-**When to use:**
-- Benchmarks that allocate/free unmanaged memory (Marshal.AllocHGlobal)
-- Benchmarks with native code interactions (WAF, profiler)
-- High allocation benchmarks with CV > 10%
-- When you observe GC-related variance
-
-**Example:**
+**❌ Don't do this:**
 ```csharp
 [IterationSetup]
 public void Setup()
@@ -103,10 +97,17 @@ public void Setup()
 }
 ```
 
-**When NOT to use:**
-- Low-allocation benchmarks (adds unnecessary overhead)
-- Benchmarks that reuse pre-allocated data
-- CV < 10% (BenchmarkDotNet's adaptive algorithm handles it)
+**Why?**
+- `[IterationSetup]` forces one invocation per iteration and skips BenchmarkDotNet's pilot, the component that sizes how many operations an iteration runs. Every measured iteration becomes a single call: full process, GC and timer noise, nothing averaged out.
+- `[IterationCleanup]` has the same effect.
+- The forced GC is redundant: BenchmarkDotNet already forces a full GC between iterations by default (`GcMode.Force`).
+- Microsoft's guideline: under 100 ms per invocation, ["your benchmark will be entirely invalid"](https://github.com/dotnet/performance/blob/main/docs/microbenchmark-design-guidelines.md#iterationsetup).
+- Full writeup: [IterationSetup breaks BenchmarkDotNet microbenchmarks](https://datadoghq.atlassian.net/wiki/x/2ACEtQE).
+
+**Do this instead:**
+- One-time setup goes in `[GlobalSetup]`, including for unmanaged memory benchmarks (WAF, profiler, `Marshal.AllocHGlobal`).
+- Add `[GcForce(true)]` explicitly to the class. It is the default, but the artifacts do not record GC settings, so an explicit attribute is the only way to verify the intent later.
+- Let the pilot size iterations. That is what it is for.
 
 ### 4. Pre-allocate Test Data in GlobalSetup
 
@@ -148,7 +149,8 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 ### DO:
 - ✅ Use `[GlobalSetup]` for **all** initialization
 - ✅ Use **instance fields** for all benchmark state
-- ✅ Use `[IterationSetup]` with GC for native/unmanaged code benchmarks
+- ✅ Use `[GcForce(true)]` explicitly on every benchmark class
+- ✅ Check `Operations > 1` and per-launch agreement after adding or changing a benchmark (see "Validating a new benchmark" below)
 - ✅ Use `static readonly` with static constructor ONLY for pure reflection metadata (MethodHandle, TypeHandle)
 - ✅ Trust BenchmarkDotNet's warmup algorithm (it handles JIT compilation automatically)
 
@@ -161,9 +163,9 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 
 1. **Static constructor/initializer timing** → Use `[GlobalSetup]` with instance fields for everything
 2. **Shared state between benchmark methods** → Use instance fields, not static
-3. **Unpredictable GC** → Use `[IterationSetup]` with GC.Collect() (only for unmanaged memory)
+3. **Unpredictable GC** → Nothing to do: `GcForce` (the default) already forces a full GC between iterations
 4. **Manual warmup interference** → Trust BenchmarkDotNet's automatic warmup (don't add manual calls)
-5. **Async timing variance** → Ensure fake implementations complete synchronously
+5. **Async timing variance** → Ensure fake implementations complete synchronously; never let a fake run background threads (flush, heartbeat), they add uncontrolled timing noise
 
 ## Pattern Examples
 
@@ -211,15 +213,6 @@ public class NativeBenchmark
         _testData = CreateTestData();
     }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-        // Force GC to reduce variance from native memory
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-    }
-
     [Benchmark]
     public void RunWaf()
     {
@@ -263,9 +256,22 @@ public class ReflectionBenchmark
 }
 ```
 
+## Validating a new benchmark
+
+BenchmarkDotNet's stability machinery (pilot, adaptive warmup and iteration counts, forced GC between iterations) only works when nothing defeats it. After adding or changing a benchmark, check the artifacts of one CI run:
+
+1. **`Operations > 1`** in the BDN logs or JSON artifacts for every measurement. `Operations == 1` means the pilot was skipped: look for `[IterationSetup]`, `[IterationCleanup]` or `RunOncePerIteration`.
+2. **Per-launch agreement**: the reported values of the launches of one benchmark should agree within a few percent. Wide launch-to-launch spread means process-level noise dominates; find and remove the noise source instead of raising the launch count.
+
+Other rules that keep the suite measurable:
+
+- **Never commit TFM stubs**: a benchmark whose body compiles to nothing on a target framework (for example `#if NET6_0_OR_GREATER` around the real body) measures BenchmarkDotNet loop overhead and code alignment, not a scenario. Filter it out in `Program.cs` (see `IsRealAspNetCoreBenchmark`).
+- **CI repetition budget**: each pipeline gives a benchmark 3 launches of about a minute each, with iterations of 500 ms. Keep one invocation cheap enough for the pilot to scale operations into the thousands; if a single call takes ~100 ms or more, the benchmark belongs to the macrobenchmark suite.
+
 ## References
 
 - [BenchmarkDotNet Setup and Cleanup](https://benchmarkdotnet.org/articles/features/setup-and-cleanup.html)
 - [BenchmarkDotNet Jobs Configuration](https://benchmarkdotnet.org/articles/configs/jobs.html)
 - [Constructor Timing Issue #1304](https://github.com/dotnet/BenchmarkDotNet/issues/1304)
 - [GlobalSetup runs once per benchmark method](https://github.com/dotnet/BenchmarkDotNet/blob/master/docs/articles/features/setup-and-cleanup.md)
+- [IterationSetup breaks BenchmarkDotNet microbenchmarks](https://datadoghq.atlassian.net/wiki/x/2ACEtQE)
