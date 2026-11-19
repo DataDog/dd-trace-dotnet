@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Json;
@@ -136,47 +137,34 @@ internal sealed partial class SecurityReporter
         }
     }
 
-    internal static void RecordWafTelemetry(IResult? result, bool isRasp)
-        => RecordWafTelemetry(result, isRasp, TelemetryFactory.Metrics);
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, AppSecRequestContext requestContext)
+        => RecordWafTelemetry(result, isRasp, requestContext, TelemetryFactory.Metrics);
 
-    internal static void RecordWafTelemetry(IResult? result, bool isRasp, IMetricsTelemetryCollector metrics)
+    /// <summary>
+    /// Records the telemetry of a WAF run. appsec.waf.error counts runs, so it is recorded here, while
+    /// appsec.waf.requests counts requests and is reported by the request context when the request ends.
+    /// RASP runs are left out of both: they have their own metrics.
+    /// </summary>
+    [TestingAndPrivateOnly]
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, AppSecRequestContext requestContext, IMetricsTelemetryCollector metrics)
     {
-        if (result is null)
+        if (result is null || isRasp)
         {
             return;
         }
 
-        if (result.Timeout)
-        {
-            metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
-        }
-        else if (!isRasp && result.ReturnCode < WafReturnCode.Ok)
-        {
-            metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.WafErrorTruncated : MetricTags.WafAnalysis.WafError);
+        requestContext.RecordWafRun(result);
 
-            if (result.ReturnCode.ToWafErrorTag() is { } wafError)
-            {
-                metrics.RecordCountWafError(wafError);
-            }
-        }
-        else if (result.ShouldBlock)
+        if (IsWafError(result) && result.ReturnCode.ToWafErrorTag() is { } wafError)
         {
-            metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
-        }
-        else if (result.ShouldReportSecurityResult)
-        {
-            metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
-        }
-        else
-        {
-            metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
+            metrics.RecordCountWafError(wafError);
         }
     }
+
+    /// <summary>
+    /// Whether a WAF run failed. A timeout takes precedence over the return code: it is reported as a timeout only.
+    /// </summary>
+    internal static bool IsWafError(IResult result) => !result.Timeout && result.ReturnCode < WafReturnCode.Ok;
 
     internal void ReportWafInitInfoOnce(InitResult? initResult)
     {
