@@ -45,6 +45,7 @@ namespace Datadog.Trace.Configuration.Schema
                 ServiceNameMetadata.Resolve("azureeventhubs", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureservicebus", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureeventgrid", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("google-pubsub", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("ibmmq", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("kafka", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("msmq", defaultServiceName, serviceNameMappings, useSuffix),
@@ -66,6 +67,7 @@ namespace Datadog.Trace.Configuration.Schema
             AwsStepFunctions,
             AzureEventHubs,
             AzureServiceBus,
+            GoogleCloudPubSub,
             IbmMq,
             Kafka,
             Msmq,
@@ -81,6 +83,7 @@ namespace Datadog.Trace.Configuration.Schema
             AzureEventHubs,
             AzureServiceBus,
             AzureEventGrid,
+            GoogleCloudPubSub,
             IbmMq,
             Kafka,
             Msmq,
@@ -135,6 +138,9 @@ namespace Datadog.Trace.Configuration.Schema
             return tags;
         }
 
+        public GoogleCloudPubSubTags CreateGoogleCloudPubSubTags(string spanKind)
+            => _useV0Tags ? new GoogleCloudPubSubTags(spanKind) : new GoogleCloudPubSubV1Tags(spanKind);
+
         private static class V0Values
         {
             public static readonly string[] InboundOperationNames =
@@ -147,6 +153,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.consume",
                 "azureeventhubs.consume",
                 "azureservicebus.consume",
+                "google-pubsub.consume",
                 "ibmmq.consume",
                 "kafka.consume",
                 "msmq.consume",
@@ -162,6 +169,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.produce",
                 "azureeventhubs.produce",
                 "azureservicebus.produce",
+                "google-pubsub.produce",
                 "ibmmq.produce",
                 "kafka.produce",
                 "msmq.produce",
@@ -180,6 +188,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.process",
                 "azureeventhubs.process",
                 "azureservicebus.process",
+                "google-pubsub.process",
                 "ibmmq.process",
                 "kafka.process",
                 "msmq.process",
@@ -195,6 +204,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.send",
                 "azureeventhubs.send",
                 "azureservicebus.send",
+                "google-pubsub.send",
                 "ibmmq.send",
                 "kafka.send",
                 "msmq.send",

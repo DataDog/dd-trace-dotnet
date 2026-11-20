@@ -119,6 +119,13 @@ services:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
 
+  google-pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    profiles: ["group1"]
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "127.0.0.1:8085:8085"
+
   servicestackredis:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
     profiles: ["group1"]
@@ -691,12 +698,13 @@ services:
       - mysql
       - mysql57
       - rabbitmq
+      - google-pubsub-emulator
       - kafka-broker
       - kafka-zookeeper
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 test-agent:8126 test-agent:4317 test-agent:4318
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 google-pubsub-emulator:8085 kafka-broker:9092 kafka-zookeeper:2181 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e

@@ -8134,6 +8134,79 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "GoogleCloudPubSub",
+    "AssemblyName": "Google.Cloud.PubSub.V1",
+    "TargetTypeName": "Google.Cloud.PubSub.V1.PublisherClientImpl",
+    "TargetMethodName": "PublishAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.String]",
+    "TargetParameterTypes": [
+      "Google.Cloud.PubSub.V1.PubsubMessage"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.PublisherClientPublishAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "GoogleCloudPubSub",
+    "AssemblyName": "Google.Cloud.PubSub.V1",
+    "TargetTypeName": "Google.Cloud.PubSub.V1.SimpleSubscriptionHandler",
+    "TargetMethodName": "HandleMessage",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Google.Cloud.PubSub.V1.SubscriberClient+Reply]",
+    "TargetParameterTypes": [
+      "Google.Cloud.PubSub.V1.PubsubMessage",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.SimpleSubscriptionHandlerHandleMessageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "GoogleCloudPubSub",
+    "AssemblyName": "Google.Cloud.PubSub.V1",
+    "TargetTypeName": "Google.Cloud.PubSub.V1.SubscriberClientImpl",
+    "TargetMethodName": "StartAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Google.Cloud.PubSub.V1.SubscriptionHandler"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.SubscriberClientStartAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "GraphQL",
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Execution.ExecutionStrategy",
