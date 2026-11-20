@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 
 using System.Web;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 
 #nullable enable
 
@@ -14,9 +13,6 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        internal static string GetUrlForSpan(this IHttpRequestMessage request, QueryStringManager queryStringManager)
-            => HttpRequestUtils.GetUrl(request.RequestUri, queryStringManager);
-
         internal static string? GetUrlForSpan(this HttpRequestBase request, QueryStringManager queryStringManager)
         {
             var url = RequestDataHelper.GetUrl(request);
@@ -41,7 +37,7 @@ namespace Datadog.Trace.Util.Http
         /// <seealso cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>
         internal static string? GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
         {
-            var url = bypassHttpRequestUrl ? RequestDataHelper.BuildUrl(request) : RequestDataHelper.GetUrl(request);
+            var url = RequestDataHelper.GetUrl(request, bypassHttpRequestUrl);
 
             if (url is not null)
             {

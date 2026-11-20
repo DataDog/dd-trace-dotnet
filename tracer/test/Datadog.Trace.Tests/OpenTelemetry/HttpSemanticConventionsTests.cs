@@ -333,6 +333,52 @@ public class HttpSemanticConventionsTests
     }
 
     [Fact]
+    public void SetHttpServerRequestValues_UsesThePathAndQueryOfARelativeUri()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+        var uri = new Uri("/store/checkout?token=SECRET&page=2", UriKind.Relative);
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: "HTTP/1.1", hostHeader: "localhost:8080", uri, QueryStringManager);
+
+        tags.UrlPath.Should().Be("/store/checkout");
+        tags.UrlQuery.Should().Be("<redacted>&page=2");
+
+        // The scheme is unknown, and the server comes from the Host header only
+        tags.UrlScheme.Should().BeNull();
+        tags.ServerAddress.Should().Be("localhost");
+        tags.ServerPort.Should().Be(8080);
+    }
+
+    [Fact]
+    public void SetHttpServerRequestValues_ReportsNoServerForARelativeUriWithoutAHostHeader()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: null, hostHeader: null, new Uri("/ping", UriKind.Relative), QueryStringManager);
+
+        tags.UrlPath.Should().Be("/ping");
+        tags.UrlQuery.Should().BeNull();
+        tags.ServerAddress.Should().BeNull();
+        tags.ServerPort.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetHttpServerRequestValues_DoesNotReportTheAuthorityOfANetworkPathReference()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: null, hostHeader: "localhost", new Uri("//user:password@host/api/values?id=1", UriKind.Relative), QueryStringManager);
+
+        tags.UrlPath.Should().BeNull();
+        tags.UrlQuery.Should().BeNull();
+        tags.UrlScheme.Should().BeNull();
+        tags.ServerAddress.Should().Be("localhost");
+    }
+
+    [Fact]
     public void SetHttpServerRequestValues_OmitsTheProtocolVersionWhenTheHostDoesNotReportIt()
     {
         var span = CreateSpan();

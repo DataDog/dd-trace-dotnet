@@ -138,9 +138,7 @@ namespace Datadog.Trace.AspNet
                 return HttpSemanticConventions.GetServerResourceName(httpRequest.HttpMethod, route: null);
             }
 
-            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
-                               ? RequestDataHelper.BuildUrl(httpRequest)
-                               : RequestDataHelper.GetUrl(httpRequest);
+            var url = RequestDataHelper.GetUrl(httpRequest, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
             if (url is not null)
             {
                 var path = UriHelpers.GetCleanUriPath(url, httpRequest.ApplicationPath);
@@ -268,9 +266,7 @@ namespace Datadog.Trace.AspNet
 
                 if (otelSemanticsEnabled)
                 {
-                    var requestUri = tracer.Settings.BypassHttpRequestUrlCachingEnabled
-                                                            ? RequestDataHelper.BuildUrl(httpRequest)
-                                                            : RequestDataHelper.GetUrl(httpRequest);
+                    var requestUri = RequestDataHelper.GetUrl(httpRequest, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
 
                     HttpSemanticConventions.SetHttpServerRequestValues(
                         scope.Span,
@@ -421,9 +417,7 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    var requestUrl = tracer.Settings.BypassHttpRequestUrlCachingEnabled
-                                        ? RequestDataHelper.BuildUrl(app.Context.Request)
-                                        : RequestDataHelper.GetUrl(app.Context.Request);
+                                    var requestUrl = RequestDataHelper.GetUrl(app.Context.Request, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                                     ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
                                     var headers = RequestDataHelper.GetHeaders(app.Context.Request);
                                     if (headers is not null)
