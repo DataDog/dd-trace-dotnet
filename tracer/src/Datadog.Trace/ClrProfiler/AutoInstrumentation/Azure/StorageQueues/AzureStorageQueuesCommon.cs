@@ -121,7 +121,7 @@ internal static class AzureStorageQueuesCommon
             }
 
             var payload = ParseJsonDictionary(messageText);
-            if (payload is null || payload.Count == 0 || payload.ContainsKey(PayloadKey))
+            if (payload is null || payload.Count == 0)
             {
                 return messageText;
             }
