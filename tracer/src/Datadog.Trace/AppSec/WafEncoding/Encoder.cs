@@ -142,6 +142,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     break;
                 case IEnumerable<KeyValuePair<string, object>> objDict:
                 {
+                    RecordTruncatedContainer(ref context, objDict);
                     var collectionDict = objDict as ICollection<KeyValuePair<string, object>> ?? objDict.ToList();
                     ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey1, &GetValue1);
                     static string GetKey1(KeyValuePair<string, object> item) => item.Key;
@@ -197,6 +198,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 case IEnumerable enumerable:
                 {
+                    RecordTruncatedContainer(ref context, enumerable);
                     ddwafObjectStruct = ProcessIEnumerable(ref context, remainingDepth, enumerable);
                     break;
                 }
@@ -212,6 +214,14 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
 
             return ddwafObjectStruct;
+        }
+
+        private static void RecordTruncatedContainer(ref EncoderContext context, object container)
+        {
+            if (context.ApplySafetyLimits && container is ITruncatedContainer truncated)
+            {
+                context.Truncation.AddContainer(truncated.OriginalCount);
+            }
         }
 
         /// <summary>
