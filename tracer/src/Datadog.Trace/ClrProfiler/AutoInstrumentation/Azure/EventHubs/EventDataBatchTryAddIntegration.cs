@@ -39,13 +39,21 @@ public sealed class EventDataBatchTryAddIntegration
         where TEventData : IEventData, IDuckType
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) ||
-            !tracer.Settings.AzureEventHubsBatchLinksEnabled)
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
             return CallTargetState.GetDefault();
         }
 
         if (eventData.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        // The batch snapshots the event's properties as part of TryAdd, so the pathway must be
+        // injected into them here rather than at the later SendAsync(EventDataBatch) call.
+        EventHubsCommon.SetProduceCheckpoint(tracer, eventData, instance.EventHubName);
+
+        if (!tracer.Settings.AzureEventHubsBatchLinksEnabled)
         {
             return CallTargetState.GetDefault();
         }

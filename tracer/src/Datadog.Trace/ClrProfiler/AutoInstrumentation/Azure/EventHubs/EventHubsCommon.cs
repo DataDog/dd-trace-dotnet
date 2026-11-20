@@ -8,9 +8,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -20,6 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 internal static class EventHubsCommon
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
+
+    // Used when the entity path is unknown — no topic tag
+    private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:eventhubs"]);
+    private static readonly EdgeTags DefaultConsumeEdgeTags = new(["direction:in", "type:eventhubs"]);
 
     internal static CallTargetState CreateSenderSpan(
         IEventHubProducerClient instance,
@@ -138,5 +146,147 @@ internal static class EventHubsCommon
             scope?.Dispose();
             return CallTargetState.GetDefault();
         }
+    }
+
+    internal static void SetProduceCheckpoints(Tracer tracer, IEnumerable? events, string? eventHubName)
+    {
+        // Only materialized collections are safe to enumerate: the sequence has not been
+        // buffered by the SDK yet at this point, and iterating a lazy generator would consume it.
+        if (events is not IReadOnlyCollection<object> eventCollection)
+        {
+            return;
+        }
+
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+        if (dataStreamsManager is not { IsEnabled: true })
+        {
+            return;
+        }
+
+        var edgeTags = GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false);
+
+        foreach (var eventObj in eventCollection)
+        {
+            if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+            {
+                SetProduceCheckpoint(dataStreamsManager, tracer.InternalActiveScope?.Span, eventData, edgeTags);
+            }
+        }
+    }
+
+    internal static void SetProduceCheckpoint(Tracer tracer, IEventData eventData, string? eventHubName)
+    {
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+        if (dataStreamsManager is not { IsEnabled: true })
+        {
+            return;
+        }
+
+        SetProduceCheckpoint(dataStreamsManager, tracer.InternalActiveScope?.Span, eventData, GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false));
+    }
+
+    internal static void SetConsumeCheckpoints(Tracer tracer, IReadOnlyList<object> events, string? eventHubName, Span? span)
+    {
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+        if (dataStreamsManager is not { IsEnabled: true } || span is null)
+        {
+            return;
+        }
+
+        var edgeTags = GetEdgeTags(dataStreamsManager, eventHubName, isConsume: true);
+        var consumeTime = span.StartTime.UtcDateTime;
+
+        foreach (var eventObj in events)
+        {
+            try
+            {
+                if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+                {
+                    PathwayContext? pathwayContext = null;
+
+                    if (eventData.Properties is { } properties)
+                    {
+                        pathwayContext = dataStreamsManager.ExtractPathwayContextAsBase64String(
+                            new AzureHeadersCollectionAdapter(properties));
+                    }
+
+                    var produceTime = eventData.EnqueuedTime.UtcDateTime;
+                    var queueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetEventSize(eventData);
+
+                    span.SetDataStreamsCheckpoint(
+                        dataStreamsManager,
+                        CheckpointKind.Consume,
+                        edgeTags,
+                        msgSize,
+                        (long)queueTimeMs,
+                        pathwayContext);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error setting consume checkpoint for Event Hubs event");
+            }
+        }
+    }
+
+    private static void SetProduceCheckpoint(DataStreamsManager dataStreamsManager, Span? span, IEventData eventData, EdgeTags edgeTags)
+    {
+        try
+        {
+            if (eventData.Properties is not { } properties
+                || properties.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
+            {
+                return;
+            }
+
+            var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetEventSize(eventData);
+
+            // Batches are typically built without an active span around TryAdd, so the
+            // checkpoint is set on the manager directly in that case, like a root produce.
+            PathwayContext? pathway;
+            if (span is not null)
+            {
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                pathway = span.Context.PathwayContext;
+            }
+            else
+            {
+                pathway = dataStreamsManager.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, edgeTags, msgSize, 0);
+            }
+
+            dataStreamsManager.InjectPathwayContextAsBase64String(
+                pathway,
+                new AzureHeadersCollectionAdapter(properties));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error setting produce checkpoint for Event Hubs event");
+        }
+    }
+
+    private static EdgeTags GetEdgeTags(DataStreamsManager dataStreamsManager, string? entityPath, bool isConsume)
+        => string.IsNullOrEmpty(entityPath)
+               ? (isConsume ? DefaultConsumeEdgeTags : DefaultProduceEdgeTags)
+               : dataStreamsManager.GetOrCreateEdgeTags(
+                   new EventHubsEdgeTagCacheKey(entityPath!, isConsume),
+                   static k => new EdgeTags([k.IsConsume ? "direction:in" : "direction:out", $"topic:{k.EntityPath}", "type:eventhubs"]));
+
+    private static long GetEventSize(IEventData eventData)
+    {
+        long size = eventData.EventBody?.ToMemory().Length ?? 0;
+
+        if (eventData.Properties is not { } properties)
+        {
+            return size;
+        }
+
+        foreach (var pair in properties)
+        {
+            size += Encoding.UTF8.GetByteCount(pair.Key);
+            size += MessageSizeHelper.TryGetSize(pair.Value);
+        }
+
+        return size;
     }
 }
