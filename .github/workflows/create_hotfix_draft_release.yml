@@ -12,6 +12,14 @@ on:
         required: false
         type: boolean
         default: false
+      nuget_publish_mode:
+        description: "How to publish the NuGet packages. stage: upload to a nuget.org staging group, which you must promote on nuget.org before publishing the GitHub release. push: publish to nuget.org immediately (fallback)"
+        required: false
+        type: choice
+        options:
+          - stage
+          - push
+        default: stage
 
 jobs:
     check_branch:
@@ -43,4 +51,6 @@ jobs:
         with:
             forced_commit_id: ${{ inputs.forced_commit_id }}
             ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}
+            # Compare against push, so anything unexpected falls back to the safer staging behaviour
+            stage_nuget_packages: ${{ inputs.nuget_publish_mode != 'push' }}
             is_hotfix: true
