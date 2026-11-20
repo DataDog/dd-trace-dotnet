@@ -299,6 +299,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
                     { "DD_TRACE_AGENT_PORT", http.Port.ToString() },
                 },
+                MockDatadogAgent.UnixDomainSocketAgent uds => new Dictionary<string, string>
+                {
+                    // The profiler reads DD_TRACE_AGENT_URL natively; unix:// makes
+                    // the exporter connect to the Unix domain socket instead of TCP.
+                    { "DD_TRACE_AGENT_URL", $"unix://{uds.SocketPath}" },
+                },
                 _ => throw new InvalidOperationException($"Unknown MockDatadogAgent type {agent?.GetType()}")
             };
 
