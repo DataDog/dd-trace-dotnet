@@ -474,7 +474,7 @@ namespace iast
         }
         size_t indexFrom = 0;
         auto indexTo = str.length() - 1;
-        while (indexFrom <= indexTo)
+        while (indexFrom < indexTo)
         {
             if (_IndexOf(str[indexTo], c) < 0)
             {
@@ -482,7 +482,7 @@ namespace iast
             }
             indexTo--;
         }
-        if (indexTo < indexFrom)
+        if (_IndexOf(str[indexTo], c) >= 0)
         {
             return EmptyWStr;
         }
@@ -531,7 +531,7 @@ namespace iast
         }
         size_t indexFrom = 0;
         auto indexTo = str.length() - 1;
-        while (indexFrom <= indexTo)
+        while (indexFrom < indexTo)
         {
             if (_IndexOf(str[indexTo], c) < 0)
             {
@@ -539,7 +539,7 @@ namespace iast
             }
             indexTo--;
         }
-        if (indexTo < indexFrom)
+        if (_IndexOf(str[indexTo], c) >= 0)
         {
             return "";
         }
