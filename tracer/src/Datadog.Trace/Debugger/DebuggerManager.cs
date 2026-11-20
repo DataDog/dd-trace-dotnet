@@ -254,7 +254,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings);
             if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
@@ -849,7 +849,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void ShutdownTasks(Exception? ex)
+        private async Task ShutdownTasks(Exception? ex)
         {
             if (_processExit.Task.IsCompleted)
             {
@@ -868,10 +868,22 @@ namespace Datadog.Trace.Debugger
             SafeDisposal.New()
                         .Add(_tracerSettingsSubscription)
                         .Add(Volatile.Read(ref _symDbRemoteConfig))
-                        .Add(_dynamicInstrumentation)
-                        .Add(ExceptionReplay)
-                        .Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
                         .DisposeAll();
+
+            try
+            {
+                var uploads = Task.WhenAll(
+                    _dynamicInstrumentation?.DisposeAsync() ?? Task.CompletedTask,
+                    ExceptionReplay?.DisposeAsync() ?? Task.CompletedTask);
+                SafeDisposal.New()
+                            .Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
+                            .DisposeAll();
+                await uploads.ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error flushing debugger events during shutdown");
+            }
         }
     }
 }

@@ -33,6 +33,8 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<string>(queueLimit);
         }
 
+        internal bool IsEmpty => _queue.IsEmpty;
+
         public static SnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer, MetricTags.DebuggerCaptureEventType? eventType)
         {
             return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer, eventType);
