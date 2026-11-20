@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -52,5 +53,29 @@ public class WafRequestsRootSpanTests
         await collector.DisposeAsync();
         var points = collector.GetMetrics().Metrics?.Where(m => m.Metric == "waf.requests").Sum(m => m.Points.Sum(p => (int)p.Value));
         points.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(SpanTypes.Web)]
+    [InlineData(SpanTypes.Serverless)] // Azure Functions retypes the HTTP root span
+    public async Task GivenARequestWithTruncatedWafInputs_WhenItsRootSpanCloses_ThenTheTruncationMetricsAreSet(string spanType)
+    {
+        await using var tracer = TracerHelper.Create(new());
+        var truncation = new TruncationInfo();
+        truncation.AddString(5000);
+        truncation.AddContainer(300);
+        truncation.AddTooDeep(20);
+        Span rootSpan;
+
+        using (var scope = (Scope)tracer.StartActive("request"))
+        {
+            rootSpan = scope.Span;
+            rootSpan.Type = spanType;
+            rootSpan.Context.TraceContext.AppSecRequestContext.AddTruncation(truncation);
+        }
+
+        rootSpan.GetMetric(Metrics.AppSecTruncatedStringLength).Should().Be(5000);
+        rootSpan.GetMetric(Metrics.AppSecTruncatedContainerSize).Should().Be(300);
+        rootSpan.GetMetric(Metrics.AppSecTruncatedContainerDepth).Should().Be(21);
     }
 }

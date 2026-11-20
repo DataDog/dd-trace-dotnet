@@ -113,10 +113,15 @@ internal sealed partial class AppSecRequestContext
     }
 
     /// <summary>
-    /// Reports the request telemetry of a local root span that isn't a web span, such as the HTTP root of an Azure
-    /// Function, which is typed serverless and so never reaches CloseWebSpan. Nothing is reported if the WAF didn't run.
+    /// Reports the request telemetry and the truncation span metrics of a local root span that isn't a web span, such
+    /// as the HTTP root of an Azure Function, which is typed serverless and so never reaches CloseWebSpan.
+    /// waf.requests isn't reported if the WAF didn't run.
     /// </summary>
-    internal void CloseNonWebRootSpan(Span span) => ReportWafRequests(span, TelemetryFactory.Metrics);
+    internal void CloseNonWebRootSpan(Span span)
+    {
+        SetTruncationMetrics(span);
+        ReportWafRequests(span, TelemetryFactory.Metrics);
+    }
 
     private void ReportWafRequests(Span span, IMetricsTelemetryCollector metrics)
     {
