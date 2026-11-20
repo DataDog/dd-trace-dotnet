@@ -71,7 +71,7 @@ shadow-build-unit-tests:
     - when: on_success
   trigger:
     include:
-      - local: .gitlab/build-unit-tests.yml
+      - local: .gitlab/build-and-unit-tests.yml
     strategy: depend
   variables:
     SHADOW_ALL_TEST_FRAMEWORKS: $run_all_test_frameworks
