@@ -39,11 +39,11 @@ jobs:
             fi
             week_number=$((10#$OVERRIDE_WEEK))
           else
-            # Anchor on the Monday of the week leading up to the Nov 23, 2026 release.
-            # This skips Nov 30 and keeps the cadence biweekly across ISO week 53.
-            anchor=$(date -u -d '2026-11-16' +%s)
+            # The Unix epoch started on a Thursday. Add three days so weeks
+            # start on Monday, and count continuously across ISO years.
+            seconds_per_day=$((24 * 60 * 60))
             now=$(date -u +%s)
-            week_number=$(( (now - anchor) / (7 * 24 * 60 * 60) ))
+            week_number=$(( (now + 3 * seconds_per_day) / (7 * seconds_per_day) ))
           fi
 
           if (( week_number % 2 == 0 )); then
