@@ -84,7 +84,7 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -202,7 +202,7 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
 
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -311,7 +311,7 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -405,7 +405,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -452,7 +452,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -492,7 +492,7 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -534,7 +534,7 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -579,7 +579,7 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
@@ -852,7 +852,7 @@ TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
     ISsiManager* ssiManager = nullptr;
     IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager, nullptr);
 
     auto callstack = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
     auto labels = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
@@ -941,6 +941,7 @@ std::unique_ptr<ProfileExporter> CreateExporterForInfoJsonTest(InfoJsonTestCompo
         c.metricsRegistry,
         c.metadataProvider.get(),
         c.ssiManager.get(),
+        nullptr,
         nullptr,
         nullptr);
     exporter->RegisterGcSettingsProvider(&c.gcSettingsProvider);
