@@ -12,6 +12,7 @@ using Amazon.Kinesis.Model;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -202,6 +203,11 @@ public class ContextPropagationTests
         extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
         extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
         extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+
+        var pathway = extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>()[0].ToString();
+        var decoded = PathwayContextEncoder.Decode(Convert.FromBase64String(pathway));
+        decoded.Should().NotBeNull();
+        decoded!.Value.Hash.Should().Be(scope!.Span.Context.PathwayContext!.Value.Hash);
     }
 
     [Fact]

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 
             if (context.SpanContext?.PathwayContext is { } pathwayContext)
             {
-                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
+                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb, tracer.Settings.IsDataStreamsLegacyEncodingBehaviorEnabled));
             }
 
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
