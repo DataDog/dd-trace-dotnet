@@ -149,6 +149,7 @@ internal sealed class EncoderLegacy : IEncoder
                 EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, object>> objDict:
+                RecordTruncatedContainer(objDict, applyLimits, ref truncation);
                 EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IEnumerable<KeyValuePair<string, bool>> objDict:
@@ -176,6 +177,7 @@ internal sealed class EncoderLegacy : IEncoder
                 EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<object> objs:
+                RecordTruncatedContainer(objs, applyLimits, ref truncation);
                 EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker, ref truncation, maxDepth);
                 break;
             case IList<int> objs:
@@ -205,6 +207,14 @@ internal sealed class EncoderLegacy : IEncoder
             default:
                 EncodeUnknownType(args, dest, wafLibraryInvoker, ref truncation);
                 break;
+        }
+    }
+
+    private static void RecordTruncatedContainer(object container, bool applyLimits, ref TruncationInfo truncation)
+    {
+        if (applyLimits && container is ITruncatedContainer truncated)
+        {
+            truncation.AddContainer(truncated.OriginalCount);
         }
     }
 
