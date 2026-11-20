@@ -64,6 +64,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
 run-benchmarks:
   stage: benchmarks
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
   tags: ["arch:amd64"]
   timeout: 2h
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
