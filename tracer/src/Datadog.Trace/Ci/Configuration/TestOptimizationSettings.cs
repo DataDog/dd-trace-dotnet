@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
@@ -16,6 +17,9 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -24,6 +28,16 @@ namespace Datadog.Trace.Ci.Configuration
         private const int MaxDynamicFlakyRetryCount = 20;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
+
+        private static readonly string[] OverridableRuntimeTags =
+        [
+            CommonTags.OSPlatform,
+            CommonTags.OSArchitecture,
+            CommonTags.OSVersion,
+            CommonTags.RuntimeName,
+            CommonTags.RuntimeVersion,
+            CommonTags.RuntimeArchitecture,
+        ];
 
         private TracerSettings? _tracerSettings;
 
@@ -126,6 +140,10 @@ namespace Datadog.Trace.Ci.Configuration
             // Retry counts that depend on the duration of the first execution
             DynamicFlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled).AsBool(false);
             DynamicFlakyRetryCounts = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets).GetAsClass<int[]>(validator: null, converter: ParseDynamicFlakyRetryCounts);
+
+            // Runtime tags overrides
+            RuntimeTags = config.WithKeys(ConfigurationKeys.CIVisibility.TestOptimizationRuntimeTags).GetAsClass<IReadOnlyDictionary<string, string>>(validator: null, converter: ParseRuntimeTags)
+                       ?? new Dictionary<string, string>();
 
             // Test Impact Analysis enablement
             ImpactedTestsDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled).AsBool();
@@ -278,6 +296,11 @@ namespace Datadog.Trace.Ci.Configuration
         public int[]? DynamicFlakyRetryCounts { get; }
 
         /// <summary>
+        /// Gets the OS and runtime tag values from DD_TEST_OPTIMIZATION_RUNTIME_TAGS that replace the detected ones, keyed by tag name.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> RuntimeTags { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the Impacted Tests Detection feature is enabled.
         /// </summary>
         public bool? ImpactedTestsDetectionEnabled { get; private set; }
@@ -387,6 +410,42 @@ namespace Datadog.Trace.Ci.Configuration
             }
 
             return ParsingResult<int[]>.Failure();
+        }
+
+        private static ParsingResult<IReadOnlyDictionary<string, string>> ParseRuntimeTags(string value)
+        {
+            // Empty and invalid values set no override instead of falling back to a lower-priority source
+            var tags = new Dictionary<string, string>();
+            if (StringUtil.IsNullOrWhiteSpace(value))
+            {
+                return ParsingResult<IReadOnlyDictionary<string, string>>.Success(tags);
+            }
+
+            JObject overrides;
+            try
+            {
+                using var reader = new JsonTextReader(new StringReader(value)) { DateParseHandling = DateParseHandling.None, ArrayPool = JsonArrayPool.Shared };
+                overrides = JObject.Load(reader);
+                while (reader.Read())
+                {
+                    // validate no trailing content
+                }
+            }
+            catch (JsonException)
+            {
+                Log.Warning("TestOptimizationSettings: Ignoring DD_TEST_OPTIMIZATION_RUNTIME_TAGS={Value}, expected a JSON object.", value);
+                return ParsingResult<IReadOnlyDictionary<string, string>>.Success(tags);
+            }
+
+            foreach (var tag in OverridableRuntimeTags)
+            {
+                if (overrides[tag] is JValue { Type: JTokenType.String, Value: string tagValue } && tagValue.Trim() is { Length: > 0 } trimmedValue)
+                {
+                    tags[tag] = trimmedValue;
+                }
+            }
+
+            return ParsingResult<IReadOnlyDictionary<string, string>>.Success(tags);
         }
 
         private TracerSettings InitializeTracerSettings()

@@ -95,7 +95,7 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
     private static string BuildFingerprint(ITestOptimization testOptimization, string testBundle)
     {
         var settings = testOptimization.Settings.TracerSettings.Manager.InitialMutableSettings;
-        var framework = FrameworkDescription.Instance;
+        var runtimeTags = TestOptimizationRuntimeTags.Create(testOptimization);
         var ciValues = testOptimization.CIValues;
         var builder = new StringBuilder();
         Append(builder, "v", "2");
@@ -105,12 +105,12 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
         Append(builder, "sha", ciValues.Commit ?? string.Empty);
         Append(builder, "test_level", TestLevel);
         Append(builder, Tags.TestTags.Bundle, testBundle);
-        Append(builder, Tags.CommonTags.OSPlatform, framework.OSPlatform);
-        Append(builder, Tags.CommonTags.OSVersion, testOptimization.HostInfo.GetOperatingSystemVersion());
-        Append(builder, Tags.CommonTags.OSArchitecture, framework.OSArchitecture);
-        Append(builder, Tags.CommonTags.RuntimeName, framework.Name);
-        Append(builder, Tags.CommonTags.RuntimeVersion, framework.ProductVersion);
-        Append(builder, Tags.CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+        Append(builder, Tags.CommonTags.OSPlatform, runtimeTags.OSPlatform);
+        Append(builder, Tags.CommonTags.OSVersion, runtimeTags.OSVersion);
+        Append(builder, Tags.CommonTags.OSArchitecture, runtimeTags.OSArchitecture);
+        Append(builder, Tags.CommonTags.RuntimeName, runtimeTags.RuntimeName);
+        Append(builder, Tags.CommonTags.RuntimeVersion, runtimeTags.RuntimeVersion);
+        Append(builder, Tags.CommonTags.RuntimeArchitecture, runtimeTags.RuntimeArchitecture);
         AppendCustomTestConfigurations(builder, settings.GlobalTags);
 
         var payload = Encoding.UTF8.GetBytes(builder.ToString());

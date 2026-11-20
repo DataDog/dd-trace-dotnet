@@ -268,6 +268,13 @@ internal static partial class ConfigurationKeys
         public const string TestManagementEnabled = "DD_TEST_MANAGEMENT_ENABLED";
 
         /// <summary>
+        /// Configuration key for a JSON object that overrides the detected operating system and runtime tags of test events and of
+        /// the configurations sent to the backend, for example <c>{"os.version":"6.12.0"}</c>. Supported keys are <c>os.platform</c>,
+        /// <c>os.architecture</c>, <c>os.version</c>, <c>runtime.name</c>, <c>runtime.version</c>, and <c>runtime.architecture</c>.
+        /// </summary>
+        public const string TestOptimizationRuntimeTags = "DD_TEST_OPTIMIZATION_RUNTIME_TAGS";
+
+        /// <summary>
         /// Configuration key for set the test session name
         /// </summary>
         public const string TestSessionName = "DD_TEST_SESSION_NAME";

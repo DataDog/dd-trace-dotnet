@@ -2703,6 +2703,17 @@ supportedConfigurations:
     product: CIVisibility
     const_name: TestManagementEnabled
     documentation: Configuration key for enabling or disabling the Test Management feature.
+  DD_TEST_OPTIMIZATION_RUNTIME_TAGS:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: TestOptimizationRuntimeTags
+    documentation: |-
+      Configuration key for a JSON object that overrides the detected operating system and runtime tags of test events and of
+      the configurations sent to the backend, for example <c>{"os.version":"6.12.0"}</c>. Supported keys are <c>os.platform</c>,
+      <c>os.architecture</c>, <c>os.version</c>, <c>runtime.name</c>, <c>runtime.version</c>, and <c>runtime.architecture</c>.
   DD_TEST_SESSION_NAME:
   - implementation: A
     scope: managed

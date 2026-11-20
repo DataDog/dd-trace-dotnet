@@ -237,14 +237,16 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private TestsConfigurations GetTestConfigurations(bool skipFrameworkInfo = false, string? testBundle = null)
     {
-        var framework = FrameworkDescription.Instance;
+        var runtimeTags = TestOptimizationRuntimeTags.Create(_testOptimization);
+        var overrides = _testOptimization.Settings.RuntimeTags;
+        string? Override(string tag) => overrides.TryGetValue(tag, out var value) ? value : null;
         return new TestsConfigurations(
-            framework.OSPlatform,
-            _testOptimization.HostInfo.GetOperatingSystemVersion(),
-            framework.OSArchitecture,
-            skipFrameworkInfo ? null : framework.Name,
-            skipFrameworkInfo ? null : framework.ProductVersion,
-            skipFrameworkInfo ? null : framework.ProcessArchitecture,
+            runtimeTags.OSPlatform,
+            runtimeTags.OSVersion,
+            runtimeTags.OSArchitecture,
+            skipFrameworkInfo ? Override(Tags.CommonTags.RuntimeName) : runtimeTags.RuntimeName,
+            skipFrameworkInfo ? Override(Tags.CommonTags.RuntimeVersion) : runtimeTags.RuntimeVersion,
+            skipFrameworkInfo ? Override(Tags.CommonTags.RuntimeArchitecture) : runtimeTags.RuntimeArchitecture,
             _customConfigurations,
             testBundle);
     }
