@@ -32,9 +32,10 @@ jobs:
             WEEK_NUM="${{ inputs.override_week }}"
           else
             # Count continuously across ISO years to keep the two-week cadence.
-            # The Unix epoch began on a Thursday, three days into the Monday-based week.
             SECONDS_PER_DAY=$((24 * 60 * 60))
             UNIX_SECONDS=$(date -u +%s)
+            # Add three days to count from the Monday before the Unix epoch
+            # (a Thursday). The week number advances at midnight UTC on Mondays.
             WEEK_NUM=$(( (UNIX_SECONDS + 3 * SECONDS_PER_DAY) / (7 * SECONDS_PER_DAY) ))
           fi
           WEEK_NUM=$((10#$WEEK_NUM)) # Convert to decimal to handle leading zeros
