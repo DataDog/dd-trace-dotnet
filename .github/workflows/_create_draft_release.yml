@@ -35,7 +35,7 @@ jobs:
     # .github/chainguard/self.github.create-draft-release.sts.yaml
     permissions:
       contents: read # actions/checkout uses the workflow token to clone
-      id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
+      id-token: write # required for dd-octo-sts OIDC, Datadog Workload Identity Federation (publish-debug-symbols), and NuGet trusted publishing
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

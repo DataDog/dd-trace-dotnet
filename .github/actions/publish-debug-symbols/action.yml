@@ -1,9 +1,11 @@
 name: "Publish native debug symbols"
 description: 'Publish native debug symbols'
 
-# Datadog symbol-upload API keys are minted at runtime via dd-sts. The calling JOB must grant
-# `permissions: id-token: write` — that cannot be set here. The dd-sts trust policies live in dd-source:
-# domains/seceng/sit/apps/apis/dd-sts/config/policies/us1.ddbuild.io/dd-trace-dotnet-api-key-*.yaml
+# Datadog symbol-upload API keys are obtained at runtime via Datadog GitHub Workload Identity Federation (WIF)
+# intake mappings, which return managed API keys (rotated weekly). The calling JOB must grant
+# `permissions: id-token: write` (that cannot be set here), and must expose the target org UUIDs as
+# `DD_ORG_UUID_<REGION>` variables (set on the `publish-debug-symbols-env` environment).
+# The intake mappings are named `dd-trace-dotnet-api-key-<region>` in each Datadog org.
 
 inputs:
   artifacts_path:
@@ -13,50 +15,84 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Mint short-lived Datadog API keys per region via dd-sts
-    # The trust policies live in dd-source:
-    # domains/seceng/sit/apps/apis/dd-sts/config/policies/us1.ddbuild.io/dd-trace-dotnet-api-key-*.yaml
+    # Fail fast with a clear error if any org UUID variable is missing, rather than an opaque WIF exchange failure
+    - name: Check Datadog org UUID variables
+      shell: bash
+      env:
+        DD_ORG_UUID_PREPROD: ${{ vars.DD_ORG_UUID_PREPROD }}
+        DD_ORG_UUID_US1: ${{ vars.DD_ORG_UUID_US1 }}
+        DD_ORG_UUID_US3: ${{ vars.DD_ORG_UUID_US3 }}
+        DD_ORG_UUID_US5: ${{ vars.DD_ORG_UUID_US5 }}
+        DD_ORG_UUID_EU1: ${{ vars.DD_ORG_UUID_EU1 }}
+        DD_ORG_UUID_AP1: ${{ vars.DD_ORG_UUID_AP1 }}
+        DD_ORG_UUID_AP2: ${{ vars.DD_ORG_UUID_AP2 }}
+        DD_ORG_UUID_UK1: ${{ vars.DD_ORG_UUID_UK1 }}
+      run: |
+        missing=0
+        for name in DD_ORG_UUID_PREPROD DD_ORG_UUID_US1 DD_ORG_UUID_US3 DD_ORG_UUID_US5 DD_ORG_UUID_EU1 DD_ORG_UUID_AP1 DD_ORG_UUID_AP2 DD_ORG_UUID_UK1; do
+          if [ -z "${!name}" ]; then
+            echo "::error::Variable $name is not set (expected on the publish-debug-symbols-env environment)"
+            missing=1
+          fi
+        done
+        exit $missing
+
+    # Obtain Datadog API keys per region via Workload Identity Federation intake mappings
     - name: Get Datadog credentials (preprod)
-      id: dd-sts-preprod
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-preprod
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-preprod
+        org_uuid: ${{ vars.DD_ORG_UUID_PREPROD }}
+        site: datad0g.com
 
     - name: Get Datadog credentials (us1)
-      id: dd-sts-us1
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-us1
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-us1
+        org_uuid: ${{ vars.DD_ORG_UUID_US1 }}
+        site: datadoghq.com
 
     - name: Get Datadog credentials (us3)
-      id: dd-sts-us3
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-us3
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-us3
+        org_uuid: ${{ vars.DD_ORG_UUID_US3 }}
+        site: us3.datadoghq.com
 
     - name: Get Datadog credentials (us5)
-      id: dd-sts-us5
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-us5
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-us5
+        org_uuid: ${{ vars.DD_ORG_UUID_US5 }}
+        site: us5.datadoghq.com
 
     - name: Get Datadog credentials (eu1)
-      id: dd-sts-eu1
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-eu1
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-eu1
+        org_uuid: ${{ vars.DD_ORG_UUID_EU1 }}
+        site: datadoghq.eu
 
     - name: Get Datadog credentials (ap1)
-      id: dd-sts-ap1
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-ap1
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-ap1
+        org_uuid: ${{ vars.DD_ORG_UUID_AP1 }}
+        site: ap1.datadoghq.com
 
     - name: Get Datadog credentials (ap2)
-      id: dd-sts-ap2
-      uses: DataDog/dd-sts-action@639d841c72f15e4e77747bd726ef8105ce971da2 # v1.0.5
+      id: wif-ap2
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
       with:
-        policy: dd-trace-dotnet-api-key-ap2
+        org_uuid: ${{ vars.DD_ORG_UUID_AP2 }}
+        site: ap2.datadoghq.com
+
+    - name: Get Datadog credentials (uk1)
+      id: wif-uk1
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
+      with:
+        org_uuid: ${{ vars.DD_ORG_UUID_UK1 }}
+        site: uk1.datadoghq.com
 
     # datadog-ci needs the version 20 (https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L6)
     - name: Install Node
@@ -129,7 +165,7 @@ runs:
         BOLD_GREEN: "\e[1;32m"
         RESET: "\e[0m"
       run: |
-        for i in "datad0g.com ${{ steps.dd-sts-preprod.outputs.api_key }}" "datadoghq.com ${{ steps.dd-sts-us1.outputs.api_key }}" "us3.datadoghq.com ${{ steps.dd-sts-us3.outputs.api_key }}" "us5.datadoghq.com ${{ steps.dd-sts-us5.outputs.api_key }}" "datadoghq.eu ${{ steps.dd-sts-eu1.outputs.api_key }}" "ap1.datadoghq.com ${{ steps.dd-sts-ap1.outputs.api_key }}" "ap2.datadoghq.com ${{ steps.dd-sts-ap2.outputs.api_key }}"; do
+        for i in "datad0g.com ${{ steps.wif-preprod.outputs.api_key }}" "datadoghq.com ${{ steps.wif-us1.outputs.api_key }}" "us3.datadoghq.com ${{ steps.wif-us3.outputs.api_key }}" "us5.datadoghq.com ${{ steps.wif-us5.outputs.api_key }}" "datadoghq.eu ${{ steps.wif-eu1.outputs.api_key }}" "ap1.datadoghq.com ${{ steps.wif-ap1.outputs.api_key }}" "ap2.datadoghq.com ${{ steps.wif-ap2.outputs.api_key }}" "uk1.datadoghq.com ${{ steps.wif-uk1.outputs.api_key }}"; do
           site=$(echo $i | cut -d' ' -f1)
           api_key=$(echo $i | cut -d' ' -f2)
           echo -e "${BOLD_GREEN}Pushing symbols to $site${RESET}"
