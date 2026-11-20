@@ -17,6 +17,7 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -204,6 +205,73 @@ public class CoordinatedSamplingTests
 
         Assert.Equal(4, sampler.SampleCalls);
         Assert.Equal(4, globalLimiter.ShouldSampleCallCount);
+    }
+
+    [Fact]
+    public async Task EachEntryPointIsItsOwnParentAndSharedChildFollowsEveryParent()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+
+        var globalLimiter = new GlobalRateLimiterMock(true);
+        var childSampler = new CountingSampler(false);
+        var child = CreateProcessor(CreateLogProbe("probe-b", captureSnapshot: true), globalLimiter);
+        CountingSampler[] parentSamplers = [new(true), new(true), new(true)];
+        string[] parentIds = ["probe-a", "probe-c", "probe-d"];
+        var parents = parentIds
+                     .Select(id => CreateProcessor(CreateLogProbe(id, captureSnapshot: true), globalLimiter))
+                     .ToArray();
+
+        var snapshots = 0;
+        for (var i = 0; i < parents.Length; i++)
+        {
+            // Entry point i calls B, in its own trace.
+            using (tracer.StartActive($"entry-{i}"))
+            {
+                snapshots += TryBeginAndDispose(parents[i], parentSamplers[i]) ? 1 : 0;
+                snapshots += TryBeginAndDispose(child, childSampler) ? 1 : 0;
+            }
+        }
+
+        // One snapshot per parent plus one from B for each of the three traces.
+        snapshots.Should().Be(6);
+        parentSamplers.Select(static sampler => sampler.SampleCalls).Should().AllBeEquivalentTo(1);
+        childSampler.SampleCalls.Should().Be(0);
+        globalLimiter.ShouldSampleCallCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GlobalLimitAppliesToParentDecisionsOnly()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+
+        // Only two parent decisions fit in the global budget.
+        var globalLimiter = new GlobalRateLimiterMock(true, budget: 2);
+        var sampler = new CountingSampler(true);
+        var parent = CreateProcessor(CreateLogProbe("parent", captureSnapshot: true), globalLimiter);
+        string[] childIds = ["child-1", "child-2"];
+        var children = childIds
+                      .Select(id => CreateProcessor(CreateLogProbe(id, captureSnapshot: true), globalLimiter))
+                      .ToArray();
+
+        var snapshotsPerTrace = new int[3];
+        for (var i = 0; i < snapshotsPerTrace.Length; i++)
+        {
+            using (tracer.StartActive($"request-{i}"))
+            {
+                snapshotsPerTrace[i] += TryBeginAndDispose(parent, sampler) ? 1 : 0;
+                foreach (var child in children)
+                {
+                    snapshotsPerTrace[i] += TryBeginAndDispose(child, sampler) ? 1 : 0;
+                }
+            }
+        }
+
+        // Children of admitted parents don't consume budget; the third parent and its children are dropped.
+        snapshotsPerTrace.Should().Equal(3, 3, 0);
+        globalLimiter.ShouldSampleCallCount.Should().Be(3);
+        sampler.SampleCalls.Should().Be(2);
     }
 
     [Theory]
@@ -720,7 +788,7 @@ public class CoordinatedSamplingTests
         }
     }
 
-    private sealed class GlobalRateLimiterMock(bool result) : IDebuggerGlobalRateLimiter
+    private sealed class GlobalRateLimiterMock(bool result, int budget = int.MaxValue) : IDebuggerGlobalRateLimiter
     {
         private int _shouldSampleCallCount;
 
@@ -728,8 +796,7 @@ public class CoordinatedSamplingTests
 
         public bool ShouldSampleSnapshot(string probeId)
         {
-            Interlocked.Increment(ref _shouldSampleCallCount);
-            return result;
+            return Interlocked.Increment(ref _shouldSampleCallCount) <= budget && result;
         }
 
         public void Initialize()
