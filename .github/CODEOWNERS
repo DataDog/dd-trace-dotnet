@@ -11,6 +11,7 @@
 /*                                        @DataDog/apm-dotnet
 
 # Repository infrastructure
+/.agents/                                 @DataDog/apm-dotnet
 /.azure-pipelines/                        @DataDog/apm-dotnet
 /.claude/                                 @DataDog/apm-dotnet
 /.devcontainer/                           @DataDog/apm-dotnet
