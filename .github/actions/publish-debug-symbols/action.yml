@@ -26,9 +26,10 @@ runs:
         DD_ORG_UUID_EU1: ${{ vars.DD_ORG_UUID_EU1 }}
         DD_ORG_UUID_AP1: ${{ vars.DD_ORG_UUID_AP1 }}
         DD_ORG_UUID_AP2: ${{ vars.DD_ORG_UUID_AP2 }}
+        DD_ORG_UUID_UK1: ${{ vars.DD_ORG_UUID_UK1 }}
       run: |
         missing=0
-        for name in DD_ORG_UUID_PREPROD DD_ORG_UUID_US1 DD_ORG_UUID_US3 DD_ORG_UUID_US5 DD_ORG_UUID_EU1 DD_ORG_UUID_AP1 DD_ORG_UUID_AP2; do
+        for name in DD_ORG_UUID_PREPROD DD_ORG_UUID_US1 DD_ORG_UUID_US3 DD_ORG_UUID_US5 DD_ORG_UUID_EU1 DD_ORG_UUID_AP1 DD_ORG_UUID_AP2 DD_ORG_UUID_UK1; do
           if [ -z "${!name}" ]; then
             echo "::error::Variable $name is not set (expected on the publish-debug-symbols-env environment)"
             missing=1
@@ -85,6 +86,13 @@ runs:
       with:
         org_uuid: ${{ vars.DD_ORG_UUID_AP2 }}
         site: ap2.datadoghq.com
+
+    - name: Get Datadog credentials (uk1)
+      id: wif-uk1
+      uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
+      with:
+        org_uuid: ${{ vars.DD_ORG_UUID_UK1 }}
+        site: uk1.datadoghq.com
 
     # datadog-ci needs the version 20 (https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L6)
     - name: Install Node
@@ -157,7 +165,7 @@ runs:
         BOLD_GREEN: "\e[1;32m"
         RESET: "\e[0m"
       run: |
-        for i in "datad0g.com ${{ steps.wif-preprod.outputs.api_key }}" "datadoghq.com ${{ steps.wif-us1.outputs.api_key }}" "us3.datadoghq.com ${{ steps.wif-us3.outputs.api_key }}" "us5.datadoghq.com ${{ steps.wif-us5.outputs.api_key }}" "datadoghq.eu ${{ steps.wif-eu1.outputs.api_key }}" "ap1.datadoghq.com ${{ steps.wif-ap1.outputs.api_key }}" "ap2.datadoghq.com ${{ steps.wif-ap2.outputs.api_key }}"; do
+        for i in "datad0g.com ${{ steps.wif-preprod.outputs.api_key }}" "datadoghq.com ${{ steps.wif-us1.outputs.api_key }}" "us3.datadoghq.com ${{ steps.wif-us3.outputs.api_key }}" "us5.datadoghq.com ${{ steps.wif-us5.outputs.api_key }}" "datadoghq.eu ${{ steps.wif-eu1.outputs.api_key }}" "ap1.datadoghq.com ${{ steps.wif-ap1.outputs.api_key }}" "ap2.datadoghq.com ${{ steps.wif-ap2.outputs.api_key }}" "uk1.datadoghq.com ${{ steps.wif-uk1.outputs.api_key }}"; do
           site=$(echo $i | cut -d' ' -f1)
           api_key=$(echo $i | cut -d' ' -f2)
           echo -e "${BOLD_GREEN}Pushing symbols to $site${RESET}"
