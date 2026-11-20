@@ -165,19 +165,30 @@ internal sealed class MetricReaderHandler
     public List<MetricPoint> GetMetricPointsSnapshot()
     {
         var list = new List<MetricPoint>();
+        List<MetricState>? completed = null;
         KeyValuePair<MetricStreamIdentity, MetricState>[] pairs;
 
         // Streams are chosen under the lock, so a stream completing meanwhile is either still in _streams or
         // already queued, never missed. A stream completing after this point is exported again next time.
+        // Points are built outside the lock: Meter.Dispose() takes it on the application's thread.
         lock (_completionLock)
         {
-            // Last export of the streams whose instrument completed since the previous collection.
-            while (_completedStreams.TryDequeue(out var completed))
+            if (_completedStreams.Count > 0)
             {
-                completed.BuildPoints(list);
+                completed = new List<MetricState>(_completedStreams);
+                _completedStreams.Clear();
             }
 
             pairs = _streams.ToArray();
+        }
+
+        // Last export of the streams whose instrument completed since the previous collection.
+        if (completed is not null)
+        {
+            foreach (var completedState in completed)
+            {
+                completedState.BuildPoints(list);
+            }
         }
 
         foreach (var (_, state) in pairs)
