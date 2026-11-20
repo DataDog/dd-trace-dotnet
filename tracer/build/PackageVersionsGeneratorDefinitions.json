@@ -1018,6 +1018,18 @@
     ]
   },
   {
+    "IntegrationName": "AzureServiceBusLegacy",
+    "SampleProjectName": "Samples.AzureServiceBus.Legacy",
+    "NugetPackageSearchName": "Microsoft.Azure.ServiceBus",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "6.0.0",
+    "SpecificVersions": [
+      "1.0.0",
+      "3.*.*",
+      "5.*.*"
+    ]
+  },
+  {
     "IntegrationName": "AzureEventHubs",
     "SampleProjectName": "Samples.AzureEventHubs",
     "NugetPackageSearchName": "Azure.Messaging.EventHubs",

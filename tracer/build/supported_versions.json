@@ -542,6 +542,23 @@
     ]
   },
   {
+    "integrationName": "AzureServiceBus",
+    "assemblyName": "Microsoft.Azure.ServiceBus",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Azure.ServiceBus",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.0.0",
+        "minVersionTestedInclusive": "1.0.0",
+        "maxVersionSupportedInclusive": "5.2.0",
+        "maxVersionAvailableInclusive": "5.2.0",
+        "maxVersionTestedInclusive": "5.2.0"
+      }
+    ]
+  },
+  {
     "integrationName": "CosmosDb",
     "assemblyName": "Microsoft.Azure.Cosmos.Client",
     "minAssemblyVersionInclusive": "3.6.0",
