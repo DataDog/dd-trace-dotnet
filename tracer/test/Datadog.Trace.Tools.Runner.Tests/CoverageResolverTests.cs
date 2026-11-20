@@ -285,6 +285,59 @@ public class CoverageResolverTests
     }
 
     /// <summary>
+    /// Verifies that a rewrite resolves an enum from a package asset that a deps.json declares but the output directory doesn't contain.
+    /// </summary>
+    [Fact]
+    public void WriteTargetAssemblyResolvesEnumFromDeclaredPackageAsset()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var packagesRoot = Path.Combine(directory.Path, "packages");
+        var packageAssemblyDirectory = Path.Combine(packagesRoot, "package.enums", "1.2.3", "lib", "net6.0");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(packageAssemblyDirectory);
+        var enumAssembly = CreateEnumAssembly(packageAssemblyDirectory, "Package.Enums", new Version(1, 0, 0, 0));
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.deps.json"), CreateDepsJson("Package.Enums", "1.2.3", "lib/net6.0/Package.Enums.dll"));
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.dev.json"), CreateRuntimeConfigWithProbingPaths(packagesRoot));
+        var assemblyPath = CopyCoverageFixture(outputDirectory);
+        using var resolver = CreateResolver(outputDirectory);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+        AddOptionalParameterWithEnumDefault(assembly.MainModule, enumAssembly, "MethodWithPackageEnumDefault");
+
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true);
+
+        using var rewrittenAssembly = AssemblyDefinition.ReadAssembly(assemblyPath);
+        var method = rewrittenAssembly.MainModule.GetTypes().SelectMany(type => type.Methods).Single(method => method.Name == "MethodWithPackageEnumDefault");
+        method.Parameters.Single().Constant.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Verifies that package folders follow the host's runtimeconfig probing paths, then the NuGet global packages folder.
+    /// </summary>
+    [Theory]
+    [CombinatorialData]
+    public void PackageRootsUseRuntimeConfigProbingPathsBeforeNuGetGlobalPackages(bool nugetPackagesIsSet)
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var probingPath = Path.Combine(directory.Path, "probing");
+        var nugetPackages = Path.Combine(directory.Path, "nuget-packages");
+        var userProfile = Path.Combine(directory.Path, "profile");
+        var defaultNuGetPackages = Path.Combine(userProfile, ".nuget", "packages");
+        string[] directories = [outputDirectory, probingPath, nugetPackages, defaultNuGetPackages];
+        foreach (var path in directories)
+        {
+            Directory.CreateDirectory(path);
+        }
+
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfigWithProbingPaths(probingPath));
+
+        var roots = PackageAssemblyLocator.GetPackageRoots(outputDirectory, name => nugetPackagesIsSet && name == "NUGET_PACKAGES" ? nugetPackages : null, userProfile);
+
+        roots.Should().Equal(probingPath, nugetPackagesIsSet ? nugetPackages : defaultNuGetPackages);
+    }
+
+    /// <summary>
     /// Verifies the Windows failure mode from issue 8592: resolved dependency handles are released.
     /// </summary>
     [SkippableFact]
@@ -407,7 +460,7 @@ public class CoverageResolverTests
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
         using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, LockAcquisitionTimeout);
 
-        var exception = CaptureExceptionFromThread(() => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null));
+        var exception = CaptureExceptionFromThread(() => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true));
 
         exception.Should().BeOfType<IOException>();
     }
@@ -428,7 +481,7 @@ public class CoverageResolverTests
 
         AddOptionalParameterWithUnresolvableEnum(assembly.MainModule);
 
-        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true);
 
         action.Should().Throw<AssemblyResolutionException>();
         File.ReadAllBytes(assemblyPath).Should().Equal(originalAssembly);
@@ -453,7 +506,7 @@ public class CoverageResolverTests
         var stagingPaths = new List<string>();
         string stagedAssemblyPath = null;
 
-        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true, (source, destination, backup) =>
         {
             stagingPaths.Add(source);
             if (destination == assemblyPath)
@@ -501,7 +554,7 @@ public class CoverageResolverTests
         using var resolver = CreateResolver(directory.Path);
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
 
-        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true);
 
         File.GetUnixFileMode(assemblyPath).Should().Be(expectedMode);
     }
@@ -525,7 +578,7 @@ public class CoverageResolverTests
         assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
         var replaceCallCount = 0;
 
-        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
+        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, writePortablePdb: true, (source, destination, backup) =>
         {
             replaceCallCount++;
             if (replaceCallCount == 2)
@@ -605,15 +658,52 @@ public class CoverageResolverTests
     }
 
     private static void AddOptionalParameterWithUnresolvableEnum(ModuleDefinition module)
+        => AddOptionalParameterWithEnumDefault(module, new AssemblyNameReference("Missing.Enums", new Version(1, 0, 0, 0)), "MethodWithMissingEnumDefault");
+
+    /// <summary>
+    /// Adds a method whose optional parameter uses an enum from another assembly, which Cecil must resolve to write the default value.
+    /// </summary>
+    private static void AddOptionalParameterWithEnumDefault(ModuleDefinition module, AssemblyNameReference enumAssembly, string methodName)
     {
-        var missingAssembly = new AssemblyNameReference("Missing.Enums", new Version(1, 0, 0, 0));
-        module.AssemblyReferences.Add(missingAssembly);
-        var missingEnum = new TypeReference("Missing.Enums", "MissingEnum", module, missingAssembly, true);
-        var method = new MethodDefinition("MethodWithMissingEnumDefault", Mono.Cecil.MethodAttributes.Public | Mono.Cecil.MethodAttributes.Static, module.TypeSystem.Void);
-        method.Parameters.Add(new ParameterDefinition("value", Mono.Cecil.ParameterAttributes.Optional | Mono.Cecil.ParameterAttributes.HasDefault, missingEnum) { Constant = 0 });
+        module.AssemblyReferences.Add(enumAssembly);
+        var enumType = new TypeReference(enumAssembly.Name, "PackageEnum", module, enumAssembly, true);
+        var method = new MethodDefinition(methodName, Mono.Cecil.MethodAttributes.Public | Mono.Cecil.MethodAttributes.Static, module.TypeSystem.Void);
+        method.Parameters.Add(new ParameterDefinition("value", Mono.Cecil.ParameterAttributes.Optional | Mono.Cecil.ParameterAttributes.HasDefault, enumType) { Constant = 0 });
         method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
         module.Types.First(type => type.Name != "<Module>").Methods.Add(method);
     }
+
+    private static AssemblyNameReference CreateEnumAssembly(string directory, string assemblyName, Version version)
+    {
+        using var assembly = AssemblyDefinition.CreateAssembly(new AssemblyNameDefinition(assemblyName, version), assemblyName, ModuleKind.Dll);
+        var module = assembly.MainModule;
+        var enumType = new TypeDefinition(assemblyName, "PackageEnum", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Sealed, module.ImportReference(typeof(Enum)));
+        enumType.Fields.Add(new FieldDefinition("value__", Mono.Cecil.FieldAttributes.Public | Mono.Cecil.FieldAttributes.SpecialName | Mono.Cecil.FieldAttributes.RTSpecialName, module.TypeSystem.Int32));
+        module.Types.Add(enumType);
+        assembly.Write(Path.Combine(directory, assemblyName + ".dll"));
+        return new AssemblyNameReference(assemblyName, version);
+    }
+
+    private static string CreateDepsJson(string packageName, string packageVersion, string runtimeAssetPath)
+    {
+        var library = $"{packageName}/{packageVersion}";
+        return $$"""
+                 {
+                   "runtimeTarget": { "name": ".NETCoreApp,Version=v6.0" },
+                   "targets": {
+                     ".NETCoreApp,Version=v6.0": {
+                       "{{library}}": { "runtime": { "{{runtimeAssetPath}}": {} } }
+                     }
+                   },
+                   "libraries": {
+                     "{{library}}": { "type": "package", "path": "{{library.ToLowerInvariant()}}" }
+                   }
+                 }
+                 """;
+    }
+
+    private static string CreateRuntimeConfigWithProbingPaths(params string[] probingPaths)
+        => $"{{ \"runtimeOptions\": {{ \"additionalProbingPaths\": [{string.Join(", ", probingPaths.Select(path => "\"" + path.Replace("\\", "\\\\") + "\""))}] }} }}";
 
     private static string CopyCoverageFixture(string directory, string fileName = "CoverageRewriterAssembly.dll")
     {
