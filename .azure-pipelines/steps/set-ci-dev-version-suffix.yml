@@ -1,0 +1,14 @@
+steps:
+- bash: ./tracer/build/set-ci-dev-version-suffix.sh "$SOURCE_BRANCH" "$SOURCE_SHA"
+  displayName: Set CI dev version suffix
+  condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+  env:
+    SOURCE_BRANCH: $(OriginalSourceBranch)
+    SOURCE_SHA: $(OriginalCommitId)
+
+- powershell: tracer/build/set-ci-dev-version-suffix.ps1 -Branch "$env:SOURCE_BRANCH" -Sha "$env:SOURCE_SHA"
+  displayName: Set CI dev version suffix
+  condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+  env:
+    SOURCE_BRANCH: $(OriginalSourceBranch)
+    SOURCE_SHA: $(OriginalCommitId)

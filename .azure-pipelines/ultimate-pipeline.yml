@@ -114,6 +114,7 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  OriginalSourceBranch: $[coalesce(variables['System.PullRequest.SourceBranch'], variables['Build.SourceBranch'])]
   TESTCONTAINERS_RYUK_DISABLED: true
   # Keep synchronized with testcontainers-ryuk in docker-compose.yml and Testcontainers 4.14.0.
   TESTCONTAINERS_RYUK_CONTAINER_IMAGE: 'testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0'
@@ -4811,6 +4812,7 @@ stages:
           # authenticated, higher-rate-limit artifact download; PR branches cannot, so they
           # use the anonymous-download variant of the workflow instead.
           WORKFLOW="create-system-test-docker-base-images-master.yml"
+          EXTRA_INPUTS=""
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             WORKFLOW="create-system-test-docker-base-images-pr.yml"
             PR_JSON=$(curl -fsS $(CURL_RETRY_FLAGS) \
@@ -4822,6 +4824,11 @@ stages:
               BRANCH_NAME="$PR_SOURCE_BRANCH"
               BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
               REF="refs/heads/$BRANCH_NAME"
+              if ! [[ $COMMIT_SHA =~ ^[0-9a-f]{40,}$ ]]; then
+                echo "Expected a commit SHA in COMMIT_SHA, but got '$COMMIT_SHA'"
+                exit 1
+              fi
+              EXTRA_INPUTS=",\"commit_sha\":\"$COMMIT_SHA\""
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
@@ -4840,7 +4847,7 @@ stages:
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/$WORKFLOW/dispatches \
-            -d "{\"ref\":\"$REF\",\"inputs\":{\"azdo_build_id\":\"$(Build.BuildId)\",\"branch_name\":\"$BRANCH_NAME\"}}"
+            -d "{\"ref\":\"$REF\",\"inputs\":{\"azdo_build_id\":\"$(Build.BuildId)\",\"branch_name\":\"$BRANCH_NAME\"$EXTRA_INPUTS}}"
         displayName: Start the generation of docker base images on GitHub Actions worfklow
         condition: |
           or(
@@ -4850,6 +4857,7 @@ stages:
         env:
           GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
           PR_SOURCE_BRANCH: $(System.PullRequest.SourceBranch)
+          COMMIT_SHA: $(OriginalCommitId)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))
@@ -5366,6 +5374,49 @@ stages:
             echo Moving $PACKAGE_NAME to system-tests/binaries
             mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
           displayName: Move dotnet binary to system test folder
+
+        # The dotnet weblog healthcheck reports the assembly version, which never carries a prerelease
+        # suffix, so version-suffixed CI builds (-dev.ci.g<sha>, -prerelease) fail system-tests' version
+        # check against the image label, which is the informational version. While this build carries a
+        # version suffix, patch the healthcheck to report the informational version too, like
+        # GetAssemblyVersion does for the label. Drop this step once system-tests reports the
+        # informational version from the healthcheck itself.
+        - script: |
+            set -e
+            cd system-tests
+            if ! ls binaries/datadog-dotnet-apm-*.tar.gz 2>/dev/null | grep -qE '^binaries/datadog-dotnet-apm-[0-9]+\.[0-9]+\.[0-9]+-'; then
+              echo "The tracer package carries no version suffix - skipping the healthcheck patch"
+              exit 0
+            fi
+            if grep -q AssemblyInformationalVersionAttribute utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs; then
+              echo "The system-tests healthcheck already reports the informational version"
+              exit 0
+            fi
+            patch_file=$(mktemp)
+            cat > "$patch_file" <<'PATCH'
+            diff --git a/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs b/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            --- a/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            +++ b/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            @@ -11,7 +11,9 @@
+                     {
+                         routeBuilder.MapGet("/healthcheck", async context =>
+                         {
+            -                var version = Assembly.Load("Datadog.Trace").GetName().Version?.ToString(3);
+            +                var tracer = Assembly.Load("Datadog.Trace");
+            +                var version = tracer.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0]
+            +                    ?? tracer.GetName().Version?.ToString(3);
+
+                             var data = new
+                             {
+            PATCH
+            if git apply "$patch_file"; then
+              echo "Patched the system-tests healthcheck to report the informational version"
+            else
+              echo "Could not patch the system-tests healthcheck: HealthcheckEndpoint.cs changed upstream. Remove or update this step." >&2
+              exit 1
+            fi
+            rm -f "$patch_file"
+          displayName: Patch system-tests healthcheck to report the informational version
 
         - script: |
             set -e
