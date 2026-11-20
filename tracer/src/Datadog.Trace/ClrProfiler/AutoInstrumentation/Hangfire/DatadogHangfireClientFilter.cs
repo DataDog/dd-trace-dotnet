@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
+            // Not deduplicated: a duplicate filter rewrites the same values, an Items flag would outlive a reused context.
             if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext))
             {
                 PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, null);
