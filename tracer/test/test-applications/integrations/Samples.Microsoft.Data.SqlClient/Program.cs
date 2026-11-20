@@ -25,7 +25,8 @@ namespace Samples.Microsoft.Data.SqlClient
 
         private static async Task<int> RunAsync()
         {
-            var commandFactory = new DbCommandFactory($"[Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}]");
+            var tableName = $"Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}";
+            var commandFactory = new DbCommandFactory($"[{tableName}]", $"[PK_{tableName}]");
             var commandExecutor = new MicrosoftSqlCommandExecutor();
             var cts = new CancellationTokenSource();
 
