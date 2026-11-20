@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -21,26 +21,24 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckLinenumbers(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckLinenumbers(TestAppContext app)
         {
             if (EnvironmentHelper.IsAlpine)
             {
                 throw new SkipTestException("This test is skipped on Alpine until the stack walking issue is fixed.");
             }
 
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
-            runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "1";
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 18");
+            runner.Environment.SetVariable(EnvironmentVariables.DebugInfoEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
             var expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:LineNumber |cg: |fn:CallThirdMethod |fg: |sg:()"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:LineNumber |cg: |fn:CallSecondMethod |fg: |sg:()"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:LineNumber |cg: |fn:CallFirstMethod |fg: |sg:()"));
 
-            var samples = ExtractCallStackMatching(runner.Environment.PprofDir, expectedStack).ToArray();
+            var samples = run.Profiles.CallStacks.Where(stackTrace => stackTrace.Contains(expectedStack)).ToArray();
 
             samples.Should().NotBeEmpty();
 
@@ -82,64 +80,35 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             }
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckNoLinenumbersIfDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckNoLinenumbersIfDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
-            runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "0";
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 18");
+            runner.Environment.SetVariable(EnvironmentVariables.DebugInfoEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            foreach (var profile in SamplesHelper.GetProfiles(runner.Environment.PprofDir))
-            {
-                foreach (var sample in profile.Sample)
-                {
-                    var stackTrace = sample.StackTrace(profile);
-                    for (var i = 0; i < stackTrace.FramesCount; i++)
-                    {
-                        stackTrace[i].Filename.Should().BeEmpty();
-                        stackTrace[i].Line.Should().Be(0);
-                    }
-                }
-            }
+            AssertNoLineNumbers(run.Profiles);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckLineNumberAreDisabledByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckLineNumberAreDisabledByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 18");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            foreach (var profile in SamplesHelper.GetProfiles(runner.Environment.PprofDir))
-            {
-                foreach (var sample in profile.Sample)
-                {
-                    var stackTrace = sample.StackTrace(profile);
-                    for (var i = 0; i < stackTrace.FramesCount; i++)
-                    {
-                        stackTrace[i].Filename.Should().BeEmpty();
-                        stackTrace[i].Line.Should().Be(0);
-                    }
-                }
-            }
+            AssertNoLineNumbers(run.Profiles);
         }
 
-        private static IEnumerable<StackTrace> ExtractCallStackMatching(string pprofDif, StackTrace expectedStackTrace)
+        private static void AssertNoLineNumbers(ProfileOutput profiles)
         {
-            foreach (var profile in SamplesHelper.GetProfiles(pprofDif))
+            foreach (var stackTrace in profiles.CallStacks)
             {
-                foreach (var sample in profile.Sample)
+                for (var i = 0; i < stackTrace.FramesCount; i++)
                 {
-                    var stackTrace = sample.StackTrace(profile);
-                    if (stackTrace.Contains(expectedStackTrace))
-                    {
-                        yield return stackTrace;
-                    }
+                    stackTrace[i].Filename.Should().BeEmpty();
+                    stackTrace[i].Line.Should().Be(0);
                 }
             }
         }

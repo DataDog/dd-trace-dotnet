@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
@@ -28,17 +30,17 @@ namespace Datadog.Profiler.IntegrationTests.Signature
         }
 
         [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
-        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void ValidateSignatures(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ValidateSignatures(TestAppContext app)
         {
-            CheckExceptionsInProfiles(framework, GetExceptionSamples(appName, framework, appAssembly));
+            CheckExceptionsInProfiles(app, GetExceptionSamples(app));
         }
 
         [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
-        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void ValidateAsyncStateMachineSignatures(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ValidateAsyncStateMachineSignatures(TestAppContext app)
         {
-            CheckAsyncStateMachineFrames(GetExceptionSamples(appName, framework, appAssembly));
+            CheckAsyncStateMachineFrames(GetExceptionSamples(app));
         }
 
         // On Linux/ARM64, the unwinder can degrade to a single "Unknown-Frame-Type" placeholder frame.
@@ -51,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                 && actualStack[0].ToString() == UnknownFrameType;
         }
 
-        private static void CheckAsyncStateMachineFrames((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckAsyncStateMachineFrames(IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptionSamples)
         {
             if (exceptionSamples.Any(sample => IsArm64DegradedStack(sample.Stacktrace)))
             {
@@ -97,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             frames.Should().OnlyContain(frame => !frame.FunctionAdornment.StartsWith("<."));
         }
 
-        private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckExceptionsInProfiles(TestAppContext app, IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptionSamples)
         {
             // .NET 9 has different stack trace for 64-bit
             // e.g. first frame is:
@@ -105,7 +107,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
             var os = Environment.OSVersion.Platform;
             StackTrace stack;
-            if (os == PlatformID.Unix && framework != "net8.0")
+            if (os == PlatformID.Unix && app.Framework != TestFramework.Net8)
             {
                 // BUG on Linux: invalid TKey instead of TValue
                 stack = new StackTrace(
@@ -172,18 +174,16 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             }
         }
 
-        private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
+        private IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> GetExceptionSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 20");
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            return SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            return run.Profiles.ExceptionSamples();
         }
     }
 }
