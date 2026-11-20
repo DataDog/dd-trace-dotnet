@@ -415,7 +415,7 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            if (overriddenMethods.Any(x => x.IsAbstract))
+            if (overriddenMethods.Exists(x => x.IsAbstract))
             {
                 return DuckTypeReverseProxyMissingMethodImplementationException.Create(overriddenMethods.Where(x => x.IsAbstract));
             }
