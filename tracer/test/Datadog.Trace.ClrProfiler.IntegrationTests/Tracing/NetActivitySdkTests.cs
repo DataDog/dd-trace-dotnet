@@ -57,7 +57,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
+        public Task SubmitsTraces() => RunSampleAndAssertTraces();
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWithOpenTelemetryEnvironmentVariables()
+        {
+            // The OpenTelemetry Operator hard-codes the OpenTelemetry auto-instrumentation CLSID and sets
+            // OTEL_DOTNET_AUTO_HOME when it injects .NET auto-instrumentation.
+            // Assert that we correctly load the Datadog SDK when both are set.
+            // SetEnvironmentVariable("CORECLR_PROFILER", EnvironmentTools.OpenTelemetryProfilerClsId);
+            // SetEnvironmentVariable("COR_PROFILER", EnvironmentTools.OpenTelemetryProfilerClsId);
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_HOME", EnvironmentHelper.MonitoringHome);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", null);
+
+            await RunSampleAndAssertTraces();
+        }
+
+        private async Task RunSampleAndAssertTraces()
         {
             SetEnvironmentVariable("DD_TRACE_DISABLED_ACTIVITY_SOURCES", "Disabled.By.ExactMatch,*.By.Glob*");
 
@@ -83,7 +101,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(NetActivitySdkTests));
+                                  .UseFileName(nameof(NetActivitySdkTests))
+                                  .DisableRequireUniquePrefix();
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
             }
