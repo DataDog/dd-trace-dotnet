@@ -3,13 +3,13 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "CounterMetric.h"
 #include "ManagedCodeCache.h"
-#include "MetricsRegistry.h"
 #include "MockProfilerInfo.h"
 
-#include <thread>
+#include <atomic>
 #include <chrono>
+#include <thread>
+#include <vector>
 
 using namespace testing;
 
@@ -17,12 +17,11 @@ using namespace testing;
 class ManagedCodeCacheTest : public Test {
 protected:
     MockProfilerInfo* mockProfiler;
-    MetricsRegistry metricsRegistry;
     std::unique_ptr<ManagedCodeCache> cache;
 
     void SetUp() override {
         mockProfiler = new MockProfilerInfo();
-        cache = std::make_unique<ManagedCodeCache>(mockProfiler, metricsRegistry);
+        cache = std::make_unique<ManagedCodeCache>(mockProfiler);
         cache->Initialize();
     }
 
@@ -46,15 +45,6 @@ protected:
                 }
                 return S_OK;
             });
-    }
-
-    // Helper: read (and reset) the IsManaged lock-failure counter.
-    // GetMetrics() exchanges the underlying atomic to 0, so each call returns the
-    // number of failures recorded since the previous read.
-    uint64_t GetLockFailureCount() {
-        auto metric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures");
-        auto metrics = metric->GetMetrics();
-        return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
     }
 
     // Shortcut to get only the function id from the returned FunctionInfo
@@ -429,75 +419,56 @@ TEST_F(ManagedCodeCacheTest, GetFunctionInfo_GetFunctionFromIPRaisesAccessViolat
 }
 #endif
 
-// Test: IsManaged is signal-safe - it must return std::nullopt rather than block
-// when another thread holds the writer lock on the pages mutex. This guards the
+// Test: IsManaged is lock-free - it must return a concrete value (and never block)
+// while another thread holds the code ranges writer lock. This guards the
 // contract relied on by the HybridUnwinder in a signal handler on ARM64.
-TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsCodeRangesLock_ReturnsValue) {
     FunctionID testFuncId = 321;
     uintptr_t codeStart = 0xC000;
     ULONG32 codeSize = 0x100;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId, /*isDynamic*/ false);
-    // Sanity: with no contention, IsManaged returns a concrete value.
-    auto baseline = cache->IsManaged(codeStart + 0x50);
-    ASSERT_TRUE(baseline.has_value());
-    EXPECT_TRUE(baseline.value());
 
-    // Simulate signal-handler contention: another thread holds the pages mutex
-    // exclusively. IsManaged must fail the try_to_lock and return std::nullopt
-    // instead of blocking (which would deadlock if called from a signal handler).
     std::atomic<bool> writerHoldsLock{false};
     std::atomic<bool> readerDone{false};
     std::thread writer([&]() {
-        auto lock = cache->LockPagesMutexExclusiveForTest();
+        auto lock = cache->LockCodeRangesWriterForTest();
         writerHoldsLock.store(true);
-        // Hold the lock until the reader side of the test has observed the nullopt.
         while (!readerDone.load())
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
 
-    // Wait for the writer to actually hold the lock before probing.
     while (!writerHoldsLock.load())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    auto contended = cache->IsManaged(codeStart + 0x50);
-    EXPECT_FALSE(contended.has_value())
-        << "IsManaged must return nullopt under writer-lock contention so the "
-           "signal handler can back off instead of deadlocking.";
+    auto managed = cache->IsManaged(codeStart + 0x50);
+    ASSERT_TRUE(managed.has_value());
+    EXPECT_TRUE(managed.value());
+    auto notManaged = cache->IsManaged(0xDEADBEEF);
+    ASSERT_TRUE(notManaged.has_value());
+    EXPECT_FALSE(notManaged.value());
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + 0x50));
 
     readerDone.store(true);
     writer.join();
-
-    // Sanity: once contention clears, IsManaged resumes normal behavior.
-    auto afterRelease = cache->IsManaged(codeStart + 0x50);
-    ASSERT_TRUE(afterRelease.has_value());
-    EXPECT_TRUE(afterRelease.value());
 }
 
-// Test: IsManaged increments the lock-failure metric when it cannot acquire the
-// pages mutex within the timeout, and leaves it untouched on the success path.
-TEST_F(ManagedCodeCacheTest, IsManaged_LockAcquisitionFailure_IncrementsMetric) {
-    FunctionID testFuncId = 0x4321;
-    uintptr_t codeStart = 0xD000;
-    ULONG32 codeSize = 0x100;
+// Test: same as above for the R2R modules writer lock (IP not in any JIT range,
+// so IsManaged falls through to the module lookup).
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsModulesLock_ReturnsValue) {
+    const uintptr_t r2rCodeStart = 0xA0000000;
+    const uintptr_t r2rCodeEnd = 0xA000FFFF;
+    cache->AddModuleRangesToCache({{r2rCodeStart, r2rCodeEnd}});
 
-    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId, /*isDynamic*/ false);
-
-    // Success path must not increment the failure metric.
-    ASSERT_TRUE(cache->IsManaged(codeStart + 0x50).value_or(false));
-    EXPECT_EQ(0u, GetLockFailureCount());
-
-    // Hold the pages mutex exclusively so IsManaged times out and returns nullopt.
     std::atomic<bool> writerHoldsLock{false};
     std::atomic<bool> readerDone{false};
     std::thread writer([&]() {
-        auto lock = cache->LockPagesMutexExclusiveForTest();
+        auto lock = cache->LockModulesWriterForTest();
         writerHoldsLock.store(true);
         while (!readerDone.load())
         {
@@ -510,47 +481,158 @@ TEST_F(ManagedCodeCacheTest, IsManaged_LockAcquisitionFailure_IncrementsMetric) 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    auto contended = cache->IsManaged(codeStart + 0x50);
-    EXPECT_FALSE(contended.has_value());
+    auto inModule = cache->IsManaged(r2rCodeStart + 0x500);
+    ASSERT_TRUE(inModule.has_value());
+    EXPECT_TRUE(inModule.value());
+    auto outside = cache->IsManaged(0xDEADBEEF);
+    ASSERT_TRUE(outside.has_value());
+    EXPECT_FALSE(outside.value());
 
     readerDone.store(true);
     writer.join();
-
-    // The failed acquisition must have been recorded exactly once.
-    EXPECT_EQ(1u, GetLockFailureCount());
 }
 
-// Test: IsManaged must also return nullopt when the writer holds the modules
-// mutex exclusively and the probed IP is not in any JIT page (i.e. the code path
-// falls through to IsCodeInR2RModule(ip, /*signalSafe*/true)).
-TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsModulesMutex_ReturnsNullopt) {
-    // Probe an IP that is not covered by any registered JIT range, so IsManaged
-    // falls through to IsCodeInR2RModule which try_to_locks _modulesMutex.
-    const uintptr_t ipOutsideJit = 0xDEADBEEF;
+// Test: readers running concurrently with a writer never miss a range that was
+// added before they started looking for it, and never see a torn range. The writer
+// inserts out of order (forcing block copies and memory reclamation) and in order
+// (in-place appends), on a few pages shared by all the functions.
+TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentWriter_NoFalseNegative) {
+    constexpr int NbFunctions = 4000;
+    constexpr uintptr_t Base = 0x7F0000000000;
+    constexpr uintptr_t Stride = 0x40;
+    constexpr uintptr_t Size = 0x30;
 
-    std::atomic<bool> writerHoldsLock{false};
-    std::atomic<bool> readerDone{false};
-    std::thread writer([&]() {
-        auto lock = cache->LockModulesMutexExclusiveForTest();
-        writerHoldsLock.store(true);
-        while (!readerDone.load())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    });
-
-    while (!writerHoldsLock.load())
+    // Functions i are laid out at Base + i * Stride, but added in a shuffled order
+    auto AddressOf = [](int i) { return Base + static_cast<uintptr_t>(i) * Stride; };
+    // 3 functions out of 4 are added in address order (in-place appends), then the
+    // remaining ones in reverse order (each one is inserted in the middle of a block)
+    std::vector<int> order;
+    order.reserve(NbFunctions);
+    for (int i = 0; i < NbFunctions; i++)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (i % 4 != 3)
+        {
+            order.push_back(i);
+        }
+    }
+    for (int i = NbFunctions - 1; i >= 0; i--)
+    {
+        if (i % 4 == 3)
+        {
+            order.push_back(i);
+        }
     }
 
-    auto contended = cache->IsManaged(ipOutsideJit);
-    EXPECT_FALSE(contended.has_value())
-        << "IsManaged must return nullopt when the modules-mutex writer is active "
-           "and the IP is not in any JIT page (R2R fallback path).";
+    std::atomic<bool> stop{false};
+    std::atomic<int> failures{0};
+    std::atomic<std::uint64_t> lookups{0};
 
-    readerDone.store(true);
-    writer.join();
+    std::vector<std::atomic<int>> addedAt(NbFunctions);
+    for (auto& a : addedAt)
+    {
+        a.store(-1);
+    }
+
+    std::vector<std::thread> readers;
+    for (int t = 0; t < 4; t++)
+    {
+        readers.emplace_back([&, t]() {
+            std::uint64_t seed = 0x9E3779B97F4A7C15ull * (t + 1);
+            while (!stop.load(std::memory_order_relaxed))
+            {
+                seed ^= seed << 13;
+                seed ^= seed >> 7;
+                seed ^= seed << 17;
+                int i = static_cast<int>(seed % NbFunctions);
+                bool wasAdded = addedAt[i].load(std::memory_order_acquire) >= 0;
+
+                auto ip = AddressOf(i) + (seed >> 32) % Size;
+                auto managed = cache->IsManaged(ip);
+                if (!managed.has_value() || (wasAdded && !managed.value()))
+                {
+                    failures++;
+                }
+
+                // The gap between two functions must never be reported as managed
+                auto gap = cache->IsManaged(AddressOf(i) + Size + 1);
+                if (!gap.has_value() || gap.value())
+                {
+                    failures++;
+                }
+                lookups++;
+            }
+        });
+    }
+
+    for (int n = 0; n < NbFunctions; n++)
+    {
+        auto i = order[n];
+        cache->AddFunctionRangesToCache({CodeRange{AddressOf(i), AddressOf(i) + Size - 1, static_cast<uintptr_t>(i + 1), false}});
+        addedAt[i].store(n, std::memory_order_release);
+    }
+
+    stop = true;
+    for (auto& reader : readers)
+    {
+        reader.join();
+    }
+
+    EXPECT_EQ(0, failures.load());
+    EXPECT_GT(lookups.load(), 0u);
+
+    for (int i = 0; i < NbFunctions; i++)
+    {
+        EXPECT_EQ(static_cast<FunctionID>(i + 1), GetFuncIdOr0(AddressOf(i) + 1));
+    }
+}
+
+// Test: memory retired while a reader was active is reclaimed by GetFunctionInfo
+// (profiler thread) without waiting for the next write
+TEST_F(ManagedCodeCacheTest, GetFunctionInfo_ReclaimsRetiredMemory) {
+    const uintptr_t base = 0x7E0000000000;
+    cache->AddFunctionRangesToCache({CodeRange{base + 0x100, base + 0x1FF, 1, false}});
+
+    {
+        auto scope = cache->EnterReadScope();
+        // Out of order: the page block is copied and the old one retired, but it
+        // cannot be freed while the scope is held
+        cache->AddFunctionRangesToCache({CodeRange{base, base + 0xFF, 2, false}});
+        EXPECT_GT(cache->PendingReclaimBytesForTest(), 0u);
+        EXPECT_TRUE(cache->IsManaged(base + 0x10, scope).value());
+    }
+
+    EXPECT_GT(cache->PendingReclaimBytesForTest(), 0u);
+    EXPECT_EQ(2u, GetFuncIdOr0(base + 0x10));
+    EXPECT_EQ(0u, cache->PendingReclaimBytesForTest());
+}
+
+// Test: module ranges are removed on RemoveModule and can be re-added at the same place
+TEST_F(ManagedCodeCacheTest, IsManaged_ModuleRemovedThenReAdded) {
+    const uintptr_t start = 0xB0000000;
+    const uintptr_t end = 0xB000FFFF;
+
+    cache->AddModuleRangesToCache({{start, end}});
+    EXPECT_TRUE(cache->IsManaged(start + 0x10).value());
+
+    cache->RemoveModuleRangesFromCache({{start, end}});
+    EXPECT_FALSE(cache->IsManaged(start + 0x10).value());
+
+    cache->AddModuleRangesToCache({{start, end}});
+    EXPECT_TRUE(cache->IsManaged(start + 0x10).value());
+}
+
+// Test: ranges outside of the indexable address space (>= 2^52) are ignored
+TEST_F(ManagedCodeCacheTest, AddFunction_RangeAboveIndexableAddressSpace_Ignored) {
+    const uintptr_t highStart = uintptr_t{1} << 52;
+    cache->AddFunctionRangesToCache({CodeRange{highStart, highStart + 0x100, 42, false}});
+    cache->AddModuleRangesToCache({{highStart, highStart + 0x1000}});
+
+    auto managed = cache->IsManaged(highStart + 0x10);
+    ASSERT_TRUE(managed.has_value());
+    EXPECT_FALSE(managed.value());
+
+    // PAC-signed / kernel-like addresses
+    EXPECT_FALSE(cache->IsManaged(0xFFFF800000001000).value());
 }
 
 // Test: IsManaged falls back to R2R module check when IP is not in the JIT page map

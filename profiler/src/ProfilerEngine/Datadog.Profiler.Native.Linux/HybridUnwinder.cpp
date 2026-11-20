@@ -50,7 +50,7 @@ struct UnwindCursor
 };
 
 bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack,
-    UnwindingRecorder* recorder) const
+    UnwindingRecorder* recorder, const ManagedCodeCache::ReadScope& codeCacheScope) const
 {
     // libunwind can produce bogus low IPs (below 0x4000) when unwinding signal-interrupted
     // leaf frames whose CFI never spills the return address (e.g. __rawmemchr in glibc).
@@ -79,7 +79,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
             return false;
         }
 
-        auto isManaged = _codeCache->IsManaged(ip);
+        auto isManaged = _codeCache->IsManaged(ip, codeCacheScope);
         if (isManaged.has_value())
         {
             if (isManaged.value())
@@ -148,7 +148,8 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
 
 void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
     UnwindingRecorder* recorder,
-    std::uintptr_t stackBase, std::uintptr_t stackEnd) const
+    std::uintptr_t stackBase, std::uintptr_t stackEnd,
+    const ManagedCodeCache::ReadScope& codeCacheScope) const
 {
     unw_word_t ip = 0;
     if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); result != 0 || ip == 0)
@@ -208,7 +209,7 @@ void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
 
         if (recorder) recorder->Record(EventType::FrameChainStep, ip, fp);
 
-        auto isManaged = _codeCache->IsManaged(ip);
+        auto isManaged = _codeCache->IsManaged(ip, codeCacheScope);
         if (isManaged.has_value() && isManaged.value())
         {
             if (!callstack.Add(ip))
@@ -311,8 +312,11 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
         return -1;
     }
 
+    // One code cache read scope for the whole walk (instead of one per IsManaged call)
+    auto codeCacheScope = _codeCache->EnterReadScope();
+
     // === Phase 1: Walk native frames with libunwind until managed code is reached ===
-    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, recorder);
+    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, recorder, codeCacheScope);
     if (!keepOnUnwinding)
     {
         // already recorded state
@@ -323,7 +327,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
     // every managed method, so FP chaining is reliable once we enter managed code.
 
-    UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
+    UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd, codeCacheScope);
 
     // Already recorded state in recorder
     return callstack.Size();

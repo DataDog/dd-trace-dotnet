@@ -4,11 +4,11 @@
 #pragma once
 
 #include "IUnwinder.h"
+#include "ManagedCodeCache.h"
 
 #include <optional>
 
 class Callstack;
-class ManagedCodeCache;
 class UnwindCursor;
 
 class HybridUnwinder: public IUnwinder
@@ -22,9 +22,11 @@ public:
                         UnwindingRecorder* recorder = nullptr) const override;
 
 private:
-    bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder) const;
+    bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder,
+                        const ManagedCodeCache::ReadScope& codeCacheScope) const;
     void UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder,
-                        std::uintptr_t stackBase, std::uintptr_t stackEnd) const;
+                        std::uintptr_t stackBase, std::uintptr_t stackEnd,
+                        const ManagedCodeCache::ReadScope& codeCacheScope) const;
 
     ManagedCodeCache* _codeCache;
 };
