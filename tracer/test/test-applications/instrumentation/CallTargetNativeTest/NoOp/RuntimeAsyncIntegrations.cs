@@ -6,6 +6,46 @@ using DatadogTrace::Datadog.Trace.ClrProfiler.CallTarget;
 namespace CallTargetNativeTest.NoOp
 {
     /// <summary>
+    /// Captures failure arguments for comparison between state-machine and runtime-async targets.
+    /// </summary>
+    public static class RuntimeAsyncFailureIntegration
+    {
+        public static object MethodEndReturnValue { get; private set; }
+
+        public static Exception MethodEndException { get; private set; }
+
+        public static Exception AsyncMethodEndException { get; private set; }
+
+        public static void Reset()
+        {
+            MethodEndReturnValue = null;
+            MethodEndException = null;
+            AsyncMethodEndException = null;
+        }
+
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        {
+            Console.WriteLine($"ProfilerOK: BeginMethod(0)<{typeof(RuntimeAsyncFailureIntegration)}, {typeof(TTarget)}>({instance})");
+            return CallTargetState.GetDefault();
+        }
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            MethodEndReturnValue = returnValue;
+            MethodEndException = exception;
+            Console.WriteLine($"ProfilerOK: EndMethod(1)<{typeof(RuntimeAsyncFailureIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            AsyncMethodEndException = exception;
+            Console.WriteLine($"ProfilerOK: EndMethodAsync(1)<{typeof(RuntimeAsyncFailureIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
+            return returnValue;
+        }
+    }
+
+    /// <summary>
     /// Declares OnAsyncMethodEnd but no OnMethodEnd
     /// </summary>
     public static class RuntimeAsyncAsyncEndOnlyIntegration
