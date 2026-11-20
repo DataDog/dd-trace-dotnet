@@ -128,6 +128,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        internal static bool IsDataSource(ProfilerFeature feature)
+        {
+            switch (feature)
+            {
+                case ProfilerFeature.Cpu:
+                case ProfilerFeature.WallTime:
+                case ProfilerFeature.Exceptions:
+                case ProfilerFeature.Allocations:
+                case ProfilerFeature.LockContention:
+                case ProfilerFeature.GarbageCollection:
+                case ProfilerFeature.LiveHeap:
+                case ProfilerFeature.Timeline:
+                case ProfilerFeature.Network:
+                case ProfilerFeature.GcThreadsCpuTime:
+                case ProfilerFeature.HeapSnapshot:
+                case ProfilerFeature.WaitHandleContention:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         internal void EnableTracer()
         {
             AddTracerEnvironmentVariables();
@@ -168,25 +190,16 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
-        internal static bool IsDataSource(ProfilerFeature feature)
+        /// <summary>
+        /// Disables every profiler data source except the listed ones, which keep their default value.
+        /// Use it to check that a feature is enabled by default.
+        /// </summary>
+        internal void DisableAllExcept(params ProfilerFeature[] features)
         {
-            switch (feature)
+            EnableOnly(features);
+            foreach (var feature in features)
             {
-                case ProfilerFeature.Cpu:
-                case ProfilerFeature.WallTime:
-                case ProfilerFeature.Exceptions:
-                case ProfilerFeature.Allocations:
-                case ProfilerFeature.LockContention:
-                case ProfilerFeature.GarbageCollection:
-                case ProfilerFeature.LiveHeap:
-                case ProfilerFeature.Timeline:
-                case ProfilerFeature.Network:
-                case ProfilerFeature.GcThreadsCpuTime:
-                case ProfilerFeature.HeapSnapshot:
-                case ProfilerFeature.WaitHandleContention:
-                    return true;
-                default:
-                    return false;
+                CustomEnvironmentVariables.Remove(VariableName(feature));
             }
         }
 
