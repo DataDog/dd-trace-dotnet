@@ -16,10 +16,30 @@ $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $out = "$($PSScriptRoot)\vcpkg.zip"
-$url = "https://github.com/microsoft/vcpkg/archive/refs/tags/$Version.zip"
+$urls = @(
+    "https://github.com/microsoft/vcpkg/archive/refs/tags/$Version.zip",
+    "https://codeload.github.com/microsoft/vcpkg/zip/refs/tags/$Version"
+)
 
-Write-Host -ForegroundColor Green "Downloading vcpkg $Version from $url to $out"
-(New-Object System.Net.WebClient).DownloadFile($url, $out)
+$downloaded = $false
+foreach ($attempt in 1..4) {
+    $url = $urls[($attempt - 1) % $urls.Count]
+    try {
+        Write-Host -ForegroundColor Green "Downloading vcpkg $Version from $url to $out (attempt $attempt of 4)"
+        (New-Object System.Net.WebClient).DownloadFile($url, $out)
+        $downloaded = $true
+        break
+    }
+    catch {
+        Remove-Item $out -Force -ErrorAction SilentlyContinue
+        if ($attempt -eq 4) { throw }
+
+        Write-Warning "Could not download vcpkg from $url`: $($_.Exception.Message)"
+        Start-Sleep -Seconds (5 * $attempt)
+    }
+}
+
+if (-not $downloaded) { throw "Could not download vcpkg $Version" }
 
 Write-Host -ForegroundColor Green "Extracting $out"
 $parent = Split-Path -Parent $InstallRoot
@@ -45,6 +65,14 @@ foreach ($tool in @('git', 'cmake', '7zip', 'powershell-core', 'ninja')) {
     & "$InstallRoot\vcpkg.exe" fetch $tool
     if ($LASTEXITCODE -ne 0) { throw "vcpkg fetch $tool failed with exit code $LASTEXITCODE" }
 }
+
+# Tests invoke Git directly, outside vcpkg. Reuse the pinned copy already fetched above.
+$gitExecutable = (& "$InstallRoot\vcpkg.exe" fetch git | Select-Object -Last 1).Trim('"')
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $gitExecutable -PathType Leaf)) {
+    throw 'Could not locate the Git executable fetched by vcpkg'
+}
+$gitDirectory = Split-Path -Parent $gitExecutable
+[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine) + ";$gitDirectory", [EnvironmentVariableTarget]::Machine)
 
 Write-Host -ForegroundColor Green "Installed vcpkg $Version to $InstallRoot"
 & "$InstallRoot\vcpkg.exe" version

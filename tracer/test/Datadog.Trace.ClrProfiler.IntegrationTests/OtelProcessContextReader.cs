@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private const int PayloadOffset = 24;
         private const uint SupportedVersion = 2;
         private const int MaxPayloadSize = 1024 * 1024;
+        private const int SyscallNotImplemented = 38; // ENOSYS on Linux x64/ARM64
 
         private static readonly byte[] Signature = Encoding.ASCII.GetBytes("OTEL_CTX");
 
@@ -99,9 +100,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (read <= 0)
                     {
+                        var errorCode = Marshal.GetLastWin32Error();
+                        if (read < 0 && errorCode == SyscallNotImplemented)
+                        {
+                            // Some runner kernels do not provide process_vm_readv. /proc/<pid>/mem
+                            // still reads the child's actual memory and enforces its own access checks.
+                            // Do not fall back on permission errors or invalid addresses.
+                            ReadRemoteMemoryFromProc(processId, address, buffer);
+                            return buffer;
+                        }
+
+                        var error = new Win32Exception(errorCode);
                         throw new Win32Exception(
-                            Marshal.GetLastWin32Error(),
-                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x}.");
+                            error.NativeErrorCode,
+                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x} (errno {error.NativeErrorCode}: {error.Message}).");
                     }
 
                     offset += checked((int)read);
@@ -113,6 +125,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return buffer;
+        }
+
+        private static void ReadRemoteMemoryFromProc(int processId, ulong address, byte[] buffer)
+        {
+            using var memory = new FileStream($"/proc/{processId}/mem", FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize: 1);
+            memory.Seek(checked((long)address), SeekOrigin.Begin);
+
+            var offset = 0;
+            while (offset < buffer.Length)
+            {
+                var read = memory.Read(buffer, offset, buffer.Length - offset);
+                if (read == 0)
+                {
+                    throw new EndOfStreamException($"Incomplete memory read from process {processId} at 0x{address:x}: read {offset} of {buffer.Length} bytes.");
+                }
+
+                offset += read;
+            }
         }
 
         private static OtelProcessContextSnapshot Read(int processId)
