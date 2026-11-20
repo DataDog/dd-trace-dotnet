@@ -1,0 +1,12 @@
+_v: 1
+name: Aerospike
+display_name: Aerospike
+description: Instruments synchronous and asynchronous Aerospike client commands, including single-key and batch reads, writes,
+  existence checks, queries, and deletes.
+packages:
+- name: Aerospike.Client
+category:
+- db.client
+systems:
+- aerospike
+creation_date: '2021-09-02'

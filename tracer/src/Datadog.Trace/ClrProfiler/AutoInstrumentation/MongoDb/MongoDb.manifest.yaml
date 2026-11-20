@@ -1,0 +1,12 @@
+_v: 1
+name: MongoDb
+display_name: MongoDB
+description: Instruments MongoDB database operations performed with the MongoDB .NET driver.
+packages:
+- name: MongoDB.Driver
+- name: MongoDB.Driver.Core
+category:
+- db.client
+systems:
+- mongodb
+creation_date: '2019-01-14'
