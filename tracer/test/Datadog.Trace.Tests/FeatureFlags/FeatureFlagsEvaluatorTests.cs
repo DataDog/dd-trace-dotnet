@@ -835,6 +835,82 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Null(result.Error);
     }
 
+    [Theory]
+    [InlineData("targetingKey", "ONE_OF", "foo", null, "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("targetingKey", "ONE_OF", "bar", null, "default", EvaluationReason.Default)]
+    [InlineData("targetingKey", "ONE_OF", null, null, "default", EvaluationReason.Default)]
+    [InlineData("targetingKey", "ONE_OF", "bar", "foo", "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("targetingKey", "ONE_OF", "foo", "bar", "default", EvaluationReason.Default)]
+    [InlineData("targetingKey", "NOT_ONE_OF", "bar", null, "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("targetingKey", "NOT_ONE_OF", "foo", null, "default", EvaluationReason.Default)]
+    [InlineData("targetingKey", "MATCHES", "foo", null, "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("targetingKey", "MATCHES", "bar", null, "default", EvaluationReason.Default)]
+    [InlineData("targetingKey", "NOT_MATCHES", "bar", null, "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("id", "ONE_OF", "foo", null, "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData("id", "ONE_OF", "bar", null, "default", EvaluationReason.Default)]
+    public void RuleWithTargetingKeyAttribute_FallsBackToTargetingKey(string attribute, string opName, string? targetingKey, string? explicitAttribute, string expectedValue, EvaluationReason expectedReason)
+    {
+        var op = (ConditionOperator)Enum.Parse(typeof(ConditionOperator), opName);
+        object value = op is ConditionOperator.MATCHES or ConditionOperator.NOT_MATCHES ? "^foo$" : new List<string> { "foo" };
+        var condition = new ConditionConfiguration { Operator = op, Attribute = attribute, Value = value };
+        var attributes = explicitAttribute is null ? null : new Dictionary<string, object?> { { attribute, explicitAttribute } };
+
+        var result = EvaluateSingleConditionFlag(condition, new EvaluationContext(targetingKey, attributes));
+
+        result.Value.Should().Be(expectedValue);
+        result.Reason.Should().Be(expectedReason);
+        result.Error.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false, "foo", "matched-value", EvaluationReason.TargetingMatch)]
+    [InlineData(false, null, "default", EvaluationReason.Default)]
+    [InlineData(true, "foo", "default", EvaluationReason.Default)]
+    [InlineData(true, null, "matched-value", EvaluationReason.TargetingMatch)]
+    public void RuleWithTargetingKeyAttribute_IsNull(bool isNull, string? targetingKey, string expectedValue, EvaluationReason expectedReason)
+    {
+        var condition = new ConditionConfiguration { Operator = ConditionOperator.IS_NULL, Attribute = "targetingKey", Value = isNull };
+
+        var result = EvaluateSingleConditionFlag(condition, new EvaluationContext(targetingKey));
+
+        result.Value.Should().Be(expectedValue);
+        result.Reason.Should().Be(expectedReason);
+        result.Error.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("foo", "treatment")]
+    [InlineData("bar", "control")]
+    [InlineData("baz", "treatment")]
+    [InlineData("qux", "control")]
+    public void RuleWithTargetingKeyAttribute_DoesNotChangeBucketing(string targetingKey, string expectedVariant)
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            ["control"] = new Variant { Key = "control", Value = "control" },
+            ["treatment"] = new Variant { Key = "treatment", Value = "treatment" },
+        };
+        var conditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.ONE_OF, Attribute = "targetingKey", Value = new List<string> { "foo", "bar", "baz", "qux" } },
+        };
+        var splits = new List<Split>
+        {
+            new Split { VariationKey = "control", Shards = new List<Shard> { new Shard { Salt = "targeting-key-rule-split", TotalShards = 10000, Ranges = new List<ShardRange> { new ShardRange { Start = 0, End = 5000 } } } } },
+            new Split { VariationKey = "treatment", Shards = new List<Shard> { new Shard { Salt = "targeting-key-rule-split", TotalShards = 10000, Ranges = new List<ShardRange> { new ShardRange { Start = 5000, End = 10000 } } } } },
+        };
+        var alloc = new Allocation { Key = "targeting-key-rule-split", Rules = new List<Rule> { new Rule(conditions) }, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "targeting-key-split-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = new FlagCollection { ["targeting-key-split-flag"] = flag } });
+
+        var result = evaluator.Evaluate("targeting-key-split-flag", ValueType.String, "default", new EvaluationContext(targetingKey));
+
+        result.Value.Should().Be(expectedVariant);
+        result.Variant.Should().Be(expectedVariant);
+        result.Reason.Should().Be(EvaluationReason.TargetingMatch);
+        result.Error.Should().BeNull();
+    }
+
     [Fact]
     public void EmptyStringTargetingKey_ShardedFlag_ReturnsValue()
     {
@@ -898,6 +974,21 @@ public partial class FeatureFlagsEvaluatorTests
         var counted = FeatureFlagsEvaluator.WarnedDestinationCount;
         FeatureFlagsEvaluator.WarnedDestinationEntries.Should().Be(counted);
         counted.Should().BeInRange(64, 64 + System.Environment.ProcessorCount, "racing first warnings can pass the cap by at most one per thread");
+    }
+
+    private static Evaluation EvaluateSingleConditionFlag(ConditionConfiguration condition, EvaluationContext context)
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            ["matched"] = new Variant { Key = "matched", Value = "matched-value" },
+        };
+        var rules = new List<Rule> { new Rule(new List<ConditionConfiguration> { condition }) };
+        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "matched" } };
+        var alloc = new Allocation { Key = "rule-alloc", Rules = rules, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "rule-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = new FlagCollection { ["rule-flag"] = flag } });
+
+        return evaluator.Evaluate("rule-flag", ValueType.String, "default", context);
     }
 
     private static FeatureFlagsEvaluator.ReportExposureDelegate RecordExposures(List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events)

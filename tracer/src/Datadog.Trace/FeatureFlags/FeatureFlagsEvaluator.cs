@@ -528,8 +528,8 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            // Special case "id": if not present, use targeting key
-            if (name == "id" && !context.Attributes.ContainsKey(name))
+            // Special case "id" and "targetingKey": if not present, use targeting key
+            if ((name is "id" or "targetingKey") && !context.Attributes.ContainsKey(name))
             {
                 return context.TargetingKey;
             }
