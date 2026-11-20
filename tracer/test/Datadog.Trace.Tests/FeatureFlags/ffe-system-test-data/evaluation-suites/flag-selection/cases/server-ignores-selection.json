@@ -1,0 +1,158 @@
+[
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "checkout-banner",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "checkout-pricing",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "search-ranking",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "summer-sale",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "ops-kill-switch",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  },
+  {
+    "description": "The server ignores the selection with tag_load_failed, so every flag is served.",
+    "flag": "untagged-flag",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": ["team:checkout"]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": ["team:checkout"],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "configurationResponse": {
+      "flagSelectionIgnored": "tag_load_failed"
+    },
+    "result": {
+      "value": true,
+      "reason": "STATIC"
+    }
+  }
+]

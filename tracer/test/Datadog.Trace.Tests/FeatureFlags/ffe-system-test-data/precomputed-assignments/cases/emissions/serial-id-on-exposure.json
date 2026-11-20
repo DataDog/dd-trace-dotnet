@@ -1,0 +1,109 @@
+{
+  "name": "serial-id-on-exposure",
+  "description": "Validates that serialId from the precomputed assignment is forwarded as serial_id on the exposure event. Covers: present serialId, absent serialId, serialId of 0 (must not be treated as absent), and null serialId.",
+  "context": {
+    "targetingKey": "serial-id-test-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "serial.id.flag": {
+            "allocationKey": "holdout-allocation",
+            "variationKey": "on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true,
+            "serialId": 340132
+          },
+          "no.serial.id.flag": {
+            "allocationKey": "regular-allocation",
+            "variationKey": "off",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "zero.serial.id.flag": {
+            "allocationKey": "zero-allocation",
+            "variationKey": "on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true,
+            "serialId": 0
+          },
+          "null.serial.id.flag": {
+            "allocationKey": "null-allocation",
+            "variationKey": "off",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "TARGETING_MATCH",
+            "doLog": true,
+            "serialId": null
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "serial.id.flag",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "on"
+      }
+    },
+    {
+      "flag": "no.serial.id.flag",
+      "variationType": "boolean",
+      "defaultValue": true,
+      "expectedResult": {
+        "value": false,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "off"
+      }
+    },
+    {
+      "flag": "zero.serial.id.flag",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "on"
+      }
+    },
+    {
+      "flag": "null.serial.id.flag",
+      "variationType": "boolean",
+      "defaultValue": true,
+      "expectedResult": {
+        "value": false,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "off"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {"_count": 1, "serial_id": 340132},
+      {"_count": 1, "serial_id": null},
+      {"_count": 1, "serial_id": 0},
+      {"_count": 1, "serial_id": null}
+    ],
+    "evaluationEvents": [
+      {"_count": 4}
+    ]
+  }
+}
