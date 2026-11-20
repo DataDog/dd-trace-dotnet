@@ -94,7 +94,23 @@ internal static class FileHelper
 
         try
         {
+            // We run elevated and grant "Everyone" write access below, so refuse to follow junctions/symlinks
+            // (which a non-admin could have planted under ProgramData) to avoid modifying an unrelated directory.
+            // Check before creating anything, and again afterwards before touching the ACL.
+            if (TryGetReparsePoint(new DirectoryInfo(logDirectory)) is { } existingReparsePoint)
+            {
+                log.WriteError($"The log directory '{logDirectory}' contains a reparse point (junction or symlink) at '{existingReparsePoint}'. Skipping creation and permission changes.");
+                return false;
+            }
+
             var dirInfo = Directory.CreateDirectory(logDirectory);
+
+            if (TryGetReparsePoint(dirInfo) is { } reparsePoint)
+            {
+                log.WriteError($"The log directory '{logDirectory}' contains a reparse point (junction or symlink) at '{reparsePoint}'. Skipping permission changes.");
+                return false;
+            }
+
             return SetDirectoryPermissions(log, dirInfo);
         }
         catch (Exception ex)
@@ -103,18 +119,35 @@ internal static class FileHelper
             return false;
         }
 
+        // Returns the path of the first existing directory (the directory itself or an ancestor) that is a reparse point
+        static string? TryGetReparsePoint(DirectoryInfo? directory)
+        {
+            for (var current = directory; current is not null; current = current.Parent)
+            {
+                if (current.Exists && (current.Attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    return current.FullName;
+                }
+            }
+
+            return null;
+        }
+
         static bool SetDirectoryPermissions(ILogger log, DirectoryInfo directoryInfo)
         {
             try
             {
-                // Give write access to "Everyone"
+                // Give write access to "Everyone", matching the MSI's GenericWrite grant on the same directory
+                // (FILE_GENERIC_WRITE = Write | ReadPermissions | Synchronize). This deliberately excludes Delete and
+                // DeleteSubdirectoriesAndFiles so unrelated users can't delete other processes' logs.
                 var dSecurity = directoryInfo.GetAccessControl();
                 dSecurity.AddAccessRule(new FileSystemAccessRule(
                     new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                    FileSystemRights.Modify | FileSystemRights.Synchronize,
+                    FileSystemRights.Write | FileSystemRights.ReadPermissions | FileSystemRights.Synchronize,
                     InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
                     PropagationFlags.NoPropagateInherit,
                     AccessControlType.Allow));
+                directoryInfo.SetAccessControl(dSecurity);
                 return true;
             }
             catch (Exception ex)
