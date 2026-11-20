@@ -96,13 +96,19 @@ public class PackageBumpReport
             sb.AppendLine("## Package Version Cooldown Report");
             sb.AppendLine();
             sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been ignored.");
-            sb.AppendLine("These require manual review before inclusion.");
+            sb.AppendLine("These require manual review before inclusion. Older ignored versions that a newer ignored");
+            sb.AppendLine("version would always be selected over (e.g. an earlier patch in the same minor) are omitted.");
             sb.AppendLine();
             sb.AppendLine("| Package | Integration | Version Kept | Ignored Version | Published | Age (days) |");
             sb.AppendLine("|---------|-------------|--------------|-----------------|-----------|------------|");
 
             foreach (var entry in _cooldownEntries)
             {
+                if (entry.IsSuperseded)
+                {
+                    continue;
+                }
+
                 var published = entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown";
                 var age = entry.PublishedDate.HasValue
                     ? ((int)(DateTimeOffset.UtcNow - entry.PublishedDate.Value).TotalDays).ToString()
@@ -152,7 +158,8 @@ public class PackageBumpReport
         string IntegrationName,
         string KeptVersion,
         string IgnoredVersion,
-        DateTimeOffset? PublishedDate);
+        DateTimeOffset? PublishedDate,
+        bool IsSuperseded);
 
     public record MajorAvailableEntry(
         string PackageName,
