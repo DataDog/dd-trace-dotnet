@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
@@ -78,6 +78,12 @@
          type wins; its runtime assets are left alone since the old AspNetCore/TestHost binaries
          were themselves compiled against it and still need it at runtime. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" ExcludeAssets="compile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\build\_build\TestArea.cs" Link="TestInfrastructure\TestArea.cs" />
+    <Compile Include="..\..\build\_build\TestImpact.cs" Link="TestInfrastructure\TestImpact.cs" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
