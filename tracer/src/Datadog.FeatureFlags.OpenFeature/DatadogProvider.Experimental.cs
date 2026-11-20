@@ -218,7 +218,14 @@ public sealed partial class DatadogProvider
     private ResolutionDetails<T> ResolveSync<T>(string flagKey, Trace.FeatureFlags.ValueType valueType, FlagValueType flagValueType, T defaultValue, EvaluationContext? context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var resolution = FeatureFlagsSdk.Resolve(
+            flagKey,
+            valueType,
+            defaultValue,
+            context,
+            deferredExposure: _deferExposures,
+            evaluate: Evaluator(),
+            evaluationEventsHook: _evpHook);
         var hooks = WithApiExposureHooks(_providerHooks);
         return hooks.Count == 0
             ? resolution

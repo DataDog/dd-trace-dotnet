@@ -20,8 +20,7 @@ public sealed class ExposureEvaluation
 {
     private static readonly IReadOnlyDictionary<string, object> EmptyFeatures = new Dictionary<string, object>();
 
-    private readonly bool _evaluationSucceeded;
-    private readonly ImmutableMetadata? _metadata;
+    private readonly bool _isExposure;
     private readonly bool? _cacheHit;
 
     internal ExposureEvaluation(
@@ -34,8 +33,6 @@ public sealed class ExposureEvaluation
         ImmutableMetadata? metadata,
         FeatureFlagsSdk.ResultState? result)
     {
-        _evaluationSucceeded = evaluationSucceeded;
-        _metadata = metadata;
         FlagKey = flagKey;
         Variant = variant;
         AllocationKey = allocationKey;
@@ -43,8 +40,25 @@ public sealed class ExposureEvaluation
         Context = context;
         Features = result?.HookFeatures ?? EmptyFeatures;
         SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
+        _isExposure = evaluationSucceeded
+                   && variant is not null
+                   && allocationKey is not null
+                   && metadata?.GetBool(FeatureFlagMetadataKeys.DoLog) == true;
         // A committed exposure carries the final verdict; otherwise the tracer stamped it during evaluation.
         _cacheHit = result is not null && result.TryGetCommittedVerdict(out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
+    }
+
+    internal ExposureEvaluation(FeatureFlagsSdk.DependencyExposureState exposure, EvaluationContext? context)
+    {
+        FlagKey = exposure.FlagKey;
+        Variant = exposure.Variant;
+        AllocationKey = exposure.AllocationKey;
+        TargetingKey = exposure.TargetingKey;
+        Context = context;
+        Features = exposure.HookFeatures;
+        SplitSerialId = exposure.SerialId;
+        _isExposure = true;
+        _cacheHit = exposure.CacheHit;
     }
 
     /// <summary> Gets the evaluated flag key. </summary>
@@ -72,11 +86,7 @@ public sealed class ExposureEvaluation
     /// Gets a value indicating whether the evaluation succeeded and selected an allocation that logs
     /// exposures, whether or not this subject was already exposed.
     /// </summary>
-    public bool IsExposure
-        => _evaluationSucceeded
-           && Variant is not null
-           && AllocationKey is not null
-           && _metadata?.GetBool(FeatureFlagMetadataKeys.DoLog) == true;
+    public bool IsExposure => _isExposure;
 
     /// <summary>
     /// Gets a value indicating whether this exposure repeats one already recorded for this subject:

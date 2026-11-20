@@ -85,7 +85,7 @@ public class FlagEvalEVPHookTests
 
         resolution.Value.Should().BeFalse();
         resolution.ErrorType.Should().Be(ErrorType.None, "the EVP fix must not change existing provider results");
-        resolution.Reason.Should().Be("error");
+        resolution.Reason.Should().Be(Reason.Error);
         resolution.ErrorMessage.Should().Be("private-evaluator-error");
         fixture.Enqueues.Should().Be(1);
         fixture.ErrorCode.Should().Be(code);
