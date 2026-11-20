@@ -207,7 +207,7 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    IEnumerable<TargetFramework> ManagedUnitTestFrameworks => UnitTestFrameworkOnly
+    IEnumerable<TargetFramework> ManagedUnitTestFrameworks => RunManagedUnitTestsFromArtifacts
         ? new[] { Framework }
         : TestingFrameworks.Where(x => x == Framework || Framework is null);
 
@@ -343,23 +343,6 @@ partial class Build
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
             }
-        });
-
-    Target RestoreManagedUnitTestPackages => _ => _
-        .Unlisted()
-        .Before(BuildRunnerTool, CompileManagedUnitTests)
-        .OnlyWhenDynamic(() => UnitTestFrameworkOnly)
-        .Executes(() =>
-        {
-            // NuGet.exe restore does not fully populate all SDK-style PackageReference
-            // dependencies required by the managed test graph. Framework-only builds consume
-            // producer artifacts without restore state, so restore into the requested package directory.
-            DotNetRestore(s => s
-                .SetProjectFile(Solution)
-                .SetVerbosity(DotNetVerbosity.Minimal)
-                .SetProperty("configuration", BuildConfiguration.ToString())
-                .SetProperty("Platform", "Any CPU")
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), s => s.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target CompileTracerNativeSrcWindows => _ => _
@@ -880,10 +863,6 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
-                    if (UnitTestFrameworkOnly)
-                    {
-                        frameworks = frameworks.Where(x => x == Framework).ToList();
-                    }
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -1543,10 +1522,7 @@ partial class Build
         .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
-            DotnetBuild(
-                TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"),
-                noRestore: !UnitTestFrameworkOnly,
-                noDependencies: false);
+            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
         });
 
     Target CompileManagedTestHelpers => _ => _
@@ -1557,11 +1533,10 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            var framework = UnitTestFrameworkOnly ? Framework : null;
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"), noRestore: !UnitTestFrameworkOnly);
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noRestore: !UnitTestFrameworkOnly);
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !UnitTestFrameworkOnly);
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !UnitTestFrameworkOnly);
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1575,23 +1550,12 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj");
-            if (UnitTestFrameworkOnly)
-            {
-                testProjects = testProjects
-                              .Where(path => TargetsFramework(Solution.GetProject(path), Framework))
-                              .ToList();
-            }
-
-            DotnetBuild(
-                testProjects,
-                framework: UnitTestFrameworkOnly ? Framework : null,
-                noRestore: !UnitTestFrameworkOnly);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
         });
 
     Target RunManagedUnitTests => _ => _
         .Unlisted()
-        .Requires(() => !UnitTestFrameworkOnly || Framework != null)
+        .Requires(() => !RunManagedUnitTestsFromArtifacts || Framework != null)
         .After(CompileManagedUnitTests)
         .DependsOn(CleanTestLogs)
         .DependsOn(ConfigureGitlabUnitTestCredentials)
@@ -1599,11 +1563,11 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
-                .Where(project => !UnitTestFrameworkOnly || TargetsFramework(project, Framework))
+                .Where(project => !RunManagedUnitTestsFromArtifacts || TargetsFramework(project, Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            if (UnitTestFrameworkOnly && testProjects.Count == 0)
+            if (RunManagedUnitTestsFromArtifacts && testProjects.Count == 0)
             {
                 throw new InvalidOperationException($"No managed unit-test projects target {Framework}");
             }
@@ -1623,11 +1587,12 @@ partial class Build
                     try
                     {
                         var testSettings = new DotNetTestSettings()
-                            .EnableNoRestore()
-                            .EnableNoBuild()
+                            .When(!RunManagedUnitTestsFromArtifacts, settings => settings
+                                .EnableNoRestore()
+                                .EnableNoBuild()
+                                .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatformAnyCPU())
                             .SetFilter(filter)
-                            .SetConfiguration(BuildConfiguration)
-                            .SetTargetPlatformAnyCPU()
                             .SetDDEnvironmentVariables("dd-tracer-dotnet")
                             .SetFramework(targetFramework)
                             .EnableCrashDumps()
@@ -1637,7 +1602,19 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .SetProjectFile(project));
+                                .SetProjectFile(project)
+                                .When(RunManagedUnitTestsFromArtifacts, settings =>
+                                {
+                                    // A DLL input goes directly to VSTest, bypassing MSBuild and NuGet.
+                                    var directory = GetProjectBinDirectory(project.Name, targetFramework);
+                                    var assembly = directory / $"{project.Name}.dll";
+                                    if (!File.Exists(assembly))
+                                    {
+                                        throw new FileNotFoundException("The producer's managed unit-test assembly is missing", assembly);
+                                    }
+
+                                    return settings.SetProjectFile(assembly).SetTestAdapterPath(directory);
+                                }));
 
                         // NUKE 6.3's batch executor clones settings and cannot serialize logger delegates.
                         // Attach the logger after configuration and execute each settings object directly.

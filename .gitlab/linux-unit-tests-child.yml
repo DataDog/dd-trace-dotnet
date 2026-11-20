@@ -74,9 +74,9 @@ workflow:
         "$tester_with_ca_certs_image" \
         sh -c '
           exec dotnet /build/bin/Debug/_build.dll \
-            BuildManagedUnitTests RunManagedUnitTests \
+            RunManagedUnitTests \
             --framework "$FRAMEWORK" \
-            --UnitTestFrameworkOnly true \
+            --RunManagedUnitTestsFromArtifacts true \
             --RequireGitlabCiVisibility true \
             --NugetPackageDirectory /project/packages
         '

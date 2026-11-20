@@ -53,9 +53,6 @@ build:
     paths:
       - artifacts/bin
       - artifacts/monitoring-home
-      - artifacts/obj/**/ref/**/*
-      - artifacts/obj/**/refint/**/*
-      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost.exe
       - artifacts/build_data/tests
       - artifacts/build_data/logs
       - artifacts/build_data/dumps
@@ -102,6 +99,7 @@ build:
         run_nuke "$native_image" BuildNativeTracerHome
       fi
       run_nuke "$managed_image" BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility
+      run_nuke "$managed_image" BuildManagedUnitTests
   artifacts:
     when: always
     expire_in: 2 weeks
@@ -109,9 +107,6 @@ build:
       - artifacts/bin
       - artifacts/monitoring-home
       - artifacts/native-symbols
-      - artifacts/obj/**/ref/**/*
-      - artifacts/obj/**/refint/**/*
-      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
       - artifacts/build_data/tests
       - artifacts/build_data/logs
       - artifacts/build_data/dumps

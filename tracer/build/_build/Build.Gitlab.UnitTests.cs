@@ -29,7 +29,7 @@ partial class Build
 
     Target ConfigureGitlabUnitTestCredentials => _ => _
         .Unlisted()
-        .Before(Restore, RestoreManagedUnitTestPackages, CompileManagedSrc, CompileManagedLoader, CompileInstrumentationVerificationLibrary)
+        .Before(Restore, CompileManagedSrc, CompileManagedLoader, CompileInstrumentationVerificationLibrary)
         .OnlyWhenDynamic(() => RequireGitlabCiVisibility)
         .Executes(() =>
         {

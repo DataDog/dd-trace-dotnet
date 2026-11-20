@@ -17,7 +17,7 @@ $dockerArguments = @(
 )
 
 # Keep shadow outputs separate from the existing signed build/publication workflow.
-& docker @dockerArguments Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishOpenTelemetryStartupHook `
+& docker @dockerArguments Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishOpenTelemetryStartupHook BuildManagedUnitTests `
     --NugetPackageDirectory c:\mnt\packages
 if ($LASTEXITCODE -ne 0) { throw "Windows shadow build failed ($LASTEXITCODE)" }
 
