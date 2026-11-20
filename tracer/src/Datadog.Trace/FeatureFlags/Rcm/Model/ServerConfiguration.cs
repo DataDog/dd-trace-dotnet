@@ -6,11 +6,14 @@
 #nullable enable
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ServerConfiguration
 {
+    private OptionalField<JToken> _evaluatorParams;
+
     [JsonConverter(typeof(StrictBooleanTrueJsonConverter))]
     public bool ObserveFullEvaluationData { get; set; }
 
@@ -20,8 +23,18 @@ internal sealed class ServerConfiguration
 
     public Environment? Environment { get; set; }
 
+    public JToken? EvaluatorParams
+    {
+        get => _evaluatorParams.Value;
+        set => _evaluatorParams = new OptionalField<JToken>(value);
+    }
+
+    internal OptionalField<JToken> EvaluatorParamsField => _evaluatorParams;
+
     [JsonConverter(typeof(FlagCollectionJsonConverter))]
     public FlagCollection? Flags { get; set; }
+
+    public bool ShouldSerializeEvaluatorParams() => _evaluatorParams.IsPresent;
 
     internal void Merge(ServerConfiguration other)
     {
@@ -41,6 +54,11 @@ internal sealed class ServerConfiguration
         if (other.Environment is not null)
         {
             Environment = other.Environment;
+        }
+
+        if (other.EvaluatorParamsField.IsPresent)
+        {
+            EvaluatorParams = other.EvaluatorParams;
         }
 
         if (Flags is null)
