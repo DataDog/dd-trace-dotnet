@@ -150,8 +150,8 @@ internal static class MessagePackStringCache
             return localCachedBytes.Bytes;
         }
 
-        // encode the string into MessagePack and cache the bytes before returning them
-        var bytes = string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
+        // Encode the string into MessagePack and cache the bytes before returning them.
+        var bytes = string.IsNullOrWhiteSpace(value) ? null : MessagePackBinary.GetEncodedStringBytes(value!);
         cachedBytes = new CachedBytes(value, bytes);
         return bytes;
     }

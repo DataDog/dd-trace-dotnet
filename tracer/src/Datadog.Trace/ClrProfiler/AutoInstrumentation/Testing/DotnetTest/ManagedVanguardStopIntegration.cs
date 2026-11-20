@@ -17,7 +17,6 @@ using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -63,7 +62,7 @@ public sealed class ManagedVanguardStopIntegration
                 return CallTargetReturn.GetDefault();
             }
 
-            if (!TryGetParentSessionSpanId(out var parentSessionSpanId))
+            if (!DotnetCommon.TryGetParentSessionSpanId(out var parentSessionSpanId))
             {
                 Common.Log.Warning("ManagedVanguardStopIntegration: Could not find the parent test session context for Microsoft CodeCoverage IPC.");
                 RecordMicrosoftCoverageIpcFailure();
@@ -263,7 +262,7 @@ public sealed class ManagedVanguardStopIntegration
     private static void RecordMicrosoftCoverageIpcFailure()
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-        if (TryGetParentSessionSpanId(out var sessionSpanId))
+        if (DotnetCommon.TryGetParentSessionSpanId(out var sessionSpanId))
         {
             CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
         }
@@ -273,22 +272,6 @@ public sealed class ManagedVanguardStopIntegration
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
         CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
-    }
-
-    private static bool TryGetParentSessionSpanId(out ulong sessionSpanId)
-    {
-        var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-            EnvironmentHelpers.GetEnvironmentVariables(),
-            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-        if (context.SpanContext is { } sessionContext)
-        {
-            sessionSpanId = sessionContext.SpanId;
-            return true;
-        }
-
-        sessionSpanId = 0;
-        return false;
     }
 
     private static bool TryReadCoverageXmlReportBackup(string filePath, out CoverageXmlReportBackup backup)

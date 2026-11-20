@@ -615,110 +615,6 @@ public class StatsdManagerTests
     }
 
     [Fact]
-    public async Task ConcurrentSettingsUpdateAndLeaseAcquisition_ThreadSafe()
-    {
-        var tracerSettings = new TracerSettings();
-        var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _) =>
-        {
-            Interlocked.Increment(ref clientCount);
-            return new(new MockStatsdClient());
-        });
-
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-        var cts = new CancellationTokenSource();
-        var disposedClientReturned = 0;
-
-        var tasks = new[]
-        {
-            Task.Run(() =>
-            {
-                // Update the environment continuously
-                var counter = 0;
-                while (!cts.Token.IsCancellationRequested)
-                {
-                    tracerSettings.Manager.UpdateManualConfigurationSettings(
-                        new ManualInstrumentationConfigurationSource(
-                            new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
-                            useDefaultSources: true),
-                        NullConfigurationTelemetry.Instance);
-                }
-            }),
-
-            Task.Run(() =>
-            {
-                while (!cts.Token.IsCancellationRequested)
-                {
-                    using var lease = manager.TryGetClientLease();
-                    if (lease.Client != null)
-                    {
-                        // Check if client is disposed WHILE we hold the lease
-                        if (((MockStatsdClient)lease.Client).DisposeCount > 0)
-                        {
-                            Interlocked.Increment(ref disposedClientReturned);
-                        }
-                    }
-                }
-            })
-        };
-
-        await Task.Delay(500);
-        cts.Cancel();
-
-        await Task.WhenAll(tasks);
-        disposedClientReturned.Should().Be(0, "should never return a disposed client while holding a lease");
-        await manager.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
-    {
-        var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
-        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
-        {
-            var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-            holders.Enqueue(client);
-            return client;
-        });
-
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-
-        // Create a bunch of leases
-        var leases = Enumerable.Range(0, 10)
-            .Select(_ => manager.TryGetClientLease())
-            .ToList();
-
-        var random = new Random();
-
-        var mutex = new CountdownEvent(leases.Count + 1);
-        var tasks = leases.Select(lease => Task.Run(() =>
-        {
-            mutex.Signal(); // decrement
-            mutex.Wait(); // wait for count to hit zero
-            Thread.Sleep(random.Next(1, 10));
-            lease.Dispose();
-        })).ToList();
-
-        // Wait and then do everything at once
-        mutex.Signal();
-        mutex.Wait();
-
-        // Trigger recreation while leases are being disposed
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-
-        await Task.WhenAll(tasks);
-
-        // We only recreated once
-        holders.Should().HaveCount(2);
-        holders.TryDequeue(out var client1).Should().BeTrue();
-        client1.IsDisposed.Should().BeTrue("old client should be disposed");
-        holders.TryDequeue(out var client2).Should().BeTrue();
-        client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
-        await manager.DisposeAsync();
-    }
-
-    [Fact]
     public async Task MultipleTransitionsBetweenRequiredAndNotRequired()
     {
         var holders = new List<StatsdManager.StatsdClientHolder>();
@@ -811,6 +707,118 @@ public class StatsdManagerTests
         holder.IsDisposed.Should().BeTrue();
         statsdClient.DisposeCount.Should().BeLessThanOrEqualTo(1); // we dispose in the background, so may not have happened yet
         await manager.DisposeAsync();
+    }
+
+    [Collection(nameof(HighConcurrencyTestCollection))]
+    public class ConcurrencyTests
+    {
+        [Fact]
+        public async Task ConcurrentSettingsUpdateAndLeaseAcquisition_ThreadSafe()
+        {
+            var tracerSettings = new TracerSettings();
+            var clientCount = 0;
+            var manager = new StatsdManager(tracerSettings, (_, _) =>
+            {
+                Interlocked.Increment(ref clientCount);
+                return new(new MockStatsdClient());
+            });
+
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+            var cts = new CancellationTokenSource();
+            var disposedClientReturned = 0;
+
+            var tasks = new[]
+            {
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        // Update the environment continuously
+                        var counter = 0;
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            tracerSettings.Manager.UpdateManualConfigurationSettings(
+                                new ManualInstrumentationConfigurationSource(
+                                    new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, $"env{counter++}" } },
+                                    useDefaultSources: true),
+                                NullConfigurationTelemetry.Instance);
+                        }
+                    },
+                    TaskCreationOptions.LongRunning),
+
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            using var lease = manager.TryGetClientLease();
+                            if (lease.Client != null)
+                            {
+                                // Check if client is disposed WHILE we hold the lease
+                                if (((MockStatsdClient)lease.Client).DisposeCount > 0)
+                                {
+                                    Interlocked.Increment(ref disposedClientReturned);
+                                }
+                            }
+                        }
+                    },
+                    TaskCreationOptions.LongRunning)
+            };
+
+            await Task.Delay(500);
+            cts.Cancel();
+
+            await Task.WhenAll(tasks);
+            disposedClientReturned.Should().Be(0, "should never return a disposed client while holding a lease");
+            await manager.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
+        {
+            var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
+            var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+            {
+                var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+                holders.Enqueue(client);
+                return client;
+            });
+
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+            // Create a bunch of leases
+            var leases = Enumerable.Range(0, 10)
+                .Select(_ => manager.TryGetClientLease())
+                .ToList();
+
+            var random = new Random();
+
+            var mutex = new CountdownEvent(leases.Count + 1);
+            var tasks = leases.Select(lease => Task.Run(() =>
+            {
+                mutex.Signal(); // decrement
+                mutex.Wait(); // wait for count to hit zero
+                Thread.Sleep(random.Next(1, 10));
+                lease.Dispose();
+            })).ToList();
+
+            // Wait and then do everything at once
+            mutex.Signal();
+            mutex.Wait();
+
+            // Trigger recreation while leases are being disposed
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+            await Task.WhenAll(tasks);
+
+            // We only recreated once
+            holders.Should().HaveCount(2);
+            holders.TryDequeue(out var client1).Should().BeTrue();
+            client1.IsDisposed.Should().BeTrue("old client should be disposed");
+            holders.TryDequeue(out var client2).Should().BeTrue();
+            client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
+            await manager.DisposeAsync();
+        }
     }
 
     private class MockStatsdClient : IDogStatsd

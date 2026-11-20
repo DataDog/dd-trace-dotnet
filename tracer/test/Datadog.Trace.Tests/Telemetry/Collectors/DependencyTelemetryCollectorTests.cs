@@ -169,27 +169,15 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeFalse($"{name} has a null version");
         }
 
-        [Fact]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHasRandom8CharName()
-        {
-            for (var i = 0; i < 1_000; i++)
-            {
-                // Path.GetRandomFileName() returns a name with the right format, so truncate
-                var name = Path.GetRandomFileName().Substring(0, 8);
-                var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
-
-                var collector = new DependencyTelemetryCollector();
-                collector.AssemblyLoaded(ignoredName, "some-guid");
-
-                collector.HasChanges().Should().BeFalse($"{name} has a zero version");
-            }
-        }
-
         [Theory]
+        [InlineData("My.Assembly")]       // an "ordinary" name: excluded purely based on the version
+        [InlineData("DynamicClasses123")]
+        [InlineData("dynamicclasses254")]
+        [InlineData("akkynf62")]
+        [InlineData("a43d8b99ea")]
         [InlineData("454845b558934321ad350977dd095960")]
-        [InlineData("41e68894e3e54239abe61eb16cb0e158")]
-        [InlineData("a1bc683e730d425c9de5fdf00dbdc003")]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas32CharHexName(string name)
+        [InlineData("InMemoryAssembly")]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZero(string name)
         {
             var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
 
@@ -204,75 +192,17 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
-        [InlineData("a43d8b99ea")]
-        [InlineData("1234567890")]
-        [InlineData("abcdef0123")]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas10CharHexName(string name)
+        [InlineData("0.0")]
+        [InlineData("0.0.0")]
+        public void DoesNotHaveChangesWhenAssemblyVersionHasFewerComponentsAndIsZero(string version)
         {
-            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+            // Versions with fewer than 4 components have Build/Revision set to -1
+            var ignoredName = CreateAssemblyName(Version.Parse(version), name: "My.Assembly");
 
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(ignoredName, "some-guid");
 
-            collector.HasChanges().Should().BeFalse($"{name} has a zero version and 10 hex chars");
-
-            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
-            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
-            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
-        }
-
-        [Theory]
-        [InlineData("dynamicclasses1")]
-        [InlineData("dynamicclasses254")]
-        [InlineData("dynamicclasses99999")]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndIsDynamicClassesPattern(string name)
-        {
-            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
-
-            var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(ignoredName, "some-guid");
-
-            collector.HasChanges().Should().BeFalse($"{name} has a zero version and matches dynamicclasses pattern");
-
-            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
-            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
-            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
-        }
-
-        [Theory]
-        [InlineData("dynamicclasses")]    // No digits
-        [InlineData("dynamicclassesabc")] // Letters instead of digits
-        [InlineData("dynamicclasses12a")] // Mixed digits and letters
-        [InlineData("mydynamicclasses1")] // Prefix before dynamicclasses
-        [InlineData("dynamic123")]        // Different prefix
-        [InlineData("DynamicClasses123")] // Wrong case (uppercase D and C)
-        [InlineData("DYNAMICCLASSES456")] // All uppercase
-        public void HasChangesWhenAssemblyNameIsNotValidDynamicClassesPattern(string name)
-        {
-            var validName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
-
-            var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(validName, "some-guid");
-
-            collector.HasChanges().Should().BeTrue($"{name} should not be filtered as it doesn't match dynamicclasses pattern");
-        }
-
-        [Theory]
-        [InlineData("InMemoryAssembly")]
-        [InlineData("inmemoryassembly")]
-        [InlineData("INMEMORYASSEMBLY")]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndNameIsInMemoryAssembly(string name)
-        {
-            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
-
-            var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(ignoredName, "some-guid");
-
-            collector.HasChanges().Should().BeFalse($"{name} has a zero version and matches InMemoryAssembly");
-
-            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
-            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
-            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
+            collector.HasChanges().Should().BeFalse($"{version} is a zero version");
         }
 
         [Fact]
@@ -328,7 +258,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("01234abc.DEF.cshtml")]  // Uppercase (not Base32)
         public void HasChangesWhenAssemblyNameIsNotValidCompiledRazorViewPattern(string assemblyName)
         {
-            var validName = CreateAssemblyName(new Version(0, 0, 0, 0), name: assemblyName);
+            var validName = CreateAssemblyName(new Version(1, 0, 0, 0), name: assemblyName);
 
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(validName, "some-guid");

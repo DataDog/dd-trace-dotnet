@@ -15,10 +15,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -197,10 +200,11 @@ namespace Datadog.Trace.Tests.Debugger
         public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
         {
             using var cts = new CancellationTokenSource();
-            var collectionJson = SerializeCollection(new CancelingCollection([1, 2, 3], cancelAfterVisitedItems: 2, cts), maxCollectionSize: 10, cts);
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2, 3], cancelAfterVisitedItems: 2, cts), maxCollectionSize: 10, cts, out var incompleteReasons);
 
             Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
             Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.NotEqual(0u, incompleteReasons & (1u << (int)MetricTags.DebuggerCaptureIncompleteReason.Timeout));
         }
 
         [Fact]
@@ -659,6 +663,36 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return"));
         }
 
+        [Theory]
+        [CombinatorialData]
+        public void Timestamp_IsWrittenAtRootAndInSnapshotWithSameValue(bool exceptionReplay, bool isFullSnapshot)
+        {
+            const Datadog.Trace.Debugger.Expressions.ProbeLocation location = Datadog.Trace.Debugger.Expressions.ProbeLocation.Method;
+            DebuggerSnapshotCreator snapshotCreator = exceptionReplay
+                ? new ExceptionReplaySnapshotCreator(isFullSnapshot, location, hasCondition: false, tags: [], CreateCaptureLimitInfo(), processTagsProvider: static () => null, serviceNameProvider: static () => "test-service")
+                : new DebuggerSnapshotCreator(isFullSnapshot, location, hasCondition: false, tags: [], CreateCaptureLimitInfo(), processTagsProvider: static () => null, serviceNameProvider: static () => "test-service");
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            var after = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            var rootTimestamp = snapshot["timestamp"];
+            var snapshotTimestamp = snapshot.SelectToken("debugger.snapshot.timestamp");
+            (rootTimestamp?.Type).Should().Be(JTokenType.Integer);
+            (snapshotTimestamp?.Type).Should().Be(JTokenType.Integer);
+            rootTimestamp!.Value<long>().Should().Be(snapshotTimestamp!.Value<long>());
+            rootTimestamp.Value<long>().Should().BeInRange(before, after);
+        }
+
         [Fact]
         public async Task SpecialType_StringBuilder()
         {
@@ -760,7 +794,17 @@ namespace Datadog.Trace.Tests.Debugger
             return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
         }
 
+        private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts, out uint incompleteReasons)
+        {
+            return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts, out incompleteReasons);
+        }
+
         private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts = null)
+        {
+            return SerializeCollection(collection, maxCollectionSize, collectionCount, wasTruncated, cts, out _);
+        }
+
+        private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts, out uint incompleteReasons)
         {
             var ownsCancellationTokenSource = cts is null;
             cts ??= new CancellationTokenSource();
@@ -784,19 +828,21 @@ namespace Datadog.Trace.Tests.Debugger
                 using var stringWriter = new System.IO.StringWriter();
                 using var jsonWriter = new JsonTextWriter(stringWriter);
                 jsonWriter.WriteStartObject();
-                serializeEnumerable!.Invoke(
-                    null,
-                    [
-                        collection,
-                        collection.GetType(),
-                        jsonWriter,
-                        collection,
-                        enumerableInfo,
-                        0,
-                        cts,
-                        limitInfo,
-                        new HashSet<object>()
-                    ]);
+                object[] arguments =
+                [
+                    collection,
+                    collection.GetType(),
+                    jsonWriter,
+                    collection,
+                    enumerableInfo,
+                    0,
+                    cts,
+                    limitInfo,
+                    new HashSet<object>(),
+                    0u
+                ];
+                serializeEnumerable!.Invoke(null, arguments);
+                incompleteReasons = (uint)arguments[9];
                 jsonWriter.WriteEndObject();
 
                 return JObject.Parse(stringWriter.ToString());

@@ -14,7 +14,31 @@ internal interface IContext : IDisposable
 {
     IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds);
 
-    IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp);
+    /// <param name="ephemeralAddressData">the addresses to evaluate in their own subcontext</param>
+    /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
+    /// <param name="isRasp">whether this run should be reported as a RASP run</param>
+    /// <param name="outcome">why the run produced no result. The persistent overload reports its own
+    /// failure and has nothing else to distinguish, but a RASP run has to tell an ended request from a
+    /// binding failure and from a WAF that is gone, and only the run itself knows which happened.</param>
+    IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
+
+    /// <summary>
+    /// Runs a batch in the subcontext identified by <paramref name="subcontextId"/>, creating it if needed,
+    /// so that several batches of one operation (e.g. the request and the response of an outbound call)
+    /// are evaluated together while staying isolated from other operations. The subcontext is kept until
+    /// <see cref="CloseSubcontext"/> or the disposal of this context.
+    /// </summary>
+    /// <param name="subcontextId">identifies the operation the batch belongs to</param>
+    /// <param name="addressData">the addresses to evaluate</param>
+    /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
+    /// <param name="isRasp">whether this run should be reported as a RASP run</param>
+    /// <param name="outcome">why the run produced no result</param>
+    IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
+
+    /// <summary>
+    /// Releases the subcontext kept for <paramref name="subcontextId"/>; a no-op if there is none.
+    /// </summary>
+    void CloseSubcontext(ulong subcontextId);
 
     /// <summary>
     /// Here we compare with potential previous runs, and make sure we don't override previous values provided by the SDK

@@ -22,6 +22,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("1.14.0")]
         [InlineData("1.16.0")]
         [InlineData("1.23.0")]
+        [InlineData("1.30.0")]
         public void ShouldNotInitialize(string version)
         {
             var libraryInitializationResult = WafLibraryInvoker.Initialize(null, null, version);

@@ -34,7 +34,6 @@ src/Datadog.Trace/TracerManagerFactory.cs
 src/Datadog.Trace/Agent/Api.cs
 src/Datadog.Trace/Agent/ApiOtlp.cs
 src/Datadog.Trace/Agent/IApi.cs
-src/Datadog.Trace/Agent/IApiRequest.cs
 src/Datadog.Trace/Agent/IApiRequestFactory.cs
 src/Datadog.Trace/Agent/IApiResponseTelemetryExtensions.cs
 src/Datadog.Trace/Agent/IKeepRateCalculator.cs
@@ -42,7 +41,6 @@ src/Datadog.Trace/Agent/IStatsAggregator.cs
 src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
-src/Datadog.Trace/Agent/SpanBuffer.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
 src/Datadog.Trace/Agent/StatsBuffer.cs
@@ -213,7 +211,6 @@ src/Datadog.Trace/Agent/TraceSamplers/ErrorSampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/ITraceChunkSampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/PrioritySampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/RareSampler.cs
-src/Datadog.Trace/Agent/Transports/ApiWebRequest.cs
 src/Datadog.Trace/Agent/Transports/ApiWebRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequestFactory.cs
@@ -232,7 +229,6 @@ src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.c
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
 src/Datadog.Trace/Debugger/Configurations/Trie.cs
 src/Datadog.Trace/Debugger/Expressions/CaptureInfo.cs
-src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
@@ -240,7 +236,6 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Dump.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.General.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.String.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs
@@ -311,7 +306,6 @@ src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs
 src/Datadog.Trace/Util/Http/HttpRequestExtensions.Core.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs
-src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DDWAF_OBJ_TYPE.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/NativeLibrary.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/ReducedRegistryAccess.cs
@@ -372,7 +366,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/IThreadContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinRequestStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/RequestContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ViewContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueProvider.cs

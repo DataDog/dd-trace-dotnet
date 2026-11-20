@@ -286,7 +286,7 @@ namespace Datadog.Trace.Debugger
                         new LineProbeResolutionDiagnostics(ProbeFile: "<empty>", ProbeId: probe.Id));
                 }
 
-                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                if (probe.Where?.Lines?.Length != 1 || !int.TryParseInvariant(probe.Where.Lines[0], out var lineNum))
                 {
                     var invalidLineDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                      ? new LineProbeResolutionDiagnostics(
@@ -497,6 +497,14 @@ namespace Datadog.Trace.Debugger
                 return Path.DirectorySeparatorChar;
             }
 
+            private static bool EndsAtSegmentBoundary(string reversedMatch, int prefixLength)
+            {
+                // The trie only returns paths that start with the (non-empty) prefix, so both indexes are in range.
+                return IsDirectorySeparator(reversedMatch[prefixLength - 1])
+                    || prefixLength == reversedMatch.Length
+                    || IsDirectorySeparator(reversedMatch[prefixLength]);
+            }
+
             private static int CountPathSegments(string path)
             {
                 if (string.IsNullOrEmpty(path))
@@ -559,7 +567,9 @@ namespace Datadog.Trace.Debugger
                 var directoryPathSeparator = _directoryPathSeparator ?? Path.DirectorySeparatorChar;
                 var reversePath = directoryPathSeparator == '\\' ? pathQuery.ReversedBackslashPath : pathQuery.ReversedForwardSlashPath;
                 var match = _trie.GetStringStartingWith(reversePath);
-                if (match != null)
+                // The trie matches characters, not path segments, so the outermost query segment can match just the start of
+                // a longer segment (e.g. "ap/MyFile.cs" vs. "/app/MyFile.cs", or "MyFile.c" vs. "MyFile.cs").
+                if (match is not null && EndsAtSegmentBoundary(match, reversePath.Length))
                 {
                     return GetReversePath(match, directoryPathSeparator, trimTrailingSeparators: false);
                 }

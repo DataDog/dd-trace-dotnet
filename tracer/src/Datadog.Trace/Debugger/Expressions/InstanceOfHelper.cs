@@ -48,6 +48,17 @@ internal static class InstanceOfHelper
     internal static bool IsInstanceOf<TValue>(TValue value, string typeName)
     {
         var type = ResolveType(typeName);
+        return IsInstanceOf(value, type, typeName);
+    }
+
+    internal static bool IsInstanceOf<TValue>(TValue value, string typeName, ref EvaluationBudget budget)
+    {
+        var type = ResolveType(typeName, ref budget);
+        return IsInstanceOf(value, type, typeName);
+    }
+
+    private static bool IsInstanceOf<TValue>(TValue value, Type type, string typeName)
+    {
         var valueType = typeof(TValue);
         bool result;
         if (valueType.IsValueType)
@@ -75,6 +86,13 @@ internal static class InstanceOfHelper
 
     internal static Type ResolveType(string typeName)
     {
+        var budget = EvaluationBudget.Create(int.MaxValue);
+        return ResolveType(typeName, ref budget);
+    }
+
+    internal static Type ResolveType(string typeName, ref EvaluationBudget budget)
+    {
+        budget.ThrowIfExceeded();
         if (StringUtil.IsNullOrEmpty(typeName))
         {
             ThrowInvalidTypeName();
@@ -95,7 +113,7 @@ internal static class InstanceOfHelper
         var typeNameInfo = ParseTypeName(typeName);
         if (typeNameInfo.IsAssemblyQualified)
         {
-            return AssemblyQualifiedTypeResolver.Resolve(typeName, typeNameInfo);
+            return AssemblyQualifiedTypeResolver.Resolve(typeName, typeNameInfo, ref budget);
         }
 
         if (MayResolveWithoutAssemblyScan(typeNameInfo.SearchTypeName) &&
@@ -114,14 +132,15 @@ internal static class InstanceOfHelper
             ThrowFullyQualifiedNameRequired(typeName);
         }
 
-        return ResolveLoadedType(typeName, typeNameInfo);
+        return ResolveLoadedType(typeName, typeNameInfo, ref budget);
     }
 
-    private static Type ResolveLoadedType(string typeName, TypeNameInfo typeNameInfo)
+    private static Type ResolveLoadedType(string typeName, TypeNameInfo typeNameInfo, ref EvaluationBudget budget)
     {
         ResolutionState? lastResolution = null;
         for (var i = 0; i < MaxResolutionRetries; i++)
         {
+            budget.ThrowIfExceededImmediately();
             var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
             ResolutionStates.TryGetValue(typeName, out var currentResolution);
             if (TryGetCachedResolution(typeName, observedGeneration, ref currentResolution, out var cachedType))
@@ -130,10 +149,11 @@ internal static class InstanceOfHelper
             }
 
             var assemblies = Volatile.Read(ref _getAssemblies)();
+            budget.ThrowIfExceededImmediately();
             var alreadyScannedAssemblies = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
                                                ? null
                                                : currentResolution?.ScannedAssemblies;
-            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, alreadyScannedAssemblies);
+            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, alreadyScannedAssemblies, ref budget);
             lastResolution = AddScannedResolution(typeName, currentResolution, scanResult, observedGeneration);
             if (lastResolution.IsAmbiguous)
             {
@@ -161,7 +181,7 @@ internal static class InstanceOfHelper
         throw UnknownType(typeName);
     }
 
-    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, AssemblyIdentity[]? alreadyScannedAssemblies)
+    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, AssemblyIdentity[]? alreadyScannedAssemblies, ref EvaluationBudget budget)
     {
         Type? resolvedType = null;
         var isAmbiguous = false;
@@ -175,6 +195,7 @@ internal static class InstanceOfHelper
 
         for (var i = 0; i < assemblies.Length; i++)
         {
+            budget.ThrowIfExceededImmediately();
             var assembly = assemblies[i];
             var assemblyIdentity = new AssemblyIdentity(assembly);
             if (ContainsAssemblyIdentity(alreadyScannedAssemblies, alreadyScannedAssemblySet, assemblyIdentity))
@@ -183,7 +204,8 @@ internal static class InstanceOfHelper
             }
 
             AddAssemblyIdentity(ref scannedAssemblies, ref scannedAssemblyCount, assemblies.Length, assemblyIdentity);
-            var matchedType = TryResolveFromAssembly(typeName, typeNameInfo, assembly);
+            var matchedType = TryResolveFromAssembly(typeName, typeNameInfo, assembly, ref budget);
+            budget.ThrowIfExceededImmediately();
             if (matchedType is null)
             {
                 continue;
@@ -206,7 +228,7 @@ internal static class InstanceOfHelper
         return new ScanResult(resolvedType, isAmbiguous, ToExactAssemblyIdentityArray(scannedAssemblies, scannedAssemblyCount));
     }
 
-    private static Type? TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly)
+    private static Type? TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly, ref EvaluationBudget budget)
     {
         if (typeNameInfo.AssemblyName is { } assemblyName &&
             !AssemblyQualifiedTypeResolver.IsMatchingAssembly(assembly, assemblyName))
@@ -222,7 +244,7 @@ internal static class InstanceOfHelper
                 return assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: false);
             }
 
-            return ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly);
+            return ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ref budget);
         }
         catch (AmbiguousMatchException ex)
         {
@@ -249,21 +271,9 @@ internal static class InstanceOfHelper
         return exception is TypeLoadException or FileNotFoundException or BadImageFormatException;
     }
 
-    private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly)
+    private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly, ref EvaluationBudget budget)
     {
-        return Type.GetType(
-            searchTypeName,
-            AssemblyQualifiedTypeResolver.ResolveGenericArgumentAssembly,
-            (resolvedAssembly, nestedTypeName, nestedIgnoreCase) => ResolveTypePartFromLoadedAssembly(resolvedAssembly ?? assembly, nestedTypeName, nestedIgnoreCase),
-            throwOnError: false,
-            ignoreCase: false);
-    }
-
-    private static Type? ResolveTypePartFromLoadedAssembly(Assembly assembly, string typeName, bool ignoreCase)
-    {
-        return MayContainAssemblyQualifiedGenericArguments(typeName)
-                   ? ResolveConstructedGenericFromLoadedAssemblies(typeName, assembly)
-                   : assembly.GetType(typeName, throwOnError: false, ignoreCase: ignoreCase);
+        return AssemblyQualifiedTypeResolver.ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ref budget);
     }
 
     private static bool MayContainAssemblyQualifiedGenericArguments(string typeName)
@@ -806,9 +816,9 @@ internal static class InstanceOfHelper
 
     private sealed class AssemblyQualifiedTypeResolver
     {
-        internal static Type Resolve(string typeName, TypeNameInfo typeNameInfo)
+        internal static Type Resolve(string typeName, TypeNameInfo typeNameInfo, ref EvaluationBudget budget)
         {
-            if (TryResolveKnownFrameworkType(typeName, typeNameInfo, out var frameworkType))
+            if (TryResolveKnownFrameworkType(typeName, typeNameInfo, ref budget, out var frameworkType))
             {
                 AddResolvedType(typeName, frameworkType, Volatile.Read(ref _assemblyLoadGeneration));
                 return frameworkType;
@@ -819,7 +829,20 @@ internal static class InstanceOfHelper
                 ThrowFullyQualifiedNameRequired(typeName);
             }
 
-            return ResolveLoadedType(typeName, typeNameInfo);
+            return ResolveLoadedType(typeName, typeNameInfo, ref budget);
+        }
+
+        internal static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly, ref EvaluationBudget budget)
+        {
+            var resolver = new BudgetedTypeResolver(assembly, budget);
+            try
+            {
+                return resolver.ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, ignoreCase: false);
+            }
+            finally
+            {
+                resolver.CopyBudgetTo(ref budget);
+            }
         }
 
         internal static bool IsMatchingAssembly(Assembly assembly, string assemblyName)
@@ -835,7 +858,7 @@ internal static class InstanceOfHelper
                     AssemblySimpleNameEquals(fullName, assemblyName));
         }
 
-        private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, [NotNullWhen(true)] out Type? type)
+        private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, ref EvaluationBudget budget, [NotNullWhen(true)] out Type? type)
         {
             type = null;
             if (typeNameInfo.AssemblyName is not { } assemblyName ||
@@ -845,7 +868,7 @@ internal static class InstanceOfHelper
             }
 
             type = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
-                       ? ResolveConstructedGenericFromKnownFrameworkAssemblies(typeNameInfo.SearchTypeName, ignoreCase: false)
+                       ? ResolveConstructedGenericFromKnownFrameworkAssemblies(typeNameInfo.SearchTypeName, ignoreCase: false, ref budget)
                        : typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: false);
             if (type is not null)
             {
@@ -857,30 +880,34 @@ internal static class InstanceOfHelper
                 return false;
             }
 
-            type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: false);
+            type = ResolveUsingLoadedAssembly(typeName, ref budget);
             return type is not null;
         }
 
-        private static Type? ResolveConstructedGenericFromKnownFrameworkAssemblies(string searchTypeName, bool ignoreCase)
+        private static Type? ResolveConstructedGenericFromKnownFrameworkAssemblies(string searchTypeName, bool ignoreCase, ref EvaluationBudget budget)
         {
-            return Type.GetType(
-                searchTypeName,
-                ResolveGenericArgumentAssembly,
-                ResolveKnownFrameworkGenericTypePart,
-                throwOnError: false,
-                ignoreCase);
+            var resolver = new BudgetedTypeResolver(defaultAssembly: null, budget);
+            try
+            {
+                return resolver.ResolveConstructedGenericFromKnownFrameworkAssemblies(searchTypeName, ignoreCase);
+            }
+            finally
+            {
+                resolver.CopyBudgetTo(ref budget);
+            }
         }
 
-        private static Type? ResolveKnownFrameworkGenericTypePart(Assembly? resolvedAssembly, string nestedTypeName, bool ignoreCase)
+        private static Type? ResolveUsingLoadedAssembly(string typeName, ref EvaluationBudget budget)
         {
-            if (resolvedAssembly is not null)
+            var resolver = new BudgetedTypeResolver(defaultAssembly: null, budget);
+            try
             {
-                return resolvedAssembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+                return resolver.ResolveUsingLoadedAssembly(typeName);
             }
-
-            return IsKnownFrameworkTypeName(nestedTypeName)
-                       ? typeof(object).Assembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase)
-                       : null;
+            finally
+            {
+                resolver.CopyBudgetTo(ref budget);
+            }
         }
 
         private static Assembly? ResolveKnownFrameworkAssembly(AssemblyName assemblyName)
@@ -888,13 +915,16 @@ internal static class InstanceOfHelper
             return IsKnownFrameworkAssemblyName(assemblyName.FullName) ? typeof(object).Assembly : null;
         }
 
-        internal static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
+        private static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName, ref EvaluationBudget budget)
         {
             var requestedFullName = assemblyName.FullName;
+            budget.ThrowIfExceededImmediately();
             var assemblies = Volatile.Read(ref _getAssemblies)();
+            budget.ThrowIfExceededImmediately();
 
             for (var i = 0; i < assemblies.Length; i++)
             {
+                budget.ThrowIfExceededImmediately();
                 var assembly = assemblies[i];
                 if (string.Equals(assembly.FullName, requestedFullName, StringComparison.Ordinal))
                 {
@@ -910,6 +940,7 @@ internal static class InstanceOfHelper
 
             for (var i = 0; i < assemblies.Length; i++)
             {
+                budget.ThrowIfExceededImmediately();
                 var assembly = assemblies[i];
                 if (AssemblySimpleNameEquals(assembly.FullName, requestedName))
                 {
@@ -918,11 +949,6 @@ internal static class InstanceOfHelper
             }
 
             return null;
-        }
-
-        internal static Assembly? ResolveGenericArgumentAssembly(AssemblyName assemblyName)
-        {
-            return ResolveKnownFrameworkAssembly(assemblyName) ?? ResolveLoadedAssembly(assemblyName);
         }
 
         private static bool AssemblyNameHasMetadata(string assemblyName)
@@ -970,6 +996,91 @@ internal static class InstanceOfHelper
             }
 
             return AssemblyNameEquals(assemblyFullName, simpleNameLength, expectedName);
+        }
+
+        private sealed class BudgetedTypeResolver
+        {
+            private readonly Assembly? _defaultAssembly;
+            private EvaluationBudget _budget;
+
+            internal BudgetedTypeResolver(Assembly? defaultAssembly, EvaluationBudget budget)
+            {
+                _defaultAssembly = defaultAssembly;
+                _budget = budget;
+            }
+
+            internal void CopyBudgetTo(ref EvaluationBudget budget)
+            {
+                budget = _budget;
+            }
+
+            internal Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, bool ignoreCase)
+            {
+                var type = Type.GetType(
+                    searchTypeName,
+                    ResolveGenericArgumentAssembly,
+                    ResolveTypePartFromLoadedAssembly,
+                    throwOnError: false,
+                    ignoreCase);
+                _budget.ThrowIfExceededImmediately();
+                return type;
+            }
+
+            internal Type? ResolveConstructedGenericFromKnownFrameworkAssemblies(string searchTypeName, bool ignoreCase)
+            {
+                var type = Type.GetType(
+                    searchTypeName,
+                    ResolveGenericArgumentAssembly,
+                    ResolveKnownFrameworkGenericTypePart,
+                    throwOnError: false,
+                    ignoreCase);
+                _budget.ThrowIfExceededImmediately();
+                return type;
+            }
+
+            internal Type? ResolveUsingLoadedAssembly(string typeName)
+            {
+                var type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: false);
+                _budget.ThrowIfExceededImmediately();
+                return type;
+            }
+
+            internal Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
+            {
+                return AssemblyQualifiedTypeResolver.ResolveLoadedAssembly(assemblyName, ref _budget);
+            }
+
+            private Assembly? ResolveGenericArgumentAssembly(AssemblyName assemblyName)
+            {
+                return AssemblyQualifiedTypeResolver.ResolveKnownFrameworkAssembly(assemblyName) ?? ResolveLoadedAssembly(assemblyName);
+            }
+
+            private Type? ResolveTypePartFromLoadedAssembly(Assembly? resolvedAssembly, string nestedTypeName, bool ignoreCase)
+            {
+                _budget.ThrowIfExceededImmediately();
+                var assembly = resolvedAssembly ?? _defaultAssembly;
+                if (assembly is null)
+                {
+                    return null;
+                }
+
+                return MayContainAssemblyQualifiedGenericArguments(nestedTypeName)
+                           ? ResolveConstructedGenericFromLoadedAssemblies(nestedTypeName, ignoreCase)
+                           : assembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+            }
+
+            private Type? ResolveKnownFrameworkGenericTypePart(Assembly? resolvedAssembly, string nestedTypeName, bool ignoreCase)
+            {
+                _budget.ThrowIfExceededImmediately();
+                if (resolvedAssembly is not null)
+                {
+                    return resolvedAssembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+                }
+
+                return IsKnownFrameworkTypeName(nestedTypeName)
+                           ? typeof(object).Assembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase)
+                           : null;
+            }
         }
     }
 

@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["NUnit.Framework.Internal.TestMethod", "NUnit.Framework.Interfaces.ITestFilter", "NUnit.Framework.Internal.Abstractions.IDebugger"],
     MinimumVersion = "3.13.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

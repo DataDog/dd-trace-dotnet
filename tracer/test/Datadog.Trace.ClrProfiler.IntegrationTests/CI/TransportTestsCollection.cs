@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [CollectionDefinition(nameof(TransportTestsCollection), DisableParallelization = true)]
 public class TransportTestsCollection
 {

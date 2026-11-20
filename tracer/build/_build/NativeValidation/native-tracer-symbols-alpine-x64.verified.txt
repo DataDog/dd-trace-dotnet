@@ -7,7 +7,6 @@ abort
 atexit
 bcmp
 btowc
-ceil
 clock_gettime
 close
 dl_iterate_phdr
@@ -67,6 +66,7 @@ mkdir
 nanosleep
 open
 poll
+posix_memalign
 prctl
 pthread_cond_broadcast
 pthread_cond_destroy

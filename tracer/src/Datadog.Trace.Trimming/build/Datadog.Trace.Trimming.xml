@@ -10,6 +10,8 @@
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
+   <assembly fullname="Azure.Messaging.EventGrid" />
+   <assembly fullname="Azure.Messaging.EventGrid.Namespaces" />
    <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
@@ -53,6 +55,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.IHttpResponseFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
@@ -91,6 +94,7 @@
    <assembly fullname="Microsoft.AspNetCore.StaticFiles" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
+   <assembly fullname="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" />
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.Grpc" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />
@@ -376,6 +380,7 @@
       <type fullname="System.Linq.Expressions.NewArrayExpression" />
       <type fullname="System.Linq.Expressions.NewExpression" />
       <type fullname="System.Linq.Expressions.ParameterExpression" />
+      <type fullname="System.Linq.Expressions.TryExpression" />
       <type fullname="System.Linq.Expressions.TypeBinaryExpression" />
       <type fullname="System.Linq.Expressions.UnaryExpression" />
       <type fullname="System.Runtime.CompilerServices.CallSite" />
@@ -634,6 +639,7 @@
       <type fullname="System.AttributeTargets" />
       <type fullname="System.AttributeUsageAttribute" />
       <type fullname="System.BadImageFormatException" />
+      <type fullname="System.Base64FormattingOptions" />
       <type fullname="System.BitConverter" />
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
@@ -732,10 +738,12 @@
       <type fullname="System.GC" />
       <type fullname="System.GCGenerationInfo" />
       <type fullname="System.GCMemoryInfo" />
+      <type fullname="System.Globalization.CharUnicodeInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
       <type fullname="System.Globalization.NumberStyles" />
+      <type fullname="System.Globalization.UnicodeCategory" />
       <type fullname="System.Guid" />
       <type fullname="System.HashCode" />
       <type fullname="System.IAsyncDisposable" />
@@ -769,6 +777,7 @@
       <type fullname="System.IO.FileInfo" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
+      <type fullname="System.IO.FileOptions" />
       <type fullname="System.IO.FileShare" />
       <type fullname="System.IO.FileStream" />
       <type fullname="System.IO.FileSystemInfo" />
@@ -875,7 +884,6 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
-      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
@@ -901,6 +909,7 @@
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.InternalsVisibleToAttribute" />
+      <type fullname="System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsByRefLikeAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsExternalInit" />
       <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" />
@@ -923,10 +932,13 @@
       <type fullname="System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs" />
       <type fullname="System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute" />
       <type fullname="System.Runtime.InteropServices.ComVisibleAttribute" />
+      <type fullname="System.Runtime.InteropServices.ExternalException" />
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
+      <type fullname="System.Runtime.InteropServices.LayoutKind" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
+      <type fullname="System.Runtime.InteropServices.StructLayoutAttribute" />
       <type fullname="System.Runtime.JitInfo" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
@@ -944,6 +956,7 @@
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
       <type fullname="System.SByte" />
+      <type fullname="System.Security.Cryptography.CryptographicException" />
       <type fullname="System.Security.Principal.TokenImpersonationLevel" />
       <type fullname="System.Security.SecurityCriticalAttribute" />
       <type fullname="System.Security.SecurityException" />
@@ -953,12 +966,14 @@
       <type fullname="System.SerializableAttribute" />
       <type fullname="System.Single" />
       <type fullname="System.Span`1" />
+      <type fullname="System.StackOverflowException" />
       <type fullname="System.String" />
       <type fullname="System.StringComparer" />
       <type fullname="System.StringComparison" />
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
       <type fullname="System.Text.Encoder" />
+      <type fullname="System.Text.EncoderFallbackException" />
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
@@ -967,6 +982,7 @@
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
       <type fullname="System.Threading.LazyThreadSafetyMode" />
+      <type fullname="System.Threading.PeriodicTimer" />
       <type fullname="System.Threading.Tasks.Task" />
       <type fullname="System.Threading.Tasks.Task`1" />
       <type fullname="System.Threading.Tasks.TaskAsyncEnumerableExtensions" />
@@ -1068,7 +1084,6 @@
       <type fullname="System.DllNotFoundException" />
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
-      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
@@ -1101,6 +1116,7 @@
    </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
+      <type fullname="System.Runtime.Loader.AssemblyLoadContext/ContextualReflectionScope" />
    </assembly>
    <assembly fullname="System.Runtime.Numerics">
       <type fullname="System.Numerics.BigInteger" />
@@ -1156,7 +1172,10 @@
       <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
       <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
       <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonReaderOptions" />
+      <type fullname="System.Text.Json.JsonTokenType" />
       <type fullname="System.Text.Json.JsonValueKind" />
+      <type fullname="System.Text.Json.Utf8JsonReader" />
    </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />
@@ -1171,10 +1190,13 @@
    </assembly>
    <assembly fullname="System.Threading">
       <type fullname="System.Threading.AbandonedMutexException" />
+      <type fullname="System.Threading.AsyncFlowControl" />
       <type fullname="System.Threading.AsyncLocal`1" />
       <type fullname="System.Threading.AsyncLocalValueChangedArgs`1" />
       <type fullname="System.Threading.AutoResetEvent" />
+      <type fullname="System.Threading.ContextCallback" />
       <type fullname="System.Threading.EventWaitHandle" />
+      <type fullname="System.Threading.ExecutionContext" />
       <type fullname="System.Threading.Interlocked" />
       <type fullname="System.Threading.LazyInitializer" />
       <type fullname="System.Threading.ManualResetEvent" />

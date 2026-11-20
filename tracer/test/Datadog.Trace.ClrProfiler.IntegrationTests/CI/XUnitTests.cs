@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public abstract class XUnitTests : TestingFrameworkTest
     {
@@ -70,6 +71,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     // Remove process tags that get added to the first span of a payload
                     targetSpan.Tags.Remove(Tags.ProcessTags);
+
+                    // Remove the otlp export marker that gets added to the first span of a payload
+                    targetSpan.Tags.Remove(Tags.SdkOtlpExport);
 
                     // Remove EFD tags
                     targetSpan.Tags.Remove(TestTags.TestIsNew);
@@ -134,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
 
                     // CI Library Language
-                    AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                    AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                     // Session data
                     AssertTargetSpanExists(targetSpan, TestTags.Command);

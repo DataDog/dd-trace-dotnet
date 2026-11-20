@@ -16,6 +16,27 @@ which format(s) are emitted. It is a **bitfield integer**:
 
 Setting `3` is useful for validation tests that compare the two outputs.
 
+## Type Names
+
+Both formats store each type name once in a string table and reference it by index.
+Names are **fully qualified**: `Namespace.Type` followed by the generic parameter or
+array suffix when there is one, for example
+`System.Collections.Generic.Dictionary<System.String, MyApp.Order>` or
+`MyApp.Order[]`. Generic arguments are themselves fully qualified and separated by a
+comma **and a space**, which is what `FrameStore` emits. A nested type keeps its
+enclosing types, joined with a dot: `MyApp.Outer.Inner`.
+
+Names come from `IFrameStore::GetTypeName(ClassID, std::string&)`, which is the same
+overload the class histogram uses, so a type name in a reference tree can be matched
+directly against the corresponding entry in the `histogram.json` of the same snapshot.
+
+Note that the `std::string_view` overload of `GetTypeName` drops only the namespace —
+it returns `Outer.Inner` for `MyApp.Outer.Inner` — and is reserved for the allocations
+recorder. Serializers must not use it, or the two artifacts would no longer be
+comparable.
+
+A type whose name cannot be resolved is stored as `?`.
+
 ---
 
 ## Format 1: JSON (v1)
@@ -28,13 +49,13 @@ Filename: `reference_tree.json`
   "tt": ["System.String", "System.Object[]", "MyApp.Order"],
   "r": [
     {
-      "t": 0, "c": "K", "ic": 42, "ts": 1680,
+      "t": 0, "c": "K", "ic": 42, "ts": 0,
       "ch": [
-        { "t": 2, "ic": 10, "ts": 512,
-          "ch": [{ "t": 1, "ic": 5, "ts": 200 }] }
+        { "t": 2, "ic": 10,
+          "ch": [{ "t": 1, "ic": 5 }] }
       ]
     },
-    { "t": 2, "c": "S", "ic": 100, "ts": 8000, "fn": "_staticOrders" }
+    { "t": 2, "c": "S", "ic": 100, "ts": 0, "fn": "_staticOrders" }
   ]
 }
 ```
@@ -44,14 +65,19 @@ Filename: `reference_tree.json`
 | Key   | Scope      | Type     | Description |
 |-------|------------|----------|-------------|
 | `v`   | top-level  | int      | Format version (currently `1`) |
-| `tt`  | top-level  | string[] | Type string table; nodes reference types by index |
+| `tt`  | top-level  | string[] | Type string table (see [Type Names](#type-names)); nodes reference types by index |
 | `r`   | top-level  | array    | Root nodes |
 | `t`   | node/root  | uint32   | Index into `tt` |
 | `c`   | root only  | string   | Root category code (see table below) |
 | `ic`  | node/root  | uint64   | Instance count at this tree position |
-| `ts`  | node/root  | uint64   | Total size in bytes |
+| `ts`  | node/root  | uint64   | Reserved compatibility field. Roots emit `0`; child nodes omit it when zero |
 | `fn`  | root only  | string?  | Static field name (only for `"c":"S"` roots) |
 | `ch`  | node/root  | array?   | Children (recursive, omitted when empty) |
+
+Reference-tree sizes are intentionally not collected. The class histogram in the
+same heap snapshot is the authoritative source for per-type instance counts and
+bytes. Reference-tree `ic` remains path-position multiplicity, not a unique-object
+count.
 
 ### Root Category Codes
 
@@ -88,7 +114,8 @@ platform.
 │   type_count   : varint                         │
 │   root_count   : varint                         │
 ├─────────────────────────────────────────────────┤
-│ String Table (one entry per type)               │
+│ String Table (one entry per type, see           │
+│                Type Names above)                │
 │   name_len     : varint (byte count)            │
 │   name_bytes   : uint8[name_len]  (UTF-8)       │
 ├─────────────────────────────────────────────────┤
@@ -96,7 +123,7 @@ platform.
 │   type_index   : varint                         │
 │   category     : uint8 (RootCategory ordinal)   │
 │   inst_count   : varint                         │
-│   total_size   : varint                         │
+│   total_size   : varint (reserved, always 0)    │
 │   field_len    : varint (0 = no field name)     │
 │   field_bytes  : uint8[field_len]  (UTF-8)      │
 │   child_count  : varint                         │
@@ -105,7 +132,7 @@ platform.
 │ Tree Nodes (recursive children)                 │
 │   type_index   : varint                         │
 │   inst_count   : varint                         │
-│   total_size   : varint                         │
+│   total_size   : varint (reserved, always 0)    │
 │   child_count  : varint                         │
 │   [children follow inline in DFS order]         │
 └─────────────────────────────────────────────────┘

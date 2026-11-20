@@ -18,7 +18,7 @@
       "type": "SESSION_TIMEOUT",
       "hash": XXX,
       "location": {
-        "path": "Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0",
+        "class": "Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0",
         "method": "<ConfigureServices>b__0"
       },
       "evidence": {

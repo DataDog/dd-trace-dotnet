@@ -166,7 +166,7 @@ public:
 
 #ifdef ARM64
         // TODO maybe a mock of ICorProfilerInfo to avoid crashing
-        _pManagedCodeCache = std::make_unique<ManagedCodeCache>(nullptr);
+        _pManagedCodeCache = std::make_unique<ManagedCodeCache>(nullptr, _metricsRegistry);
         _pUnwinder = std::make_unique<HybridUnwinder>(_pManagedCodeCache.get());
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();

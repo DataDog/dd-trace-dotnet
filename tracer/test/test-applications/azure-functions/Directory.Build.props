@@ -14,6 +14,12 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
 
+    <!-- Isolate NuGet restore outputs when building multiple package versions of the same sample. -->
+    <DD_RestoreProjectName>$(MSBuildProjectName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(AssemblyName)' != '' ">$(AssemblyName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(PackageId)' != '' ">$(PackageId)</DD_RestoreProjectName>
+    <MSBuildProjectExtensionsPath Condition="'$(ApiVersion)'!='' ">$(ArtifactsPath)/obj/$(DD_RestoreProjectName)/$(ArtifactsPivots)</MSBuildProjectExtensionsPath>
+
   </PropertyGroup>
 
   <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />

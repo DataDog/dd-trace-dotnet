@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         // The max test duration is _really_ big on some runners the test(s) can
         // take long time to start and to end.
-        private readonly TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
+        private TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
 
         private string _appListenerPort;
 
@@ -51,6 +51,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             ServiceName = $"IntegrationTest-{_appName}";
         }
 
+        public TestApplicationRunner(
+            TestAppContext context,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableTracer = false,
+            bool enableProfiler = true)
+            : this(
+                context.Application.FolderName,
+                TestFrameworkInfo.ToMoniker(context.Framework),
+                context.Application.AssemblyName,
+                output,
+                commandLine,
+                enableTracer,
+                enableProfiler)
+        {
+        }
+
         public string TestOutputDir => _testBaseOutputDir;
 
         public EnvironmentHelper Environment { get; }
@@ -62,6 +79,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
 
         public int ProfilingExportsIntervalInSeconds { get; } = 3;
+
+        // The application is killed (and the test fails) if it runs for longer than that.
+        public TimeSpan MaxTestRunDuration
+        {
+            get => _maxTestRunDuration;
+            set => _maxTestRunDuration = value;
+        }
 
         public string ProcessOutput { get; set; }
 
@@ -80,6 +104,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             RunTest(agent);
             PrintTestInfo();
+            agent.ThrowIfHandlerFailed();
         }
 
         public bool WaitForExitOrCaptureDump(Process process, int milliseconds)
@@ -113,6 +138,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             process.Start();
 
             return new ProcessHelper(process);
+        }
+
+        private static string ParseListeningUrl(string output)
+        {
+            if (output is null)
+            {
+                return null;
+            }
+
+            var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
+            return match.Success ? match.Groups[1].Value : null;
         }
 
         private void PrintTestInfo()
@@ -244,17 +280,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     false,
                     $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode:X})");
             }
-        }
-
-        private static string ParseListeningUrl(string output)
-        {
-            if (output is null)
-            {
-                return null;
-            }
-
-            var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
-            return match.Success ? match.Groups[1].Value : null;
         }
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)

@@ -33,7 +33,6 @@ namespace Datadog.Trace.Agent
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly bool _spanMetricsEnabled;
-        private readonly bool _otelSemanticsEnabled;
         private readonly OtlpProtocol _metricsEncoding;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
@@ -52,7 +51,6 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
             _spanMetricsEnabled = settings.OtelTracesSpanMetricsEnabled;
-            _otelSemanticsEnabled = settings.OtelSemanticsEnabled;
             _metricsEncoding = exporterSettings.OtlpMetricsProtocol;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
         }
@@ -174,8 +172,8 @@ namespace Datadog.Trace.Agent
 
             var useJson = _metricsEncoding == OtlpProtocol.HttpJson;
             var payload = useJson
-                ? OtlpSpanStatsSerializer.SerializeJson(state.Stats, state.BucketDuration, _otelSemanticsEnabled)
-                : OtlpSpanStatsSerializer.Serialize(state.Stats, state.BucketDuration, _otelSemanticsEnabled);
+                ? OtlpSpanStatsSerializer.SerializeJson(state.Stats, state.BucketDuration)
+                : OtlpSpanStatsSerializer.Serialize(state.Stats, state.BucketDuration);
 
             if (payload is null)
             {

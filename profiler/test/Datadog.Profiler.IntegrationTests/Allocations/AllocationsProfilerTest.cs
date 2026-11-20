@@ -79,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net10.0", "net11.0" })]
         public void MeasureAllocations(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureAllocation);
@@ -96,9 +96,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
             allocationSamples.Should().NotBeEmpty();
 
-            // check that we use the new .NET 10 AllocationSampled event if running on .NET 10
+            // check that we use the new .NET 10 AllocationSampled event if running on .NET 10+
             // and AllocationTick otherwise
-            string expectedLog = (framework == "net10.0")
+            string expectedLog = (framework == "net10.0" || framework == "net11.0")
                 ? "Listen to AllocationSampled event"
                 : "Listen to AllocationTick event";
             bool containsExpectedLog = false;

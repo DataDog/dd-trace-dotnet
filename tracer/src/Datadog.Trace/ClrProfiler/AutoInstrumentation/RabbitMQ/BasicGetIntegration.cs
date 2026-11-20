@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 if (scope != null)
                 {
-                    string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWith("amq.gen-") ? queue : "<generated>";
+                    string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWithOrdinal("amq.gen-") ? queue : "<generated>";
                     scope.Span.ResourceName = $"{Command} {queueDisplayName}";
 
                     if (tags != null && messageSize != null)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                             tags,
                             basicProperties.Headers,
                             basicGetResult.Body?.Length ?? 0,
-                            basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0);
+                            RabbitMQIntegration.GetTimeInQueueMs(basicProperties.Timestamp.UnixTime));
                     }
                 }
             }

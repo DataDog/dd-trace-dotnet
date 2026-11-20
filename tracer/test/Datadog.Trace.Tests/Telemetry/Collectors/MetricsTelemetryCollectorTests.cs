@@ -1,4 +1,4 @@
-// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
+﻿// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -106,9 +106,12 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
         collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
+        collector.RecordCountWafError(MetricTags.WafError.BindingError, 7);
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
         collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
+        collector.RecordCountRaspError(MetricTags.RaspError.LfiInternal, 4);
+        collector.RecordCountRaspRuleSkipped(MetricTags.RaspRuleTypeSkipped.LfiAfterRequest, 6);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
@@ -252,7 +255,16 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.WafError.GetName(),
+                Points = new[] { new { Value = 7 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "waf_error:-127" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -280,6 +292,25 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.RaspError.GetName(),
+                Points = new[] { new { Value = 4 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "waf_error:-3", "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                // rasp.rule.skipped is specified without the version tags, so they must not be substituted in
+                Metric = Count.RaspRuleSkipped.GetName(),
+                Points = new[] { new { Value = 6 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "reason:after-request", "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },

@@ -70,7 +70,6 @@ namespace Datadog.Trace.Agent
 
         private readonly IApi _api;
         private readonly bool _isOtlp;
-        private readonly NormalizerTraceProcessor _normalizerProcessor;
         private readonly ObfuscatorTraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -109,7 +108,6 @@ namespace Datadog.Trace.Agent
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
-            _normalizerProcessor = new NormalizerTraceProcessor();
             _obfuscatorProcessor = new ObfuscatorTraceProcessor();
 
             _prioritySampler = new PrioritySampler();
@@ -157,13 +155,18 @@ namespace Datadog.Trace.Agent
                 }
             });
 
+            var initialTimestampNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             for (int i = 0; i < _buffers.Length; i++)
             {
-                _buffers[i] = new(header, new(settings), new(TelemetryFactory.Metrics));
+                var cardinalityLimiter = new StatsCardinalityLimiter(settings);
+                var cardinalityReporter = new StatsCardinalityReporter(TelemetryFactory.Metrics);
+                _buffers[i] = _isOtlp
+                                  ? new StatsBuffer.OtlpStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs)
+                                  : new StatsBuffer.DatadogStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs);
             }
 
             _flushTask = Task.Run(Flush);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
             if (_isOtlp)
             {
@@ -228,10 +231,12 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>Processes a trace whose spans have already been normalized.</summary>
+        /// <param name="spans">The normalized spans to filter, obfuscate, and sample.</param>
+        /// <returns>The keep state of the trace.</returns>
         public TraceKeepState ProcessTrace(ref SpanCollection spans)
         {
             // Follow the same processing steps as the Go tracer
-            spans = NormalizeTrace(in spans);
             if (ShouldFilterTrace(in spans))
             {
                 return TraceKeepState.Rejected;
@@ -262,21 +267,6 @@ namespace Datadog.Trace.Agent
                 {
                     span.ResourceName = resource;
                 }
-            }
-        }
-
-        [TestingAndPrivateOnly]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal SpanCollection NormalizeTrace(in SpanCollection trace)
-        {
-            try
-            {
-                return _normalizerProcessor.Process(in trace);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error executing normalizer trace processor");
-                return trace;
             }
         }
 
@@ -361,13 +351,6 @@ namespace Datadog.Trace.Agent
         [TestingAndPrivateOnly]
         internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
             // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
@@ -380,7 +363,7 @@ namespace Datadog.Trace.Agent
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/aggregation.go
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
             var isTraceRoot = span.Context.ParentId is null or 0;
-            var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var httpMethod = span.GetHttpMethod() ?? string.Empty;
             var httpEndpoint = span.GetTag(Tags.HttpRoute) ?? string.Empty;
 
             // Normalize service source to match trace serialization behavior:
@@ -459,8 +442,8 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode,
-                span.Context.Origin?.StartsWith("synthetics") == true,
+                span.GetHttpStatusCode() ?? 0,
+                span.Context.Origin?.StartsWithOrdinal("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
                 _isOtlp ? span.IsTopLevel : false,
@@ -658,6 +641,8 @@ namespace Datadog.Trace.Agent
 
         internal async Task Flush()
         {
+            var bucketDurationNs = _bucketDuration.ToNanoseconds();
+
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
@@ -671,10 +656,16 @@ namespace Datadog.Trace.Agent
                 await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
+                var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
+                long statsDurationNs;
 
                 lock (_buffers)
                 {
-                    _currentBuffer = (_currentBuffer + 1) % BufferCount;
+                    var boundaryNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+                    var nextStartNs = buffer.GetNextStart(boundaryNs);
+                    statsDurationNs = buffer.GetDuration(nextStartNs, bucketDurationNs);
+                    _buffers[nextBufferIndex].SetStart(nextStartNs);
+                    _currentBuffer = nextBufferIndex;
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
@@ -689,11 +680,9 @@ namespace Datadog.Trace.Agent
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
-                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
+                    await _api.SendStatsAsync(buffer, statsDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
-                // Always reset the buffer so Start is re-aligned and stale keys are pruned,
-                // even when no hits were recorded this interval.
                 buffer.Reset();
             }
             while (!_processExit.Task.IsCompleted);
@@ -728,9 +717,16 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
-                && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                 || span.GetMetric(Tags.PartialSnapshot) >= 0))
+            // SEMCON-1093 FR04: OTLP span metrics only for service-entry (top-level) or explicitly measured spans.
+            // Non-OTLP: also includes span-kind-eligible spans, and excludes partial snapshots.
+            // Note: !(x >= 0) is intentionally used instead of x < 0 because GetMetric returns double?,
+            // and null < 0 is false while !(null >= 0) is true — we want null (unset) to pass through.
+            var isEligible = _isOtlp
+                ? span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0
+                : (span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                  && !(span.GetMetric(Tags.PartialSnapshot) >= 0);
+
+            if (!isEligible)
             {
                 return;
             }

@@ -10,5 +10,5 @@ namespace Datadog.Trace.AppSec.WafEncoding;
 
 internal interface IEncoder
 {
-    public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true);
+    public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true);
 }

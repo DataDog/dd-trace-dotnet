@@ -151,4 +151,8 @@ internal sealed partial class MetricsTelemetryCollector
     public void RecordCountCIVisibilityTestManagementTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
     }
+
+    public void RecordCountCIVisibilityDynamicAtrRetriesEnabled(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityDynamicFlakyRetryBuckets tag, int increment = 1)
+    {
+    }
 }

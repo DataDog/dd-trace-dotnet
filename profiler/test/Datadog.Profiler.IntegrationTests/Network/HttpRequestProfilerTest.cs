@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,7 +58,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             nbWarning.Should().Be(1);
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldNotGetHttpSamplesWhenDefaultSampling(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
@@ -73,7 +74,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             samples.Should().BeEmpty();
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetHttpSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
@@ -91,7 +92,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "response status code"));
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetRedirect(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Redirect);
@@ -148,7 +149,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             }
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [Flaky("HTTP profiling intermittently produces no request-time samples in CI")]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetError(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Error);
@@ -191,7 +193,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             }
         }
 
-        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [Flaky("Test flaked in CI")]
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetDetails(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Blog);
@@ -279,7 +282,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             Assert.True(checkedSamples > 0);
         }
 
-        [TestAppFact("Samples.HttpRequest", new[] { "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [Flaky("Test flaked in CI")]
+        [TestAppFact("Samples.HttpRequest", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetExactDurations(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: RedirectTime);

@@ -5,9 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Datadog.Trace.Tools.Shared
 {
@@ -50,7 +52,7 @@ namespace Datadog.Trace.Tools.Shared
                 return Linux.ProcessEnvironmentLinux.ReadModules(process);
             }
 
-            var modules = process.Modules
+            var modules = ReadModuleInformationWithRetry(process, static p => p.Modules)
                 .OfType<ProcessModule>()
                 .Select(p => p.FileName)
                 .Where(p => p != null)
@@ -63,6 +65,36 @@ namespace Datadog.Trace.Tools.Shared
             }
 
             return modules!;
+        }
+
+        internal static TResult ReadModuleInformationWithRetry<TResult>(
+            Process process,
+            Func<Process, TResult> readModuleInformation)
+        {
+            const int maxAttempts = 5;
+            const int retryDelayMilliseconds = 20;
+
+            // In Windows CI, we saw "[FAILURE]: Could not fetch information about target process",
+            // potentially caused by a race with DLL loading/unloading while reading module information.
+            // Windows module enumeration can fail during these changes, so as a workaround we retry
+            // these transient failures a few times before reporting an error.
+            // See https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-enumprocessmodules#remarks
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    return readModuleInformation(process);
+                }
+                catch (Win32Exception ex) when (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                            && attempt < maxAttempts
+                                            && ex.NativeErrorCode is 0 or 6 or 299
+                                            && !process.HasExited)
+                {
+                    // Give the target's DLL loader time to progress. This synchronous diagnostic
+                    // read sleeps at most four times; a persistent failure propagates unchanged.
+                    Thread.Sleep(retryDelayMilliseconds);
+                }
+            }
         }
     }
 }

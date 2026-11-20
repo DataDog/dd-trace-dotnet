@@ -8,9 +8,10 @@
 #include "InlineVTCache.h"
 #include "GCDescReader.h"
 #include "TypeReferenceTree.h"
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "ReferenceChainTypes.h"
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -29,50 +30,124 @@ class IFrameStore;
 class ReferenceChainTraverser
 {
 public:
+    enum class TraversalStopReason
+    {
+        None,
+        FaultBudgetExhausted,
+        UnexpectedException,
+        FaultGuardUnavailable,
+        VisitedMemoryBudgetExhausted
+    };
+
     struct TraversalFrame
     {
         uintptr_t objectAddress;
         TypeTreeNode* treeNode;
         uint32_t depth;
         ClassID classID;
-        SIZE_T objectSize;
+        SIZE_T layoutSize;
     };
+
+    static constexpr size_t DefaultVisitedMemoryLimitBytes = 256 * 1024 * 1024;
 
     ReferenceChainTraverser(
         ICorProfilerInfo12* pCorProfilerInfo,
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
         InlineVTCache& inlineVTCache,
-        size_t visitedSetInitialCapacity = 512);
+        size_t visitedMemoryLimitBytes = DefaultVisitedMemoryLimitBytes,
+        bool benchmarkEnabled = false);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
-    // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
+    // A fresh bitmap epoch is used per root for cycle detection within that root's graph.
     void TraverseFromSingleRoot(const RootInfo& root);
 
     void LogStats() const;
 
-    size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
     size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
+    size_t GetVisitedPeakMemorySize() const { return _visited.GetPeakMemorySize(); }
 
-    // Whether the GCDesc reader passed (or has not yet failed) its runtime
-    // self-test. When false, GCDesc-based traversal is disabled for this
-    // traverser; the class histogram (which does not use GCDesc) is unaffected.
+    // Benchmark-only accounting for size lookups performed before traversal starts.
+    void RecordRootObjectSizeCall(bool isStatic, bool failedOrZero);
+
+    // Whether the raw object-header and GCDesc readers passed (or have not yet
+    // failed) their runtime self-tests. When false, raw-layout traversal is
+    // disabled for this traverser; the class histogram is unaffected.
+    //
+    // This is the permanent, layout-level signal. A memory access fault (see
+    // GetFaultCount/WasAbortedByFaults) is a data-level event and never flips it.
     bool IsGCDescTrusted() const { return _gcDescTrusted; }
+
+    // Number of memory access faults recovered from during this traverser's life
+    // (i.e. this dump). A fault is data-local -- it says nothing about the GCDesc
+    // layout being wrong -- so it is tracked separately from IsGCDescTrusted().
+    uint32_t GetFaultCount() const { return _faultCount; }
+
+    TraversalStopReason GetStopReason() const { return _stopReason; }
+
+    // True only when memory access faults exhausted the per-dump budget.
+    bool WasAbortedByFaults() const
+    {
+        return _stopReason == TraversalStopReason::FaultBudgetExhausted;
+    }
+
+    bool WasAbortedByException() const
+    {
+        return _stopReason == TraversalStopReason::UnexpectedException;
+    }
 
 #ifdef DD_TEST
     // Unit tests only: perform a guarded read of one byte from ptr using the same
     // SIGSEGV/SIGBUS (Linux) or SEH (Windows) machinery as TraverseFromSingleRoot.
     void Test_FaultReadUnderGuard(const volatile void* ptr);
+
+    // Unit tests only: throw a C++ exception from inside the guard. The exception is
+    // expected to escape (the guard only recovers from memory access faults) without
+    // leaving any guard state behind.
+    void Test_ThrowUnderGuard();
 #endif
 
 private:
-    void TraverseFromSingleRootImpl(const RootInfo& root);
+    // Everything TraverseFromSingleRoot does, minus the "an exception escaped" safety
+    // net that wraps it.
+    void TraverseFromSingleRootCore(const RootInfo& root);
+
+    // Runs body under MemoryFaultGuard and counts the faults it recovers from.
+    // Returns false when the body faulted or fault recovery was unavailable; the
+    // corresponding traversal stop handler has already run.
+    //
+    // C++ exceptions are deliberately NOT caught: they propagate to
+    // TraverseFromSingleRoot, the single place that decides what an unexpected
+    // exception means for the dump.
+    //
+    // IMPORTANT: neither body nor anything it calls may own something that needs
+    // destruction, and guarded regions must not nest (see MemoryFaultGuard.h).
+    template <typename TBody>
+    bool RunGuarded(TBody&& body);
+
+    // Prepare the per-root state and push the root frame onto _traversalStack.
+    // Unguarded: does not read object graph memory beyond the root's MethodTable
+    // (see SeedRootGuarded for the fault-protected entry point).
+    void SeedRoot(const RootInfo& root);
+
+    // Fault-guarded wrapper around SeedRoot. Returns false if a memory access
+    // fault occurred while seeding (the root is then skipped entirely).
+    bool SeedRootGuarded(const RootInfo& root);
 
     // Iterative object graph traversal using an explicit stack.
     // Uses GCDesc to enumerate reference fields directly from the MethodTable (fast path).
     // Consults InlineVTCache for inline VT tree attribution (slow path, rare).
-    void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth,
-                             ClassID rootClassID, SIZE_T rootObjectSize);
+    //
+    // Drains _traversalStack until it is empty (or the fault budget is exhausted,
+    // or the GCDesc self-test fails). Because each frame is popped BEFORE it is
+    // scanned, this can be safely re-entered after a fault: the faulting frame is
+    // already gone and every unscanned frame is still on the stack.
+    void DrainTraversalStack();
+
+    // Fault-guarded wrapper around DrainTraversalStack. On a memory access fault it
+    // calls OnTraversalFault and returns; the caller re-enters to resume with the
+    // frames that remain on _traversalStack.
+    void DrainTraversalStackGuarded();
 
     // Enqueue reference fields from inline value type array elements via GCDesc negative series.
     void EnqueueValueTypeArrayChildren(
@@ -105,30 +180,56 @@ private:
     // Returns true if the reference was newly inserted and pushed onto the stack.
     bool ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth);
 
+    bool TryGetClassIDForFirstVisit(uintptr_t objectAddress, ClassID& classID);
+    const InlineVTCache::InlineVTInfo* GetInlineVTInfoCached(ClassID classID);
+
     void PushTraversalFrameIfScannable(
         uintptr_t objectAddress,
         TypeTreeNode* treeNode,
         uint32_t depth,
         ClassID classID,
-        SIZE_T objectSize);
+        SIZE_T layoutSize);
 
-    bool IsValidObjectAddress(uintptr_t address) const;
+    static bool IsValidObjectAddress(uintptr_t address);
     std::string GetClassName(ClassID classID) const;
 
     void OnTraversalFault();
+
+    // Fault recovery is unavailable. The guarded body was not executed, so stop the
+    // dump without counting this as a recovered memory access fault.
+    void OnFaultGuardUnavailable();
+
+    // A C++ exception escaped the traversal. Unlike a memory access fault this is not
+    // a data-level event, so it stops the dump instead of being counted and retried.
+    void OnTraversalAborted();
+
+    // Emits the self-test failure recorded by DrainTraversalStack. Called from outside
+    // the fault guard because resolving a class name and logging both take locks that
+    // a fault would leave held for good (siglongjmp does not unwind).
+    void LogPendingSelfTestFailure();
+
+    uint64_t GetBenchmarkFirstVisitReferenceCount() const;
+    uint64_t GetBenchmarkEdgeCount() const;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
     InlineVTCache& _inlineVTCache;
 
-    // Per-root cycle detection.
-    // Cleared between roots to avoid reallocating the bucket array.
-    VisitedObjectSet _visited;
+    // Per-root cycle detection. Bitmap pages persist across roots while an epoch
+    // provides an O(1) logical clear.
+    VisitedAddressBitmap _visited;
 
     // Used to keep track of all objects to visit when starting from a root.
     // Reused across roots to avoid repeated heap allocations.
     std::vector<TraversalFrame> _traversalStack;
+
+    // Reusable scratch for multi-dimensional value-type array dimensions.
+    // Kept as members (not locals) so no vector destructor runs on the guarded
+    // traversal path, where a fault unwinds via siglongjmp / SEH without running
+    // C++ destructors.
+    std::vector<ULONG32> _dimSizesScratch;
+    std::vector<int> _dimBoundsScratch;
 
     // Statistics
     uint64_t _objectsTraversed;
@@ -136,15 +237,93 @@ private:
     uint64_t _rootCategoryCounts[RootCategoryCount] = {};
     std::chrono::nanoseconds _totalTraversalDuration{0};
 
+    struct BenchmarkStats
+    {
+        struct RootWork
+        {
+            uint64_t objects = 0;
+            uint64_t edges = 0;
+            uint64_t durationNs = 0;
+            uint64_t maxObjects = 0;
+            uint64_t maxEdges = 0;
+            uint64_t maxDurationNs = 0;
+        };
+
+        uint64_t getObjectSizeRootCalls = 0;
+        uint64_t getObjectSizeStaticRootCalls = 0;
+        uint64_t getObjectSizeRootScannableCalls = 0;
+        uint64_t getObjectSizeRootLeafCalls = 0;
+        uint64_t getObjectSizeStaticRootScannableCalls = 0;
+        uint64_t getObjectSizeStaticRootLeafCalls = 0;
+        uint64_t getObjectSizeFirstVisitScannableCalls = 0;
+        uint64_t getObjectSizeFirstVisitLeafCalls = 0;
+        uint64_t getObjectSizeRevisitCalls = 0;
+        uint64_t getObjectSizeFailedOrZeroCalls = 0;
+        uint64_t getClassFromObjectFirstVisitCalls = 0;
+        uint64_t getClassFromObjectFailedCalls = 0;
+        uint64_t rawMethodTableClassReads = 0;
+        uint64_t inlineVTLookupCalls = 0;
+        uint64_t inlineVTFoundCalls = 0;
+        uint64_t inlineVTCacheHits = 0;
+        uint64_t inlineVTCacheMisses = 0;
+        uint64_t terminalStopEdgeSkips = 0;
+        uint64_t firstVisitLeafReferences = 0;
+        uint64_t revisitReferences = 0;
+        RootWork rootWork[RootCategoryCount] = {};
+    };
+
+    // Null unless the runtime benchmark environment variable is enabled.
+    std::unique_ptr<BenchmarkStats> _benchmarkStats;
+
     static constexpr size_t MinStackReserve = 64;
     size_t _traversalStackHighWatermark = MinStackReserve;
 
+    // ---- Permanent, layout-level state ----
     // GCDesc reader self-test state. The self-test runs on the first few
     // scannable objects of a traversal and cross-checks the GCDesc/MethodTable
     // layout against profiling-API metadata. On a clear contradiction the reader
     // is disabled (_gcDescTrusted = false) for the rest of this traverser's life.
     static constexpr uint32_t MaxSelfTestObjects = 8;
+    enum class SelfTestFailureKind : uint8_t
+    {
+        None,
+        GCDescLayout,
+        ObjectHeader
+    };
+
+    enum class ObjectHeaderSelfTestResult : uint8_t
+    {
+        Pending,
+        Passed,
+        Failed
+    };
+
     bool _gcDescTrusted = true;
     GCDesc::SelfTestResult _selfTest = GCDesc::SelfTestResult::Pending;
+    ObjectHeaderSelfTestResult _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Pending;
+    SelfTestFailureKind _selfTestFailureKind = SelfTestFailureKind::None;
     uint32_t _selfTestObjectsChecked = 0;
+    uint32_t _objectHeaderSelfTestObjectsChecked = 0;
+
+    // Class that failed the self-test, reported once from outside the fault guard.
+    ClassID _selfTestFailedClassID = 0;
+    bool _selfTestFailureLogged = false;
+
+    // ---- Per-dump, data-level state (reset with the traverser each dump) ----
+    // Beyond this many recovered faults the heap is unstable enough (or our reads
+    // wrong enough) that continuing is not worth the signal-handler round trips
+    // taken while the runtime is suspended. This never disables the reader itself.
+    static constexpr uint32_t MaxFaultsPerDump = 16;
+    uint32_t _faultCount = 0;
+    TraversalStopReason _stopReason = TraversalStopReason::None;
+
+    struct InlineVTLookupCacheEntry
+    {
+        ClassID classID = 0;
+        const InlineVTCache::InlineVTInfo* info = nullptr;
+    };
+
+    static constexpr size_t InlineVTLookupCacheSize = 256;
+    static_assert((InlineVTLookupCacheSize & (InlineVTLookupCacheSize - 1)) == 0);
+    InlineVTLookupCacheEntry _inlineVTLookupCache[InlineVTLookupCacheSize] = {};
 };

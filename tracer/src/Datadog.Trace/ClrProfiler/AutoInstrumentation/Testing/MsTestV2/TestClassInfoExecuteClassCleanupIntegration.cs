@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -39,11 +40,13 @@ public static class TestClassInfoExecuteClassCleanupIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
-        if (state.State is TestSuite suite)
+        if (state.State is TestSuite { IsClosed: false } suite)
         {
             if (exception is not null)
             {
                 suite.SetErrorInfo(exception);
+                // A passing test does not mark its suite as failed when only ClassCleanup fails.
+                suite.Tags.Status = TestTags.StatusFail;
             }
 
             suite.Close();
@@ -77,6 +80,8 @@ public static class TestClassInfoExecuteClassCleanupIntegrationV3_9
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // MSTest 3.9 returns the cleanup failure, just like its later async implementation.
+        exception ??= returnValue as Exception;
         TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
@@ -115,6 +120,8 @@ public static class TestClassInfoExecuteClassCleanupAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // MSTest returns a TestFailedException for cleanup failures instead of throwing it.
+        exception ??= returnValue as Exception;
         TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
         return returnValue;
     }

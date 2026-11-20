@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
@@ -109,7 +110,7 @@ partial class Build
        .Executes(() =>
        {
            var autoInstGenProj =
-               SourceDirectory / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
+               ToolsDirectory / "Datadog.AutoInstrumentation" / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
 
            // We make sure the autoinstrumentation generator builds so we can fail the task if not.
            DotNetRestore(s => s
@@ -119,7 +120,7 @@ partial class Build
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
-                           .SetFramework(TargetFramework.NET10_0)
+                           .SetFramework(TargetFramework.NET11_0)
                            .SetProjectFile(autoInstGenProj)
                            .SetConfiguration(Configuration.Release)
                            .SetNoWarnDotNetCore3());
@@ -128,7 +129,7 @@ partial class Build
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
                                   .SetNoBuild(true)
-                                  .SetFramework(TargetFramework.NET10_0)
+                                  .SetFramework(TargetFramework.NET11_0)
                                   .EnableNoLaunchProfile()
                                   .SetProjectFile(autoInstGenProj)
                                   .SetConfiguration(Configuration.Release);
@@ -164,7 +165,7 @@ partial class Build
        .Executes(() =>
        {
            var autoInstGenCliProj =
-               SourceDirectory / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
+               ToolsDirectory / "Datadog.AutoInstrumentation" / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
 
            DotNetRestore(s => s
                              .SetDotnetPath(TargetPlatform)
@@ -173,7 +174,7 @@ partial class Build
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
-                           .SetFramework(TargetFramework.NET10_0)
+                           .SetFramework(TargetFramework.NET11_0)
                            .SetProjectFile(autoInstGenCliProj)
                            .SetConfiguration(Configuration.Release)
                            .SetNoWarnDotNetCore3());
@@ -213,7 +214,7 @@ partial class Build
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
                                   .SetNoBuild(true)
-                                  .SetFramework(TargetFramework.NET10_0)
+                                  .SetFramework(TargetFramework.NET11_0)
                                   .EnableNoLaunchProfile()
                                   .SetProjectFile(autoInstGenCliProj)
                                   .SetConfiguration(Configuration.Release)
@@ -640,21 +641,109 @@ partial class Build
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
-       .Requires(() => Version)
        .Requires(() => NewVersion)
-       .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
+            // The samples are rewritten from the current version, and must never reference a dev build
+            if (IsDevVersionSuffix(VersionSuffix))
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
+                throw new Exception($"Cannot bump the version from the dev build {FullVersion}. Revert the commit that set the dev version suffix first.");
             }
 
-            // Samples need to use the latest version (i.e. the _current_ build version, before updating)
-            new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
-            // Source needs to use the _actual_ version
-            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
+            var trimmed = NewVersionSuffix?.Trim().TrimStart('-') ?? string.Empty;
+            var newVersionSuffix = trimmed.Length == 0 ? string.Empty : "-" + trimmed;
+            if (newVersionSuffix is not ("" or "-prerelease"))
+            {
+                throw new Exception($"UpdateVersion only accepts an empty suffix or 'prerelease', but NewVersionSuffix was '{NewVersionSuffix}'. Use SetDevVersionSuffix for a dev build.");
+            }
+
+            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, newVersionSuffix);
+
+            // The version number has to change: the samples are rewritten from the *pre-bump*
+            // version (they should track the release on nuget.org, not the one under development).
+            if (source.TracerVersion == new System.Version(Version))
+            {
+                throw new Exception(
+                    $"Cannot set versions: {NewVersion} is already the current version. Changing only " +
+                    "the prerelease suffix is not supported - the version number has to change too.");
+            }
+
+            // Samples reference the version that is published on nuget.org, which is the one we are
+            // bumping *away* from, so they lag the source by one release.
+            new SetAllVersions.Samples(TracerDirectory, Version, VersionSuffix).Run();
+
+            // version.props, which everything else derives from.
+            source.Run();
         });
+
+    Target SetDevVersionSuffix => _ => _
+       .Description("Sets a dev build version suffix, producing X.Y.Z-dev.<NewVersionSuffix>, without changing the version number")
+       .Before(Clean, BuildTracerHome)
+       .Before(Clean, BuildProfilerHome)
+       .Requires(() => NewVersionSuffix)
+       .Executes(() =>
+        {
+            var suffix = ValidateDevVersionSuffix(NewVersionSuffix);
+            new SetAllVersions.Suffix(TracerDirectory, Version, suffix).Run();
+
+            static string ValidateDevVersionSuffix(string value)
+            {
+                var suffix = value.Trim().TrimStart('-').ToLowerInvariant();
+                if (suffix.Length == 0)
+                {
+                    throw new Exception("NewVersionSuffix is required, e.g. 'myfix' to produce X.Y.Z-dev.myfix");
+                }
+
+                if (suffix == "prerelease")
+                {
+                    throw new Exception("The 'prerelease' suffix is reserved for prerelease releases and should not be used for dev branches");
+                }
+
+                if (!IsDevVersionSuffix("-" + suffix))
+                {
+                    suffix = "dev." + suffix;
+                }
+
+                // Semver prerelease identifiers, restricted to lowercase so artifact names are predictable
+                if (!Regex.IsMatch(suffix, "^dev([.-][a-z0-9]+)*$"))
+                {
+                    throw new Exception($"The dev version suffix '{suffix}' is invalid: use only letters, digits, '.' and '-', with no empty parts, e.g. 'my-fix.2'");
+                }
+
+                if (suffix.Length > 32)
+                {
+                    throw new Exception($"The dev version suffix '{suffix}' is too long: it can be at most 32 characters, as it appears in every artifact name");
+                }
+
+                foreach (var identifier in suffix.Split('.'))
+                {
+                    // Semver forbids leading zeros in numeric identifiers - we just ban 0 prefix for simplicity
+                    if (identifier.Length > 1 && identifier[0] == '0' && identifier.All(char.IsDigit))
+                    {
+                        throw new Exception($"The dev version suffix '{suffix}' is invalid: the part '{identifier}' must not have a leading zero");
+                    }
+
+                    foreach (var token in identifier.Split('-'))
+                    {
+                        // Lowercase identifiers that are object-like macros in the native build could cause things to break
+                        // when we pass the values to the native build. For simplicity, just ban them
+                        string[] nativeMacroIdentifiers =
+                        {
+                            "linux", "unix", "i386", "errno", "stdin", "stdout", "stderr",
+                            "small", "hyper", "interface", "far", "near", "pascal", "cdecl",
+                        };
+                        if (nativeMacroIdentifiers.Contains(token))
+                        {
+                            throw new Exception($"The dev version suffix '{suffix}' can't contain '{token}': it is a macro in the native build, so the native code would report a different version");
+                        }
+                    }
+                }
+
+                return "-" + suffix;
+            }
+        });
+
+    static bool IsDevVersionSuffix(string suffix) => Regex.IsMatch(suffix, "^-dev([.-]|$)");
 
     Target AnalyzePipelineCriticalPath => _ => _
        .Description("Perform critical path analysis on the consolidated pipeline stages")
@@ -703,9 +792,15 @@ partial class Build
           {
               var fileName = Path.GetFileNameWithoutExtension(source);
 
-              Logger.Information("Difference found in " + fileName);
+              // A brand new snapshot has no verified file yet, so diff against an empty
+              // string to show the whole thing as an addition, instead of throwing and
+              // hiding the diffs for every other snapshot in the run
+              var verified = source.ToString().Replace("received", "verified");
+              var hasVerified = File.Exists(verified);
+
+              Logger.Information((hasVerified ? "Difference found in " : "New snapshot file ") + fileName);
               var dmp = new diff_match_patch();
-              var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
+              var diff = dmp.diff_main(hasVerified ? File.ReadAllText(verified) : string.Empty, File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
               DiffHelper.PrintDiff(diff);
@@ -723,9 +818,7 @@ partial class Build
             }
 
             // Connect to Azure DevOps Services
-            var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            var connection = CreateAzureDevopsConnection();
 
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
@@ -891,9 +984,7 @@ partial class Build
             EnsureExistingDirectory(downloadDirectory);
             EnsureExistingDirectory(packageExtractionDirectory);
 
-            using var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            using var connection = CreateAzureDevopsConnection();
 
             using var client = connection.GetClient<BuildHttpClient>();
 
@@ -1069,6 +1160,17 @@ partial class Build
         var json = JsonDocument.Parse(File.ReadAllText(globalJsonPath));
         return json.RootElement.GetProperty("sdk").GetProperty("version").GetString()
             ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
+    }
+
+    // MCR only publishes prerelease SDK tags trimmed to "<major>.<minor>.<patch>-<label>.<n>"
+    // (e.g. "11.0.100-rc.1"), never the full global.json version with its trailing build and
+    // revision segments (e.g. "11.0.100-rc.1.26425.128"), so drop anything past the fourth
+    // dot-separated segment when resolving the mcr.microsoft.com/dotnet/sdk tag.
+    static string GetDotnetSdkImageTag(AbsolutePath rootDirectory)
+    {
+        var version = GetDotnetSdkVersion(rootDirectory);
+        var segments = version.Split('.');
+        return segments.Length > 4 ? string.Join(".", segments[..4]) : version;
     }
 
     static string GetSha512Hash(string filePath)

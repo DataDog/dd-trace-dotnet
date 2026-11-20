@@ -30,19 +30,13 @@ namespace Datadog.Trace.Agent
 
         public StatsAggregationKey BuildKey(Span span)
         {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-            if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
             return new StatsAggregationKey(
                 span.ResourceName,
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode,
-                isSyntheticsRequest: span.Context.Origin?.StartsWith("synthetics") == true,
+                span.GetHttpStatusCode() ?? 0,
+                isSyntheticsRequest: span.Context.Origin?.StartsWithOrdinal("synthetics") == true,
                 spanKind: string.Empty,
                 isError: false,
                 isTopLevel: false,

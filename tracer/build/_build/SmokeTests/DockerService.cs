@@ -95,6 +95,20 @@ public class DockerService
 
     public static async Task PullImageAsync(string image, bool skipIfImageExists)
     {
+        // A reference may be "repo", "repo:tag", "repo@sha256:...", or "repo:tag@sha256:...".
+        // When a digest is present it is authoritative (the tag is ignored), so pull and inspect
+        // by the canonical "repo@sha256:..." form — that's what a digest pull stores locally.
+        var atIndex = image.IndexOf('@');
+        var digest = atIndex >= 0 ? image[(atIndex + 1)..] : null;
+        var name = atIndex >= 0 ? image[..atIndex] : image;
+
+        var firstColon = name.IndexOf(':');
+        var repo = firstColon >= 0 ? name[..firstColon] : name;
+
+        // Docker's images/create pulls by digest when Tag is set to the "sha256:..." value.
+        var tag = digest ?? (firstColon >= 0 ? name[(firstColon + 1)..] : "latest");
+        var inspectRef = digest is null ? image : $"{repo}@{digest}";
+
         if (skipIfImageExists)
         {
             var exists = await RetryAsync(
@@ -104,7 +118,7 @@ public class DockerService
                     try
                     {
                         using var client = CreateDockerClient();
-                        await client.Images.InspectImageAsync(image);
+                        await client.Images.InspectImageAsync(inspectRef);
                         return true;
                     }
                     catch (DockerImageNotFoundException)
@@ -122,10 +136,6 @@ public class DockerService
 
             Logger.Information("Image {Image} not found locally, pulling...", image);
         }
-
-        var firstColon = image.IndexOf(':');
-        var repo = firstColon >= 0 ? image[..firstColon] : image;
-        var tag = firstColon >= 0 ? image[(firstColon + 1)..] : "latest";
 
         await RetryAsync(
             $"Pull image {image}",
@@ -383,11 +393,44 @@ public class DockerService
         }
     }
 
-    static async Task CleanupContainerAsync(DockerClient client, string containerId)
+    /// <summary>
+    /// Force-removes the container, returning <c>false</c> if the removal failed
+    /// </summary>
+    public static async Task<bool> RemoveContainerAsync(string containerId)
+    {
+        using var client = CreateDockerClient();
+        return await CleanupContainerAsync(client, containerId);
+    }
+
+    /// <summary>
+    /// Logs the container's runtime state, to help diagnose containers that never become ready
+    /// </summary>
+    public static async Task LogContainerStateAsync(string description, string containerId)
+    {
+        try
+        {
+            using var client = CreateDockerClient();
+            var state = (await client.Containers.InspectContainerAsync(containerId)).State;
+            Logger.Information(
+                "{Description} container {Id} state: {Status} (ExitCode: {ExitCode}, OOMKilled: {OOMKilled}, Error: {Error})",
+                description,
+                containerId[..12],
+                state.Status,
+                state.ExitCode,
+                state.OOMKilled,
+                state.Error);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Failed to inspect {Description} container {Id}", description, containerId[..12]);
+        }
+    }
+
+    static async Task<bool> CleanupContainerAsync(DockerClient client, string containerId)
     {
         if (containerId is null)
         {
-            return;
+            return true;
         }
 
         try
@@ -396,10 +439,12 @@ public class DockerService
                 containerId,
                 new ContainerRemoveParameters {Force = true, RemoveVolumes = true});
             Logger.Debug("Removed container {Id}", containerId[..12]);
+            return true;
         }
         catch (Exception ex)
         {
             Logger.Warning(ex, "Failed to remove container {Id}", containerId[..12]);
+            return false;
         }
     }
 

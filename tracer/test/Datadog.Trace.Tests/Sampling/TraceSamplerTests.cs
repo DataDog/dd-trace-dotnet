@@ -18,14 +18,14 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class TraceSamplerTests
     {
-        private const float FallbackRate = 0.25f;
+        private const double FallbackRate = 0.25d;
         private const string ServiceName = "my-service-name";
         private const string Env = "my-test-env";
         private const string OperationName = "test";
         private const string ResourceName = "test-resource-name";
 
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
-        private static readonly Dictionary<string, float> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
+        private static readonly Dictionary<string, double> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
 
         [Fact]
         public async Task RateLimiter_Never_Applied_For_DefaultRule()
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             builder.RegisterRule(
                 new LocalCustomSamplingRule(
-                    rate: 0.5f,
+                    rate: 0.5d,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -173,11 +173,30 @@ namespace Datadog.Trace.Tests.Sampling
             mechanism2.Should().Be(SamplingMechanism.AgentRate);
         }
 
+        [Fact]
+        public async Task MakeSamplingDecision_ReturnsSampleField_MatchingKnuthOutcome()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, ServiceName } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+
+            using var scope = (Scope)tracer.StartActive(OperationName);
+            scope.Span.Context.TraceContext.Environment = Env;
+
+            var builder = new TraceSampler.Builder(new NoLimits());
+            builder.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var sampler = builder.Build();
+            sampler.SetDefaultSampleRates(new Dictionary<string, double> { { $"service:{ServiceName},env:{Env}", 1d } });
+
+            var decision = sampler.MakeSamplingDecision(scope.Span);
+
+            decision.KeptByProbabilitySampling.Should().BeTrue();
+        }
+
         private async Task RunSamplerTest(
             ITraceSampler sampler,
             int iterations,
-            float expectedAutoKeepRate,
-            float expectedUserKeepRate,
+            double expectedAutoKeepRate,
+            double expectedUserKeepRate,
             float acceptableVariancePercent)
         {
             var sampleSize = iterations;

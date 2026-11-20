@@ -12,13 +12,17 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Tests.Telemetry;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
 
+[Collection(nameof(TelemetryFactoryTests))]
 public class ProbeProcessorTests
 {
+    private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
+
     private const string InvalidConditionJson = @"{
     ""gt"": [
       {""ref"": ""undefined""},
@@ -68,9 +72,22 @@ public class ProbeProcessorTests
     }
 
     [Fact]
+    public void UsesConfiguredEvaluationTimeBudget()
+    {
+        var probe = CreateConditionalLogProbe("probe-id", FalseConditionJson, captureSnapshot: false);
+        var processor = new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 123);
+
+        Assert.Equal(123, processor.EvaluatorMaxEvaluationTimeInMilliseconds);
+
+        processor.UpdateProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 456);
+
+        Assert.Equal(456, processor.EvaluatorMaxEvaluationTimeInMilliseconds);
+    }
+
+    [Fact]
     public void ConditionEvaluationErrorsFinalizeWithoutCaptureData()
     {
-        var processor = new ProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: true));
+        var processor = CreateProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: true));
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
@@ -89,7 +106,7 @@ public class ProbeProcessorTests
     [Fact]
     public void UnconditionalFullSnapshotWithoutExpressionsDoesNotEvaluate()
     {
-        var processor = new ProbeProcessor(CreateLogProbe("probe-id", captureSnapshot: true));
+        var processor = CreateProbeProcessor(CreateLogProbe("probe-id", captureSnapshot: true));
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
@@ -160,7 +177,7 @@ public class ProbeProcessorTests
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var sampler = new TestAdaptiveSampler(false);
         var probe = CreateConditionalLogProbe("snapshot-probe", InvalidConditionJson, captureSnapshot: true);
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
 
@@ -184,7 +201,7 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
 
-        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false));
+        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false), TestMaxEvaluationTimeInMilliseconds);
 
         var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
@@ -260,7 +277,7 @@ public class ProbeProcessorTests
         var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
-        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"));
+        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"), TestMaxEvaluationTimeInMilliseconds);
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
         Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
@@ -272,10 +289,11 @@ public class ProbeProcessorTests
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesGlobalBeforePerProbe()
     {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
@@ -285,15 +303,17 @@ public class ProbeProcessorTests
         Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
         Assert.Equal(0, perProbeSampler.SampleCalls);
+        collector.AssertHasCount("events.skipped", "reason:rateLimitGlobal", "event_type:snapshot");
     }
 
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_CalibratesGlobalSamplerWhenPerProbeRejects()
     {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
         var globalRateLimiter = new GlobalRateLimiterMock(true);
         var perProbeSampler = new TestAdaptiveSampler(false);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
@@ -303,6 +323,7 @@ public class ProbeProcessorTests
         Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
         Assert.Equal(1, perProbeSampler.SampleCalls);
+        collector.AssertHasCount("events.skipped", "reason:rateLimitProbe", "event_type:snapshot");
     }
 
     [Fact]
@@ -311,7 +332,7 @@ public class ProbeProcessorTests
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateLogProbe("log-probe", captureSnapshot: false);
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
@@ -328,7 +349,7 @@ public class ProbeProcessorTests
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateConditionalLogProbe("conditional-false", FalseConditionJson, captureSnapshot: true);
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
         var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var captureInfo = CreateAsyncEvaluateCaptureInfo();
@@ -353,7 +374,7 @@ public class ProbeProcessorTests
             Where = new Where { MethodName = nameof(SampleTarget.Execute) },
             Tags = [],
         };
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
@@ -377,7 +398,7 @@ public class ProbeProcessorTests
             Where = new Where { MethodName = nameof(SampleTarget.Execute) },
             Tags = [],
         };
-        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
         var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
@@ -388,9 +409,51 @@ public class ProbeProcessorTests
         Assert.Equal(1, perProbeSampler.SampleCalls);
     }
 
+    [Fact]
+    public void TryBeginProcess_UnconditionalLogProbe_RecordsRateLimitProbeSkip()
+    {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(false);
+        var probe = CreateLogProbe("log-probe", captureSnapshot: false);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        Assert.False(processor.TryBeginProcess(in probeData, out _));
+
+        collector.AssertHasCount("events.skipped", "reason:rateLimitProbe", "event_type:log");
+    }
+
+    [Fact]
+    public void Process_EvaluationTimeout_FailsOpenOnceThenRecordsSkipped()
+    {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+        var probe = CreateConditionalLogProbe("timeout-probe", @"{ ""eq"": [1, 1] }", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 0, new GlobalRateLimiterMock(true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        using var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var firstCaptureInfo = CreateAsyncEvaluateCaptureInfo();
+
+        var firstResult = processor.Process(ref firstCaptureInfo, firstSnapshotCreator, in probeData);
+
+        // The first event survives so the snapshot can carry the evaluation error to the customer.
+        Assert.True(firstResult);
+        collector.AssertDoesNotHave("events.skipped");
+
+        using var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var secondCaptureInfo = CreateAsyncEvaluateCaptureInfo();
+
+        var secondResult = processor.Process(ref secondCaptureInfo, secondSnapshotCreator, in probeData);
+
+        // Further timeout diagnostics in the five-minute window are skipped.
+        Assert.False(secondResult);
+        collector.AssertHasCount("events.skipped", "reason:evaluationTimeout", "event_type:snapshot");
+    }
+
     private static ProbeProcessor CreateConditionalProbeProcessor()
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",
@@ -408,7 +471,7 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateCaptureExpressionProbeProcessor(bool includeNullEntry = false, bool includeEmptyNameEntry = false)
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",
@@ -434,7 +497,17 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateVersionedCaptureExpressionProbeProcessor(string probeId, int version, string captureName)
     {
-        return new ProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
+        return CreateProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
+    }
+
+    private static ProbeProcessor CreateProbeProcessor(ProbeDefinition probe)
+    {
+        return new ProbeProcessor(probe, TestMaxEvaluationTimeInMilliseconds);
+    }
+
+    private static ProbeProcessor CreateProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+    {
+        return new ProbeProcessor(probe, TestMaxEvaluationTimeInMilliseconds, globalRateLimiter);
     }
 
     private static LogProbe CreateLogProbe(string probeId, bool captureSnapshot)
@@ -504,7 +577,7 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateUndefinedCaptureExpressionProbeProcessor()
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",

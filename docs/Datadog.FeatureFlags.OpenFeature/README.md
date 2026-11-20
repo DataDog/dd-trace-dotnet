@@ -72,7 +72,166 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Exposures in your own data store
+
+[//]: # (Maintainers: we plan to move the exposure sections, from here through Stop sending exposures to Datadog, to the public Datadog docs. Then we will remove them from this README and link to the docs.)
+
+The provider sends exposures to Datadog. To record exposures in your own data store, use
+`ExposureHook`. It receives every completed evaluation, with the same exposure decision that the
+provider uses for Datadog, the selected split's serial id, and the features of the selected split.
+Only an `ExposureHook` added with `Api.Instance.AddHooks` also
+receives the [synchronous evaluations](#synchronous-evaluation-experimental).
+
+```csharp
+using System.Collections.Concurrent;
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature;
+
+var queue = new BlockingCollection<ExposureRecord>(10_000);
+
+OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
+{
+    if (!evaluation.ShouldSend)
+    {
+        return;
+    }
+
+    // A split without holdout features gives null here.
+    evaluation.Features.TryGetValue("holdout.key", out var holdoutKey);
+    evaluation.Features.TryGetValue("holdout.assignment_group", out var assignmentGroup);
+    // TryAdd never blocks the evaluation: when the queue is full, the record is dropped.
+    queue.TryAdd(new ExposureRecord(
+        evaluation.FlagKey,
+        evaluation.Variant,
+        evaluation.TargetingKey,
+        evaluation.SplitSerialId,
+        holdoutKey as string,
+        assignmentGroup as string));
+}));
+// A background thread drains the queue and writes to the data store.
+
+record ExposureRecord(string FlagKey, string? Variant, string? TargetingKey, long? SplitSerialId, string? HoldoutKey, string? AssignmentGroup);
+```
+
+- The callback runs on the evaluation thread. Do not write to the data store from the callback:
+  copy what you need and hand it to a background queue. Do not block: use a non-blocking add, so
+  a slow data store cannot delay flag evaluations.
+- `ShouldSend` is true for a successful evaluation of an allocation that logs exposures, for a
+  subject not yet exposed to the same allocation, variant and serial id. When the provider is
+  registered directly with OpenFeature and you evaluate through a client, these are exactly the
+  exposures the provider sends to Datadog while Datadog logging is on (see
+  [When exposures are sent](#when-exposures-are-sent) for other setups). The serial id and the
+  verdict require a tracer version that carries this feature; with an older tracer, `ShouldSend`
+  is false.
+- `IsExposure` is true for every successful evaluation of an allocation that logs exposures,
+  including repeats. `IsCacheHit` tells repeats apart.
+- `SplitSerialId` identifies the selected split in Datadog, as in the exposures the provider sends.
+  Keep it with the exposures you store; it is null when the split has none.
+- An evaluation that fails, including one that an `after` hook fails, is not an exposure.
+- After the tracer shuts down, exposures are no longer recorded, so evaluations get no decision:
+  `ShouldSend` and `IsCacheHit` are false.
+- An exception from the callback does not affect the evaluation. The first one is logged at warn
+  level, later ones at debug level; pass an `ILogger` to the hook to route them, otherwise only
+  the first one is written, to `System.Diagnostics.Trace`.
+
+### When exposures are sent
+
+The provider records and sends an exposure only after OpenFeature has completed the evaluation
+without an error, so an evaluation that a later hook fails sends and records nothing. This needs a
+tracer version that supports it; with an older tracer, the tracer sends the exposure during the
+evaluation, before hooks run.
+
+With a tracer that supports it, the exposure is sent from a provider hook, so it depends on how
+the provider's hooks run:
+
+- If you call the provider's `Resolve...ValueAsync` methods directly instead of through an
+  OpenFeature client, no hooks run and no exposure is sent or recorded. The synchronous methods
+  below run the provider's hooks and do send exposures.
+- If you wrap `DatadogProvider` in your own `FeatureProvider`, return its `GetProviderHooks()` from
+  your wrapper and pass its `FlagMetadata` instance through unchanged; otherwise no exposure is
+  sent, and the exposure decisions that `ExposureHook` reports are not reliable. When 1,000
+  flag evaluations leave their exposure uncommitted before the provider's hooks ever run, the tracer
+  logs a warning, once per tracer configuration.
+- Inside OpenFeature's `MultiProvider`, the provider's hooks run inside the multi-provider, before
+  your client's `after` hooks. If one of those hooks then fails the evaluation, the exposure has
+  already been recorded and queued for Datadog, and `ExposureHook` reports the evaluation as
+  failed. With a strategy that can return another provider's result, such as `ComparisonStrategy`,
+  the exposure can also be recorded for a value that your application does not receive.
+- If recording an exposure fails, the provider writes the first failure to
+  `System.Diagnostics.Trace`.
+
+### Features
+
+`Features` returns the features of the selected split whose destinations include the customer
+hook, keyed without the `__dd_feature.` prefix. Values are a `string`, `double` or `bool`, with the
+type the feature has in the flag configuration: a string feature whose value is `"true"` or
+`"2026"` stays a `string`. The map is empty when the split has no such features, and with a tracer
+that does not report split features. A tracer that reports features but not their types gives
+every value as a `string`. Datadog can add destinations later; the tracer ignores a destination it
+does not know and logs a warning once for each one.
+
+### Flag metadata
+
+The public flag metadata is the `__dd_feature.<key>` entries. There is one entry for each feature of
+the selected split that lists the `HOOK` destination. The value is a `string`, `double` or `bool`.
+Read these entries in the hook's `finally` stage, and skip details that have an error.
+
+Other keys that start with `__dd_` are internal. They can change, and they can be missing.
+`ExposureHook` gives the exposure decision (`IsExposure`, `IsCacheHit` and `ShouldSend`) and the
+split's serial id (`SplitSerialId`).
+
+### Stop sending exposures to Datadog
+
+```
+DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED=false
+```
+
+The provider then sends no exposure events to Datadog. `ExposureHook` callbacks still receive every
+evaluation, the exposure cache still records, and `ShouldSend` gives the same results. The default
+is `true`.
+
+This setting stops exposures only. Flag evaluation events have their own setting,
+`DD_FLAGGING_EVALUATION_COUNTS_ENABLED`, and are unaffected.
+
+## Synchronous evaluation (experimental)
+
+`DatadogProvider` provides experimental synchronous methods for code that cannot
+await: `ResolveBooleanValue`, `ResolveIntegerValue`, `ResolveDoubleValue`,
+`ResolveStringValue`, and `ResolveStructureValue`. Each returns OpenFeature
+`ResolutionDetails<T>` from the local evaluator. Register the provider with
+`SetProviderAsync` first; initialization and configuration delivery remain asynchronous.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature.Model;
+
+var provider = new DatadogProvider();
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
+
+#pragma warning disable DDFF001 // Explicit opt-in to experimental sync resolution.
+var result = provider.ResolveBooleanValue("new-checkout", false, context);
+#pragma warning restore DDFF001
+
+bool enabled = result.Value;
+```
+
+These methods are Datadog extensions, outside OpenFeature's `IFeatureClient` API.
+They use only the context you pass; global, client, and transaction context are
+not merged, and OpenFeature client lifecycle checks do not run. The provider's
+own hooks run before the call returns, recording evaluation metrics on supported
+frameworks, span enrichment and evaluation events when enabled, and exposures. An `ExposureHook` added
+with `Api.Instance.AddHooks` then receives the evaluation, with the final exposure
+decision. Other hooks registered on the OpenFeature API or a client do not run.
+
+Until configuration arrives, a call returns your default value with
+`ProviderNotReady`. Inspect the error details when a default is unsuitable.
+Cancellation and invalid arguments retain the direct async provider methods'
+exception behavior.
+
+These APIs report diagnostic `DDFF001`; suppress it explicitly to opt in. Older
+compilers may not enforce this diagnostic. Existing async calls require no opt-in.
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-

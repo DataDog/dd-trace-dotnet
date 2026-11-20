@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckCpuTimeForGcThreadsIsEnabledByDefaultWithServerGC(string appName, string framework, string appAssembly)
         {
             // Use the heavier allocation workload so the GC threads reliably accrue >= 1 ms of CPU
@@ -51,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().Contain(sample => IsGcCpuSample(sample) && sample.StackTrace.Equals(GcStack));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckCpuTimeForGcThreadsValueIsReported(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioAllocationsHeavy);
@@ -80,7 +81,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
                 .Contain(sample => IsGcCpuSample(sample) && sample.Values[0] == 0 && sample.Values[1] != 0);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckNoGcSampleIfCpuProfilingIsDisabled(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
@@ -101,7 +102,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(GcStack));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0" })]
+        [Flaky("Samples.Computer01 intermittently runs for too long or is lost in CI")]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckNoGcSampleIfWorkstationGC(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);

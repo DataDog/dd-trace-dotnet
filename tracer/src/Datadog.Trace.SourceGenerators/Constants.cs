@@ -9,6 +9,8 @@ internal static class Constants
 {
     public const string Usage = nameof(Usage);
 
+    public const string SupportedConfigurationsFileName = "supported-configurations.yaml";
+
     public const string FileHeader =
         """
         // <copyright company="Datadog">

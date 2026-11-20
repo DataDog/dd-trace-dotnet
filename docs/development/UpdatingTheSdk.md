@@ -47,6 +47,11 @@ Add support for the new .NET version across projects:
 - **Smoke Tests**:
   - Add additional smoke tests for the new .NET release
   - This may involve pushing new versions of our dedicated smoke test dockerfiles for distros that don't have official Microsoft
+  - **Confirm every new `mcr.microsoft.com/dotnet/*` tag actually exists** (e.g. via the registry's `tags/list` API or `docker buildx imagetools inspect`) before adding a scenario for it — don't assume tag names carry over from the previous major version. In particular:
+    - The Ubuntu-based tag's codename can change release to release, and a new LTS codename (e.g. `noble`) may not exist yet if the corresponding Ubuntu LTS hasn't shipped — only the interim-release codename (e.g. `resolute`) may be published until then.
+    - The Windows base image's `windowsservercore-ltscXXXX` suffix can bump to a newer Windows Server LTSC release and drop support for the previous one.
+    - `mcr.microsoft.com/dotnet/sdk` only publishes prerelease tags trimmed to `<major>.<minor>.<patch>-<label>.<n>` (e.g. `11.0.100-rc.1`), never the full 4-segment `global.json` SDK version (e.g. `11.0.100-rc.1.26425.128`). Any code that builds a Docker tag from the raw `global.json` version (e.g. the smoke tests' `DOTNETSDK_VERSION` build-arg) needs to trim it down first.
+  - After adding/changing scenarios, pin the new image digests with the `UpdateSmokeTestImageDigests` Nuke target rather than hand-writing `@sha256:` values.
 
 ### 3. Integration Support Updates *(Major versions only)*
 Update automatic instrumentation to support the new runtime:
@@ -93,6 +98,17 @@ When updating to pre-release versions (RC, preview):
 - Enable pre-release rolling forward in runtime configurations
 - May require different container image tags or availability
 - By default we bail out of preview versions of the SDK in SSI environments in the native loader, need to consider whether that needs changing, or whether we should continue to bail out.
+
+## Pre-Release to GA Updates
+
+When moving from the final RC to the GA release, in addition to the version find-and-replace:
+
+- **SSI guard rails**: bump the supported major version ceiling in `shared/src/Datadog.Trace.ClrProfiler.Native/single_step_guard_rails.cpp`, so SSI no longer aborts on the new runtime.
+- **"Next version" preview tests**: update the `#if NETXX_0_OR_GREATER` condition and the expected `".NET XX or higher"` strings in `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TestInfrastructure/InstrumentationTests.cs` to point at the next major version.
+- **Log check patterns**: remove the "only while .NET XX is in preview" `Found incompatible runtime` known-error patterns in `tracer/build/_build/Build.Steps.cs`.
+- **Forced injection in tests**: remove any `DD_INJECT_FORCE` added for the preview framework, e.g. in `profiler/test/Datadog.Profiler.IntegrationTests/Helpers/EnvironmentHelper.cs` and `tracer/test/Datadog.Trace.Tools.dd_dotnet.IntegrationTests/Checks/ProcessBasicChecksTests.cs`.
+- **RC workarounds**: search for comments such as "Remove once we build with .NET XX GA" and for skips or allowed log patterns tied to specific RC SDK versions, and try re-enabling them.
+- **Smoke test images**: once the floating `XX.0-*` MCR tags point to the GA images, re-pin them with the `UpdateSmokeTestImageDigests` Nuke target. Check the image's `DOTNET_VERSION` environment variable to confirm the tag has moved. MCR can lag the SDK release by a day or so.
 
 ## Files Requiring Manual Review
 

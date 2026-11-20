@@ -1,4 +1,4 @@
-// <copyright file="SecurityReporter.cs" company="Datadog">
+﻿// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Json;
@@ -136,34 +137,34 @@ internal sealed partial class SecurityReporter
         }
     }
 
-    internal static void RecordWafTelemetry(IResult? result)
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, AppSecRequestContext requestContext)
+        => RecordWafTelemetry(result, isRasp, requestContext, TelemetryFactory.Metrics);
+
+    /// <summary>
+    /// Records the telemetry of a WAF run. appsec.waf.error counts runs, so it is recorded here, while
+    /// appsec.waf.requests counts requests and is reported by the request context when the request ends.
+    /// RASP runs are left out of both: they have their own metrics.
+    /// </summary>
+    [TestingAndPrivateOnly]
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, AppSecRequestContext requestContext, IMetricsTelemetryCollector metrics)
     {
-        if (result is null)
+        if (result is null || isRasp)
         {
             return;
         }
 
-        if (result.Timeout)
+        requestContext.RecordWafRun(result);
+
+        if (IsWafError(result) && result.ReturnCode.ToWafErrorTag() is { } wafError)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
-        }
-        else if (result.ShouldBlock)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
-        }
-        else if (result.ShouldReportSecurityResult)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
-        }
-        else
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
-                result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
+            metrics.RecordCountWafError(wafError);
         }
     }
+
+    /// <summary>
+    /// Whether a WAF run failed. A timeout takes precedence over the return code: it is reported as a timeout only.
+    /// </summary>
+    internal static bool IsWafError(IResult result) => !result.Timeout && result.ReturnCode < WafReturnCode.Ok;
 
     internal void ReportWafInitInfoOnce(InitResult? initResult)
     {
@@ -228,7 +229,7 @@ internal sealed partial class SecurityReporter
                 traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
 
-            var clientIp = _span.GetTag(Tags.HttpClientIp);
+            var clientIp = _span.GetHttpClientIp();
             if (!string.IsNullOrEmpty(clientIp))
             {
                 _span.SetTag(Tags.ActorIp, clientIp);
@@ -342,7 +343,7 @@ internal sealed partial class SecurityReporter
     {
         // We don't want to fill the spans with not useful data, so we only send it when RASP has been used
         // We report always, even if there is no match
-        if (result.AggregatedTotalRuntimeRasp > 0)
+        if (result.AggregatedTotalRuntimeWithBindingsRasp > 0)
         {
             localRootSpan.Context.TraceContext.AppSecRequestContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
         }

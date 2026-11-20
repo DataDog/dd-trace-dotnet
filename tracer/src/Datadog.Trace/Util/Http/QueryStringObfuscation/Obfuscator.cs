@@ -63,6 +63,10 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             {
                 _logger.Error(exception, "Query string obfuscation timed out with timeout value of {TotalMilliseconds} ms and regex pattern {Pattern}", _timeout.TotalMilliseconds, _regex.ToString());
             }
+            catch (Exception exception)
+            {
+                _logger.Error(exception, "Query string obfuscation failed for regex pattern {Pattern}", _regex.ToString());
+            }
 
             return string.Empty;
         }

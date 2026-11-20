@@ -270,13 +270,29 @@ public class CompositeConfigurationSourceTests
 
         // no valid value
         var actual = source.GetInt32(key, telemetry, validator: null);
-        actual.Should().Be(ConfigurationResult<int>.NotFound());
+        actual.Should().Be(ConfigurationResult<int>.ParseFailure());
 
         // only telemetry value should be the error
         telemetry.Telemetry.Should()
                  .ContainSingle()
                  .Which.Should()
                  .BeEquivalentTo(new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error));
+    }
+
+    [Fact]
+    public void ReturnsHighestPriorityInvalidResult_WhenNoSourceIsValid()
+    {
+        const string key = "string_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new()),
+            new NameValueConfigurationSource(new() { { key, "high" } }),
+            new NameValueConfigurationSource(new() { { key, "low" } }),
+        };
+
+        source.GetString(key, _telemetry, validator: _ => false, recordValue: true)
+              .Should()
+              .Be(ConfigurationResult<string>.Invalid("high"));
     }
 
     [Fact]
@@ -312,6 +328,29 @@ public class CompositeConfigurationSourceTests
                       new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error),
                       new ConfigurationTelemetryTests.ConfigDto(key, 123, ConfigurationOrigins.Code, true, null),
                   ]);
+    }
+
+    [Fact]
+    public void GetAs_WhenRestoringLowerPriorityResultUsesRecordValue()
+    {
+        const string key = "some_value";
+        const string secret = "secret";
+        var telemetry = new ConfigurationTelemetry();
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new() { { key, "invalid" } }, ConfigurationOrigins.EnvVars),
+            new NameValueConfigurationSource(new() { { key, secret } }, ConfigurationOrigins.AppConfig),
+        };
+
+        var result = new ConfigurationBuilder(source, telemetry)
+                    .WithKeys(key)
+                    .AsRedactedStringResult(value => value == secret ? value : ParsingResult<string>.Failure());
+
+        result.ConfigurationResult.Result.Should().Be(secret);
+        telemetry.GetQueueForTesting()
+                 .Last()
+                 .Type.Should()
+                 .Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
     }
 
     [Fact]

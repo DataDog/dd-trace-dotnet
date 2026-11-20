@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers;
 
@@ -73,6 +74,10 @@ internal sealed class TraceFilter
     /// <summary>
     /// Returns true if the trace should be kept, false if it should be rejected.
     /// Evaluation is based on the root span only.
+    /// Note: When a tag has both a DD and OTel name and is strongly typed in our ITags implementations,
+    /// there are two diverging behaviors:
+    /// - When applying a filter tag, the search checks both DD and OTel tag keys (and the singular tag value)
+    /// - When applying a filter tag regex, the search only checks one tag key (DD or Otel) based on the span's configured semantics setting.
     /// </summary>
     public bool ShouldKeepTrace(Span rootSpan)
     {
@@ -94,6 +99,7 @@ internal sealed class TraceFilter
         }
 
         // 2a. Reject filtering: reject if any tag matches reject filters
+        // With DD vs OTel semantics: Simple tag names check both key names and the (singular) value.
         foreach (var filter in _filterTagKeysReject)
         {
             // Key-only filter: matches if tag key exists with any value
@@ -158,7 +164,7 @@ internal sealed class TraceFilter
     private static bool MatchesRegexTagFilter(Span span, RegexTagFilter filter)
     {
         var processor = new RegexTagFilterProcessor(filter);
-        span.Tags.EnumerateTags(ref processor);
+        span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
         return processor.Matched;
     }
 
@@ -237,7 +243,7 @@ internal sealed class TraceFilter
         }
     }
 
-    private struct RegexTagFilterProcessor : IItemProcessor<string>
+    private struct RegexTagFilterProcessor : IItemProcessor<string>, IItemProcessor<int>
     {
         private readonly RegexTagFilter _filter;
         public bool Matched;
@@ -258,6 +264,22 @@ internal sealed class TraceFilter
                     // Key-only filter: any matching key is sufficient
                     // Key:Value filter: value must also match
                     Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(item.Value);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (!Matched)
+            {
+                if (_filter.KeyPattern.IsMatch(item.Key))
+                {
+                    // Key-only filter: any matching key is sufficient
+                    // Key:Value filter: value must also match
+                    // Regex.IsMatch(ReadOnlySpan<char>) is .NET 7+, so we have to hand it a string;
+                    // IntStringCache keeps that allocation-free for the values we actually see.
+                    Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(IntStringCache.ToInvariantString(item.Value));
                 }
             }
         }

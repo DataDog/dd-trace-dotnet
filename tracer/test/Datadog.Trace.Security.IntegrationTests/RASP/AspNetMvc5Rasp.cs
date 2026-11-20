@@ -130,7 +130,8 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         var dateTime = DateTime.UtcNow;
         var answer = await SubmitRequest("/Iast/PopulateDDBB", null, string.Empty);
         _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB"));
-        await agent.WaitForSpansAsync(2, minDateTime: dateTime);
+        var setupSpans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
+        Assert.True(setupSpans.Count >= 2, $"Expected at least 2 setup spans, but only received {setupSpans.Count}.");
         dateTime = DateTime.UtcNow;
         var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
         testName += _classicMode ? ".Classic" : ".Integrated";

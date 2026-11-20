@@ -3,67 +3,138 @@ name: Create hotfix branch
 on:
   workflow_dispatch:
     inputs:
+      base_version:
+        description: 'Released version to branch from, without a "v" prefix (for example, 3.55.0). Run this workflow from master.'
+        required: true
+        type: string
       version:
-        description: 'Hotfix Version Number (x.x.x)'
+        description: 'Hotfix version number, without a "v" prefix (for example, 3.55.1)'
         required: true
       is_prerelease:
         description: 'Is Prerelease version? (true/false)'
         default: 'false'
         required: true
+      dry_run:
+        description: 'Validate the version bump without creating a branch or commit'
+        type: boolean
+        default: false
 
 jobs:
-  check_tag:
-    runs-on: ubuntu-latest
-    steps:
-        - name: Verify running from a tag
-          run: |
-            if [[ "${{  github.ref }}" != refs/tags/* ]]; then
-              echo "Error: This workflow can only be run from a tag"
-              echo "Current ref: ${{ github.ref }}"
-              exit 1
-            fi
-
   bump_version:
-    needs: check_tag
-    runs-on: windows-latest
+    # commit-headless does not support Windows runners.
+    runs-on: ubuntu-latest
     permissions:
-      contents: write # Push branches
-      issues: write # change milestones 
+      contents: read
+      id-token: write # Required for dd-octo-sts authentication
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      NewVersion: "${{ github.event.inputs.version }}"
-      NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
+      NewVersion: "${{ inputs.version }}"
+      NewVersionSuffix: "${{ inputs.is_prerelease == 'true' && 'prerelease' || '' }}"
 
     steps:
-      - name: Support longpaths
-        run: git config --system core.longpaths true
-
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: "Configure Git Credentials"
+      # The dd-octo-sts policy only trusts the master copy of this workflow, so fail fast elsewhere
+      - name: Fail if not on master
+        if: github.ref != 'refs/heads/master'
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          echo "::error::This workflow must be run from master, but was run from $GITHUB_REF"
+          exit 1
 
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+      - name: Compute release tag
+        id: base_tag
+        env:
+          BASE_VERSION: ${{ inputs.base_version }}
+        run: |
+          if ! [[ "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::base_version must be a version without a 'v' prefix (for example, 3.55.0), but was '$BASE_VERSION'"
+            exit 1
+          fi
+          echo "tag=v$BASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: refs/tags/${{ steps.base_tag.outputs.tag }}
+
+      - name: Record base commit
+        id: base
+        run: |
+          # github.sha identifies the workflow revision, which can differ from the release tag.
+          base_sha=$(git rev-parse HEAD)
+          echo "sha=$base_sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateVersion
+        run: ./tracer/build.sh UpdateVersion
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+        run: ./tracer/build.sh VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: "Output Version"
         id: versions
-        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
-      - name: "Push hotfix branch"
+      - name: "Stage version bump"
+        run: git add -u
+
+      - name: "Compute staging branch"
+        id: staging
+        env:
+          FULL_VERSION: ${{ steps.versions.outputs.full_version }}
+        run: echo "branch=bot/hotfix-staging/$FULL_VERSION-$GITHUB_RUN_ID" >> "$GITHUB_OUTPUT"
+
+      # commit-headless v3.4.0 still creates branches with --dry-run, so skip all remote writes entirely.
+      - name: Get dd-octo-sts token
+        if: ${{ !inputs.dry_run }}
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.create_hotfix_branch.push
+
+      # hotfix/* branches can be created but not pushed to, and commit-headless always pushes to the
+      # branch it works on, so build the signed commit on an unprotected staging branch instead.
+      - name: "Create signed commit on staging branch"
+        id: commit
+        if: ${{ !inputs.dry_run }}
+        uses: DataDog/commit-headless@d6afabfd690ea1dbdd7d368acbefd71304928699 # action/v3.4.1
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          command: commit
+          branch: ${{ steps.staging.outputs.branch }}
+          message: "[Version Bump] ${{ steps.versions.outputs.full_version }}"
+          # Keeps whoever dispatched the workflow as a Co-authored-by trailer.
+          author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
+          head-sha: ${{ steps.base.outputs.sha }}
+          create-branch: true
+
+      - name: "Create hotfix branch"
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          BASE_TAG: ${{ steps.base_tag.outputs.tag }}
+          COMMIT_SHA: ${{ steps.commit.outputs.pushed_ref }}
+          FULL_VERSION: ${{ steps.versions.outputs.full_version }}
         run: |
-          git checkout -b hotfix/${{ steps.versions.outputs.full_version }}
-          git add .
-          git commit -m "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          git push origin -u hotfix/${{ steps.versions.outputs.full_version }}
+          # Creating the ref at the signed commit is a branch creation, not a push. Fails if the branch exists.
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f "ref=refs/heads/hotfix/$FULL_VERSION" \
+            -f "sha=$COMMIT_SHA"
+
+          {
+            echo "## Created hotfix branch \`hotfix/$FULL_VERSION\`"
+            echo
+            echo "Branched from \`$BASE_TAG\` with a version bump commit: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/hotfix/$FULL_VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Delete staging branch"
+        if: ${{ always() && !inputs.dry_run && steps.commit.outcome != 'skipped' }}
+        env:
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          STAGING_BRANCH: ${{ steps.staging.outputs.branch }}
+        run: |
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$STAGING_BRANCH" \
+            || echo "::warning::Failed to delete the staging branch $STAGING_BRANCH"

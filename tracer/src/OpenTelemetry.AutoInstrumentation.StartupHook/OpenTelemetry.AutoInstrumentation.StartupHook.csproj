@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Match the file name the OpenTelemetry Operator puts in DOTNET_STARTUP_HOOKS. -->
+    <AssemblyName>OpenTelemetry.AutoInstrumentation.StartupHook</AssemblyName>
+  </PropertyGroup>
+</Project>

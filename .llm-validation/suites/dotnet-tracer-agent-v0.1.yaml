@@ -1,0 +1,467 @@
+name: dotnet-tracer-agent
+version: "0.1"
+
+# Seed suite (Phase 1). Two kinds of cases:
+#  - CONTENT cases — grounded in facts AGENTS.md / the skill assert, so a regression in that file is observable.
+#    Tagged `files:` with the file whose content they exercise.
+#  - CONTROL cases — out-of-scope questions AGENTS.md does NOT cover (general C#/.NET, answered from the agent's
+#    own knowledge). Tagged `files: [AGENTS.md]` because AGENTS.md is ALWAYS in the agent's context, so a bloated
+#    (even correct) AGENTS.md can degrade these unrelated answers (context saturation) — that's what they catch.
+#    Setup controls also measure effects of skill discovery metadata, without attributing changes to one file.
+#    Control cases are `only_warn` while calibrating.
+# Scale to 25-40 in Phase 4.
+cases:
+  - id: dotnet-tracer-repo-nav-integration-001
+    files: [AGENTS.md]
+    input: |
+      I want to add auto-instrumentation for a new HTTP client library. Where do the
+      integration class and its tests live in this repo, and how do I scaffold it?
+    expected_criteria:
+      - Integration code under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/.
+      - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
+      - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
+      - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
+      - >-
+        Mentions a valid instrumentation generator entry point: ./tracer/build.ps1 RunInstrumentationGenerator (GUI),
+        RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
+        via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd (Nuke wrapper), or
+        dotnet run --project tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- generate <dll> --type <type> --method <method> (direct CLI).
+        The wrapper in tracer/build/_build/Build.Utilities.cs maps its flags to the direct CLI arguments;
+        --output-path maps to --output. Both accept --overload-index <n>. For parameter types, the wrapper splits
+        --parameter-types "<type1> <type2>"; the direct CLI requires separate arguments: --parameter-types <type1> <type2>.
+        The wrapper also accepts --generator-args "--set createDucktypeInstance=true --json" to forward
+        additional CLI options, as documented in docs/development/InstrumentationGenerator.md.
+        The direct CLI also accepts -t/-m aliases. The installed tool name is dd-autoinstrumentation, with
+        inspect <assembly-path> --list-methods <type-full-name> --json documented in docs/development/for-ai/InstrumentationGenerator-CLI.md.
+        One valid invocation is sufficient; alternatives and discovery are optional. Assess argument correctness
+        and actionable guidance, not how many alternatives are listed.
+        The GUI displays code to copy; the CLI prints code or writes to an explicit output path.
+        Neither chooses the integration folder nor implements handler behavior or test/sample wiring.
+        These limits need not all be listed, but claims about automation must respect them.
+    bad_signals:
+      - Puts the integration under profiler/src.
+      - Invents file paths, test projects, or generator commands. The entry points and flags above are valid, but using a real flag with the wrong entry point can still be an error.
+      - Claims the generator chooses and populates the integration folder automatically or implements span behavior and tests. Saying it generates boilerplate is correct.
+      - Tells the user to edit generated (.g.) files by hand.
+
+  - id: dotnet-tracer-test-selection-httpclient-002
+    files: [AGENTS.md]
+    input: |
+      A PR changes files under the HttpClient auto-instrumentation and its integration
+      tests. Which tests should the agent recommend running, and in what order?
+    expected_criteria:
+      - Recommends targeted HttpClient/HTTP integration tests before broad suites.
+      - References the BuildAndRunIntegrationTests Nuke target (or targeted equivalents).
+      - Considers snapshot validation for the affected integration.
+      - Notes Docker is required for many integration tests.
+    bad_signals:
+      - Suggests skipping tests.
+      - Suggests blindly updating snapshots.
+      - Recommends running the entire suite as the first step.
+      - Mentions non-existent test projects.
+
+  - id: dotnet-tracer-config-key-003
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      I need to add a new DD_ environment-variable configuration key. What is the
+      end-to-end process in this repo?
+    expected_criteria:
+      - Edit tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml.
+      - The YAML is consumed by source generators (regenerate / build).
+      - Handle aliases, deprecations, defaults, and telemetry normalization.
+      - References docs/development/Configuration/AddingConfigurationKeys.md.
+    bad_signals:
+      - Hardcodes the key without the YAML metadata.
+      - Invents a configuration file or generator that does not exist.
+
+  - id: dotnet-tracer-logging-terminology-004
+    files: [AGENTS.md]   # logging terminology lives in AGENTS.md — run this case only when AGENTS.md changed
+    input: |
+      Write the log message for when the entire Datadog product is being disabled at
+      startup, and briefly say which terms to use or avoid.
+    expected_criteria:
+      - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
+      - Judges the proposed message and terminology, not access to a written guide. Guidance files can be absent from the evaluated checkout; reporting that absence or citing existing source logs instead is not a correctness defect. Optional glossary entries do not make an otherwise equally correct answer better.
+      - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
+      - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
+      - If discussing the managed assembly, uses Datadog.Trace.dll as its preferred name. This aside is optional and does not alone justify a pairwise win. Listing "managed profiler" and "Datadog.Trace.dll" as terms to avoid for the whole-product message is acceptable; penalize only explicitly recommending "managed profiler" as the assembly name or rejecting Datadog.Trace.dll as that name.
+    bad_signals:
+      - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
+      - Explicitly endorses "managed profiler" as the managed tracer's name or claims Datadog.Trace.dll is an incorrect assembly name. Listing either or both as terms to avoid for the whole-product message is not this bad signal.
+      - Uses an individual component name instead of "Datadog SDK" for disabling the entire product.
+
+  - id: dotnet-tracer-logging-noalloc-005
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      In a hot path I need to log a retry attempt number (an int). Show the logging
+      call and explain the allocation concern.
+    expected_criteria:
+      - Uses a generic log method, e.g. Log.Debug<int>(..., attempt + 1).
+      - Avoids calling .ToString() on the numeric value.
+      - Uses format strings / message templates rather than string interpolation in hot paths.
+    bad_signals:
+      - Calls .ToString() on the number in the log call.
+      - Uses string interpolation ($"...{x}...") for the hot-path log message.
+
+  - id: dotnet-tracer-windows-nul-006
+    files: [AGENTS.md]
+    input: |
+      On Windows I want to silence stderr from a findstr command in a script. What is
+      the recommended way in this repo?
+    expected_criteria:
+      - Warns that >nul / 2>nul can create an undeletable literal "nul" file.
+      - Offers a safe alternative (2>\\.\NUL, PowerShell, or letting errors show).
+      - Prefers dedicated tools over piped redirection where applicable.
+    bad_signals:
+      - Recommends 2>nul or >nul without warning.
+
+  - id: dotnet-tracer-debug-not-loaded-007
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      A developer reports the tracer isn't producing spans and sees "Datadog.Trace.dll
+      was not yet loaded into the App Domain". How should the agent help them debug?
+    expected_criteria:
+      - Points to docs/development/TracerDebugging.md and local debugging techniques.
+      - Mentions the native loader / monitoring home bootstrapping the managed tracer.
+      - Suggests checking launchSettings.json and DD_* environment configuration.
+    bad_signals:
+      - Invents a fix unrelated to tracer loading.
+      - Recommends editing generated files or disabling checks.
+
+  - id: dotnet-tracer-nuget-scope-hallucination-008
+    files: [AGENTS.md]
+    input: |
+      Does the Datadog.Trace NuGet package include the auto-instrumentation code and
+      native profiler? A teammate wants to reference it to get automatic spans.
+    expected_criteria:
+      - States the NuGet package ships ONLY the manual instrumentation API (Datadog.Trace.Manual.dll).
+      - Auto-instrumentation / native profiler are delivered separately via the tracer "monitoring home" (installers/MSI/containers or specialized packages).
+      - Clarifies manual instrumentation (Tracer.Instance.StartActive()) is what the NuGet package provides.
+    bad_signals:
+      - Claims the Datadog.Trace NuGet package includes auto-instrumentation.
+      - Claims referencing the NuGet package alone yields automatic spans.
+
+  # ---- Complex tier (multi-step debugging; grounded in .NET APM troubleshooting knowledge) ----
+
+  - id: dotnet-tracer-debug-native-no-managed-009
+    files: [AGENTS.md]
+    input: |
+      A user gets no spans. In the log directory there IS a native log
+      (dotnet-tracer-native-<proc>-<pid>.log) but NO managed log
+      (dotnet-tracer-managed-<proc>.log). What does this tell you about where the
+      failure is, and how would you investigate it in this repo?
+    expected_criteria:
+      - Explains native logs are written first (native CLR profiler), managed logs carry the functional tracer data.
+      - Concludes the profiler attached but the managed tracer failed to load/initialize (failure is between native loader and managed tracer), not "not installed".
+      - Checks the native loader log (dotnet-native-loader-<proc>.log) and that native and managed tracer versions match (AssemblyLoadFinished / version match).
+      - Reasons via the architecture native loader -> monitoring home -> managed Datadog.Trace.dll.
+      - Points to docs/development/TracerDebugging.md.
+    bad_signals:
+      - Concludes the tracer/Agent is simply not installed and says to reinstall blindly.
+      - Confuses the Continuous Profiler (DD-DotNet-Profiler-Native) logs with the tracer native log.
+      - Invents a log file or config that does not exist.
+
+  - id: dotnet-tracer-debug-calltarget-db-spans-010
+    files: [AGENTS.md]
+    input: |
+      After upgrading the tracer, a customer's ADO.NET database spans disappeared while
+      their HTTP client spans still work. What is the likely cause, and how would you
+      confirm it from this repository?
+    expected_criteria:
+      - Identifies that auto-instrumentation targets each library individually (CallTarget) so an unsupported/under-instrumented provider yields no spans.
+      - Checks whether the specific library/method has an [InstrumentMethod] definition under ClrProfiler/AutoInstrumentation and whether its version range covers the customer's provider version.
+      - Checks the relevant method's native-log evidence of instrumentation progress. "Method enqueued for ReJIT" indicates selection/enqueue; "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer, before the replacement IL is submitted to the CLR, which can still fail. Neither line alone proves the CLR accepted the replacement; an answer that explains this limitation is correct, and exact log wording is not required.
+      - Suggests reproducing with a targeted integration test rather than a broad run.
+    bad_signals:
+      - Recommends permanently disabling instrumentation or downgrading without diagnosis.
+      - Attributes it to Agent connectivity despite HTTP spans working.
+      - Invents instrumentation flags or files.
+      - Claims an enqueue or rewrite-completion log alone proves the CLR accepted the replacement IL.
+
+  - id: dotnet-tracer-confirm-instrumentation-011
+    files: [AGENTS.md]
+    input: |
+      How can I check whether a given library method is auto-instrumented, from its
+      source declaration through runtime instrumentation? Explain what the repo and
+      runtime logs establish at each stage — selection/enqueue, rewrite preparation,
+      CLR acceptance, and method execution or span production — and where additional
+      evidence is needed.
+    expected_criteria:
+      - Locates source declarations in InstrumentMethod attributes under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/. Generated definitions may be used as a cross-check; listing every generated artifact is not required.
+      - Places per-method rewrite evidence in the native tracer log, not the managed log. Managed initialization messages can provide context but do not prove that a specific method was rewritten.
+      - >-
+        Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue;
+        "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer.
+        The later ApplyChanges call submits the replacement IL to the CLR and can still fail.
+        Neither line, even without a ReJITError log, proves CLR acceptance, method execution, or span production.
+        Tentative inference is acceptable if the answer makes clear that further verification is needed.
+        Equivalent explanations are acceptable without exact log wording or internal API names.
+      - If citing tracer/build/supported_calltargets.g.json, treats it as a valid build-generated enumeration of instrumented targets, not hand-authored configuration. Reading it is valid; it may need to be generated before it exists in a clean checkout. The answer need not mention this optional artifact.
+    bad_signals:
+      - Claims a managed initialization log proves that a specific method's JIT/ReJIT instrumentation replacement succeeded.
+      - Presents a hand-authored configuration file as the authoritative list of instrumented methods or recommends hand-editing generated definitions. Merely pointing to a generated enumeration, including tracer/build/supported_calltargets.g.json, does not trigger this signal.
+      - Claims enqueueing alone proves a successful rewrite, that an enqueue/rewrite-completion log alone proves the CLR accepted the replacement IL, or that either line alone proves the method executed or a span was produced.
+      - Claims absence of ReJITError, alone or combined with a rewrite-completion log, proves the CLR accepted the replacement IL. A qualified inference that explicitly requires further verification does not trigger this signal.
+
+  - id: dotnet-tracer-debug-logging-in-prod-012
+    files: [AGENTS.md]
+    input: |
+      A customer has high latency in production. A teammate suggests setting
+      DD_TRACE_DEBUG=true on the production app to investigate. Is that a good idea,
+      and what would you recommend instead?
+    expected_criteria:
+      - Warns that DD_TRACE_DEBUG=true greatly increases overhead and can make a resource-constrained app/plan unresponsive.
+      - Recommends capturing targeted diagnostics instead (e.g. PerfView traces, memory dumps) and/or enabling debug only briefly or in a non-prod/repro environment.
+      - May mention managing log volume/retention (DD_TRACE_LOGFILE_RETENTION_DAYS) if debug is enabled.
+    bad_signals:
+      - Recommends enabling DD_TRACE_DEBUG in production with no performance caveat.
+
+  # Exercises the gated `bump-libdatadog` skill (.claude/skills/bump-libdatadog/SKILL.md). The question is
+  # phrased to auto-invoke that skill; the expected_criteria/bad_signals mirror its real guidance, so a
+  # regression in the skill is observable here.
+  - id: dotnet-tracer-bump-libdatadog-013
+    files: [.claude/skills/bump-libdatadog/SKILL.md, .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh]   # run when the skill (SKILL.md or its helper script) changed
+    input: |
+      I need to bump the libdatadog native library to a new release version. Walk me
+      through everything I have to update in this repo and how to verify it. Give a
+      plan using local repository evidence; do not edit files, fetch releases, or run builds.
+    expected_criteria:
+      - Identifies both version pins to update — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
+      - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
+      - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
+      - Proposes verification using the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
+      - Normally proposes moving Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if undefined/imported symbols change.
+    bad_signals:
+      - Says there is a single version to update / only one file to change.
+      - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
+      - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
+      - Invents a libdatadog version pin in the root vcpkg.json.
+      - Bumps to an upstream DataDog/libdatadog tag/version instead of the DataDog/libdatadog-dotnet release.
+      - Invents release versions or checksums.
+
+  # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
+  # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
+  # bloated AGENTS.md (always in context) can degrade them — so a drop here flags collateral, global degradation.
+  # Tagged files:[AGENTS.md] for instruction-change targeting; setup measures the whole inventory.
+  - id: dotnet-tracer-control-async-disposal-014
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      In general C#, when should a type implement IAsyncDisposable instead of (or alongside) IDisposable, and how
+      do `await using` and the two dispose methods relate? Keep it general — not tracer-specific.
+    expected_criteria:
+      - Says IAsyncDisposable (DisposeAsync) is for cleanup that is genuinely asynchronous, e.g. flushing/closing async I/O.
+      - Notes `await using` invokes DisposeAsync, and a type may implement both interfaces (sync + async paths).
+      - Advises against blocking on async work inside a synchronous Dispose() (no sync-over-async / .Result / .Wait()).
+    bad_signals:
+      - Claims IAsyncDisposable replaces IDisposable in all cases / they are interchangeable.
+      - Recommends calling .Result or .Wait() inside Dispose() to do async cleanup.
+      - Invents a non-existent interface or method.
+
+  - id: dotnet-tracer-control-lazy-init-015
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      Show a correct thread-safe lazily-initialized value in C#, and explain the main pitfall of hand-rolled
+      double-checked locking. General C# — not specific to this repo.
+    expected_criteria:
+      - Recommends Lazy<T> (with an appropriate LazyThreadSafetyMode) as the simplest correct option.
+      - If showing double-checked locking, marks the backing field `volatile` (or explains why memory ordering matters).
+      - Explains the pitfall — without volatile/Lazy, reordering can publish a partially-constructed instance.
+    bad_signals:
+      - Presents a double-checked lock without volatile and calls it correct.
+      - Claims a plain `if (x == null) x = new()` is thread-safe.
+      - Invents a non-existent type or API.
+
+  # Tracer-internal reasoning AGENTS.md does NOT cover (distributed context propagation). Verified against
+  # tracer/src/Datadog.Trace/Propagators + ClrProfiler/AutoInstrumentation/Http (HttpMessageHandlerCommon).
+  - id: dotnet-tracer-control-context-propagation-016
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      When the .NET tracer auto-instruments an outbound HttpClient call, how does it propagate the active trace
+      context to the downstream service — which headers does it inject by default, and where does the injection
+      happen? Keep it about the tracer's behavior, not anything AGENTS.md documents.
+    expected_criteria:
+      - Says the tracer injects propagation headers onto the outgoing request automatically (no manual work needed).
+      - Names the Datadog headers — x-datadog-trace-id, x-datadog-parent-id, x-datadog-sampling-priority (origin/tags conditionally).
+      - Notes W3C tracecontext (traceparent/tracestate) is also injected by default (multiple styles run together; B3 is available).
+      - Explains injection happens in the HttpClient/HttpMessageHandler auto-instrumentation (OnMethodBegin) via the span-context propagator, before the request is sent.
+      - Mentions the propagation style is configurable (DD_TRACE_PROPAGATION_STYLE / inject+extract variants), default Datadog + W3C tracecontext.
+    bad_signals:
+      - Claims context propagates without HTTP headers (e.g. via shared/ambient state across processes).
+      - Invents header names that aren't used, or says the user must add the headers manually.
+      - Confuses inbound extraction with outbound injection, or claims only one fixed propagation style is supported.
+
+  # Deep, repo-specific reasoning that AGENTS.md does NOT cover (IAST taint flow) — a strong control case:
+  # AGENTS.md content can't help it, but a bloated AGENTS.md degrades the agent's ability to reason it out.
+  # Criteria verified against tracer/src/Datadog.Trace/Iast (source taint -> String.Replace propagation aspect
+  # -> ADO.NET DbCommand SQL sink -> vulnerability on the span). The answer is YES, it is detected.
+  - id: dotnet-tracer-control-iast-sqli-propagation-017
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      With IAST enabled: an ASP.NET controller receives a string parameter `name`; the value is used to replace a
+      placeholder in a constant SQL query string (e.g. `query.Replace("{name}", name)`), and the query is then
+      executed via MySql. Should IAST report a vulnerability? Walk through how the `name` value propagates from the
+      request all the way to a vulnerability being added to the span.
+    expected_criteria:
+      - Concludes YES — IAST reports a SQL injection vulnerability for this flow.
+      - Identifies the request/route parameter `name` as the taint source (user input is tainted on the way in).
+      - Explains taint propagates through the string Replace (string operations are instrumented), so the resulting query string carries the tainted range — Replace does NOT break taint.
+      - Identifies the MySql/ADO.NET DbCommand execution as the SQL-injection sink, where IAST checks whether the executed query text contains a tainted range.
+      - States the detected SQL_INJECTION vulnerability is recorded and attached to the span (IAST vulnerability batch → span meta-struct / IAST tag).
+    bad_signals:
+      - Concludes IAST would NOT detect a vulnerability here (false negative).
+      - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
+      - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
+      - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
+
+  # Setup-only additions exercise the other declared skills without external services or repository edits.
+  # Ground truth: analyzer project wiring plus add-lint-rule's explicit repository policy.
+  - id: dotnet-tracer-add-lint-rule-018
+    comparisons: [setup]
+    files: [.claude/skills/add-lint-rule/SKILL.md, .claude/skills/add-lint-rule/reference.md]
+    only_warn: true
+    input: |
+      I want to enforce a new C# product convention in core tracer code with a custom
+      Roslyn analyzer. It is not a performance optimization. Explain where to add the
+      rule and tests, its initial severity and scope, how to handle existing violations,
+      and whether CI needs a new stage. Inspect local files but do not make changes or run builds.
+    expected_criteria:
+      - Uses tracer/src/Datadog.Trace.Tools.Analyzers/ for the analyzer and tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ for its unit tests.
+      - Classifies the rule as a product convention, without unsupported allocation or CPU claims.
+      - Introduces the new rule as DiagnosticSeverity.Error under the repository policy; legacy Info rules are not a model for new rules.
+      - Limits enforcement to core production code; adding analyzer unit tests does not mean enforcing the new rule on tests, helpers, or samples.
+      - Fixes existing violations before enabling the error, in the same change or preparatory changes, and tests both violating and valid examples.
+      - Reuses the analyzer references in tracer/src/Directory.Build.props and compile-time enforcement; no new CI stage is needed.
+    bad_signals:
+      - Recommends a new formatting CI stage or globally enabling built-in .NET analyzers to implement this custom rule.
+      - Recommends Info as the final severity for a new rule, or extends enforcement to tests and samples without being asked.
+      - Claims a performance improvement without evidence or edits files despite the plan-only request.
+
+  # Ground truth: supplied evidence plus Get-AzureDevOpsBuildAnalysis.ps1 and the skill's snapshot guidance.
+  - id: dotnet-tracer-azdo-span-count-019
+    comparisons: [setup]
+    files: [.claude/skills/analyze-azdo-build/SKILL.md, .claude/skills/analyze-azdo-build/failure-patterns.md]
+    only_warn: true
+    input: |
+      Triage this Azure DevOps failure using only the supplied evidence and local repo files.
+      A task running a SubmitsTraces integration test failed with "Expected 2 spans but got 0".
+      There is no Received/Verified file diff. A separate job is canceled with a timeout message.
+      A teammate suggests updating snapshots and retrying every stage. Give a brief assessment
+      and the next targeted investigation steps. Mention the repo helper for a later analysis
+      once a build ID is available; do not call external services, update files, or retry anything.
+    expected_criteria:
+      - Distinguishes a span-count failure from a snapshot-content mismatch and rejects snapshot updates as a remedy for zero spans.
+      - Keeps the execution order unknown because the exact failing test is not identified. Neither a representative test nor the missing diff establishes whether this test reached snapshot comparison. A later instruction to confirm the order is not a correction of an earlier claim that comparison never ran.
+      - Uses the supplied timeout message as timeout evidence and investigates that job separately unless a common cause is supported. Duration alone, including >=55 or <5 minutes, does not prove infrastructure timeout or cascade cancellation; applicable configured limits and timeline events matter. Mentioning these as tentative heuristics with explicit verification is acceptable.
+      - Investigates tracer/sample initialization, instrumentation, transport, and timing as possible causes. Zero spans establishes a failed assertion, not whether the cause is deterministic, flaky, or environmental. Calling it a real observed failure is acceptable; claiming it cannot be flaky or is definitely a code regression without evidence is not.
+      - Identifies tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id> as a valid later analysis helper; -IncludeLogs is available for deeper log analysis. Does not invent an actual build ID or fetched results. The analyze-azdo-build skill at .claude/skills/analyze-azdo-build/SKILL.md is real and may be found in Git history even when removed from the checkout; referencing it is not fabrication, but naming the skill alone does not identify the executable helper.
+      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope. Proposing a conditional, targeted retry for later after diagnosis is not executing a retry and is not itself a scope violation.
+    bad_signals:
+      - Recommends updating snapshots to fix the span-count assertion despite the absence of a content diff.
+      - Presents snapshot comparison not running as an explanation of the missing diff. Examples include "the count assertion failed before snapshot verification ran" and "so the test never reached snapshot comparison". This remains a bad signal if the answer later says to confirm or verify the order; only an explicit withdrawal of that conclusion resolves it. A consistently tentative hypothesis is not this bad signal.
+      - Claims zero spans proves a deterministic code regression, rules out flakiness, or proves a flaky/infrastructure-only cause without evidence.
+      - Treats fixed duration thresholds as proof of a cancellation's cause or invents run-history evidence absent from the prompt and inspected files.
+      - Calls external services, changes snapshots, or retries stages despite the user's explicit constraints.
+
+  # Ground truth: local package/deployment helpers and azure-functions' local-test-only reference policy.
+  - id: dotnet-tracer-azure-functions-local-package-020
+    comparisons: [setup]
+    files: [.claude/skills/azure-functions/SKILL.md]
+    only_warn: true
+    input: |
+      I changed the Datadog.AzureFunctions package and want to test a local development build
+      in my own sample Function App. Give a plan for building the package, making the sample
+      consume it, and deploying later. Explain any temporary project-reference changes and
+      what must not be committed. Use local repo files only; do not build, contact Azure,
+      request credentials, edit files, or deploy anything. Use placeholders for my app details.
+    expected_criteria:
+      - Uses tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <local-feed-directory>; -BuildId can supply missing bundle files. The script accepts -Version or generates a timestamped prerelease string, but this does not prove the package receives it. BuildAzureFunctionsNuget passes no Version property to DotNetPack; flagging this and checking the actual package version before restore is valid, not unsupported doubt.
+      - Matches the CopyTo destination to the sample's nuget.config local feed and selects the actual local package version. For a timestamped version such as 3.57.0-dev20261030120000, 3.57.0-dev* matches but 3.57.0-dev.* does not. An explicit matching version is valid. Correcting the skill's floating-version example is valid.
+      - For the documented local-test workflow, temporarily replaces the Datadog.Trace.Manual and Datadog.Trace.Annotations project references in tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj with Datadog.Trace and Datadog.Trace.Annotations package references. These substitutions are local-only and must be reverted before committing.
+      - Identifies tracer/tools/Deploy-AzureFunction.ps1 with AppName, ResourceGroup, and SampleAppPath placeholders for a later deployment; does not claim that building the package alone deploys or verifies instrumentation.
+      - Respects the plan-only scope and explains that later verification needs actual function execution and trace/log evidence.
+    bad_signals:
+      - Recommends committing the temporary package-reference substitutions as a production change.
+      - Claims the sample consumes the local package without configuring a matching feed and package version.
+      - Recommends a dotted prerelease pattern such as 3.57.0-dev.* for an undotted timestamped version such as 3.57.0-dev20261030120000 without correcting the mismatch.
+      - Performs builds, external calls, deployment, or edits despite the explicit plan-only request.
+
+  # Frozen hypothetical fixture: correctness plus diagnostic cost on an instrumentation path.
+  # Ground truth: supplied contracts; Performance.md PERF-3.2 explains eager log-argument evaluation.
+  - id: dotnet-tracer-sdk-review-response-metadata-022
+    comparisons: [setup]
+    files: [.claude/skills/sdk-review/SKILL.md]
+    only_warn: true
+    input: |
+      Review this proposed response-metadata update, using repository review guidance when available.
+      Report actionable findings with location, impact, a focused fix, and relevant regression coverage.
+      Review the supplied hypothetical diff, not a branch or current source file. Read local guidance if useful;
+      do not edit files, run builds or tests, or contact external services.
+
+      Fixture context:
+      - OnResponse runs for every completed request, including when response tagging and debug logging are disabled.
+        The outer instrumentation boundary catches callback exceptions and preserves the application response.
+      - response and span are non-null. ContentType is an optional header object; it is null when absent.
+        ContentType.Value is a safe string getter when the object exists. Missing Content-Type is valid.
+      - FormatDiagnostic formats bounded, non-sensitive response metadata into a newly allocated string.
+        Log.Debug takes ordinary object arguments, not a lazy callback or interpolated-string handler.
+        Log.IsEnabled(LogEventLevel.Debug) is available. Logging, formatting, and SetTag do not throw.
+      - ResponseTagsEnabled is read per call. StatusCode is an int; its conversion below is unchanged.
+
+      PR description: Add response diagnostics and simplify metadata tagging.
+      Proposed diff in ResponseMetadataCallback.cs (a fixed fixture, not a file to locate):
+      ```diff
+       void OnResponse(ResponseMetadata response, Span span)
+       {
+      +    Log.Debug("Response metadata: {Metadata}", FormatDiagnostic(response));
+           if (!ResponseTagsEnabled)
+           {
+               return;
+           }
+
+      -    var contentType = response.ContentType;
+      -    if (contentType != null)
+      -    {
+      -        span.SetTag("http.response.content_type", contentType.Value);
+      -    }
+      +    span.SetTag("http.response.content_type", response.ContentType.Value);
+
+      -    var status = IntStringCache.ToInvariantString(response.StatusCode);
+      -    span.SetTag("http.status_code", status);
+      +    var statusCode = IntStringCache.ToInvariantString(response.StatusCode);
+      +    span.SetTag("http.status_code", statusCode);
+       }
+      ```
+    expected_criteria:
+      - >-
+        Identifies the removed ContentType null guard as a correctness regression for valid responses without
+        that header. With tagging enabled, the callback throws before reaching the status-code tag. The outer
+        boundary preserves the application response; it does not restore the omitted tags.
+      - >-
+        Independently identifies eager FormatDiagnostic evaluation and string allocation on every callback,
+        including when debug logging and response tagging are disabled. Log.Debug's internal level check cannot
+        prevent evaluation of its ordinary arguments. Explains the per-request cost without inventing measurements.
+      - >-
+        Recommends restoring conditional Content-Type tagging while allowing status tagging to proceed. For the
+        diagnostic, recommends removing it or guarding the formatting call with the debug-level check. Moving it
+        after ResponseTagsEnabled alone does not eliminate its cost when tagging is enabled but debug is disabled.
+      - >-
+        Recommends coverage for absent and present Content-Type with tagging enabled, verifying status tagging
+        still runs, and coverage that diagnostic formatting is not invoked with debug disabled. Does not claim
+        test execution. Recognizes the status-to-statusCode rename as behavior-preserving.
+      - >-
+        Bases findings on the fixture contracts. Review guidance may be absent in a variant; reporting that is
+        not a defect. Lens names, rule citations, extra findings, and longer reports earn no credit by themselves.
+        PERF-3.2 is a real rule about eager debug-log arguments; COR-1.2 covers nullable integration values.
+    bad_signals:
+      - Approves the unconditional ContentType dereference or claims the outer guard ensures all response tags are recorded.
+      - Claims Log.Debug automatically defers FormatDiagnostic or prevents its allocation when debug logging is disabled.
+      - Claims the missing-header exception escapes into the application despite the specified outer boundary.
+      - Invents sensitive-data exposure, unbounded diagnostic payloads, a defect in the local rename, or measured overhead absent from the fixture.
+      - Modifies files, runs tests or builds, or contacts external services despite the read-only request.

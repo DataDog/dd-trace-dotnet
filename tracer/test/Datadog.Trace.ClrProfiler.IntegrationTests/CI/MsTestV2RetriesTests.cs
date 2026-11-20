@@ -13,9 +13,13 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [Collection(nameof(TransportTestsCollection))]
 public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 {
+    // Native retry scenarios share the assembly but have their own integration tests.
+    private const string TestSuiteFilter = "--TestCaseFilter:FullyQualifiedName~Samples.MSTestTestsRetries.TestSuite.";
+
     public MsTestV2RetriesTests(ITestOutputHelper output)
         : base("MSTestTestsRetries", output)
     {
@@ -30,6 +34,36 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 
     protected override string TrueAtThirdRetry => "Samples.MSTestTestsRetries.TestSuite.TrueAtThirdRetry";
 
+    public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.MSTest2Retries);
+
+    public static IEnumerable<object[]> GetAutomationExclusionData() => GetAutomationExclusionData(PackageVersions.MSTest2Retries);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetAutomationExclusionData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task AutomationExclusions(string packageVersion, string testName, int expectedExecutions, string expectedFinalStatus, int expectedExitCode, string expectedTag)
+        => base.AutomationExclusions(packageVersion, testName, expectedExecutions, expectedFinalStatus, expectedExitCode, expectedTag);
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.MSTest2Retries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task ProtectedAttemptToFixFailure(string packageVersion)
+        => base.ProtectedAttemptToFixFailure(packageVersion);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetQuarantineRetryData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task QuarantineWithAutomaticRetries(string packageVersion, bool quarantined, bool retriesEnabled, bool quarantineAlwaysFails)
+        => base.QuarantineWithAutomaticRetries(packageVersion, quarantined, retriesEnabled, quarantineAlwaysFails);
+
     [SkippableTheory]
     [MemberData(nameof(PackageVersions.MSTest2Retries), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
@@ -37,7 +71,17 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "FlakyRetries")]
     public override Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
-        return base.FlakyRetries(packageVersion);
+        return FlakyRetriesWithArguments(packageVersion, TestSuiteFilter);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.MSTest2Retries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return DynamicFlakyRetriesWithArguments(packageVersion, TestSuiteFilter);
     }
 
     [SkippableTheory]
@@ -50,6 +94,10 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     {
         return base.FlakyRetriesWithExceptionReplay(packageVersion);
     }
+
+    // Quarantine must not depend on the runner treating Inconclusive as a non-blocking outcome.
+    protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+        => TestSuiteFilter + " -- MSTest.MapInconclusiveToFailed=true";
 }
 
 #endif

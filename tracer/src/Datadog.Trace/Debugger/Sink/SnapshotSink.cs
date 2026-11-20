@@ -6,6 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -16,23 +17,43 @@ namespace Datadog.Trace.Debugger.Sink
 
         private readonly BoundedConcurrentQueue<string> _queue;
         private readonly int _batchSize;
+        private readonly int _queueLimit;
         private readonly SnapshotSlicer _snapshotSlicer;
 
-        internal SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
+        // Null for products that reuse this sink but are not covered by the Dynamic Instrumentation
+        // guardrail metrics. Oversized payloads are still dropped, they are just not reported.
+        private readonly MetricTags.DebuggerCaptureEventType? _eventType;
+
+        internal SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer, MetricTags.DebuggerCaptureEventType? eventType, int queueLimit = DefaultQueueLimit)
         {
             _snapshotSlicer = snapshotSlicer;
             _batchSize = batchSize;
-            _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
+            _queueLimit = queueLimit;
+            _eventType = eventType;
+            _queue = new BoundedConcurrentQueue<string>(queueLimit);
         }
 
-        public static SnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer)
+        public static SnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer, MetricTags.DebuggerCaptureEventType? eventType)
         {
-            return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer);
+            return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer, eventType);
         }
 
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string snapshot, uint incompleteReasons = 0)
         {
-            _queue.TryEnqueue(_snapshotSlicer.SliceIfNeeded(probeId, snapshot));
+            var sliced = _snapshotSlicer.SliceIfNeeded(probeId, snapshot, ref incompleteReasons);
+            if (sliced is null)
+            {
+                DebuggerGuardrailMetrics.RecordEventsDropped(_eventType, MetricTags.DebuggerEventsDroppedReason.PayloadTooLarge);
+                return;
+            }
+
+            if (!_queue.TryEnqueue(sliced))
+            {
+                DebuggerGuardrailMetrics.RecordEventsDropped(_eventType, MetricTags.DebuggerEventsDroppedReason.QueueFull);
+                return;
+            }
+
+            DebuggerGuardrailMetrics.RecordCaptureIncomplete(_eventType, incompleteReasons);
         }
 
         public List<string> GetSnapshots()
@@ -54,7 +75,7 @@ namespace Datadog.Trace.Debugger.Sink
 
         public int RemainingCapacity()
         {
-            return DefaultQueueLimit - _queue.Count;
+            return _queueLimit - _queue.Count;
         }
     }
 }

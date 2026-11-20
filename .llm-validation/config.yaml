@@ -1,0 +1,57 @@
+model: claude-opus-5-5
+runs: 3
+
+instruction_files:
+  - AGENTS.md
+  - .claude/skills/bump-libdatadog/SKILL.md
+  - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
+
+# Complete guidance inventory for setup comparison; instruction-change targeting above is unchanged.
+# Use --comparison setup --level setup-calibration for the repeated calibration run, or add --dry-run to inspect it.
+# .claude/settings.json contains telemetry attributes only and is retained as common configuration.
+# Personal settings.local.json must be excluded from both variants by the isolated runner.
+setup:
+  files:
+    - CLAUDE.md
+    - AGENTS.md
+  directories:
+    - .claude/skills
+
+default_level: gate
+presets:
+  # Three guidance cases, five skill workflows, and two general-language controls.
+  # This is a calibration subset, not full-suite coverage or proof of individual skill benefit.
+  setup-calibration:
+    cases:
+      - dotnet-tracer-repo-nav-integration-001
+      - dotnet-tracer-logging-terminology-004
+      - dotnet-tracer-nuget-scope-hallucination-008
+      - dotnet-tracer-bump-libdatadog-013
+      - dotnet-tracer-control-async-disposal-014
+      - dotnet-tracer-control-lazy-init-015
+      - dotnet-tracer-add-lint-rule-018
+      - dotnet-tracer-azdo-span-count-019
+      - dotnet-tracer-azure-functions-local-package-020
+      - dotnet-tracer-sdk-review-response-metadata-022
+    runs: 3
+  gate:
+    cases:
+      - dotnet-tracer-logging-terminology-004
+      - dotnet-tracer-nuget-scope-hallucination-008
+      - dotnet-tracer-repo-nav-integration-001
+      - dotnet-tracer-confirm-instrumentation-011
+      - dotnet-tracer-bump-libdatadog-013
+      - dotnet-tracer-control-context-propagation-016
+    runs: 8
+  minimum:
+    cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
+    runs: 4
+  full:
+    runs: 3
+
+# These thresholds decide when a *blocking* case's pairwise regression actually FAILs:
+policy:
+  noise_threshold: 1.0
+  pairwise_win_floor: 0.45
+  blocking_fail_floor: 0.45
+  blocking_fail_ci_upper: 0.55

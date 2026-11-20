@@ -29,6 +29,7 @@ namespace Samples.AspNetCoreMvc
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             var includeExtraMiddleware = Environment.GetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE") == "1";
+            var includeRouteEdgeCases = Environment.GetEnvironmentVariable("ADD_ROUTE_EDGE_CASES") == "1";
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -56,6 +57,33 @@ namespace Samples.AspNetCoreMvc
                 app.UseMiddleware<CustomSpanMiddleware>("custom_pre_routing");
             }
 
+            if (includeRouteEdgeCases)
+            {
+                // Turns an error status into an error page by re-running the pipeline against a
+                // different path. Scoped to /re-execute so that every other test case keeps the
+                // default pipeline.
+                app.UseWhen(
+                    context => context.Request.Path.StartsWithSegments("/re-execute"),
+                    branch => branch.UseStatusCodePagesWithReExecute("/status-code/{0}"));
+
+                // Rewrites the path the way a URL-rewriting middleware would, so that routing runs
+                // against a different path than the one the request arrived on.
+                app.Use(async (context, next) =>
+                {
+                    if (context.Request.Path == "/rewrite-me")
+                    {
+                        context.Request.Path = "/alive-check";
+                    }
+
+                    await next();
+                });
+
+                // Strips the path base from requests mounted under it, the way an app hosted behind
+                // a reverse proxy or in a sub-application would be. Routing then runs against the
+                // remaining path.
+                app.UsePathBase("/path-base");
+            }
+
             app.UseRouting();
 
             if (includeExtraMiddleware)
@@ -65,6 +93,17 @@ namespace Samples.AspNetCoreMvc
 
             app.UseEndpoints(endpoints =>
             {
+                if (includeRouteEdgeCases)
+                {
+                    // A route template that matches the application root, which ASP.NET Core stores
+                    // as the empty string. Registered before the default route so that it is the one
+                    // that matches "/".
+                    endpoints.MapControllerRoute(
+                        name: "empty-route-template",
+                        pattern: string.Empty,
+                        defaults: new { controller = "Home", action = "Index" });
+                }
+
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");

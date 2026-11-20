@@ -28,7 +28,7 @@
       "hash": 874141243,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "XpathInjection"
       },
       "evidence": {

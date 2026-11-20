@@ -8,7 +8,7 @@ This is a single-PR flow. You do not need a local Windows machine with Docker De
 
 ### 1. Edit the image
 
-Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoint.bat`, `requirements.txt`, `constraints.txt`, etc. Every file in this directory contributes to the image hash, so any change produces a new tag.
+Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoint.bat`, etc. Every file in this directory contributes to the image hash, so any change produces a new tag.
 
 ### 2. Open a PR
 
@@ -40,6 +40,12 @@ Once `build-windows-ci-image` is green, re-run the `build:` job (or any other Wi
 
 - The `:latest` tag is **only** used to seed the Docker build cache on the next rebuild. Nothing in the pipeline consumes `:latest` as an input at runtime; the consumer always pins to the content hash.
 - Changes to `compute-image-hash.ps1` itself also invalidate the hash, because the script hashes its own directory.
+
+### vcpkg toolchain
+
+`install_vcpkg.ps1` installs vcpkg into `C:\vcpkg` and pre-fetches the helper tools vcpkg would otherwise download on every build (e.g, `cmake`, `7zip` etc). 
+
+- Keep `VCPKG_VERSION` in `gitlab.windows.dockerfile` in sync with the `vcpkgVersion` constant in `tracer/build/_build/Build.Steps.cs`, so the pre-fetched tool versions match what the build's vcpkg expects.
 
 ### Example PR
 

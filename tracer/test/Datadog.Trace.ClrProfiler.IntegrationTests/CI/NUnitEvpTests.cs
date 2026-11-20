@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class NUnitEvpTests : TestingFrameworkEvpTest
     {
@@ -272,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                         """),
                     1,
-                    ExpectedTestCount + 9 + 9,
+                    ExpectedTestCount,
                     "quarantined_and_disabled");
             }
         }
@@ -364,7 +365,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: GetTestRunnerArguments(packageVersion, false), packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=all");
@@ -376,6 +377,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestSuiteCount, testSuites.Count);
                         Assert.Single(testModules);
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));
@@ -490,7 +493,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                             // CI Library Language
-                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                             // Check Session data
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
@@ -751,6 +754,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         useDotnetExec: false))
                .ConfigureAwait(false);
         }
+
+        protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+            => NUnitTests.GetSharedSampleArguments(packageVersion) ?? base.GetTestRunnerArguments(packageVersion, useDotnetExec);
 
         protected override void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {

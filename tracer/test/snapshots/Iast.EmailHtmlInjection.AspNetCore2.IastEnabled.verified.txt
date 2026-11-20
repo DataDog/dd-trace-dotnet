@@ -28,7 +28,7 @@
       "hash": -543813396,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "SendMailAux"
       },
       "evidence": {

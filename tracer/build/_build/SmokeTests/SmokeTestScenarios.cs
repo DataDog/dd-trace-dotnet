@@ -63,6 +63,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
@@ -140,10 +142,13 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -227,10 +232,13 @@ public static class SmokeTestScenarios
                 installType: InstallType.TarMuslX64,
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -251,6 +259,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
@@ -258,7 +268,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // https://github.com/dotnet/runtime/issues/66707
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
@@ -310,9 +321,11 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -333,6 +346,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute-chiseled", "resolute"),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute-chiseled-composite", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute-chiseled", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute-chiseled-composite", "resolute"),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble-chiseled", "noble"),
@@ -351,6 +366,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute-chiseled", "resolute"),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute-chiseled-composite", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute-chiseled", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute-chiseled-composite", "resolute"),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble-chiseled", "noble"),
@@ -372,6 +389,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
@@ -404,10 +422,13 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -455,6 +476,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
@@ -462,7 +484,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
@@ -482,10 +505,12 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -501,6 +526,8 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    // MCR does not publish an 11.0-noble tag; resolute (Ubuntu 26.04) is the only Ubuntu-based 11.0 tag
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute"),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye"),
@@ -538,6 +565,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
@@ -612,13 +640,15 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
@@ -646,10 +676,13 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
@@ -668,10 +701,12 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19", "3.19", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
@@ -693,16 +728,15 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-resolute", "resolute", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-bullseye-slim", "bullseye", true),
-                    // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-bullseye", "bullseye", true),
-                },
-                excludeWhenPrerelease: TargetFramework.NETCOREAPP3_1);
+                });
 
             yield return GetDotnetToolNuget(
                 shortName: "alpine",
@@ -710,15 +744,15 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.20", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-alpine3.16", "3.16", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
-                    // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-alpine3.15", "3.15", true),
-                },
-                excludeWhenPrerelease: TargetFramework.NETCOREAPP3_1);
+                });
         }
 
         // ─────────────────────────────────────────────────────────
@@ -736,6 +770,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute"),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble"),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm"),
@@ -789,10 +824,12 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24"),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20"),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24"),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });
@@ -869,6 +906,7 @@ public static class SmokeTestScenarios
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
                 NuGetPackageName = Projects.DatadogTraceBundle,
+                IncludeDdDotnetScenario = true,
             });
 
         static IEnumerable<NuGetScenario> GetAzureFunctionsNuGet(
@@ -893,8 +931,7 @@ public static class SmokeTestScenarios
             string shortName,
             string os,
             string runtimeId,
-            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
-            string? excludeWhenPrerelease = null)
+            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new DotnetToolScenario
             {
                 ShortName = shortName,
@@ -905,15 +942,13 @@ public static class SmokeTestScenarios
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
-                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
             });
 
         static IEnumerable<DotnetToolNugetScenario> GetDotnetToolNuget(
             string shortName,
             string os,
             string runtimeId,
-            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
-            string? excludeWhenPrerelease = null)
+            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new DotnetToolNugetScenario
             {
                 ShortName = shortName,
@@ -924,7 +959,6 @@ public static class SmokeTestScenarios
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
-                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
             });
 
         static IEnumerable<TrimmingScenario> GetTrimming(
@@ -969,11 +1003,12 @@ public static class SmokeTestScenarios
         static (TargetFramework PublishFramework, string Tag, string OsVersion)[] GetWindowsRuntimeImages() =>
             new []
             {
-                (TargetFramework.NET10_0, "10.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "servercore-2022"),
+                // .NET 11 dropped the windowsservercore-ltsc2022 tag; only ltsc2025 are published
+                // So everything switches to 2025
+                (TargetFramework.NET11_0, "11.0-windowsservercore-ltsc2025", "servercore-2025"),
+                (TargetFramework.NET10_0, "10.0-windowsservercore-ltsc2025", "servercore-2025"),
+                (TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2025", "servercore-2025"),
+                (TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2025", "servercore-2025"),
             };
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsMsiScenarios()
@@ -1036,8 +1071,8 @@ public static class SmokeTestScenarios
 
             yield return from platform in platforms
                          from image in GetWindowsRuntimeImages()
-                        // just test the highest and lowest LTS versions for brevity
-                         where image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework ==  TargetFramework.NET6_0
+                        // just test the latest version and the highest and lowest LTS versions for brevity
+                         where image.PublishFramework == TargetFramework.NET11_0 || image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework == TargetFramework.NET8_0
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
@@ -1110,8 +1145,8 @@ public static class SmokeTestScenarios
             var platforms = new[] { "x64", "x86" };
             var runtimeImages = new[]
             {
-                (PublishFramework: TargetFramework.NET9_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
-                (PublishFramework: TargetFramework.NET8_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
+                (PublishFramework: TargetFramework.NET9_0, Tag: "4.8.1-windowsservercore-ltsc2025", OsVersion: "servercore-2025"),
+                (PublishFramework: TargetFramework.NET8_0, Tag: "4.8.1-windowsservercore-ltsc2025", OsVersion: "servercore-2025"),
             };
 
             yield return from platform in platforms

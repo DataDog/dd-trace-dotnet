@@ -47,6 +47,11 @@ public class DeduplicationTests : TestHelper
         SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
 
         int expectedSpanCount = instrumented ? (deduplicationEnabled ? 2 : 10) : 0;
+        if (onlyWeakHash)
+        {
+            expectedSpanCount /= 2;
+        }
+
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
 
         if (!onlyWeakHash)

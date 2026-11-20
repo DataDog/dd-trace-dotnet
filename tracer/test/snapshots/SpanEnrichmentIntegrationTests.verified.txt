@@ -1,0 +1,35 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: ffe.root,
+    Resource: ffe.root,
+    Service: Samples.OpenFeature,
+    Tags: {
+      env: integration_tests,
+      ffe_flags_enc: ZAg=,
+      ffe_runtime_defaults: {"time-based-flag":"Not found"},
+      ffe_subjects_enc: {"3a3cee63f5a48700192db604dbd7ae1ae154f1703ced7ea100dab5620bec6cf0":"bA=="},
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: ffe.child,
+    Resource: ffe.child,
+    Service: Samples.OpenFeature,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet
+    }
+  }
+]

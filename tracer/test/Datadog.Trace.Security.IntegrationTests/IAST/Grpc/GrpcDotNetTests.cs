@@ -60,7 +60,7 @@ public class GrpcDotNetTests : TestHelper
         var settings = VerifyHelper.GetSpanVerifierSettings();
 
         // Add scrub for the location data, as using APM sample, we won't disable symbols on their sample
-        (Regex RegexPattern, string Replacement) locationMsgRegex = (new Regex(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,4}(\s)*},"), string.Empty);
+        (Regex RegexPattern, string Replacement) locationMsgRegex = (new Regex(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,6}(\s)*},"), string.Empty);
         settings.AddRegexScrubber(locationMsgRegex);
 
         settings.AddIastScrubbing();

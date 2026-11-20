@@ -4,8 +4,10 @@
 #pragma once
 
 #include <thread>
+#include <array>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <chrono>
 
 #include "IHeapSnapshotManager.h"
@@ -17,17 +19,18 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "InlineVTCache.h"
+#include "ReferenceChainTypes.h"
 #include "SnapshotCooldown.h"
 
 #include "corprof.h"
 
 // forward declarations
+class CoreLibModuleProvider;
 class IThreadsCpuManager;
 class INativeThreadList;
 class IRuntimeInfo;
 class TypeReferenceTree;
 class ReferenceChainTraverser;
-struct RootInfo;
 
 using namespace std::chrono_literals;
 
@@ -61,6 +64,7 @@ public:
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         MetricsRegistry& metricsRegistry,
         INativeThreadList* pNativeThreadList,
@@ -72,6 +76,10 @@ public:
 
     // used for debugging purpose
     std::string GetHeapSnapshotText();
+
+    // Called from ModuleUnloadStarted: the types met during a dump are inspected after it,
+    // so their ClassIDs must not be trusted once the module defining them is gone.
+    void OnModuleUnloaded();
 
     // Reference tree output (separate from histogram)
     std::vector<FileEntry> GetAndClearReferenceTreeContent() override;
@@ -146,6 +154,32 @@ private:
         }
     };
 
+    struct ReferenceChainBenchmarkStats
+    {
+        std::array<uint64_t, RootCategoryCount> observedRoots{};
+        uint64_t traversalCalls = 0;
+        uint64_t duplicateAddresses = 0;
+        uint64_t interiorSkipped = 0;
+        uint64_t weakObserved = 0;
+        uint64_t classLookupFailed = 0;
+        uint64_t sizeLookupFailed = 0;
+        uint64_t rootGetClassFromObjectCalls = 0;
+        std::unordered_set<uintptr_t> rootAddresses;
+
+        void Reset()
+        {
+            observedRoots.fill(0);
+            traversalCalls = 0;
+            duplicateAddresses = 0;
+            interiorSkipped = 0;
+            weakObserved = 0;
+            classLookupFailed = 0;
+            sizeLookupFailed = 0;
+            rootGetClassFromObjectCalls = 0;
+            rootAddresses.clear();
+        }
+    };
+
     MemoryStats ComputeMemoryStats() const;
 
     // Incremental memory tracking: track sum of item sizes
@@ -159,6 +193,10 @@ private:
     void CleanupSession();
     void StartAsyncSnapshotIfNeeded();
 
+    // Inspects the types met during the last traversal: MUST NOT be called while a dump is
+    // in progress because it may load types (see InlineVTCache::ResolvePendingTypes).
+    void ResolvePendingInlineValueTypes();
+
     // Logs (once) the detected runtime type/version and whether it falls within
     // the range the GCDesc reader has been validated against. This is a soft
     // signal for diagnostics only; it never disables the feature.
@@ -169,6 +207,8 @@ private:
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
     uint32_t _referenceTreeFormat;
+    bool _isReferenceChainBenchmarkEnabled;
+    std::unique_ptr<ReferenceChainBenchmarkStats> _pReferenceChainBenchmarkStats;
     bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;
@@ -185,6 +225,7 @@ private:
     std::shared_ptr<ProxyMetric> _heapSnapshotDurationMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotObjectCountMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotTotalSizeMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotTraversalFaultsMetric;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
@@ -224,19 +265,30 @@ private:
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
-    // Set to true once the GCDesc reader fails its runtime self-test during a dump.
+    // Set to true once a raw object-header/GCDesc reader fails its runtime self-test
+    // during a dump, or once memory access faults exhaust the budget on several
+    // consecutive dumps.
     // When set, subsequent dumps skip reference-chain traversal entirely (no
     // traverser is created) while the class histogram continues to work.
     bool _gcDescDisabled = false;
+
+    // Transient platform capability signal, kept separate from _gcDescDisabled:
+    // Linux may retry signal-handler installation at the next dump.
+    bool _faultGuardUnavailable = false;
+
+    // Consecutive dumps whose traversal was cut short by memory access faults.
+    // A single bad dump is treated as transient; a run of them is not.
+    static constexpr uint32_t MaxConsecutiveFaultyDumps = 3;
+    uint32_t _consecutiveFaultyDumps = 0;
+
+    // Fault count from the most recent dump's traversal, surfaced as a metric.
+    uint32_t _lastTraversalFaultCount = 0;
 
     // Ensures the runtime version range diagnostic is logged at most once.
     bool _runtimeVersionLogged = false;
 
     // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
     std::unique_ptr<InlineVTCache> _pInlineVTCache;
-
-    // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
-    size_t _visitedSetHighWatermark = 512;
 
     std::chrono::nanoseconds _startTimestamp;
 

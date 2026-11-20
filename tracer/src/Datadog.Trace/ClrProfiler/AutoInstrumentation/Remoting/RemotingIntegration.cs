@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -29,7 +30,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        internal static Scope? CreateServerScope(IMessage msg, PropagationContext context)
+        // One server scope per request, keyed by the sinkStack (stable across the whole request/response cycle,
+        // whatever the formatter chain looks like): the first ProcessMessage creates it, later sinks in the chain
+        // reuse it, and SerializeResponse (or the first ProcessMessage, if no response is serialized) closes it.
+        private static readonly ConditionalWeakTable<object, Scope> ServerScopesBySinkStack = new();
+
+        internal static Scope? CreateServerScope(IMessage? msg, PropagationContext context)
         {
             var tracer = Tracer.Instance;
 
@@ -61,6 +67,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             }
 
             return scope;
+        }
+
+        internal static void SetServerScope(object sinkStack, Scope? scope)
+        {
+            if (scope is not null)
+            {
+                ServerScopesBySinkStack.Add(sinkStack, scope);
+            }
+        }
+
+        internal static bool TryGetServerScope(object sinkStack, out Scope? scope)
+        {
+            return ServerScopesBySinkStack.TryGetValue(sinkStack, out scope);
+        }
+
+        // The request message isn't always available when the scope is created (a formatter that still has
+        // to deserialize the request is called without one), so fill in the method name once we have it.
+        internal static void SetMethodNameIfMissing(Scope scope, IMessage? msg)
+        {
+            if (scope.Span.Tags is RemotingTags { MethodName: null } tags && msg is IMethodMessage { MethodName: { } methodName })
+            {
+                tags.MethodName = methodName;
+                scope.Span.ResourceName ??= methodName;
+            }
+        }
+
+        internal static bool TryGetAndRemoveServerScope(object sinkStack, out Scope? scope)
+        {
+            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out scope))
+            {
+                ServerScopesBySinkStack.Remove(sinkStack);
+                return true;
+            }
+
+            scope = null;
+            return false;
         }
 
         internal static Scope? CreateClientScope(IMessage msg)

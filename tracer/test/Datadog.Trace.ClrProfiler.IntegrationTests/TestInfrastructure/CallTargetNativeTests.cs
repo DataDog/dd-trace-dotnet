@@ -1,0 +1,404 @@
+// <copyright file="CallTargetNativeTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#pragma warning disable SA1402 // File may only contain a single type
+
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Datadog.Trace.ClrProfiler.IntegrationTests
+{
+    public class CallTargetNativeTests : TestHelper
+    {
+        public CallTargetNativeTests(ITestOutputHelper output)
+            : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
+        {
+            SetServiceVersion("1.0.0");
+        }
+
+        protected virtual bool IsRuntimeAsyncBuild => false;
+
+        public static IEnumerable<object[]> MethodArgumentsData()
+        {
+            for (var i = 0; i < 9; i++)
+            {
+                var fastPath = i < 9;
+                yield return new object[] { i, fastPath };
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(MethodArgumentsData))]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, numberOfArguments.ToString()))
+            {
+                string beginMethodString = $"ProfilerOK: BeginMethod\\({numberOfArguments}\\)";
+                if (!fastPath)
+                {
+                    beginMethodString = $"ProfilerOK: BeginMethod\\(Array\\)";
+                }
+
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int exceptionCount = Regex.Matches(processResult.StandardOutput, "Exception thrown.").Count;
+
+                string[] typeNames =
+                {
+                    ".VoidMethod",
+                    ".ReturnValueMethod",
+                    ".ReturnReferenceMethod",
+                    ".ReturnGenericMethod<string>",
+                    ".ReturnGenericMethod<int>",
+                    ".ReturnGenericMethod",
+                };
+
+                if (numberOfArguments == 0)
+                {
+                    // On number of arguments = 0 the throw exception on integrations async continuation runs.
+                    // So we have 1 more case with an exception being reported from the integration.
+                    Assert.Equal(240, beginMethodCount);
+                    Assert.Equal(240, endMethodCount);
+                    Assert.Equal(44, exceptionCount);
+                }
+                else if (numberOfArguments == 1)
+                {
+                    Assert.Equal(235, beginMethodCount);
+                    Assert.Equal(235, endMethodCount);
+                    Assert.Equal(40, exceptionCount);
+                }
+                else
+                {
+                    Assert.Equal(228, beginMethodCount);
+                    Assert.Equal(228, endMethodCount);
+                    Assert.Equal(40, exceptionCount);
+                }
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodRefArguments()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "withref"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    ".VoidMethod",
+                    ".VoidRefMethod",
+                };
+
+                Assert.Equal(9, beginMethodCount);
+                Assert.Equal(8, begin2MethodCount);
+                Assert.Equal(17, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodOutArguments()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "without"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    ".VoidMethod",
+                };
+
+                Assert.Equal(4, beginMethodCount);
+                Assert.Equal(4, begin2MethodCount);
+                Assert.Equal(8, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodAbstract()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "abstract"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    ".VoidMethod",
+                    ".OtherMethod",
+                };
+
+                Assert.Equal(1, beginMethodCount);
+                Assert.Equal(4, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodInterface()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "interface"))
+            {
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    ".VoidMethod",
+                    ".ReturnValueMethod",
+                };
+
+                Assert.Equal(5, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task RemoveIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "remove"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int notInstrumentedMethodCount = Regex.Matches(processResult.StandardOutput, "OK: Not instrumented").Count;
+
+                // Enabled, Disabled, Enabled -> 2 functions per cycle
+                Assert.Equal(4, beginMethodCount);
+                Assert.Equal(4, endMethodCount);
+                Assert.Equal(2, notInstrumentedMethodCount);
+
+                Assert.Contains(".VoidMethod", processResult.StandardOutput);
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task ExtraIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "extras"))
+            {
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = { ".NonVoidWithBranchToLastReturn" };
+
+                begin1MethodCount.Should().Be(1);
+                endMethodCount.Should().Be(1);
+
+                processResult.StandardOutput.Should().ContainAll(typeNames);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task CallTargetBubbleUpExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "calltargetbubbleupexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration, CallTargetNativeTest").Count;
+            beginMethodCount.Should().Be(6);
+            endMethodCount.Should().Be(6);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task InstrumentationExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "instrumentationexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            beginMethodCount.Should().Be(5);
+            endMethodCount.Should().Be(2);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task CategorizedCallTargetIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "categories"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int notInstrumentedMethodCount = Regex.Matches(processResult.StandardOutput, "OK: Not instrumented").Count;
+
+                // Enabled, Disabled, Enabled -> 2 functions per cycle
+                Assert.Equal(20, beginMethodCount);
+                Assert.Equal(20, endMethodCount);
+                Assert.Equal(10, notInstrumentedMethodCount);
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task MethodRefStructArguments()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunCallTargetSample(agent, "withrefstruct"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
+                int begin4MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({4}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    "ReadOnlySpan<char>",
+                    "Span<char>",
+                    "ReadOnlyRefStruct",
+                    "VoidMixedMethod",
+                };
+
+                Assert.Equal(6, beginMethodCount);
+                Assert.Equal(9, begin2MethodCount);
+                Assert.Equal(3, begin4MethodCount);
+                Assert.Equal(18, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task AsyncMethods()
+        {
+            // The same async targets compile to state machines in the default build and to runtime-async methods in
+            // the runtime-async build, and integrations should not be able to tell the difference. The sample also checks
+            // what each callback receives when a target fails, and exits non-zero if a check fails.
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "runtimeasync");
+            processResult.ExitCode.Should().Be(0);
+
+            // Skipping the body of a state-machine target returns a null task, so only the runtime-async build runs
+            // the two skip-method-body calls.
+            var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
+
+            var output = processResult.StandardOutput;
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(76 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(65 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(72 + skipMethodBodyCalls);
+            Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
+
+            VerifyInstrumentation(processResult.Process);
+        }
+
+        private async Task<ProcessResult> RunCallTargetSample(MockTracerAgent agent, string arguments)
+        {
+            var processResult = await RunSampleAndWaitForExit(agent, arguments: arguments);
+#if NET11_0_OR_GREATER
+            // The sample verifies that it was compiled the way we expect, this check confirms we ran the right sample!
+            processResult.StandardOutput.Should().Contain($"RuntimeAsyncCompiled: {IsRuntimeAsyncBuild}");
+#endif
+            return processResult;
+        }
+    }
+
+#if NET11_0_OR_GREATER
+    public class CallTargetNativeRuntimeAsyncTests : CallTargetNativeTests
+    {
+        public CallTargetNativeRuntimeAsyncTests(ITestOutputHelper output)
+            : base(output)
+        {
+            // Built by CompileTrimmingSamples with DD_RuntimeAsync=true, see CallTargetNativeTest.csproj
+            EnvironmentHelper.ArtifactsPivotSuffix = "_runtime_async";
+        }
+
+        protected override bool IsRuntimeAsyncBuild => true;
+    }
+#endif
+}

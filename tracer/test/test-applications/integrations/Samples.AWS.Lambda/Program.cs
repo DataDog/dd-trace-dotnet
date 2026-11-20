@@ -121,7 +121,13 @@ namespace Samples.AWS.Lambda
             // Toplevel Statements
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TOPLEVEL_STATEMENT"));
-            
+
+            // AWS Lambda integration disabled (DD_TRACE_AWSLAMBDA_ENABLED=0), and all tracing disabled (DD_TRACE_ENABLED=0)
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_INTEGRATION"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_TRACING"));
+
             static async Task Post(string url)
             {
                 HttpClient client = new HttpClient();

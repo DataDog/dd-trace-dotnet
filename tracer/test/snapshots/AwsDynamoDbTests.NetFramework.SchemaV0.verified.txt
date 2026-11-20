@@ -62,10 +62,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -92,10 +94,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -122,15 +126,27 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -143,7 +159,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteItem,
-      aws.requestId: Guid_5,
+      aws.requestId: Guid_6,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -152,15 +168,27 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -173,7 +201,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_6,
+      aws.requestId: Guid_7,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -182,10 +210,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -203,7 +233,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchGetItem,
-      aws.requestId: Guid_7,
+      aws.requestId: Guid_8,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -212,10 +242,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -233,7 +265,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_8,
+      aws.requestId: Guid_9,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -242,10 +274,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -506,7 +540,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: PutItem,
-      aws.requestId: Guid_9,
+      aws.requestId: Guid_10,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -515,10 +549,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -536,7 +572,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: GetItem,
-      aws.requestId: Guid_10,
+      aws.requestId: Guid_11,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -545,10 +581,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -566,7 +604,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: UpdateItem,
-      aws.requestId: Guid_11,
+      aws.requestId: Guid_12,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -575,15 +613,27 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_19,
@@ -596,7 +646,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteItem,
-      aws.requestId: Guid_12,
+      aws.requestId: Guid_13,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -605,15 +655,27 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_19,
@@ -626,7 +688,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_13,
+      aws.requestId: Guid_14,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -635,10 +697,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -656,7 +720,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchGetItem,
-      aws.requestId: Guid_14,
+      aws.requestId: Guid_15,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -665,10 +729,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
@@ -686,7 +752,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_15,
+      aws.requestId: Guid_16,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -695,10 +761,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {

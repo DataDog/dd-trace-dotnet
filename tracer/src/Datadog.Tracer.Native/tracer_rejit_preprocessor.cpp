@@ -10,9 +10,8 @@
 namespace trace
 {
 // TracerRejitPreprocessor
-TracerRejitPreprocessor::TracerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
-                                                 std::shared_ptr<RejitWorkOffloader> work_offloader) : 
-    RejitPreprocessor(corProfiler, rejit_handler, work_offloader, RejitterPriority::Normal)
+TracerRejitPreprocessor::TracerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler) :
+    RejitPreprocessor(corProfiler, rejit_handler, RejitterPriority::Normal)
 {
 }
 

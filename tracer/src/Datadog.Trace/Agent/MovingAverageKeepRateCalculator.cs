@@ -53,7 +53,7 @@ namespace Datadog.Trace.Agent
 
             if (bucketDuration != Timeout.InfiniteTimeSpan)
             {
-                Task.Run(UpdateBucketTaskLoopAsync)
+                _ = Task.Run(UpdateBucketTaskLoopAsync)
                     .ContinueWith(t => Log.Error(t.Exception, $"Error in {nameof(MovingAverageKeepRateCalculator)} {nameof(UpdateBucketTaskLoopAsync)} "), TaskContinuationOptions.OnlyOnFaulted);
             }
         }

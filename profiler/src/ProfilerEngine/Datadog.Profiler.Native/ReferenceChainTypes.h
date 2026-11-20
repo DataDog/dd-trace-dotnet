@@ -53,18 +53,18 @@ struct RootInfo
     // try to work around the failing call to GetClassFromObject/GetObjectSize
     // TODO: need to find another way for BulkRootNode events because the ClassID is not provided in the payload
     ClassID classID;
-    uint64_t objectSize;
+    SIZE_T layoutSize;
 
     // For static roots: pointer to the UTF-16 field name from the event buffer (e.g., L"_staticOrders").
     // nullptr for non-static roots.  Valid only during the GC callback that created this RootInfo.
     const WCHAR* fieldName;
 
-    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, uint64_t size, const WCHAR* field = nullptr)
+    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, SIZE_T size, const WCHAR* field = nullptr)
         :
         address(addr),
         category(cat),
         classID(typeID),
-        objectSize(size),
+        layoutSize(size),
         fieldName(field)
     {
     }

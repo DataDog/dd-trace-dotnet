@@ -11,6 +11,7 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extension
 
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    find_package(Threads REQUIRED)
 endif()
 
 if (BIT64)
@@ -42,16 +43,28 @@ add_executable(${TEST_EXECUTABLE_NAME}
     pch.cpp
     integration_test.cpp
     version_struct_test.cpp
+    dd_version_test.cpp
     iast_util_test.cpp
     il_rewriter_eh_sort_test.cpp
+    dataflow_test.cpp
     string_test.cpp
 	util_test.cpp
+    signature_builder_test.cpp
+    runtime_async_test.cpp
+    rejit_concurrency_test.cpp
+    test_link_stubs.cpp
+    otel_thread_ctx_test.cpp
+    ../../src/Datadog.Tracer.Native/otel_thread_ctx.cpp
 )
 
 # Define directories includes
 target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
+
+# The semver from version.props as a string literal, so dd_version_test.cpp can check that dd_version.h
+# produces the same value. Test-only: production code derives it from the DD_VERSION_* definitions.
+target_compile_definitions(${TEST_EXECUTABLE_NAME} PRIVATE DD_EXPECTED_SEMANTIC_VERSION="${DD_SEMANTIC_VERSION}")
 
 add_dependencies(${TEST_EXECUTABLE_NAME} gtest Datadog.Tracer.Native.static coreclr)
 
@@ -64,5 +77,9 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -lstdc++fs
   -Wc++20-extensions
 )
+
+if(ISLINUX)
+  target_link_libraries(${TEST_EXECUTABLE_NAME} Threads::Threads)
+endif()
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

@@ -5,7 +5,8 @@
     <VcpkgDepsDir>$(VcpkgManifestRoot)\artifacts\deps\vcpkg\</VcpkgDepsDir>
     <!-- trying mimicking what's vcpkg does by default but redirecting where we want the final files -->
     <VcpkgInstalledDir>$(VcpkgDepsDir)$(VcpkgTriplet)</VcpkgInstalledDir>
-    <VcpkgAdditionalInstallOptions>--downloads-root $(VcpkgIntermediateFolder)/downloads --x-packages-root $(VcpkgIntermediateFolder)/packages --x-buildtrees-root $(VcpkgIntermediateFolder)/buildtrees  --clean-after-build</VcpkgAdditionalInstallOptions>
+    <!-- We leave downloads-root (for vcpkg deps) as the default, so that we can pre-populate it once (e.g. in CI)-->
+    <VcpkgAdditionalInstallOptions>--x-packages-root $(VcpkgIntermediateFolder)/packages --x-buildtrees-root $(VcpkgIntermediateFolder)/buildtrees  --clean-after-build</VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(VcpkgUseStatic)' == 'true' and '$(VcpkgEnabled)' == 'true' and '$(MSBuildProjectExtension)' == '.vcxproj'">
     <Link>

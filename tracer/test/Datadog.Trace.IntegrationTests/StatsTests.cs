@@ -57,7 +57,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -156,7 +156,7 @@ namespace Datadog.Trace.IntegrationTests
             durationStartBuckets.Single().Hits.Should().Be(3);
             durationStartBuckets.Single().Duration.Should().Be(beforeY2KDuration.ToNanoseconds());
 
-            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetTag(Tags.HttpStatusCode) == "200");
+            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetHttpStatusCodeString() == "200");
             durationStartSpans.Should().HaveCount(3);
             durationStartSpans.Sum(s => s.Duration).Should().Be(beforeY2KDuration.ToNanoseconds());
 
@@ -171,8 +171,8 @@ namespace Datadog.Trace.IntegrationTests
             stats.Where(s => s.HttpStatusCode == 0).Sum(s => s.Hits).Should().Be(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
             stats.Where(s => s.HttpStatusCode != 0).Should().OnlyContain(s => s.HttpStatusCode == 200);
 
-            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is null).Should().HaveCount(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
-            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is not null).Should().OnlyContain(s => s.GetTag(Tags.HttpStatusCode) == "200");
+            spans.Where(s => s.GetHttpStatusCodeString() is null).Should().HaveCount(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
+            spans.Where(s => s.GetHttpStatusCodeString() is not null).Should().OnlyContain(s => s.GetHttpStatusCodeString() == "200");
 
             Span CreateDefaultSpan(string serviceName = null, string operationName = null, string resourceName = null, string type = null, string httpStatusCode = null, bool finishOnClose = true)
             {
@@ -203,7 +203,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -363,7 +363,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
                     }));
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -583,7 +583,7 @@ namespace Datadog.Trace.IntegrationTests
                 stats.Env.Should().Be(settings.Manager.InitialMutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
                 stats.Version.Should().Be(settings.Manager.InitialMutableSettings.ServiceVersion);
-                stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+                stats.TracerVersion.Should().Be(TracerConstants.SemanticVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);
                 stats.RuntimeId.Should().Be(Tracer.RuntimeId);
@@ -603,7 +603,7 @@ namespace Datadog.Trace.IntegrationTests
                 group.Errors.Should().Be(2);
                 group.ErrorSummary.Should().NotBeEmpty();
                 group.Hits.Should().Be(tracesCount);
-                group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
+                group.HttpStatusCode.Should().Be(span.GetHttpStatusCode());
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);

@@ -5,23 +5,29 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ServerConfiguration
 {
+    [JsonConverter(typeof(StrictBooleanTrueJsonConverter))]
+    public bool ObserveFullEvaluationData { get; set; }
+
     public string? CreatedAt { get; set; }
 
     public string? Format { get; set; }
 
     public Environment? Environment { get; set; }
 
-    public Dictionary<string, Flag>? Flags { get; set; }
+    [JsonConverter(typeof(FlagCollectionJsonConverter))]
+    public FlagCollection? Flags { get; set; }
 
     internal void Merge(ServerConfiguration other)
     {
+        // One nonconsenting file protects every flag retained in the merged configuration.
+        ObserveFullEvaluationData &= other.ObserveFullEvaluationData;
+
         if (other.CreatedAt is not null)
         {
             CreatedAt = other.CreatedAt;
@@ -39,15 +45,12 @@ internal sealed class ServerConfiguration
 
         if (Flags is null)
         {
-            Flags = new Dictionary<string, Flag>();
+            Flags = new FlagCollection();
         }
 
         if (other.Flags is not null)
         {
-            foreach (var pair in other.Flags)
-            {
-                Flags[pair.Key] = pair.Value;
-            }
+            Flags.Merge(other.Flags);
         }
     }
 }

@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = streamName;
             }
 
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, streamName);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 {
                     var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                         new KinesisEdgeTagCacheKey((string)state.State, IsConsume: true),
-                        static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
+                        static k => new EdgeTags(["direction:in", $"topic:{k.StreamName}", "type:kinesis"]));
                     foreach (var o in response.Records)
                     {
                         var record = o.DuckCast<IRecord>();

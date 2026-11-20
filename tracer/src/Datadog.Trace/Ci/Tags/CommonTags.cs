@@ -87,6 +87,11 @@ internal static class CommonTags
     public const string CIPipelineName = "ci.pipeline.name";
 
     /// <summary>
+    /// CI Pipeline display name
+    /// </summary>
+    public const string CIPipelineDisplayName = "ci.pipeline.display_name";
+
+    /// <summary>
     /// CI Pipeline number
     /// </summary>
     public const string CIPipelineNumber = "ci.pipeline.number";

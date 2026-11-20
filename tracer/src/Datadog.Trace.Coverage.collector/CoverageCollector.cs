@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,11 +47,11 @@ namespace Datadog.Trace.Coverage.Collector
                 events.SessionEnd += OnSessionEnd;
                 events.TestHostLaunched += (sender, args) =>
                 {
-                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
+                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId.ToString(CultureInfo.InvariantCulture)} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
                 };
                 events.TestCaseStart += (sender, args) =>
                 {
-                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber)}]: {args.TestCaseName}");
+                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber).ToString(CultureInfo.InvariantCulture)}]: {args.TestCaseName}");
                 };
                 events.TestCaseEnd += (sender, args) =>
                 {
@@ -176,8 +177,7 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
-                    var extension = Path.GetExtension(file).ToLowerInvariant();
-                    if (extension is ".dll" or ".exe" or "")
+                    if (HasAssemblyExtension(file))
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
@@ -314,7 +314,7 @@ namespace Datadog.Trace.Coverage.Collector
                 }
             }
 
-            _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
+            _logger?.Warning($"Processed {numAssemblies.ToString(CultureInfo.InvariantCulture)} assemblies in folder: {folder}");
 
             // The following is just a best effort approach to indicate in the test session that
             // we successfully instrumented all assemblies to collect code coverage.
@@ -343,6 +343,20 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _logger?.Debug("CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
             }
+        }
+
+        internal static bool HasAssemblyExtension(string filePath)
+        {
+            if (Path.GetDirectoryName(filePath) is { } directory &&
+                Path.GetFileName(directory).StartsWith(AssemblyProcessor.StagingDirectoryPrefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var extension = Path.GetExtension(filePath);
+            return extension is "" ||
+                   string.Equals(extension, ".dll", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(extension, ".exe", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc />

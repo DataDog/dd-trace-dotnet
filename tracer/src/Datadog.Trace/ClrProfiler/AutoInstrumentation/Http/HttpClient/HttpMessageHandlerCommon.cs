@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 
@@ -86,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                         }
                         catch (AppSec.BlockException ex)
                         {
+                            RaspModule.CloseDownstreamSubcontext(scope.Span.Context.TraceContext, scope.Span.SpanId);
                             scope.DisposeWithException(ex);
                             throw;
                         }
@@ -119,6 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
+                    var protocolVersion = response.Version;
                     if (state.State is true)
                     {
                         RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
@@ -127,8 +130,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage.Instance is not null)
                 {
                     var statusCode = responseMessage.StatusCode;
+                    var protocolVersion = responseMessage.Version;
 #endif
                     scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, protocolVersion);
                 }
 
                 if (exception != null)
@@ -138,6 +143,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             }
             finally
             {
+#if NETCOREAPP
+                // whether a response came back or not, the subcontext opened for this call ends with it
+                if (state.State is true)
+                {
+                    RaspModule.CloseDownstreamSubcontext(scope.Span.Context.TraceContext, scope.Span.SpanId);
+                }
+#endif
+
                 scope.Dispose();
             }
 

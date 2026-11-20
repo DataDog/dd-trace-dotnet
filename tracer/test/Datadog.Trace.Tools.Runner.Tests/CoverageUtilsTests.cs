@@ -138,10 +138,48 @@ public class CoverageUtilsTests
         File.WriteAllText(bPath, JsonConvert.SerializeObject(b));
 
         var outputFile = Path.GetTempFileName();
-        global::CoverageUtils.TryCombineAndGetTotalCoverage(tmpFolder, outputFile, out var actualGlobalCoverageInfo).Should().BeTrue();
+        CoverageUtils.TryCombineAndGetTotalCoverage(tmpFolder, outputFile, out var actualGlobalCoverageInfo, useStdOut: false).Should().BeTrue();
         actualGlobalCoverageInfo.Should().BeEquivalentTo(expected);
 
         var outputContent = File.ReadAllText(outputFile);
         JsonConvert.DeserializeObject<GlobalCoverageInfo>(outputContent).Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    internal void LegacyDirectorySkipsMalformedJsonAndCombinesValidCoverage()
+    {
+        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).FullName;
+        try
+        {
+            var expected = new GlobalCoverageInfo
+            {
+                Components =
+                {
+                    new ComponentCoverageInfo("component")
+                    {
+                        Files =
+                        {
+                            new FileCoverageInfo("file.cs")
+                            {
+                                ExecutableBitmap = [0xff],
+                                ExecutedBitmap = [0x81]
+                            }
+                        }
+                    }
+                }
+            };
+            File.WriteAllText(Path.Combine(directory, "unrelated.json"), "{not-json");
+            File.WriteAllText(Path.Combine(directory, "coverage.json"), JsonConvert.SerializeObject(expected));
+            var outputPath = Path.Combine(directory, "combined.json");
+
+            CoverageUtils.TryCombineAndGetTotalCoverage(directory, outputPath, out var actual, useStdOut: false).Should().BeTrue();
+
+            actual.Should().BeEquivalentTo(expected);
+            JsonConvert.DeserializeObject<GlobalCoverageInfo>(File.ReadAllText(outputPath)).Should().BeEquivalentTo(expected);
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
     }
 }

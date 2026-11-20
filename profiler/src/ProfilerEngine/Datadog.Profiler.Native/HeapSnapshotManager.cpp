@@ -11,15 +11,49 @@
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "TypeReferenceTreeBinarySerializer.h"
 #include "ReferenceChainTypes.h"
+#include "MemoryFaultGuard.h"
 
 #include "Log.h"
 
 constexpr const WCHAR* ThreadName = WStr("DD_HeapSnapMgr");
 
+namespace
+{
+RootCategory GetRootCategory(const GCBulkRootEdgeValue& root)
+{
+    if (root.Kind == GCRootKind::Stack)
+    {
+        return RootCategory::Stack;
+    }
+
+    if (root.Kind == GCRootKind::Finalizer)
+    {
+        return RootCategory::Finalizer;
+    }
+
+    if (root.Kind == GCRootKind::Handle)
+    {
+        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
+        {
+            return RootCategory::Pinning;
+        }
+        return RootCategory::Handle;
+    }
+
+    if (root.Kind == GCRootKind::Other)
+    {
+        return RootCategory::Other;
+    }
+
+    return RootCategory::Unknown;
+}
+} // namespace
+
 HeapSnapshotManager::HeapSnapshotManager(
     IConfiguration* pConfiguration,
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     MetricsRegistry& metricsRegistry,
     INativeThreadList* pNativeThreadList,
@@ -55,6 +89,11 @@ HeapSnapshotManager::HeapSnapshotManager(
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
     _referenceTreeFormat = pConfiguration->GetReferenceTreeFormat();
+    _isReferenceChainBenchmarkEnabled = (_referenceTreeFormat & ReferenceTreeFormat_BenchmarkDiagnostics) != 0;
+    if (_isReferenceChainBenchmarkEnabled)
+    {
+        _pReferenceChainBenchmarkStats = std::make_unique<ReferenceChainBenchmarkStats>();
+    }
 
     auto testInterval = pConfiguration->GetTestHeapSnapshotInterval();
     _delayFirstSnapshot = (testInterval.count() > 0);
@@ -81,12 +120,16 @@ HeapSnapshotManager::HeapSnapshotManager(
         return static_cast<double>(_totalSize);
     });
 
+    _heapSnapshotTraversalFaultsMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_traversal_faults", [this]() {
+        return static_cast<double>(_lastTraversalFaultCount);
+    });
+
 
     _pCorProfilerInfo->AddRef();
 
     // Initialize reference tree and inline VT cache (persisted across dumps)
     _typeReferenceTree = std::make_unique<TypeReferenceTree>();
-    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore);
+    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pCoreLibModuleProvider);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -181,12 +224,41 @@ void HeapSnapshotManager::MainLoopIteration()
         // Note: GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods.
         // They fail with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE from another thread, and crash the CLR after a GC.
         // --> Traversal is done during the OnBulkRoot* event handlers (see OnBulkRootEdges/OnBulkRootStaticVar).
+
+        // Conversely, looking for the inline value types of a type may load types: this is
+        // forbidden during the dump GC, so the traversal only queued the types it met. The
+        // session is now closed (i.e. no callback can run anymore) so they can be inspected
+        // here: their references will be attributed to the embedded structs starting with
+        // the next snapshot.
+        ResolvePendingInlineValueTypes();
     }
     else
     if (_shouldStartHeapDump.load())
     {
         _shouldStartHeapDump.store(false);
         StartGCDump();
+    }
+}
+
+void HeapSnapshotManager::ResolvePendingInlineValueTypes()
+{
+    if (_pInlineVTCache == nullptr)
+    {
+        return;
+    }
+
+    size_t inspectedCount = _pInlineVTCache->ResolvePendingTypes();
+    if (inspectedCount > 0)
+    {
+        Log::Debug("InlineVTCache: inspected ", inspectedCount, " type(s) met during the last snapshot.");
+    }
+}
+
+void HeapSnapshotManager::OnModuleUnloaded()
+{
+    if (_pInlineVTCache != nullptr)
+    {
+        _pInlineVTCache->OnModuleUnloaded();
     }
 }
 
@@ -331,6 +403,12 @@ void HeapSnapshotManager::OnBulkRootEdges(
     uint32_t count,
     GCBulkRootEdgeValue* pRoots)
 {
+    // This lock MUST stay above the reference-chain traversal below. The traverser
+    // recovers from memory access faults via SEH / siglongjmp, which unwinds WITHOUT
+    // running destructors. The fault guard lives entirely inside TraverseFromSingleRoot
+    // (below this lock), so recovery never skips this lock_guard's unlock. Never move
+    // the guard above this line or a fault would leave _histogramLock held and deadlock
+    // the GC.
     std::lock_guard lock(_histogramLock);
 
     Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
@@ -341,71 +419,85 @@ void HeapSnapshotManager::OnBulkRootEdges(
     for (size_t i = 0; i < count; i++)
     {
         auto& root = pRoots[i];
+        RootCategory category = GetRootCategory(root);
+        const auto rootFlags = static_cast<uint32_t>(root.Flags);
+        const bool isWeakRoot = (rootFlags & static_cast<uint32_t>(GCRootFlags::WeakRef)) != 0;
+
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->observedRoots[static_cast<size_t>(category)]++;
+            if (!_pReferenceChainBenchmarkStats->rootAddresses.insert(root.RootedNodeAddress).second)
+            {
+                _pReferenceChainBenchmarkStats->duplicateAddresses++;
+            }
+            if (isWeakRoot)
+            {
+                _pReferenceChainBenchmarkStats->weakObserved++;
+            }
+        }
+
+        // Weak handles do not keep their targets alive, so they are not retention roots.
+        if (isWeakRoot)
+        {
+            continue;
+        }
 
         // GCRootFlags::Interior: address points inside an object, not at the ObjectID header.
         // GetClassFromObject expects a real ObjectID; resolving interior pointers to the containing
         // object is not implemented (would need bulk-node range index or CLR API support).
-        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
+        if ((rootFlags & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->interiorSkipped++;
+            }
             continue;
         }
-
-        // Map GCRootKind to RootCategory
-        RootCategory category;
-        if (root.Kind == GCRootKind::Stack)
-        {
-            category = RootCategory::Stack;  // local variable
-        }
-        else if (root.Kind == GCRootKind::Finalizer)
-        {
-            category = RootCategory::Finalizer;
-        }
-        else if (root.Kind == GCRootKind::Handle)
-        {
-            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
-            {
-                category = RootCategory::Pinning;
-            }
-            else
-            {
-                category = RootCategory::Handle;
-            }
-        }
-        else if (root.Kind == GCRootKind::Other)
-        {
-            category = RootCategory::Other;
-        }
-        else
-        {
-            category = RootCategory::Unknown;
-        }
-
 
         // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
         // (i.e. NOT from another thread and NOT after a GC)
         ClassID rootClassID;
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->rootGetClassFromObjectCalls++;
+        }
         HRESULT hr = _pCorProfilerInfo->GetClassFromObject(root.RootedNodeAddress, &rootClassID);
         if (FAILED(hr))
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->classLookupFailed++;
+            }
             failCount++;
             continue;
         }
 
-        SIZE_T size = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &size);
+        SIZE_T layoutSize = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &layoutSize);
+        if (_isReferenceChainBenchmarkEnabled && _pReferenceChainTraverser)
+        {
+            _pReferenceChainTraverser->RecordRootObjectSizeCall(false, FAILED(hr) || layoutSize == 0);
+        }
+        if (_pReferenceChainBenchmarkStats != nullptr && (FAILED(hr) || layoutSize == 0))
+        {
+            _pReferenceChainBenchmarkStats->sizeLookupFailed++;
+        }
         if (FAILED(hr))
         {
             failCount++;
-
-            continue;
+            layoutSize = 0;
         }
 
         successCount++;
-        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
+        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, layoutSize);
 
         // Traverse the object graph from this root immediately (while still in GC callback context)
         if (_pReferenceChainTraverser)
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->traversalCalls++;
+            }
             _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
         }
     }
@@ -417,11 +509,29 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
 {
     std::lock_guard lock(_histogramLock);
 
-    // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
-    SIZE_T size = 0;
-    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &size);
+    if (_pReferenceChainBenchmarkStats != nullptr)
+    {
+        _pReferenceChainBenchmarkStats->observedRoots[static_cast<size_t>(RootCategory::StaticVariable)]++;
+        if (!_pReferenceChainBenchmarkStats->rootAddresses.insert(static_cast<uintptr_t>(root.ObjectID)).second)
+        {
+            _pReferenceChainBenchmarkStats->duplicateAddresses++;
+        }
+    }
+
+    // GetObjectSize2 can only be called from within ICorProfilerCallback methods.
+    SIZE_T layoutSize = 0;
+    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &layoutSize);
+    if (_isReferenceChainBenchmarkEnabled && _pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->RecordRootObjectSizeCall(true, FAILED(hr) || layoutSize == 0);
+    }
+    if (_pReferenceChainBenchmarkStats != nullptr && (FAILED(hr) || layoutSize == 0))
+    {
+        _pReferenceChainBenchmarkStats->sizeLookupFailed++;
+    }
     if (FAILED(hr))
     {
+        layoutSize = 0;
         if (Log::IsDebugEnabled())
         {
             std::string typeName;
@@ -429,14 +539,22 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
             Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", shared::ToString(fieldName),
                        "' type='", typeName, "' hr=", hr);
         }
-        return;
     }
 
-    RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
+    RootInfo rootInfo(
+        static_cast<uintptr_t>(root.ObjectID),
+        RootCategory::StaticVariable,
+        static_cast<ClassID>(root.TypeID),
+        layoutSize,
+        fieldName);
 
     // Traverse the object graph from this root immediately (while still in GC callback context)
     if (_pReferenceChainTraverser)
     {
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->traversalCalls++;
+        }
         _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
     }
 }
@@ -550,16 +668,13 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
 
     if (_lastTimestamp == 0ns)
     {
-        if (_memPressureThreshold == 0)
-        {
-            _lastTimestamp = now;
+        _lastTimestamp = now;
 
-            if (!_delayFirstSnapshot)
-            {
-                _shouldStartHeapDump.store(true);
-            }
-            return;
+        if (!_delayFirstSnapshot)
+        {
+            _shouldStartHeapDump.store(true);
         }
+        return;
     }
     else
     {
@@ -624,6 +739,28 @@ void HeapSnapshotManager::StartGCDump()
 
     LogRuntimeVersionRangeOnce();
 
+    if (_pReferenceChainBenchmarkStats != nullptr)
+    {
+        _pReferenceChainBenchmarkStats->Reset();
+    }
+
+    // The cache outlives a dump, so a module unloaded since the last one leaves it with
+    // ClassIDs pointing to freed MethodTables. Dropping them here, before any traversal
+    // can look one up, also avoids attributing a freshly loaded type to whatever used
+    // to live at the same address.
+    if (_pInlineVTCache != nullptr && _pInlineVTCache->DropCacheIfModuleUnloaded())
+    {
+        Log::Debug("InlineVTCache: cleared after a module unload.");
+    }
+
+    bool faultGuardAvailable = MemoryFaultGuard::EnsureInstalled();
+    if (!faultGuardAvailable && !_faultGuardUnavailable)
+    {
+        Log::Error("Reference-chain traversal is skipped for this heap snapshot because "
+                   "memory fault recovery is unavailable. Heap class histograms are unaffected.");
+    }
+    _faultGuardUnavailable = !faultGuardAvailable;
+
     // reset the class histogram and reference tree
     {
         std::lock_guard lock(_histogramLock);
@@ -632,11 +769,18 @@ void HeapSnapshotManager::StartGCDump()
 
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
-        // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
+        // Visited bitmap pages are allocated lazily up to a fixed per-dump memory budget.
         //
-        // If the GCDesc reader previously failed its self-test, do not create the
-        // traverser: the reference tree is skipped while the class histogram still runs.
-        if (_gcDescDisabled)
+        // If a raw object-header/GCDesc reader previously failed its self-test, do not
+        // create the traverser: the reference tree is skipped while the class histogram runs.
+        if (!faultGuardAvailable)
+        {
+            // A skipped dump breaks a streak of dumps that exhausted their fault
+            // budgets; otherwise non-consecutive failures could disable traversal.
+            _consecutiveFaultyDumps = 0;
+            _pReferenceChainTraverser.reset();
+        }
+        else if (_gcDescDisabled)
         {
             _pReferenceChainTraverser.reset();
         }
@@ -644,7 +788,8 @@ void HeapSnapshotManager::StartGCDump()
         {
             _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
                 _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-                _visitedSetHighWatermark);
+                ReferenceChainTraverser::DefaultVisitedMemoryLimitBytes,
+                _isReferenceChainBenchmarkEnabled);
         }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
@@ -689,30 +834,117 @@ void HeapSnapshotManager::OnEndGCDump()
               << std::endl;
 #endif
 
-    // Log traversal statistics and persist high-water-mark for next dump's pre-sizing.
+    if (_isReferenceChainBenchmarkEnabled)
+    {
+        Log::Debug("Reference chain benchmark heap: duration_ms=", _duration,
+                   ", objects=", _objectCount,
+                   ", bytes=", _totalSize);
+
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            const auto& observed = _pReferenceChainBenchmarkStats->observedRoots;
+            Log::Debug("Reference chain benchmark roots observed: stack=", observed[static_cast<size_t>(RootCategory::Stack)],
+                       ", static=", observed[static_cast<size_t>(RootCategory::StaticVariable)],
+                       ", finalizer=", observed[static_cast<size_t>(RootCategory::Finalizer)],
+                       ", handle=", observed[static_cast<size_t>(RootCategory::Handle)],
+                       ", pinning=", observed[static_cast<size_t>(RootCategory::Pinning)],
+                       ", conditional_weak_table=", observed[static_cast<size_t>(RootCategory::ConditionalWeakTable)],
+                       ", com=", observed[static_cast<size_t>(RootCategory::COM)],
+                       ", other=", observed[static_cast<size_t>(RootCategory::Other)],
+                       ", unknown=", observed[static_cast<size_t>(RootCategory::Unknown)]);
+
+            Log::Debug("Reference chain benchmark root decisions: observed=",
+                       _pReferenceChainBenchmarkStats->rootAddresses.size() + _pReferenceChainBenchmarkStats->duplicateAddresses,
+                       ", traversal_calls=", _pReferenceChainBenchmarkStats->traversalCalls,
+                       ", duplicate_addresses=", _pReferenceChainBenchmarkStats->duplicateAddresses,
+                       ", interior_skipped=", _pReferenceChainBenchmarkStats->interiorSkipped,
+                       ", weak_observed=", _pReferenceChainBenchmarkStats->weakObserved,
+                       ", class_lookup_failed=", _pReferenceChainBenchmarkStats->classLookupFailed,
+                       ", size_lookup_failed=", _pReferenceChainBenchmarkStats->sizeLookupFailed,
+                       ", root_get_class_calls=", _pReferenceChainBenchmarkStats->rootGetClassFromObjectCalls);
+        }
+    }
+
+    // Log traversal statistics.
     // Traversal itself was done incrementally during OnBulkRoot* callbacks.
     if (_pReferenceChainTraverser)
     {
         _pReferenceChainTraverser->LogStats();
 
-        size_t hwm = _pReferenceChainTraverser->GetVisitedHighWatermark();
-        size_t peakEntries = _pReferenceChainTraverser->GetVisitedPeakEntryCount();
-        if (hwm > _visitedSetHighWatermark)
-        {
-            _visitedSetHighWatermark = hwm;
-        }
-        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
-                   " buckets (peak entries this dump: ", peakEntries, ")");
+        _lastTraversalFaultCount = _pReferenceChainTraverser->GetFaultCount();
 
-        // If the GCDesc reader failed its self-test during this dump, disable
-        // reference-chain traversal for all subsequent dumps. The class histogram
-        // is unaffected and continues to be produced.
+        // Policy separating the permanent layout-level signal from transient
+        // traversal stop reasons:
+        //  1. Self-test failure is systemic (our MethodTable/GCDesc model is wrong)
+        //     -> disable permanently.
+        //  2. Faults that exhausted the budget are data-local -> tolerate a single
+        //     bad dump, but disable if it keeps happening dump after dump.
+        //  3. Unexpected exceptions or an unavailable fault guard abort only this dump
+        //     and do not count as fault-budget exhaustion.
+        //  4. Otherwise the dump was clean (or recovered from a few faults) -> reset
+        //     the consecutive-faulty-dump counter.
+        // In all cases the class histogram is unaffected and continues to be produced.
         if (!_pReferenceChainTraverser->IsGCDescTrusted())
         {
             _gcDescDisabled = true;
             Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
-                      "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+                      "because a raw CLR layout reader failed its self-test. "
+                      "Heap class histograms are unaffected.");
         }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::FaultBudgetExhausted)
+        {
+            _consecutiveFaultyDumps++;
+            Log::Warn("Reference-chain traversal was cut short by ", _lastTraversalFaultCount,
+                      " memory access fault(s) (", _consecutiveFaultyDumps,
+                      " consecutive dump(s)). The reference tree for this dump is partial.");
+
+            if (_consecutiveFaultyDumps >= MaxConsecutiveFaultyDumps)
+            {
+                _gcDescDisabled = true;
+                Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
+                          "after ", MaxConsecutiveFaultyDumps, " consecutive dumps hit the memory access "
+                          "fault budget. Heap class histograms are unaffected.");
+            }
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::UnexpectedException)
+        {
+            _consecutiveFaultyDumps = 0;
+            Log::Warn("Reference-chain traversal was cut short by an unexpected exception. "
+                      "The reference tree for this dump is partial. "
+                      "Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::FaultGuardUnavailable)
+        {
+            _consecutiveFaultyDumps = 0;
+            _faultGuardUnavailable = true;
+            Log::Error("Reference-chain traversal was cut short because memory fault recovery "
+                       "became unavailable. Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::VisitedMemoryBudgetExhausted)
+        {
+            _consecutiveFaultyDumps = 0;
+            Log::Warn("Reference-chain traversal reached its visited-address memory budget. "
+                      "The reference tree for this dump is partial. "
+                      "Heap class histograms are unaffected.");
+        }
+        else
+        {
+            if (_lastTraversalFaultCount > 0)
+            {
+                Log::Debug("Reference-chain traversal recovered from ", _lastTraversalFaultCount,
+                           " memory access fault(s) this dump.");
+            }
+            _consecutiveFaultyDumps = 0;
+        }
+
+        // Traversal only runs during this dump's GC callbacks. All policy state
+        // needed by future dumps has now been copied to the manager, so release
+        // the dump-local visited bitmap and traversal stack promptly.
+        _pReferenceChainTraverser.reset();
     }
 
     if (_pInlineVTCache)

@@ -435,14 +435,14 @@ File:
     Attributes: 1536
     Component_: libdatadog
     FileName: ceb4q7zl.dll|datadog_profiling_ffi.dll
-    Language: ''
-    Version: ''
+    Language: 0
+    Version: 2.2.0.0
   libdatadog.32:
     Attributes: 1536
     Component_: libdatadog.32
     FileName: lk7zloue.dll|datadog_profiling_ffi.dll
-    Language: ''
-    Version: ''
+    Language: 0
+    Version: 2.2.0.0
   LibDdwaf:
     Attributes: 1536
     Component_: LibDdwaf

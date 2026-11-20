@@ -36,6 +36,11 @@ internal class TestCaseMetadata
 
     public bool IsAttemptToFix => SelectedRetryMode == TestRetryMode.AttemptToFix;
 
+    /// <summary>
+    /// Gets a value indicating whether an Attempt to Fix test must fail even if another attempt passed.
+    /// </summary>
+    public bool ShouldReportAttemptToFixFailure => IsAttemptToFix && (InitialExecutionFailed || !AllAttemptsPassed);
+
     public bool IsRetry { get; set; }
 
     public bool IsLastRetry => IsRetry && CountDownExecutionNumber == 0;
@@ -47,6 +52,17 @@ internal class TestCaseMetadata
     public bool Skipped { get; set; }
 
     public bool HasAnException { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether retries are scheduled after the current test span closes.
+    /// </summary>
+    public bool UsesRetryCoordinator { get; set; }
+
+    /// <summary>
+    /// Gets or sets the decision reserved while the current attempt closes. The retry scheduler reuses this
+    /// decision so another test cannot consume the same shared ATR budget slot in between callbacks.
+    /// </summary>
+    public XUnitRetryExecutionDecision? PendingRetryDecision { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
@@ -66,4 +82,11 @@ internal class TestCaseMetadata
     public bool AnyRetryPassed { get; set; }
 
     public string UniqueID { get; }
+
+    public void PrepareForRetry()
+    {
+        CountDownExecutionNumber--;
+        HasAnException = false;
+        PendingRetryDecision = null;
+    }
 }

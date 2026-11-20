@@ -1,11 +1,10 @@
 Template:
-Segments: 
+Segments:
 
 {
     "ref": "Nested"
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

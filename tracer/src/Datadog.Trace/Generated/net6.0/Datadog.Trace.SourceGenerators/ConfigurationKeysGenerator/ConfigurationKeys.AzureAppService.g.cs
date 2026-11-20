@@ -18,6 +18,13 @@ internal static partial class ConfigurationKeys
     internal static class AzureAppService
     {
         /// <summary>
+        /// Configuration key for the longest wait, in seconds, between attempts to start or restart the trace agent or
+        /// DogStatsD in Azure App Service. The wait starts at 2 seconds and doubles after each failed start or health-check
+        /// restart, up to this value. Retries never stop. Default value is 300 (5 minutes).
+        /// </summary>
+        public const string AasAgentMaxRetryIntervalSeconds = "DD_AAS_AGENT_MAX_RETRY_INTERVAL_SECONDS";
+
+        /// <summary>
         /// Configuration key which has the running version of the Azure App Services Site Extension.
         /// This env var is set in the <c>applicationHost.xdt</c> file.
         /// </summary>

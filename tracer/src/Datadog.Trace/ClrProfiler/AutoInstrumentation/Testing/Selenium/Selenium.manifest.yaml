@@ -1,0 +1,12 @@
+_v: 1
+name: Selenium
+display_name: Selenium
+description: Instruments Selenium WebDriver navigation, window close, and quit commands during Test Optimization runs, injecting
+  the test trace ID into a browser cookie for RUM correlation and tagging the test with browser metadata, then stopping and
+  flushing the RUM session and marking the test RUM-active on a close, quit, subsequent navigation, or test completion.
+packages:
+- name: Selenium.WebDriver
+category:
+- other
+systems: []
+creation_date: '2024-05-01'

@@ -6,6 +6,7 @@
 #include "TypeReferenceTree.h"
 #include "IFrameStore.h"
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -24,11 +25,28 @@ private:
     static void WriteBytes(std::vector<uint8_t>& out, const uint8_t* data, size_t len);
     static void WriteString(std::vector<uint8_t>& out, std::string_view str);
 
-    static void WriteNode(
-        const TypeTreeNode& node,
-        std::unordered_map<ClassID, uint32_t>& typeToIndex,
-        std::vector<std::string_view>& typeTable,
-        uint32_t& nextIndex,
-        IFrameStore* pFrameStore,
-        std::vector<uint8_t>& out);
+    // String table state threaded through the whole walk. Bundled into one object because
+    // passing it as separate arguments meant several same-typed references side by side,
+    // where a transposition would still compile.
+    struct StringTable
+    {
+        explicit StringTable(IFrameStore* frameStore);
+
+        // Length-prefixed type names in index order.
+        std::vector<uint8_t> bytes;
+        uint32_t count = 0;
+
+        std::unordered_map<ClassID, uint32_t> typeToIndex;
+
+        // Receives the resolved name of the type being registered (see RegisterType).
+        std::string scratch;
+
+        IFrameStore* pFrameStore;
+    };
+
+    // Returns the string table index for the given type, appending its fully
+    // qualified name to the already encoded string table on first encounter.
+    static uint32_t RegisterType(StringTable& types, ClassID typeID);
+
+    static void WriteNode(const TypeTreeNode& node, StringTable& types, std::vector<uint8_t>& out);
 };

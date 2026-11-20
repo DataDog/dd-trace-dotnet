@@ -53,6 +53,745 @@
 
 
 
+
+
+
+
+
+
+
+
+## [Release 3.58.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.58.0)
+
+## Summary
+
+- Adds support for .NET 11
+- [Tracing] Add support for percent-encode literal % in W3C baggage
+- [CI Visibility] Add test automation exclusion attributes
+- [AAP] Redact URL attributes
+- [Continuous Profiler] Add cpu_arch tag to profiles
+- [DBM] Propagate Oracle service hash through the session ACTION
+- [FFE] Add split features, exposure verdicts and exposure hooks
+- [Serverless] Add Azure FrontDoor support
+
+
+## Changes
+
+### Tracer
+* [Tracer] Send Datadog-External-Env header to the agent (#9452)
+* [Tracer] Give a new IIS AppDomain a new runtime ID when its AppDomainID is reused (#9577)
+* [Tracer] Percent-encode literal % in W3C baggage (#9587)
+* Warm up gzip up at start (#9615)
+* [OTel] Remove OTEL_ENABLED and add OTEL_TRACES_EXPORTER in the startup log (#9564)
+
+### CI Visibility
+* [SDTEST-4054][SDTEST-4055][SDTEST-4056] Add test automation exclusion attributes (#9578)
+* [CI Visibility] Index skippable test parameter matching (#9599)
+* [CI Visibility] Align Attempt to Fix with the other tracers (#9619)
+* [CI Visibility] Add guard test for netstandard2.0 consumers of Datadog.Trace (#9657)
+* [CI Visibility] Fix coverage instrumentation of expression-bodied finalizers (#9661)
+
+### ASM
+* [AppSec] Fix WAF and RASP runtime span metrics (#9600)
+* [AppSec] Emit API Security missing_route and request schema telemetry (#9605)
+* [AAP] Update embedded WAF ruleset to v1.19.0 (#9633)
+* [AAP] Fix downstream WAF inputs for API10 rules and redact URL attributes (#9650)
+* [IAST] Report the source method of async and iterator state machines in vulnerability locations (#9682)
+
+### Continuous Profiler
+* [Profiler] Optimize reference chain traversal (#9345)
+* Mark two profiler integration tests as flaky (#9449)
+* [Profiler] Add cpu_arch tag on profile (#9585)
+* [Profiler] Increase startup timeout in 32 bit to reduce flackiness in CI (#9622)
+* [Profiler] Add a profiler log model with readable assertions (#9635)
+* [Profiler] Keep loader configuration files in the per-test output directory (#9636)
+* [Profiler] Share one multipart request parser across profiler tests (#9637)
+* [Profiler] Add an immutable pprof read model for profiler tests (#9638)
+* [Profiler] Add typed test application and framework context (#9639)
+* [Profiler] Use SkipTestException and Flaky for profiler tests (#9648)
+* [Profiler] Bump libunwind to v1.8.3-custom-2 (#9694)
+
+### Debugger
+* [Debugger] Mark some guardrail tests as flaky (#9630)
+
+### Serverless
+* [Tracer] Fix statemachinename for qualified AWS Step Functions ARNs (#9646)
+* [APMSVLS-442] Adding azure frontdoor support (#8861)
+
+### Feature Flags
+* [FFE] Add split features, exposure verdicts and a customer exposure hook to OpenFeature metadata (#9592)
+* [FFE] Split evaluation counts by EVALUATION features and keep feature value types (#9593)
+* [FFE] Send exposures only after the OpenFeature evaluation succeeds (#9591)
+
+### Fixes
+* [Tracer] Preserve Cosmos DB spans when metadata access fails after disposal (#9535)
+* Fix null ref in IpcTcpProcessMessageIntegration (#9627)
+* Handle transient Windows module reads in dd-dotnet (#9640)
+* fix(ducktype): Update duck typing so we don't call `IDuckType.Instance` when the `IDuckType` is null (#9668)
+* [DBM] Add missing parameter prefixes to stored-procedure EXEC commands (#9688)
+* Fix bugs in CallTarget machinery (#9618)
+* Add `runtime-async` bug fix + CallTarget integration tests (#9625)
+
+### Miscellaneous
+* [DuckTyping] Validate target ToString methods before emitting IL (#9236)
+* [OTLP] Default OTLP protocols to http/protobuf (#9506)
+* [OTel] Disable OpenTelemetry mode when OTEL_SDK_DISABLED=true (#9514)
+* [Configuration] Ignore unsupported OTEL_PROPAGATORS values with a warning (#9515)
+* [Configuration] Keep invalid results in composite configuration source (#9522)
+* [DBM] Add Oracle stored-procedure service comments (skip .NET Framework) (#9533)
+* [OTel] Make semantics mode default OTEL_TRACES_EXPORTER to otlp (#9544)
+* [OTLP] Write global tags once as OTLP trace resource attributes (#9596)
+* Enable (and address) async + threading analyzers (#9665)
+* [DBM] Propagate the Oracle service hash through the session ACTION (#9582)
+* [DBM] Don't use single-character strings when building params (#9691)
+
+### Build / Test
+* Mark seven flaky integration tests as Flaky (#9621)
+* [ai tooling] Load `.claude/skills` in the pi coding agent (#9571)
+* [ASM] Mark flaky ASM tests as [Flaky] (#9626)
+* [Test Package Versions Bump] Updating package versions (#9398)
+* Add Feature Flags section to release notes (#9463)
+* Add .NET agent setup evaluation pilot (#9474)
+* ci: update one-pipeline version (#9477)
+* Explicitly record the `-prerelease` flag in `version.props` (#9569)
+* Bump DataDog/commit-headless from 3.4.0 to 3.4.1 in the gh-actions-packages group across 1 directory (#9574)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9576)
+* [Build] Bump to libdatadog v2.2.0 (#9579)
+* Fix linux release artifact names and versioning for prereleases (#9580)
+* Skip arm64 .NET 5 buster-slim smoke tests (#9581)
+* Collect more Couchbase logs in CI on failure (#9601)
+* Report semantic version instead of 4-part Assembly Version (#9602)
+* Allow creating dev/nightly builds (#9603)
+* [OTel] Fix semantics mode traces encoding test after http/protobuf default (#9604)
+* [Test Package Versions Bump] Updating package versions (#9610)
+* Fix Azure Functions Event Grid test flakiness (#9612)
+* Optionally remove unused files from `Datadog.Trace.Bundle` NuGet package when user app is published (#9623)
+* Move macOS CI runners to macOS 15 (#9624)
+* Fix Windows benchmark choosing invalid commits (#9629)
+* Update LLM validation platform to v0.1.6 (#9634)
+* Enable Meziantou.Analyzer analyzers for all production code (#9641)
+* [CI] Install the global.json SDK in the FFE fixtures workflow (#9643)
+* [Test Package Versions Bump] Updating package versions (#9647)
+* Enable (and address) culture-sensitive analyzers (#9651)
+* [Tests] Rebind HttpListener on port conflict in FeatureFlags EVP transport tests (#9652)
+* Bump Microsoft.Azure.Functions.Worker from 2.2.0 to 2.52.0 (#9654)
+* Bump Microsoft.Azure.Functions.Worker.Sdk from 2.0.5 to 2.1.0 (#9655)
+* Mark two RASP telemetry tests as flaky (#9662)
+* Run StatsD settings concurrency test without parallel tests (#9666)
+* Update to .NET 11 GA (#9677)
+* [CI] Add apm-dotnet as co-owner of the telemetry metrics JSON files (#9684)
+* Add retries for test-agent startup (#9707)
+* Assign ownership of bundle tests (#9713)
+* Enable (and address) process analyzers (#9667)
+
+
+[Changes since 3.57.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.57.0...v3.58.0)
+
+## [Release 3.57.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.57.0)
+
+## Summary
+
+* [Tracer] Event Grid instrumentation (#8920 
+* [Test Optimization] Add NUnit 5 support (#9407)
+* [Test Optimization] Add dynamic automatic test retries (#9480)
+* [Debugger] Fix native stack buffer overflow on large return type signatures (#9388)
+* Fix baggage leak between Kafka messages (#9529)
+* Fix DynamoDB instrumentation for AWS SDK `4.0.109.3`+ (#9555)
+
+## Changes
+
+### Tracer
+* [Tracer] Event Grid instrumentation (#8911)
+* Refactor `ApiWebRequest` (#9145)
+* [AAS] Recover agent processes after overlapped recycles, and log their lifecycle (#9397)
+* [Tracer] Use double precision for trace sampling rates (#9467)
+* Use branchless hex encoding in `HexString.ToHexBytes` (#9503)
+* [Tracer] Decode percent-encoded OTLP header values (#9516)
+* Fix OTLP sampling rule return type (#9561)
+* Guard OnActivityWithSourceStopped for null Activity (#9584)
+
+### CI Visibility
+* [CI Visibility] Fix message loss and abandoned mutexes in the IPC channel (#9335)
+* [Test Optimization] Add NUnit 5 support (#9407)
+* [Test Optimization] Add dynamic automatic test retries (#9480)
+* [Test Optimization] Report sessions where VSTest ran no tests as skipped (#9486)
+* [Test Optimization] [NO TICKET] Send test_level in settings request (#9510)
+
+### ASM
+* [IAST] Skip frames without debug info when choosing the vulnerability location (#9332)
+* [AppSec] Emit appsec.waf.config_errors telemetry (#9481)
+
+### Continuous Profiler
+* [profiler tests] keep profiler mock agent listener alive when test handlers throw and decompress gzipped telemetry (#9367)
+* [Profiler] Fix "Delayed start failure creates a logical zombie" issue (#9403)
+
+### Debugger
+* [Debugger] DEBUG-4637 Fix DI remote enablement (#9344)
+* [Debugger] Fix native stack buffer overflow on large return type signatures (#9388)
+* [Debugger] Report telemetry metrics in the debugger namespace (#9423)
+* [Debugger] DEBUG-5961 Emit lowercase {redacted} placeholder in expression templates (#9482)
+* [Debugger] Support snapshot sampling below 1 per second (#9496)
+* [Debugger] Treat StackOverflowException as unsupported for Exception Replay (#9499)
+* [Debugger] Add root timestamp to snapshot payloads (#9532)
+* [Debugger] Remove probes when Dynamic Instrumentation is disabled remotely (#9560)
+* [Debugger] Update safety guide and add redaction guardrails (#9562)
+* [Debugger] Add Dynamic Instrumentation rules to `/sdk-review` (#9566)
+
+### Serverless
+* [Serverless] Respect DD_TRACE_ENABLED in AWS Lambda integration (#9424)
+* [Serverless] Use aca.function.* tag prefix in Azure Container Apps (#9479)
+
+### Fixes
+* [Tracer] Fix Azure Service Bus producer/consumer trace disconnect for ServiceBusProcessor (#8867)
+* [Feature Flags] Preserve 256 attributes alongside targeting key (#9511)
+* Fix baggage leak between Kafka messages (#9529)
+* Fix DynamoDB instrumentation for AWS SDK `4.0.109.3`+ (#9555)
+
+### Build / Test
+* Update Testcontainers infrastructure (#9066)
+* Normalize resource schema URLs in OTLP snapshots added in 1.19.0 (#9298)
+* [Tracer] Warm up OpenSSL with SHA-256 instead of MD5 (#9329)
+* [Tracing] Test stable Quartz 4 releases (#9385)
+* [CI] Bump LLM validation platform to v0.1.5 (#9420)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9459)
+* Add ability to skip running Azure DevOps CI (#9473)
+* Clarify LLM benchmark criteria (#9484)
+* Ensure `alpine.build.dockerfile` can still build (#9502)
+* Consolidate versioning approach for the tracer (#9521)
+* Stop trusting compromised eMudhra roots in CI and smoke-test images (#9527)
+* Stop trusting compromised eMudhra roots in the build-toolchain images (#9528)
+* Move AutoInstrumentation.Generator to `tools` folder (#9549)
+* Remove unused Python requirements from Windows GitLab image (#9550)
+* Fix some `apm-serverless` CODEOWNERS (#9556)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9557)
+* Bump the gh-actions-packages group across 2 directories with 3 updates (#9558)
+* Remove the phrase skip ci within the square brackets from the PR template (#9588)
+
+### Miscellaneous
+* Migrate Couchbase tests to Testcontainers (#9108)
+* [Feature Flags] Add privacy-protected flagevaluation EVP events through the Agent (#9351)
+* [DBM] Add Oracle stored-procedure service comments (#9415)
+* [Tracer] Wake up the trace serialization and DogStatsD threads at shutdown (#9419)
+* Make CI curl calls fail on HTTP errors and retry (#9450)
+* Add agent skill for introducing lint and static analysis rules (#9464)
+* [Feature Flags] Add debug logging for provider onboarding (#9465)
+* fix(otel-metrics): export the aggregation temporality stored on MetricPoint (#9468)
+* Implement `/sdk-review` lens-based review skill (#9471)
+* Seed .NET review rules in `/sdk-review` (#9472)
+* fix(otel): treat empty OTEL_* environment variables as unset (#9497)
+* [OTLP] Export the tracer's sampling decision in OTLP traces (#9498)
+* fix(otel): unify OTLP endpoint and protocol resolution (#9505)
+* Revert "[DBM] Add Oracle stored-procedure service comments (#9415)" (#9525)
+* [Tracer] Use the Default sampling mechanism in OTLP mode when no rule is configured (#9531)
+
+### Data Streams Monitoring
+* [DSM] Fix RabbitMQ time in queue treating AMQP timestamp seconds as milliseconds (#9455)
+* [DSM] Fix sync Kinesis GetRecords never recording consume checkpoints (#9456)
+* [DSM] Fix node-hash retention and evict idle tag cache entries (#9457)
+
+
+[Changes since 3.56.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.56.0...v3.57.0)
+
+## [Release 3.56.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.56.0)
+
+## Summary
+
+* [Debugger] Fix native stack buffer overflow on large type signatures (#9377)
+* [ASP.NET MVC] Stop child actions from naming the request (#9346)
+* [Profiler] Take the heap snapshot memory threshold into account (#9399)
+
+## Changes
+
+### Tracer
+* [Debugger] Fix stale local variable names from PDB lookup (#9389)
+* [Tracer] Check only new methods in Desktop CLR NGen inliner replays (#9412)
+* [Tracer] Restore OTLP adoption markers and fix smoke snapshots (#9363)
+* [ASP.NET MVC] Stop child actions from naming the request (#9346)
+* feat(telemetry): report Quartz and Azure Service Bus spans (#9183)
+* feat(otel): Enable the OTel operator init container build (#9368)
+* Expose resolved OpenTelemetry configuration in startup logs (#9376)
+
+### CI Visibility
+* [Test Optimization] Fix MSTest 4.4.0 discovery and native retries (#9192)
+* [CI] Bump DatadogTestCollector and DatadogTestLogger to 0.0.60 (#9417)
+
+### ASM
+* perf(tracer): reduce query-string matching cost (#9374)
+* perf(tracer): use lookbehind for JWT prefix in default query-string regex (#9405)
+* Attempt to work around runtime flake for ASM (#8884)
+
+### Continuous Profiler
+* Mark CheckCpuSamples as Flaky (#9392)
+* Mark CheckTimestampAsLabel as Flaky (#9393)
+* [Profiler] Take the heap snapshot memory threshold into account (#9399)
+
+### Debugger
+* [Debugger] Fix native stack buffer overflow on large type signatures (#9377)
+
+### Serverless
+* [Serverless] Remove serverless-azure-and-gcp and serverless-aws from CODEOWNERS (#9354)
+
+### Feature Flags
+* [Feature Flags] Add agentless EVP fallback transport (#9235)
+* [Feature Flags] experimental synchronous provider APIs (#9334)
+* [Feature Flags] Bind discovery results to the Agent endpoint (#9352)
+* [Feature Flags] Bound exposure shutdown and own the existing EVP sender (#9353)
+
+### Fixes
+* Defer Desktop CLR NGen inliner enumeration to CLR callbacks (#9370)
+* fix(otel): emit stable deployment environment in logs (#9371)
+* Fix false positives in LLM validation benchmarks (#9357)
+* Fix hotfix branch creation from release tags (#9390)
+* Fix regex test on .NET 5 (#9391)
+* Fix flaky exposure shutdown flush test (#9396)
+
+### Build / Test
+* Update to .NET 11 RC2 (#9404)
+* [Test Package Versions Bump] Updating package versions (#9290)
+* [Remoting] Fix bug when only a single server formatter is registered (#9333)
+* Local Agentic Code Review Scripts (#9338)
+* Ignore stale legacy benchmark results (#9349)
+* Run smoke tests on PRs when the likely have changed (#9365)
+* Use base APM SDK capabilities team in CODEOWNERS (#9369)
+* Update log4net to 3.5.0 and fix log correlation tests (#9378)
+* Attempt to correct `tracer/` CODEOWNERS (#9379)
+* test: snapshot mock agent telemetry before casting to avoid race (#9381)
+* Removes LLM related skills and settings that are unused or invalid (#9386)
+* Make exposure shutdown flush test deterministic (#9401)
+* Pin Windows VMs to v1.16.0 to fix .NET 11 RC2 requirements  (#9409)
+* [Tracer] Add .NET Framework regression tests for the NGen inliner crash (#9413)
+* Run Windows microbenchmarks on processor group zero (#9350)
+
+### Miscellaneous
+* ci: update one-pipeline version (#9358)
+* ci: update one-pipeline version (#9375)
+* ci: update one-pipeline version (#9395)
+* ci: update one-pipeline version (#9416)
+
+[Changes since 3.55.2](https://github.com/DataDog/dd-trace-dotnet/compare/v3.55.2...v3.56.0)
+
+## [Release 3.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.55.0)
+
+## Summary
+* [Tracer] support OTel thread context propagation on Linux (#9147)
+* [Tracer] Add Azure Durable Functions tracing (#9217)
+* Fix cross-language DSM pathway extraction for AWS messages (#9289)
+
+## Changes
+
+### Tracer
+* fix(openfeature): accept empty string as valid targeting key (#8384)
+* [Tracer] support OTel thread context propagation on Linux (#9147)
+* [Tracer] Add Azure Durable Functions tracing (#9217)
+* Copy ASP.NET Core activity tags we haven't set, instead of filtering them (#9297)
+* Initial runtime-async support for .NET 11 (#9305)
+* Fix various minor issues identified in .NET 11 update (#9280)
+* Enforce ot tracestate value limit (#9324)
+* feat(otel): Emit OpenTelemetry HTTP semantic conventions on HTTP server spans (ASP.NET) (#9027)
+* feat(otel): Support the required startup hook for opentelemetry-operator installation (#9314)
+* [Docs] Keep customer data out of pull requests (#9356)
+
+### CI Visibility
+* [CI Visibility] Secure reduced tracer home cache (#8804)
+* [CI Visibility] Restore request configurations in skippable responses (#9339)
+
+### ASM
+* [AppSec] Report the WAF version when the WAF fails to initialize (#9308)
+* [AppSec] Disable instrumentation telemetry in managed unit tests (#9309)
+
+### Continuous Profiler
+* [Profiler] Log the ARM64 gate reason when the Continuous Profiler is disabled (#9258)
+
+### Debugger
+* [Debugger] Disable Exception Replay when FIPS blocks MD5 (#9176)
+* [Tracer] Synchronize ReJIT state access (#9254)
+* [Tracer] Keep ReJIT requests bound to module generations (#9255)
+* [Tracer] Harden ReJIT worker failures (#9256)
+* [Debugger] Coordinate snapshot sampling per trace (#9266)
+* [Debugger] Emit truncated:true when snapshot strings are clipped (#9272)
+* [Debugger] Box value-type keys when indexing IDictionary (#9274)
+* [Tracer] Forget processed NGen inliner modules when they unload (#9292)
+* [Debugger] Hash Exception Replay exceptions with FNV-1a instead of MD5 (#9328)
+
+### Serverless
+* [Serverless] Expand apm-serverless CODEOWNERS coverage (#9326)
+
+### Fixes
+* fix(otlp): emit non-overlapping trace metric windows (#9159)
+* [FeatureFlags] Return the caller's default value on every provider error (#9299)
+* [FeatureFlags] Stop serving flags removed from a modified Remote Configuration file (#9304)
+
+### Miscellaneous
+* Use `StringUtil.ToLowerInvariant()`/`StringUtil.ToUpperInvariant()` on .NET Framework (#9180)
+* Declare FLAKY_BENCHMARKS_REGEX and document benchmarks CI (#9306)
+* ci: update one-pipeline to 1.5.4 (#9312)
+* [Propagators] OTLP trace export carries `ot.th/rv`[APMAPI-2170] (#9062)
+
+### Build / Test
+* Rework CODEOWNERS tests to try and aim for exclusive ownership (#9155)
+* Isolate Git changes in impacted tests (#9195)
+* Disable Continuous Profiler in legacy security policy smoke test (#9197)
+* [Build] Disable libunwind clone progress output (#9198)
+* Produce snupkg for feature flags NuGet package (#9200)
+* Add team freeze guard workflow (#9220)
+* Prevent duplicate integration test runs and filter overlaps (#9269)
+* chore(codeowners): give FFE sole ownership of product paths (#9273)
+* [Test Package Versions Bump] Updating package versions (#9275)
+* [CI] Bump llm-validation to v0.1.4 (signed image) (#9281)
+* Upload microbenchmark results to BP_EXTERNAL_S3_URL (#9282)
+* Update retry on infra failures for benchmarks (#9283)
+* Change ownership of timeit benchmarks (#9284)
+* Fix token timing out (#9293)
+* Build updates in preparation for .NET 11 (#9294)
+* Update version of ClrMD used by dd-dotnet to support .NET 11 (#9295)
+* .NET 11 test/build prerequisites (#9302)
+* [Tests] Wait for app-closing telemetry before exiting func (#9315)
+* Update to building with .NET 11 RC1 (#9317)
+* Remove ASP.NET Core modules from classic IIS test configurations (#9318)
+* Isolate impacted-test Git caches (#9319)
+* Isolate mocked CI-provider tests (#9320)
+* Re-enable .NET 11 benchmarks (#9321)
+* Extend Azure artifact polling timeout (#9330)
+* Explicitly forward BP_EXTERNAL_S3_URL on benchmark triggers (#9337)
+* Bump the gh-actions-packages group across 2 directories with 7 updates (#9348)
+
+### Data Streams Monitoring
+* Fix cross-language DSM pathway extraction for AWS messages (#9289)
+
+
+[Changes since 3.54.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.54.0...v3.55.0)
+
+## [Release 3.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.54.0)
+
+## Summary
+
+* [Propagators] Add OpenTelemetry consistent probability sampling (#9178)
+* [CI Visibility] Add support for MSTest 4.4.0 (#9189)
+* [CI Visibility] Add xUnit v4 support (#9162)
+
+## Changes
+
+### Tracer
+* [DuckTyping] Generate proxies in target AssemblyLoadContext (#9167)
+* [DuckTyping] Prevent memory corruption for by-ref value types (#9221)
+* [DuckTyping] Reject incompatible open generic method signatures (#9226)
+* [DuckTyping] Work around concurrent ExceptionDispatchInfo runtime crash (#9209)
+* [FeatureFlags] Remove the manual (non-OpenFeature) Feature Flags API (#9260)
+* [tracer] Fix heap corruption (#9199)
+* [Propagators] Add OpenTelemetry consistent probability sampling (#9178)
+* [ASP.NET MVC] Handle malformed request URLs when creating scopes (#9212)
+* Support stable OTel deployment environment attribute (#9150)
+* feat(feature-flags): wire source-agnostic activation and OpenFeature InitializeAsync (#9044)
+* [FeatureFlags] Replay the configuration handler on registration and bump the OpenFeature package (#9264)
+
+### CI Visibility
+* [CI Visibility] Add xUnit v4 support (#9162)
+* [CI Visibility] Fix TIA missing line coverage response field (#9165)
+* [CI Visibility] Add support for MSTest 4.4.0 (#9189)
+* [CI Visibility] Preserve oversized test parameters for ITR (#9214)
+* [CI Visibility] Fix quarantine with automatic retries across test frameworks (#9229)
+* [CI Visibility] Stabilize test session working directory fingerprint (#9243)
+* [CI Visibility] Fix custom MSTest attribute skipping across MSTest 2-4 (#9271)
+
+### ASM
+* [AppSec] Send the real response status to the WAF and stop resending the request addresses (#9082)
+* [AppSec] Emit rasp.error and rasp.rule.skipped telemetry (#9090)
+* [IAST] Guard stack walks against stack exhaustion (#9227)
+
+### Continuous Profiler
+* [Profiler] Fix `Unknown-Method` bug (Arm64 only) (#9232)
+* [Profiler] Fix `Unknown-Method` part2 (#9244)
+
+### Debugger
+* Support GitHub/GitLab/Azure DevOps/Bitbucket Server SourceLink variants (#8505)
+* [Debugger] Skip nested byref-like locals after type-forward resolution (#9205)
+* [Debugger] Fail closed when async Exception Replay cannot clone SetException args (#9225)
+* [Debugger] Guard async catch-entry instrumentation (#9242)
+
+### Serverless
+* [Serverless] Bump Datadog.Serverless.Compat to 1.9.0 (#9248)
+
+### Data Streams Monitoring
+* Add additional guards to Kafka cluster ID discovery (#9261)
+
+### Build / Test
+* Drop V1 schema rows in pairwise mode (#8536)
+* Add `[Trait("Area", "CiVisibility")]` to CI Vis tests, and run in dedicated jobs only when required (#9169)
+* Fix RunNativeLoaderTestsWindows artifact name (#9170)
+* Split ARM64 integration tests by area (#9172)
+* [Test Package Versions Bump] Updating package versions (#9187)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9188)
+* Build managed samples as AnyCPU (#9193)
+* Ensure we push the correct symbol packages as part of a release (#9196)
+* [CI] Skip Aerospike tests on transient Docker failures (#9202)
+* Allow choosing which system test branch to run (#9208)
+* [Test Package Versions Bump] Updating package versions (#9216)
+* Remove deleted projects from OSX and Security solution filters (#9218)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9224)
+* [CI] bump llm-validation-platform to v0.1.3 (#9230)
+* [CI] Bump LLM validation platform to v0.1.2 (#9177)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9241)
+* Skip ExceptionReplayRewrite_DoesNotThrowInvalidProgramException (#9251)
+* Stop hardcoding the sample version in XUnit V3_X4 tests (#9259)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9263)
+* ci: update one-pipeline to 1.5.1 (#9257)
+* ci: update one-pipeline to 1.5.3 (#9268)
+
+### Miscellaneous
+* Add non-allocating `ToLowerInvariant()` / `ToUpperInvariant()` for .NET Framework (#9173)
+* [Native] Downgrade high-frequency ReJIT logs to debug (#9215)
+
+[Changes since 3.53.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.53.0...v3.54.0)
+
+## [Release 3.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.53.0)
+
+## Summary
+
+* [Tracing] Improve memory_load metric in .NET 10
+* [Tracing] Reduce buffer contention when writing spans
+* [CI Visibility] Improve CODEOWNERS parsing
+* [Continuous Profiling] Bug fixes and performance improvements
+* [Feature Flagging] Send split serial ids on exposure events 
+
+## Changes
+
+### Tracer
+* Avoid unobserved tasks for synchronous delegate exceptions (#9071)
+* Reduce locking in `AgentWriter` to avoid contention (#9107)
+* Expose the `TrailerSize` of an `ISpanBufferSerializer` (#9115)
+* Fix lock-contention causing trace to be "stranded" (#9120)
+* Improve `GcMemoryLoadCalculator` by using `GC.GetConfigurationVariables()` where possible (#9146)
+
+
+### CI Visibility
+* [CI Visibility] Refactor CODEOWNERS parsing and source ownership resolution (#9099)
+* [CI Visibility] Fix coverage rewrites with shared framework dependencies (#9102)
+* [CI Visibility] Keep CODEOWNERS matches inside repository (#9127)
+* [CI Visibility] Stabilize CODEOWNERS concurrency test (#9143)
+* [CI Visibility] Resolve CODEOWNERS from matching local checkout (#9148)
+
+### Continuous Profiler
+* [Profiler] ManagedCodeCache updates synchronously (#8840)
+* [Profiler] Fix flaky tests caused by failing`timer_create` (#8988)
+* [Profiler] Fix start/stop crash at shutdown (#9037)
+* [Profiler] Fix crashes at shutdown (#9050)
+* [Profiler] Measure and reduce GC profiling impact (#9119)
+* [Profiler] Fix flacky tests (#9126)
+* [Profiler] Fix bug in FrameStore (#9140)
+
+### Feature Flags and Experimentation
+* [Feature Flags] Send the split serial id on exposure events (#9088)
+* feat(feature-flags): add agentless configuration keys, settings, and endpoint derivation (#9040)
+* feat(feature-flags): add UFC parser and agentless HTTP poller (#9042)
+* feat(openfeature): support arbitrary semver parts (#9122)
+
+### Build / Test
+* Migrate remaining integration tests to CombinatorialOrPairwiseData (#8528)
+* Move secrets to be protected environment secrets (#8865)
+* Try to make it so that CODEOWNERs triggers tests (#9092)
+* Split system-test docker image creation to work in both protected and unprotected environments (#9094)
+* [Test Package Versions Bump] Updating package versions (#9100)
+* Consolidate and fix bugs in GitLab "download from Azure" scripts (#9103)
+* Don't need to download and sign when pushing a tag (#9105)
+* Mark DSM TransportsWorkCorrectly as flaky (#9116)
+* Mark DSM ContextPropagation as flaky (#9117)
+* [Test Package Versions Bump] Updating package versions (#9124)
+* Bump test logger to latest (to try to fix codeowners) (#9128)
+* Add `new Random()` to the banned API list, to discourage using those APIs (#9129)
+* Add SDK capabilities and LP as owners in addition to tracing-dotnet (#9130)
+* Bump SLO for throughput tests (#9131)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9134)
+* Add many timeouts and retries to build stages in Azure DevOps (#9141)
+* Move CI uploads to new subscription (#9142)
+* Refine listed non-IDM tests to single owner (#9149)
+* [CI Visibility] Bump Datadog test packages to 0.0.59 (#9151)
+* [Test Package Versions Bump] Updating package versions (#9152)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9153)
+* Increase profiler integration test timeout (#9158)
+* Bump the gh-actions-packages group across 2 directories with 4 updates (#9161)
+* [Test Package Versions Bump] Updating package versions (#9163)
+* Don't run high-concurrency tests in parallel with other tests (#9166)
+* Fix release creation (#9190)
+* Fix broken unit tests in `GcMemoryLoadCalculatorTests` (#9101)
+
+### Miscellaneous
+* [Propagators] Add OpenTelemetry consistent probability sampling (#8983)
+* Revert "[Propagators] Add OpenTelemetry consistent probability sampling" (#9171)
+* feat(otel): Emit OpenTelemetry HTTP semantic conventions on HTTP server spans (ASP.NET Core) (#8995)
+* [Propagators] Generalize tracestate parsing (#9000)
+* Remove exception throwing from `CanCreate()` paths in DuckTyping (#9005)
+* Revert "[Propagators] Add OpenTelemetry consistent probability sampling" (#9171)
+
+[Changes since 3.52.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.52.0...v3.53.0)
+
+## [Release 3.52.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.52.0)
+
+## Summary
+
+* [Tracing] Reduce dropped traces during forced flush
+* [Tracing] Improve runtime metrics memory_load calculation
+* [ASM[ Various bug fixes and improvements
+* [Code Origins] Add code-origin support for ASP.NET
+* [Dynamic Instrumentation] Add time budgets for probe expression evaluation
+
+## Changes
+
+### Tracer
+* Change `AgentWriter` to only flush from a single task (#9007)
+* `AgentWriter` cleanup (#9010)
+* `AgentWriter` testing cleanup (#9011)
+* Fix minor `AgentWriter` bugs (#9013)
+* Ensure `AgentWriter` serialization always happens on the same thread (#9014)
+* Avoid flinalizer crash on .NET Framework with `FreeConsole`/`AllocConsole`/`AttachConsole` (#9079)
+* Partially fix runtime metrics memory_load calculation (#9095)
+
+### ASM
+* [AAP] Open module metadata for writing only when we rewrite the module (#8991)
+* [AppSec] Free the WAF diagnostics of every config applied to the builder (#9056)
+* [AppSec] Dispose the WAF context when a non-web local root span closes (#9057)
+* [AppSec] Emit appsec.waf.error telemetry (#9075)
+* [IAST] Fix entry loss in DefaultTaintedMap under concurrency (#9041)
+
+### Continuous Profiler
+* [Profiler] Improve reference chain  (#8966)
+* [Profiler] Fix flakiness due to Libraries Info Cache (#8997)
+
+### Debugger
+* [Code Origin] Add code-origin support for ASP.NET MVC4/5 and Web API2 (#8739)
+* [Debugger] Bound Dynamic Instrumentation probe expression evaluation with a time budget (#8806)
+* [Debugger] Add guardrail telemetry metrics (#8998)
+* [Debugger] Stabilize ClrMD heap assertions (#8999)
+* [Debugger] Harden ClrMD memory assertions (#9035)
+* [Dynamic Instrumentation] DEBUG-4669 change default string length limit from 1000 to 255 (#9065)
+* [Debugger] Record Dynamic Instrumentation guardrail metrics (#9070)
+
+### Serverless
+* [Serverless] Bump Datadog.Serverless.Compat to 1.8.0 (#9034)
+
+
+### Miscellaneous
+* feat(otel): Emit OpenTelemetry HTTP semantic convention on HTTP client spans (#8975)
+* [Configuration] Enforce sensitive configuration redaction at compile time (#8976)
+* Fix OTLP trace metrics attribute gaps in span stats serializer (#8992)
+* Update libdatadog-dotnet to 2.1.1 (#9091)
+
+### Build / Test
+* test(ffe): use canonical FFE fixtures (#8616)
+* Add the LLM Validation gate for AGENTS.md + the libdatadog-bump skill (#8845)
+* Add `environment` to subject in chainguard policies (#8866)
+* [Tracer] Fix integration test span wait thresholds (#8970)
+* Fix flake in RabbitMQ DSM snapshots across bucket boundaries (#8972)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8990)
+* chore(feature-flags): expand CODEOWNERS coverage (#8994)
+* Disable default launchSettings.json generation for the Fleet Installer integration tests (#9004)
+* Fix SnapshotSlicerTests verify prefix (#9009)
+* [Test Package Versions Bump] Updating package versions (#9018)
+* Fix typo: IncludeAllTestFrameworks in hotfix branches (#9019)
+* Fix native validation (#9020)
+* ci: update one-pipeline to 1.3.0 (#9025)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9036)
+* [Test Package Versions Bump] Updating package versions (#9043)
+* ci: update one-pipeline to 1.3.1 (#9047)
+* Pin LLM validation gate to v0.1.1 (#9048)
+* Update CODEOWNERS for integration tests ownership (#9049)
+* Fix flake in `AgentWriterTests` (#9052)
+* Fix flaky grpc tests (#9058)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9061)
+* Bump testing of Microsoft.Data.SQLite (#9063)
+* Fix flaky WhenSupported_WritesAStatsPointAfterDelay test (#9074)
+* [Test Package Versions Bump] Updating package versions (#9076)
+* Fix IisCheckTests concurrency (#9077)
+* [Tests] Retry non-application dotnet commands after SIGSEGV (#9080)
+* LLM validation platform moved to ddoghq (#9081)
+* Sign .nupkg contents (exe, dll etc, not package itself) (#9083)
+* Remove * CODEOWNERS and fixup a few stale rules (#9084)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9085)
+* ci: update one-pipeline to 1.4.0 (#9087)
+* Change /tracer/ to be unrooted tracer/ in CODEOWNERS (#9089)
+
+[Changes since 3.51.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.51.1...v3.52.0)
+
+## [Release 3.51.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.51.0)
+
+## Summary
+
+* [Tracer] Add support for Ocelot 25.x.x (#8984)
+* [Tracer] Add support for MySql.Data 26.x.x (#8985)
+* [Feature Flagging] APM feature-flag span enrichment (#8795)
+* [CI Visibility] Support MSTest 4.3.3 (#8979)
+* [CI Visibility] Implement bounded-memory global coverage implementation (#8926)
+* [AAP] Collect DataContract JSON response body schemas (#8706)
+
+## Changes
+
+### Tracer
+* [Tracer] Distinguish trace buffer drop reasons (#8931)
+* [Tracer] Update the TagsList infrastructure to store `int` properties on ITags implementations (#8941)
+* [OTLP] Exclude non-top-level, non-measured spans from OTLP trace metrics (#8947)
+* [Tracer] Update the TagsList infrastructure to allow a secondary OtelName (#8971)
+* [FFE] FFE APM feature-flag span enrichment (#8795)
+* [Tracer] Distinguish full and locked trace buffers (#8980)
+* [Tracer] Add support for Ocelot 25.x.x (#8984)
+* [OTLP Logs] Fix ArgumentOutOfRangeException serializing large log batches (pooled buffers) (#8862)
+* [Tracer] Add support for MySql.Data 26.x.x (#8985)
+
+### CI Visibility
+* [CI Visibility] Bound global coverage memory (#8926)
+* [CI Visibility] Add Buildkite pipeline display name tag (#8956)
+* [CI Visibility] Support MSTest 4.3.3 (#8979)
+
+### ASM
+* [AAP] Collect DataContract JSON response body schemas (#8706)
+* [AAP] Handle duplicate keys in ASM `DecodeMap` (#8951)
+* [AAP] Cap recursion depth in ObjectExtractor's list/dictionary paths (#8958)
+* [AAP] Migrate libddwaf to 2.0.1 (#8959)
+* [AppSec] Don't hold on to a recycled HttpContext (#8989)
+* [IAST] Add Class field to vulnerability Location and repurpose Path to source file (#8930)
+
+### Continuous Profiler
+* [Profiler] Add Reader/Writer Spinning mutex (#8904)
+* [Profiler] Cleanup generic method frame encoding and namespaceless types (#8961)
+
+### Fixes
+* fix(otlp): Emit a StatusCode.Error on OTLP spans when DD Span.Error field is set (#8954)
+* Fix broken IAST instrumentation of MySql.Data and Oracle (#8987)
+
+### Miscellaneous
+* Bump DatadogTestCollector and DatadogTestLogger to 0.0.55 (#8949)
+* ci: update one-pipeline to 1.1.0 (#8909)
+* feat(otel): Update HTTP span error handling when OTel Semantics mode Is enabled (#8940)
+* Exclude zero-version assemblies from dependency collection (#8965)
+* Bump the statsd default packet size (#8967)
+* Bump libdatadog to 2.1.0 (v38.0.0) (#8968)
+
+### Build / Test
+* Reduce verbosity of execution benchmark results comment (#8868)
+* [Test Package Versions Bump] Updating package versions (#8876)
+* [Tracing] Fix Hangfire baggage accumulation (#8900)
+* [CI] Speed up GitLab Windows build with parallel C++ compilation (#8925)
+* Mark Debugger MethodProbeTest_NamedPipes as Flaky (#8929)
+* [Smoke Tests] Collect crash dumps from Windows containers (#8937)
+* Attempt to delete Kinesis stream before running tests (#8939)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8942)
+* Clean external warnings native (#8948)
+* [Tracer] Avoid Microsoft.Data.SqlClient transport flakes (#8950)
+* Make sure we pin the `dd-apm-test-agent` smoke test image (#8952)
+* [Test Package Versions Bump] Updating package versions (#8955)
+* Try to fix unit tests touching `[TracerRestorer]` (#8957)
+* Pre-install and initialize vcpkg in Windows GitLab (#8962)
+* Make bots sign their commits (#8963)
+* [Tracer] Fix Cosmos VNext query test flakiness (#8969)
+* Bump the gh-actions-packages group across 3 directories with 11 updates (#8977)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8978)
+* Fix support for building StackExchange Redis sample in latest package version (#8982)
+* [Test Package Versions Bump] Updating package versions (#8996)
+
+### Data Streams Monitoring
+* Fix dsm throughput tests (#8981)
+
+
+[Changes since 3.50.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.50.0...v3.51.0)
+
 ## [Release 3.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.50.0)
 
 ## Summary

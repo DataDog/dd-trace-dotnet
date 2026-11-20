@@ -5,24 +5,33 @@
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal enum DDWAF_OBJ_TYPE
+    /// <summary>
+    /// Mirrors DDWAF_OBJ_TYPE in ddwaf.h. The backing type must stay <see cref="byte"/>: since
+    /// libddwaf 2.0 the type is stored in the first byte of the 16 byte ddwaf_object union.
+    /// </summary>
+    internal enum DDWAF_OBJ_TYPE : byte
     {
-        DDWAF_OBJ_INVALID = 0,
-        /** Value shall be decoded as a int64_t (or int32_t on 32bits platforms). **/
-        DDWAF_OBJ_SIGNED = 1 << 0,
-        /** Value shall be decoded as a uint64_t (or uint32_t on 32bits platforms). **/
-        DDWAF_OBJ_UNSIGNED = 1 << 1,
-        /** Value shall be decoded as a UTF-8 string of length nbEntries. **/
-        DDWAF_OBJ_STRING = 1 << 2,
-        /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having no parameterName. **/
-        DDWAF_OBJ_ARRAY = 1 << 3,
-        /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having a parameterName. **/
-        DDWAF_OBJ_MAP = 1 << 4,
-        /** Value shall be decoded as a bool **/
-        DDWAF_OBJ_BOOL = 1 << 5,
-        /** Value shall be decoded as a double (float64) **/
-        DDWAF_OBJ_DOUBLE = 1 << 6,
+        /** Unknown or uninitialised type **/
+        DDWAF_OBJ_INVALID = 0x00,
         /** Null type, only used for its semantic value **/
-        DDWAF_OBJ_NULL = 1 << 7,
+        DDWAF_OBJ_NULL = 0x01,
+        /** Boolean type **/
+        DDWAF_OBJ_BOOL = 0x02,
+        /** 64-bit signed integer type **/
+        DDWAF_OBJ_SIGNED = 0x04,
+        /** 64-bit unsigned integer type **/
+        DDWAF_OBJ_UNSIGNED = 0x06,
+        /** 64-bit float (or double) type **/
+        DDWAF_OBJ_FLOAT = 0x08,
+        /** Dynamic UTF-8 string of up to max(uint32) length **/
+        DDWAF_OBJ_STRING = 0x10,
+        /** Literal UTF-8 string of up to max(uint32) length, these are never freed **/
+        DDWAF_OBJ_LITERAL_STRING = 0x12,
+        /** UTF-8 string of up to 14 bytes, stored inline in the object itself **/
+        DDWAF_OBJ_SMALL_STRING = 0x14,
+        /** Array of ddwaf_object, up to max(uint16) capacity **/
+        DDWAF_OBJ_ARRAY = 0x20,
+        /** Array of ddwaf_object_kv, up to max(uint16) capacity **/
+        DDWAF_OBJ_MAP = 0x40,
     }
 }

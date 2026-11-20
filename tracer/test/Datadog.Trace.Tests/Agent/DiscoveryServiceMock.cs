@@ -29,7 +29,8 @@ internal class DiscoveryServiceMock : IDiscoveryService
         string containerTagsHash = "containerTagsHash",
         bool clientDropP0 = true,
         bool spanMetaStructs = true,
-        bool spanEvents = true)
+        bool spanEvents = true,
+        bool eventPlatformProxySupportsEvpOriginHeaders = true)
         => TriggerChange(
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
@@ -46,7 +47,8 @@ internal class DiscoveryServiceMock : IDiscoveryService
                 containerTagsHash: containerTagsHash,
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
-                spanEvents: spanEvents));
+                spanEvents: spanEvents,
+                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders));
 
     public void TriggerChange(AgentConfiguration config)
     {

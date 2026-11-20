@@ -36,12 +36,13 @@ namespace Datadog.Trace.Telemetry
         {
             // exclude dlls we're not interested in which have a "random" component
             // - ASP.NET site dlls's e.g. App_Web_*.dll
-            // - Assemblies without a version or explicitly version 0.0.0.0 (and have 8 aplphnumeric values)
+            // - Assemblies without a version, or with a zero version (0.0.0.0)
             // - Assemblies created by expression evaluation in VB.NET (expression_host_, Expressions12334324)
             // - Dlls loaded from asp.net temp directory
+            // Note: Build/Revision are -1 when a Version is created with fewer than 4 components
             var assemblyName = assembly.Name;
             if (assemblyName is null or ""
-             || assembly.Version is null
+             || assembly.Version is null or { Major: 0, Minor: 0, Build: <= 0, Revision: <= 0 }
              || IsTempPathPattern(assemblyName)
              || IsCompiledRazorViewPattern(assemblyName)
              || (assemblyName[0] == 'A'
@@ -57,7 +58,6 @@ namespace Datadog.Trace.Telemetry
              || assemblyName.StartsWith("EntityFrameworkDynamicProxies-", StringComparison.Ordinal)
              || assemblyName.StartsWith("expression_host_", StringComparison.Ordinal)
              || (assemblyName.StartsWith("Expressions", StringComparison.Ordinal) && IsHexString(assemblyName, 11))
-             || (assembly.Version is { Major: 0, Minor: 0, Build: 0, Revision: 0 } && IsZeroVersionAssemblyPattern(assemblyName))
              || IsGuid(assemblyName)
              || IsZxPattern(assemblyName))
             {
@@ -192,68 +192,6 @@ namespace Datadog.Trace.Telemetry
                 default:
                     return false;
             }
-        }
-
-        private static bool IsZeroVersionAssemblyPattern(string assemblyName)
-        {
-            // e.g.
-            //    454845b558934321ad350977dd095960 (32+ hex chars)
-            //    a43d8b99ea (10 hex chars)
-            //    akkynf62 (8 base32 chars)
-            //    dynamicclasses254
-            //    InMemoryAssembly
-            return (assemblyName.Length == 8
-                 && IsBase32Char(assemblyName[0])
-                 && IsBase32Char(assemblyName[1])
-                 && IsBase32Char(assemblyName[2])
-                 && IsBase32Char(assemblyName[3])
-                 && IsBase32Char(assemblyName[4])
-                 && IsBase32Char(assemblyName[5])
-                 && IsBase32Char(assemblyName[6])
-                 && IsBase32Char(assemblyName[7]))
-                || assemblyName.Equals("InMemoryAssembly", StringComparison.OrdinalIgnoreCase)
-                || (assemblyName.Length is 10 or >= 32 && IsHexString(assemblyName, 0))
-                || IsDynamicClassesPattern(assemblyName);
-        }
-
-        private static bool IsDynamicClassesPattern(string assemblyName)
-        {
-            // Pattern: "dynamicclasses" followed by digits, e.g., dynamicclasses254
-            // Length must be > 14 ("dynamicclasses".Length) to have at least one digit
-            if (assemblyName.Length <= 14)
-            {
-                return false;
-            }
-
-            // Check prefix character by character to avoid allocation (lowercase only)
-            if (assemblyName[0] != 'd'
-             || assemblyName[1] != 'y'
-             || assemblyName[2] != 'n'
-             || assemblyName[3] != 'a'
-             || assemblyName[4] != 'm'
-             || assemblyName[5] != 'i'
-             || assemblyName[6] != 'c'
-             || assemblyName[7] != 'c'
-             || assemblyName[8] != 'l'
-             || assemblyName[9] != 'a'
-             || assemblyName[10] != 's'
-             || assemblyName[11] != 's'
-             || assemblyName[12] != 'e'
-             || assemblyName[13] != 's')
-            {
-                return false;
-            }
-
-            // Verify remaining characters are all digits
-            for (int i = 14; i < assemblyName.Length; i++)
-            {
-                if (!char.IsAsciiDigit(assemblyName[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private static bool IsBase32Char(char c)

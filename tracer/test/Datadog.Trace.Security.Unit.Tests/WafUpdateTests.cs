@@ -168,12 +168,14 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext();
+            using var context = waf.CreateContext(out _);
             var result = context.Run(args, TimeoutMicroSeconds);
             result.Timeout.Should().BeFalse("Timeout should be false");
-            var spectedResult = isAttack ? WafReturnCode.Match : WafReturnCode.Ok;
-            result.ReturnCode.Should().Be(spectedResult);
-            if (spectedResult == WafReturnCode.Match)
+
+            // since libddwaf 2.x deriving attributes (here the endpoint fingerprint) is enough to return
+            // Match, so a benign run is told apart by the absence of events, not by the return code
+            result.ShouldReportSecurityResult.Should().Be(isAttack);
+            if (isAttack)
             {
                 var rule = attackParts[2];
                 var jsonString = JsonConvert.SerializeObject(result.Data);
@@ -202,7 +204,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 },
             };
 
-            using var context = waf.CreateContext();
+            using var context = waf.CreateContext(out _);
             var result = context.Run(args, TimeoutMicroSeconds);
             result.Timeout.Should().BeFalse("Timeout should be false");
             result.ReturnCode.Should().Be(WafReturnCode.Match);

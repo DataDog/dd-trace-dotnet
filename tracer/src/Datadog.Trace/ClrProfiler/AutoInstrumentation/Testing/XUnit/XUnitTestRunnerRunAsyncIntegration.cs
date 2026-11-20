@@ -147,8 +147,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         }
 
-        // Decrement the execution number (the method body will do the execution)
-        testCaseMetadata.CountDownExecutionNumber--;
+        // Reset the previous attempt's outcome before the method body executes again.
+        testCaseMetadata.PrepareForRetry();
 
         return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, testCaseMetadata));
     }
@@ -189,12 +189,13 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
-                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TraceClock.Instance.UtcNow - testRunnerState.StartTime));
+                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, TraceClock.Instance.UtcNow - testRunnerState.StartTime);
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0, hasNotRun: false, ref _totalRetries);
+                    // Quarantine clears the framework's exceptions, but ATR still needs the actual attempt's outcome.
+                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0 || testCaseMetadata.HasAnException, hasNotRun: false, ref _totalRetries);
                     if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
                         if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
@@ -247,10 +248,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's clear the failed and skipped runs if we have at least one successful run
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
 
+                    var frameworkResult = XUnitFrameworkResult.Unknown;
                     if (testCaseMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
                     {
                         // Quarantined or disabled test results should not be reported to the testing framework.
@@ -260,6 +262,13 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Total = 1;
                         runSummary.Failed = 0;
                         runSummary.Skipped = 1;
+                    }
+                    else if (testCaseMetadata.ShouldReportAttemptToFixFailure)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Skipped = 0;
+                        runSummary.Failed = 1;
+                        frameworkResult = XUnitFrameworkResult.Failed;
                     }
                     else
                     {
@@ -286,11 +295,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                     }
 
-                    messageBus.FlushMessages(testCaseMetadata.UniqueID);
+                    messageBus.FlushMessages(testCaseMetadata.UniqueID, frameworkResult);
 
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        var debugMsg = StringUtil.Invariant($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
                 }
@@ -321,9 +330,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
     /// <summary>
     /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v2).
-    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
-    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
-    /// further retry can run after the current failed execution.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = available retry slots.
+    /// This value is observed before retry scheduling consumes a slot, so a value of 1 permits one
+    /// final retry and a value of 0 permits none.
     /// </summary>
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);

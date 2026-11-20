@@ -2,121 +2,143 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "ReferenceChainTraverser.h"
+#include "IFrameStore.h"
 #include "Log.h"
+#include "MemoryFaultGuard.h"
 #include "OpSysTools.h"
 
 #include <cstdint>
-
-#ifndef _WINDOWS
-#include <csetjmp>
-#include <csignal>
-
-#include "ProfilerSignalManager.h"
-
-// NOTE (macOS): macOS is not a supported profiler build today
-// (profiler/src/CMakeLists.txt fails with "MACOS builds are not supported yet").
-// If it is ever enabled, this guard needs a macOS path because ProfilerSignalManager
-// lives in the Linux-only project and does not exist there. A macOS port would:
-//   - install its own sigaction() for SIGSEGV and SIGBUS (saving the previous actions),
-//   - in the handler, siglongjmp when t_inGuardedTraversal is set, otherwise manually
-//     chain to the saved previous sa_sigaction/sa_handler (or restore SIG_DFL + re-raise
-//     when there was none) so real faults keep their original crash semantics,
-//   - register once (e.g. std::call_once) so re-creating the traverser does not save our
-//     own handler as the "previous" one.
-// The TLS recovery machinery (t_traversalJmpBuf / t_inGuardedTraversal / sigsetjmp in the
-// wrapper) is portable and would be shared as-is.
-
-namespace
-{
-thread_local sigjmp_buf t_traversalJmpBuf;
-thread_local volatile sig_atomic_t t_inGuardedTraversal = 0;
-
-// ProfilerSignalManager: return false to chain to the CLR's previous SIGSEGV/SIGBUS handler.
-// When in guarded traversal we siglongjmp and do not return.
-bool TraversalFaultHandler(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
-{
-    if (t_inGuardedTraversal != 0)
-    {
-        siglongjmp(t_traversalJmpBuf, 1);
-    }
-    return false;
-}
-} // namespace
-#endif
+#include <stdexcept>
+#include <utility>
 
 ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
     InlineVTCache& inlineVTCache,
-    size_t visitedSetInitialCapacity)
+    size_t visitedMemoryLimitBytes,
+    bool benchmarkEnabled)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
-      _visited(visitedSetInitialCapacity),
+      _visited(visitedMemoryLimitBytes, benchmarkEnabled),
       _objectsTraversed(0),
-      _rootsProcessed(0)
+      _rootsProcessed(0),
+      _benchmarkStats(benchmarkEnabled ? std::make_unique<BenchmarkStats>() : nullptr)
 {
-#ifndef _WINDOWS
-    auto* segv = ProfilerSignalManager::Get(SIGSEGV);
-    if (segv != nullptr)
+}
+
+template <typename TBody>
+bool ReferenceChainTraverser::RunGuarded(TBody&& body)
+{
+    MemoryFaultGuard::RunResult result = MemoryFaultGuard::Run(std::forward<TBody>(body));
+    if (result == MemoryFaultGuard::RunResult::Completed)
     {
-        segv->RegisterHandler(&TraversalFaultHandler);
+        return true;
     }
-    auto* bus = ProfilerSignalManager::Get(SIGBUS);
-    if (bus != nullptr)
+
+    if (result == MemoryFaultGuard::RunResult::Faulted)
     {
-        bus->RegisterHandler(&TraversalFaultHandler);
+        OnTraversalFault();
     }
-#endif
+    else
+    {
+        OnFaultGuardUnavailable();
+    }
+
+    return false;
 }
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
-    // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal.
-    // The class histogram does not depend on this path and keeps working.
-    if (!_gcDescTrusted)
+    uint64_t objectsBefore = 0;
+    uint64_t edgesBefore = 0;
+    std::chrono::nanoseconds benchmarkStart{0};
+    if (_benchmarkStats != nullptr)
+    {
+        objectsBefore = _objectsTraversed;
+        edgesBefore = GetBenchmarkEdgeCount();
+        benchmarkStart = OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+    // The guards below only recover from memory access faults. Anything else -- a
+    // std::bad_alloc from the tree or the visited set, a CLR exception surfacing
+    // through one of the profiling API calls -- would otherwise escape into the
+    // EventPipe callback driving the dump. Stop this dump's traversal instead.
+    try
+    {
+        TraverseFromSingleRootCore(root);
+    }
+    catch (...)
+    {
+        OnTraversalAborted();
+    }
+
+    // Reported from here rather than from inside the guard: see LogPendingSelfTestFailure.
+    LogPendingSelfTestFailure();
+
+    if (_benchmarkStats != nullptr)
+    {
+        auto duration = OpSysTools::GetHighPrecisionTimestamp() - benchmarkStart;
+        uint64_t durationNs = static_cast<uint64_t>(duration.count());
+        uint64_t objects = _objectsTraversed - objectsBefore;
+        uint64_t edges = GetBenchmarkEdgeCount() - edgesBefore;
+        auto& work = _benchmarkStats->rootWork[static_cast<size_t>(root.category)];
+        work.objects += objects;
+        work.edges += edges;
+        work.durationNs += durationNs;
+        work.maxObjects = (std::max)(work.maxObjects, objects);
+        work.maxEdges = (std::max)(work.maxEdges, edges);
+        work.maxDurationNs = (std::max)(work.maxDurationNs, durationNs);
+    }
+}
+
+void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
+{
+    // If a raw object-header/GCDesc reader failed its self-test, skip traversal
+    // permanently. If faults exhausted the per-dump budget, skip the rest of this
+    // dump transiently. The class histogram does not depend on this path.
+    if (!_gcDescTrusted || _stopReason != TraversalStopReason::None)
     {
         return;
     }
 
-#ifdef _WINDOWS
-    __try
-    {
-        TraverseFromSingleRootImpl(root);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        OnTraversalFault();
-    }
-#else
-    // Linux: recover from SIGSEGV/SIGBUS via a signal handler + siglongjmp.
-    // (macOS is not supported; see the comment at the top of this file.)
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        TraverseFromSingleRootImpl(root);
-        t_inGuardedTraversal = 0;
-    }
-    else
-    {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-    }
-#endif
-}
-
-void ReferenceChainTraverser::TraverseFromSingleRootImpl(const RootInfo& root)
-{
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
-    _rootCategoryCounts[static_cast<int>(root.category)]++;
 
-    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
+    // Seeding reads the root's MethodTable, so it too runs under the fault guard.
+    // A fault while seeding means we cannot even start this root -- skip it.
+    if (!SeedRootGuarded(root))
+    {
+        _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
+        return;
+    }
 
-    _visited.Clear();
+    // Resume loop: each guarded drain returns either because the stack was fully
+    // consumed or because a memory access fault interrupted it. On a fault the
+    // faulting frame has already been popped (the drain pops before it scans), so
+    // re-entering picks up at the next unscanned frame. We only lose the remaining
+    // references of the single object that faulted, not the whole root subgraph.
+    while (!_traversalStack.empty() &&
+           _gcDescTrusted &&
+           _stopReason == TraversalStopReason::None)
+    {
+        uint32_t faultsBeforeDrain = _faultCount;
+        uint64_t objectsBeforeDrain = _objectsTraversed;
 
-    TraverseObjectGraph(root.address, rootNode, 1, root.classID, root.objectSize);
+        DrainTraversalStackGuarded();
+
+        // Progress guarantee. Each drain pops a frame BEFORE scanning it and bumps
+        // _objectsTraversed right after the pop, so a faulting drain that scanned
+        // anything has already removed the offending frame -- no action needed (using
+        // stack size here would be wrong, since a drain also PUSHES children before it
+        // faults). Only if a fault somehow occurred without popping any frame do we
+        // drop one so the loop cannot spin. The fault budget is the ultimate backstop.
+        if (_faultCount != faultsBeforeDrain && _objectsTraversed == objectsBeforeDrain && !_traversalStack.empty())
+        {
+            _traversalStack.pop_back();
+        }
+    }
 
     if (_traversalStack.capacity() > _traversalStackHighWatermark)
     {
@@ -127,47 +149,199 @@ void ReferenceChainTraverser::TraverseFromSingleRootImpl(const RootInfo& root)
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
 }
 
+bool ReferenceChainTraverser::SeedRootGuarded(const RootInfo& root)
+{
+    return RunGuarded([this, &root] { SeedRoot(root); });
+}
+
+void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
+{
+    _rootCategoryCounts[static_cast<int>(root.category)]++;
+
+    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.fieldName);
+
+    _visited.ClearForRoot();
+    _traversalStack.clear();
+    _traversalStack.reserve(_traversalStackHighWatermark);
+
+    if (_visited.TryMarkFirstVisit(root.address) == VisitedAddressBitmap::VisitResult::CapacityExceeded)
+    {
+        _stopReason = TraversalStopReason::VisitedMemoryBudgetExhausted;
+        return;
+    }
+
+    size_t stackSizeBeforePush = _benchmarkStats != nullptr ? _traversalStack.size() : 0;
+    PushTraversalFrameIfScannable(root.address, rootNode, 1, root.classID, root.layoutSize);
+    if (_benchmarkStats != nullptr)
+    {
+        bool isScannable = _traversalStack.size() != stackSizeBeforePush;
+        if (root.category == RootCategory::StaticVariable)
+        {
+            if (isScannable)
+            {
+                _benchmarkStats->getObjectSizeStaticRootScannableCalls++;
+            }
+            else
+            {
+                _benchmarkStats->getObjectSizeStaticRootLeafCalls++;
+            }
+        }
+        else
+        {
+            if (isScannable)
+            {
+                _benchmarkStats->getObjectSizeRootScannableCalls++;
+            }
+            else
+            {
+                _benchmarkStats->getObjectSizeRootLeafCalls++;
+            }
+        }
+    }
+}
+
+void ReferenceChainTraverser::DrainTraversalStackGuarded()
+{
+    RunGuarded([this] { DrainTraversalStack(); });
+}
+
 void ReferenceChainTraverser::OnTraversalFault()
 {
-    _gcDescTrusted = false;
-    _selfTest = GCDesc::SelfTestResult::Failed;
+    // A memory access fault is a data-level event: one address happened to be
+    // unreadable. It says nothing about whether the GCDesc/MethodTable layout
+    // model is correct, so it must NOT touch _gcDescTrusted / _selfTest. Those
+    // are only tripped by the layout self-test.
+    _faultCount++;
+    if (_faultCount >= MaxFaultsPerDump)
+    {
+        _stopReason = TraversalStopReason::FaultBudgetExhausted;
+    }
+
+    // The interrupted insert may have written an address into the visited set
+    // without recording its bucket in _dirtyIndices, so the next Clear() must
+    // wipe the whole table instead of only the tracked buckets.
+    _visited.MarkPossiblyInconsistent();
+
     LogOnce(Warn,
             "Reference-chain traversal hit a memory access fault while reading object graph memory. "
-            "Disabling reference-chain traversal for the rest of the process. The class histogram is unaffected.");
+            "The faulting object is skipped and traversal continues. "
+            "See the per-dump fault count in the traversal statistics.");
+}
+
+void ReferenceChainTraverser::OnFaultGuardUnavailable()
+{
+    _stopReason = TraversalStopReason::FaultGuardUnavailable;
+    _visited.MarkPossiblyInconsistent();
+
+    LogOnce(Error,
+            "Reference-chain traversal cannot start because memory fault recovery is unavailable. "
+            "Traversal is skipped for the rest of this heap snapshot. "
+            "The class histogram is unaffected.");
+}
+
+void ReferenceChainTraverser::OnTraversalAborted()
+{
+    // Something threw rather than faulted, so retrying makes no sense: stop traversing
+    // for the rest of this dump. As with a fault, this says nothing about whether the
+    // GCDesc/MethodTable layout model is correct, so _gcDescTrusted stays untouched.
+    _stopReason = TraversalStopReason::UnexpectedException;
+
+    // The traversal was interrupted at an arbitrary point, so the visited set may hold
+    // an address whose bucket was never recorded in _dirtyIndices.
+    _visited.MarkPossiblyInconsistent();
+
+    LogOnce(Warn,
+            "Reference-chain traversal was aborted by an unexpected exception. "
+            "Traversal is skipped for the rest of this heap snapshot. "
+            "The class histogram is unaffected.");
+}
+
+void ReferenceChainTraverser::LogPendingSelfTestFailure()
+{
+    if (_selfTestFailedClassID == 0 || _selfTestFailureLogged)
+    {
+        return;
+    }
+
+    _selfTestFailureLogged = true;
+
+    if (_selfTestFailureKind == SelfTestFailureKind::ObjectHeader)
+    {
+        Log::Warn("Reference-chain object-header self-test failed for class ", GetClassName(_selfTestFailedClassID),
+                  " (classID=", _selfTestFailedClassID, "): the raw MethodTable read disagrees with GetClassFromObject. ",
+                  "Disabling reference-chain traversal for the rest of the process. ",
+                  "The class histogram is unaffected.");
+    }
+    else
+    {
+        Log::Warn("Reference-chain layout self-test failed for class ", GetClassName(_selfTestFailedClassID),
+                  " (classID=", _selfTestFailedClassID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
+                  "Disabling reference-chain traversal for the rest of the process. ",
+                  "The class histogram is unaffected.");
+    }
 }
 
 #ifdef DD_TEST
 void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
 {
-    if (!_gcDescTrusted)
+    if (!_gcDescTrusted || _stopReason != TraversalStopReason::None)
     {
         return;
     }
 
-#ifdef _WINDOWS
-    __try
+    RunGuarded([ptr] { (void)*reinterpret_cast<const volatile char*>(ptr); });
+}
+
+void ReferenceChainTraverser::Test_ThrowUnderGuard()
+{
+    RunGuarded([] { throw std::runtime_error("Test_ThrowUnderGuard"); });
+}
+#endif
+
+void ReferenceChainTraverser::RecordRootObjectSizeCall(bool isStatic, bool failedOrZero)
+{
+    if (_benchmarkStats == nullptr)
     {
-        (void)*reinterpret_cast<const volatile char*>(ptr);
+        return;
     }
-    __except (EXCEPTION_EXECUTE_HANDLER)
+
+    if (isStatic)
     {
-        OnTraversalFault();
-    }
-#else
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        (void)*reinterpret_cast<const volatile char*>(ptr);
-        t_inGuardedTraversal = 0;
+        _benchmarkStats->getObjectSizeStaticRootCalls++;
     }
     else
     {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
+        _benchmarkStats->getObjectSizeRootCalls++;
     }
-#endif
+
+    if (failedOrZero)
+    {
+        _benchmarkStats->getObjectSizeFailedOrZeroCalls++;
+    }
 }
-#endif
+
+uint64_t ReferenceChainTraverser::GetBenchmarkFirstVisitReferenceCount() const
+{
+    if (_benchmarkStats == nullptr)
+    {
+        return 0;
+    }
+
+    return _benchmarkStats->getObjectSizeFirstVisitScannableCalls +
+           _benchmarkStats->firstVisitLeafReferences +
+           _benchmarkStats->getClassFromObjectFailedCalls;
+}
+
+uint64_t ReferenceChainTraverser::GetBenchmarkEdgeCount() const
+{
+    if (_benchmarkStats == nullptr)
+    {
+        return 0;
+    }
+
+    return GetBenchmarkFirstVisitReferenceCount() +
+           _benchmarkStats->revisitReferences;
+}
 
 void ReferenceChainTraverser::LogStats() const
 {
@@ -179,48 +353,137 @@ void ReferenceChainTraverser::LogStats() const
 
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(_totalTraversalDuration).count();
 
+    const char* stopDescription = "";
+    switch (_stopReason)
+    {
+        case TraversalStopReason::FaultBudgetExhausted:
+            stopDescription = " (fault budget exhausted; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::UnexpectedException:
+            stopDescription = " (unexpected exception; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::FaultGuardUnavailable:
+            stopDescription = " (memory fault recovery unavailable; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::VisitedMemoryBudgetExhausted:
+            stopDescription = " (visited-address memory budget exhausted; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::None:
+            break;
+    }
+
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
               _objectsTraversed, " objects traversed, ",
-              "stack high watermark: ", _traversalStackHighWatermark);
+              "stack high watermark: ", _traversalStackHighWatermark, ", ",
+              "memory access faults: ", _faultCount,
+              stopDescription);
 
-    Log::Debug("  VisitedObjectSet: ",
+    Log::Debug("  VisitedAddressBitmap: ",
               _visited.Size(), " current / ",
               _visited.GetPeakEntryCount(), " peak entries, ",
-              _visited.GetBucketCount(), " buckets, ",
-              _visited.GetGrowCount(), " grows, ",
-              _visited.GetMemorySize() / 1024, " KB total (",
-              "addresses: ", _visited.GetAddressesMemorySize() / 1024, " KB, ",
-              "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
-              "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
+              _visited.GetAllocatedPageCount(), " allocated pages, ",
+              _visited.GetMemorySize() / 1024, " KB current / ",
+              _visited.GetPeakMemorySize() / 1024, " KB peak, ",
+              _visited.GetCapacityExceededCount(), " capacity failures");
 
-    if constexpr (VisitedObjectSet::AreDetailedStatsEnabled())
+    if (_benchmarkStats != nullptr)
     {
-        size_t tryInsertCalls = _visited.GetTryInsertCalls();
-        size_t tryInsertAverageProbesX100 = tryInsertCalls == 0 ? 0 : (_visited.GetTryInsertProbeCount() * 100) / tryInsertCalls;
-        Log::Debug("  VisitedObjectSet TryInsert: ",
-                  tryInsertCalls, " calls, ",
-                  _visited.GetTryInsertInsertedCount(), " inserted, ",
-                  _visited.GetTryInsertAlreadyPresentCount(), " already present, ",
-                  _visited.GetTryInsertProbeCount(), " probes, avg ",
-                  tryInsertAverageProbesX100 / 100, ".",
-                  tryInsertAverageProbesX100 % 100, ", max ",
-                  _visited.GetTryInsertMaxProbeCount());
+        uint64_t firstVisitReferences = GetBenchmarkFirstVisitReferenceCount();
+        uint64_t edgesExamined = GetBenchmarkEdgeCount();
+        const char* stopReason = "none";
+        switch (_stopReason)
+        {
+            case TraversalStopReason::FaultBudgetExhausted:
+                stopReason = "fault_budget_exhausted";
+                break;
+            case TraversalStopReason::UnexpectedException:
+                stopReason = "unexpected_exception";
+                break;
+            case TraversalStopReason::FaultGuardUnavailable:
+                stopReason = "fault_guard_unavailable";
+                break;
+            case TraversalStopReason::VisitedMemoryBudgetExhausted:
+                stopReason = "visited_memory_budget_exhausted";
+                break;
+            case TraversalStopReason::None:
+                break;
+        }
 
-        size_t markCalls = _visited.GetMarkVisitedAndStoreCalls();
-        size_t markAverageProbesX100 = markCalls == 0 ? 0 : (_visited.GetMarkVisitedAndStoreProbeCount() * 100) / markCalls;
-        Log::Debug("  VisitedObjectSet MarkVisitedAndStore: ",
-                  markCalls, " calls, ",
-                  _visited.GetMarkVisitedAndStoreInsertedCount(), " inserted, ",
-                  _visited.GetMarkVisitedAndStoreAlreadyPresentCount(), " already present, ",
-                  _visited.GetMarkVisitedAndStoreProbeCount(), " probes, avg ",
-                  markAverageProbesX100 / 100, ".",
-                  markAverageProbesX100 % 100, ", max ",
-                  _visited.GetMarkVisitedAndStoreMaxProbeCount());
-    }
-    else
-    {
-        Log::Debug("  VisitedObjectSet detailed probe stats: disabled");
+        auto treeStatistics = _tree.GetStatistics();
+        Log::Debug("Reference chain benchmark traversal: duration_ms=", durationMs,
+                   ", roots=", _rootsProcessed,
+                   ", objects=", _objectsTraversed,
+                   ", stack_capacity=", _traversalStackHighWatermark,
+                   ", faults=", _faultCount,
+                   ", stop_reason=", stopReason,
+                   ", visited_peak_entries=", _visited.GetPeakEntryCount(),
+                   ", visited_bytes=", _visited.GetPeakMemorySize(),
+                   ", visited_buckets=", 0,
+                   ", visited_grows=", 0,
+                   ", edges=", edgesExamined,
+                   ", first_visit_refs=", firstVisitReferences,
+                   ", revisit_refs=", _benchmarkStats->revisitReferences,
+                   ", get_class_first_visit=", _benchmarkStats->getClassFromObjectFirstVisitCalls,
+                   ", get_class_revisit=", 0,
+                   ", raw_class_reads=", _benchmarkStats->rawMethodTableClassReads,
+                   ", tree_nodes=", treeStatistics.nodeCount,
+                   ", visited_kind=bitmap",
+                   ", visited_pages=", _visited.GetAllocatedPageCount(),
+                   ", visited_capacity_exceeded=", _visited.GetCapacityExceededCount());
+
+        Log::Debug("Reference chain benchmark lookup stats: object_header_checks=",
+                   _objectHeaderSelfTestObjectsChecked,
+                   ", inline_vt_lookups=", _benchmarkStats->inlineVTLookupCalls,
+                   ", inline_vt_found=", _benchmarkStats->inlineVTFoundCalls,
+                   ", inline_vt_cache_hits=", _benchmarkStats->inlineVTCacheHits,
+                   ", inline_vt_cache_misses=", _benchmarkStats->inlineVTCacheMisses,
+                   ", terminal_stop_edge_skips=", _benchmarkStats->terminalStopEdgeSkips,
+                   ", visited_last_page_hits=", _visited.GetLastPageHitCount(),
+                   ", visited_page_index_lookups=", _visited.GetPageIndexLookupCount(),
+                   ", visited_page_index_probes=", _visited.GetPageIndexProbeCount());
+
+        Log::Debug("Reference chain benchmark tree fanout: leaves=", treeStatistics.leafCount,
+                   ", children_1_4=", treeStatistics.children1To4,
+                   ", children_5_8=", treeStatistics.children5To8,
+                   ", children_9_16=", treeStatistics.children9To16,
+                   ", children_17_plus=", treeStatistics.children17OrMore,
+                   ", max_children=", treeStatistics.maxChildren);
+
+        Log::Debug("Reference chain benchmark GetObjectSize2: root=", _benchmarkStats->getObjectSizeRootCalls,
+                   ", static_root=", _benchmarkStats->getObjectSizeStaticRootCalls,
+                   ", root_scannable=", _benchmarkStats->getObjectSizeRootScannableCalls,
+                   ", root_leaf=", _benchmarkStats->getObjectSizeRootLeafCalls,
+                   ", static_root_scannable=", _benchmarkStats->getObjectSizeStaticRootScannableCalls,
+                   ", static_root_leaf=", _benchmarkStats->getObjectSizeStaticRootLeafCalls,
+                   ", first_visit_scannable=", _benchmarkStats->getObjectSizeFirstVisitScannableCalls,
+                   ", first_visit_leaf=", _benchmarkStats->getObjectSizeFirstVisitLeafCalls,
+                   ", revisit=", _benchmarkStats->getObjectSizeRevisitCalls,
+                   ", failed_or_zero=", _benchmarkStats->getObjectSizeFailedOrZeroCalls);
+
+        Log::Debug("Reference chain benchmark roots: stack=", _rootCategoryCounts[static_cast<int>(RootCategory::Stack)],
+                   ", static=", _rootCategoryCounts[static_cast<int>(RootCategory::StaticVariable)],
+                   ", finalizer=", _rootCategoryCounts[static_cast<int>(RootCategory::Finalizer)],
+                   ", handle=", _rootCategoryCounts[static_cast<int>(RootCategory::Handle)],
+                   ", pinning=", _rootCategoryCounts[static_cast<int>(RootCategory::Pinning)],
+                   ", conditional_weak_table=", _rootCategoryCounts[static_cast<int>(RootCategory::ConditionalWeakTable)],
+                   ", com=", _rootCategoryCounts[static_cast<int>(RootCategory::COM)],
+                   ", other=", _rootCategoryCounts[static_cast<int>(RootCategory::Other)],
+                   ", unknown=", _rootCategoryCounts[static_cast<int>(RootCategory::Unknown)]);
+
+        for (size_t i = 0; i < RootCategoryCount; i++)
+        {
+            auto category = static_cast<RootCategory>(i);
+            const auto& work = _benchmarkStats->rootWork[i];
+            Log::Debug("Reference chain benchmark root work: category=", RootCategoryToString(category),
+                       ", roots=", _rootCategoryCounts[i],
+                       ", objects=", work.objects,
+                       ", edges=", work.edges,
+                       ", duration_ms=", work.durationNs / 1'000'000,
+                       ", max_objects=", work.maxObjects,
+                       ", max_edges=", work.maxEdges,
+                       ", max_duration_ms=", work.maxDurationNs / 1'000'000);
+        }
     }
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
@@ -233,19 +496,16 @@ void ReferenceChainTraverser::LogStats() const
     }
 }
 
-void ReferenceChainTraverser::TraverseObjectGraph(
-    uintptr_t objectAddress,
-    TypeTreeNode* currentNode,
-    uint32_t depth,
-    ClassID rootClassID,
-    SIZE_T rootObjectSize)
+void ReferenceChainTraverser::DrainTraversalStack()
 {
-    _traversalStack.clear();
-    _traversalStack.reserve(_traversalStackHighWatermark);
-
-    _visited.MarkVisitedAndStore(objectAddress, rootClassID);
-    PushTraversalFrameIfScannable(objectAddress, currentNode, depth, rootClassID, rootObjectSize);
-
+    // Accepted residual risk: this runs under the fault guard and mutates the tree
+    // via TypeTreeNode::GetOrCreateChild (which allocates child nodes and, for nodes
+    // with more than four child types, can allocate/rehash an overflow map). A fault
+    // landing during a mutation could in theory leave the tree inconsistent.
+    // In practice faults come from raw object/MethodTable reads (GCDesc slots,
+    // GetClassFromObject), never from our own allocator, so this is not observed. The
+    // airtight follow-up would be a harvest-then-process split (read slots under the
+    // guard into a pre-sized buffer, mutate the tree outside it).
     while (!_traversalStack.empty())
     {
         auto frame = _traversalStack.back();
@@ -259,7 +519,7 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         _objectsTraversed++;
 
         ClassID classID = frame.classID;
-        SIZE_T objectSize = frame.objectSize;
+        SIZE_T layoutSize = frame.layoutSize;
 
         if (!GCDesc::ContainsGCPointers(classID))
         {
@@ -273,15 +533,19 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         if (_selfTest == GCDesc::SelfTestResult::Pending && _selfTestObjectsChecked < MaxSelfTestObjects)
         {
             _selfTestObjectsChecked++;
-            GCDesc::SelfTestResult result = GCDesc::ValidateAgainstMetadata(_pCorProfilerInfo, classID, objectSize);
+            GCDesc::SelfTestResult result = GCDesc::ValidateAgainstMetadata(_pCorProfilerInfo, classID, layoutSize);
             if (result == GCDesc::SelfTestResult::Failed)
             {
                 _gcDescTrusted = false;
                 _selfTest = GCDesc::SelfTestResult::Failed;
-                Log::Warn("GCDesc reference-chain self-test failed for class ", GetClassName(classID),
-                          " (classID=", classID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
-                          "Disabling reference-chain traversal for the rest of the process. ",
-                          "The class histogram is unaffected.");
+                _selfTestFailureKind = SelfTestFailureKind::GCDescLayout;
+
+                // Only record the class here. Resolving its name takes the FrameStore
+                // lock and logging takes the logger lock; a fault while either is held
+                // would leave it held for good, because neither siglongjmp nor SEH
+                // unwinding runs destructors. LogPendingSelfTestFailure reports it from
+                // outside the guard.
+                _selfTestFailedClassID = classID;
                 return;
             }
             else if (result == GCDesc::SelfTestResult::Passed)
@@ -306,12 +570,14 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         // FAST PATH: Read positive GCDesc series directly from the MethodTable.
         // This handles both regular objects and reference arrays, matching the GC scanner.
         // Check if this type has inline VTs (slow path needed for tree attribution).
-        const InlineVTCache::InlineVTInfo* vtInfo = _inlineVTCache.GetInlineVTInfo(classID);
+        // A type met for the first time is only known from the next snapshot on: it cannot be
+        // inspected from here (see InlineVTCache::ResolvePendingTypes).
+        const InlineVTCache::InlineVTInfo* vtInfo = GetInlineVTInfoCached(classID);
 
         if (vtInfo == nullptr)
         {
             // Common case: no inline VTs. All GCDesc refs belong to direct fields.
-            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, layoutSize,
                 [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG /*offset*/)
                 {
                     if (IsValidObjectAddress(refAddr))
@@ -326,7 +592,7 @@ void ReferenceChainTraverser::TraverseObjectGraph(
             // object's GCDesc, then use InlineVTCache only to attribute refs to
             // the deepest inline VT range that owns their offset.
             AddInlineValueTypeInstances(frame.treeNode, *vtInfo);
-            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, layoutSize,
                 [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG offset)
                 {
                     if (!IsValidObjectAddress(refAddr))
@@ -361,13 +627,14 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
         return;
     }
 
-    // Stack-allocate for rank 1; heap-allocate only for multi-dimensional.
+    // Stack-allocate for rank 1; use reusable members for multi-dimensional so no
+    // vector destructor runs on this fault-guarded path (a fault unwinds without
+    // running C++ destructors). resize() may allocate, but that happens before any
+    // object-graph memory is read, and the members outlive a longjmp.
     ULONG32 dimSize1;
     int dimBound1;
     ULONG32* dimensionSizes;
     int* dimensionLowerBounds;
-    std::vector<ULONG32> dimSizesVec;
-    std::vector<int> dimBoundsVec;
     if (rank == 1)
     {
         dimensionSizes = &dimSize1;
@@ -375,10 +642,10 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     }
     else
     {
-        dimSizesVec.resize(rank);
-        dimBoundsVec.resize(rank);
-        dimensionSizes = dimSizesVec.data();
-        dimensionLowerBounds = dimBoundsVec.data();
+        _dimSizesScratch.resize(rank);
+        _dimBoundsScratch.resize(rank);
+        dimensionSizes = _dimSizesScratch.data();
+        dimensionLowerBounds = _dimBoundsScratch.data();
     }
 
     BYTE* pData = nullptr;
@@ -421,36 +688,7 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                 return;
             }
 
-            VisitedObjectSet::VisitedEntry* slot = nullptr;
-            if (_visited.TryInsert(refAddr, slot) == VisitedObjectSet::InsertResult::Inserted)
-            {
-                ClassID targetClassID = 0;
-                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddr, &targetClassID);
-                if (FAILED(hr) || targetClassID == 0)
-                {
-                    return;
-                }
-
-                SIZE_T targetSize = 0;
-                hr = _pCorProfilerInfo->GetObjectSize2(refAddr, &targetSize);
-                if (FAILED(hr) || targetSize == 0)
-                {
-                    return;
-                }
-
-                slot->classID = targetClassID;
-
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
-                childNode->AddInstance(targetSize);
-                PushTraversalFrameIfScannable(refAddr, childNode, depth + 1, targetClassID, targetSize);
-            }
-            else if (slot->classID != 0)
-            {
-                SIZE_T revisitSize = 0;
-                _pCorProfilerInfo->GetObjectSize2(refAddr, &revisitSize);
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-                childNode->AddInstance(revisitSize);
-            }
+            ProcessDiscoveredRef(refAddr, currentNode, depth);
         });
 }
 
@@ -458,11 +696,11 @@ void ReferenceChainTraverser::AddInlineValueTypeInstances(TypeTreeNode* currentN
 {
     for (const auto& field : vtInfo.fields)
     {
-        ClassID vtClassID = field.second;
+        ClassID vtClassID = field.classID;
         TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
-        vtNode->AddInstance(0);
+        vtNode->AddInstance();
 
-        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        const InlineVTCache::InlineVTInfo* nestedInfo = GetInlineVTInfoCached(vtClassID);
         if (nestedInfo != nullptr)
         {
             AddInlineValueTypeInstances(vtNode, *nestedInfo);
@@ -477,25 +715,22 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
     const InlineVTCache::InlineVTInfo& vtInfo,
     ULONG baseOffset)
 {
-    for (const auto& [vtOffset, vtClassID] : vtInfo.fields)
+    for (const auto& field : vtInfo.fields)
     {
-        ULONG vtStart = baseOffset + vtOffset;
-        ULONG fieldCount = 0;
-        ULONG vtSize = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassLayout(vtClassID, nullptr, 0, &fieldCount, &vtSize);
-        if (FAILED(hr) || vtSize == 0)
+        ULONG vtStart = baseOffset + field.offset;
+        if (vtStart < baseOffset)
         {
             continue;
         }
 
-        if (refOffset < vtStart || refOffset >= vtStart + vtSize)
+        if (refOffset < vtStart || refOffset - vtStart >= field.size)
         {
             continue;
         }
 
-        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
+        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(field.classID);
 
-        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        const InlineVTCache::InlineVTInfo* nestedInfo = GetInlineVTInfoCached(field.classID);
         if (nestedInfo != nullptr)
         {
             return GetInlineValueTypeOwner(vtNode, depth + 1, refOffset, *nestedInfo, vtStart);
@@ -507,39 +742,183 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
     return {currentNode, depth};
 }
 
+const InlineVTCache::InlineVTInfo* ReferenceChainTraverser::GetInlineVTInfoCached(ClassID classID)
+{
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->inlineVTLookupCalls++;
+    }
+
+    uint64_t hash = (static_cast<uint64_t>(classID) >> 3) * 0x9E3779B97F4A7C15ULL;
+    hash ^= hash >> 32;
+    size_t index = static_cast<size_t>(hash) & (InlineVTLookupCacheSize - 1);
+    InlineVTLookupCacheEntry& entry = _inlineVTLookupCache[index];
+    if (entry.classID == classID)
+    {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->inlineVTCacheHits++;
+            if (entry.info != nullptr)
+            {
+                _benchmarkStats->inlineVTFoundCalls++;
+            }
+        }
+        return entry.info;
+    }
+
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->inlineVTCacheMisses++;
+    }
+
+    const InlineVTCache::InlineVTInfo* info = _inlineVTCache.GetInlineVTInfoForScannableType(classID);
+    entry.info = info;
+    entry.classID = classID;
+
+    if (_benchmarkStats != nullptr && info != nullptr)
+    {
+        _benchmarkStats->inlineVTFoundCalls++;
+    }
+    return info;
+}
+
+bool ReferenceChainTraverser::TryGetClassIDForFirstVisit(uintptr_t objectAddress, ClassID& classID)
+{
+    classID = 0;
+    if (_objectHeaderSelfTest == ObjectHeaderSelfTestResult::Failed)
+    {
+        return false;
+    }
+
+    if (_objectHeaderSelfTest == ObjectHeaderSelfTestResult::Passed)
+    {
+        classID = GCDesc::GetClassIDFromObject(objectAddress);
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->rawMethodTableClassReads++;
+            if (classID == 0)
+            {
+                _benchmarkStats->getClassFromObjectFailedCalls++;
+            }
+        }
+        return classID != 0;
+    }
+
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->getClassFromObjectFirstVisitCalls++;
+    }
+
+    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(objectAddress, &classID);
+    if (FAILED(hr) || classID == 0)
+    {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->getClassFromObjectFailedCalls++;
+        }
+        return false;
+    }
+
+    ClassID rawClassID = GCDesc::GetClassIDFromObject(objectAddress);
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->rawMethodTableClassReads++;
+    }
+
+    _objectHeaderSelfTestObjectsChecked++;
+    if (rawClassID != classID)
+    {
+        _gcDescTrusted = false;
+        _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Failed;
+        _selfTestFailureKind = SelfTestFailureKind::ObjectHeader;
+        _selfTestFailedClassID = classID;
+
+        // ProcessDiscoveredRef skips the remaining references in the current object
+        // once trust is lost. Discard queued frames so this drain stops as well.
+        _traversalStack.clear();
+        return false;
+    }
+
+    if (_objectHeaderSelfTestObjectsChecked >= MaxSelfTestObjects)
+    {
+        _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Passed;
+    }
+
+    return true;
+}
+
 bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth)
 {
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    if (_visited.TryInsert(refAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
+    if (!_gcDescTrusted || (_stopReason != TraversalStopReason::None))
+    {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->terminalStopEdgeSkips++;
+        }
+        return false;
+    }
+
+    auto visit = _visited.TryMarkFirstVisit(refAddress);
+    if (visit == VisitedAddressBitmap::VisitResult::CapacityExceeded)
+    {
+        _stopReason = TraversalStopReason::VisitedMemoryBudgetExhausted;
+
+        // no need to drain the traversal stack
+        _traversalStack.clear();
+        return false;
+    }
+
+    if (visit == VisitedAddressBitmap::VisitResult::FirstVisit)
     {
         ClassID targetClassID = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
-        if (FAILED(hr) || targetClassID == 0)
+        if (!TryGetClassIDForFirstVisit(refAddress, targetClassID))
         {
             return false;
         }
-
-        SIZE_T targetSize = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &targetSize);
-        if (FAILED(hr) || targetSize == 0)
-        {
-            return false;
-        }
-
-        slot->classID = targetClassID;
 
         TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
-        childNode->AddInstance(targetSize);
-        PushTraversalFrameIfScannable(refAddress, childNode, depth + 1, targetClassID, targetSize);
+        childNode->AddInstance();
+
+        if (!GCDesc::ContainsGCPointers(targetClassID))
+        {
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->firstVisitLeafReferences++;
+            }
+            return false;
+        }
+
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->getObjectSizeFirstVisitScannableCalls++;
+        }
+
+        SIZE_T layoutSize = 0;
+        HRESULT hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &layoutSize);
+        if (FAILED(hr) || layoutSize == 0)
+        {
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->getObjectSizeFailedOrZeroCalls++;
+            }
+            return false;
+        }
+
+        PushTraversalFrameIfScannable(refAddress, childNode, depth + 1, targetClassID, layoutSize);
         return true;
     }
 
-    if (slot->classID != 0)
+    ClassID targetClassID = GCDesc::GetClassIDFromObject(refAddress);
+    if (_benchmarkStats != nullptr)
     {
-        SIZE_T revisitSize = 0;
-        _pCorProfilerInfo->GetObjectSize2(refAddress, &revisitSize);
-        TypeTreeNode* childNode = parentNode->GetOrCreateChild(slot->classID);
-        childNode->AddInstance(revisitSize);
+        _benchmarkStats->rawMethodTableClassReads++;
+        _benchmarkStats->revisitReferences++;
+    }
+
+    if (targetClassID != 0)
+    {
+        TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
+        childNode->AddInstance();
     }
 
     return false;
@@ -550,11 +929,11 @@ void ReferenceChainTraverser::PushTraversalFrameIfScannable(
     TypeTreeNode* treeNode,
     uint32_t depth,
     ClassID classID,
-    SIZE_T objectSize)
+    SIZE_T layoutSize)
 {
-    if (GCDesc::ContainsGCPointers(classID))
+    if (layoutSize != 0 && GCDesc::ContainsGCPointers(classID))
     {
-        _traversalStack.push_back({objectAddress, treeNode, depth, classID, objectSize});
+        _traversalStack.push_back({objectAddress, treeNode, depth, classID, layoutSize});
     }
 }
 
@@ -568,7 +947,7 @@ std::string ReferenceChainTraverser::GetClassName(ClassID classID) const
     return "<classID=" + std::to_string(classID) + ">";
 }
 
-bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
+bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address)
 {
     if (address == 0 || address < 0x10000)
     {

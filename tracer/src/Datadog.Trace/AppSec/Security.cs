@@ -142,7 +142,7 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        internal string? DdlibWafVersion => _waf?.Version;
+        internal string? DdlibWafVersion => _waf?.Version ?? _wafLibraryInvoker?.GetVersion();
 
         internal bool IsTrackUserEventsEnabled =>
             AppsecEnabled && CalculateIsTrackUserEventsEnabled(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
@@ -226,7 +226,7 @@ namespace Datadog.Trace.AppSec
                         if (_wafInitResult?.RuleFileVersion is { Length: > 0 })
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
-                            TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
+                            TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, WafRuleFileVersion);
                         }
 
                         RefreshRcmSubscriptions();
@@ -301,7 +301,7 @@ namespace Datadog.Trace.AppSec
 #if NETCOREAPP
                     if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
 #else
-                    if (!error.Key.ToLower().Contains("unknown matcher:"))
+                    if (error.Key.IndexOf("unknown matcher:", StringComparison.OrdinalIgnoreCase) < 0)
 #endif
                     {
                         return false;
@@ -368,7 +368,7 @@ namespace Datadog.Trace.AppSec
                 {
                     return (int)statusCodeInt;
                 }
-                else if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                else if (actionStatusCode is string statusCodeString && int.TryParseInvariant(statusCodeString, out var statusCode))
                 {
                     return statusCode;
                 }
@@ -604,7 +604,18 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
+                if (_waf is null)
+                {
+                    TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, _wafInitResult.RuleFileVersion is { Length: > 0 } ruleFileVersion ? ruleFileVersion : null);
+                }
+
                 TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                // a failed init is a config error even when the WAF reported none, e.g. an unparseable ruleset
+                if (_wafInitResult.UpdateResult.ConfigErrors == 0)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafConfigErrors(Telemetry.Metrics.MetricTags.WafConfigAction.Init);
+                }
+
                 _wafInitResult.Waf?.Dispose();
                 _configurationState.AppsecEnabled = false;
                 InitializationError = "Error initializing waf";
@@ -638,21 +649,37 @@ namespace Datadog.Trace.AppSec
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
-            else if (_rateLimiter?.Allowed(span) ?? false)
+            else if (_rateLimiter is not null)
             {
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                if (setSource)
+                if (_rateLimiter.Allowed(span))
                 {
-                    span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                    span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                    if (setSource)
+                    {
+                        span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                    }
+
+                    span.Context.TraceContext?.AppSecRequestContext.MarkTraceKept();
+                    return true;
                 }
 
-                return true;
+                span.Context.TraceContext?.AppSecRequestContext.MarkTraceRateLimited();
             }
 
             return false;
         }
 
-        internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
+        internal IContext? CreateAdditiveContext(out WafOutcome outcome, bool isRasp = false)
+        {
+            if (_waf is null)
+            {
+                // AppSec is enabled but the WAF never initialized, or an update left us without one
+                outcome = WafOutcome.WafUnavailable;
+                return null;
+            }
+
+            return _waf.CreateContext(out outcome, isRasp);
+        }
 
         private void RunShutdown(Exception? ex)
         {

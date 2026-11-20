@@ -31,6 +31,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [UsesVerify]
 public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 {
@@ -429,7 +430,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                     }
                     """),
                 1,
-                34,
+                16,
                 "quarantined_and_disabled");
         }
     }
@@ -529,6 +530,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
         var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
         var testModule = testModules[0];
+
+        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
         // Check Suite
         Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
@@ -631,7 +634,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                 // CI Library Language
-                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                 // Check Session data
                 AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
@@ -753,7 +756,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         // Smoke check telemetry
         await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
-        var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
+        var allData = agent.Telemetry.ToArray().Cast<TelemetryData>().ToArray();
 
         // we will have multiple app closing events
         TelemetryHelper.GetMetricData(allData, "endpoint_payload.requests", "endpoint:test_cycle", singleAppClosing: false)
@@ -779,6 +782,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var unresolvedCoverageReferences = new List<string>();
         var evpRequests = new List<string>();
         var skippableRequestBodies = new List<string>();
+        var settingsRequestBodies = new List<string>();
 
         InjectSession(
             out var sessionId,
@@ -828,6 +832,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
             if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
             {
+                lock (settingsRequestBodies)
+                {
+                    settingsRequestBodies.Add(e.Value.BodyInJson);
+                }
+
                 e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
                 return;
             }
@@ -849,7 +858,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                             "attributes": {
                               "suite": "{{TestSuiteName}}",
                               "name": "SimplePassTest",
-                              "_missing_line_code_coverage": false
+                              "_is_missing_line_code_coverage": false
                             }
                           }
                         ],
@@ -911,6 +920,28 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         lock (skippableRequestBodies)
         {
             receivedSkippableRequestBodies = skippableRequestBodies.ToArray();
+        }
+
+        string[] receivedSettingsRequestBodies;
+        lock (settingsRequestBodies)
+        {
+            receivedSettingsRequestBodies = settingsRequestBodies.ToArray();
+        }
+
+        receivedSettingsRequestBodies.Should().NotBeEmpty("received EVP requests: {0}", string.Join(", ", receivedEvpRequests));
+        foreach (var settingsRequestBody in receivedSettingsRequestBodies)
+        {
+            var settingsRequestAttributes = JObject.Parse(settingsRequestBody)["data"]?["attributes"];
+            settingsRequestAttributes.Should().NotBeNull("settings request body: {0}", settingsRequestBody);
+            (settingsRequestAttributes["test_level"]?.Value<string>()).Should().Be("test");
+            (settingsRequestAttributes["branch"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            var settingsConfigurations = settingsRequestAttributes["configurations"];
+            settingsConfigurations.Should().NotBeNull("settings request body: {0}", settingsRequestBody);
+            (settingsConfigurations["os.platform"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            (settingsConfigurations["os.version"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            (settingsConfigurations["os.architecture"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            (settingsConfigurations["runtime.name"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            (settingsConfigurations["runtime.version"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
         }
 
         var skippableRequestBody = receivedSkippableRequestBodies.Should().ContainSingle("received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
@@ -1384,7 +1415,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             {
                 ["suite"] = TestSuiteName,
                 ["name"] = name,
-                ["_missing_line_code_coverage"] = missingLineCodeCoverage,
+                ["_is_missing_line_code_coverage"] = missingLineCodeCoverage,
                 ["configurations"] = configurations
             }
         };

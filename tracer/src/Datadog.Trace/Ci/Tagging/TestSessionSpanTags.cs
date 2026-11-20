@@ -17,7 +17,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 {
     public TestSessionSpanTags()
     {
-        LibraryVersion = TracerConstants.AssemblyVersion;
+        LibraryVersion = TracerConstants.SemanticVersion;
 
         // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/environment-processorcount-on-windows#change-description
         LogicalCpuCount = Environment.ProcessorCount;
@@ -48,6 +48,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 
     [Tag(CommonTags.CIPipelineName)]
     public string? CIPipelineName { get; set; }
+
+    [Tag(CommonTags.CIPipelineDisplayName)]
+    public string? CIPipelineDisplayName { get; set; }
 
     [Tag(CommonTags.CIPipelineNumber)]
     public string? CIPipelineNumber { get; set; }
@@ -170,6 +173,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             CIProvider = environmentValues.Provider;
             CIPipelineId = environmentValues.PipelineId;
             CIPipelineName = environmentValues.PipelineName;
+            CIPipelineDisplayName = environmentValues.PipelineDisplayName;
             CIPipelineNumber = environmentValues.PipelineNumber;
             CIPipelineUrl = environmentValues.PipelineUrl;
             CIJobId = environmentValues.JobId;

@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -481,7 +482,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             parentSpan.Type.Should().Be(SpanTypes.Web);
             parentSpan.ResourceName.Should().Be(resourceName);
             AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
-            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, statusCode.ToString());
+            parentSpan.GetHttpStatusCode().Should().Be(statusCode);
             parentSpan.Error.Should().Be(isError);
 
             if (expectedParentSpanTags is not null)

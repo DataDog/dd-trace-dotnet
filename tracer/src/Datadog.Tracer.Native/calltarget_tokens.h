@@ -95,6 +95,8 @@ public:
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
+    bool IsRuntimeAsyncValueTypeInstanceMethod(FunctionInfo* caller);
+
     mdMethodDef GetCallTargetStateSkipMethodBodyMemberRef();
 
     HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments, FunctionInfo* caller,

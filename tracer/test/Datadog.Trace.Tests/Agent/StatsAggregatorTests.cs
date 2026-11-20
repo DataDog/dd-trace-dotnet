@@ -15,12 +15,15 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
+using MessagePack;
 using Moq;
 using Xunit;
 
@@ -130,7 +133,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task IdleFlush_StillResetsStartTimestamp()
+        public async Task IdleFlush_StillAdvancesStartAndResetsBuffer()
         {
             var api = new Mock<IApi>();
             var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
@@ -141,22 +144,39 @@ namespace Datadog.Trace.Tests.Agent
             await aggregator.Flush();
             api.Reset();
 
-            // Record the Start timestamp after the first flush (buffer was swapped, so
-            // the "current" buffer is the one that will receive new spans next).
-            var buffer = aggregator.CurrentBuffer;
-            var startAfterFirstFlush = buffer.Start;
+            var bufferAfterFirstFlush = aggregator.CurrentBuffer;
+            var startAfterFirstFlush = bufferAfterFirstFlush.Start;
 
-            // Flush with no new spans — no API call, but Reset must still run to
-            // re-align Start and prune stale keys.
+            // Flush with no new spans. The next window must still advance and the flushed
+            // buffer must still be reset so stale keys are pruned.
             await aggregator.Flush();
 
-            // The buffer has been swapped again; grab the one that was just flushed.
-            // After the second flush, the buffer that was "current" has been reset.
-            // Its Start should have been updated (re-aligned to the current 10s boundary).
-            // Because at least a few nanoseconds have elapsed, or at the very least the
-            // stale keys from the first flush should have been pruned.
-            buffer.Start.Should().BeGreaterOrEqualTo(startAfterFirstFlush);
-            buffer.Buckets.Should().BeEmpty("stale keys with zero hits should be pruned by Reset");
+            aggregator.CurrentBuffer.Start.Should().BeGreaterOrEqualTo(startAfterFirstFlush);
+            bufferAfterFirstFlush.Buckets.Should().BeEmpty("stale keys with zero hits should be pruned by Reset");
+        }
+
+        [Fact]
+        public async Task Otlp_FlushesUseContiguousTimestamps()
+        {
+            const int bucketDurationSeconds = 60;
+            var windows = new List<(long Start, long Duration)>();
+            var api = new Mock<IApi>();
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()))
+               .Callback<StatsBuffer, long, int>((buffer, duration, _) => windows.Add((buffer.Start, duration)))
+               .Returns(Task.FromResult(true));
+
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await aggregator.DisposeAsync();
+
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+
+            windows.Should().HaveCount(2);
+            windows[0].Duration.Should().BePositive();
+            windows[0].Duration.Should().BeLessThan(TimeSpan.FromSeconds(bucketDurationSeconds).ToNanoseconds());
+            windows[1].Start.Should().Be(windows[0].Start + windows[0].Duration);
         }
 
         [Fact]
@@ -547,6 +567,120 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task Otlp_UnmeasuredChildSpan_ExcludedFromStats()
+        {
+// SEMCON-1093 FR04: only service-entry (top-level) or explicitly measured (_dd.measured=1) spans
+// should generate OTLP trace metrics — unmeasured child spans must be excluded.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            // Non-top-level, non-measured child — must not produce a stats bucket
+            var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            childSpan.OperationName = "child.op";
+            childSpan.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, childSpan);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(childSpan));
+        }
+
+        [Fact]
+        public async Task Otlp_MeasuredChildSpan_IncludedInStats()
+        {
+            // FR04: spans with _dd.measured=1 should be included in OTLP mode even when non-top-level.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var measuredChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            measuredChild.OperationName = "measured.child";
+            measuredChild.SetTag(Tags.Measured, "1");
+            measuredChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, measuredChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(2);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(measuredChild));
+        }
+
+        [Fact]
+        public async Task Otlp_SpanKindEligibleChildSpan_ExcludedFromStats()
+        {
+            // FR04: span-kind-eligible (client/server) is a Datadog stats concept; for OTLP only
+            // top-level and _dd.measured=1 spans are included — span kind alone is not enough.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var clientChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            clientChild.OperationName = "http.client";
+            clientChild.SetTag(Tags.SpanKind, SpanKinds.Client);
+            clientChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, clientChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(clientChild));
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task WriteTrace_NormalizesOperationNameOnlyWhenComputingStats(bool statsEnabled, bool apmTracingEnabled)
+        {
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.StatsComputationEnabled, statsEnabled },
+                { ConfigurationKeys.StatsComputationInterval, 3600 },
+            });
+            var api = new Mock<IApi>();
+            api.SetupGet(x => x.TracesEncoding).Returns(TracesEncoding.DatadogV0_4);
+            byte[] payload = [];
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+               .Callback((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) => payload = traces.ToArray())
+               .ReturnsAsync(true);
+            var aggregator = StatsAggregator.Create(api.Object, settings, new StubDiscoveryService(), TestStatsdManager.NoOp, isOtlp: false);
+            var writer = new AgentWriter(api.Object, aggregator, TestStatsdManager.NoOp, automaticFlush: false, apmTracingEnabled: apmTracingEnabled);
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "bad-name";
+            span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual, rate: null, limiterRate: null);
+            span.SetDuration(TimeSpan.FromMilliseconds(10));
+
+            try
+            {
+                writer.WriteTrace(new SpanCollection([span]));
+                await writer.FlushTracesAsync();
+
+                var expectedName = statsEnabled && apmTracingEnabled ? "bad_name" : "bad-name";
+                MessagePackSerializer.Deserialize<MockSpan[][]>(payload).Should().ContainSingle().Which.Should().ContainSingle().Which.Name.Should().Be(expectedName);
+                if (aggregator is StatsAggregator stats)
+                {
+                    stats.CurrentBuffer.Buckets.Keys.Select(key => key.OperationName).Should().Equal(apmTracingEnabled ? ["bad_name"] : []);
+                }
+            }
+            finally
+            {
+                await writer.FlushAndCloseAsync();
+            }
+        }
+
+        [Fact]
         public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
         {
             var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
@@ -560,16 +694,13 @@ namespace Datadog.Trace.Tests.Agent
             span.ResourceName = "SELECT * FROM users WHERE id = 123";
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
-            span.SetService(string.Empty, "manual");
             span.Finish();
 
-            span.ServiceName.Should().BeEmpty();
             var traceChunk = new SpanCollection([span]);
+            traceChunk = new NormalizerTraceProcessor().Process(in traceChunk);
             var result = aggregator.ProcessTrace(ref traceChunk);
             result.Should().Be(TraceKeepState.AggregateAndExport);
             traceChunk.Count.Should().Be(1);
-            // normalized
-            span.ServiceName.Should().NotBeEmpty();
             // obfuscated
             traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
         }

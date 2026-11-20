@@ -26,6 +26,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#include "CoreLibModuleProvider.h"
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -52,6 +53,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSamplerLoop.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -188,6 +191,9 @@ void CorProfilerCallback::InitializeServices()
     _pFrameStore = std::make_unique<FrameStore>(
         _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
 
+    // must be created before the components that resolve core library types (i.e. exceptions and heap snapshot)
+    _pCoreLibModuleProvider = std::make_unique<CoreLibModuleProvider>(_pCorProfilerInfo);
+
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
@@ -305,6 +311,7 @@ void CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
+            _pCoreLibModuleProvider.get(),
             _pConfiguration.get(),
             _rawSampleTransformer.get(),
             _metricsRegistry,
@@ -399,6 +406,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
+                _pCoreLibModuleProvider.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
                 _pNativeThreadList,
@@ -613,18 +621,34 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    // Stack frames collector is shared by StackSamplerLoopManager and StackSamplerLoop
+    //  (registered separately below), so it's constructed here rather than by either of them.
+    _callstackProvider = CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize));
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration.get(), &_callstackProvider, _metricsRegistry);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration.get(),
         _metricsSender,
         _pClrLifetime.get(),
+        _pThreadsCpuManager,
+        _pStackFramesCollector.get(),
+        _metricsRegistry,
+        _pConfiguration.get());
+
+    _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration.get(),
+        _pStackFramesCollector.get(),
+        _pStackSamplerLoopManager,
         _pThreadsCpuManager,
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry,
-        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
+        _metricsRegistry);
+
+    _pStackSamplerLoopManager->SetStackSamplerLoop(_pStackSamplerLoop);
 
 #ifdef ARM64
     if (Log::IsDebugEnabled())
@@ -700,11 +724,20 @@ void CorProfilerCallback::InitializeServices()
         }
     }
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(
+    // This is temporary until we have refactored all of this.
+    // Hack: we first create the samples collector instance and populate the _pSamplesCollector pointer.
+    // ...
+    _pSamplesCollector = std::make_unique<SamplesCollector>(
         _pConfiguration.get(),
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
+
+    // Raw samples waiting in the providers. Must stay close to zero: a growing value means samples are
+    // created but never drained by the SamplesCollector, i.e. unbounded memory growth (SCP-1413).
+    _pendingSamplesMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_pending_raw_samples", [this]() {
+        return static_cast<double>(_pSamplesCollector->GetPendingSamplesCount());
+    });
 
     if (_pConfiguration->IsThreadLifetimeEnabled())
     {
@@ -798,7 +831,6 @@ void CorProfilerCallback::InitializeServices()
     }
 }
 
-
 // Stable Configuration as manual or Single Step Instrumentation heuristics are triggered so profiling can start
 void CorProfilerCallback::OnStartDelayedProfiling()
 {
@@ -809,10 +841,30 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 
     auto started = StartServices();
+
+    // Hack: ...Start samples collector last AND only if all services started correctly.
+    if (started)
+    {
+        started &= _pSamplesCollector->Start();
+    }
+
     if (!started)
     {
         Log::Error("One or multiple services failed to start after a delay. Stopping all services.");
+
+        // The callbacks (EventPipe, exceptions, thread lifetime) keep being called by the CLR and only check
+        // IsProfilerStarted() before creating samples. Make it return false *before* stopping the services:
+        // otherwise, samples would keep accumulating in the providers while the SamplesCollector is stopped.
+        // This also prevents ETW from being started (see ThreadCreated) and endpoints from being accumulated.
+        _pSsiManager->OnDelayedStartFailed();
+
+        // Note: _isServicesShutdown is deliberately NOT set here, unlike in DisposeInternal().
+        // That's a known hack/issue. Accepted for now until the refactoring @gleocadie
+        StopEventSources();
         StopServices();
+        // No need to stop the samples collector, either it failed to start either one service failed to start earlier.
+        // The application will run with the profiler disabled. Drain the samples to avoid using memory.
+        _pSamplesCollector->DrainSamples();
 
         Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler.");
     }
@@ -823,7 +875,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         // for .NET Framework, we need to start ETW communication
         if (_pEtwEventsManager != nullptr)
         {
-            StartEtwCommunication();
+            StartEtwSession();
         }
     }
 }
@@ -899,8 +951,16 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
 }
 
 
-void CorProfilerCallback::StartEtwCommunication()
+void CorProfilerCallback::StartEtwSession()
 {
+    std::lock_guard<std::mutex> lock(_etwLifetimeMutex);
+
+    // the providers are stopped: nobody would collect the samples created from ETW events
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return;
+    }
+
     if (_isETWStarted)
     {
         Log::Warn("ETW communication is already started.");
@@ -913,7 +973,6 @@ void CorProfilerCallback::StartEtwCommunication()
         return;
     }
 
-    _isETWStarted = true;
     auto success = _pEtwEventsManager->Start();
     if (!success)
     {
@@ -921,7 +980,50 @@ void CorProfilerCallback::StartEtwCommunication()
 
         _pEtwEventsManager->Stop();
         _pEtwEventsManager = nullptr;
+        return;
     }
+
+    _isETWStarted = true;
+}
+
+void CorProfilerCallback::StopEtwSession()
+{
+    std::lock_guard<std::mutex> lock(_etwLifetimeMutex);
+
+    if (!_isETWStarted || (_pEtwEventsManager == nullptr))
+    {
+        return;
+    }
+
+    _pEtwEventsManager->Stop();
+    _isETWStarted = false;
+}
+
+void CorProfilerCallback::StopEventSources()
+{
+    StopEtwSession();
+
+    StopEventPipeSession();
+}
+
+void CorProfilerCallback::StopEventPipeSession()
+{
+    std::lock_guard<std::mutex> lock(_eventPipeLifetimeMutex);
+
+    if ((_session == 0) || (_pCorProfilerInfoEvents == nullptr))
+    {
+        return;
+    }
+
+    auto hr = _pCorProfilerInfoEvents->EventPipeStopSession(_session);
+    if (SUCCEEDED(hr))
+    {
+        _session = 0;
+        return;
+    }
+
+    // Do not clear _session to give it a chance to be stopped again later (at shutdown)
+    Log::Error("Failed to stop the EventPipe session with hr=0x", std::hex, hr, std::dec, ".");
 }
 
 bool CorProfilerCallback::StartServices()
@@ -963,15 +1065,24 @@ bool CorProfilerCallback::StartServices()
 
 bool CorProfilerCallback::DisposeServices()
 {
+    // All services are stopped in reverse order of their creation.
     bool result = StopServices();
 
-    // Delete all services instances in reverse order of their creation
-    // to avoid using a deleted service...
+    // Hack: SamplesCollector is not part of the services. We must stop it last (only if started),
+    // to make sure that in normal shutdown, a last profiler is generated and sent.
+    // In case of the profiler failed to correctly start all services, the samples collector won't be started,
+    // so no last pprof will be generated and sent (in all cases, the pprof would not contains useful data)
+    if (_pSamplesCollector->IsStarted())
+    {
+        result &= _pSamplesCollector->Stop();
+    }
 
+    // Delete all services instances to avoid using a deleted service...
     _services.clear();
 
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
+    _pStackSamplerLoop = nullptr;
     _pManagedThreadList = nullptr;
     _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
@@ -1005,6 +1116,14 @@ bool CorProfilerCallback::StopServices()
     {
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
+
+        // Prevent unhelpful logs (service did not start or was stopped already)
+        if (!service->IsStarted())
+        {
+            Log::Debug(name, " was not started: nothing to stop.");
+            continue;
+        }
+
         success = service->Stop();
         LogServiceStop(success, name);
         result &= success;
@@ -1031,27 +1150,35 @@ void CorProfilerCallback::DisposeInternal()
         ProfilerEngineStatus::WriteIsProfilerEngineActive(false);
         _isInitialized.store(false);
 
-        // Don't forget to stop the CLR events session if any
-        auto* pInfo = _pCorProfilerInfoEvents;
-        if (pInfo != nullptr)
+        // Same two-phase teardown as the OnStartDelayedProfiling() failure path: event sources first,
+        // then the consumers (DisposeServices() -> StopServices() below).
+        // Both are idempotent: they might already have been stopped if the delayed start failed.
+        StopEventSources();
+
         {
-            if (_session != 0)
+            // same lock as StopEventPipeSession(): _pCorProfilerInfoEvents must not be released while
+            // a concurrent OnStartDelayedProfiling() failure path is about to use it
+            std::lock_guard<std::mutex> lock(_eventPipeLifetimeMutex);
+
+            auto* pInfo = _pCorProfilerInfoEvents;
+            if (pInfo != nullptr)
             {
-                pInfo->EventPipeStopSession(_session);
-                _session = 0;
+                pInfo->Release();
+                _pCorProfilerInfoEvents = nullptr;
             }
-
-            pInfo->Release();
-            _pCorProfilerInfoEvents = nullptr;
         }
 
-        // Do the same for .NET Framework if any
-        if (_pEtwEventsManager != nullptr)
         {
-            _pEtwEventsManager->Stop();
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
+            // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
+            // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
+            // ICorProfilerCallback method can race DisposeServices() below, or run after it and
+            // find already-destroyed service pointers.
+            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
+            _isServicesShutdown = true;
+            DisposeServices();
         }
-
-        DisposeServices();
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -1425,6 +1552,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::EffectiveCpuProfilerType,
+                            to_string(_pConfiguration->GetCpuProfilerType()));
     PrintEnvironmentVariables();
 
     _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
@@ -1567,7 +1696,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Use managed code cache
     if (_pConfiguration->UseManagedCodeCache())
     {
-        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
+        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _metricsRegistry);
         if (!_managedCodeCache->Initialize())
         {
             Log::Error("Failed to initialize managed code cache. The profiler will not run.");
@@ -1596,6 +1725,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     if (_pConfiguration->IsWaitHandleProfilingEnabled())
     {
         eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
+    if (_pConfiguration->IsHeapSnapshotEnabled())
+    {
+        // CoreLibModuleProvider is fed from ModuleLoadFinished and InlineVTCache needs it
+        // to resolve the primitive types of inline value type fields. Exception profiling
+        // asks for the same flag and is enabled by default, so this only matters when it
+        // has been turned off.
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS;
     }
 
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
@@ -1768,13 +1906,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return S_OK;
     }
 
-    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
-        _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)
-    {
-        // TODO: check we this is needed under these conditions (for example, should do nothing if disabled)
-        _pSamplesCollector->Start();
-    }
-
     // if the profiler is not enabled (either manually or via SSI), nothing is profiled
     if (!_pSsiManager->IsProfilerEnabled())
     {
@@ -1787,10 +1918,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
     {
         auto started = StartServices();
+
+        // Hack: ...Start samples collector last AND only if all services started correctly.
+        if (started)
+        {
+            started &= _pSamplesCollector->Start();
+        }
+
         if (!started)
         {
             Log::Error("One or multiple services failed to start. Stopping all services.");
             StopServices();
+
+            // No need to stop the samples collector, either it failed to start either one service failed to start earlier.
 
             Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
             return E_FAIL;
@@ -1819,6 +1959,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
+    // (StopServices() will also call Stop() on both of these again later, in the correct reverse-of-
+    // registration order; both are one-shot services, so those later calls are guaranteed no-ops.)
+    _pStackSamplerLoop->Stop();
     _pStackSamplerLoopManager->Stop();
 
 
@@ -1833,9 +1976,6 @@ if (_pCpuProfiler != nullptr)
     LogServiceStop(success, _pCpuProfiler->GetName());
 }
 #endif
-    // TODO: maybe move the following 2 lines AFTER stopping the providers
-    // --> to ensure that the last samples are collected
-    _pSamplesCollector->Stop();
 
     _pSsiManager->ProcessEnd();
 
@@ -1981,6 +2121,18 @@ if (_pCpuProfiler != nullptr)
 
         Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
         Log::Info("==============================================");
+
+        if (Log::IsDebugEnabled())
+        {
+            // This is mainly for tests where no profile is sent (SSI + failing service)
+            // We want to know what the metrics at shutdow to check if there is anything wrong (ex: pending samples)
+            Log::Debug("=== Profiler Metrics at Shutdown ===");
+            for (auto const& [name, value] : _metricsRegistry.Collect())
+            {
+                Log::Debug("  ", name, ": ", value);
+            }
+            Log::Debug("====================================");
+        }
     } // IsMemoryFootprintEnabled
 
     // DisposeInternal() already respects the _isInitialized flag.
@@ -1997,6 +2149,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    // Previously unguarded entirely (unlike its siblings below, which at least had the racy
+    // _isInitialized check) - _pRuntimeIdStore is a _services-managed pointer DisposeServices()
+    // can free concurrently. See EngineActiveGuard.h.
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return S_OK;
+    }
+
     _pAppDomainStore->Register(appDomainId);
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
@@ -2045,9 +2211,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2058,6 +2224,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         GetFullFrameworkVersion(moduleId);
     }
 #endif
+
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return S_OK;
+    }
+
+    // must be done first: the other consumers rely on the core library module id being set
+    if (_pCoreLibModuleProvider != nullptr)
+    {
+        _pCoreLibModuleProvider->OnModuleLoaded(moduleId);
+    }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -2074,6 +2251,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID moduleId)
 {
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        // Notified here rather than from ModuleUnloadFinished so that the ClassIDs of the
+        // module stop being used before the runtime starts freeing what they point to.
+        _pHeapSnapshotManager->OnModuleUnloaded();
+    }
+
     return S_OK;
 }
 
@@ -2123,9 +2307,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
-        _managedCodeCache->AddFunction(functionId);
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
     return S_OK;
 }
@@ -2154,9 +2338,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadCreated(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2165,7 +2349,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     //       -> Look at OnStartDelayedProfiling()
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
-        StartEtwCommunication();
+        StartEtwSession();
     }
 
     if (_pThreadLifetimeProvider != nullptr)
@@ -2208,9 +2392,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2244,7 +2428,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         _systemCallsShield->Unregister();
     }
 
-    if (_pCpuProfiler != nullptr)
+    // pThreadInfo is only set when the thread was still in the managed thread list: there is no timer
+    // to delete otherwise, and UnregisterThread would dereference a null pointer.
+    if (_pCpuProfiler != nullptr && pThreadInfo != nullptr)
     {
         _pCpuProfiler->UnregisterThread(pThreadInfo);
     }
@@ -2257,9 +2443,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    // Prevent from adding new threads in managed thread lists to avoid leaking memory/handles.
+    // ThreadDestroyed is not changed to allow cleaning thread metadata.
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
         return S_OK;
     }
 
@@ -2368,9 +2561,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2480,7 +2673,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::MovedReferences(ULONG cMovedObjec
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectAllocated(ObjectID objectId, ClassID classId)
 {
-    if (_pAllocationsRecorder != nullptr)
+    // the recorded allocations are serialized by the (stopped) SamplesCollector: don't accumulate them anymore
+    if (_pAllocationsRecorder != nullptr && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         _pAllocationsRecorder->OnObjectAllocated(objectId, classId);
     }
@@ -2505,9 +2699,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2666,9 +2860,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::GetReJITParameters(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
-        _managedCodeCache->AddFunction(functionId);
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
 
     return S_OK;
@@ -2711,9 +2905,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
-        _managedCodeCache->AddFunction(functionId);
+        // The CLR calls this callback (and not JITCompilationFinished) for every
+        // dynamic method, so no need to ask it if the function is dynamic or not.
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ true);
     }
     return S_OK;
 }
@@ -2757,6 +2953,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
 {
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return S_OK;
+    }
+
     if (_pCorProfilerInfoEvents == nullptr)
     {
         return S_OK;
@@ -2771,5 +2972,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
     }
 
     Log::Debug("Event pipe provider: ", shared::ToString(providerName));
+
+    if (_pEventPipeEventsManager != nullptr)
+    {
+        _pEventPipeEventsManager->OnProviderCreated(provider);
+    }
+
     return S_OK;
 }

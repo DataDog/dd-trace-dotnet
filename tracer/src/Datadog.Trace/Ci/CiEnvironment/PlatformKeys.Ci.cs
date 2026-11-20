@@ -236,6 +236,7 @@ internal static partial class PlatformKeys
             public const string Tag = "BUILDKITE_TAG";
             public const string BuildCheckoutPath = "BUILDKITE_BUILD_CHECKOUT_PATH";
             public const string BuildNumber = "BUILDKITE_BUILD_NUMBER";
+            public const string PipelineName = "BUILDKITE_PIPELINE_NAME";
             public const string PipelineSlug = "BUILDKITE_PIPELINE_SLUG";
             public const string BuildUrl = "BUILDKITE_BUILD_URL";
             public const string Message = "BUILDKITE_MESSAGE";

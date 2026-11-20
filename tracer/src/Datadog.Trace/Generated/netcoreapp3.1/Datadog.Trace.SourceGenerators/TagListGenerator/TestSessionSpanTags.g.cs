@@ -41,6 +41,9 @@ namespace Datadog.Trace.Ci.Tagging
         // CIPipelineNameBytes = MessagePack.Serialize("ci.pipeline.name");
         private static ReadOnlySpan<byte> CIPipelineNameBytes => [176, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101];
 
+        // CIPipelineDisplayNameBytes = MessagePack.Serialize("ci.pipeline.display_name");
+        private static ReadOnlySpan<byte> CIPipelineDisplayNameBytes => [184, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 100, 105, 115, 112, 108, 97, 121, 95, 110, 97, 109, 101];
+
         // CIPipelineNumberBytes = MessagePack.Serialize("ci.pipeline.number");
         private static ReadOnlySpan<byte> CIPipelineNumberBytes => [178, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114];
 
@@ -164,6 +167,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "ci.provider.name" => CIProvider,
                 "ci.pipeline.id" => CIPipelineId,
                 "ci.pipeline.name" => CIPipelineName,
+                "ci.pipeline.display_name" => CIPipelineDisplayName,
                 "ci.pipeline.number" => CIPipelineNumber,
                 "ci.pipeline.url" => CIPipelineUrl,
                 "ci.job.url" => CIJobUrl,
@@ -229,6 +233,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "ci.pipeline.name": 
                     CIPipelineName = value;
+                    break;
+                case "ci.pipeline.display_name": 
+                    CIPipelineDisplayName = value;
                     break;
                 case "ci.pipeline.number": 
                     CIPipelineNumber = value;
@@ -350,7 +357,7 @@ namespace Datadog.Trace.Ci.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Command is not null)
             {
@@ -390,6 +397,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (CIPipelineName is not null)
             {
                 processor.Process(new TagItem<string>("ci.pipeline.name", CIPipelineName, CIPipelineNameBytes));
+            }
+
+            if (CIPipelineDisplayName is not null)
+            {
+                processor.Process(new TagItem<string>("ci.pipeline.display_name", CIPipelineDisplayName, CIPipelineDisplayNameBytes));
             }
 
             if (CIPipelineNumber is not null)
@@ -577,7 +589,7 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("git.commit.head.message", GitHeadCommitMessage, GitHeadCommitMessageBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -635,6 +647,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("ci.pipeline.name (tag):")
                   .Append(CIPipelineName)
+                  .Append(',');
+            }
+
+            if (CIPipelineDisplayName is not null)
+            {
+                sb.Append("ci.pipeline.display_name (tag):")
+                  .Append(CIPipelineDisplayName)
                   .Append(',');
             }
 

@@ -7,12 +7,19 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.WafEncoding;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal sealed class Result : IResult
     {
-        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false, bool truncated = false)
+        /// <param name="returnStruct">the WAF result to decode</param>
+        /// <param name="returnCode">the WAF return code</param>
+        /// <param name="totals">the totals of the runs of the same scope of the request, which already include this
+        /// run's wall clock; the duration reported by the WAF for this run is added to them</param>
+        /// <param name="isRasp">whether the run is a RASP run</param>
+        /// <param name="truncation">what the encoder truncated in the input</param>
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref WafRunTotals totals, bool isRasp = false, in TruncationInfo truncation = default)
         {
             ReturnCode = returnCode;
 
@@ -24,13 +31,18 @@ namespace Datadog.Trace.AppSec.Waf
             returnValues.TryGetValue("actions", out var actionsObj);
             returnValues.TryGetValue("attributes", out var attributesObj);
 
-            if (durationObj is ulong durationNanos and > 0)
+            if (durationObj is ulong durationNanos)
             {
-                aggregatedTotalRuntime += durationNanos / 1000; // Convert from nanoseconds to microseconds
+                totals.AddDuration(durationNanos);
             }
 
             Actions = (Dictionary<string, object?>?)actionsObj;
-            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+
+            // Since libddwaf 2.x a run that only produces attributes or actions also returns DDWAF_MATCH,
+            // so the return code alone is no longer enough: requiring events keeps this to actual rule
+            // matches and stops API Security runs from being reported as security results.
+            var events = eventsObj as IReadOnlyCollection<object>;
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match && events is { Count: > 0 };
 
             if (keepObj is bool keepValue)
             {
@@ -48,9 +60,9 @@ namespace Datadog.Trace.AppSec.Waf
                 BuildDerivatives(attributesValue);
             }
 
-            if (ShouldReportSecurityResult && eventsObj is IReadOnlyCollection<object> eventsValue)
+            if (ShouldReportSecurityResult)
             {
-                Data = eventsValue;
+                Data = events;
             }
 
             if (Actions is { Count: > 0 })
@@ -75,13 +87,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (isRasp)
             {
-                AggregatedTotalRuntimeRasp = aggregatedTotalRuntime;
-                AggregatedTotalRuntimeWithBindingsRasp = aggregatedTotalRuntimeWithBindings;
+                AggregatedTotalRuntimeRasp = totals.DurationMicroseconds;
+                AggregatedTotalRuntimeWithBindingsRasp = totals.DurationWithBindingsMicroseconds;
             }
             else
             {
-                AggregatedTotalRuntime = aggregatedTotalRuntime;
-                AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+                AggregatedTotalRuntime = totals.DurationMicroseconds;
+                AggregatedTotalRuntimeWithBindings = totals.DurationWithBindingsMicroseconds;
             }
 
             if (timeoutObj is bool timeoutValue and true)
@@ -89,7 +101,7 @@ namespace Datadog.Trace.AppSec.Waf
                 Timeout = timeoutValue;
             }
 
-            Truncated = truncated;
+            Truncation = truncation;
         }
 
         public WafReturnCode ReturnCode { get; }
@@ -109,22 +121,22 @@ namespace Datadog.Trace.AppSec.Waf
         public bool HasKeep { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds
+        /// Gets the total runtime of the non-RASP runs of the request so far, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntime { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds with parameter passing to the waf
+        /// Gets the total runtime of the non-RASP runs of the request so far, including the bindings, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds for RASP calls
+        /// Gets the total runtime of the RASP runs of the request so far, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeRasp { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds with parameter passing to the waf for RASP calls
+        /// Gets the total runtime of the RASP runs of the request so far, including the bindings, in microseconds
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
 
@@ -145,7 +157,9 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool Timeout { get; }
 
-        public bool Truncated { get; }
+        public bool Truncated => Truncation.Truncated;
+
+        public TruncationInfo Truncation { get; }
 
         private void BuildDerivatives(Dictionary<string, object?> derivatives)
         {
@@ -161,7 +175,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, derivative.Value);
+                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, WafAttributeRedaction.Redact(derivative.Key, derivative.Value));
                 }
             }
         }

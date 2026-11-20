@@ -211,32 +211,47 @@ internal enum Count
     [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
 #endregion
-#region Live Debugger Namespace
+#region Debugger Namespace
 
     /// <summary>
     /// The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state and the signal that triggered entry.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureTransitions,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.Debugger)] DebuggerMemoryPressureTransitions,
 
     /// <summary>
     /// The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.Debugger)] DebuggerMemoryPressureDisabled,
 
     /// <summary>
     /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by memory load percentage bucket at the transition.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.Debugger)] DebuggerMemoryPressureMemoryUsagePct,
 
     /// <summary>
     /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by GC activity bucket at the transition.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGcActivity,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.Debugger)] DebuggerMemoryPressureGcActivity,
 
     /// <summary>
     /// Count of Dynamic Instrumentation high-memory-pressure periods, incremented once on exit and tagged by duration bucket.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.Debugger)] DebuggerMemoryPressureDuration,
+
+    /// <summary>
+    /// The number of debugger events skipped before capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsSkippedReason, MetricTags.DebuggerEventType>("events.skipped", isCommon: true, NS.Debugger)] DebuggerEventsSkipped,
+
+    /// <summary>
+    /// The number of debugger events dropped after capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerCaptureEventType>("events.dropped", isCommon: true, NS.Debugger)] DebuggerEventsDropped,
+
+    /// <summary>
+    /// The number of incomplete debugger captures, tagged by event type and reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerCaptureEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.Debugger)] DebuggerCaptureIncomplete,
 #endregion
 #region AppSec Namespace
 
@@ -251,6 +266,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
+    /// The number of errors the waf reported while loading a configuration, at init or on update
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafConfigAction>("waf.config_errors", isCommon: true, NS.ASM)] WafConfigErrors,
+
+    /// <summary>
     /// Requests analyzed by ddwaf
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
@@ -259,6 +279,11 @@ internal enum Count
     /// Waf inputs that have been truncated
     /// </summary>
     [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
+
+    /// <summary>
+    /// Number of errors returned by a call to ddwaf_run, tagged by the ddwaf_run return code
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafError>("waf.error", isCommon: true, NS.ASM)] WafError,
 
     /// <summary>
     /// Counts the number of times a rule type is evaluated.
@@ -276,6 +301,17 @@ internal enum Count
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
 
     /// <summary>
+    /// Counts the number of times the WAF returned an error when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.RaspError>("rasp.error", isCommon: true, NS.ASM)] RaspError,
+
+    /// <summary>
+    /// Counts the number of times the evaluation of a RASP instrumentation had to be skipped
+    /// because of the request lifecycle, tagged by the rule type and the reason.
+    /// </summary>
+    [TelemetryMetric<RaspRuleTypeSkipped>("rasp.rule.skipped", isCommon: true, NS.ASM)] RaspRuleSkipped,
+
+    /// <summary>
     /// Counts the number of times a user id hasn't been found  as part of the login success, login failure or signup event
     /// </summary>
     [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
@@ -289,6 +325,21 @@ internal enum Count
     /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
     /// </summary>
     [TelemetryMetric<UserEventSdk>("sdk.event", isCommon: true, NS.ASM)] UserEventSdk,
+
+    /// <summary>
+    /// Counts the requests for which API Security could not get the route, so could not consider them for schema extraction
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.missing_route", isCommon: true, NS.ASM)] ApiSecMissingRoute,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which at least one schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.schema", isCommon: true, NS.ASM)] ApiSecRequestSchema,
+
+    /// <summary>
+    /// Counts the requests sampled by API Security for which no schema was extracted
+    /// </summary>
+    [TelemetryMetric<MetricTags.ApiSecFramework>("api_security.request.no_schema", isCommon: true, NS.ASM)] ApiSecRequestNoSchema,
 
 #endregion
 #region Iast Namespace
@@ -318,4 +369,25 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.IastVulnerabilityType>("suppressed.vulnerabilities", isCommon: true, NS.Iast)] IastSuppressedVulnerabilities,
     #endregion
+
+#region Feature Flags (Tracers Namespace)
+
+    /// <summary>Evaluations dropped locally, not aggregate bucket counts.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationDropReason>("flagevaluation.rows.dropped", isCommon: true)] FlagEvaluationRowsDropped,
+
+    /// <summary>Evaluations whose telemetry was degraded to omit identity and context.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationDegradeReason>("flagevaluation.rows.degraded", isCommon: true)] FlagEvaluationRowsDegraded,
+
+    /// <summary>Additional payloads created to respect the uncompressed payload limit.</summary>
+    [TelemetryMetric("flagevaluation.payload.splits", isCommon: true)] FlagEvaluationPayloadSplits,
+
+    /// <summary>Evaluations with context omissions, counted once per fixed reason.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationContextReason>("flagevaluation.context.truncated", isCommon: true)] FlagEvaluationContextTruncated,
+
+    /// <summary>Evaluations with an invalid targeting key omitted from telemetry.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationTargetingReason>("flagevaluation.targeting_key.omitted", isCommon: true)] FlagEvaluationTargetingKeyOmitted,
+
+    /// <summary>Unexpected hook errors isolated from customer evaluations.</summary>
+    [TelemetryMetric("flagevaluation.hook.errors", isCommon: true)] FlagEvaluationHookErrors,
+#endregion
 }

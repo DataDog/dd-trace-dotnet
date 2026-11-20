@@ -81,8 +81,29 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
             var securityCoordinator = TryGet(security, span);
-            var result = securityCoordinator.Value.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.Value.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GivenAWafRunThatFailsToBind_WhenTheRequestEnds_ThenWafRequestsReportsAWafError()
+        {
+            // reading the route data throws, inside the try of RunWaf and before the WAF runs
+            var contextMoq = new Mock<HttpContext>();
+            contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
+            var traceContext = new TraceContext(new EmptyDatadogTracer());
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+            var waf = CreateWaf().Waf;
+            waf.Should().NotBeNull();
+            var security = new AppSec.Security(waf: waf);
+            var securityCoordinator = Get(security, span, new HttpTransport(contextMoq.Object));
+
+            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } });
+
+            result.Should().BeNull();
+            var metrics = await WafRequestsTelemetryTests.CloseAsync(traceContext.AppSecRequestContext);
+            metrics.Should().ContainSingle(m => m.Name == "waf.requests").Which.Tags.Should().Contain("waf_error:true");
         }
 
         [Fact]
@@ -112,8 +133,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             securityCoordinator.HasValue.Should().BeTrue();
 
             var nativeResult = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
-            ulong duration = 0;
-            var result = new Result(ref nativeResult, WafReturnCode.Match, ref duration, 0);
+            var totals = default(WafRunTotals);
+            var result = new Result(ref nativeResult, WafReturnCode.Match, ref totals);
             securityCoordinator.Value.Reporter.TryReport(result, true);
 
             rootTestScope.Span.Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");
@@ -137,7 +158,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             using var security = new AppSec.Security();
             var securityCoordinator = SecurityCoordinator.Get(security, rootTestScope.Span, new HttpTransport(contextMoq.Object));
-            var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().BeNull();
         }
 
@@ -160,7 +181,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
             var securityCoordinator = Get(security, span, httpTransport);
-            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().NotBeNull();
         }
 #endif

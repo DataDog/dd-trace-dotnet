@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace - Putting this in system so we can do simple drop-in replacement
@@ -13,10 +14,33 @@ namespace System;
 
 /// <summary>
 /// Provides some simple wrappers around string operations, primarily to provide nullable annotations for frameworks
-/// that don't support them i.e. .NET FX, .NET Standard 2.0.
+/// that don't support them i.e. .NET FX, .NET Standard 2.0. Also polyfills the string char overloads
+/// (<c>StartsWith(char)</c> and <c>EndsWith(char)</c>) on those frameworks.
 /// </summary>
-internal static class StringUtil
+internal static partial class StringUtil
 {
+#if !NETCOREAPP
+    // Polyfills for the string char overloads added in .NET Core 2.0, so callers can use them on every
+    // target framework. On .NET Core the built-in overloads are used instead.
+
+    extension(string value)
+    {
+        /// <summary>
+        /// Polyfill for <c>string.StartsWith(char)</c> on .NET Framework and .NET Standard 2.0.
+        /// </summary>
+        /// <param name="c">The character to compare</param>
+        /// <returns>true if the string starts with <paramref name="c"/>; otherwise, false.</returns>
+        public bool StartsWith(char c) => value.Length != 0 && value[0] == c;
+
+        /// <summary>
+        /// Polyfill for <c>string.EndsWith(char)</c> on .NET Framework and .NET Standard 2.0.
+        /// </summary>
+        /// <param name="c">The character to compare</param>
+        /// <returns>true if the string ends with <paramref name="c"/>; otherwise, false.</returns>
+        public bool EndsWith(char c) => value.Length != 0 && value[value.Length - 1] == c;
+    }
+#endif
+
     /// <summary>
     /// Indicates whether the specified string is null or an empty string ("").
     /// A nullable-annotation wrapper for <see cref="string.IsNullOrEmpty"/>
@@ -38,4 +62,64 @@ internal static class StringUtil
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNullOrWhiteSpace([NotNullWhen(false)] string? value)
         => string.IsNullOrWhiteSpace(value);
+
+#if NETFRAMEWORK
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToUpperInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToUpperInvariant(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || char.IsBetween(digit, 'a', 'z'))
+            {
+                // Note: we don't call string.ToUpperInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToUpper(value);
+            }
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToLowerInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToLowerInvariant(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || char.IsBetween(digit, 'A', 'Z'))
+            {
+                // Note: we don't call string.ToLowerInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToLower(value);
+            }
+        }
+
+        return value;
+    }
+#else
+    [return: NotNullIfNotNull(nameof(value))]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string? ToUpperInvariant(string? value)
+        => value?.ToUpperInvariant();
+
+    [return: NotNullIfNotNull(nameof(value))]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string? ToLowerInvariant(string? value)
+        => value?.ToLowerInvariant();
+#endif
 }

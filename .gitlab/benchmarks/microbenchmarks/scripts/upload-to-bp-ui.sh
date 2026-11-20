@@ -30,14 +30,15 @@ upload_one() {
 
     local response status_code response_body curl_exit=0
     response=$(curl --retry 3 --retry-all-errors --retry-max-time 300 \
-        -s -w "\n%{http_code}" \
+        --fail-with-body -s -w "\n%{http_code}" \
         --form file=@"$file" \
         "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}") || curl_exit=$?
 
     status_code=$(echo "$response" | tail -n1)
     response_body=$(echo "$response" | head -n-1)
 
-    if [ $curl_exit -ne 0 ]; then
+    # --fail-with-body: an HTTP error exits 22 but still gives us the status code and body below
+    if [ $curl_exit -ne 0 ] && [ $curl_exit -ne 22 ]; then
         echo "WARNING: curl failed (exit $curl_exit) while uploading $basename"
         echo "fail" > "$result_file"
         return

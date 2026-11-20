@@ -64,6 +64,45 @@ public class PathwayContextEncoderTests
         decoded.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("AAAAAAAABBAAAAAAAAAAAAAAAAA=", 0, 0)]
+    [InlineData("AAAAAAAABBAC0K+r/vliAAAAAAA=", 1_000_000, 1_700_000_001_000_000_000)]
+    [InlineData("AAAAAAAABBCAgICACNCvq/75YgA=", 1_073_741_824_000_000, 1_700_000_001_000_000_000)]
+    public void DecoderAcceptsNodeJsPadding(string base64, long pathwayStartNs, long edgeStartNs)
+    {
+        // Node.js pads these 10-, 15-, and 19-byte encodings to 20 bytes.
+        var bytes = Convert.FromBase64String(base64);
+        var expected = new PathwayContext(new PathwayHash(0x1004000000000000), pathwayStartNs, edgeStartNs);
+
+        PathwayContextEncoder.Decode(bytes).Should().Be(expected);
+#if NETCOREAPP3_1_OR_GREATER
+        PathwayContextEncoder.Decode(bytes.AsSpan()).Should().Be(expected);
+#endif
+    }
+
+    [Theory]
+    [InlineData(11, -1)]
+    [InlineData(11, 10)]
+    [InlineData(20, 19)]
+    [InlineData(27, 26)]
+    public void DecoderIgnoresTrailingBytes(int byteCount, int nonZeroOffset)
+    {
+        // Preserve the shared decoder's existing behavior. AWS encoding-layer validation
+        // must not change which binary pathways other integrations can decode.
+        var bytes = new byte[byteCount];
+        if (nonZeroOffset >= 0)
+        {
+            bytes[nonZeroOffset] = 1;
+        }
+
+        var expected = new PathwayContext(new PathwayHash(0), 0, 0);
+
+        PathwayContextEncoder.Decode(bytes).Should().Be(expected);
+#if NETCOREAPP3_1_OR_GREATER
+        PathwayContextEncoder.Decode(bytes.AsSpan()).Should().Be(expected);
+#endif
+    }
+
     [Fact]
     public void DecoderFailure_InvalidEdgeBytes()
     {

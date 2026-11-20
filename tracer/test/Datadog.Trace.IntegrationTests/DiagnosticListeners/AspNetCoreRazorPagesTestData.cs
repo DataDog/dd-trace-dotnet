@@ -37,7 +37,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, "GET BadHttpRequest", EmptyTags() },
             // The below is the ideal behaviour, but we can't achieve that currently
             // { $"{ReExecuteHandlerPrefix}/Error", 500, true, "GET Error", EmptyTags() },
-            // { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
+            // { $"{ReExecuteHandlerPrefix}/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, "GET BadHttpRequest", EmptyTags() },
         };
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/Error", 500, true, $"GET {ExceptionPagePrefix}/error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 2, null, ConventionalChildTags(page: "BadHttpRequest"), null, null },
             { $"{ReExecuteHandlerPrefix}/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/error", ConventionalParentTags(page: "Error"), 3, null, ConventionalChildTags(page: "Error"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
-            { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 3, null, ConventionalChildTags(page: "BadHttpRequest"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
+            { $"{ReExecuteHandlerPrefix}/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, $"GET {ReExecuteHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 3, null, ConventionalChildTags(page: "BadHttpRequest"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/", ConventionalChildTags("Index", route: string.Empty), null, null },
         };
 
@@ -94,7 +94,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/Error", 500, true, $"GET {ExceptionPagePrefix}/error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 2, null, ConventionalChildTags(page: "BadHttpRequest"), null, null },
             { $"{ReExecuteHandlerPrefix}/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/error", ConventionalParentTags(page: "Error"), 3, null, ConventionalChildTags(page: "Error"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
-            { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 3, null, ConventionalChildTags(page: "BadHttpRequest"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
+            { $"{ReExecuteHandlerPrefix}/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, $"GET {ReExecuteHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 3, null, ConventionalChildTags(page: "BadHttpRequest"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/", ConventionalChildTags("Index", route: string.Empty), null, null },
         };
 

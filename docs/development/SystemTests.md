@@ -8,21 +8,17 @@
 
 ## How to run against a specific system-tests branch
 
-### Editing ultimate-pipeline.yaml
+The `system_tests` stage clones `DataDog/system-tests` at the branch or tag name in the
+`system_tests_branch` queue-time variable, falling back to `main` when it isn't set. To run
+against a system-tests feature branch:
 
-> TODO - we could / should improve this
+1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
+2. Click `Run Pipeline`, and select your dd-trace-dotnet branch
+3. Click `Variables`, and set `system_tests_branch` to the system-tests branch or tag name
+4. Select `Stages To Run`, and select `build_linux`, `package_linux` and `system_tests` to avoid using excessive resources
 
-There is no pipeline parameter to override which system-tests branch is cloned. To test against a specific system-tests branch from the dd-trace-dotnet CI pipeline, modify the two `git clone` commands in `.azure-pipelines/ultimate-pipeline.yml`:
-
-```yaml
-# original runs against default system-tests branch
-- script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
-
-# To use a specific branch on system-tests
-- script: git $(GIT_RETRY_CONFIG) clone --depth 1 -b <SYSTEM_TESTS_BRANCH_HERE> https://github.com/DataDog/system-tests.git
-```
-
-There are two clone steps to update recommended to search for `system-tests.git`. **Remember to revert this change before merging your PR.**
+`system_tests_branch` accepts a branch or tag name, not a commit SHA. No source edit is
+needed, and there is nothing to revert before merging.
 
 
 ### Building a Docker image for a PR branch (label-based)

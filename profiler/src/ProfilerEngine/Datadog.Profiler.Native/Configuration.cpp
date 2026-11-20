@@ -35,6 +35,20 @@ CpuProfilerType const Configuration::DefaultCpuProfilerType =
 #endif
 std::chrono::minutes const Configuration::DefaultDevHeapSnapshotInterval = 1min;
 std::chrono::minutes const Configuration::DefaultProdHeapSnapshotInterval = 5min;
+std::chrono::milliseconds const Configuration::DefaultLibrariesInfoCacheStartTimeout =
+#if defined(DD_SANITIZERS)
+    // Sanitizers instrument every allocation and memory access, so populating the
+    // cache takes considerably longer than in a regular build.
+    10s;
+#else
+    2s;
+#endif
+std::chrono::milliseconds const Configuration::DefaultWatcherStartTimeout =
+#if defined(DD_SANITIZERS)
+    10s;
+#else
+    2s;
+#endif
 
 Configuration::Configuration()
 {
@@ -49,6 +63,7 @@ Configuration::Configuration()
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false, true);
     _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true, true);
+    _isGcLifecycleEventsProcessingSkipped = GetEnvironmentValue(EnvironmentVariables::GcLifecycleEventsSkipProcessing, false);
     _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false, true);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -118,7 +133,7 @@ Configuration::Configuration()
         );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+    _cpuProfilerType = ExtractCpuProfilerType(_isCpuProfilingEnabled, OpSysTools::GetAvailableSignalQueueSlots());
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
@@ -126,6 +141,8 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
     _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
+    _librariesInfoCacheStartTimeout = ExtractLibrariesInfoCacheStartTimeout();
+    _watcherStartTimeout = ExtractWatcherStartTimeout();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -215,6 +232,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 bool Configuration::IsGarbageCollectionProfilingEnabled() const
 {
     return _isGarbageCollectionProfilingEnabled;
+}
+
+bool Configuration::IsGcLifecycleEventsProcessingSkipped() const
+{
+    return _isGcLifecycleEventsProcessingSkipped;
 }
 
 bool Configuration::IsGcThreadsCpuTimeEnabled() const
@@ -517,6 +539,42 @@ std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono
     // for CI-Visibility we allow it to be less
     auto interval = GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
     return std::max(interval, minimum);
+}
+
+CpuProfilerType Configuration::ExtractCpuProfilerType(bool isCpuProfilingEnabled, std::optional<std::uint64_t> availableSignalQueueSlots)
+{
+    auto cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+
+#ifdef LINUX
+    // Every timer_create timer holds a signal queue slot for its whole lifetime, and the kernel
+    // accounts those slots per real user id: the budget is shared with all the other processes
+    // running as the same user. Without enough headroom for this process' threads, timer creation
+    // fails and those threads silently produce no CPU sample. The manual profiler is a safe
+    // destination because it relies on a standard signal, which the kernel keeps delivering (minus
+    // its siginfo) once the queue is full.
+    if (isCpuProfilingEnabled && cpuProfilerType == CpuProfilerType::TimerCreate)
+    {
+        if (!availableSignalQueueSlots.has_value())
+        {
+            Log::Warn("Unable to determine how many signal queue slots are available (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
+
+        if (availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots)
+        {
+            Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
+                      MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
+    }
+#else
+    (void)isCpuProfilingEnabled;
+    (void)availableSignalQueueSlots;
+#endif
+
+    return cpuProfilerType;
 }
 
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
@@ -937,6 +995,49 @@ std::chrono::seconds Configuration::GetTestHeapSnapshotInterval() const
     return _testHeapSnapshotInterval;
 }
 
+std::chrono::milliseconds Configuration::ExtractLibrariesInfoCacheStartTimeout() const
+{
+    // A negative value parses into a negative duration, and zero would make the wait
+    // return immediately, silently disabling the cache: neither is ever intended.
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::LibrariesInfoCacheStartTimeout, DefaultLibrariesInfoCacheStartTimeout);
+    if (timeout <= 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::LibrariesInfoCacheStartTimeout,
+                  " env var must be strictly positive but is set to '", timeout,
+                  "' - '", DefaultLibrariesInfoCacheStartTimeout, "' is used instead");
+        return DefaultLibrariesInfoCacheStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() const
+{
+    return _librariesInfoCacheStartTimeout;
+}
+
+std::chrono::milliseconds Configuration::ExtractWatcherStartTimeout() const
+{
+    // Unlike the other start timeouts, 0 is a valid value here: it means "do not wait for the watcher
+    // thread", which makes StackSamplerLoopManager fail to start. That is how the integration tests reach
+    // the delayed-start failure path deterministically (see SCP-1413). Negative values are not meaningful.
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::WatcherStartTimeout, DefaultWatcherStartTimeout);
+    if (timeout < 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::WatcherStartTimeout,
+                  " env var must not be negative but is set to '", timeout,
+                  "' - '", DefaultWatcherStartTimeout, "' is used instead");
+        return DefaultWatcherStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetWatcherStartTimeout() const
+{
+    return _watcherStartTimeout;
+}
+
 int32_t Configuration::ExtractHeapHandleLimit() const
 {
     // default handle count limit is 4096; could be changed via env vars from 1024 to 16000
@@ -954,14 +1055,14 @@ uint32_t Configuration::GetHeapHandleLimit() const
 
 uint32_t Configuration::ExtractReferenceTreeFormat() const
 {
-    // The format is a bitfield combining ReferenceTreeFormat_Binary (1) and ReferenceTreeFormat_Json (2).
-    // Only 1 (Binary), 2 (Json) and 3 (Binary + Json) are valid; anything else falls back to the
-    // default binary format.
+    // At least one output format bit must be set. Benchmark diagnostics may be combined with either
+    // output format, but is not valid on its own.
     constexpr uint32_t defaultFormat = ReferenceTreeFormat_Binary;
-    constexpr uint32_t validMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t outputMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t validMask = outputMask | ReferenceTreeFormat_BenchmarkDiagnostics;
 
     uint32_t format = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, defaultFormat);
-    if (format == 0 || (format & ~validMask) != 0)
+    if ((format & outputMask) == 0 || (format & ~validMask) != 0)
     {
         return defaultFormat;
     }

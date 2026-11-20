@@ -1,5 +1,5 @@
 ﻿{
-  "live_debugger": {
+  "debugger": {
     "memory_pressure.transitions": {
       "tags": [
         "state",
@@ -52,6 +52,39 @@
       "description": "Count of Dynamic Instrumentation high-memory-pressure episodes, incremented once on exit and tagged by duration bucket (`bucket:lt_1s`, `bucket:1_5s`, `bucket:5_30s`, or `bucket:gte_30s`). Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:1_5s` means 1s <= duration < 5s",
       "send_to_user": false,
       "user_tags": []
+    },
+    "events.skipped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events skipped before capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "events.dropped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events dropped after capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "capture.incomplete": {
+      "tags": [
+        "event_type",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of incomplete debugger captures, tagged by event type and reason",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "general": {
@@ -81,6 +114,54 @@
     }
   },
   "tracers": {
+    "flagevaluation.rows.dropped": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations dropped locally, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.rows.degraded": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations degraded to omit identity and context, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.payload.splits": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "payloads",
+      "description": "Additional payloads created to respect the uncompressed size limit.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.context.truncated": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with context omissions, once per fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.targeting_key.omitted": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with an invalid targeting key omitted.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.hook.errors": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Unexpected hook errors isolated from customer evaluations.",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "integration_errors": {
       "tags": [
         "integration_name",
@@ -809,7 +890,8 @@
         "request_excluded",
         "block_failure",
         "rate_limited",
-        "input_truncated"
+        "input_truncated",
+        "waf_error"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -837,16 +919,73 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "waf.error": {
+      "tags": [
+        "waf_version",
+        "event_rules_version",
+        "waf_error"
+      ],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Counts the number of times the WAF returned an error when evaluating WAF addresses",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "waf.config_errors": {
       "tags": [
         "waf_version",
         "event_rules_version",
+        "action",
         "config_key",
         "scope"
       ],
       "metric_type": "count",
       "data_type": "errors",
       "description": "Count of errors reported by the WAF on about particular config item",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.missing_route": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which the library was unable to obtain the HTTP route.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which schemas were generated.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.no_schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests without schema..",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "rasp.error": {
+      "tags": [
+        "waf_version",
+        "event_rules_version",
+        "waf_error",
+        "rule_type",
+        "rule_variant"
+      ],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Counts the number of times the WAF returned an error when evaluating a specific rule type.",
       "send_to_user": false,
       "user_tags": []
     },
@@ -874,6 +1013,18 @@
       "metric_type": "count",
       "data_type": "matches",
       "description": "Counts the number of times a rule type has a match",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "rasp.rule.skipped": {
+      "tags": [
+        "reason",
+        "rule_type",
+        "rule_variant"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "Counts the number of times the evaluation of a RASP instrumentation had to be skipped due to issues related to the request lifecycle",
       "send_to_user": false,
       "user_tags": []
     },
@@ -1617,6 +1768,16 @@
       "metric_type": "count",
       "data_type": "tests",
       "description": "The number of tests detected as modified",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "dynamic_atr_retries.enabled": {
+      "tags": [
+        "has_custom_buckets"
+      ],
+      "metric_type": "count",
+      "data_type": "sessions",
+      "description": "The number of sessions that pick the automatic test retries count from the duration of each test. Tagged with has_custom_buckets:true when DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS sets the counts",
       "send_to_user": false,
       "user_tags": []
     }

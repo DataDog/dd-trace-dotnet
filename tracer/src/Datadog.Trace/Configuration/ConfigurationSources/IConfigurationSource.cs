@@ -104,6 +104,26 @@ public interface IConfigurationSource
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
+    /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
+    /// <param name="separator">Sets the character that separates keys and values in the input</param>
+    /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
+    /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+    ConfigurationResult<IDictionary<string, string>> GetDictionary(
+        string key,
+        IConfigurationTelemetry telemetry,
+        Func<IDictionary<string, string>, bool>? validator,
+        bool allowOptionalMappings,
+        char separator,
+        bool recordValue);
+
+    /// <summary>
+    /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+    /// the setting with the specified key.
+    /// </summary>
+    /// <param name="key">The key that identifies the setting.</param>
+    /// <param name="telemetry">The context for recording telemetry.</param>
+    /// <param name="validator">An optional validation function that must be applied to
+    /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="parser">A user-provided parser that converts the input string into a dictionary</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
     ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser);

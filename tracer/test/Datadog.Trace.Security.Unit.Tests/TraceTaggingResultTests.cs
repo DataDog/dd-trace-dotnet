@@ -94,7 +94,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = CreateWaf();
             using var waf = initResult.Waf!;
-            using var context = waf.CreateContext()!;
+            using var context = waf.CreateContext(out _)!;
 
             var result = context.Run(
                 new Dictionary<string, object>
@@ -324,8 +324,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var encoder = new Encoder();
             using var encodedResult = encoder.Encode(returnValues, applySafetyLimits: true);
             var nativeResult = encodedResult.ResultDdwafObject;
-            ulong duration = 0;
-            return new Result(ref nativeResult, returnCode, ref duration, 0);
+            var totals = default(WafRunTotals);
+            return new Result(ref nativeResult, returnCode, ref totals);
         }
 
         private static SecurityInstanceOverride OverrideSecurityInstance()
@@ -346,7 +346,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = CreateWaf(ruleFile: RuleFile);
             using var waf = initResult.Waf!;
-            using var context = waf.CreateContext()!;
+            using var context = waf.CreateContext(out _)!;
 
             var args = new Dictionary<string, object>
             {

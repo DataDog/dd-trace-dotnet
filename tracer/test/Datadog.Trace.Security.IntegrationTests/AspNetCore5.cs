@@ -78,7 +78,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/null-action/test/test";
             var dateTime = DateTime.UtcNow;
             await SubmitRequest(url, null, null);
-            var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
+            var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.ScrubSessionFingerprint();
             settings.ScrubbResponseContentLength();
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 new KeyValuePair<string, string>("x-datadog-security-test", "test-uuid-2"),
             };
             await SubmitRequest(url, body: null, contentType: null, headers: headers);
-            var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
+            var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.ScrubSessionFingerprint();
             await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.security-testing-headers");

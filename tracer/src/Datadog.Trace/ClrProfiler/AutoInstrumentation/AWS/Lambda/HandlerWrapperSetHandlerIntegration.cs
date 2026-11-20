@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
@@ -64,12 +65,19 @@ public sealed class HandlerWrapperSetHandlerIntegration
         return result;
     }
 
-    private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnAsyncCallback, IReturnCallback
+    internal readonly struct Async1Callbacks : IBegin1Callbacks, IReturnAsyncCallback, IReturnCallback
     {
         public bool PreserveAsyncContext => false;
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
+            // The enabled check is made once per invocation, here. OnDelegateEndAsync only sends end-invocation when
+            // this returns a CallTargetState, so start/end-invocation stay paired even if the setting changes mid-invocation.
+            if (!LambdaCommon.IsEnabled(Tracer.Instance))
+            {
+                return null;
+            }
+
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
@@ -83,6 +91,25 @@ public sealed class HandlerWrapperSetHandlerIntegration
             else
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
+
+                // jsonString keeps the original payload (with _datadog) for the extension;
+                // only the stream the customer handler reads is replaced.
+                if (Tracer.Instance.Settings.AwsLambdaStripContextEnabled)
+                {
+                    try
+                    {
+                        var strippedJson = InjectedContextHelper.StripContext(jsonString);
+                        if (!ReferenceEquals(strippedJson, jsonString))
+                        {
+                            proxyInstance.InputStream = new MemoryStream(EncodingHelpers.Utf8NoBom.GetBytes(strippedJson));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LambdaCommon.Log("Unable to strip _datadog from Lambda payload; using original", ex, debug: false);
+                    }
+                }
+
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
                 requestId = proxyInstance.LambdaContext?.AwsRequestId;
             }
@@ -105,32 +132,36 @@ public sealed class HandlerWrapperSetHandlerIntegration
         /// <inheritdoc/>
         public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
-            LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
-            if (state is CallTargetState callTargetState)
+            if (state is not CallTargetState callTargetState)
             {
-                try
-                {
-                    var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
-                    if (proxyInstance == null)
-                    {
-                        LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
-                        await LambdaCommon.EndInvocationAsync(string.Empty, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
-                        await LambdaCommon.EndInvocationAsync(jsonString, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
-                    await LambdaCommon.EndInvocationAsync(string.Empty, ex, callTargetState, RequestBuilder).ConfigureAwait(false);
-                }
-
-                LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
+                // The integration was disabled when the invocation started (or OnDelegateBegin failed), so no
+                // start-invocation was sent. Skip end-invocation, but still flush before Lambda freezes the environment.
+                await LambdaCommon.FlushAsync().ConfigureAwait(false);
+                return returnValue;
             }
 
+            LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
+            try
+            {
+                var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
+                if (proxyInstance == null)
+                {
+                    LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
+                    await LambdaCommon.EndInvocationAsync(string.Empty, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
+                }
+                else
+                {
+                    var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
+                    await LambdaCommon.EndInvocationAsync(jsonString, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
+                await LambdaCommon.EndInvocationAsync(string.Empty, ex, callTargetState, RequestBuilder).ConfigureAwait(false);
+            }
+
+            LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
             return returnValue;
         }
     }

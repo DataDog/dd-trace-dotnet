@@ -1,0 +1,365 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: quartz.job.execute,
+    Resource: execute exceptionJob,
+    Service: Samples.Quartz,
+    Type: custom,
+    ParentId: Id_3,
+    Error: 1,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      error.msg: Expected InvalidOperationException thrown,
+      error.stack:
+Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False
+Quartz.JobExecutionException: Expected InvalidOperationException thrown
+---> System.InvalidOperationException: Expected InvalidOperationException thrown
+at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context, CancellationToken cancellationToken),
+      error.type: Quartz.JobExecutionException,
+      events: <events>,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_1,
+      quartz.fire.instance.id: <fire.instance.id>,
+      quartz.job.group: group2,
+      quartz.job.name: exceptionJob,
+      quartz.job.type: QuartzSampleApp.Jobs.ExceptionJob, Samples.Quartz,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group2,
+      quartz.trigger.name: exceptionTrigger,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: quartz.job.execute,
+    Resource: execute helloJob,
+    Service: Samples.Quartz,
+    Type: custom,
+    ParentId: Id_5,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.fire.instance.id: <fire.instance.id>,
+      quartz.job.group: group1,
+      quartz.job.name: helloJob,
+      quartz.job.type: QuartzSampleApp.Jobs.HelloJob, Samples.Quartz,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group1,
+      quartz.trigger.name: helloTrigger,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: quartz.job.veto,
+    Resource: veto vetoableJob,
+    Service: Samples.Quartz,
+    Type: custom,
+    ParentId: Id_7,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.fire.instance.id: <fire.instance.id>,
+      quartz.job.group: group3,
+      quartz.job.name: vetoableJob,
+      quartz.job.type: QuartzSampleApp.Jobs.VetoableJob, Samples.Quartz,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group3,
+      quartz.trigger.name: vetoableTrigger,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_9,
+    Name: quartz.jobstore.schedulejob,
+    Resource: schedule exceptionJob,
+    Service: Samples.Quartz,
+    Type: http,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      quartz.job.group: group2,
+      quartz.job.name: exceptionJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group2,
+      quartz.trigger.name: exceptionTrigger,
+      runtime-id: Guid_3,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_11,
+    Name: quartz.jobstore.schedulejob,
+    Resource: schedule helloJob,
+    Service: Samples.Quartz,
+    Type: http,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      quartz.job.group: group1,
+      quartz.job.name: helloJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group1,
+      quartz.trigger.name: helloTrigger,
+      runtime-id: Guid_3,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_13,
+    Name: quartz.jobstore.schedulejob,
+    Resource: schedule vetoableJob,
+    Service: Samples.Quartz,
+    Type: http,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      quartz.job.group: group3,
+      quartz.job.name: vetoableJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group3,
+      quartz.trigger.name: vetoableTrigger,
+      runtime-id: Guid_3,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_14,
+    Name: quartz.jobstore.triggeredjobcomplete,
+    Resource: Quartz.JobStore.TriggeredJobComplete,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_3,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.job.group: group2,
+      quartz.job.name: exceptionJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group2,
+      quartz.trigger.name: exceptionTrigger,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_15,
+    Name: quartz.jobstore.triggeredjobcomplete,
+    Resource: Quartz.JobStore.TriggeredJobComplete,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_5,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.job.group: group1,
+      quartz.job.name: helloJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group1,
+      quartz.trigger.name: helloTrigger,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: quartz.jobstore.triggeredjobcomplete,
+    Resource: Quartz.JobStore.TriggeredJobComplete,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.job.group: group3,
+      quartz.job.name: vetoableJob,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      quartz.trigger.group: group3,
+      quartz.trigger.name: vetoableTrigger,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: quartz.jobstore.triggersfired,
+    Resource: Quartz.JobStore.TriggersFired,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      quartz.jobstore.trigger.count: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: quartz.jobstore.triggersfired,
+    Resource: Quartz.JobStore.TriggersFired,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_18,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      quartz.jobstore.trigger.count: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: quartz.jobstore.triggersfired,
+    Resource: Quartz.JobStore.TriggersFired,
+    Service: Samples.Quartz,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: quartz,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Quartz,
+      otel.library.version: <otel-library-version>,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      quartz.scheduler.id: NON_CLUSTERED,
+      quartz.scheduler.name: QuartzScheduler,
+      span.kind: client,
+      version: 1.0.0
+    },
+    Metrics: {
+      quartz.jobstore.trigger.count: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

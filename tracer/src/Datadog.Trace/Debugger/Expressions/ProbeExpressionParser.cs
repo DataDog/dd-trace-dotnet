@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -34,32 +36,38 @@ internal partial class ProbeExpressionParser<T>
     /// <summary>
     /// This, Return, Exception, LocalsAndArgs
     /// </summary>
-    private static readonly Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T> DefaultDelegate;
+    private static readonly CompiledExpressionDelegate<T> DefaultDelegate;
+    private static readonly Type EvaluationBudgetByRefType = typeof(EvaluationBudget).MakeByRefType();
+    private static readonly MethodInfo ThrowIfExceededMethod = GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.ThrowIfExceeded), [EvaluationBudgetByRefType]);
+    private static readonly MethodInfo ThrowIfExceededImmediatelyMethod = GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.ThrowIfExceededImmediately), [EvaluationBudgetByRefType]);
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
+    private MethodCallExpression _budgetCheckExpression;
+    private ParameterExpression _evaluationBudgetParameterExpression;
     private ParserContext _parserContext;
     private CaptureLimitInfo? _captureLimitInfo;
 
     static ProbeExpressionParser()
     {
-        DefaultDelegate = (_, _, _, _, _) =>
-        {
-            if (typeof(T) == typeof(bool))
-            {
-                return (T)(object)true;
-            }
-
-            if (typeof(T) == typeof(object))
-            {
-                return (T)(object)Expressions.UndefinedValue.Instance;
-            }
-
-            return default;
-        };
+        DefaultDelegate = DefaultValue;
     }
 
-    private delegate Expression Combiner(Expression left, Expression right);
+    private static T DefaultValue(ScopeMember invocationTarget, ScopeMember returnValue, ScopeMember duration, Exception exception, ScopeMember[] members, ref EvaluationBudget budget)
+    {
+        budget.ThrowIfExceededImmediately();
+        if (typeof(T) == typeof(bool))
+        {
+            return (T)(object)true;
+        }
+
+        if (typeof(T) == typeof(object))
+        {
+            return (T)(object)Expressions.UndefinedValue.Instance;
+        }
+
+        return default;
+    }
 
     private Expression ParseRoot(
         JsonTextReader reader,
@@ -96,7 +104,7 @@ internal partial class ProbeExpressionParser<T>
         return null;
     }
 
-    private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression ConditionalOperator(JsonTextReader reader, Func<Expression, Expression, Expression> combiner, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         _arrayStack++;
         reader.Read();
@@ -133,7 +141,7 @@ internal partial class ProbeExpressionParser<T>
         return left;
     }
 
-    private Expression Combine(Expression leftOperand, Expression rightOperand, Combiner combiner)
+    private Expression Combine(Expression leftOperand, Expression rightOperand, Func<Expression, Expression, Expression> combiner)
     {
         return leftOperand is null ? AsBoolean(rightOperand) : combiner(AsBoolean(leftOperand), AsBoolean(rightOperand));
 
@@ -155,7 +163,9 @@ internal partial class ProbeExpressionParser<T>
         const int maxIteration = 100000;
         while (ConditionalRead(reader, shouldAdvanceReader) && safeguard++ <= maxIteration)
         {
-            var readerValue = reader.Value?.ToString();
+            // Only property names and strings are read as text; other tokens use the typed reader.Value, because
+            // formatting it (e.g. a double or a negative number) would depend on the current culture
+            var readerValue = reader.Value as string;
             try
             {
                 switch (reader.TokenType)
@@ -335,7 +345,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.String:
                         {
-                            if (readerValue?.StartsWith("#") == true)
+                            if (readerValue?.StartsWith('#') == true)
                             {
                                 // skip comment
                                 return ParseTree(reader, parameters, itParameter);
@@ -367,7 +377,7 @@ internal partial class ProbeExpressionParser<T>
                                 if (itParameter == null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
-                                    return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
+                                    return Expression.Parameter(UndefinedValueType, UndefinedValueDump);
                                 }
 
                                 return itParameter;
@@ -412,12 +422,12 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Integer:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Int32, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.Float:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Double, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.StartArray:
@@ -439,7 +449,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Boolean:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Boolean, CultureInfo.InvariantCulture));
                         }
                 }
             }
@@ -567,9 +577,9 @@ internal partial class ProbeExpressionParser<T>
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
 
-        if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
+        if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            var ex = new ArgumentException("Method has been called with an invalid argument");
+            var ex = new InvalidOperationException("Method has been called with an invalid argument");
             Log.Error(
                 ex,
                 "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",
@@ -617,6 +627,9 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocalsParameterExpression = Expression.Parameter(argsOrLocals.GetType());
         AddLocalAndArgs(argsOrLocals, scopeMembers, expressions, argsOrLocalsParameterExpression);
 
+        _evaluationBudgetParameterExpression = Expression.Parameter(EvaluationBudgetByRefType, "evaluationBudget");
+        expressions.Add(BudgetCheck(checkImmediately: true));
+
         var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
 
@@ -634,7 +647,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         _redactedDictionaryValues = null;
-        return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
+        return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression, _evaluationBudgetParameterExpression);
     }
 
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
@@ -670,6 +683,13 @@ internal partial class ProbeExpressionParser<T>
         expressions.Add(Expression.Assign(variable, assignmentValue));
         scopeMembers.Add(variable);
         return parameterExpression;
+    }
+
+    private MethodCallExpression BudgetCheck(bool checkImmediately = false)
+    {
+        return checkImmediately
+                   ? Expression.Call(ThrowIfExceededImmediatelyMethod, _evaluationBudgetParameterExpression)
+                   : _budgetCheckExpression ??= Expression.Call(ThrowIfExceededMethod, _evaluationBudgetParameterExpression);
     }
 
     internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
@@ -716,13 +736,14 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
-            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(
+            var expression = Expression.Lambda<CompiledExpressionDelegate<T>>(
                 parsedExpression.ExpressionBody,
                 parsedExpression.ThisParameterExpression,
                 parsedExpression.ReturnParameterExpression,
                 parsedExpression.DurationParameterExpression,
                 parsedExpression.ExceptionParameterExpression,
-                parsedExpression.ArgsAndLocalsParameterExpression);
+                parsedExpression.ArgsAndLocalsParameterExpression,
+                parsedExpression.EvaluationBudgetParameterExpression);
             var compiled = expression.Compile();
             return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }

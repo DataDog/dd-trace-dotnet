@@ -20,6 +20,7 @@ namespace ReferenceChainExplorer.ViewModels;
 public class MainViewModel : INotifyPropertyChanged
 {
     private ReferenceTree? _tree;
+    private ReverseChainBuilder? _reverseChainBuilder;
     private TypeSummary? _selectedType;
     private IReadOnlyList<ForwardTreeNode> _forwardTreeRoots = Array.Empty<ForwardTreeNode>();
     private string _statusText = "No file loaded";
@@ -173,7 +174,10 @@ public class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            _tree = ReferenceTreeLoader.LoadFromFile(dialog.FileName);
+            var tree = ReferenceTreeLoader.LoadFromFile(dialog.FileName);
+            var reverseChainBuilder = new ReverseChainBuilder(tree);
+            _tree = tree;
+            _reverseChainBuilder = reverseChainBuilder;
 
             TypeSummaries.Clear();
             ReverseChains.Clear();
@@ -184,8 +188,7 @@ public class MainViewModel : INotifyPropertyChanged
 
             UpdateForwardTree();
 
-            var summaries = TypeSummary.BuildFromTree(_tree);
-            foreach (var summary in summaries.OrderByDescending(s => s.TotalInstanceCount))
+            foreach (var summary in _reverseChainBuilder.TypeSummaries.OrderByDescending(s => s.TotalInstanceCount))
             {
                 TypeSummaries.Add(summary);
             }
@@ -213,12 +216,12 @@ public class MainViewModel : INotifyPropertyChanged
     {
         ReverseChains.Clear();
 
-        if (_tree is null || _selectedType is null)
+        if (_reverseChainBuilder is null || _selectedType is null)
         {
             return;
         }
 
-        var chains = ReverseChainBuilder.Build(_tree, _selectedType.TypeIndex);
+        var chains = _reverseChainBuilder.Build(_selectedType.TypeIndex);
         foreach (var node in chains)
         {
             ReverseChains.Add(node);

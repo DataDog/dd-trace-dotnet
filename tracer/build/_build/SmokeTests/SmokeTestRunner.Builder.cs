@@ -14,7 +14,10 @@ public static partial class SmokeTestRunner
 {
     class Builder
     {
-        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
+        // Pinned by digest so we control exactly which test-agent version smoke tests run against
+        // We don't track this in smoke-test-images.docker-compose.yml, because we don't want auto-bumps.
+        // Keep this digest in sync with the test-agent service in docker-compose.yml.
+        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
         readonly SmokeTestImageDigests ImageDigests;
@@ -26,7 +29,7 @@ public static partial class SmokeTestRunner
 
         /// <summary>
         /// Builds all Docker images for the given scenario. Returns the list of image tags to test.
-        /// Most categories produce a single image; chiseled categories produce two (one per entrypoint style).
+        /// Returns the base image, plus a "-dd-dotnet" variant (launched via dd-dotnet) for categories that support it.
         /// Windows categories also build the test agent
         /// </summary>
         public async Task<string[]> BuildImageAsync(
@@ -70,7 +73,12 @@ public static partial class SmokeTestRunner
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
-                return new[] {scenario.DockerTag};
+                // Build the dd-dotnet variant (launches the app via dd-dotnet.sh)
+                const string ddDotnetDockerfilePath = "build/_build/docker/smoke.dd-dotnet.dockerfile";
+                var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, buildArgs, artifactsDir);
+
+                return new[] {scenario.DockerTag, ddDotnetTag};
             }
 
             async Task<string[]> BuildChiseledImageAsync(ChiseledScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
@@ -114,7 +122,26 @@ public static partial class SmokeTestRunner
                 };
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
-                return new[] {scenario.DockerTag};
+
+                if (!scenario.IncludeDdDotnetScenario)
+                {
+                    return new[] {scenario.DockerTag};
+                }
+
+                // Build the dd-dotnet NuGet variant
+                const string ddDotnetDockerfilePath = "build/_build/docker/smoke.nuget.dd-dotnet.dockerfile";
+                var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+                var ddDotnetBuildArgs = new Dictionary<string, string>
+                {
+                    ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
+                    ["RUNTIME_IMAGE"] = ImageDigests.GetImageWithDigest(scenario.RuntimeImage),
+                    ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+                    ["TOOL_VERSION"] = toolVersion,
+                };
+
+                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+
+                return new[] {scenario.DockerTag, ddDotnetTag};
             }
 
             async Task<string[]> BuildDotnetToolImageAsync(DotnetToolScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
@@ -190,7 +217,11 @@ public static partial class SmokeTestRunner
                     ["RUNTIME_IMAGE"] = ImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = scenario.InstallCommand,
-                    ["TOOL_VERSION"] = toolVersion + (scenario.PackageVersionSuffix ?? ""),
+                    // Mirrors the package's own version: Datadog.Trace.Trimming.csproj only adds its -prerelease
+                    // suffix when the version has no suffix already (the three-part prefix never contains a '-')
+                    ["TOOL_VERSION"] = scenario.PackageVersionSuffix is { } suffix && !toolVersion.Contains('-')
+                                           ? toolVersion + suffix
+                                           : toolVersion,
                     ["PACKAGE_NAME"] = scenario.PackageName,
                     ["RUNTIME_IDENTIFIER"] = scenario.RuntimeId,
                 };

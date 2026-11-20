@@ -30,6 +30,11 @@ namespace Datadog.Profiler.IntegrationTests
         public event EventHandler<EventArgs<int>> EventsSent;
         public event EventHandler<EventArgs<int>> ProfilerUnregistered;
 
+        // Exceptions thrown by test event handlers while dispatching a request.
+        // They are recorded instead of being rethrown so a buggy handler cannot
+        // kill the listener thread (and with it the whole test host).
+        public ConcurrentQueue<Exception> HandlerExceptions { get; } = new();
+
         public int NbCallsOnProfilingEndpoint => Volatile.Read(ref _nbCallsOnProfilingEndpoint);
         public int ProfiledProcessId { get; set; }
 
@@ -62,6 +67,15 @@ namespace Datadog.Profiler.IntegrationTests
             _etwProxy.ProfilerUnregistered += (sender, e) => ProfilerUnregistered?.Invoke(this, e);
 
             _etwProxy.StartServer();
+        }
+
+        public void ThrowIfHandlerFailed()
+        {
+            var exceptions = HandlerExceptions.ToArray();
+            if (exceptions.Length > 0)
+            {
+                throw new AggregateException("Mock agent request handlers failed.", exceptions);
+            }
         }
 
         public virtual void Dispose()
@@ -114,33 +128,15 @@ namespace Datadog.Profiler.IntegrationTests
 
             private void Initialize(int retries)
             {
-                var port = TcpPortProvider.GetOpenPort();
-                while (true)
-                {
-                    // seems like we can't reuse a listener if it fails to start,
-                    // so create a new listener each time we retry
-                    var listener = new HttpListener();
-                    listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                    listener.Prefixes.Add($"http://localhost:{port}/");
-
-                    try
-                    {
-                        listener.Start();
-                        Port = port;
-                        _listener = listener;
-
-                        // success
-                        return;
-                    }
-                    catch (HttpListenerException) when (retries > 0)
-                    {
-                        // only catch the exception if there are retries left
-                        port = TcpPortProvider.GetOpenPort();
-                        retries--;
-                    }
-
-                    listener.Close();
-                }
+                _listener = TcpPortProvider.StartHttpListener(
+                    port =>
+                    [
+                        $"http://127.0.0.1:{port}/",
+                        $"http://localhost:{port}/",
+                    ],
+                    out var boundPort,
+                    maxAttempts: retries);
+                Port = boundPort;
             }
 
             private void HandleHttpRequests()
@@ -153,20 +149,33 @@ namespace Datadog.Profiler.IntegrationTests
                     try
                     {
                         var ctx = _listener.GetContext();
-                        if (ctx.Request.RawUrl == ProfilesEndpoint)
+                        // An exception escaping a subscriber's handler would propagate out of this
+                        // loop and kill the listener thread, taking down the whole test host and
+                        // aborting the entire test run. Record it instead, keep serving requests,
+                        // and still send the normal response.
+                        try
                         {
-                            OnProfilesRequestReceived(ctx);
-                            Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
-                        }
+                            if (ctx.Request.RawUrl == ProfilesEndpoint)
+                            {
+                                // Increment before dispatching so a throwing handler cannot skip
+                                // the count and mislead tests that assert on NbCallsOnProfilingEndpoint.
+                                Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
+                                OnProfilesRequestReceived(ctx);
+                            }
 
-                        if (ctx.Request.RawUrl == TracesEndpoint)
-                        {
-                            OnTracesRequestReceived(ctx);
-                        }
+                            if (ctx.Request.RawUrl == TracesEndpoint)
+                            {
+                                OnTracesRequestReceived(ctx);
+                            }
 
-                        if (ctx.Request.RawUrl == TelemetryMetricsEndpoint)
+                            if (ctx.Request.RawUrl == TelemetryMetricsEndpoint)
+                            {
+                                OnTelemetryMetricsReceived(ctx);
+                            }
+                        }
+                        catch (Exception ex)
                         {
-                            OnTelemetryMetricsReceived(ctx);
+                            HandlerExceptions.Enqueue(ex);
                         }
 
                         // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
@@ -269,6 +278,30 @@ namespace Datadog.Profiler.IntegrationTests
                 _namedPipeServer?.Dispose();
             }
 
+            // The HTTP request body is left unread by MockHttpParser.ReadRequest, so consume the
+            // declared Content-Length bytes to keep the stream aligned for the next read.
+            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
+            {
+                if (contentLength is not > 0)
+                {
+                    return;
+                }
+
+                var remaining = contentLength.Value;
+                var buffer = new byte[8192];
+                while (remaining > 0)
+                {
+                    var toRead = (int)Math.Min(buffer.Length, remaining);
+                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    remaining -= read;
+                }
+            }
+
             // Reads each HTTP request from the pipe and writes back a canned HTTP response.
             private async Task HandleNamedPipeProfiles(NamedPipeServerStream ss, CancellationToken cancellationToken)
             {
@@ -306,30 +339,6 @@ namespace Datadog.Profiler.IntegrationTests
                     // abrupt one surfaces as IOException ("Pipe is broken"); OperationCanceledException
                     // happens during shutdown/dispose. These all mark the normal end of a
                     // request/response cycle, so swallow them instead of surfacing an "Unexpected exception".
-                }
-            }
-
-            // The HTTP request body is left unread by MockHttpParser.ReadRequest, so consume the
-            // declared Content-Length bytes to keep the stream aligned for the next read.
-            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
-            {
-                if (contentLength is not > 0)
-                {
-                    return;
-                }
-
-                var remaining = contentLength.Value;
-                var buffer = new byte[8192];
-                while (remaining > 0)
-                {
-                    var toRead = (int)Math.Min(buffer.Length, remaining);
-                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
-                    if (read == 0)
-                    {
-                        break;
-                    }
-
-                    remaining -= read;
                 }
             }
         }
@@ -397,6 +406,21 @@ namespace Datadog.Profiler.IntegrationTests
                 Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
             }
 
+            private static bool IsExpectedPipeDisconnect(IOException ex)
+            {
+                // IOExceptions raised for pipe I/O wrap a Win32 error code as an HRESULT
+                // (HRESULT_FROM_WIN32 => facility 7, code in the low 16 bits). Prefer matching the
+                // code; fall back to the message text if this isn't a Win32-derived HRESULT.
+                const int facilityWin32 = 7;
+                if (((ex.HResult >> 16) & 0x1FFF) == facilityWin32)
+                {
+                    var win32Code = ex.HResult & 0xFFFF;
+                    return win32Code is ErrorBrokenPipe or ErrorNoData or ErrorPipeNotConnected;
+                }
+
+                return ex.Message.Contains("The pipe is being closed") || ex.Message.Contains("Pipe is broken");
+            }
+
             private async Task StartNamedPipeServer(ManualResetEventSlim stopEvent)
             {
                 var instance = $" ({_pipeName}:{Interlocked.Increment(ref _instanceCount)})";
@@ -449,21 +473,6 @@ namespace Datadog.Profiler.IntegrationTests
                     _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
                     m.Wait(5_000);
                 }
-            }
-
-            private static bool IsExpectedPipeDisconnect(IOException ex)
-            {
-                // IOExceptions raised for pipe I/O wrap a Win32 error code as an HRESULT
-                // (HRESULT_FROM_WIN32 => facility 7, code in the low 16 bits). Prefer matching the
-                // code; fall back to the message text if this isn't a Win32-derived HRESULT.
-                const int facilityWin32 = 7;
-                if (((ex.HResult >> 16) & 0x1FFF) == facilityWin32)
-                {
-                    var win32Code = ex.HResult & 0xFFFF;
-                    return win32Code is ErrorBrokenPipe or ErrorNoData or ErrorPipeNotConnected;
-                }
-
-                return ex.Message.Contains("The pipe is being closed") || ex.Message.Contains("Pipe is broken");
             }
         }
     }

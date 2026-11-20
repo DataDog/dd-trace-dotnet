@@ -42,13 +42,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
-            var probesIds = methodMetadataInfo.ProbeIds;
-            var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
+            var probes = MethodMetadataCollection.Instance.Get(methodMetadataIndex).Probes;
+            var probesIds = probes.ProbeIds;
+            var probeMetadataIndices = probes.ProbeMetadataIndices;
 
-            if (instrumentationVersion != methodMetadataInfo.InstrumentationVersion)
+            if (instrumentationVersion != probes.InstrumentationVersion)
             {
-                Log.Warning("BeginMethod: The instrumentation version is different, received version: {InstrumentationVersion}, but the kept version is: {KeptVersionNumber}", new object[] { instrumentationVersion, methodMetadataInfo.InstrumentationVersion });
+                Log.Warning<int, int>("BeginMethod: The instrumentation version is different, received version: {InstrumentationVersion}, but the kept version is: {KeptVersionNumber}", instrumentationVersion, probes.InstrumentationVersion);
                 isReEntryToMoveNext.LogStates = AsyncMethodDebuggerState.CreateInvalidatedDebuggerStates();
                 return;
             }

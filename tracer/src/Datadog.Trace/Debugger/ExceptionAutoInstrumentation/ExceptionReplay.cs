@@ -36,12 +36,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionReplay(settings);
         }
 
-        public void Initialize()
+        public bool Initialize()
         {
             Log.Information("Initializing Exception Replay");
 
             InitSnapshotsSink();
+            if (_isDisabled)
+            {
+                Settings.Disable();
+                return false;
+            }
+
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
+            return true;
         }
 
         private void InitSnapshotsSink()
@@ -51,7 +58,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-            _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            // Exception Replay shares the snapshot pipeline but is not part of the Dynamic Instrumentation guardrail metrics.
+            _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, eventType: null);
             // TODO: respond to changes in exporter settings
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;

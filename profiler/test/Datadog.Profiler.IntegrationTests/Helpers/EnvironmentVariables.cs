@@ -47,5 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string TestHeapSnapshotInterval = "DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL";
         public const string UseManagedCodeCache = "DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE";
         public const string MemoryFootprintEnabled = "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED";
+        public const string LibrariesInfoCacheStartTimeout = "DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT";
+        public const string WatcherStartTimeout = "DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT";
     }
 }

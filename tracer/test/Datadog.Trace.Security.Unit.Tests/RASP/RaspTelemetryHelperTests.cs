@@ -23,5 +23,21 @@ namespace Datadog.Trace.Security.Unit.Tests.RASP
             raspTelemetryHelper.GenerateRaspSpanMetricTags(tags);
             tags.GetMetric(Metrics.RaspWafTimeout).Should().Be(1);
         }
+
+        [Fact]
+        public void GivenSeveralRaspRuns_WhenGenerateRaspSpanMetricTagsIsCalled_ThenTheDurationsAreTheRequestTotals()
+        {
+            var raspTelemetryHelper = new RaspMetricsHelper();
+            var tags = new TagsList();
+            raspTelemetryHelper.AddRaspSpanMetrics(1000, 2000, false);
+            raspTelemetryHelper.AddRaspSpanMetrics(1500, 3000, false);
+
+            // an older running total reported after a newer one
+            raspTelemetryHelper.AddRaspSpanMetrics(1000, 2000, false);
+            raspTelemetryHelper.GenerateRaspSpanMetricTags(tags);
+            tags.GetMetric(Metrics.RaspWafDuration).Should().Be(1500);
+            tags.GetMetric(Metrics.RaspWafAndBindingsDuration).Should().Be(3000);
+            tags.GetMetric(Metrics.RaspRuleEval).Should().Be(3);
+        }
     }
 }

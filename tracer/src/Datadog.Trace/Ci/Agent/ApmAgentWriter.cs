@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci.Agent;
 
@@ -27,7 +28,7 @@ internal sealed class ApmAgentWriter : IEventWriter
 
     public ApmAgentWriter(
         TracerSettings settings,
-        Action<Dictionary<string, float>> updateSampleRates,
+        Action<Dictionary<string, double>> updateSampleRates,
         Action<string>? updateConfigHash,
         IDiscoveryService discoveryService,
         int maxBufferSize = DefaultMaxBufferSize)
@@ -42,7 +43,7 @@ internal sealed class ApmAgentWriter : IEventWriter
         _agentWriter = new AgentWriter(api, statsAggregator, statsdManager, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled);
     }
 
-    // Internal for testing
+    [TestingOnly]
     internal ApmAgentWriter(IApi api, IStatsdManager statsdManager, int maxBufferSize = DefaultMaxBufferSize)
     {
         _agentWriter = new AgentWriter(api, null, statsdManager, maxBufferSize: maxBufferSize);

@@ -1,5 +1,5 @@
 Template:
-Segments: 
+Segments:
 
 {
     "index": [
@@ -9,8 +9,7 @@ Segments:
         "hello"
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

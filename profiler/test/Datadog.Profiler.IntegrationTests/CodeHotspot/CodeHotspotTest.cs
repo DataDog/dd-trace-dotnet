@@ -201,6 +201,8 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
+
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
             Assert.Single(profilerRuntimeIds.Distinct());

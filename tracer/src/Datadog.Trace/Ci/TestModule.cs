@@ -45,6 +45,7 @@ public sealed class TestModule
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
     private IpcClient? _ipcClient;
+    private long _testCount;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -81,6 +82,7 @@ public sealed class TestModule
                 CIProvider = sessionSpanTags.CIProvider,
                 CIPipelineId = sessionSpanTags.CIPipelineId,
                 CIPipelineName = sessionSpanTags.CIPipelineName,
+                CIPipelineDisplayName = sessionSpanTags.CIPipelineDisplayName,
                 CIPipelineNumber = sessionSpanTags.CIPipelineNumber,
                 CIPipelineUrl = sessionSpanTags.CIPipelineUrl,
                 CIJobName = sessionSpanTags.CIJobName,
@@ -153,7 +155,7 @@ public sealed class TestModule
 
                 if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, out var testSessionWorkingDirectory))
                 {
-                    tags.WorkingDirectory = testSessionWorkingDirectory;
+                    tags.WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(testSessionWorkingDirectory, false);
                 }
             }
             else
@@ -184,7 +186,7 @@ public sealed class TestModule
         tags.TestsSkipped = "false";
 
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
+            string.IsNullOrEmpty(framework) ? "test_module" : $"{StringUtil.ToLowerInvariant(framework)}.test_module",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
@@ -406,34 +408,35 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        // Only out-of-process test modules without ITR publish this intermediate percentage.
+        // Normal customer sessions rely on the final session snapshot and must not materialize
+        // the full global model once per module.
         if (_testOptimization.Settings.CodeCoverageEnabled == true &&
-            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
-            coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
+            !_testOptimization.Settings.IntelligentTestRunnerEnabled &&
+            _fakeSession is not null &&
+            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
-            // For a normal customer session we never report the percentage of total lines on modules
-            if (!_testOptimization.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
+            var snapshotResult = coverageHandler.AcquireGlobalCoverageSnapshot();
+            if (snapshotResult.Status == GlobalCoverageSnapshotStatus.Success && snapshotResult.Snapshot is { } snapshot)
             {
-                // Adds the global code coverage percentage to the module
-                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
-                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-            }
-
-            // If the code coverage path environment variable is set, we store the json file
-            if (!string.IsNullOrWhiteSpace(_testOptimization.Settings.CodeCoveragePath))
-            {
-                var codeCoveragePath = Path.Combine(_testOptimization.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
-                try
+                using (snapshot)
                 {
-                    using var fStream = File.OpenWrite(codeCoveragePath);
-                    using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-                    using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
-                    JsonSerializer.Create().Serialize(jsonWriter, globalCoverage);
-                }
-                catch (Exception ex)
-                {
-                    _testOptimization.Log.Error(ex, "Error writing global code coverage.");
+                    var globalCoverage = snapshot.Model;
+                    try
+                    {
+                        coverageHandler.TryCommit(
+                            snapshot,
+                            () =>
+                            {
+                                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
+                                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        _testOptimization.Log.Error(ex, "Error writing global code coverage.");
+                    }
                 }
             }
         }
@@ -478,6 +481,7 @@ public sealed class TestModule
 
         if (_ipcClient is not null)
         {
+            SendExecutedTests(_ipcClient);
             _ipcClient.Dispose();
             _ipcClient = null;
         }
@@ -574,6 +578,11 @@ public sealed class TestModule
         }
     }
 
+    /// <summary>
+    /// Counts a test created in this module, so the module can report how many tests it ran to an out-of-process session.
+    /// </summary>
+    internal void CountTest() => Interlocked.Increment(ref _testCount);
+
     internal bool EnableIpcClient()
     {
         if (_fakeSession != null || Tags.SessionId == 0)
@@ -650,5 +659,23 @@ public sealed class TestModule
         }
 
         return false;
+    }
+
+    private void SendExecutedTests(IpcClient ipcClient)
+    {
+        // VSTest reports its own count, but other runners don't, for example Microsoft.Testing.Platform under
+        // dotnet test on SDK 9 and earlier. Without the module's count, a session that VSTest reported as empty
+        // would be skipped even though these tests ran.
+        try
+        {
+            if (!TestSession.TrySendExecutedTests(ipcClient, Interlocked.Read(ref _testCount)))
+            {
+                _testOptimization.Log.Warning("TestModule: Could not send the executed tests to the test session.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _testOptimization.Log.Error(ex, "Error sending SessionExecutedTestsMessage");
+        }
     }
 }

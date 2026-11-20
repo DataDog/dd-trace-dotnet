@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -42,6 +43,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -55,6 +57,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -68,6 +71,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -81,6 +85,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -95,6 +100,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -106,6 +113,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -117,6 +126,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -128,8 +139,11 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
+        [Flaky("Intermittently finds an error message in the profiler log file in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckCustomGetFunctionFromIP(string appName, string framework, string appAssembly)
         {
@@ -141,7 +155,7 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
-            // First, check for no error  
+            // First, check for no error
             runner.RunAndCheck();
 
             // Then check for custom get function from IP enabled

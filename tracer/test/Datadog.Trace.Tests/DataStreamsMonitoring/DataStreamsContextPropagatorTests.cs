@@ -153,6 +153,21 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             }
         }
 
+        [Theory]
+        [InlineData("%%%")]
+        [InlineData("AAAA")]
+        [InlineData("AAAAAAAAAAAAgA==")] // A valid Base64 encoding with an unterminated edge timestamp.
+        public void Extract_WhenPreferredHeaderIsInvalid_DoesNotFallBackToLegacyHeader(string base64Header)
+        {
+            var headers = new TestHeadersCollection();
+            var legacyContext = new PathwayContext(new PathwayHash(1234), 1_000_000, 2_000_000);
+            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes(base64Header));
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(legacyContext));
+
+            DataStreamsContextPropagator.Instance.Extract(headers, isDataStreamsLegacyHeadersEnabled: true).Should().BeNull();
+            DataStreamsContextPropagator.Instance.Extract(headers, isDataStreamsLegacyHeadersEnabled: false).Should().BeNull();
+        }
+
         private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
             => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
 

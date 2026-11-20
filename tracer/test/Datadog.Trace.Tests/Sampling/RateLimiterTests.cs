@@ -55,62 +55,6 @@ namespace Datadog.Trace.Tests.Sampling
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
 
-        [Fact]
-        public void Limits_Approximately_To_Defaults()
-        {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 100, numberOfBursts: 18, millisecondsBetweenBursts: 247);
-        }
-
-        [Fact]
-        public void Limits_To_Custom_Amount_Per_Second()
-        {
-            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
-        }
-
-        private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
-        {
-            var actualIntervalLimit = intervalLimit ?? DefaultLimitPerSecond;
-
-            var test = new RateLimitLoadTest()
-            {
-                NumberPerBurst = numberPerBurst,
-                TimeBetweenBursts = TimeSpan.FromMilliseconds(millisecondsBetweenBursts),
-                NumberOfBursts = numberOfBursts
-            };
-
-            var result = RunTest(intervalLimit, test);
-
-            var theoreticalTime = numberOfBursts * millisecondsBetweenBursts;
-            var expectedLimit = theoreticalTime * actualIntervalLimit / 1_000;
-
-            var acceptableUpperVariance = (actualIntervalLimit * 1.0);
-            var acceptableLowerVariance = (actualIntervalLimit * 1.15); // Allow for increased tolerance on lower limit since the rolling window does not get dequeued as quickly as it can queued
-            var upperLimit = expectedLimit + acceptableUpperVariance;
-            var lowerLimit = expectedLimit - acceptableLowerVariance;
-
-            Assert.True(
-                result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, received {result.TotalAllowed} out of {result.TotalAttempted} within {theoreticalTime} milliseconds.");
-
-            // Rate should match for the last two intervals, which is a total of two seconds
-            var numberOfBurstsWithinTwoIntervals = 2_000 / millisecondsBetweenBursts;
-            var totalExpectedSent = numberOfBurstsWithinTwoIntervals * numberPerBurst;
-            var totalExpectedAllowed = 2 * actualIntervalLimit;
-            var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
-
-            var lowestRate = expectedRate - 0.40f;
-            if (lowestRate < 0)
-            {
-                lowestRate = expectedRate / 2;
-            }
-
-            var highestRate = expectedRate + 0.40f;
-
-            Assert.True(
-                result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
-                $"Expected rate between {lowestRate} and {highestRate}, received {result.ReportedRate}.");
-        }
-
         private static async Task<int> AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -132,94 +76,154 @@ namespace Datadog.Trace.Tests.Sampling
             return allowedCount;
         }
 
-        private static RateLimitResult RunTest(int? intervalLimit, RateLimitLoadTest test)
+        [Collection(nameof(HighConcurrencyTestCollection))]
+        public class ConcurrencyTests
         {
-            var parallelism = test.NumberPerBurst;
-
-            if (parallelism > Environment.ProcessorCount)
+            [Fact]
+            public void Limits_Approximately_To_Defaults()
             {
-                parallelism = Environment.ProcessorCount;
+                Run_Limit_Test(intervalLimit: null, numberPerBurst: 100, numberOfBursts: 18, millisecondsBetweenBursts: 247);
             }
 
-            var clock = new SimpleClock();
-
-            var limiter = new TracerRateLimiter(maxTracesPerInterval: intervalLimit, intervalMilliseconds: null);
-            var barrier = new Barrier(parallelism + 1, _ => clock.UtcNow += test.TimeBetweenBursts);
-            var numberPerThread = test.NumberPerBurst / parallelism;
-            var workers = new Task[parallelism];
-            int totalAttempted = 0;
-            int totalAllowed = 0;
-
-            for (int i = 0; i < workers.Length; i++)
+            [Fact]
+            public void Limits_To_Custom_Amount_Per_Second()
             {
-                workers[i] = Task.Factory.StartNew(
-                    () =>
-                    {
-                        using var lease = Clock.SetForCurrentThread(clock);
+                Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
+            }
 
-                        for (var i = 0; i < test.NumberOfBursts; i++)
+            private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
+            {
+                var actualIntervalLimit = intervalLimit ?? DefaultLimitPerSecond;
+
+                var test = new RateLimitLoadTest()
+                {
+                    NumberPerBurst = numberPerBurst,
+                    TimeBetweenBursts = TimeSpan.FromMilliseconds(millisecondsBetweenBursts),
+                    NumberOfBursts = numberOfBursts
+                };
+
+                var result = RunTest(intervalLimit, test);
+
+                var theoreticalTime = numberOfBursts * millisecondsBetweenBursts;
+                var expectedLimit = theoreticalTime * actualIntervalLimit / 1_000;
+
+                var acceptableUpperVariance = (actualIntervalLimit * 1.0);
+                var acceptableLowerVariance = (actualIntervalLimit * 1.15); // Allow for increased tolerance on lower limit since the rolling window does not get dequeued as quickly as it can queued
+                var upperLimit = expectedLimit + acceptableUpperVariance;
+                var lowerLimit = expectedLimit - acceptableLowerVariance;
+
+                Assert.True(
+                    result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
+                    $"Expected between {lowerLimit} and {upperLimit}, received {result.TotalAllowed} out of {result.TotalAttempted} within {theoreticalTime} milliseconds.");
+
+                // Rate should match for the last two intervals, which is a total of two seconds
+                var numberOfBurstsWithinTwoIntervals = 2_000 / millisecondsBetweenBursts;
+                var totalExpectedSent = numberOfBurstsWithinTwoIntervals * numberPerBurst;
+                var totalExpectedAllowed = 2 * actualIntervalLimit;
+                var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
+
+                var lowestRate = expectedRate - 0.40f;
+                if (lowestRate < 0)
+                {
+                    lowestRate = expectedRate / 2;
+                }
+
+                var highestRate = expectedRate + 0.40f;
+
+                Assert.True(
+                    result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
+                    $"Expected rate between {lowestRate} and {highestRate}, received {result.ReportedRate}.");
+            }
+
+            private static RateLimitResult RunTest(int? intervalLimit, RateLimitLoadTest test)
+            {
+                var parallelism = test.NumberPerBurst;
+
+                if (parallelism > Environment.ProcessorCount)
+                {
+                    parallelism = Environment.ProcessorCount;
+                }
+
+                var clock = new SimpleClock();
+
+                var limiter = new TracerRateLimiter(maxTracesPerInterval: intervalLimit, intervalMilliseconds: null);
+                var barrier = new Barrier(parallelism + 1, _ => clock.UtcNow += test.TimeBetweenBursts);
+                var numberPerThread = test.NumberPerBurst / parallelism;
+                var workers = new Task[parallelism];
+                int totalAttempted = 0;
+                int totalAllowed = 0;
+
+                for (int i = 0; i < workers.Length; i++)
+                {
+                    workers[i] = Task.Factory.StartNew(
+                        () =>
                         {
-                            // Wait for every worker to be ready for next burst
-                            barrier.SignalAndWait();
+                            using var lease = Clock.SetForCurrentThread(clock);
 
-                            for (int j = 0; j < numberPerThread; j++)
+                            for (var i = 0; i < test.NumberOfBursts; i++)
                             {
-                                // trace id and span id are not used in rate-limiting
-                                var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+                                // Wait for every worker to be ready for next burst
+                                barrier.SignalAndWait();
 
-                                // pass a specific start time since there is no TraceContext
-                                var span = new Span(spanContext, DateTimeOffset.UtcNow);
-
-                                Interlocked.Increment(ref totalAttempted);
-
-                                if (limiter.Allowed(span))
+                                for (int j = 0; j < numberPerThread; j++)
                                 {
-                                    Interlocked.Increment(ref totalAllowed);
+                                    // trace id and span id are not used in rate-limiting
+                                    var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+
+                                    // pass a specific start time since there is no TraceContext
+                                    var span = new Span(spanContext, DateTimeOffset.UtcNow);
+
+                                    Interlocked.Increment(ref totalAttempted);
+
+                                    if (limiter.Allowed(span))
+                                    {
+                                        Interlocked.Increment(ref totalAllowed);
+                                    }
                                 }
                             }
-                        }
-                    },
-                    TaskCreationOptions.LongRunning);
+                        },
+                        TaskCreationOptions.LongRunning);
+                }
+
+                // Wait for all workers to be ready
+                barrier.SignalAndWait();
+
+                // We do not need to synchronize with workers anymore
+                barrier.RemoveParticipant();
+
+                // Wait for workers to finish
+                Task.WaitAll(workers);
+
+                var result = new RateLimitResult
+                {
+                    RateLimiter = limiter,
+                    ReportedRate = limiter.GetEffectiveRate(),
+                    TotalAttempted = totalAttempted,
+                    TotalAllowed = totalAllowed
+                };
+
+                return result;
             }
 
-            // Wait for all workers to be ready
-            barrier.SignalAndWait();
-
-            // We do not need to synchronize with workers anymore
-            barrier.RemoveParticipant();
-
-            // Wait for workers to finish
-            Task.WaitAll(workers);
-
-            var result = new RateLimitResult
+            private class RateLimitLoadTest
             {
-                RateLimiter = limiter,
-                ReportedRate = limiter.GetEffectiveRate(),
-                TotalAttempted = totalAttempted,
-                TotalAllowed = totalAllowed
-            };
+                public int NumberPerBurst { get; set; }
 
-            return result;
-        }
+                public TimeSpan TimeBetweenBursts { get; set; }
 
-        private class RateLimitLoadTest
-        {
-            public int NumberPerBurst { get; set; }
+                public int NumberOfBursts { get; set; }
+            }
 
-            public TimeSpan TimeBetweenBursts { get; set; }
+            private class RateLimitResult
+            {
+                public RateLimiter RateLimiter { get; set; }
 
-            public int NumberOfBursts { get; set; }
-        }
+                public float ReportedRate { get; set; }
 
-        private class RateLimitResult
-        {
-            public RateLimiter RateLimiter { get; set; }
+                public int TotalAttempted { get; set; }
 
-            public float ReportedRate { get; set; }
-
-            public int TotalAttempted { get; set; }
-
-            public int TotalAllowed { get; set; }
+                public int TotalAllowed { get; set; }
+            }
         }
     }
 }

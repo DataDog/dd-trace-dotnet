@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
+#pragma warning disable SA1201 // Elements should appear in the correct order
 namespace Samples.Computer01
 {
     // Simple chain types
@@ -176,12 +177,12 @@ namespace Samples.Computer01
 
     public class EventSubscriber
     {
-        public LeakedPayload Payload { get; }
-
         public EventSubscriber(LeakedPayload payload)
         {
             Payload = payload;
         }
+
+        public LeakedPayload Payload { get; }
 
         public void OnDataReceived(object sender, EventArgs e)
         {
@@ -243,6 +244,12 @@ namespace Samples.Computer01
     public class InteropPayload
     {
         public byte[] NativeBuffer { get; } = new byte[2048];
+    }
+
+    // Scenario 17: Weak GCHandle (not a retention root)
+    public class WeakHandleTarget
+    {
+        public InteropPayload Payload { get; } = new InteropPayload();
     }
 
     // Scenario 19: Async state machine leak
@@ -384,6 +391,8 @@ namespace Samples.Computer01
     /// </summary>
     public class ReferenceChainScenarios : ScenarioBase
     {
+        private static List<Order> _staticOrders;
+
         private readonly int _scenarioNumber;
 
         private Dictionary<int, Order> _orderMap;
@@ -399,13 +408,13 @@ namespace Samples.Computer01
         private List<SparseObject> _sparseObjects;
         private StructWithReferences[] _structEntries;
 
-        private static List<Order> _staticOrders;
-
         // Scenarios 13-19: Memory leak patterns
         private EventPublisher _eventPublisher;
         private ClosureHolder _closureHolder;
         private List<TimerOwner> _timerOwners;
         private List<GCHandle> _gcHandles;
+        private List<GCHandle> _weakHandles;
+        private List<WeakHandleTarget> _weakHandleTargets;
         private List<GCHandle> _pinnedHandles;
         private AsyncLeakSource _asyncLeakSource;
         private List<OuterHolder<InnerStruct>> _nestedVtHolders;
@@ -472,6 +481,9 @@ namespace Samples.Computer01
                     break;
                 case 16:
                     RunGCHandleLeak();
+                    break;
+                case 17:
+                    RunWeakGCHandle();
                     break;
                 case 18:
                     RunPinnedLeak();
@@ -1077,6 +1089,27 @@ namespace Samples.Computer01
         }
 
         /// <summary>
+        /// Scenario 17: Weak GCHandle
+        /// The targets are also held strongly so the runtime reports non-null weak handles.
+        /// Weak handles must not appear as roots in a retention tree.
+        /// </summary>
+        private void RunWeakGCHandle()
+        {
+            Console.WriteLine("ReferenceChain Scenario 17: Weak GCHandle");
+            var handles = new List<GCHandle>();
+            var targets = new List<WeakHandleTarget>();
+            for (int i = 0; i < 20; i++)
+            {
+                var target = new WeakHandleTarget();
+                targets.Add(target);
+                handles.Add(GCHandle.Alloc(target, GCHandleType.Weak));
+            }
+
+            _weakHandles = handles;
+            _weakHandleTargets = targets;
+        }
+
+        /// <summary>
         /// Scenario 18: Pinned Handle (Pinning root kind)
         /// GCHandle.Alloc with Pinned - tests Pinning root category.
         /// </summary>
@@ -1243,5 +1276,6 @@ namespace Samples.Computer01
         }
     }
 }
+#pragma warning restore SA1201 // Elements should appear in the correct order
 #pragma warning restore SA1649 // File name should match first type name
 #pragma warning restore SA1402 // File may only contain a single type

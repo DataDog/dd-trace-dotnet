@@ -1,4 +1,4 @@
-﻿// <copyright file="CoverageUtils.cs" company="Datadog">
+// <copyright file="CoverageUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,14 +6,12 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util;
 
 internal static class CoverageUtils
 {
@@ -26,23 +24,24 @@ internal static class CoverageUtils
 
     public static bool TryCombineAndGetTotalCoverage(string? inputFolder, string? outputFile, out GlobalCoverageInfo? globalCoverageInfo)
     {
-        if (string.IsNullOrEmpty(outputFile))
+        globalCoverageInfo = null;
+        if (StringUtil.IsNullOrEmpty(outputFile))
         {
             globalCoverageInfo = null;
             return false;
         }
 
-        if (!TryCombineAndGetTotalCoverage(inputFolder, out globalCoverageInfo))
-        {
-            return false;
-        }
-
         try
         {
-            using var fStream = File.OpenWrite(outputFile);
-            using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-            using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
-            new JsonSerializer().Serialize(jsonWriter, globalCoverageInfo);
+            if (!TryReadAndCombine(inputFolder, outputFile, expectedRunToken: null, out globalCoverageInfo))
+            {
+                return false;
+            }
+
+            var writer = new GlobalCoverageArtifactWriter();
+            using var stagedOutput = writer.StageReplace(outputFile!, globalCoverageInfo!);
+            stagedOutput.Commit();
+
             return true;
         }
         catch (Exception ex)
@@ -53,13 +52,17 @@ internal static class CoverageUtils
         return false;
     }
 
-    private static bool TryCombineAndGetTotalCoverage(string? inputFolder, out GlobalCoverageInfo? globalCoverageInfo)
+    public static bool TryReadAndCombine(
+        string? inputFolder,
+        string? outputFile,
+        string? expectedRunToken,
+        out GlobalCoverageInfo? globalCoverageInfo)
     {
         globalCoverageInfo = default;
 
         try
         {
-            if (string.IsNullOrEmpty(inputFolder))
+            if (StringUtil.IsNullOrEmpty(inputFolder))
             {
                 return false;
             }
@@ -70,31 +73,33 @@ internal static class CoverageUtils
                 return false;
             }
 
-            var jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder!, expectedRunToken, out var jsonFiles))
+            {
+                return false;
+            }
+
             if (jsonFiles.Length == 0)
             {
                 Log.ErrorSkipTelemetry("'{InputFolder}' doesn't contain any json file.", inputFolder);
                 return false;
             }
 
-            List<GlobalCoverageInfo> globalCoverages = new();
-            foreach (var file in jsonFiles)
+            if (!GlobalCoverageFileCombiner.TryCombine(
+                    jsonFiles,
+                    outputFile,
+                    requireAllInputs: expectedRunToken is not null,
+                    onFileProcessed: null,
+                    out globalCoverageInfo,
+                    out var rejectedInput))
             {
-                var fileContent = File.ReadAllText(file);
-                try
+                if (rejectedInput is not null)
                 {
-                    if (JsonHelper.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
-                    {
-                        globalCoverages.Add(gCoverageInfo);
-                    }
+                    Log.Error("Error processing global coverage input: {File}", rejectedInput);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error processing {File}", file);
-                }
+
+                return false;
             }
 
-            globalCoverageInfo = GlobalCoverageInfo.Combine(globalCoverages.ToArray());
             return true;
         }
         catch (Exception globalEx)

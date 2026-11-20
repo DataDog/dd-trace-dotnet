@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Hangfire" Version="$(ApiVersion)" />
     <PackageReference Include="Hangfire.MemoryStorage" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.8" />
   </ItemGroup>
   

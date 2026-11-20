@@ -13,6 +13,9 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal ref struct ExpressionEvaluationResult
 {
+    // This must be a field so compiled expressions can mutate the authoritative budget by reference.
+    internal EvaluationBudget EvaluationBudget;
+
     internal string? Template { get; set; }
 
     internal bool? Condition { get; set; }

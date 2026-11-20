@@ -689,22 +689,20 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            using var memory = MemoryPool<string>.Shared.Rent(methodLocalsCount);
-            var names = memory.Memory.Span;
-
             var signature = GetLocalSignature(method);
             if (signature == null)
             {
                 return null;
             }
 
+            var names = new string[methodLocalsCount];
             foreach (var scopeHandle in PdbReader.GetLocalScopes(methodDefHandle.ToDebugInformationHandle()))
             {
                 var localScope = PdbReader.GetLocalScope(scopeHandle);
                 foreach (var localVarHandle in localScope.GetLocalVariables())
                 {
                     var local = PdbReader.GetLocalVariable(localVarHandle);
-                    if (local.Index > methodLocalsCount || local.Attributes.HasFlag(LocalVariableAttributes.DebuggerHidden))
+                    if (local.Index >= methodLocalsCount || local.Attributes.HasFlag(LocalVariableAttributes.DebuggerHidden))
                     {
                         continue;
                     }
@@ -729,7 +727,7 @@ namespace Datadog.Trace.Pdb
                 }
             }
 
-            return names.Slice(0, methodLocalsCount).ToArray();
+            return names;
         }
 
         internal CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfo(int methodToken)

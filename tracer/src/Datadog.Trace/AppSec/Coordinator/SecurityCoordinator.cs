@@ -1,4 +1,4 @@
-// <copyright file="SecurityCoordinator.cs" company="Datadog">
+﻿// <copyright file="SecurityCoordinator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,6 +7,7 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -38,22 +39,65 @@ internal readonly partial struct SecurityCoordinator
 
     public SecurityReporter Reporter { get; }
 
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
+    public void MarkBlockFailed() => _appsecRequestContext.MarkBlockFailed();
+
+    /// <summary>
+    /// Records the outcome of a WAF run whose block, if it asked for one, was attempted, and reports the result
+    /// </summary>
+    /// <param name="result">the result of the WAF run</param>
+    /// <param name="blocked">whether the blocking response could be applied</param>
+    public void MarkBlockAndReport(IResult result, bool blocked)
+    {
+        if (result.ShouldBlock)
+        {
+            // even when the block failed, so that the following WAF runs don't try to block again
+            _httpTransport.MarkBlocked();
+            if (!blocked)
+            {
+                MarkBlockFailed();
+            }
+        }
+
+        Reporter.TryReport(result, blocked);
+    }
 
     public IResult? Scan(bool lastTime = false)
     {
-        var args = GetBasicRequestArgsForWaf();
-        return RunWaf(args, lastTime);
+        var args = CollectRequestArgsForWaf();
+
+        if (lastTime && _httpTransport.StatusCode is { } statusCode)
+        {
+            args[AddressesConstants.ResponseStatus] = statusCode.ToStringInvariant();
+        }
+
+        return args.Count > 0 ? RunWaf(args, lastTime) : null;
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
+    // Core request-phase collection: returns the request addresses to the first scan of the request and an
+    // empty set to the following ones (Framework doesn't go through here, it refreshes them on every
+    // BeginRequest). The context check comes first so they aren't marked as sent when there is no store to
+    // keep them.
+    internal Dictionary<string, object> CollectRequestArgsForWaf() =>
+        _appsecRequestContext.GetOrCreateAdditiveContext(_security) is not null && _appsecRequestContext.ShouldSendRequestAddresses()
+            ? GetBasicRequestArgsForWaf()
+            : new Dictionary<string, object>(3);
+
+    internal bool ShouldScanResponse() => _appsecRequestContext.ShouldScanResponse();
+
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null, ulong? subcontextId = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
 
+        // a RASP run is exactly a run that has an address to report under, so the execution mode and
+        // the telemetry classification cannot end up disagreeing
+        var isRasp = raspAddress is not null;
+
         try
         {
-            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
+            // GetOrCreateAdditiveContext reports its own RASP failure: it is the only place that can
+            // tell an ended request from a failed creation without racing a concurrent disposal
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security, raspAddress);
 
             if (additiveContext is null)
             {
@@ -66,18 +110,42 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode?.ToString(), _httpTransport.RouteData);
+            var samplingDecision = _security.ApiSecurity.GetSamplingDecision(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData, _appsecRequestContext.BlockRequested);
 
             // run the WAF and execute the results
+            var outcome = WafOutcome.Success;
             result = runWithEphemeral
-                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
+                         ? subcontextId is { } id
+                               ? additiveContext.RunInSubcontext(id, args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
+                               : additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
+            if (raspAddress is not null)
+            {
+                // the context was handed out, so a run that produced nothing failed or arrived after the
+                // request ended, and only the run knows which: a null here is not classifiable
+                RaspModule.RecordRaspOutcome(raspAddress, outcome);
+            }
+
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordWafTelemetry(result);
+            SecurityReporter.RecordWafTelemetry(result, isRasp, _appsecRequestContext);
+            ApiSecurity.RecordSamplingTelemetry(samplingDecision, result, _localRootSpan, TelemetryFactory.Metrics);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
+            if (result is null)
+            {
+                if (raspAddress is not null)
+                {
+                    RaspModule.RecordRaspOutcome(raspAddress, WafOutcome.BindingFailed);
+                }
+                else
+                {
+                    TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                    _appsecRequestContext.RecordWafRunFailure();
+                }
+            }
+
             var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
@@ -140,7 +208,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                SecurityReporter.RecordWafTelemetry(result);
+                SecurityReporter.RecordWafTelemetry(result, isRasp: false, _appsecRequestContext);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {
@@ -150,6 +218,12 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
+            if (result is null)
+            {
+                TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                _appsecRequestContext.RecordWafRunFailure();
+            }
+
             if (addresses is not null)
             {
                 var stringBuilder = StringBuilderCache.Acquire();
@@ -221,7 +295,7 @@ internal readonly partial struct SecurityCoordinator
                 var currentKey = key ?? string.Empty;
                 if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
                 {
-                    currentKey = currentKey.ToLowerInvariant();
+                    currentKey = StringUtil.ToLowerInvariant(currentKey);
                     var value = getHeaderValue(collection, currentKey);
 #if NETCOREAPP
                     if (!headersDic.TryAdd(currentKey, value))

@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -27,6 +26,9 @@ internal static class MsTestIntegration
 {
     internal const string IntegrationName = nameof(Configuration.IntegrationId.MsTestV2);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
+#if NETFRAMEWORK
+    private const string TotalTestCasesKey = "Datadog.Trace.MSTest.TotalTestCases";
+#endif
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
     internal static readonly ThreadLocal<MethodInfoCacheItem?> IsTestMethodRunnableThreadLocal = new();
@@ -111,6 +113,7 @@ internal static class MsTestIntegration
 
         var test = startDate is null ? suite.CreateTest(testName) : suite.CreateTest(testName, startDate.Value);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -140,7 +143,8 @@ internal static class MsTestIntegration
         Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
-        Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
+        var totalTestCases = GetTotalTestCases();
+        Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref totalTestCases);
 
         // Flaky retry
         Common.SetFlakyRetryTags(test, isRetry);
@@ -170,33 +174,7 @@ internal static class MsTestIntegration
         var hasDisplayName = !string.IsNullOrEmpty(displayName) && displayName != testName;
         if (methodParameters?.Length > 0 || hasDisplayName)
         {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object?>()
-            };
-
-            if (hasDisplayName)
-            {
-                testParameters.Metadata[TestTags.MetadataTestName] = displayName;
-            }
-
-            if (methodParameters is not null)
-            {
-                for (var i = 0; i < methodParameters.Length; i++)
-                {
-                    if (testMethodArguments != null && i < testMethodArguments.Length)
-                    {
-                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
-                    }
-                    else
-                    {
-                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
-                    }
-                }
-            }
-
-            test.SetParameters(testParameters);
+            test.SetParameters(Common.CreateTestParameters(testMethodArguments, methodParameters, hasDisplayName ? displayName : null, useParameterIndexForUnnamedParameters: true));
         }
     }
 
@@ -311,7 +289,9 @@ internal static class MsTestIntegration
             out var matchedSkippableTest,
             moduleName,
             metadataTestName: hasResolvedDisplayName ? metadataTestName : null,
-            allowParametersMetadataMismatch: !hasResolvedDisplayName && hasRowIdentity);
+            allowParametersMetadataMismatch: !hasResolvedDisplayName && hasRowIdentity,
+            includeMetadataTestNameInFingerprint: false,
+            useParameterIndexForUnnamedParameters: true);
         traits ??= GetTraits(testMethod);
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;
@@ -377,7 +357,7 @@ internal static class MsTestIntegration
         var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
         var testClass = testMethodInfo.TestClassName ?? string.Empty;
         var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
-        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
+        return TestAutomationExclusions.From(testMethodInfo.MethodInfo).ApplyTo(testManagementFeature.GetTestProperties(testModule, testClass, testMethod));
     }
 
     internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)
@@ -466,4 +446,28 @@ internal static class MsTestIntegration
     {
         Interlocked.Add(ref _totalTestCases, count);
     }
+
+    internal static long GetTotalTestCases()
+    {
+#if NETFRAMEWORK
+        // MSTest discovers tests in the caller's AppDomain, then executes them in a fresh one.
+        // Restore the unfiltered count copied when that execution host was created.
+        if (Interlocked.Read(ref _totalTestCases) == 0 && AppDomain.CurrentDomain.GetData(TotalTestCasesKey) is long count)
+        {
+            Interlocked.CompareExchange(ref _totalTestCases, count, 0);
+        }
+#endif
+        return Interlocked.Read(ref _totalTestCases);
+    }
+
+#if NETFRAMEWORK
+    internal static void CopyTotalTestCasesTo(AppDomain executionDomain)
+    {
+        var count = GetTotalTestCases();
+        if (count > 0)
+        {
+            executionDomain.SetData(TotalTestCasesKey, count);
+        }
+    }
+#endif
 }

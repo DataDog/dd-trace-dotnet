@@ -17,7 +17,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <summary>
         /// The default UDP maximum packet size.
         /// </summary>
-        public const int DefaultStatsdMaxUDPPacketSize = 512;
+        public const int DefaultStatsdMaxUDPPacketSize = 1432;
 
         /// <summary>
         /// The name of the environment variable defining the global tags to be applied to every metric, event, and service check.
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// Gets or sets the maximum Unix domain socket packet size.
         /// </summary>
         /// <value>The maximum Unix domain socket packet size.</value>
-        public int StatsdMaxUnixDomainSocketPacketSize { get; set; } = 2048;
+        public int StatsdMaxUnixDomainSocketPacketSize { get; set; } = 8192;
 
         /// <summary>
         /// Gets or sets a value indicating whether we truncate the metric if it is too long.

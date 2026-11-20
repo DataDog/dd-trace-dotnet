@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.OpenTelemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -67,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 if (returnValue is HttpWebResponse response)
                 {
                     state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, tracer.CurrentTraceSettings.Settings);
+                    HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, response.ProtocolVersion);
                     state.Scope.Dispose();
                 }
                 else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
@@ -76,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     state.Scope.Span.SetException(exception, markAsError: false);
 
                     state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, tracer.CurrentTraceSettings.Settings);
+                    HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, exceptionResponse.ProtocolVersion);
 
                     state.Scope.Dispose();
                 }

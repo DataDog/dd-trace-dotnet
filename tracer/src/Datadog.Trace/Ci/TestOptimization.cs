@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -235,6 +236,10 @@ internal sealed class TestOptimization : ITestOptimization
             return;
         }
 
+        // Agent discovery can initialize the tracer. Register first so test sessions close before its writer.
+        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        cd.Debug("Added shutdown task");
+
         if (_enablement.InferredEnabled)
         {
             PropagateCiVisibilityEnvironmentVariable();
@@ -264,9 +269,6 @@ internal sealed class TestOptimization : ITestOptimization
         {
             Log.Information("TestOptimization: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
         }
-
-        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
-        cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
@@ -547,6 +549,15 @@ internal sealed class TestOptimization : ITestOptimization
             }
 
             await testModule.CloseAsync().ConfigureAwait(false);
+        }
+
+        try
+        {
+            CoverageReporter.FinalizeGlobalCoverage();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimization: Error finalizing global code coverage during shutdown.");
         }
 
         foreach (var testSession in TestSession.ActiveTestSessions)

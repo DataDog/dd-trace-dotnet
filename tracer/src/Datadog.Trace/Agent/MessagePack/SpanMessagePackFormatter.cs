@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Processors;
@@ -80,6 +81,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
         private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+        private static ReadOnlySpan<byte> SdkOtlpExportNameBytes => "_dd.sdk.otlp_export"u8; // Tags.SdkOtlpExport
+        private static ReadOnlySpan<byte> SdkOtlpExportValueBytes => "false"u8;
 
         // numeric tags
         private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
@@ -96,6 +99,10 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> AppSecEnabledBytes => "_dd.appsec.enabled"u8; // Metrics.AppSecEnabled
         private static ReadOnlySpan<byte> WafRuleFileVersionBytes => "_dd.appsec.event_rules.version"u8; // Tags.AppSecRuleFileVersion
         private static ReadOnlySpan<byte> RuntimeFamilyBytes => "_dd.runtime_family"u8; // Tags.RuntimeFamily
+        // Feature-flag span enrichment tag names (frozen cross-SDK contract; bare names, never _dd.-prefixed)
+        private static ReadOnlySpan<byte> FfeFlagsEncNameBytes => "ffe_flags_enc"u8; // SpanEnrichmentState.TagFlagsEnc
+        private static ReadOnlySpan<byte> FfeSubjectsEncNameBytes => "ffe_subjects_enc"u8; // SpanEnrichmentState.TagSubjectsEnc
+        private static ReadOnlySpan<byte> FfeRuntimeDefaultsNameBytes => "ffe_runtime_defaults"u8; // SpanEnrichmentState.TagRuntimeDefaults
         // Azure App Service tag names
         private static ReadOnlySpan<byte> AasSiteNameTagNameBytes => "aas.site.name"u8; // Tags.AzureAppServicesSiteName
         private static ReadOnlySpan<byte> AasSiteKindTagNameBytes => "aas.site.kind"u8; // Tags.AzureAppServicesSiteKind
@@ -436,13 +443,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 case sbyte or byte or short or ushort or int or uint or long:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, IntValueFieldBytes);
-                    offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value));
+                    offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value, CultureInfo.InvariantCulture));
                     break;
 
                 case float or double:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DoubleValueFieldBytes);
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value));
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value, CultureInfo.InvariantCulture));
                     break;
             }
 
@@ -506,7 +513,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            span.Tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
@@ -619,16 +626,23 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
-            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
+            // Payload-scoped tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
             {
-                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
 
-                if (processTagsRawBytes is not null)
+                if (model.TraceChunk.ProcessTags is not null)
                 {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                    if (processTagsRawBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    }
                 }
             }
 
@@ -661,6 +675,34 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, WafRuleFileVersionBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
+            }
+
+            if (model.IsLocalRoot &&
+                span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
+                featureFlagEnrichment.HasData())
+            {
+                var ffeTags = featureFlagEnrichment.BuildSpanTags();
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.FlagsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeFlagsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.FlagsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.SubjectsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeSubjectsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.SubjectsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.RuntimeDefaults))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeRuntimeDefaultsNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.RuntimeDefaults);
+                }
             }
 
             // AAS tags need to be set on any span for the backend to properly handle the billing.
@@ -973,7 +1015,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -1002,6 +1044,24 @@ namespace Datadog.Trace.Agent.MessagePack
                 else
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+                }
+
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<int> item)
+            {
+                // int-backed tags are serialized as strings; IntStringCache keeps this allocation-free
+                var value = IntStringCache.ToInvariantString(item.Value);
+
+                if (item.SerializedKey.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, value, _tagProcessors);
                 }
 
                 Count++;

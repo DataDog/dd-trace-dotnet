@@ -51,7 +51,8 @@ namespace Samples.SqlServer
 
         private static async Task<int> AsyncMain()
         {
-            var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]");
+            var tableName = $"System-Data-SqlClient-Test-{Guid.NewGuid():N}";
+            var commandFactory = new DbCommandFactory($"[{tableName}]", $"[PK_{tableName}]");
             var commandExecutor = new SqlCommandExecutor();
             var commandExecutorVb = new SqlCommandExecutorVb();
             var cts = new CancellationTokenSource();

@@ -73,6 +73,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+    /// For Oracle in service mode, the Base Hash is written to the session ACTION instead of SQL comments.
     /// Default value is false (disabled).
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
@@ -82,6 +83,7 @@ internal static partial class ConfigurationKeys
     /// Configuration key for setting DBM propagation mode
     /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
     /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
+    /// For Oracle, dynamic_service writes the Base Hash to the session ACTION instead of injecting SQL comments
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
@@ -157,7 +159,18 @@ internal static partial class ConfigurationKeys
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
     /// <summary>
+    /// Origin detection information injected into application containers by the Datadog Cluster Agent Admission Controller,
+    /// e.g. <c>it-false,cn-nginx-webserver,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759</c>.
+    /// When set, the value is forwarded unparsed in the <c>Datadog-External-Env</c> header on requests to the agent
+    /// (traces, stats, remote configuration) and to the telemetry intake, so that the agent can resolve the origin
+    /// container when the container id or cgroup inode are not available. Empty or invalid values are ignored.
+    /// This is not intended to be set manually.
+    /// </summary>
+    public const string ExternalEnv = "DD_EXTERNAL_ENV";
+
+    /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
+    /// When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
@@ -247,6 +260,7 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
     /// Default value is <c>true</c> (enabled) on .NET 6+ and <c>false</c> (disabled) otherwise.
+    /// Runtime metrics are always disabled when <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> is <c>true</c>.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
@@ -346,6 +360,13 @@ internal static partial class ConfigurationKeys
     /// Default value is true
     /// </summary>
     public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
+
+    /// <summary>
+    /// Configuration key for enabling or disabling span links creation for Azure Event Grid batch operations.
+    /// Default value is <c>true</c> (enabled).
+    /// </summary>
+    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventGridBatchLinksEnabled"/>
+    public const string AzureEventGridBatchLinksEnabled = "DD_TRACE_AZURE_EVENTGRID_BATCH_LINKS_ENABLED";
 
     /// <summary>
     /// Configuration key for enabling or disabling span links creation for Azure EventHubs batch operations.
@@ -523,6 +544,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
+    /// When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
@@ -594,6 +616,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for specifying a custom regex to obfuscate query strings.
+    /// Custom regexes process user-supplied query strings. Avoid costly backtracking.
     /// Default value is in TracerSettingsConstants
     ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
     /// </summary>
