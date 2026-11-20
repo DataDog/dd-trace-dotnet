@@ -143,10 +143,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                // exchange can be empty for "direct"; key encodes both cases without collision
+                // exchange can be empty for "direct"; key encodes both cases without collision.
+                // Names are normalized before keying so per-instance names share one cache entry.
                 var produceKey = new RabbitMQProduceEdgeTagCacheKey(
-                    tags.Exchange ?? string.Empty,
-                    string.IsNullOrEmpty(tags.Exchange) ? tags.Queue ?? tags.RoutingKey ?? string.Empty : string.Empty,
+                    RabbitMQQueueNameNormalizer.Normalize(tags.Exchange) ?? string.Empty,
+                    string.IsNullOrEmpty(tags.Exchange) ? RabbitMQQueueNameNormalizer.Normalize(tags.Queue ?? tags.RoutingKey) ?? string.Empty : string.Empty,
                     !string.IsNullOrEmpty(tags.RoutingKey));
                 var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                     produceKey,
@@ -194,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
                 var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
-                    new RabbitMQConsumeEdgeTagCacheKey(tags.Queue ?? tags.RoutingKey ?? string.Empty),
+                    new RabbitMQConsumeEdgeTagCacheKey(RabbitMQQueueNameNormalizer.Normalize(tags.Queue ?? tags.RoutingKey) ?? string.Empty),
                     static k => new EdgeTags(["direction:in", $"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]));
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.SetDataStreamsCheckpoint(
