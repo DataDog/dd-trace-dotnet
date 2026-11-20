@@ -19,6 +19,10 @@ on:
         description: 'Branch name for tagging (optional). If provided, tags as branch name instead of latest_snapshot'
         required: false
 
+      commit_sha:
+        description: 'The commit the AzDo build stamped its dev version from (optional)'
+        required: false
+
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -36,4 +40,5 @@ jobs:
       with:
         azdo_build_id: "${{ github.event.inputs.azdo_build_id }}"
         branch_name: "${{ github.event.inputs.branch_name }}"
+        commit_sha: "${{ github.event.inputs.commit_sha }}"
         github_token: ${{ secrets.GITHUB_TOKEN }}

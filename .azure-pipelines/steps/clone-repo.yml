@@ -180,3 +180,5 @@ steps:
   - checkout: self
     clean: true
     retryCountOnTaskFailure: 3
+
+- template: set-ci-dev-version-suffix.yml

@@ -10,6 +10,10 @@ inputs:
     description: 'Branch name for tagging (optional). If provided, tags as branch name instead of latest_snapshot'
     required: false
 
+  commit_sha:
+    description: 'The commit the AzDo build stamped its dev version from (optional). If provided, applies the same version suffix before reading the version'
+    required: false
+
   github_token:
     description: 'Github token for pushing images to ghcr.io Docker repository'
     required: true
@@ -27,6 +31,14 @@ runs:
     - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
         global-json-file: global.json
+
+    - name: "Set CI dev version suffix"
+      if: ${{ inputs.commit_sha != '' }}
+      shell: bash
+      run: ./tracer/build/set-ci-dev-version-suffix.sh "$BRANCH_NAME_INPUT" "$COMMIT_SHA_INPUT"
+      env:
+        BRANCH_NAME_INPUT: "${{ inputs.branch_name }}"
+        COMMIT_SHA_INPUT: "${{ inputs.commit_sha }}"
 
     - name: "Get current version"
       id: versions
