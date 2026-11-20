@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Include="..\..\build\_build\CiStageSelection.cs" Link="CiStageSelection.cs" />
+  </ItemGroup>
+
+</Project>
