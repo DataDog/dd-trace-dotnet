@@ -21,6 +21,27 @@ jobs:
 
   steps:
   - template: ensure-docker-ready.yml
+
+  # Diagnostic only: the Windows smoke test images are large and builds have failed with
+  # "not enough space on the disk", so log what is already on the agent before any build
+  - powershell: |
+      # Prevent PowerShell from treating native command stderr as a terminating error
+      $ErrorActionPreference = 'Continue'
+
+      $dockerRoot = docker info --format '{{.DockerRootDir}}'
+      if (-not $dockerRoot) { $dockerRoot = 'C:\' }
+      $driveName = (Split-Path -Qualifier $dockerRoot).TrimEnd(':')
+
+      Write-Host ("Docker root: {0}" -f $dockerRoot)
+      Write-Host ("Free space on {0}: {1:N1} GB" -f $driveName, ((Get-PSDrive -Name $driveName).Free / 1GB))
+      Get-PSDrive -PSProvider FileSystem | ForEach-Object {
+          Write-Host ("Drive {0}: used {1:N1} GB, free {2:N1} GB" -f $_.Name, ($_.Used / 1GB), ($_.Free / 1GB))
+      }
+      docker system df
+      docker images --all --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}'
+      exit 0
+    displayName: Log docker disk usage
+
   - template: clone-repo.yml
     parameters:
       targetShaId: $(targetShaId)
