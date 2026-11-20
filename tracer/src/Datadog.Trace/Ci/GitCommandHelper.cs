@@ -120,14 +120,14 @@ internal static class GitCommandHelper
             {
                 var sb = StringBuilderCache.Acquire();
                 sb.AppendLine(" -> ");
-                sb.AppendLine($"  command : git {arguments}");
-                sb.AppendLine($"       wd : {workingDirectory}");
+                sb.Append("  command : git ").AppendLine(arguments);
+                sb.Append("       wd : ").AppendLine(workingDirectory);
                 sb.AppendLine(StringUtil.Invariant($"exit code : {gitOutput?.ExitCode}"));
                 sb.AppendLine(StringUtil.Invariant($"  elapsed : {sw.ElapsedMilliseconds}ms"));
-                sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
+                sb.Append("   output : ").AppendLine(gitOutput?.Output ?? "<NULL>");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
                 {
-                    sb.AppendLine($"   error  : {err}");
+                    sb.Append("   error  : ").AppendLine(err);
                 }
 
                 var txt = StringBuilderCache.GetStringAndRelease(sb);

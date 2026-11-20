@@ -47,7 +47,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return true;
             }
 
-            if (o.GetType() != this.GetType())
+            if (o.GetType() != typeof(RemoteConfiguration))
             {
                 return false;
             }
