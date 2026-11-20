@@ -10,8 +10,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Amazon.Kinesis.Model;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -264,6 +267,77 @@ public class ContextPropagationTests
         personMemoryStream.Should().NotBeNull();
 
         personMemoryStream.ToArray().Should().BeEquivalentTo(PersonJsonStringBytes);
+    }
+
+    [Fact]
+    public void ExtractPathwayContext_WithInjectedArrayValue_ReturnsContext()
+    {
+        var dsm = GetDataStreamsManager();
+        var context = new PathwayContext(new PathwayHash(123), 1_234_000_000, 5_678_000_000);
+        var adapter = new KinesisContextAdapter();
+        dsm.InjectPathwayContext(context, adapter);
+
+        var data = new Dictionary<string, object>(PersonDictionary) { [DatadogKey] = adapter.GetDictionary() };
+        var stream = ContextPropagation.DictionaryToMemoryStream(data);
+
+        var extracted = ContextPropagation.ExtractPathwayContext(dsm, stream);
+
+        extracted.Should().NotBeNull();
+        extracted!.Value.Hash.Value.Should().Be(context.Hash.Value);
+        extracted.Value.PathwayStart.Should().Be(context.PathwayStart);
+        extracted.Value.EdgeStart.Should().Be(context.EdgeStart);
+    }
+
+    [Fact]
+    public void ExtractPathwayContext_WithStringValue_ReturnsContext()
+    {
+        var dsm = GetDataStreamsManager();
+        var context = new PathwayContext(new PathwayHash(456), 1_234_000_000, 5_678_000_000);
+        var adapter = new KinesisContextAdapter();
+        dsm.InjectPathwayContext(context, adapter);
+        var encoded = adapter.GetValues("dd-pathway-ctx-base64").Should().ContainSingle().Subject;
+
+        var json = $"{{\"before\":{{\"nested\":[1,2]}},\"{DatadogKey}\":{{\"x-datadog-trace-id\":\"1\",\"dd-pathway-ctx-base64\":\"{encoded}\"}},\"after\":true}}";
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+        var extracted = ContextPropagation.ExtractPathwayContext(dsm, stream);
+
+        extracted.Should().NotBeNull();
+        extracted!.Value.Hash.Value.Should().Be(context.Hash.Value);
+    }
+
+    [Fact]
+    public void ExtractPathwayContext_PreservesStreamPosition()
+    {
+        var dsm = GetDataStreamsManager();
+        var adapter = new KinesisContextAdapter();
+        dsm.InjectPathwayContext(new PathwayContext(new PathwayHash(789), 1, 2), adapter);
+        var data = new Dictionary<string, object>(PersonDictionary) { [DatadogKey] = adapter.GetDictionary() };
+        var stream = ContextPropagation.DictionaryToMemoryStream(data);
+        stream.Position = 7;
+
+        ContextPropagation.ExtractPathwayContext(dsm, stream);
+
+        stream.Position.Should().Be(7);
+    }
+
+    [Theory]
+    [InlineData("Jordan Gonzalez is not json at all")]
+    [InlineData("[\"an\", \"array\", \"of\", \"strings\", \"long enough\"]")]
+    [InlineData("{\"name\":\"Jordan\",\"lastname\":\"Gonzalez\",\"city\":\"NYC\"}")]
+    [InlineData("{\"name\":\"Jordan\",\"_datadog\":\"not an object at all\"}")]
+    [InlineData("{\"name\":\"Jordan\",\"_datadog\":{\"dd-pathway-ctx-base64\":\"!!notbase64!!\"}}")]
+    public void ExtractPathwayContext_WithoutValidContext_ReturnsNull(string data)
+    {
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes(data));
+
+        ContextPropagation.ExtractPathwayContext(GetDataStreamsManager(), stream).Should().BeNull();
+    }
+
+    private static DataStreamsManager GetDataStreamsManager()
+    {
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, "true" } });
+        return new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>());
     }
 
     private static ScopedTracer GetTracer(string schemaVersion = "v1")

@@ -115,6 +115,92 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
+        public static PathwayContext? ExtractPathwayContext(DataStreamsManager dataStreamsManager, MemoryStream? data)
+        {
+            if (data is null || data.Length <= MaxDsmHeaderSize)
+            {
+                return null;
+            }
+
+            var originalPosition = data.Position;
+            try
+            {
+                data.Position = 0;
+                var adapter = ReadPropagatedContext(data);
+                return adapter is { } headers ? dataStreamsManager.ExtractPathwayContext(headers) : null;
+            }
+            catch (Exception)
+            {
+                Log.Debug("Unable to extract data streams context from Kinesis data.");
+                return null;
+            }
+            finally
+            {
+                data.Position = originalPosition;
+            }
+        }
+
+        private static KinesisContextAdapter? ReadPropagatedContext(MemoryStream stream)
+        {
+            using var streamReader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
+            using var reader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
+
+            if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+            {
+                return null;
+            }
+
+            while (reader.Read() && reader.TokenType == JsonToken.PropertyName)
+            {
+                if (!string.Equals((string?)reader.Value, KinesisKey, StringComparison.Ordinal))
+                {
+                    reader.Read();
+                    reader.Skip();
+                    continue;
+                }
+
+                if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+                {
+                    return null;
+                }
+
+                var adapter = new KinesisContextAdapter();
+                var objectDepth = reader.Depth;
+                while (reader.Read() && reader.Depth > objectDepth)
+                {
+                    if (reader.TokenType != JsonToken.PropertyName)
+                    {
+                        continue;
+                    }
+
+                    var name = (string)reader.Value!;
+                    reader.Read();
+                    if (reader.TokenType == JsonToken.String)
+                    {
+                        adapter.Add(name, (string)reader.Value!);
+                    }
+                    else if (reader.TokenType == JsonToken.StartArray)
+                    {
+                        while (reader.Read() && reader.TokenType != JsonToken.EndArray)
+                        {
+                            if (reader.TokenType == JsonToken.String)
+                            {
+                                adapter.Add(name, (string)reader.Value!);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        reader.Skip();
+                    }
+                }
+
+                return adapter;
+            }
+
+            return null;
+        }
+
         [TestingAndPrivateOnly]
         internal static Dictionary<string, object>? ParseDataObject(MemoryStream dataStream)
         {
