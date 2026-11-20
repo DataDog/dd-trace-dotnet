@@ -64,6 +64,32 @@ runs:
     - name: Set up QEMU
       uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
+    - name: Install Datadog Buildx
+      shell: bash
+      env:
+        BUILDX_VERSION: 0.38.2-dd.3
+      run: |
+        set -euo pipefail
+        case "$(uname -m)" in
+          x86_64) arch=amd64; checksum=d974b718dd988bfe661346e8e2ac5751be55475883ae796ae9dea9d0f6cbe0b2 ;;
+          aarch64|arm64) arch=arm64; checksum=b22f3da81c913eb76da05143ba49ec3de06224b617161c969c43022add397b29 ;;
+          *) echo "Unsupported Buildx architecture" >&2; exit 1 ;;
+        esac
+        buildx_tmp="$(mktemp -d)"
+        trap 'rm -rf "$buildx_tmp"' EXIT
+        curl --fail --silent --show-error --location --retry 3 \
+          "https://github.com/DataDog/buildx/releases/download/v${BUILDX_VERSION}/buildx_${BUILDX_VERSION}_linux_${arch}.tar.gz" \
+          --output "$buildx_tmp/buildx.tar.gz"
+        printf '%s  %s\n' "$checksum" "$buildx_tmp/buildx.tar.gz" | sha256sum --check
+        tar -xzf "$buildx_tmp/buildx.tar.gz" -C "$buildx_tmp" buildx
+        install -D -m 0755 "$buildx_tmp/buildx" "${DOCKER_CONFIG:-$HOME/.docker}/cli-plugins/docker-buildx"
+        selected="$(docker buildx version)"
+        case "$selected" in
+          "github.com/docker/buildx v${BUILDX_VERSION} "*) printf '%s\n' "$selected" ;;
+          *) echo "Unexpected Buildx client: $selected" >&2; exit 1 ;;
+        esac
+
+    # With no version input, setup-buildx-action reuses the installed client.
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
