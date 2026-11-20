@@ -2413,6 +2413,55 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AwsLambdaSdk",
+    "AssemblyName": "AWSSDK.Lambda",
+    "TargetTypeName": "Amazon.Lambda.AmazonLambdaClient",
+    "TargetMethodName": "Invoke",
+    "TargetReturnType": "Amazon.Lambda.Model.InvokeResponse",
+    "TargetParameterTypes": [
+      "Amazon.Lambda.Model.InvokeRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.LambdaSdk.InvokeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsLambdaSdk",
+    "AssemblyName": "AWSSDK.Lambda",
+    "TargetTypeName": "Amazon.Lambda.AmazonLambdaClient",
+    "TargetMethodName": "InvokeAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Lambda.Model.InvokeResponse]",
+    "TargetParameterTypes": [
+      "Amazon.Lambda.Model.InvokeRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.LambdaSdk.InvokeAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AwsS3",
     "AssemblyName": "AWSSDK.S3",
     "TargetTypeName": "Amazon.S3.AmazonS3Client",

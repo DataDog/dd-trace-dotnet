@@ -1048,6 +1048,93 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> AwsLambdaSdk =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET48
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET5_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET6_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET7_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET8_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET9_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET10_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#if NET11_0
+                new object[] { "3.3.112.2" },
+                new object[] { "3.5.9.2" },
+                new object[] { "3.7.511.24" },
+                new object[] { "4.0.111.4" },
+                new object[] { "4.1.3" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AwsStepFunctions =>
 
             new List<object[]>

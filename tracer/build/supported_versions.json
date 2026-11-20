@@ -324,6 +324,23 @@
     ]
   },
   {
+    "integrationName": "AwsLambdaSdk",
+    "assemblyName": "AWSSDK.Lambda",
+    "minAssemblyVersionInclusive": "3.3.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.Lambda",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.3.0",
+        "minVersionTestedInclusive": "3.3.112.2",
+        "maxVersionSupportedInclusive": "4.1.3",
+        "maxVersionAvailableInclusive": "4.1.3",
+        "maxVersionTestedInclusive": "4.1.3"
+      }
+    ]
+  },
+  {
     "integrationName": "AwsS3",
     "assemblyName": "AWSSDK.S3",
     "minAssemblyVersionInclusive": "3.3.0",
