@@ -224,6 +224,70 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.Batches.Should().BeEmpty();
         }
 
+        [Fact]
+        [Trait("Category", "FormalMethods")]
+        public async Task Diagnostic_QueueSaturationSilentlyRejectsTheNewestLog()
+        {
+            var options = new BatchingSinkOptions(
+                batchSizeLimit: 10,
+                queueLimit: 1,
+                period: TinyWait,
+                circuitBreakPeriod: CircuitBreakPeriod,
+                failuresBeforeCircuitBreak: FailuresBeforeCircuitBreak);
+            await using var sink = new InMemoryBatchedSink(options);
+            var first = new TestEvent("first");
+            var second = new TestEvent("second");
+
+            sink.EnqueueLog(first);
+            sink.EnqueueLog(second);
+            await sink.RunOneIterationAsync(noDelay: true);
+
+            sink.Batches.Should().ContainSingle()
+                .Which.Should().ContainSingle()
+                .Which.Should().BeSameAs(first);
+        }
+
+        [Fact]
+        [Trait("Category", "FormalMethods")]
+        public async Task Diagnostic_FailedBatchIsNotRetried()
+        {
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions, emitResults: [false, true]);
+            sink.EnqueueLog(new TestEvent("lost after failed send"));
+
+            await sink.RunOneIterationAsync(noDelay: true);
+            await sink.RunOneIterationAsync(noDelay: true);
+
+            sink.Batches.Should().ContainSingle("the failed waiting batch is cleared in finally");
+        }
+
+        [Fact]
+        [Trait("Category", "FormalMethods")]
+        public async Task Diagnostic_FlushAcknowledgesFailedAndDiscardedBatch()
+        {
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions, emitResults: [false]);
+            sink.EnqueueLog(new TestEvent("lost after false acknowledgement"));
+            var flush = sink.FlushAsync();
+
+            await sink.RunOneIterationAsync(noDelay: true);
+
+            flush.IsCompletedSuccessfully.Should().BeTrue();
+            sink.Batches.Should().ContainSingle();
+        }
+
+        [Fact]
+        [Trait("Category", "FormalMethods")]
+        public async Task Diagnostic_FlushRequestedAfterDisposeNeverCompletes()
+        {
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions, startBackgroundLoop: true);
+            sink.Start();
+            await sink.DisposeAsync();
+
+            var flush = sink.FlushAsync();
+            var winner = await Task.WhenAny(flush, Task.Delay(TinyWait));
+
+            winner.Should().NotBeSameAs(flush, "the only consumer of flush acknowledgements has exited");
+        }
+
         internal class TestEvent : DirectSubmissionLogEvent
         {
             private readonly string _evt;

@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -443,6 +444,72 @@ public class TelemetryControllerTests
         await controller.DisposeAsync();
     }
 
+    [Fact]
+    [Trait("Category", "FormalMethodsPhase2")]
+    public async Task Diagnostic_FailedFinalTelemetryPushIsNotRetried()
+    {
+        var transport = new SequencedTelemetryTransport(
+            TelemetryPushResult.Success,
+            TelemetryPushResult.TransientFailure,
+            TelemetryPushResult.Success);
+        var configuration = new ConfigurationTelemetry();
+        var settings = new TracerSettings(source: null, telemetry: configuration);
+        var transportManager = new TelemetryTransportManager(settings.Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
+        var controller = new TelemetryController(
+            settings,
+            configuration,
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            TimeSpan.FromHours(1),
+            _extendedFlushInterval);
+
+        controller.Start();
+        await transport.WaitForCountAsync(1, _timeout);
+        configuration.Record("formal.phase2.final", "pending", recordValue: true, ConfigurationOrigins.Code);
+
+        await controller.DisposeAsync();
+
+        transport.GetData().Should().HaveCount(2);
+        transport.GetData()
+                 .Any(data => GetPayload(data, TelemetryRequestTypes.AppClientConfigurationChanged).Payload is AppClientConfigurationChangedPayload payload
+                           && payload.Configuration.Any(x => x.Name == "formal.phase2.final"))
+                 .Should().BeTrue();
+        transport.RemainingResults.Should().Be(1, "the successful retry result was never consumed");
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethodsPhase2")]
+    public async Task Diagnostic_FailedRedactedLogPayloadIsNotRetried()
+    {
+        var transport = new FailingLogsTelemetryTransport();
+        var configuration = new ConfigurationTelemetry();
+        var settings = new TracerSettings(source: null, telemetry: configuration);
+        var logs = new RedactedErrorLogCollector();
+        var transportManager = new TelemetryTransportManager(settings.Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
+        var controller = new TelemetryController(
+            settings,
+            configuration,
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            logs,
+            transportManager,
+            _flushInterval,
+            _extendedFlushInterval);
+
+        controller.Start();
+        await transport.WaitForCountAsync(1, _timeout);
+        logs.EnqueueLog("formal phase 2 log", TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow, stackTrace: null);
+
+        await transport.LogAttempted.Task.WaitAsync(_timeout);
+        await Task.Delay(TimeSpan.FromTicks(_flushInterval.Ticks * 4));
+        await controller.DisposeAsync();
+
+        transport.GetData().Count(x => x.RequestType == TelemetryRequestTypes.RedactedErrorLogs)
+                 .Should().Be(1, "GetLogs drained the failed payload and later flushes had nothing to retry");
+    }
+
     private static (ICollection<ConfigurationKeyValue> Configurations, ICollection<IntegrationTelemetryData> Integrations, ICollection<DependencyTelemetryData> Dependencies, ProductsData Products) GetPayloads(TelemetryData data)
     {
         var messageBatch = data.Payload.Should()
@@ -578,5 +645,73 @@ public class TelemetryControllerTests
         }
 
         public string GetTransportInfo() => nameof(SlowTelemetryTransport);
+    }
+
+    private sealed class SequencedTelemetryTransport : ITelemetryTransport
+    {
+        private readonly ConcurrentQueue<TelemetryData> _data = new();
+        private readonly ConcurrentQueue<TelemetryPushResult> _results;
+
+        public SequencedTelemetryTransport(params TelemetryPushResult[] results)
+        {
+            _results = new ConcurrentQueue<TelemetryPushResult>(results);
+        }
+
+        public int RemainingResults => _results.Count;
+
+        public List<TelemetryData> GetData() => _data.ToList();
+
+        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        {
+            _data.Enqueue(data);
+            return Task.FromResult(_results.TryDequeue(out var result) ? result : TelemetryPushResult.Success);
+        }
+
+        public string GetTransportInfo() => nameof(SequencedTelemetryTransport);
+
+        public async Task WaitForCountAsync(int count, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (_data.Count < count && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(10);
+            }
+
+            _data.Count.Should().BeGreaterOrEqualTo(count);
+        }
+    }
+
+    private sealed class FailingLogsTelemetryTransport : ITelemetryTransport
+    {
+        private readonly ConcurrentQueue<TelemetryData> _data = new();
+
+        public TaskCompletionSource<bool> LogAttempted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public List<TelemetryData> GetData() => _data.ToList();
+
+        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        {
+            _data.Enqueue(data);
+            if (data.RequestType == TelemetryRequestTypes.RedactedErrorLogs)
+            {
+                LogAttempted.TrySetResult(true);
+                return Task.FromResult(TelemetryPushResult.TransientFailure);
+            }
+
+            return Task.FromResult(TelemetryPushResult.Success);
+        }
+
+        public string GetTransportInfo() => nameof(FailingLogsTelemetryTransport);
+
+        public async Task WaitForCountAsync(int count, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (_data.Count < count && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(10);
+            }
+
+            _data.Count.Should().BeGreaterOrEqualTo(count);
+        }
     }
 }
