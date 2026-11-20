@@ -1,0 +1,53 @@
+name: Check release schedule
+
+on:
+  workflow_call:
+    inputs:
+      force_run:
+        type: boolean
+      override_week:
+        type: string
+    outputs:
+      should_proceed:
+        description: Whether to run in the current week
+        value: ${{ jobs.check_schedule.outputs.should_proceed }}
+
+permissions: {}
+
+jobs:
+  check_schedule:
+    runs-on: ubuntu-latest
+    outputs:
+      should_proceed: ${{ steps.schedule.outputs.should_proceed }}
+    steps:
+      - name: Check the release cadence
+        id: schedule
+        shell: bash
+        env:
+          FORCE_RUN: ${{ inputs.force_run }}
+          OVERRIDE_WEEK: ${{ inputs.override_week }}
+        run: |
+          if [[ "$FORCE_RUN" == "true" ]]; then
+            echo "should_proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -n "$OVERRIDE_WEEK" ]]; then
+            if [[ ! "$OVERRIDE_WEEK" =~ ^[0-9]+$ ]]; then
+              echo "::error::Override week must be a non-negative integer"
+              exit 1
+            fi
+            week_number=$((10#$OVERRIDE_WEEK))
+          else
+            # Anchor on the Monday of the week leading up to the Nov 23, 2026 release.
+            # This skips Nov 30 and keeps the cadence biweekly across ISO week 53.
+            anchor=$(date -u -d '2026-11-16' +%s)
+            now=$(date -u +%s)
+            week_number=$(( (now - anchor) / (7 * 24 * 60 * 60) ))
+          fi
+
+          if (( week_number % 2 == 0 )); then
+            echo "should_proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_proceed=false" >> "$GITHUB_OUTPUT"
+          fi
