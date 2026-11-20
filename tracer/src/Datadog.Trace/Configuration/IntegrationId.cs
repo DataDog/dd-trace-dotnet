@@ -89,6 +89,7 @@ namespace Datadog.Trace.Configuration
         Protobuf,
         AzureEventHubs,
         AzureEventGrid,
+        AzureStorageQueues,
         DatadogTraceVersionConflict,
         Hangfire,
         OpenFeature,

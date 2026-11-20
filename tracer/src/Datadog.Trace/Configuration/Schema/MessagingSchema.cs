@@ -45,6 +45,7 @@ namespace Datadog.Trace.Configuration.Schema
                 ServiceNameMetadata.Resolve("azureeventhubs", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureservicebus", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureeventgrid", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azurestoragequeues", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("ibmmq", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("kafka", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("msmq", defaultServiceName, serviceNameMappings, useSuffix),
@@ -66,6 +67,7 @@ namespace Datadog.Trace.Configuration.Schema
             AwsStepFunctions,
             AzureEventHubs,
             AzureServiceBus,
+            AzureStorageQueues,
             IbmMq,
             Kafka,
             Msmq,
@@ -81,6 +83,7 @@ namespace Datadog.Trace.Configuration.Schema
             AzureEventHubs,
             AzureServiceBus,
             AzureEventGrid,
+            AzureStorageQueues,
             IbmMq,
             Kafka,
             Msmq,
@@ -129,6 +132,9 @@ namespace Datadog.Trace.Configuration.Schema
             return tags;
         }
 
+        public AzureStorageQueuesTags CreateAzureStorageQueuesTags(string spanKind)
+            => new(spanKind);
+
         public AzureEventGridTags CreateAzureEventGridTags(string spanKind)
         {
             var tags = _useV0Tags ? new AzureEventGridTags(spanKind) : new AzureEventGridV1Tags(spanKind);
@@ -147,6 +153,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.consume",
                 "azureeventhubs.consume",
                 "azureservicebus.consume",
+                "azurestoragequeues.consume",
                 "ibmmq.consume",
                 "kafka.consume",
                 "msmq.consume",
@@ -162,6 +169,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.produce",
                 "azureeventhubs.produce",
                 "azureservicebus.produce",
+                "azurestoragequeues.produce",
                 "ibmmq.produce",
                 "kafka.produce",
                 "msmq.produce",
@@ -180,6 +188,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.process",
                 "azureeventhubs.process",
                 "azureservicebus.process",
+                "azurestoragequeues.process",
                 "ibmmq.process",
                 "kafka.process",
                 "msmq.process",
@@ -195,6 +204,7 @@ namespace Datadog.Trace.Configuration.Schema
                 "aws.stepfunctions.send",
                 "azureeventhubs.send",
                 "azureservicebus.send",
+                "azurestoragequeues.send",
                 "ibmmq.send",
                 "kafka.send",
                 "msmq.send",

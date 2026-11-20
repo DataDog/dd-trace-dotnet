@@ -71,6 +71,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.AzureEventHubs => MetricTags.IntegrationName.AzureEventHubs,
             IntegrationId.AzureEventGrid => MetricTags.IntegrationName.AzureEventGrid,
+            IntegrationId.AzureStorageQueues => MetricTags.IntegrationName.AzureStorageQueues,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
             IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
             IntegrationId.IbmMq => MetricTags.IntegrationName.IbmMq,
