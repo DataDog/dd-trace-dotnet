@@ -396,7 +396,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         var sb = StringBuilderCache.Acquire();
                         foreach (var x in enumerableDic)
                         {
-                            sb.Append($"{getKey(x)}, {getValue(x)}, ");
+                            sb.Append(getKey(x)).Append(", ").Append(getValue(x)).Append(", ");
                         }
 
                         if (sb.Length > 0)
@@ -669,7 +669,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     IList<bool> objs => FormatList(objs, sb),
                     IList<float> objs => FormatList(objs, sb),
                     IList<object> objs => FormatList(objs, sb),
-                    _ => sb.Append($"Error: couldn't format type: {o?.GetType()}")
+                    _ => sb.Append("Error: couldn't format type: ").Append(o?.GetType())
                 };
         }
 

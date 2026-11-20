@@ -385,7 +385,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in tags)
                     {
-                        sb.Append($"{pair.Key} (tag):{pair.Value},");
+                        sb.Append(pair.Key).Append(" (tag):").Append(pair.Value).Append(',');
                     }
                 }
             }
@@ -398,7 +398,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in metrics)
                     {
-                        sb.Append($"{pair.Key} (metric):{pair.Value}");
+                        sb.Append(pair.Key).Append(" (metric):").Append(pair.Value);
                     }
                 }
             }
@@ -411,7 +411,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in metaStruct)
                     {
-                        sb.Append($"{pair.Key} (metaStruct)");
+                        sb.Append(pair.Key).Append(" (metaStruct)");
                     }
                 }
             }

@@ -2493,7 +2493,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     sb.AppendLine("\tmsbuildArgs: ");
                     foreach (var arg in msbuildArgs)
                     {
-                        sb.AppendLine($"\t\t{arg}");
+                        sb.Append("\t\t").AppendLine(arg);
                     }
                 }
 
@@ -2502,7 +2502,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     sb.AppendLine("\tuserDefinedArguments: ");
                     foreach (var arg in userDefinedArguments)
                     {
-                        sb.AppendLine($"\t\t{arg}");
+                        sb.Append("\t\t").AppendLine(arg);
                     }
                 }
 
@@ -2511,12 +2511,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     sb.AppendLine("\ttrailingArguments: ");
                     foreach (var arg in trailingArguments)
                     {
-                        sb.AppendLine($"\t\t{arg}");
+                        sb.Append("\t\t").AppendLine(arg);
                     }
                 }
 
-                sb.AppendLine("\tnoRestore: " + noRestore);
-                sb.AppendLine("\tmsbuildPath: " + msbuildPath);
+                sb.Append("\tnoRestore: ").Append(noRestore).AppendLine();
+                sb.Append("\tmsbuildPath: ").AppendLine(msbuildPath);
                 Log.Debug("{MessageValue}", StringBuilderCache.GetStringAndRelease(sb));
             }
         }

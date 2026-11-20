@@ -152,6 +152,13 @@ public class StringUtilTests
         var span = "span".AsSpan(1, 2);
         StringUtil.Invariant($"[{span}]").Should().Be("[pa]");
     }
+
+    [Fact]
+    public void Invariant_AppendsEmptySpans()
+    {
+        var span = ReadOnlySpan<char>.Empty;
+        StringUtil.Invariant($"[{span}]").Should().Be("[]");
+    }
 #endif
 
 #if NETFRAMEWORK
