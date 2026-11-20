@@ -550,7 +550,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus.APM", "tracer\test\test-applications\integrations\Samples.AzureServiceBus.APM\Samples.AzureServiceBus.APM.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.DataStreams.AzureServiceBus\Samples.DataStreams.AzureServiceBus.csproj", "{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}"
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureEventHubs", "tracer\\test\\test-applications\\integrations\\Samples.DataStreams.AzureEventHubs\\Samples.DataStreams.AzureEventHubs.csproj", "{5AE8899B-34E0-4DE8-B716-ABEDBE70A7D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureEventHubs", "tracer\test\test-applications\integrations\Samples.DataStreams.AzureEventHubs\Samples.DataStreams.AzureEventHubs.csproj", "{5AE8899B-34E0-4DE8-B716-ABEDBE70A7D0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureEventHubs", "tracer\test\test-applications\integrations\Samples.AzureEventHubs\Samples.AzureEventHubs.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D7}"
 EndProject
