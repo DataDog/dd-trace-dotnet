@@ -5,6 +5,7 @@
 
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,9 +15,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest : SmokeTestBase
     {
-        public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest(ITestOutputHelper output)
+        public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest(ITestOutputHelper output, StackExchangeRedisFixture redisFixture)
             : base(output, "StackExchange.Redis.AssemblyConflict.LegacyProject", maxTestRunSeconds: 30)
         {
+            foreach (var variable in redisFixture.GetEnvironmentVariables())
+            {
+                SetEnvironmentVariable(variable.Key, variable.Value);
+            }
         }
 
         [Fact]
