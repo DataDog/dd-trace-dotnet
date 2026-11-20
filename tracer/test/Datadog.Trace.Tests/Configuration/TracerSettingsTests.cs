@@ -778,6 +778,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"),
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true"),
                 (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, "true"),
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf"));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
@@ -1406,10 +1407,8 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, true, true)] // semantics mode exports traces over OTLP by default
-        [InlineData(null, false, false)]
-        [InlineData("none", true, false)]
-        public void OtelTracesSpanMetricsEnabled_AutoEnabledWithOtelSemanticsEnabled(string tracesExporter, bool otelSemanticsEnabled, bool expected)
+        [CombinatorialData]
+        public void OtelTracesSpanMetricsEnabled_DisabledByDefault([CombinatorialValues(null, "none", "otlp")] string tracesExporter, bool otelSemanticsEnabled)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
@@ -1417,7 +1416,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
             var settings = new TracerSettings(source);
 
-            settings.OtelTracesSpanMetricsEnabled.Should().Be(expected);
+            settings.OtelTracesSpanMetricsEnabled.Should().BeFalse();
         }
 
         [Theory]

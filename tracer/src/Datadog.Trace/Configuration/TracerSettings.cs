@@ -761,14 +761,8 @@ namespace Datadog.Trace.Configuration
 
             OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
-            // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
-            // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
-            // OpenTelemetry semantics mode makes OTLP the default traces exporter.
-            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()
-                                  ?? (OtelSemanticsEnabled ? "otlp" : null);
-            var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = DisableIfOtelSdkDisabled(
-                explicitSpanMetrics ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled),
+                config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool(defaultValue: false),
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
             // Serverless and Azure App Service are excluded because the out-of-process reader can't run there.
@@ -868,13 +862,9 @@ namespace Datadog.Trace.Configuration
             // Force to false otherwise, even if explicitly requested.
             if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
             {
-                if (explicitSpanMetrics == true)
-                {
-                    Log.Warning(
-                        "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding (OTEL_TRACES_EXPORTER={OtelTracesExporter}). OTLP span metrics require OTLP trace export, so this setting has been disabled.",
-                        ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
-                        otelTracesExporter);
-                }
+                Log.Warning(
+                    "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding. OTLP span metrics require OTLP trace export, so this setting has been disabled.",
+                    ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
                 OtelTracesSpanMetricsEnabled = false;
                 telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
@@ -1271,9 +1261,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether OTLP span metrics export is enabled.
-        /// Derived from the tri-state OTEL_TRACES_SPAN_METRICS_ENABLED:
-        /// explicit true/false overrides auto-detection; when unset, enabled iff
-        /// OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+        /// Disabled by default; requires explicit enablement and OTLP trace export.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled"/>
         internal bool OtelTracesSpanMetricsEnabled { get; }
