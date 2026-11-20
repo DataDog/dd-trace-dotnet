@@ -201,6 +201,7 @@ bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
     auto newModuleInfo = creator(methodDef, this);
     updater(newModuleInfo.get());
     m_newMethods.push_back(newModuleInfo.get());
+    m_handler->m_hasNewMethods = true;
     m_methods[methodDef] = std::move(newModuleInfo);
     return true;
 }
@@ -765,6 +766,41 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         }
     }
 
+    EnqueueNGenInlinersForRejit(std::move(rejitRequests));
+}
+
+std::optional<std::future<void>> RejitHandler::EnqueueRejitForNGenInliners()
+{
+    if (!m_hasNewMethods.exchange(false))
+    {
+        return std::nullopt;
+    }
+
+    std::vector<RejitRequest> rejitRequests;
+    Rejitter* prev = nullptr;
+    for (size_t x = 0; x < m_rejittersCount; x++)
+    {
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->GetNGenInlinerRejitRequests(rejitRequests);
+        }
+    }
+
+    if (rejitRequests.empty())
+    {
+        return std::nullopt;
+    }
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    EnqueueNGenInlinersForRejit(std::move(rejitRequests), std::move(promise));
+    return future;
+}
+
+void RejitHandler::EnqueueNGenInlinersForRejit(std::vector<RejitRequest> rejitRequests,
+                                               std::shared_ptr<std::promise<void>> promise)
+{
     // Every RequestReJIT suspends the runtime on .NET Framework, so request the inliners found by every rejitter
     // at once, and only once each: a method can inline several instrumented methods.
     std::sort(rejitRequests.begin(), rejitRequests.end());
@@ -772,7 +808,7 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
                                     [](const RejitRequest& lhs, const RejitRequest& rhs)
                                     { return !(lhs < rhs) && !(rhs < lhs); }),
                         rejitRequests.end());
-    EnqueueForRejit(std::move(rejitRequests));
+    EnqueueForRejit(std::move(rejitRequests), std::move(promise));
 }
 
 void RejitHandler::SetRejitTracking(bool enabled) {
