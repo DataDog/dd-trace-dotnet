@@ -92,8 +92,11 @@ message(STATUS "Tracer Managed Loader")
 find_package(Libunwind REQUIRED)
 message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
 
-find_package(Libdatadog REQUIRED)
-message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
+# libdatadog is only used by the profiler (and managed code) on Linux; we don't ship it on macOS
+if (NOT ISMACOS)
+    find_package(Libdatadog REQUIRED)
+    message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
+endif()
 
 find_package(GoogleTest REQUIRED)
 message(STATUS "GoogleTest library")

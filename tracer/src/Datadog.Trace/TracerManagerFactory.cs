@@ -113,7 +113,12 @@ namespace Datadog.Trace
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
-            if (result.Result is not Result.Success)
+            if (result.Result is (Result.LibDatadogUnavailable or Result.ApplicationMonitoringConfigFileDisabled) && result.Exception is null)
+            {
+                // Expected, e.g. in serverless, on macOS, or when explicitly disabled
+                Log.Information("Not using hands-off configuration with status: {Status} and message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
+            }
+            else if (result.Result is not Result.Success)
             {
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
