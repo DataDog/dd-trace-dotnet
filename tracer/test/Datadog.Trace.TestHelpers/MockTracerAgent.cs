@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
@@ -105,6 +106,13 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the custom remote configuration response only has the configurations
+        /// of the products the request asks for, as the agent's does. Otherwise, it has every configuration.
+        /// Needs <see cref="ShouldDeserializeTraces"/>.
+        /// </summary>
+        public bool RemoteConfigOnlyRequestedProducts { get; set; }
 
         public bool ConfigSent { get; set; } = false;
 
@@ -549,7 +557,14 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
-                HandlePotentialRemoteConfig(request);
+                var remoteConfigRequest = HandlePotentialRemoteConfig(request);
+                if (RemoteConfigOnlyRequestedProducts
+                 && remoteConfigRequest is not null
+                 && CustomResponses.TryGetValue(MockTracerResponseType.RemoteConfig, out var remoteConfigResponse))
+                {
+                    return OnlyRequestedProducts(remoteConfigResponse, remoteConfigRequest);
+                }
+
                 responseType = MockTracerResponseType.RemoteConfig;
             }
             else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
@@ -588,6 +603,25 @@ namespace Datadog.Trace.TestHelpers
                        {
                            IsConfigResponse = responseType == MockTracerResponseType.Info,
                        };
+        }
+
+        private static MockTracerResponse OnlyRequestedProducts(MockTracerResponse response, string request)
+        {
+            var products = GetRcmRequestExtensions.DeserializeRcmRequest(request).Client.Products;
+            bool IsRequested(JToken path) => products.Contains(RemoteConfigurationPath.FromPath(path.Value<string>()).Product);
+
+            var json = JObject.Parse(response.Response);
+            if (json["client_configs"] is JArray clientConfigs)
+            {
+                json["client_configs"] = new JArray(clientConfigs.Where(IsRequested));
+            }
+
+            if (json["target_files"] is JArray targetFiles)
+            {
+                json["target_files"] = new JArray(targetFiles.Where(file => IsRequested(file["path"])));
+            }
+
+            return new MockTracerResponse(json.ToString(Formatting.None), response.StatusCode) { ContentType = response.ContentType, SendResponse = response.SendResponse };
         }
 
         private void HandlePotentialTraces(MockHttpRequest request)
@@ -820,7 +854,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialRemoteConfig(MockHttpRequest request)
+        private string HandlePotentialRemoteConfig(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces)
             {
@@ -829,6 +863,7 @@ namespace Datadog.Trace.TestHelpers
                     var body = request.ReadStreamBody();
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
+                    return rc;
                 }
                 catch (Exception ex)
                 {
@@ -838,12 +873,14 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // Accept call is likely interrupted by a dispose
                         // Swallow the exception and let the test finish
-                        return;
+                        return null;
                     }
 
                     throw;
                 }
             }
+
+            return null;
         }
 
         private void HandlePotentialDataStreams(MockHttpRequest request)

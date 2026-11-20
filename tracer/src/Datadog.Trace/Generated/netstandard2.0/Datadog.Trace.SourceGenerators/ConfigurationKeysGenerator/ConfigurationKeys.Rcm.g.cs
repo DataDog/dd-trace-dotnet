@@ -31,5 +31,15 @@ internal static partial class ConfigurationKeys
         /// intended for testing and for explicitly disabling RCM even though it is available.
         /// </summary>
         public const string RemoteConfigurationEnabled = "DD_REMOTE_CONFIGURATION_ENABLED";
+
+        /// <summary>
+        /// Temporary switch, to be removed in a future release. Selects the remote configuration client: when <c>true</c>
+        /// (the default), the client of libdatadog is used where libdatadog is available, and when <c>false</c>, the
+        /// managed client is used instead. The managed client is also used when the libdatadog client can't be created;
+        /// if it is created but then fails, setting this to <c>false</c> is the remedy. For example, the libdatadog client
+        /// sends its requests through <c>HTTP_PROXY</c> or <c>HTTPS_PROXY</c> when they are set, also to a local agent,
+        /// while on .NET Framework the managed client follows the system proxy settings.
+        /// </summary>
+        public const string RemoteConfigurationNativeClientEnabled = "DD_REMOTE_CONFIGURATION_NATIVE_CLIENT_ENABLED";
     }
 }

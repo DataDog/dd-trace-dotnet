@@ -58,7 +58,7 @@ internal sealed class FfeProduct
                         "Feature Flags: remote_config configuration file {Path} received (version {Version}, {Length} bytes)",
                         ffeConfig.Path.Path,
                         ffeConfig.Version,
-                        ffeConfig.Length);
+                        ffeConfig.Contents.Length);
                     // Keep date-like strings as text, as the agentless parser does.
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None);
                     if (serverConfigFile.TypedFile is null)

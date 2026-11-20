@@ -127,7 +127,6 @@ src/Datadog.Trace/Processors/TruncatorTagsProcessor.cs
 src/Datadog.Trace/Processors/TruncatorTraceProcessor.cs
 src/Datadog.Trace/RemoteConfigurationManagement/ApplyStates.cs
 src/Datadog.Trace/RemoteConfigurationManagement/IRemoteConfigurationManager.cs
-src/Datadog.Trace/RemoteConfigurationManagement/ProductConfigChangedEventArgs.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RcmCapabilitiesIndices.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfiguration.cs
 src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationCache.cs

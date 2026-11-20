@@ -112,7 +112,18 @@ namespace Datadog.Trace.Security.IntegrationTests.UserEvents
                                     RcmProducts.AsmData, nameof(TestAuthenticatedRequest)),
                                ]);
             request2.Should().NotBeNull();
-            request2.CachedTargetFiles.Should().HaveCount(_enableSecurity ? 1 : 0);
+            if (_enableSecurity)
+            {
+                request2.CachedTargetFiles.Should().HaveCount(1);
+            }
+            else
+            {
+                // libdatadog still caches the file this mock agent sends (a real agent only sends requested products),
+                // but the tracer doesn't apply it
+                request2.Client.Products.Should().NotContain(RcmProducts.AsmData);
+                request2.Client.State.ConfigStates.Should().ContainSingle(s => s.Product == RcmProducts.AsmData).Which.ApplyState.Should().Be(ApplyStates.UNACKNOWLEDGED);
+            }
+
             await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)), scrubCookiesFingerprint: true);
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");

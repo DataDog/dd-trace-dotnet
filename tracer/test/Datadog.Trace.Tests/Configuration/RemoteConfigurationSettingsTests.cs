@@ -42,5 +42,21 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.PollInterval.Should().Be(TimeSpan.FromSeconds(expected));
         }
+
+        [Theory]
+        [InlineData(null, true)]
+        [InlineData("", true)]
+        [InlineData("invalid", true)]
+        [InlineData("true", true)]
+        [InlineData("false", false)]
+        [InlineData("0", false)]
+        public void NativeClientEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled, value));
+
+            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.NativeClientEnabled.Should().Be(expected);
+        }
     }
 }

@@ -96,7 +96,7 @@ public class FfeProductTests
         json ??= JsonConvert.SerializeObject(new ServerConfiguration());
         return new Dictionary<string, List<RemoteConfiguration>>
         {
-            [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", version.ToString() } }, version)]
+            [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, Encoding.UTF8.GetBytes(json), version)]
         };
     }
 }
