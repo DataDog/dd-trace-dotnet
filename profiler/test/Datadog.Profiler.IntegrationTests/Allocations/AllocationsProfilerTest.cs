@@ -332,6 +332,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         {
             Assert.True(run.UploadCount > 0);
 
+            // Exact sample types before AllocationSamples() drops other rows.
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.AllocationCount, ProfileValue.AllocationSize);
+
             var allocationSamples = run.Profiles.AllocationSamples();
             allocationSamples.Should().NotBeEmpty();
 
