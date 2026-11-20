@@ -8,9 +8,7 @@ using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -352,7 +350,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            if (!connection.TryDuckCast<IOracleConnectionAction>(out var oracleConnection))
+            if (OracleActionNameSetter.Get(connection.GetType()) is not { } setActionName)
             {
                 if (TryConsumeOracleActionErrorLog(out var remaining))
                 {
@@ -367,8 +365,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                 // ODP.NET before 23.x skips an assignment equal to its cached value, so an ACTION changed server-side
                 // (for example by DBMS_APPLICATION_INFO in PL/SQL) would never be restored. Clearing first forces the write;
                 // the driver sends the final value with the next round trip, so this adds no round trip.
-                oracleConnection.ActionName = string.Empty;
-                oracleConnection.ActionName = GetOracleServiceHashAction(baseHash);
+                setActionName(connection, string.Empty);
+                setActionName(connection, GetOracleServiceHashAction(baseHash));
                 return true;
             }
             catch (Exception ex)
