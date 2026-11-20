@@ -27,6 +27,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.StateMachineName)]
         public string? StateMachineName { get; set; }
 
+        [Tag(Trace.Tags.AwsStateMachineArn)]
+        public string? StateMachineArn { get; set; }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }

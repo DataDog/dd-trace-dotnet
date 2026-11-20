@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             var streamName = AwsKinesisCommon.GetStreamName(request);
             if (tags is not null)
             {
-                tags.StreamName = streamName;
+                AwsKinesisCommon.TagStream(tags, streamName, request.StreamARN);
             }
 
             ContextPropagation.InjectTraceIntoRecords(tracer, request, scope, streamName);

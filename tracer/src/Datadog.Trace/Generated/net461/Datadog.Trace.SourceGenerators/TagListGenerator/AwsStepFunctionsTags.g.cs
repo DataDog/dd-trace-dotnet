@@ -17,6 +17,9 @@ namespace Datadog.Trace.Tagging
         // StateMachineNameBytes = MessagePack.Serialize("statemachinename");
         private static ReadOnlySpan<byte> StateMachineNameBytes => [176, 115, 116, 97, 116, 101, 109, 97, 99, 104, 105, 110, 101, 110, 97, 109, 101];
 
+        // StateMachineArnBytes = MessagePack.Serialize("aws.state_machine.arn");
+        private static ReadOnlySpan<byte> StateMachineArnBytes => [181, 97, 119, 115, 46, 115, 116, 97, 116, 101, 95, 109, 97, 99, 104, 105, 110, 101, 46, 97, 114, 110];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
@@ -25,6 +28,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "statemachinename" => StateMachineName,
+                "aws.state_machine.arn" => StateMachineArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -36,6 +40,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "statemachinename": 
                     StateMachineName = value;
+                    break;
+                case "aws.state_machine.arn": 
+                    StateMachineArn = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsStepFunctionsTags));
@@ -53,6 +60,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("statemachinename", StateMachineName, StateMachineNameBytes));
             }
 
+            if (StateMachineArn is not null)
+            {
+                processor.Process(new TagItem<string>("aws.state_machine.arn", StateMachineArn, StateMachineArnBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -67,6 +79,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("statemachinename (tag):")
                   .Append(StateMachineName)
+                  .Append(',');
+            }
+
+            if (StateMachineArn is not null)
+            {
+                sb.Append("aws.state_machine.arn (tag):")
+                  .Append(StateMachineArn)
                   .Append(',');
             }
 

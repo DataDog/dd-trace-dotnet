@@ -27,6 +27,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.StreamName)]
         public string? StreamName { get; set; }
 
+        [Tag(Trace.Tags.AwsStreamArn)]
+        public string? StreamArn { get; set; }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }

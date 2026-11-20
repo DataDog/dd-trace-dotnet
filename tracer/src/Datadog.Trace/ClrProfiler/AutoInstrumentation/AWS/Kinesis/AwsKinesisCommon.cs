@@ -44,6 +44,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return StringUtil.IsNullOrEmpty(arnStreamName) ? request.StreamName : arnStreamName;
         }
 
+        public static void TagStream(AwsKinesisTags tags, string? streamName, string? streamArn)
+        {
+            tags.StreamName = streamName;
+            tags.StreamArn = StringUtil.IsNullOrEmpty(streamArn) ? null : streamArn;
+        }
+
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)
         {
             tags = null;

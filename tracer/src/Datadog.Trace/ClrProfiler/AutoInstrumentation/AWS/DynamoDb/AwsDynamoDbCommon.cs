@@ -18,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         private const string DatadogAwsDynamoDbServiceName = "aws-dynamodb";
         private const string DynamoDbServiceName = "DynamoDB";
         private const string DynamoDbOperationName = "aws.dynamodb.request";
+        private const string TableResourcePrefix = "table/";
+        private static readonly char[] ArnSeparator = { ':' };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsDynamoDbCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
@@ -71,8 +73,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             }
 
             tags.TableName = tableName;
+            tags.TableArn = GetTableArn(tableName);
             var span = scope.Span;
             span.ResourceName = $"{span.ResourceName} {tableName}";
+        }
+
+        /// <summary>
+        /// Returns the table name if it is a full DynamoDB table ARN
+        /// (`arn:partition:dynamodb:region:account:table/name`), otherwise null.
+        /// DynamoDB accepts either a table name or a table ARN as `TableName`.
+        /// </summary>
+        public static string? GetTableArn(string? tableName)
+        {
+            // cheap check first: most requests use a plain table name
+            if (tableName is null || !tableName.StartsWith("arn:", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            // arn:<partition>:dynamodb:<region>:<account>:table/<name>
+            var parts = tableName.Split(ArnSeparator, 6);
+            if (parts.Length != 6
+             || parts[1].Length == 0
+             || parts[2] != "dynamodb"
+             || parts[3].Length == 0
+             || parts[4].Length == 0
+             || !parts[5].StartsWith(TableResourcePrefix, StringComparison.Ordinal)
+             || parts[5].Length == TableResourcePrefix.Length
+             || parts[5].IndexOf('/', TableResourcePrefix.Length) >= 0)
+            {
+                return null;
+            }
+
+            return tableName;
         }
 
         public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags? tags, Scope? scope)
