@@ -75,6 +75,7 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
             {
                 point.EdgeTags.Should().Contain("type:azure-storage-queue");
                 point.EdgeTags.Should().Contain("topic:dsm-test-queue");
+                point.PayloadSize.Should().NotBeEmpty();
             }
 
             var produceHashes = producePoints.Select(p => p.Hash).ToHashSet();
