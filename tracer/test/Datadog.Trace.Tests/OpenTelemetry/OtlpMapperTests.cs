@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
@@ -311,6 +312,26 @@ public class OtlpMapperTests
         int droppedCount = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
 
         droppedCount.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(0, 3)]
+    [InlineData(1, 2)]
+    [InlineData(128, 0)]
+    public void EmitAttributesFromSpan_ReportKeyCollisionsDoNotConsumeExtraSlots(int limit, int expectedDropped)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        span.SetMetaStruct("custom.report", [0x80]);
+        span.Context.TraceContext.Tags.SetTag("custom.report", "trace-tag");
+        span.Context.TraceContext.Tags.SetTag("trace.only", "kept");
+        span.SetTag("custom.report", "span-tag");
+        span.SetMetric("custom.report", 42);
+        span.SetTag("span.only", "kept");
+        var model = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+        var keys = new List<string>();
+
+        OtlpMapper.EmitAttributesFromSpan(kv => keys.Add(kv.Key), in model, limit).Should().Be(expectedDropped);
+        keys.Should().Equal(new[] { "custom.report", "trace.only", "span.only" }.Take(limit));
     }
 
     [Fact]
