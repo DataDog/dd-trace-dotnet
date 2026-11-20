@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Sha
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
 $versionProps = Join-Path $PSScriptRoot "_build/version.props"
 
@@ -15,7 +15,7 @@ if ($lowerBranch -eq "" -or $lowerBranch -match '^(refs/|master$|main$|release|h
 }
 
 $Sha = $Sha.ToLowerInvariant()
-if ($Sha -notmatch '^[0-9a-f]{8,}$') {
+if ($Sha -notmatch '^[0-9a-f]{40,}$') {
     throw "Expected a commit SHA, but got '$Sha'"
 }
 

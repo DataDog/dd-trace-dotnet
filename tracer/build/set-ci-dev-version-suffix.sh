@@ -6,15 +6,15 @@ sha="$2"
 version_props="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_build/version.props"
 
 branch="${branch#refs/heads/}"
-case "$(echo "$branch" | tr '[:upper:]' '[:lower:]')" in
+case "$(printf '%s' "$branch" | tr '[:upper:]' '[:lower:]')" in
   ''|refs/*|master|main|release*|hotfix*)
     echo "Not setting a CI dev version suffix for branch '$branch'"
     exit 0
     ;;
 esac
 
-sha="$(echo "$sha" | tr '[:upper:]' '[:lower:]')"
-if ! [[ "$sha" =~ ^[0-9a-f]{8,}$ ]]; then
+sha="$(printf '%s' "$sha" | tr '[:upper:]' '[:lower:]')"
+if ! [[ "$sha" =~ ^[0-9a-f]{40,}$ ]]; then
   echo "Expected a commit SHA, but got '$sha'" >&2
   exit 1
 fi

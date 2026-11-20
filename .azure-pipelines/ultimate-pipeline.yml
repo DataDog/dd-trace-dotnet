@@ -4824,6 +4824,10 @@ stages:
               BRANCH_NAME="$PR_SOURCE_BRANCH"
               BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
               REF="refs/heads/$BRANCH_NAME"
+              if ! [[ $COMMIT_SHA =~ ^[0-9a-f]{40,}$ ]]; then
+                echo "Expected a commit SHA in COMMIT_SHA, but got '$COMMIT_SHA'"
+                exit 1
+              fi
               EXTRA_INPUTS=",\"commit_sha\":\"$COMMIT_SHA\""
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
@@ -5370,6 +5374,49 @@ stages:
             echo Moving $PACKAGE_NAME to system-tests/binaries
             mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
           displayName: Move dotnet binary to system test folder
+
+        # The dotnet weblog healthcheck reports the assembly version, which never carries a prerelease
+        # suffix, so version-suffixed CI builds (-dev.ci.g<sha>, -prerelease) fail system-tests' version
+        # check against the image label, which is the informational version. While this build carries a
+        # version suffix, patch the healthcheck to report the informational version too, like
+        # GetAssemblyVersion does for the label. Drop this step once system-tests reports the
+        # informational version from the healthcheck itself.
+        - script: |
+            set -e
+            cd system-tests
+            if ! ls binaries/datadog-dotnet-apm-*.tar.gz 2>/dev/null | grep -qE '^binaries/datadog-dotnet-apm-[0-9]+\.[0-9]+\.[0-9]+-'; then
+              echo "The tracer package carries no version suffix - skipping the healthcheck patch"
+              exit 0
+            fi
+            if grep -q AssemblyInformationalVersionAttribute utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs; then
+              echo "The system-tests healthcheck already reports the informational version"
+              exit 0
+            fi
+            patch_file=$(mktemp)
+            cat > "$patch_file" <<'PATCH'
+            diff --git a/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs b/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            --- a/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            +++ b/utils/build/docker/dotnet/weblog/Endpoints/HealthcheckEndpoint.cs
+            @@ -11,7 +11,9 @@
+                     {
+                         routeBuilder.MapGet("/healthcheck", async context =>
+                         {
+            -                var version = Assembly.Load("Datadog.Trace").GetName().Version?.ToString(3);
+            +                var tracer = Assembly.Load("Datadog.Trace");
+            +                var version = tracer.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0]
+            +                    ?? tracer.GetName().Version?.ToString(3);
+
+                             var data = new
+                             {
+            PATCH
+            if git apply "$patch_file"; then
+              echo "Patched the system-tests healthcheck to report the informational version"
+            else
+              echo "Could not patch the system-tests healthcheck: HealthcheckEndpoint.cs changed upstream. Remove or update this step." >&2
+              exit 1
+            fi
+            rm -f "$patch_file"
+          displayName: Patch system-tests healthcheck to report the informational version
 
         - script: |
             set -e

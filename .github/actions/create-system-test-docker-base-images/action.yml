@@ -35,7 +35,12 @@ runs:
     - name: "Set CI dev version suffix"
       if: ${{ inputs.commit_sha != '' }}
       shell: bash
-      run: ./tracer/build/set-ci-dev-version-suffix.sh "$BRANCH_NAME_INPUT" "$COMMIT_SHA_INPUT"
+      run: |
+        ./tracer/build/set-ci-dev-version-suffix.sh "$BRANCH_NAME_INPUT" "$COMMIT_SHA_INPUT"
+        if ! grep -qE '<DD_VersionSuffix>[^<]+</DD_VersionSuffix>' tracer/build/_build/version.props; then
+          echo "The version suffix was not set, so the Azure DevOps artifacts for this commit can't be found" >&2
+          exit 1
+        fi
       env:
         BRANCH_NAME_INPUT: "${{ inputs.branch_name }}"
         COMMIT_SHA_INPUT: "${{ inputs.commit_sha }}"

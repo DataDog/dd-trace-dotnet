@@ -111,7 +111,9 @@ build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
-    - ./tracer/build/set-ci-dev-version-suffix.ps1 -Branch "$env:CI_COMMIT_BRANCH" -Sha "$env:CI_COMMIT_SHA"
+    - |
+      $branch = if ($env:CI_COMMIT_BRANCH) { $env:CI_COMMIT_BRANCH } else { $env:CI_MERGE_REQUEST_SOURCE_BRANCH_NAME }
+      & tracer/build/set-ci-dev-version-suffix.ps1 -Branch "$branch" -Sha "$env:CI_COMMIT_SHA"
     - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
       if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
