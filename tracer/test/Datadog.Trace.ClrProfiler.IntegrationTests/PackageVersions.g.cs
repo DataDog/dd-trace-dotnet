@@ -149,5 +149,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> OpenFeature => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenFeature : PackageVersionsLatestSpecific.OpenFeature;
 
         public static IEnumerable<object[]> Ocelot => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Ocelot : PackageVersionsLatestSpecific.Ocelot;
+
+        public static IEnumerable<object[]> AzureStorageQueues => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureStorageQueues : PackageVersionsLatestSpecific.AzureStorageQueues;
     }
 }

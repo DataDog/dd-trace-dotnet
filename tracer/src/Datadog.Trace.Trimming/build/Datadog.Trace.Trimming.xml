@@ -14,6 +14,7 @@
    <assembly fullname="Azure.Messaging.EventGrid.Namespaces" />
    <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
+   <assembly fullname="Azure.Storage.Queues" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />

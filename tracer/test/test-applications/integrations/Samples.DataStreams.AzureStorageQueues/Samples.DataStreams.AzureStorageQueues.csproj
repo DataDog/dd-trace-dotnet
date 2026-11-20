@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">12.28.1</ApiVersion>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Queues" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+</Project>
