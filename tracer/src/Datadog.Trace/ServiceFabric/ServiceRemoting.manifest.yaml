@@ -1,0 +1,12 @@
+_v: 1
+name: ServiceRemoting
+display_name: Azure Service Fabric Service Remoting
+description: Instruments Service Fabric Service Remoting client and server requests.
+packages:
+- name: Microsoft.ServiceFabric.Services.Remoting
+category:
+- rpc.client
+- rpc.server
+systems:
+- azure.service_fabric
+creation_date: '2021-03-29'
