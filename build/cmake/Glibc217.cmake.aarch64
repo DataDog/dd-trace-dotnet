@@ -1,0 +1,68 @@
+# Cross-toolchain file for building on Ubuntu while targeting glibc 2.17 (GLIBC_2.17 floor).
+# Mirrors Glibc217.cmake.x86_64 for aarch64. Uses devtoolset-10 (not 11, which was never
+# released for aarch64). See glibc217-sysroot.harvest.dockerfile (single file, both arches,
+# selected via --platform + the DEVTOOLSET_VERSION build arg).
+#
+# Does NOT set CMAKE_SYSROOT: C headers stay on the build host (safe - glibc symbol versions
+# are a link-time property). C++ headers and libraries are redirected to devtoolset-10
+# (harvested from CentOS 7 aarch64, targeting glibc 2.17).
+
+# Overridable for local repros: cmake -DGLIBC217_SYSROOT=/path/to/harvested/sysroot ...
+set(GLIBC217_SYSROOT "/sysroot/aarch64-glibc217" CACHE PATH
+    "Location of the harvested glibc 2.17 + devtoolset-10 sysroot")
+set(glibc217_sysroot ${GLIBC217_SYSROOT})
+
+# Forward to try_compile() sub-projects (they don't inherit the outer cache).
+list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES GLIBC217_SYSROOT)
+set(devtoolset10_dir ${glibc217_sysroot}/devtoolset10)
+
+if (NOT EXISTS ${glibc217_sysroot})
+    message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but ${glibc217_sysroot} does not exist. "
+                         "The Docker image should have extracted the harvested glibc 2.17 "
+                         "sysroot tarball there. "
+                         "To build outside that image, point -DGLIBC217_SYSROOT= at a local copy.")
+endif()
+
+if (NOT EXISTS ${devtoolset10_dir})
+    message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but ${devtoolset10_dir} does not exist. "
+                         "The harvested sysroot must also include devtoolset-10's "
+                         "libstdc++/libgcc and C++ headers")
+endif()
+
+# Selecting this toolchain file IS the opt-in — no separate -DUSE_GLIBC217_SYSROOT needed.
+set(USE_GLIBC217_SYSROOT ON)
+
+# Seed UNIVERSAL=OFF (mutually exclusive with glibc217 sysroot; root CMakeLists.txt enforces).
+set(UNIVERSAL OFF CACHE BOOL "Build as Universal binary")
+
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(triple aarch64-unknown-linux-gnu)
+set(CMAKE_C_COMPILER_TARGET ${triple})
+set(CMAKE_CXX_COMPILER_TARGET ${triple})
+
+# Toolchain files run before project(), so use CMAKE_CURRENT_LIST_DIR (not CMAKE_SOURCE_DIR)
+get_filename_component(glibc217_compat_include_dir "${CMAKE_CURRENT_LIST_DIR}/../../shared/src/glibc217-compat" ABSOLUTE)
+
+# -isystem: shadow the host's <sys/single_threaded.h> with our stub (see glibc217-compat.c);
+#   libstdc++'s <ext/atomicity.h> would otherwise pull in __libc_single_threaded (glibc 2.32+).
+# -nostdinc++ + -cxx-isystem: redirect C++ headers to devtoolset-10 (C headers stay on host).
+set(CMAKE_CXX_FLAGS_INIT "-isystem ${glibc217_compat_include_dir} -nostdinc++ -cxx-isystem ${devtoolset10_dir}/include/10 -cxx-isystem ${devtoolset10_dir}/include/10/aarch64-redhat-linux")
+
+# --sysroot: glibc's .so files are linker scripts with absolute paths from CentOS 7;
+#   --sysroot makes the linker resolve them relative to the sysroot.
+# -B/-L: pick up crt*.o from the sysroot and libstdc++.a/libgcc.a from devtoolset-10.
+# -rpath-link: transitive linker search. No --dynamic-linker (would bake a build-host path
+#   into PT_INTERP; the default /lib/ld-linux-aarch64.so.1 is already correct everywhere).
+# --no-dependent-libraries: lld honors #pragma comment(lib) from vendored CoreCLR PAL
+#   headers (mscoree.lib), which doesn't exist on Linux; disable it.
+# -Wno-unused-command-line-argument: on link flags only — CMake passes -nostdinc++ to
+#   the linker too, which triggers a spurious warning.
+set(glibc217_link_flags "-fuse-ld=lld-16 -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset10_dir}/lib -L${devtoolset10_dir}/lib -Wl,--sysroot=${glibc217_sysroot} -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "${glibc217_link_flags}")
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "${glibc217_link_flags}")
+
+# lld-16 is versioned (no bare `lld` symlink in ubuntu.dockerfile), matching Glibc217.cmake.x86_64.
+
+# To debug linker resolution, add -Wl,-verbose or run ValidateNative*GlibcCompatibility.

@@ -109,6 +109,10 @@ For example:
 
 The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example, on Linux:
 
+For the native release-build architecture, glibc 2.17 sysroot maintenance,
+compatibility guarantees, and validation checklist, see
+[Native Linux glibc compatibility builds](../docs/development/NativeLinuxGlibcCompatibility.md).
+
 ```bash
 # Clean and build the main tracer project
 ./build_in_docker.sh Clean BuildTracerHome

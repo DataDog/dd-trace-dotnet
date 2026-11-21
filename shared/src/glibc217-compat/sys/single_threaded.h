@@ -1,0 +1,25 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2026 Datadog, Inc.
+
+// Stub for glibc's sys/single_threaded.h (glibc 2.32+). See glibc217-compat.c.
+#ifndef _SYS_SINGLE_THREADED_H
+#define _SYS_SINGLE_THREADED_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(__GNUC__)
+extern __attribute__((visibility("hidden"))) char __libc_single_threaded;
+#else
+extern char __libc_single_threaded;
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
