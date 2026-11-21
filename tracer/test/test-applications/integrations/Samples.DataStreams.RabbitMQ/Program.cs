@@ -42,6 +42,7 @@ namespace Samples.DataStreams.RabbitMQ
                 // Per-instance queue names should be normalized in DSM edge tags:
                 //    (direction:out, topic:amq.gen-*) -> (direction:in, topic:amq.gen-*)
                 //    (direction:out, topic:callback-*) -> (direction:in, topic:callback-*)
+                //    (direction:out, topic:*) -> (direction:in, topic:*)
                 await PublishAndGetPerInstanceQueues(model);
                 return;
             }
@@ -102,7 +103,13 @@ namespace Samples.DataStreams.RabbitMQ
             await model.BasicPublishAsync("", callbackQueue, Encoding.UTF8.GetBytes(Message));
             await GetMessage(model, callbackQueue);
 
-            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed} and {callbackQueue}.");
+            // queue name that is only a UUID
+            var uuidQueue = Guid.NewGuid().ToString();
+            await model.QueueDeclareAsync(queue: uuidQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            await model.BasicPublishAsync("", uuidQueue, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, uuidQueue);
+
+            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed}, {callbackQueue} and {uuidQueue}.");
         }
 
         private static async Task PublishMessageToDefaultExchange(IChannel model)
@@ -250,7 +257,13 @@ namespace Samples.DataStreams.RabbitMQ
             model.BasicPublish("", callbackQueue, null, Encoding.UTF8.GetBytes(Message));
             await GetMessage(model, callbackQueue);
 
-            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed} and {callbackQueue}.");
+            // queue name that is only a UUID
+            var uuidQueue = Guid.NewGuid().ToString();
+            model.QueueDeclare(queue: uuidQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            model.BasicPublish("", uuidQueue, null, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, uuidQueue);
+
+            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed}, {callbackQueue} and {uuidQueue}.");
         }
 
         private static Task PublishMessageToDefaultExchange(IModel model)

@@ -36,9 +36,14 @@ public class RabbitMQQueueNameNormalizerTests
     [InlineData("reply-orders-8F14E45F-CEEA-467A-9F3A-6B1F1E2C0A11", "reply-orders-*")]
     [InlineData("reply_8f14e45fceea467a9f3a6b1f1e2c0a11", "reply_*")]
     [InlineData("events.8f14e45f-ceea-467a-9f3a-6b1f1e2c0a11", "events.*")]
+    [InlineData("foo_8f14e45f-ceea-467a-9f3a-6b1f1e2c0a11", "foo_*")]
     // trailing long hex
     [InlineData("membership-9f8e7d6c5b4a39281706f5e4d3c2b1a0", "membership-*")]
     [InlineData("worker.0123456789abcdef", "worker.*")]
+    // bare UUID
+    [InlineData("8f14e45f-ceea-467a-9f3a-6b1f1e2c0a11", "*")]
+    [InlineData("8F14E45F-CEEA-467A-9F3A-6B1F1E2C0A11", "*")]
+    [InlineData("8f14e45fceea467a9f3a6b1f1e2c0a11", "*")]
     // unchanged
     [InlineData("orders", "orders")]
     [InlineData("orders-v2", "orders-v2")]
@@ -46,6 +51,9 @@ public class RabbitMQQueueNameNormalizerTests
     [InlineData("worker.0123456789abcde", "worker.0123456789abcde")] // 15 hex chars
     [InlineData("worker0123456789abcdef", "worker0123456789abcdef")] // no separator
     [InlineData("0123456789abcdef0123", "0123456789abcdef0123")] // no separator
+    [InlineData("8f14e45f-ceea-467a-9f3a-6b1f1e2c0a1", "8f14e45f-ceea-467a-9f3a-6b1f1e2c0a1")] // 35 chars, not a UUID
+    [InlineData("8f14e45fceea467a9f3a6b1f1e2c0a1", "8f14e45fceea467a9f3a6b1f1e2c0a1")] // 31 hex
+    [InlineData("0123456789abcdef01234567", "0123456789abcdef01234567")] // 24 hex
     [InlineData("test.topic.chocolate.cake", "test.topic.chocolate.cake")]
     [InlineData("amq.direct", "amq.direct")]
     [InlineData("PaymentService_bus", "PaymentService_bus")]

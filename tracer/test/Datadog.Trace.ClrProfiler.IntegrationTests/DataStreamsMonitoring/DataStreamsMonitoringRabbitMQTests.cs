@@ -87,14 +87,16 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix} PerInstanceQueues", packageVersion: packageVersion))
         {
-            // 2 produce + 2 consume checkpoints
-            var points = PayloadsToPoints(await agent.WaitForDataStreamsPointsAsync(statsCount: 4));
+            // 3 produce + 3 consume checkpoints
+            var points = PayloadsToPoints(await agent.WaitForDataStreamsPointsAsync(statsCount: 6));
             var edgeTags = points.Select(p => string.Join(",", p.EdgeTags)).Distinct().ToList();
 
             edgeTags.Should().Contain("direction:out,topic:amq.gen-*,type:rabbitmq");
             edgeTags.Should().Contain("direction:in,topic:amq.gen-*,type:rabbitmq");
             edgeTags.Should().Contain("direction:out,topic:callback-*,type:rabbitmq");
             edgeTags.Should().Contain("direction:in,topic:callback-*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:out,topic:*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:in,topic:*,type:rabbitmq");
             edgeTags.Should().OnlyContain(t => !t.Contains("amq.gen-") || t.Contains("amq.gen-*"));
             edgeTags.Should().OnlyContain(t => !t.Contains("callback-") || t.Contains("callback-*"));
         }

@@ -11,8 +11,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
 /// <summary>
 /// Normalizes per-instance RabbitMQ queue and exchange names (server-named queues, direct reply-to,
-/// per-process bus endpoints, names with a trailing UUID or long hex id) before they are used in
-/// Data Streams Monitoring edge tags. Without this, every process or request creates new DSM edges.
+/// per-process bus endpoints, names with a trailing UUID or long hex id, names that are only a UUID)
+/// before they are used in Data Streams Monitoring edge tags. Without this, every process or request
+/// creates new DSM edges.
 /// Only used for DSM edge tags; span tags and resource names keep the raw name.
 /// </summary>
 internal static class RabbitMQQueueNameNormalizer
@@ -27,6 +28,8 @@ internal static class RabbitMQQueueNameNormalizer
     private const string WolverineReplies = "wolverine.replies.*";
     private const int MinHexSuffixLength = 16;
     private const int DashedUuidLength = 36;
+    private const int UndashedUuidLength = 32;
+    private const string BareUuidNormalized = "*";
 
     /// <summary>
     /// Returns the normalized name, or the same instance when no rule applies.
@@ -54,6 +57,11 @@ internal static class RabbitMQQueueNameNormalizer
          || TryNormalizeIdSuffix(name, out normalized))
         {
             return normalized;
+        }
+
+        if (IsBareUuid(name))
+        {
+            return BareUuidNormalized;
         }
 
         return name;
@@ -155,6 +163,30 @@ internal static class RabbitMQQueueNameNormalizer
         }
 
         normalized = string.Concat(name.Substring(0, separator + 1), "*");
+        return true;
+    }
+
+    // the whole name is a UUID: 8-4-4-4-12 hex with dashes, or exactly 32 hex chars => *
+    private static bool IsBareUuid(string name)
+    {
+        if (name.Length == DashedUuidLength)
+        {
+            return IsDashedUuid(name, 0);
+        }
+
+        if (name.Length != UndashedUuidLength)
+        {
+            return false;
+        }
+
+        foreach (var c in name)
+        {
+            if (!IsHex(c))
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 
