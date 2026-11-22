@@ -18,6 +18,7 @@
     "flag": "new-user-onboarding",
     "result": {
       "reason": "ERROR",
+      "errorCode": "TARGETING_KEY_MISSING",
       "value": "default"
     },
     "targetingKey": null,

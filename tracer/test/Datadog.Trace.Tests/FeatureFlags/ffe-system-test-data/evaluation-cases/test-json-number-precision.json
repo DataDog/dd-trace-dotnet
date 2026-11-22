@@ -1,0 +1,58 @@
+[
+  {
+    "flag": "json-number-precision-flag",
+    "variationType": "JSON",
+    "defaultValue": {
+      "default": true
+    },
+    "targetingKey": "alice",
+    "attributes": {},
+    "result": {
+      "value": {
+        "zero": 0,
+        "small": 5,
+        "negative": -7,
+        "int32Max": 2147483647,
+        "int32Min": -2147483648,
+        "aboveInt32": 2147483648,
+        "maxSafeInteger": 9007199254740991,
+        "float": 5.0,
+        "fraction": 0.25,
+        "nested": {
+          "count": 3,
+          "values": [
+            1,
+            2.5,
+            -3
+          ]
+        }
+      },
+      "reason": "STATIC"
+    }
+  },
+  {
+    "flag": "json-number-precision-flag",
+    "variationType": "JSON",
+    "defaultValue": {
+      "default": true
+    },
+    "targetingKey": "bob",
+    "attributes": {
+      "precision": "above-double"
+    },
+    "result": {
+      "value": {
+        "aboveMaxSafeInteger": 9007199254740993,
+        "int64Max": 9223372036854775807,
+        "int64Min": -9223372036854775808,
+        "nested": {
+          "ids": [
+            9007199254740993,
+            18014398509481985
+          ]
+        }
+      },
+      "reason": "TARGETING_MATCH"
+    }
+  }
+]

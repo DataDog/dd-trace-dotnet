@@ -1,0 +1,352 @@
+[
+  {
+    "description": "Plain text matches anywhere and is case sensitive. The text is a substring.",
+    "attributes": {
+      "value": "zachary"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-contains",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "contains-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Plain text matches anywhere and is case sensitive. The match is case sensitive.",
+    "attributes": {
+      "value": "Zach"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-contains",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "contains-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An escaped dot matches only a dot. The input has the literal text.",
+    "attributes": {
+      "value": "a@example.com"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-escaped-dot",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "escaped-dot-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An escaped dot matches only a dot. An escaped dot does not match another character.",
+    "attributes": {
+      "value": "a@exampleXcom"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-escaped-dot",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "escaped-dot-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An unescaped dot matches any character. The dot matches X.",
+    "attributes": {
+      "value": "a@exampleXcom"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unescaped-dot",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unescaped-dot-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An escaped @ is a literal @. A leading .* does not change an unanchored match. The input ends with one of the alternatives.",
+    "attributes": {
+      "value": "user@site-b.example"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-escaped-at",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "escaped-at-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An escaped @ is a literal @. A leading .* does not change an unanchored match. No alternative is a suffix.",
+    "attributes": {
+      "value": "user@site-c.example"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-escaped-at",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "escaped-at-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "^ anchors the match at the start of the input. The input starts with the text.",
+    "attributes": {
+      "value": "beta-user"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-starts-with",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "starts-with-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "^ anchors the match at the start of the input. The text is not at the start.",
+    "attributes": {
+      "value": "xbeta-user"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-starts-with",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "starts-with-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "$ anchors the match at the end of the input. The input ends with the text.",
+    "attributes": {
+      "value": "site.test"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-ends-with",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "ends-with-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "$ anchors the match at the end of the input. The text is not at the end.",
+    "attributes": {
+      "value": "site.test.com"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-ends-with",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "ends-with-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "^ and $ around a group of alternatives match the whole input. The input is the first alternative.",
+    "attributes": {
+      "value": "us"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-equals-alternation",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "equals-alternation-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "^ and $ around a group of alternatives match the whole input. The input is the second alternative.",
+    "attributes": {
+      "value": "eu"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-equals-alternation",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "equals-alternation-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "^ and $ around a group of alternatives match the whole input. The input is longer than an alternative.",
+    "attributes": {
+      "value": "usa"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-equals-alternation",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "equals-alternation-2",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A top-level | matches either side anywhere. The input contains the second side.",
+    "attributes": {
+      "value": "xdefx"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-top-level-alternation",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "top-level-alternation-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A top-level | matches either side anywhere. The input contains neither side.",
+    "attributes": {
+      "value": "abde"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-top-level-alternation",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "top-level-alternation-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Two groups of alternatives after a leading .* match every combination as a suffix. One combination is a suffix.",
+    "attributes": {
+      "value": "u@bravo.net"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-wildcard-alternations",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "wildcard-alternations-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Two groups of alternatives after a leading .* match every combination as a suffix. No combination is a suffix.",
+    "attributes": {
+      "value": "u@alpha.com"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-wildcard-alternations",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "wildcard-alternations-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A trailing .* does not change the match. The input starts with the text.",
+    "attributes": {
+      "value": "administrator"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-trailing-wildcard",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "trailing-wildcard-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A trailing .* does not change the match. The text is not at the start.",
+    "attributes": {
+      "value": "sysadmin"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-trailing-wildcard",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "trailing-wildcard-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A leading lazy .*? does not change an unanchored match. The input contains the text.",
+    "attributes": {
+      "value": "xxabc"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-lazy-wildcard",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "lazy-wildcard-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": ".* matches every input, including the empty string. The empty string matches.",
+    "attributes": {
+      "value": ""
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-whole-input-any",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "whole-input-any-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": ".+ needs one character that is not a line feed. One character is enough.",
+    "attributes": {
+      "value": "x"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-non-empty",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "non-empty-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": ".+ needs one character that is not a line feed. The empty string has no character.",
+    "attributes": {
+      "value": ""
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-non-empty",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "non-empty-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": ".+ needs one character that is not a line feed. A line feed alone does not match.",
+    "attributes": {
+      "value": "\n"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-non-empty",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "non-empty-2",
+    "variationType": "STRING"
+  }
+]

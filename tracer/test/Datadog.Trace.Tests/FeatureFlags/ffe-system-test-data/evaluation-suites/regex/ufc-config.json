@@ -1,0 +1,1403 @@
+{
+  "createdAt": "2026-11-16T00:00:00Z",
+  "format": "SERVER",
+  "environment": {
+    "name": "Test"
+  },
+  "flags": {
+    "regex-contains": {
+      "key": "regex-contains",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "zach"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-escaped-dot": {
+      "key": "regex-escaped-dot",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "@example\\.com"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-unescaped-dot": {
+      "key": "regex-unescaped-dot",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "@example.com"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-escaped-at": {
+      "key": "regex-escaped-at",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*\\@(site-a|site-b)\\.example$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-starts-with": {
+      "key": "regex-starts-with",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^beta-"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-ends-with": {
+      "key": "regex-ends-with",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "\\.test$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-equals-alternation": {
+      "key": "regex-equals-alternation",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^(us|eu)$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-top-level-alternation": {
+      "key": "regex-top-level-alternation",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "abc|def"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-wildcard-alternations": {
+      "key": "regex-wildcard-alternations",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*@(alpha|bravo)\\.(io|net)$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-trailing-wildcard": {
+      "key": "regex-trailing-wildcard",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^admin.*"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-lazy-wildcard": {
+      "key": "regex-lazy-wildcard",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*?abc"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-whole-input-any": {
+      "key": "regex-whole-input-any",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-non-empty": {
+      "key": "regex-non-empty",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".+"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-end-before-newline": {
+      "key": "regex-end-before-newline",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "\\.test$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-dot-and-line-feed": {
+      "key": "regex-dot-and-line-feed",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^a.b$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-multiline-flag": {
+      "key": "regex-multiline-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?m)^beta$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-dot-all-flag": {
+      "key": "regex-dot-all-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?s)^a.b$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-case-insensitive-flag": {
+      "key": "regex-case-insensitive-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?i)^admin@"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-email-class": {
+      "key": "regex-email-class",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^[a-zA-Z0-9._%+-]+@site\\.test$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-posix-class": {
+      "key": "regex-posix-class",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^[[:alnum:]]+$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-counted-repetition": {
+      "key": "regex-counted-repetition",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^a{2,3}$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-unicode-flag-word-boundary": {
+      "key": "regex-unicode-flag-word-boundary",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?u)\\bmañana\\b"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-word-boundary": {
+      "key": "regex-word-boundary",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "\\bfoo\\b"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-unicode-digit": {
+      "key": "regex-unicode-digit",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^\\d+$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-unicode-space": {
+      "key": "regex-unicode-space",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^a\\sb$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-not-matches": {
+      "key": "regex-not-matches",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "NOT_MATCHES",
+                  "value": "@example\\.com$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-not-matches-missing-attribute": {
+      "key": "regex-not-matches-missing-attribute",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "NOT_MATCHES",
+                  "value": "@example\\.com$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-nested-plus": {
+      "key": "regex-nested-plus",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^(a+)+$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-overlapping-alternation": {
+      "key": "regex-overlapping-alternation",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^(a|aa)+$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-nested-star": {
+      "key": "regex-nested-star",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(a*)*b"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-words-and-spaces": {
+      "key": "regex-words-and-spaces",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^(\\w+\\s?)*$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-email-validation": {
+      "key": "regex-email-validation",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^([a-zA-Z0-9])(([\\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-leading-wildcard-long-miss": {
+      "key": "regex-leading-wildcard-long-miss",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*@(site-a|site-b)\\.example$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-class-long-miss": {
+      "key": "regex-class-long-miss",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "^[a-zA-Z0-9._%+-]+@site\\.test$"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-many-wildcards": {
+      "key": "regex-many-wildcards",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*a.*a.*a.*b"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-wildcard-chain": {
+      "key": "regex-wildcard-chain",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": ".*.*.*.*.*="
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-lookahead": {
+      "key": "regex-lookahead",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?=a)a"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-lookbehind": {
+      "key": "regex-lookbehind",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?<!a)b"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-backreference": {
+      "key": "regex-backreference",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(a)\\1"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-atomic-group": {
+      "key": "regex-atomic-group",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "MATCHES",
+                  "value": "(?>a)"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "regex-not-matches-lookahead": {
+      "key": "regex-not-matches-lookahead",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "match": {
+          "key": "match",
+          "value": "match"
+        }
+      },
+      "allocations": [
+        {
+          "key": "match",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "value",
+                  "operator": "NOT_MATCHES",
+                  "value": "(?=a)a"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "match",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    }
+  }
+}

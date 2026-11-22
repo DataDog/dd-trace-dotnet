@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "files": {
+    "corpus.json": {
+      "sha256": "393490bfefe382b9b75cf2964c131a910faa679888689457f99c2da2dc57fbbd",
+      "response_cases": 46,
+      "accepted": 6,
+      "signing_cases": 2
+    },
+    "nested-der.json": {
+      "sha256": "16a5de8b346087c4e4145e5c7bb43ac2dfd945a780fb56a75f38b1f7061302c4",
+      "response_cases": 2,
+      "accepted": 1,
+      "signing_cases": 0
+    },
+    "isolated-certificate-rules.json": {
+      "sha256": "7304bb12f011688a39b53ebd5fb5d842febd0f5ae81e67126a7e24d1e79a225a",
+      "response_cases": 4,
+      "accepted": 1,
+      "signing_cases": 0
+    },
+    "subject-der.json": {
+      "sha256": "c3cc9c3992ddb9b77892d0230212c9e6b383dbf7aeab705af6132125245afc59",
+      "response_cases": 2,
+      "accepted": 1,
+      "signing_cases": 2
+    },
+    "near-expiry.json": {
+      "sha256": "f0de3afa5ed0083ddb9d687238431286fc025d9a72c29ba7eb0c4dc304d7914f",
+      "response_cases": 6,
+      "accepted": 4,
+      "signing_cases": 6
+    },
+    "extension-profile.json": {
+      "sha256": "e3ca10b6429d171126d81c50fe4d624ae24a3450cf3ee121f2b1e437d84a9439",
+      "response_cases": 6,
+      "accepted": 2,
+      "signing_cases": 6
+    }
+  }
+}
