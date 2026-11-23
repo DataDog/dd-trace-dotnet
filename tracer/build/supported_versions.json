@@ -1192,16 +1192,16 @@
     "integrationName": "Npgsql",
     "assemblyName": "Npgsql",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Npgsql",
         "minVersionAvailableInclusive": "2.0.11",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "4.1.14",
-        "maxVersionSupportedInclusive": "10.0.3",
-        "maxVersionAvailableInclusive": "10.0.3",
-        "maxVersionTestedInclusive": "10.0.3"
+        "maxVersionSupportedInclusive": "11.0.0",
+        "maxVersionAvailableInclusive": "11.0.0",
+        "maxVersionTestedInclusive": "11.0.0"
       }
     ]
   },
