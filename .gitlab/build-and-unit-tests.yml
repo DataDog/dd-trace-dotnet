@@ -26,6 +26,46 @@ resolve-linux-ci-images:
     paths:
       - .gitlab/generated/linux-ci-images.env
 
+.check-linux-ci-images:
+  extends: .linux-docker
+  stage: build
+  timeout: 15m
+  needs:
+    - &linux-ci-image-metadata
+      job: resolve-linux-ci-images
+      artifacts: true
+  script:
+    - |
+      set -eu
+      . .gitlab/linux-ci-images.sh
+      load_linux_ci_images
+      check_linux_ci_images "$LINUX_IMAGE_ARCHITECTURE"
+
+check-linux-ci-images-x64:
+  extends: .check-linux-ci-images
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: x64
+
+check-linux-ci-images-arm64:
+  extends: .check-linux-ci-images
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: arm64
+
+# Consumer overlays retain metadata artifacts and gate only their architecture.
+.linux-ci-images-x64-ready:
+  needs:
+    - *linux-ci-image-metadata
+    - job: check-linux-ci-images-x64
+      artifacts: false
+
+.linux-ci-images-arm64-ready:
+  needs:
+    - *linux-ci-image-metadata
+    - job: check-linux-ci-images-arm64
+      artifacts: false
+
 # Windows jobs use CI Identity on the host for registry authentication only.
 generate-unit-tests-pipelines:
   stage: build
@@ -122,7 +162,7 @@ build:
         - artifacts/build_data/tests/*.xml
 
 build-linux-tracer-x64:
-  extends: .build-linux-tracer
+  extends: [.build-linux-tracer, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: debian
@@ -130,7 +170,7 @@ build-linux-tracer-x64:
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-x64-musl:
-  extends: .build-linux-tracer
+  extends: [.build-linux-tracer, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: alpine
@@ -138,7 +178,7 @@ build-linux-tracer-x64-musl:
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-arm64:
-  extends: .build-linux-tracer
+  extends: [.build-linux-tracer, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
     MANAGED_BASE_IMAGE: debian
@@ -146,7 +186,7 @@ build-linux-tracer-arm64:
     RUN_NATIVE_TESTS: "false"
 
 build-linux-tracer-arm64-musl:
-  extends: .build-linux-tracer
+  extends: [.build-linux-tracer, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
     MANAGED_BASE_IMAGE: alpine
@@ -201,7 +241,7 @@ build-linux-tracer-arm64-musl:
         - profiler/build_data/tests/*.xml
 
 build-linux-profiler-x64:
-  extends: .build-linux-profiler
+  extends: [.build-linux-profiler, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
     NATIVE_BASE_IMAGE: centos7
@@ -209,7 +249,7 @@ build-linux-profiler-x64:
     RUN_NATIVE_TESTS: "true"
 
 build-linux-profiler-x64-musl:
-  extends: .build-linux-profiler
+  extends: [.build-linux-profiler, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
     NATIVE_BASE_IMAGE: alpine
@@ -217,7 +257,7 @@ build-linux-profiler-x64-musl:
     RUN_NATIVE_TESTS: "true"
 
 build-linux-profiler-arm64:
-  extends: .build-linux-profiler
+  extends: [.build-linux-profiler, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
     NATIVE_BASE_IMAGE: debian
@@ -225,7 +265,7 @@ build-linux-profiler-arm64:
     RUN_NATIVE_TESTS: "false"
 
 build-linux-profiler-arm64-musl:
-  extends: .build-linux-profiler
+  extends: [.build-linux-profiler, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
     NATIVE_BASE_IMAGE: alpine
@@ -260,13 +300,13 @@ build-linux-profiler-arm64-musl:
       - artifacts/build_data/dumps
 
 build-linux-universal-x64:
-  extends: .build-linux-universal
+  extends: [.build-linux-universal, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
     UNIVERSAL_ARCHITECTURE: x64
 
 build-linux-universal-arm64:
-  extends: .build-linux-universal
+  extends: [.build-linux-universal, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
     UNIVERSAL_ARCHITECTURE: arm64
