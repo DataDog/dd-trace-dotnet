@@ -35,8 +35,10 @@ Linux artifacts do not all use the same libc build path.
   musl-based binaries. These artifacts are merged into the glibc package later
   in the pipeline; they do not use the glibc 2.17 sysroot.
 - **Alpine** also builds the musl `dd-dotnet` executables, without a sysroot.
-- **Debian** is still used for several generated test matrices. Do not assume
-  those runs use the sysroot.
+- **Ubuntu in the generated test matrices** (unit, integration, debugger
+  integration, and exploration tests) uses the same image, but those jobs run
+  tests and do not produce the shipped native artifacts. Do not assume those
+  runs exercise or validate the sysroot.
 - **CentOS 7** remains the source of the harvested sysroot and a runtime smoke
   test target. It is not the normal compiler image for the tracer or profiler.
 
