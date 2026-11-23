@@ -34,9 +34,24 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             using var run = runner.Run();
             var expectedStack = new StackTrace(
-                    StackFrame.Build().Module("Samples.Computer01").Namespace("Samples.Computer01").Type("LineNumber").Function("CallThirdMethod").Signature("()"),
-                    StackFrame.Build().Module("Samples.Computer01").Namespace("Samples.Computer01").Type("LineNumber").Function("CallSecondMethod").Signature("()"),
-                    StackFrame.Build().Module("Samples.Computer01").Namespace("Samples.Computer01").Type("LineNumber").Function("CallFirstMethod").Signature("()"));
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("LineNumber")
+                        .Function("CallThirdMethod")
+                        .Signature("()"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("LineNumber")
+                        .Function("CallSecondMethod")
+                        .Signature("()"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("LineNumber")
+                        .Function("CallFirstMethod")
+                        .Signature("()"));
 
             var samples = run.Profiles.CallStacks.Where(stackTrace => stackTrace.Contains(expectedStack)).ToArray();
 
