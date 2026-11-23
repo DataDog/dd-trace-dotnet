@@ -44,6 +44,14 @@ If publication fails, inspect its logs, resolve the cause, and retry the manual 
 
 - Keep `VCPKG_VERSION` in `gitlab.windows.dockerfile` in sync with the `vcpkgVersion` constant in `tracer/build/_build/Build.Steps.cs`, so the pre-fetched tool versions match what the build's vcpkg expects.
 
+### Windows unit-test runtimes and long paths
+
+The image enables `LongPathsEnabled` and installs the additional x64 .NET runtimes from `additional-dotnet-runtimes.json`. The .NET 11 SDK supplies its runtime; the base image supplies .NET Framework 4.8. The targeting packs selected in `install_vstudio.ps1` are separate build dependencies.
+
+Keep the pinned runtime inventory aligned with the full Windows matrix in `GetTestingFrameworks` in `Build.Steps.cs`, not just the reduced PR matrix. Obtain exact Windows x64 runtime installer URLs and SHA512 hashes from Microsoft's `https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/<channel>/releases.json`; do not resolve floating channels during image builds. Older runtimes remain intentionally available for compatibility tests. The installer verifies hashes, installation exit codes, and the resulting `dotnet --list-runtimes` inventory.
+
+After publishing the new image, verify `LongPathsEnabled=1` inside a fresh container and run the full Windows managed-test matrix (including net48 and older .NET Core cells). Test jobs consume the prepared image without runtime downloads or registry edits. The runner-side Git long-path checkout hook is still required separately.
+
 ### Example PR
 
 - [dd-trace-dotnet#7492](https://github.com/DataDog/dd-trace-dotnet/pull/7492) (earlier, local-build flow — for structural reference)

@@ -63,6 +63,12 @@ ENV VCPKG_VERSION="2024.11.16" \
 COPY install_vcpkg.ps1 .
 RUN powershell -Command .\install_vcpkg.ps1 -Version $ENV:VCPKG_VERSION -InstallRoot $ENV:VCPKG_ROOT
 
+# Container configuration and x64 runtimes shared by all managed unit-test jobs.
+# .NET Framework 4.8 comes from the base image; .NET 11 comes from the SDK above.
+RUN New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -PropertyType DWord -Value 1 -Force | Out-Null
+COPY additional-dotnet-runtimes.json install_dotnet_test_runtimes.ps1 ./
+RUN powershell -File .\install_dotnet_test_runtimes.ps1
+
 # Copy everything else
 COPY . .
 ENTRYPOINT ["/entrypoint.bat"]

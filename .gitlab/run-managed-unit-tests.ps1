@@ -32,7 +32,6 @@ finally {
     $response = $null
 }
 
-& "$PSScriptRoot/install-windows-test-runtime.ps1" -Framework $env:FRAMEWORK
 & C:\entrypoint.bat RunManagedUnitTests --framework $env:FRAMEWORK `
     --RunManagedUnitTestsFromArtifacts true --NugetPackageDirectory C:\mnt\packages
 exit $LASTEXITCODE

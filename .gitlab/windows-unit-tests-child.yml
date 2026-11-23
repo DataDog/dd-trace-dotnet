@@ -60,10 +60,9 @@ workflow:
         -e CI_MERGE_REQUEST_DIFF_BASE_SHA `
         -e CI_MERGE_REQUEST_TARGET_BRANCH_NAME `
         -e CI_MERGE_REQUEST_IID `
-        --entrypoint cmd.exe `
+        --entrypoint powershell `
         $env:WINDOWS_BUILD_IMAGE `
-        /d /s /c `
-        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\run-managed-unit-tests.ps1"
+        -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\run-managed-unit-tests.ps1
       if ($LASTEXITCODE -ne 0) {
         throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
       }
