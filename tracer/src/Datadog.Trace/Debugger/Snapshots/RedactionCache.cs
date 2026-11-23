@@ -62,13 +62,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         /// </summary>
         internal void AddOrReplace(ref RedactionCache<TKey> field, TKey key, bool value)
         {
-            if (TryAdd(key, value))
-            {
-                return;
-            }
-
-            // Checking first saves the allocation when the cache was already replaced.
-            if (ReferenceEquals(Volatile.Read(ref field), this))
+            if (!TryAdd(key, value))
             {
                 TryReplace(ref field, key, value);
             }

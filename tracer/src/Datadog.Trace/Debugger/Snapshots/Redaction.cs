@@ -100,7 +100,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(StringBuilder)
         ];
 
-        private static Redaction _instnace = new();
+        private static Redaction _instance = new();
 
         private static int _longNameLogged;
 
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _maxKeywordLength = GetMaxLength(_redactKeywords);
         }
 
-        internal static Redaction Instance => _instnace;
+        internal static Redaction Instance => _instance;
 
 #pragma warning disable DD0002 // Test-only accessors over the test-only RedactionCache.Count
         [TestingOnly]
@@ -552,7 +552,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (name.Length > MaxCachedNameLength)
             {
-                if (Volatile.Read(ref _longNameLogged) == 0 && Interlocked.Exchange(ref _longNameLogged, 1) == 0)
+                if (Interlocked.CompareExchange(ref _longNameLogged, 1, 0) == 0)
                 {
                     Log.Debug("Name length {Length} exceeds {MaxLength} characters, so its redaction result is not cached. Further occurrences are not logged.", name.Length, property1: MaxCachedNameLength);
                 }
@@ -616,7 +616,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         /// </summary>
         internal void ResetInstance()
         {
-           System.Threading.Interlocked.Exchange(ref _instnace, new());
+            Interlocked.Exchange(ref _instance, new());
         }
     }
 }
