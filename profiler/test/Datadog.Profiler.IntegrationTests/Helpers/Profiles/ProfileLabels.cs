@@ -24,6 +24,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 
         public ProfileLabel this[int index] => _labels[index];
 
+        public bool Has(string name) => GetValues(name).Count > 0;
+
         public string GetRequired(string name)
         {
             var values = GetValues(name);
