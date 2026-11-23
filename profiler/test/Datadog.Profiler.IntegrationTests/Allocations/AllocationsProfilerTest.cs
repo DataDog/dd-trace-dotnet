@@ -151,7 +151,12 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            ProfileReader.Read(runner.Environment.PprofDir).AllocationSamples().Should().NotBeEmpty();
+            var profiles = ProfileReader.Read(runner.Environment.PprofDir);
+
+            // Exact sample types before AllocationSamples() drops other rows.
+            profiles.Should().HaveSampleTypes(ProfileValue.AllocationCount);
+
+            profiles.AllocationSamples().Should().NotBeEmpty();
         }
 
         private static Dictionary<string, AllocStats> GetProfiledAllocations(IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> allocations)

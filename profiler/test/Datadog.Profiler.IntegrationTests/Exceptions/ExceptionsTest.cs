@@ -954,6 +954,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(run.UploadCount > 0);
 
+            // Exact sample types before ExceptionSamples() drops other rows.
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
+
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
             var unaggregatedProfile = new List<(string Type, string Message, long Count, StackTrace ExpectedStack)>
