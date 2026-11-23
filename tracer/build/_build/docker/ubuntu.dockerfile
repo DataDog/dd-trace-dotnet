@@ -78,6 +78,12 @@ RUN set -eux; \
 RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
     && ln -s "/usr/lib/$MULTIARCH/libldap-2.5.so.0" "/usr/lib/$MULTIARCH/libldap-2.4.so.2"
 
+# Grpc.Core 2.29/2.30 DllImports "libdl.so" (unversioned name). glibc 2.34+ merged libdl into libc and
+# jammy's libc6-dev only ships libdl.a, so the symlink is missing and Grpc.Core fails with
+# DllNotFoundException. GrpcLegacy then hangs instead of failing. Debian buster's libc6-dev shipped it.
+RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
+    && ln -s "/usr/lib/$MULTIARCH/libdl.so.2" "/usr/lib/$MULTIARCH/libdl.so"
+
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
     && chmod u+x llvm.sh \
