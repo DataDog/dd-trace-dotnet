@@ -15,8 +15,10 @@ run_nuke() {
         --env CI_JOB_NAME_SLUG \
         --env CI_COMMIT_SHA \
         --env CI_COMMIT_BRANCH \
+        --env LINUX_DOTNET_SDK_VERSION \
+        --env LINUX_NATIVE_DOTNET_SDK_VERSION \
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         "$image" \
-        dotnet /build/bin/Debug/_build.dll "$@"
+        sh .gitlab/run-nuke-linux-container.sh "$@"
 }

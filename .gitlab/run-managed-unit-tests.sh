@@ -31,7 +31,7 @@ if [ -z "$(printf '%s' "${DD_LOGGER_DD_API_KEY:-}" | tr -d '[:space:]')" ]; then
 fi
 
 unset DD_STS_OIDC_TOKEN
-exec dotnet /build/bin/Debug/_build.dll \
+exec sh .gitlab/run-nuke-linux-container.sh \
     RunManagedUnitTests \
     --framework "$FRAMEWORK" \
     --RunManagedUnitTestsFromArtifacts true \

@@ -79,7 +79,9 @@ ENV IsAlpine=true \
     DOTNET_ROOT=/usr/share/dotnet \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
-FROM base AS builder
+FROM base AS build-environment
+
+FROM build-environment AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
@@ -88,7 +90,7 @@ COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
 
-FROM base AS tester
+FROM base AS test-environment
 
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
@@ -106,6 +108,8 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ./dotnet-install.sh --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+
+FROM test-environment AS tester
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

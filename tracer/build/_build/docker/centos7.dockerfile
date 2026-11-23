@@ -86,9 +86,11 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base AS builder
+FROM base AS build-environment
 
 ENV USE_NATIVE_SDK_VERSION=true
+
+FROM build-environment AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

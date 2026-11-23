@@ -1,0 +1,36 @@
+include:
+  - local: .gitlab/linux-build-common.yml
+
+.publish-linux-ci-images:
+  extends: .linux-docker
+  stage: .pre
+  needs: []
+  timeout: 2h
+  resource_group: linux-ci-images-$LINUX_IMAGE_ARCHITECTURE
+  allow_failure: true
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true" || $CI_COMMIT_TAG || $DOTNET_PACKAGE_VERSION'
+      when: never
+    # Publication executes candidate-controlled build code and writes shared tags.
+    # Keep a human review checkpoint, as for the Windows image job.
+    - when: manual
+  script:
+    - |
+      set -eu
+      . .gitlab/linux-ci-images.sh
+      publish_linux_ci_images "$LINUX_IMAGE_ARCHITECTURE"
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
+build-linux-ci-images-x64:
+  extends: .publish-linux-ci-images
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: x64
+
+build-linux-ci-images-arm64:
+  extends: .publish-linux-ci-images
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: arm64

@@ -14,6 +14,7 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  - local: .gitlab/linux-ci-images.yml
   - project: 'ddoghq/llm-validation-platform'
     ref: 745818b5d65805d5852b07cbdf4d09c29b3da6c9   # v0.1.6 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'

@@ -116,7 +116,9 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base AS builder
+FROM base AS build-environment
+
+FROM build-environment AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
@@ -126,7 +128,7 @@ RUN dotnet build /build --no-restore
 
 WORKDIR /project
 
-FROM base AS tester
+FROM base AS test-environment
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
@@ -159,6 +161,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
         && rm azure-functions-core-tools.zip; \
     fi
 
+
+FROM test-environment AS tester
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

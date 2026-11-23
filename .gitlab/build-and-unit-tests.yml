@@ -2,10 +2,6 @@
 include:
   - local: .gitlab/linux-build-common.yml
 
-variables:
-  # CentOS/universal native toolchains cannot use the managed SDK from global.json.
-  LEGACY_NATIVE_DOTNET_SDK_VERSION: "7.0.306"
-
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
@@ -13,6 +9,22 @@ workflow:
 stages:
   - build
   - test
+
+resolve-linux-ci-images:
+  extends: .linux-docker
+  stage: build
+  needs: []
+  tags: ["docker-in-docker:amd64"]
+  script:
+    - |
+      set -eu
+      . .gitlab/linux-ci-images.sh
+      mkdir -p .gitlab/generated
+      resolve_linux_ci_images > .gitlab/generated/linux-ci-images.env
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - .gitlab/generated/linux-ci-images.env
 
 # Windows jobs use CI Identity on the host for registry authentication only.
 generate-unit-tests-pipelines:
@@ -69,25 +81,20 @@ build:
   extends: .linux-docker
   stage: build
   timeout: 90m
-  needs: []
+  needs:
+    - job: resolve-linux-ci-images
+      artifacts: true
   script:
     - |
       set -eu
 
-      MANAGED_DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
-      NATIVE_DOTNET_SDK_VERSION=${NATIVE_DOTNET_SDK_VERSION:-$MANAGED_DOTNET_SDK_VERSION}
-
-      managed_image="dd-trace-dotnet/${MANAGED_BASE_IMAGE}-builder:${CI_JOB_ID}"
-      native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-builder:${CI_JOB_ID}"
-
-      echo "Building ${MANAGED_BASE_IMAGE} .NET ${MANAGED_DOTNET_SDK_VERSION} builder image"
-      sh .gitlab/build-linux-image.sh "$MANAGED_BASE_IMAGE" "$MANAGED_DOTNET_SDK_VERSION" "$managed_image"
-
-      if [ "$NATIVE_BASE_IMAGE" = "$MANAGED_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$MANAGED_DOTNET_SDK_VERSION" ]; then
+      . .gitlab/linux-ci-images.sh
+      load_linux_ci_images
+      managed_image=$(pull_linux_ci_image "$MANAGED_BASE_IMAGE" builder)
+      if [ "$NATIVE_BASE_IMAGE" = "$MANAGED_BASE_IMAGE" ]; then
         native_image="$managed_image"
       else
-        echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} native builder image"
-        sh .gitlab/build-linux-image.sh "$NATIVE_BASE_IMAGE" "$NATIVE_DOTNET_SDK_VERSION" "$native_image"
+        native_image=$(pull_linux_ci_image "$NATIVE_BASE_IMAGE" builder)
       fi
 
       . .gitlab/run-nuke-linux.sh
@@ -120,7 +127,6 @@ build-linux-tracer-x64:
   variables:
     MANAGED_BASE_IMAGE: debian
     NATIVE_BASE_IMAGE: centos7
-    NATIVE_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-x64-musl:
@@ -151,25 +157,20 @@ build-linux-tracer-arm64-musl:
   extends: .linux-docker
   stage: build
   timeout: 90m
-  needs: []
+  needs:
+    - job: resolve-linux-ci-images
+      artifacts: true
   script:
     - |
       set -eu
 
-      VALIDATION_DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
-      NATIVE_DOTNET_SDK_VERSION=${NATIVE_DOTNET_SDK_VERSION:-$VALIDATION_DOTNET_SDK_VERSION}
-
-      native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-profiler-builder:${CI_JOB_ID}"
-      validation_image="dd-trace-dotnet/${VALIDATION_BASE_IMAGE}-profiler-validator:${CI_JOB_ID}"
-
-      echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} profiler builder image"
-      sh .gitlab/build-linux-image.sh "$NATIVE_BASE_IMAGE" "$NATIVE_DOTNET_SDK_VERSION" "$native_image"
-
-      if [ "$NATIVE_BASE_IMAGE" = "$VALIDATION_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$VALIDATION_DOTNET_SDK_VERSION" ]; then
+      . .gitlab/linux-ci-images.sh
+      load_linux_ci_images
+      native_image=$(pull_linux_ci_image "$NATIVE_BASE_IMAGE" builder)
+      if [ "$NATIVE_BASE_IMAGE" = "$VALIDATION_BASE_IMAGE" ]; then
         validation_image="$native_image"
       else
-        echo "Building ${VALIDATION_BASE_IMAGE} .NET ${VALIDATION_DOTNET_SDK_VERSION} profiler validation image"
-        sh .gitlab/build-linux-image.sh "$VALIDATION_BASE_IMAGE" "$VALIDATION_DOTNET_SDK_VERSION" "$validation_image"
+        validation_image=$(pull_linux_ci_image "$VALIDATION_BASE_IMAGE" builder)
       fi
 
       . .gitlab/run-nuke-linux.sh
@@ -204,7 +205,6 @@ build-linux-profiler-x64:
   tags: ["docker-in-docker:amd64"]
   variables:
     NATIVE_BASE_IMAGE: centos7
-    NATIVE_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
     VALIDATION_BASE_IMAGE: debian
     RUN_NATIVE_TESTS: "true"
 
@@ -236,16 +236,16 @@ build-linux-profiler-arm64-musl:
   extends: .linux-docker
   stage: build
   timeout: 60m
-  needs: []
-  variables:
-    UNIVERSAL_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
+  needs:
+    - job: resolve-linux-ci-images
+      artifacts: true
   script:
     - |
       set -eu
 
-      universal_image="dd-trace-dotnet/universal-${UNIVERSAL_ARCHITECTURE}-builder:${CI_JOB_ID}"
-      echo "Building ${UNIVERSAL_ARCHITECTURE} universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
-      sh .gitlab/build-linux-image.sh universal "$UNIVERSAL_DOTNET_SDK_VERSION" "$universal_image"
+      . .gitlab/linux-ci-images.sh
+      load_linux_ci_images
+      universal_image=$(pull_linux_ci_image universal builder)
 
       . .gitlab/run-nuke-linux.sh
       run_nuke "$universal_image" \

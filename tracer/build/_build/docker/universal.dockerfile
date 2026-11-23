@@ -67,7 +67,9 @@ ENV \
     CXX=clang++ \
     CC=clang
 
-FROM base AS builder
+FROM base AS build-environment
+
+FROM build-environment AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

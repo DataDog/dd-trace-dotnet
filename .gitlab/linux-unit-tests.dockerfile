@@ -1,4 +1,4 @@
-# The caller must supply the job-specific tester image built with the selected SDK.
+# Used only during manual publication, on top of the selected test environment.
 ARG TESTER_IMAGE
 
 FROM ${TESTER_IMAGE}

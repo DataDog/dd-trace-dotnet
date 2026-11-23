@@ -9,24 +9,19 @@ workflow:
   extends: .linux-docker
   stage: test
   timeout: 1h
+  needs:
+    - &linux-ci-images-metadata
+      pipeline: "$PARENT_PIPELINE_ID"
+      job: resolve-linux-ci-images
+      artifacts: true
   script:
     - |
       set -eu
 
-      DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
-
-      tester_image="dd-trace-dotnet/${BASE_IMAGE}-tester:${CI_JOB_ID}"
-      tester_with_ca_certs_image="dd-trace-dotnet/${BASE_IMAGE}-tester-ca-certs:${CI_JOB_ID}"
+      . .gitlab/linux-ci-images.sh
+      load_linux_ci_images
+      tester_image=$(pull_linux_ci_image "$BASE_IMAGE" tester)
       mkdir -p artifacts/build_data/infra_logs
-      echo "Building ${BASE_IMAGE} test image for ${FRAMEWORK}"
-      sh .gitlab/build-linux-image.sh "$BASE_IMAGE" "$DOTNET_SDK_VERSION" "$tester_image" tester
-
-      echo "Adding Datadog CA certificates to the test image"
-      docker build \
-        --build-arg "TESTER_IMAGE=${tester_image}" \
-        --tag "$tester_with_ca_certs_image" \
-        --file .gitlab/linux-unit-tests.dockerfile \
-        .gitlab
 
       echo "Running managed unit tests for ${FRAMEWORK}"
       docker run --rm \
@@ -35,6 +30,8 @@ workflow:
         --env artifacts=/project/artifacts/output \
         --env CI=true \
         --env FRAMEWORK \
+        --env LINUX_DOTNET_SDK_VERSION \
+        --env LINUX_NATIVE_DOTNET_SDK_VERSION \
         --env DD_LOGGER_ENABLED=true \
         --env DD_LOGGER_DD_API_KEY \
         --env DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
@@ -71,7 +68,7 @@ workflow:
         --env DD_STS_OIDC_TOKEN \
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-        "$tester_with_ca_certs_image" \
+        "$tester_image" \
         sh .gitlab/run-managed-unit-tests.sh
   artifacts:
     when: always
@@ -93,6 +90,7 @@ workflow:
 .linux-unit-test-x64-glibc:
   extends: .linux-unit-test-x64
   needs:
+    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-x64
       artifacts: true
@@ -103,6 +101,7 @@ workflow:
 .linux-unit-test-x64-musl:
   extends: .linux-unit-test-x64
   needs:
+    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-x64-musl
       artifacts: true
@@ -117,6 +116,7 @@ workflow:
 .linux-unit-test-arm64-glibc:
   extends: .linux-unit-test-arm64
   needs:
+    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-arm64
       artifacts: true
@@ -127,6 +127,7 @@ workflow:
 .linux-unit-test-arm64-musl:
   extends: .linux-unit-test-arm64
   needs:
+    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-arm64-musl
       artifacts: true
