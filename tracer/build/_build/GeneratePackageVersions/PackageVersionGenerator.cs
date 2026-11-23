@@ -168,7 +168,7 @@ namespace GeneratePackageVersions
                     var lastVersion = allVersions.Last();
 
                     // One row per distinct selected version preserves split-range / per-glob slots
-                    // (e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.* each produce their own entry), so a
+                    // (e.g. AWSSDK.DynamoDBv2's 3.3.*, 3.*.*, 4.*.* each produce their own entry), so a
                     // backport to 3.x is reported even when the overall max 4.x is unchanged.
                     var selectedVersions = allVersions
                         .Distinct()
@@ -317,7 +317,7 @@ namespace GeneratePackageVersions
         /// Returns the highest previously-tested version for the given entry that falls in its
         /// [MinVersion, MaxVersionExclusive) range AND shares the candidate version's major. The
         /// range filter guards split-range packages (e.g. GraphQL 4.x-6.x and 7.x-9.x) and the
-        /// major filter guards wide single-range packages (e.g. AwsSdk 3.x-5.x) where a late
+        /// major filter guards wide single-range packages (e.g. AwsDynamoDb 3.x-5.x) where a late
         /// backport to an older major would otherwise slip through under a higher newer-major max.
         /// </summary>
         private static Version FindPreviousMaxForEntry(
