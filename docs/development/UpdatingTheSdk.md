@@ -28,8 +28,6 @@ Update all references to the SDK version across the repository:
   - `tracer/build/_build/docker/alpine.dockerfile`
   - `tracer/build/_build/docker/ubuntu.dockerfile`
   - `tracer/build/_build/docker/universal.dockerfile`
-  - `tracer/build/_build/docker/debian.dockerfile`
-
   The Linux images have different artifact and libc responsibilities. See
   [Native Linux glibc compatibility builds](NativeLinuxGlibcCompatibility.md)
   before changing their base image, SDK selection, or native build role.
