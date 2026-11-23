@@ -78,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         public void ShouldContentionProfilerBeEnabledByDefault(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: ScenarioContention);
-            runner.Environment.DisableAllExcept(ProfilerFeature.LockContention);
+            runner.Environment.ResetToDefault(ProfilerFeature.LockContention);
 
             using var run = runner.Run();
 

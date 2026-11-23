@@ -88,10 +88,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
         }
 
         [Fact]
-        public void DisableAllExcept_LeavesTheListedFeatureAtItsDefault()
+        public void ResetToDefault_LeavesTheListedFeatureAtItsDefault()
         {
             var environment = new EnvironmentHelper("net8.0", enableTracer: false, enableProfiler: true);
-            environment.DisableAllExcept(ProfilerFeature.Cpu);
+            environment.ResetToDefault(ProfilerFeature.Cpu);
 
             environment.CustomEnvironmentVariables.Should().NotContainKey(EnvironmentVariables.CpuProfilerEnabled);
             environment.CustomEnvironmentVariables[EnvironmentVariables.WallTimeProfilerEnabled].Should().Be("0");

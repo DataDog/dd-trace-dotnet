@@ -191,10 +191,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Disables every profiler data source except the listed ones, which keep their default value.
+        /// Puts the listed features back to their default value (no variable set) and disables every other profiler data source.
         /// Use it to check that a feature is enabled by default.
         /// </summary>
-        internal void DisableAllExcept(params ProfilerFeature[] features)
+        internal void ResetToDefault(params ProfilerFeature[] features)
         {
             EnableOnly(features);
             foreach (var feature in features)

@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetCpuSamplesIfCpuProfilerIsActivatedByDefault(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: CmdLine);
-            runner.Environment.DisableAllExcept(ProfilerFeature.Cpu);
+            runner.Environment.ResetToDefault(ProfilerFeature.Cpu);
 
             using var run = runner.Run();
 
@@ -36,7 +36,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetWalltimeSamplesIfWalltimeProfilerIsActivatedByDefault(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: CmdLine);
-            runner.Environment.DisableAllExcept(ProfilerFeature.WallTime);
+            runner.Environment.ResetToDefault(ProfilerFeature.WallTime);
 
             using var run = runner.Run();
 
