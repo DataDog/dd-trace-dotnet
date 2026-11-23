@@ -9,7 +9,7 @@ Where code belongs, who owns state, and API and type shape.
 ## 1. Settings and state ownership
 
 ### DES-1.1: Read DD_ENV, DD_SITE, and DD_API_KEY from the tracer's settings objects, not from `IConfigurationSource`
-- Flag: a new settings class or component calls `config.WithKeys(ConfigurationKeys.Environment|Site|ApiKey)` (or another key the tracer already extracts) itself, or native code re-reads an env var (e.g. `DD_PROFILING_ENABLED`) that the managed side already resolves. If the key isn't on the shared settings yet (today `DD_SITE` and `DD_API_KEY`), the fix is to extract it there once and pass it in, not to add another independent read.
+- Flag: a new settings class or component calls `config.WithKeys(ConfigurationKeys.Environment|Site|ApiKey)` (or another key the tracer already extracts) itself, or native code re-reads an env var (e.g. `DD_PROFILING_ENABLED`) that the managed side already resolves. If the key isn't on the shared settings yet (today `DD_SITE` and `DD_API_KEY`), the fix is to extract it there once and pass it in, not to add another independent read. Also flag a settings class that parses a key another settings class owns, such as `DD_APPSEC_ENABLED` in `TracerSettings`. If the change adds an OTLP signal, the signal must resolve its endpoint and protocol through `ExporterSettings.GetOtlpTransport`.
 - ❌ `Env = config.WithKeys(ConfigurationKeys.Environment).AsString();`
 - ✅ `Env = mutableSettings.Environment;`
 
@@ -72,6 +72,9 @@ Where code belongs, who owns state, and API and type shape.
 - Flag: `if (_isOtlp)` (or a similar mode flag) branches across two or more classes that call different setup APIs (`SetStartTime` vs `SetMinStartTime`) for each mode.
 - ❌ `if (_isOtlp) { _buffers[i].SetStartTime(now); }`
 - ✅ `_buffers[i] = _isOtlp ? new OtlpStatsBuffer(...) : new DatadogStatsBuffer(...);`
+
+### DES-3.8: Inject one test-seam interface instead of delegates or several time parameters
+- Flag: a type gains delegate properties, `Stopwatch` instances, or several separate time parameters only so that tests can control it. Inject one interface instead. On hot paths, pass it as a generic struct parameter.
 
 ## 4. Configuration and analyzers
 
