@@ -30,13 +30,13 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromEnvironmentVariables(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromEnvironmentVariables(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
-            runner.Environment.CustomEnvironmentVariables["DD_TRACE_GIT_METADATA_ENABLED"] = "1";
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_REPOSITORY_URL"] = "https://Myrepository";
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_COMMIT_SHA"] = "42";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
+            runner.Environment.SetVariable("DD_TRACE_GIT_METADATA_ENABLED", "1");
+            runner.Environment.SetVariable("DD_GIT_REPOSITORY_URL", "https://Myrepository");
+            runner.Environment.SetVariable("DD_GIT_COMMIT_SHA", "42");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -45,15 +45,15 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(profilerGitMetadata, tracerGitMetadata);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromDdTags(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromDdTags(TestAppContext app)
         {
             // In this case, the profiler does not do anything specific.
             // We just get the DD_TAGS and add them to the profile/request
             // But the goal of the test is to ensure that the tracer has extracted them and we have the same.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
-            runner.Environment.CustomEnvironmentVariables["DD_TRACE_GIT_METADATA_ENABLED"] = "1";
-            runner.Environment.CustomEnvironmentVariables["DD_TAGS"] = "git.repository_url:https://Myrepository,git.commit.sha:42";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
+            runner.Environment.SetVariable("DD_TRACE_GIT_METADATA_ENABLED", "1");
+            runner.Environment.SetVariable("DD_TAGS", "git.repository_url:https://Myrepository,git.commit.sha:42");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -62,11 +62,11 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(profilerGitMetadata, tracerGitMetadata);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromBinary(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromBinary(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
-            runner.Environment.CustomEnvironmentVariables["DD_TRACE_GIT_METADATA_ENABLED"] = "1";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
+            runner.Environment.SetVariable("DD_TRACE_GIT_METADATA_ENABLED", "1");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -75,13 +75,13 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(profilerGitMetadata, tracerGitMetadata);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromEnvironmentVariablesIfTracerFeatureIsDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromEnvironmentVariablesIfTracerFeatureIsDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
-            runner.Environment.CustomEnvironmentVariables["DD_TRACE_GIT_METADATA_ENABLED"] = "0";
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_REPOSITORY_URL"] = "https://Myrepository";
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_COMMIT_SHA"] = "42";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
+            runner.Environment.SetVariable("DD_TRACE_GIT_METADATA_ENABLED", "0");
+            runner.Environment.SetVariable("DD_GIT_REPOSITORY_URL", "https://Myrepository");
+            runner.Environment.SetVariable("DD_GIT_COMMIT_SHA", "42");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -91,15 +91,15 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromDdTagsIfTracerFeatureIsDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromDdTagsIfTracerFeatureIsDisabled(TestAppContext app)
         {
             // In this case, the profiler does not do anything specific.
             // We just get the DD_TAGS and add them to the profile/request
             // But the goal of the test is to ensure that the tracer has extracted them and we have the same.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
-            runner.Environment.CustomEnvironmentVariables["DD_TRACE_GIT_METADATA_ENABLED"] = "0";
-            runner.Environment.CustomEnvironmentVariables["DD_TAGS"] = "git.repository_url:https://Myrepository,git.commit.sha:42";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
+            runner.Environment.SetVariable("DD_TRACE_GIT_METADATA_ENABLED", "0");
+            runner.Environment.SetVariable("DD_TAGS", "git.repository_url:https://Myrepository,git.commit.sha:42");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -109,12 +109,12 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckGitMetataFromDdTagsIfTracerIsDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckGitMetataFromDdTagsIfTracerIsDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: false);
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_REPOSITORY_URL"] = "https://Myrepository";
-            runner.Environment.CustomEnvironmentVariables["DD_GIT_COMMIT_SHA"] = "42";
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: false);
+            runner.Environment.SetVariable("DD_GIT_REPOSITORY_URL", "https://Myrepository");
+            runner.Environment.SetVariable("DD_GIT_COMMIT_SHA", "42");
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
@@ -124,10 +124,10 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void EnsureNoGitMetataIfNotPresentInEnvVars(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void EnsureNoGitMetataIfNotPresentInEnvVars(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: false);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: false);
 
             var (profilerGitMetadata, _) = RunTest(runner);
 
