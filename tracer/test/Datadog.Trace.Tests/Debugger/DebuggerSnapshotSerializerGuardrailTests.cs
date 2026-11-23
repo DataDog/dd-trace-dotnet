@@ -19,6 +19,9 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class DebuggerSnapshotSerializerGuardrailTests
 {
+    private static readonly DebuggerSnapshotSerializer SerializerWithoutTimeout =
+        new(DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds, disableSerializationTimeout: true);
+
     [Fact]
     public void Capture_WhenDepthLimitApplies_MarksDepth()
     {
@@ -87,25 +90,6 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
-    public void Capture_WhenTimeoutScopeIsNested_MemberGetterFailureStillMarksRuntimeError()
-    {
-        using var timeoutScope = DebuggerSnapshotSerializer.DisableSerializationTimeout();
-        var snapshotCreator = CreateCreator();
-
-        // CaptureInto opens and disposes a nested scope. The outer scope must remain active.
-        CaptureInto(snapshotCreator, new ThrowingMessageException());
-        snapshotCreator = CreateCreator();
-        snapshotCreator.StartEntry();
-        snapshotCreator.CaptureArgument(new ThrowingMessageException(), "arg", typeof(ThrowingMessageException));
-        snapshotCreator.EndEntry();
-        snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
-
-        HasReason(snapshotCreator.IncompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeTrue();
-        HasReason(snapshotCreator.IncompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Timeout).Should().BeFalse();
-        snapshotCreator.GetSnapshotJson().Should().NotContain("\"notCapturedReason\":\"timeout\"");
-    }
-
-    [Fact]
     public void Capture_WhenAsyncLocalIsUnreachable_MarksOther()
     {
         var (snapshot, incompleteReasons) = Capture(new DebuggerSnapshotSerializer.UnreachableLocal("unreachable"));
@@ -145,12 +129,12 @@ public class DebuggerSnapshotSerializerGuardrailTests
             tags: [],
             limitInfo,
             processTagsProvider: static () => null,
-            serviceNameProvider: static () => "test-service");
+            serviceNameProvider: static () => "test-service",
+            serializer: SerializerWithoutTimeout);
     }
 
     private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object value)
     {
-        using var timeoutScope = DebuggerSnapshotSerializer.DisableSerializationTimeout();
         snapshotCreator.StartEntry();
         snapshotCreator.CaptureArgument(value, "arg", value.GetType());
         snapshotCreator.EndEntry();
