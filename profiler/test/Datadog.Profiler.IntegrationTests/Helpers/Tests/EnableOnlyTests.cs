@@ -5,12 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
 {
     [Trait("Category", "TestInfrastructure")]
+    [ProfilerBeforeAfterTest]
     public class EnableOnlyTests
     {
         [Fact]

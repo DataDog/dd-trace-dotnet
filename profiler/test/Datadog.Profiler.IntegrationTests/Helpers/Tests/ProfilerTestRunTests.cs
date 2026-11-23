@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,6 +18,7 @@ using Xunit.Sdk;
 namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
 {
     [Trait("Category", "TestInfrastructure")]
+    [ProfilerBeforeAfterTest]
     public class ProfilerTestRunTests
     {
         private readonly ITestOutputHelper _output;
