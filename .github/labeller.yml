@@ -44,6 +44,10 @@ labels:
   - name: "area:data-streams-monitoring"
     title: "^\\[?(?i)(data stream monitoring)"
 
+  # [FFE], [FFL-1234], [FeatureFlags], [OpenFeature], or conventional-commit style fix(ffe):, feat(FeatureFlags):
+  - name: "area:ffe,feature_flags"
+    title: "^(?i)(\\[(ffe|ffl-\\d+|feature ?flags?|openfeature)\\]|\\w+\\((ffe|feature ?flags?|openfeature)\\)!?:)"
+
   - name: "area:builds"
     title: "^\\[?(?i)build"
 
@@ -61,6 +65,9 @@ labels:
 
   - name: "area:debugger"
     allFilesIn: "tracer\/src\/Datadog\\.Trace\/Debugger\/.*"
+
+  - name: "area:ffe,feature_flags"
+    allFilesIn: "^(tracer\/src\/Datadog\\.Trace\/FeatureFlags\/|tracer\/src\/Datadog\\.FeatureFlags\\.OpenFeature\/|tracer\/src\/Datadog\\.Trace\/ClrProfiler\/AutoInstrumentation\/ManualInstrumentation\/OpenFeature\/)"
 
   - name: "area:builds"
     allFilesIn: "\\.github\/.*|tracer\/build\/.*|\\.azure-pipelines\/.*|gitlab-ci\\.yml"
