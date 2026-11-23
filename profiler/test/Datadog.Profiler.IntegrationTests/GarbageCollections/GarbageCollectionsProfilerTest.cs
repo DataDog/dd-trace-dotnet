@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     {
         private const string ScenarioGenerics = "--scenario 12";
         private const string ScenarioWithoutGC = "--scenario 6 --threads 1";
-        private const string GcRootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
+        private static readonly StackFrame GcRootFrame = StackFrame.Build().Function("Garbage Collector");
 
         private readonly ITestOutputHelper _output;
 
@@ -84,9 +84,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
         private static bool CheckSamplesAreGC(ProfileOutput profiles)
         {
-            var rootFrame = new StackFrame(GcRootFrame);
-
-            return profiles.AllSamplesMatch(sample => IsGcSample(sample, rootFrame));
+            return profiles.AllSamplesMatch(sample => IsGcSample(sample, GcRootFrame));
         }
 
         private static bool IsGcSample(ProfileSample sample, StackFrame rootFrame)
