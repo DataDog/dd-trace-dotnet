@@ -37,6 +37,11 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 ### COR-2.4: Synchronise replay-on-register with the update path so a handler runs once per update
 - Flag: a `Register`/`Subscribe` method that immediately invokes the new handler when state already exists, while the update path can invoke the same handler concurrently with no shared lock or generation check.
 
+### COR-2.6: Claim a file or port atomically instead of checking that it is free first
+- Flag: `File.Exists` followed by a create or open of the same path. Also flag `TcpPortProvider.GetOpenPort()` followed by a later `Start()`. A concurrent process can claim the resource between the two calls.
+- ❌ `if (!File.Exists(path)) { File.WriteAllText(path, config); }`
+- ✅ `new FileStream(path, FileMode.CreateNew)`, then retry with a new path on `IOException`.
+
 ## 3. Runtime settings
 
 ### COR-3.1: Use `Tracer.Instance.CurrentTraceSettings` / `SettingsManager.SubscribeToChanges`, not `Manager.Initial*Settings`
@@ -84,10 +89,15 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `OnMethodEnd` resets thread-local state while `OnAsyncMethodEnd` calls `securityCoordinator.BlockAndReport(...)`.
 - ✅ Block from an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`.
 
+### COR-5.5: Check what a URL or path already contains before adding a separator or segment
+- Flag: code that always adds `/`, `?` or a suffix such as `v1/<signal>` to a configured URL or path. Also flag a trim, such as `TrimStart('?')`, that removes characters the user value needs. These produce `//api/foo`, `/v1/logs/v1/logs` or a changed query.
+- ❌ `var path = "/" + proxyPath;`
+- ✅ `var path = proxyPath.StartsWith("/") ? proxyPath : "/" + proxyPath;`
+
 ## 6. Tests
 
 ### COR-6.1: Create a fresh instance per test instead of using a static `.Instance` or the global tracer
-- Flag: unit tests using a `SomeType.Instance` singleton, `[TracerRestorer]`/`SetTracer`, or `Tracer.Instance` where a locally constructed instance would do, or a `Reset()`/`Clear()` added to production state only so tests can reuse it.
+- Flag: unit tests using a `SomeType.Instance` singleton, `[TracerRestorer]`/`SetTracer`, or `Tracer.Instance` where a locally constructed instance would do, or a `Reset()`/`Clear()` added to production state only so tests can reuse it. Also flag a test that changes process-wide state, such as `Tracer.Instance` or `Baggage.Current`, outside a non-parallel test collection. A restorer attribute alone does not stop parallel tests from racing.
 - ❌ `var store = CoreHttpContextStore.Instance;`
 - ✅ `var store = new CoreHttpContextStore();`
 
