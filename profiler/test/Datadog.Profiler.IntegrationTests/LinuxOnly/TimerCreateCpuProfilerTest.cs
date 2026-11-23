@@ -100,7 +100,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BeGreaterThan(0);
             }
 
-            AssertTimestampInProfile(run.ProfileDirectory, runner.ProfilingExportsIntervalInSeconds);
+            AssertTimestampInProfile(run.Profiles, runner.ProfilingExportsIntervalInSeconds);
         }
 
         [TestAppFact(TestApplication.Computer01)]
@@ -125,29 +125,29 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BeGreaterThan(0);
             }
 
-            AssertTimestampInProfile(run.ProfileDirectory, runner.ProfilingExportsIntervalInSeconds);
+            AssertTimestampInProfile(run.Profiles, runner.ProfilingExportsIntervalInSeconds);
         }
 
-        private static void AssertTimestampInProfile(string pprofFolder, int exportIntervalSec)
+        private static void AssertTimestampInProfile(ProfileOutput profiles, int exportIntervalSec)
         {
-            foreach (var profile in SamplesHelper.GetProfiles(pprofFolder))
+            foreach (var profile in profiles.Profiles)
             {
                 var start = profile.TimeNanos;
                 var end = profile.DurationNanos + start;
                 var previousCollectionStart = start - (exportIntervalSec * 1_000_000_000_000);
-                foreach (var sample in profile.Sample)
+                foreach (var sample in profile.Samples)
                 {
-                    var samplex = Sample.Create(profile, sample);
-                    var endTimestamp = long.Parse(samplex.Labels["end_timestamp_ns"]);
+                    var endTimestamp = long.Parse(sample.Labels.GetRequired("end_timestamp_ns"));
 
                     // we check that end_timestamp_ns is either part of the previous collection
                     // either the current collection.
                     endTimestamp.Should().BeInRange(previousCollectionStart, end);
 
                     // same for timeline
-                    if (samplex.Values.TryGetValue("timeline", out var timelineTimestamp))
+                    var timelineTimestamp = sample.Values.TryGetValue(ProfileValue.Timeline);
+                    if (timelineTimestamp.IsPresent)
                     {
-                        timelineTimestamp.Should().BeInRange(previousCollectionStart, end);
+                        timelineTimestamp.Value.Should().BeInRange(previousCollectionStart, end);
                     }
                 }
             }
