@@ -21,6 +21,7 @@ using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using static Datadog.Trace.Tests.OpenTelemetry.Traces.OtlpTraceTestHelpers;
 
 namespace Datadog.Trace.Tests.OpenTelemetry;
 
@@ -315,8 +316,42 @@ public class OtlpMapperTests
     }
 
     [Theory]
+    [CombinatorialData]
+    public async Task SerializeSpans_PreservesSecurityReportBytesOnKeyCollisions(bool useJson, bool otelSemanticsEnabled)
+    {
+        var settings = new TracerSettings(new DictionaryConfigurationSource(new Dictionary<string, string>
+        {
+            { "DD_SERVICE", "mapper-test" },
+            { "OTEL_TRACES_EXPORTER", "otlp" },
+            { "DD_TRACE_OTEL_SEMANTICS_ENABLED", otelSemanticsEnabled ? "true" : "false" },
+        }));
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+        var reports = new Dictionary<string, byte[]> { ["appsec"] = [0x80], ["iast"] = [0x81, 1, 2], ["_dd.stack"] = [0x81, 3, 4] };
+        var span = CreateFinishedSpan(tracer, "reports", s =>
+        {
+            foreach (var report in reports)
+            {
+                s.SetTag(report.Key, "span-tag");
+                s.SetMetric(report.Key, 42);
+                s.SetMetaStruct(report.Key, report.Value);
+            }
+        });
+        var plain = CreateFinishedSpan(tracer, "plain", s => s.SetTag("appsec", "ordinary-tag"));
+        var request = Serialize(useJson, new SpanCollection([span, plain]));
+        var spans = GetSpans(request["resourceSpans"].Should().ContainSingle().Which);
+        var attributes = GetAttributes(spans["reports"]); // ToDictionary rejects duplicate keys.
+        foreach (var report in reports)
+        {
+            ((string?)attributes[report.Key]["bytesValue"]).Should().Be(Convert.ToBase64String(report.Value));
+        }
+
+        ((string?)GetAttributes(spans["plain"])["appsec"]["stringValue"]).Should().Be("ordinary-tag");
+    }
+
+    [Theory]
     [InlineData(0, 3)]
     [InlineData(1, 2)]
+    [InlineData(2, 1)]
     [InlineData(128, 0)]
     public void EmitAttributesFromSpan_ReportKeyCollisionsDoNotConsumeExtraSlots(int limit, int expectedDropped)
     {
