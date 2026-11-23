@@ -32,6 +32,11 @@ Other repositories:
 ### XSDK-2.1: Register new telemetry metrics in the backend intake allow list before the tracer emits them
 - Flag: new metric entries in `common_metrics.json` or new metric definitions in the PR, with no linked change that adds them to the intake allow list.
 
+### XSDK-2.2: Record a shared telemetry metric with the tags and scope that the spec and other SDKs use
+- Flag: A shared telemetry metric that the diff records with a tag value that other SDKs do not use. Also flag a metric recorded for runs that the spec excludes, such as `waf.input_truncated` for RASP runs.
+- ❌ Report a root-level context overflow as `MaxStructureProperties`.
+- ✅ Report a root-level overflow as `MaxContextFields`, as the other SDKs do.
+
 ## 3. Specs and semantic conventions
 
 ### XSDK-3.1: Name the exact OTel reference that span names and tags align with
