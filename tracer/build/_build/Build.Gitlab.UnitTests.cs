@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -13,9 +11,6 @@ partial class Build
     [Parameter("JSON list of changed files captured from the GitLab runner checkout")]
     readonly AbsolutePath GitlabChangedFiles;
 
-    [Parameter("Require GitLab CI Visibility credentials for managed unit tests. Defaults to false.")]
-    readonly bool RequireGitlabCiVisibility;
-
     AbsolutePath GitlabUnitTestsOutputDirectory => RootDirectory / ".gitlab" / "generated";
 
     Target WriteGitlabUnitTestsBaseBranch => _ => _
@@ -25,54 +20,6 @@ partial class Build
             var outputDirectory = GitlabUnitTestsOutputDirectory;
             Directory.CreateDirectory(outputDirectory);
             File.WriteAllText(outputDirectory / "base-branch.txt", TestComparisonBranch);
-        });
-
-    Target ConfigureGitlabUnitTestCredentials => _ => _
-        .Unlisted()
-        .Before(Restore, CompileManagedSrc, CompileManagedLoader, CompileInstrumentationVerificationLibrary)
-        .OnlyWhenDynamic(() => RequireGitlabCiVisibility)
-        .Executes(() =>
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
-                {
-                    return;
-                }
-
-                var oidcToken = Environment.GetEnvironmentVariable("DD_STS_OIDC_TOKEN");
-                if (string.IsNullOrWhiteSpace(oidcToken))
-                {
-                    throw new InvalidOperationException("DD_STS_OIDC_TOKEN is unavailable");
-                }
-
-                using var client = new HttpClient();
-                using var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key");
-                request.Headers.Authorization = new("Bearer", oidcToken);
-                using var response = client.SendAsync(request).GetAwaiter().GetResult();
-                response.EnsureSuccessStatusCode();
-                using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-                using var payload = JsonDocument.Parse(responseStream);
-                if (!payload.RootElement.TryGetProperty("api_key", out var apiKeyElement)
-                 || string.IsNullOrWhiteSpace(apiKeyElement.GetString()))
-                {
-                    throw new InvalidOperationException("The dd-sts response did not contain an API key");
-                }
-
-                Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", apiKeyElement.GetString());
-                Logger.Information("CI Visibility API key configured using dd-sts");
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("CI Visibility credentials are required for GitLab unit tests", ex);
-            }
-            finally
-            {
-                // Test processes need the API key, not the token used to obtain it.
-                Environment.SetEnvironmentVariable("DD_STS_OIDC_TOKEN", null);
-            }
         });
 
     Target GenerateGitlabUnitTestsPipelines => _ => _

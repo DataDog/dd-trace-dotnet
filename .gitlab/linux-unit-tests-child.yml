@@ -72,14 +72,7 @@ workflow:
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         "$tester_with_ca_certs_image" \
-        sh -c '
-          exec dotnet /build/bin/Debug/_build.dll \
-            RunManagedUnitTests \
-            --framework "$FRAMEWORK" \
-            --RunManagedUnitTestsFromArtifacts true \
-            --RequireGitlabCiVisibility true \
-            --NugetPackageDirectory /project/packages
-        '
+        sh .gitlab/run-managed-unit-tests.sh
   artifacts:
     when: always
     expire_in: 2 weeks

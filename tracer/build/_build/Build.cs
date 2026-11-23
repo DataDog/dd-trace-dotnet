@@ -295,7 +295,6 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(ConfigureGitlabUnitTestCredentials)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests);
 

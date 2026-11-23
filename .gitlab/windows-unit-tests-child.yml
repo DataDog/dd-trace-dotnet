@@ -29,6 +29,7 @@ workflow:
         -e DD_LOGGER_ENABLED=true `
         -e DD_LOGGER_DD_API_KEY `
         -e DD_STS_OIDC_TOKEN `
+        -e FRAMEWORK `
         -e DD_LOGGER_DD_SERVICE=dd-trace-dotnet `
         -e DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\ci-visibility.log `
         -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `
@@ -62,7 +63,7 @@ workflow:
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat RunManagedUnitTests --framework $env:FRAMEWORK --RunManagedUnitTestsFromArtifacts true --RequireGitlabCiVisibility true --NugetPackageDirectory c:\mnt\packages"
+        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\run-managed-unit-tests.ps1"
       if ($LASTEXITCODE -ne 0) {
         throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
       }

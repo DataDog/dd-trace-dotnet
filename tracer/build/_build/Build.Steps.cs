@@ -1558,7 +1558,6 @@ partial class Build
         .Requires(() => !RunManagedUnitTestsFromArtifacts || Framework != null)
         .After(CompileManagedUnitTests)
         .DependsOn(CleanTestLogs)
-        .DependsOn(ConfigureGitlabUnitTestCredentials)
         .Executes(() =>
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")

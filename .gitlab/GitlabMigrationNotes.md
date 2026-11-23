@@ -57,7 +57,7 @@ Generator containers must also receive `GITLAB_CI` for NUKE to detect the GitLab
 
 ## Results and validation
 
-Managed-test jobs opt into `--RequireGitlabCiVisibility true`, independently of framework selection. Windows and Linux forward the OIDC token into the test container; `ConfigureGitlabUnitTestCredentials` obtains a temporary Datadog API key through `dd-sts` when no key is already configured. It runs before test execution and clears `DD_STS_OIDC_TOKEN`, including when a key is preconfigured or the exchange fails. Subsequent processes inherit the API key, not the exchange token; this is not a guarantee that memory or dumps contain no credentials. Container startup and bootstrapping NUKE precede this cleanup. Credential-exchange failures fail the job; never log or persist the returned credentials.
+Managed-test jobs configure CI Visibility in [the Linux](run-managed-unit-tests.sh) and [Windows](run-managed-unit-tests.ps1) setup scripts, not in NUKE. Windows and Linux forward the OIDC token into the test container; setup obtains a temporary Datadog API key through `dd-sts` when no key is already configured. The exchange has a 60-second request timeout, and failures or missing keys fail the job. Setup clears `DD_STS_OIDC_TOKEN` before starting NUKE, including when a key is preconfigured or the exchange fails. Subsequent processes inherit the API key, not the exchange token; this does not erase credentials from process memory or dumps. Never log or persist the returned credentials.
 
 Windows shadow producers and matrix generation retain CI Identity tokens on the runner for [registry authentication](https://datadoghq.atlassian.net/wiki/spaces/SECENG/pages/4956889069), but do not forward them into their containers, which do not need an AWS role.
 
