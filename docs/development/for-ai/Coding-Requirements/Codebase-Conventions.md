@@ -90,6 +90,9 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 - ❌ `WarnFailure(result, attempts: 1);`
 - ✅ `WarnFailure(in result, attempts: 1);`
 
+### CONV-3.9: Inject test seams through one interface, not delegates or several time parameters
+- Flag: delegate properties, extra `Stopwatch` instances, or several separate time-related parameters that exist only as test seams. If a class needs a seam, pass one generic struct parameter that implements an interface.
+
 ## 4. Tests
 
 ### CONV-4.1: Assert integration-test spans with Verify snapshots, not per-tag assertions
@@ -130,6 +133,9 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 - Flag: a `Should().X(...)` call with a reason-string argument that restates the assertion, where the meaning behind the assertion is already clear.
 - ❌ `context.Should().BeNull("the context is gone after the request");`
 - ✅ `context.Should().BeNull();`
+
+### CONV-4.9: Put tests that change process-wide state in a non-parallel collection
+- Flag: a test that replaces `Tracer.Instance`, sets `Baggage.Current`, or changes other static state. Flag it when its class is not in a non-parallel collection such as `TracerInstanceTestCollection`. A restorer attribute alone is not enough.
 
 ## 5. Build and process
 
