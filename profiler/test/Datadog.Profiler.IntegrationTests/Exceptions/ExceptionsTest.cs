@@ -399,7 +399,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void ExceptionProfilerIsEnabledByDefault(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: Scenario1);
-            runner.Environment.DisableAllExcept(ProfilerFeature.Exceptions);
+            runner.Environment.ResetToDefault(ProfilerFeature.Exceptions);
 
             using var run = runner.Run();
 

@@ -43,7 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         public void ShouldAllocationProfilerBeDisabledByDefault(TestAppContext app)
         {
             var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
-            runner.Environment.DisableAllExcept(ProfilerFeature.Allocations);
+            runner.Environment.ResetToDefault(ProfilerFeature.Allocations);
 
             using var run = runner.Run();
 

@@ -41,7 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         {
             var runner = app.CreateRunner(_output, commandLine: ScenarioGenerics);
 
-            runner.Environment.DisableAllExcept(ProfilerFeature.GarbageCollection);
+            runner.Environment.ResetToDefault(ProfilerFeature.GarbageCollection);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var run = runner.Run();
@@ -56,7 +56,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // allow agent proxy to send the recorded events
             runner.TestDurationInSeconds = 30;
 
-            runner.Environment.DisableAllExcept(ProfilerFeature.GarbageCollection);
+            runner.Environment.ResetToDefault(ProfilerFeature.GarbageCollection);
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
