@@ -183,7 +183,15 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             using var run = runner.Run();
             Assert.True(run.UploadCount > 0);
 
-            return run.Profiles.ExceptionSamples();
+            // Exact sample types before ExceptionSamples() drops other rows.
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
+
+            var exceptionSamples = run.Profiles.ExceptionSamples();
+
+            // The signature checks loop over the samples: without any, they would pass without checking a stack.
+            exceptionSamples.Should().NotBeEmpty();
+
+            return exceptionSamples;
         }
     }
 }
