@@ -118,7 +118,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         /// is in preview we have to force injection (<see cref="EnvironmentVariables.SsiInjectionForced"/>) for it,
         /// otherwise the profiler is never loaded and nothing is exported. No supported framework currently needs this.
         /// </summary>
-        internal static void ForceInjectionIfRequired(TestApplicationRunner runner, string framework)
+        internal static void ForceInjectionIfRequired(TestApplicationRunner runner, TestFramework framework)
         {
             if (IsRunningOnWindows())
             {
