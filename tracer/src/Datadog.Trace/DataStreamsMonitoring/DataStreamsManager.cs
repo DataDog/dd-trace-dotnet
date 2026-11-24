@@ -268,6 +268,13 @@ internal sealed class DataStreamsManager
     }
 
     /// <summary>
+    /// Makes <paramref name="pathway"/> the parent of the next produce checkpoint in the current execution context,
+    /// for consume checkpoints set in a different execution context than the code that handles the message
+    /// </summary>
+    /// <param name="pathway">The pathway of the consume checkpoint for the message being handled</param>
+    internal static void SetLastConsumePathway(PathwayContext pathway) => LastConsumePathway.Value = pathway;
+
+    /// <summary>
     /// Sets a checkpoint using the provided <see cref="PathwayContext"/>
     /// NOTE: <paramref name="edgeTags"/> must be in correct sort order
     /// </summary>

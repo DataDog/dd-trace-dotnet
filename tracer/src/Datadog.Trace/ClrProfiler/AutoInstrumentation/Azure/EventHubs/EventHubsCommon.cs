@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -28,6 +29,8 @@ internal static class EventHubsCommon
     // Used when the entity path is unknown — no topic tag
     private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:eventhubs"]);
     private static readonly EdgeTags DefaultConsumeEdgeTags = new(["direction:in", "type:eventhubs"]);
+
+    private static readonly ConditionalWeakTable<object, StrongBox<PathwayContext>> ConsumePathways = new();
 
     internal static CallTargetState CreateSenderSpan(
         IEventHubProducerClient instance,
@@ -221,6 +224,12 @@ internal static class EventHubsCommon
                         msgSize,
                         (long)queueTimeMs,
                         pathwayContext);
+
+                    if (span.Context.PathwayContext is { } consumePathway)
+                    {
+                        ConsumePathways.Remove(eventObj);
+                        ConsumePathways.Add(eventObj, new StrongBox<PathwayContext>(consumePathway));
+                    }
                 }
             }
             catch (Exception ex)
@@ -230,12 +239,19 @@ internal static class EventHubsCommon
         }
     }
 
+    internal static void RestoreConsumePathway(object eventData)
+    {
+        if (ConsumePathways.TryGetValue(eventData, out var consumePathway))
+        {
+            DataStreamsManager.SetLastConsumePathway(consumePathway.Value);
+        }
+    }
+
     private static void SetProduceCheckpoint(DataStreamsManager dataStreamsManager, Span? span, IEventData eventData, EdgeTags edgeTags)
     {
         try
         {
-            if (eventData.Properties is not { } properties
-                || properties.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
+            if (eventData.Properties is not { } properties)
             {
                 return;
             }
