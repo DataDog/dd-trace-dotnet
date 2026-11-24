@@ -87,7 +87,7 @@ public class QuartzTests : TracingIntegrationTest
                     span.Tags.Should().ContainKey("quartz.scheduler.name");
                     span.Metrics.Should().ContainKey("quartz.jobstore.trigger.count");
                     span.GetMetric("quartz.jobstore.trigger.count").Should().BeGreaterOrEqualTo(0);
-                    if (suffix == "V4_4")
+                    if (suffix is "V4_4" or "V4_8")
                     {
                         span.Metrics.Should().ContainKey("quartz.jobstore.trigger.fired_on_acquire");
                     }
@@ -95,7 +95,7 @@ public class QuartzTests : TracingIntegrationTest
 
                 // Each of the three scheduled triggers is acquired once; empty polls add zero.
                 acquisitionSpans.Sum(span => span.GetMetric("quartz.jobstore.trigger.count") ?? 0).Should().Be(3);
-                if (suffix == "V4_4")
+                if (suffix is "V4_4" or "V4_8")
                 {
                     acquisitionSpans.Sum(span => span.GetMetric("quartz.jobstore.trigger.fired_on_acquire") ?? 0).Should().Be(3);
                 }
@@ -106,6 +106,7 @@ public class QuartzTests : TracingIntegrationTest
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
             var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
             var fireInstanceId = new Regex(@"fire\.instance\.id:\s*\d+");
+            var scheduledFireTime = new Regex(@"quartz\.trigger\.scheduled_fire_time:\s*[^,\r\n]+");
             var scrubEvents = new Regex(@"events:?\s*:\s*\[(?s:.*?)\],");
             var scrubOtelVersion = new Regex(@"otel\.library\.version:\s*[\d\.]+");
             var jobExecutionExceptionParameters = new Regex("unscheduleAllTriggers = False \\r?\\n");
@@ -115,6 +116,7 @@ public class QuartzTests : TracingIntegrationTest
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
             settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
             settings.AddRegexScrubber(fireInstanceId, "fire.instance.id: <fire.instance.id>");
+            settings.AddRegexScrubber(scheduledFireTime, "quartz.trigger.scheduled_fire_time: <scheduled_fire_time>");
             settings.AddRegexScrubber(scrubEvents, "events: <events>,");
             settings.AddRegexScrubber(scrubOtelVersion, "otel.library.version: <otel-library-version>");
             settings.AddRegexScrubber(jobExecutionExceptionParameters, "unscheduleAllTriggers = False\n");
@@ -153,6 +155,8 @@ public class QuartzTests : TracingIntegrationTest
 
         return new Version(packageVersion) switch
         {
+            // Quartz 4.8.0 adds the quartz.trigger.scheduled_fire_time and quartz.firing.origin tags.
+            { } v when v >= new Version("4.8.0") => new("V4_8", 9),
             // Fire-on-acquire removes the separate TriggersFired spans.
             { } v when v >= new Version("4.4.0") => new("V4_4", 9),
             // Quartz 4.1.1 fixes Activity.Current leaking between scheduler operations.
