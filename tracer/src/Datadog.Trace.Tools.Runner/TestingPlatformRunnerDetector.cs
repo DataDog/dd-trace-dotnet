@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner;
 /// otherwise <c>test.runner</c> in the closest <c>global.json</c> found from the working directory upwards decides.
 /// The values are compared case-insensitively, and only the closest <c>global.json</c> counts, even when it has no
 /// <c>test</c> section. SDK 10 ignores <c>DOTNET_TEST_RUNNER</c>; the SDK version isn't known here, so the variable is
-/// always honored.
+/// always honored. The JSON reader accepts a trailing comma that makes SDK 11 ignore <c>global.json</c> and run VSTest.
 /// </remarks>
 internal static class TestingPlatformRunnerDetector
 {

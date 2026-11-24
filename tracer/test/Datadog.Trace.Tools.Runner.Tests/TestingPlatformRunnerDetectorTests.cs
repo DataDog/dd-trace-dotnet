@@ -20,7 +20,7 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
 
     public TestingPlatformRunnerDetectorTests()
     {
-        _root = Path.Combine(Path.GetTempPath(), "dd-mtp-detector-" + Guid.NewGuid().ToString("N"));
+        _root = Path.Combine(Path.GetTempPath(), "dd-mtp-detector-" + Path.GetRandomFileName());
         _workingDirectory = Path.Combine(_root, "repo", "tests");
         Directory.CreateDirectory(_workingDirectory);
     }
