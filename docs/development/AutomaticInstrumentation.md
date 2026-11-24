@@ -442,11 +442,11 @@ We use a [Nuke](https://nuke.build/) target to automatically generate all the re
 
 - Update [tracer/build/PackageVersionsGeneratorDefinitions.json](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/PackageVersionsGeneratorDefinitions.json) to describe which versions to test.
 - If you're instrumenting a new NuGet package/assembly, add an entry into [the `IntegrationMap` dictionary](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/_build/Honeypot/IntegrationGroups.cs) which maps from an assembly name to a NuGet package name.
-- Using `./tracer/build.ps1` (or appropriate script for your platform) run `./tracer/build.ps1 GeneratePackageVersions` to generate all the boilerplate.
+- Using `./tracer/build.ps1` (or appropriate script for your platform) run `./tracer/build.ps1 GeneratePackageVersions` to generate all the boilerplate. On Linux or macOS, run it with `OS=Windows_NT` in the environment (e.g. `OS=Windows_NT ./tracer/build.sh GeneratePackageVersions`): the sample projects' `TargetFrameworks` are OS-conditioned, and without it the regenerated files lose their `net48` entries.
 
 The JSON format has various mechanisms for only testing specific framework versions (if required), as well as which _specific_ versions to test on every PR (you can use `*` for "floating" versions which are automatically updated to new versions as packages are released.)
 
-Note that running `GeneratePackageVersions` updates _all_ the packages in the solution. This can lead to lots of unrelated changes (\*\*Cough, AWS SDK, Cough\*\*). It's best to revert the changes that don't apply strictly to your integration to avoid noise.
+Use `--IncludePackages <Package>` to update only the package your integration targets; every other package re-emits its previous output unchanged. Running without it refreshes _all_ the packages, which can bring in lots of unrelated changes (\*\*Cough, AWS SDK, Cough\*\*).
 
 ##### Creating the integration test
 
