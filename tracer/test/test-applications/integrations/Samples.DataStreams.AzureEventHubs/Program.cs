@@ -35,33 +35,47 @@ namespace Samples.DataStreams.AzureEventHubs
             var firstEventConsumed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var secondEventConsumed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var consumedCount = 0;
+            using var stopReading = new CancellationTokenSource();
+            var options = new ReadEventOptions { MaximumWaitTime = TimeSpan.FromSeconds(30) };
 
-            var consumeTask = Task.Run(async () =>
+            // Read only the events this run publishes: the hub keeps the events of earlier runs.
+            var readers = new List<Task>();
+            foreach (var partitionId in await consumer.GetPartitionIdsAsync())
             {
-                var options = new ReadEventOptions { MaximumWaitTime = TimeSpan.FromSeconds(30) };
+                var properties = await consumer.GetPartitionPropertiesAsync(partitionId);
+                var startingPosition = properties.IsEmpty
+                    ? EventPosition.Earliest
+                    : EventPosition.FromSequenceNumber(properties.LastEnqueuedSequenceNumber, isInclusive: false);
 
-                await foreach (PartitionEvent partitionEvent in consumer.ReadEventsAsync(options))
+                readers.Add(Task.Run(async () =>
                 {
-                    if (partitionEvent.Data == null)
+                    try
                     {
-                        continue;
-                    }
+                        await foreach (PartitionEvent partitionEvent in consumer.ReadEventsFromPartitionAsync(partitionId, startingPosition, options, stopReading.Token))
+                        {
+                            if (partitionEvent.Data == null)
+                            {
+                                continue;
+                            }
 
-                    var body = Encoding.UTF8.GetString(partitionEvent.Data.EventBody.ToArray());
-                    Console.WriteLine($"Received: '{body}'");
+                            var body = Encoding.UTF8.GetString(partitionEvent.Data.EventBody.ToArray());
+                            Console.WriteLine($"Received: '{body}'");
 
-                    var index = Interlocked.Increment(ref consumedCount) - 1;
-                    if (index == 0)
-                    {
-                        firstEventConsumed.TrySetResult(true);
+                            if (Interlocked.Increment(ref consumedCount) == 1)
+                            {
+                                firstEventConsumed.TrySetResult(true);
+                            }
+                            else
+                            {
+                                secondEventConsumed.TrySetResult(true);
+                            }
+                        }
                     }
-                    else
+                    catch (OperationCanceledException)
                     {
-                        secondEventConsumed.TrySetResult(true);
-                        break;
                     }
-                }
-            });
+                }));
+            }
 
             // Pipeline 1: publish with SendAsync(IEnumerable<EventData>)
             await producer.SendAsync(new[] { new EventData(Encoding.UTF8.GetBytes("event 1")) });
@@ -75,6 +89,8 @@ namespace Samples.DataStreams.AzureEventHubs
             await producer.SendAsync(batch);
 
             await secondEventConsumed.Task;
+            stopReading.Cancel();
+            await Task.WhenAll(readers);
             Console.WriteLine("Done");
         }
     }

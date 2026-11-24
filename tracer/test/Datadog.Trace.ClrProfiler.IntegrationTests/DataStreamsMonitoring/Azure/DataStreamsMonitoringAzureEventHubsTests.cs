@@ -95,6 +95,8 @@ public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
         }
 
         return points
+               .GroupBy(s => new { s.Hash, s.ParentHash, s.TimestampType })
+               .Select(g => g.First())
                .OrderBy(s => GetRootHashName(s, points))
                .ThenBy(s => GetHashDepth(s, points))
                .ThenBy(s => s.Hash)
