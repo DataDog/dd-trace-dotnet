@@ -248,6 +248,21 @@ public class UfcConfigurationParserTests
     }
 
     [Fact]
+    public void RejectsConditionWithNullAttribute()
+    {
+        var body = ValidEnvelope.Replace(
+            "\"flags\": {}",
+            "\"flags\": { \"root\": { \"key\": \"root\", \"enabled\": true, \"variationType\": \"STRING\", \"allocations\": [{ \"key\": \"allocation\", \"rules\": [{ \"conditions\": [{ \"attribute\": null, \"operator\": \"ONE_OF\", \"value\": [\"on\"] }] }], \"splits\": [] }] } }");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("root", out _).Should().Be(FlagLookupResult.Invalid);
+        new FeatureFlagsEvaluator(null, configuration).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"))
+                                                      .Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
     public void IgnoresUnknownFlagEvaluationFields()
     {
         var body = """

@@ -55,7 +55,7 @@ internal sealed class ConditionConfiguration
 
         if (!isDependency)
         {
-            return true;
+            return _attribute.Value is not null;
         }
 
         var descriptor = _flagEvaluation.Value;
