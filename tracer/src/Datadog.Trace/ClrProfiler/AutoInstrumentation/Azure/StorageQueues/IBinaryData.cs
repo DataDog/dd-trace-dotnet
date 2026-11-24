@@ -5,11 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues;
 
-internal interface IBinaryData : IDuckType
+internal interface IBinaryData
 {
-    long Length { get; }
+    IBody ToMemory();
 }

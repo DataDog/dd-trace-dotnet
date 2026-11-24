@@ -18,7 +18,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 
-[UsesVerify]
 public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTest
 {
     public DataStreamsMonitoringAzureStorageQueuesTests(ITestOutputHelper output)
@@ -56,20 +55,20 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
             spans.Should().HaveCount(6);
 
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(5);
+            taggedSpans.Should().HaveCount(6);
 
             var producerSpans = spans.Where(s => s.Tags["span.kind"] == SpanKinds.Producer).ToList();
             var consumerSpans = spans.Where(s => s.Tags["span.kind"] == SpanKinds.Consumer).ToList();
             producerSpans.Should().HaveCount(3);
             consumerSpans.Should().HaveCount(3);
 
-            var points = PayloadsToPoints(agent.DataStreams);
+            var points = CurrentBucketPoints(agent.DataStreams);
             points.Should().NotBeEmpty();
 
             var producePoints = points.Where(p => p.EdgeTags.Contains("direction:out")).ToList();
             var consumePoints = points.Where(p => p.EdgeTags.Contains("direction:in")).ToList();
-            producePoints.Should().HaveCount(3);
-            consumePoints.Should().HaveCount(3);
+            producePoints.Should().NotBeEmpty();
+            consumePoints.Should().NotBeEmpty();
 
             foreach (var point in points)
             {
@@ -78,26 +77,149 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
                 point.PayloadSize.Should().NotBeEmpty();
             }
 
+            SumCheckpointCounts(producePoints).Should().Be(3);
+            SumCheckpointCounts(consumePoints).Should().Be(3);
+
             var produceHashes = producePoints.Select(p => p.Hash).ToHashSet();
             var linkedConsumePoints = consumePoints.Where(p => p.ParentHash != 0 && produceHashes.Contains(p.ParentHash)).ToList();
-            linkedConsumePoints.Should().HaveCount(2);
+            linkedConsumePoints.Should().NotBeEmpty();
+            SumCheckpointCounts(linkedConsumePoints).Should().Be(2);
         }
     }
 
-    private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
+    private static List<MockDataStreamsStatsPoint> CurrentBucketPoints(IImmutableList<MockDataStreamsPayload> payloads)
     {
-        var points = new List<MockDataStreamsStatsPoint>();
+        var points = new List<(ulong Start, MockDataStreamsStatsPoint Point)>();
         foreach (var payload in payloads)
         {
             foreach (var bucket in payload.Stats)
             {
-                foreach (var point in bucket.Points)
+                if (bucket.Stats is null)
                 {
-                    points.Add(point);
+                    continue;
+                }
+
+                foreach (var point in bucket.Stats)
+                {
+                    if (point.TimestampType == "current")
+                    {
+                        points.Add((bucket.Start, point));
+                    }
                 }
             }
         }
 
-        return points;
+        return points
+            .GroupBy(x => new { x.Start, x.Point.Hash, x.Point.ParentHash })
+            .Select(g => g.First().Point)
+            .ToList();
+    }
+
+    private static double SumCheckpointCounts(IEnumerable<MockDataStreamsStatsPoint> points)
+        => points.Sum(p => ReadSketchCount(p.PathwayLatency));
+
+    private static double ReadSketchCount(byte[] sketch)
+    {
+        var position = 0;
+        var count = 0D;
+
+        while (position < sketch.Length)
+        {
+            var (tag, next) = ReadVarint(sketch, position);
+            position = next;
+            var field = (int)(tag >> 3);
+            var wireType = (int)(tag & 7);
+
+            if (wireType == 0)
+            {
+                (_, position) = ReadVarint(sketch, position);
+            }
+            else if (wireType == 1)
+            {
+                if (field == 4)
+                {
+                    count += BitConverter.ToDouble(sketch, position);
+                }
+
+                position += 8;
+            }
+            else if (wireType == 2)
+            {
+                var (length, after) = ReadVarint(sketch, position);
+                position = after;
+                if (field is 2 or 3)
+                {
+                    count += ReadStoreCount(sketch, position, position + (int)length);
+                }
+
+                position += (int)length;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unexpected wire type {wireType} in a serialized sketch.");
+            }
+        }
+
+        return count;
+
+        static double ReadStoreCount(byte[] buffer, int start, int end)
+        {
+            var position = start;
+            var count = 0D;
+
+            while (position < end)
+            {
+                var (tag, next) = ReadVarint(buffer, position);
+                position = next;
+                var field = (int)(tag >> 3);
+                var wireType = (int)(tag & 7);
+
+                if (wireType == 0)
+                {
+                    (_, position) = ReadVarint(buffer, position);
+                }
+                else if (wireType == 2 && field == 2)
+                {
+                    var (length, after) = ReadVarint(buffer, position);
+                    position = after;
+                    for (var offset = 0; offset < (int)length; offset += sizeof(double))
+                    {
+                        count += BitConverter.ToDouble(buffer, position + offset);
+                    }
+
+                    position += (int)length;
+                }
+                else if (wireType == 1)
+                {
+                    position += 8;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unexpected wire type {wireType} in a serialized store.");
+                }
+            }
+
+            return count;
+        }
+    }
+
+    private static (uint Value, int Next) ReadVarint(byte[] buffer, int position)
+    {
+        var value = 0U;
+        var shift = 0;
+
+        while (position < buffer.Length)
+        {
+            var b = buffer[position++];
+            value |= (uint)(b & 0x7F) << shift;
+            if ((b & 0x80) == 0)
+            {
+                return (value, position);
+            }
+
+            shift += 7;
+        }
+
+        throw new InvalidOperationException("Truncated varint in a serialized sketch.");
     }
 }

@@ -87,6 +87,11 @@ public sealed class EncodeMessageBodyIntegration
                 ? Convert.ToBase64String(Encoding.UTF8.GetBytes(injected))
                 : injected;
 
+            if (Encoding.UTF8.GetByteCount(encodedResult) > AzureStorageQueuesCommon.MaxMessageSizeBytes)
+            {
+                return new CallTargetReturn<string>(result);
+            }
+
             return new CallTargetReturn<string>(encodedResult);
         }
         catch

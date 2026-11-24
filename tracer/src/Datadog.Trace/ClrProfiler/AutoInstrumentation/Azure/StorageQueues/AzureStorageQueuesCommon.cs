@@ -32,7 +32,7 @@ internal static class AzureStorageQueuesCommon
 
     internal const string PayloadKey = "_datadog";
 
-    private const int MaxMessageSizeBytes = 64 * 1024;
+    internal const int MaxMessageSizeBytes = 64 * 1024;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureStorageQueuesCommon));
 
@@ -195,7 +195,12 @@ internal static class AzureStorageQueuesCommon
         try
         {
             using var stringReader = new StringReader(messageText);
-            using var reader = new JsonTextReader(stringReader) { ArrayPool = JsonArrayPool.Shared, DateParseHandling = DateParseHandling.None };
+            using var reader = new JsonTextReader(stringReader)
+            {
+                ArrayPool = JsonArrayPool.Shared,
+                DateParseHandling = DateParseHandling.None,
+                FloatParseHandling = FloatParseHandling.Decimal,
+            };
             var serializer = new JsonSerializer();
             return serializer.Deserialize<Dictionary<string, object>>(reader);
         }
