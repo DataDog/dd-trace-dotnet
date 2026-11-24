@@ -83,7 +83,24 @@ Note:
 
 ### Linux
 
-#### Minimun requirements
+#### Cold setup with Docker
+
+With Docker running Linux containers, run the following from the repository root. The wrapper builds the Alpine toolchain image, so no host .NET SDK or native build tools are required.
+
+```bash
+./tracer/build_in_docker.sh \
+    BuildTracerHome BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+```
+
+This builds the tracer and native loader, Continuous Profiler, Linux preload wrapper, and demo applications. Runtime libraries are published under `artifacts/monitoring-home/`; demo binaries are under `artifacts/profiler-build/bin/`. The build does not run a demo or collect profiles.
+
+Keep the build outputs between edits. For subsequent native profiler changes, rebuild only the profiler:
+
+```bash
+./tracer/build_in_docker.sh BuildProfilerHome
+```
+
+#### Minimum requirements without Docker
 
 To build C# projects
 - [Install the latest .NET SDK](https://docs.microsoft.com/en-us/dotnet/core/install/linux)
