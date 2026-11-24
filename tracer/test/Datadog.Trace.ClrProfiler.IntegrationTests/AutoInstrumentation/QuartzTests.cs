@@ -70,7 +70,6 @@ public class QuartzTests : TracingIntegrationTest
 
             if (suffix.StartsWith("V4", StringComparison.Ordinal))
             {
-                // Fire-on-acquire landed in Quartz 4.4.0.
                 var firesOnAcquire = new Version(packageVersion) >= new Version("4.4.0");
                 var acquisitionSpans = allSpans.Where(isAcquisitionSpan).ToList();
                 acquisitionSpans.Should().NotBeEmpty();
@@ -157,7 +156,6 @@ public class QuartzTests : TracingIntegrationTest
 
         return new Version(packageVersion) switch
         {
-            // Quartz 4.8.0 adds the quartz.trigger.scheduled_fire_time and quartz.firing.origin tags.
             { } v when v >= new Version("4.8.0") => new("V4_8", 9),
             // Fire-on-acquire removes the separate TriggersFired spans.
             { } v when v >= new Version("4.4.0") => new("V4_4", 9),
