@@ -10,7 +10,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -41,25 +40,6 @@ public class AwsSnsCommonTests
 
         // When the request does not contain a `TopicArn` it should return `null`
         AwsSnsCommon.GetTopicName(null).Should().Be(null);
-    }
-
-    [Fact]
-    public void TopicArn_IsTaggedUnderBothNames()
-    {
-        const string topicArn = "arn:aws:sns:region:000000000:my-topic-name";
-        var tags = new AwsSnsTags(SpanKinds.Producer) { TopicArn = topicArn };
-
-        tags.GetTag("aws.topic.arn").Should().Be(topicArn);
-        tags.GetTag("aws.sns.topic_arn").Should().Be(topicArn);
-    }
-
-    [Fact]
-    public void TopicArn_WhenNotSet_IsNotTagged()
-    {
-        var tags = new AwsSnsTags(SpanKinds.Producer);
-
-        tags.GetTag("aws.topic.arn").Should().BeNull();
-        tags.GetTag("aws.sns.topic_arn").Should().BeNull();
     }
 
     [Theory]

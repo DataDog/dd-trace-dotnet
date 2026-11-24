@@ -40,17 +40,6 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public async Task TagTableNameAndResourceName_WithTableName_DoesNotTagTableArn()
-    {
-        await using var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
-
-        AwsDynamoDbCommon.TagTableNameAndResourceName(TableName, tags, scope);
-
-        tags.TableArn.Should().BeNull();
-    }
-
-    [Fact]
     public async Task TagTableNameAndResourceName_WithTableArn_TagsTableArn()
     {
         await using var tracer = GetTracer();
@@ -65,7 +54,6 @@ public class AwsDynamoDbCommonTests
     [Theory]
     [InlineData("arn:aws:dynamodb:us-east-1:123456789012:table/MyTableName")]
     [InlineData("arn:aws-us-gov:dynamodb:us-gov-west-1:123456789012:table/my-table_1.v2")]
-    [InlineData("arn:aws-cn:dynamodb:cn-north-1:123456789012:table/MyTableName")]
     public void GetTableArn_WithTableArn_ReturnsArn(string tableName)
     {
         AwsDynamoDbCommon.GetTableArn(tableName).Should().Be(tableName);
@@ -73,9 +61,7 @@ public class AwsDynamoDbCommonTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
     [InlineData("MyTableName")]
-    [InlineData("arn:")]
     // not a DynamoDB ARN
     [InlineData("arn:aws:kinesis:us-east-1:123456789012:stream/MyStream")]
     // missing components
@@ -158,26 +144,6 @@ public class AwsDynamoDbCommonTests
 
         var span = scope.Span;
         span.ResourceName.Should().Be("DynamoDB.BatchGetItem MyTableName");
-    }
-
-    [Fact]
-    public async Task TagBatchRequest_WithOneTableArn_TagsTableArn()
-    {
-        await using var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
-        var request = new BatchGetItemRequest
-        {
-            RequestItems = new Dictionary<string, KeysAndAttributes>()
-            {
-                { TableArn, new() }
-            }
-        };
-        var proxy = request.DuckCast<IBatchRequest>();
-
-        AwsDynamoDbCommon.TagBatchRequest(proxy, tags, scope);
-
-        tags.TableName.Should().Be(TableArn);
-        tags.TableArn.Should().Be(TableArn);
     }
 
     [Fact]

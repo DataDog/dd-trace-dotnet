@@ -10,6 +10,7 @@ using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -19,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         private const string DynamoDbServiceName = "DynamoDB";
         private const string DynamoDbOperationName = "aws.dynamodb.request";
         private const string TableResourcePrefix = "table/";
-        private static readonly char[] ArnSeparator = { ':' };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsDynamoDbCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
@@ -92,20 +92,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             }
 
             // arn:<partition>:dynamodb:<region>:<account>:table/<name>
-            var parts = tableName.Split(ArnSeparator, 6);
-            if (parts.Length != 6
-             || parts[1].Length == 0
-             || parts[2] != "dynamodb"
-             || parts[3].Length == 0
-             || parts[4].Length == 0
-             || !parts[5].StartsWith(TableResourcePrefix, StringComparison.Ordinal)
-             || parts[5].Length == TableResourcePrefix.Length
-             || parts[5].IndexOf('/', TableResourcePrefix.Length) >= 0)
+            var index = 0;
+            foreach (var part in tableName.SplitIntoSpans(':', count: 6))
             {
-                return null;
+                ReadOnlySpan<char> value = part;
+                var valid = index switch
+                {
+                    0 => true, // "arn", checked above
+                    2 => value.SequenceEqual("dynamodb".AsSpan()),
+                    5 => IsTableResource(value),
+                    _ => !value.IsEmpty, // partition, region, account
+                };
+
+                if (!valid)
+                {
+                    return null;
+                }
+
+                index++;
             }
 
-            return tableName;
+            return index == 6 ? tableName : null;
+        }
+
+        // `table/<name>`, without a further path such as `/index/<index>` or `/stream/<label>`
+        private static bool IsTableResource(ReadOnlySpan<char> resource)
+        {
+            if (!resource.StartsWith(TableResourcePrefix.AsSpan(), StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var name = resource.Slice(TableResourcePrefix.Length);
+            return !name.IsEmpty && name.IndexOf('/') < 0;
         }
 
         public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags? tags, Scope? scope)

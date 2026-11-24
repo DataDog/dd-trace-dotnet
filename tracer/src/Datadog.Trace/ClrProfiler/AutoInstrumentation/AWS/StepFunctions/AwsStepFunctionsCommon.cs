@@ -97,12 +97,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             return NullIfEmpty(stateMachineArn.Substring(lastSeparationIndex));
         }
 
-        public static void TagStateMachine(AwsStepFunctionsTags tags, string? stateMachineArn)
-        {
-            tags.StateMachineName = GetStateMachineName(stateMachineArn);
-            tags.StateMachineArn = StringUtil.IsNullOrEmpty(stateMachineArn) ? null : stateMachineArn;
-        }
-
         private static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
 
         internal static string GetOperationName(Tracer tracer, string spanKind)

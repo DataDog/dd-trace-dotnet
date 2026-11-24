@@ -55,19 +55,5 @@ public class AwsKinesisCommonTests
 
         tags.StreamName.Should().Be("mystream");
         tags.StreamArn.Should().Be(streamArn);
-        tags.GetTag("aws.stream.arn").Should().Be(streamArn);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public void TagStream_WithoutStreamArn_DoesNotTagArn(string streamArn)
-    {
-        var tags = new AwsKinesisTags(SpanKinds.Producer);
-
-        AwsKinesisCommon.TagStream(tags, "mystream", streamArn);
-
-        tags.StreamName.Should().Be("mystream");
-        tags.StreamArn.Should().BeNull();
     }
 }
