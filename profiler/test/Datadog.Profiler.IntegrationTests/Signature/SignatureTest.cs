@@ -412,7 +412,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                     Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
                 }
 
-                Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
+                Assert.True(sample.Stacktrace.StartsWith(stack, out var stackStartsWithMessage), stackStartsWithMessage);
             }
         }
 

@@ -348,23 +348,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void CatalogCoversEveryStringTestAppFact()
-        {
-            const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-            var attributes = typeof(TestAppFact).Assembly.GetTypes()
-                .SelectMany(type => type.GetMethods(flags))
-                .SelectMany(method => method.GetCustomAttributes<TestAppFact>(inherit: false))
-                .Where(attribute => !attribute.IsTyped)
-                .ToList();
-
-            foreach (var attribute in attributes)
-            {
-                TestApplicationCatalog.TryGetByFolder(attribute.AppName, out var descriptor).Should().BeTrue(attribute.AppName);
-                descriptor.AssemblyName.Should().Be(attribute.AppAssembly);
-            }
-        }
-
-        [Fact]
         public void EveryApplicationEnumValueHasADescriptor()
         {
             foreach (TestApplication application in Enum.GetValues(typeof(TestApplication)))

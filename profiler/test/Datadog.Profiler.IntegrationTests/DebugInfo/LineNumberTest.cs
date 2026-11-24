@@ -53,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
                         .Function("CallFirstMethod")
                         .Signature("()"));
 
-            var samples = run.Profiles.CallStacks.Where(stackTrace => stackTrace.Contains(expectedStack)).ToArray();
+            var samples = run.Profiles.CallStacks.Where(stackTrace => stackTrace.ContainsSequence(expectedStack)).ToArray();
 
             samples.Should().NotBeEmpty();
 

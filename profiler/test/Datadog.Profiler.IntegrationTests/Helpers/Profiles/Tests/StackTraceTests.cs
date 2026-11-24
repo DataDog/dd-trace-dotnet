@@ -14,23 +14,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
     public class StackTraceTests
     {
         [Fact]
-        public void EndWith_IsAPrefixCheck()
+        public void StartsWith_IsAPrefixCheck()
         {
             var stack = TestStack.Trace("A", "B", "C");
 
-            stack.EndWith(TestStack.Trace("A", "B")).Should().BeTrue();
-            stack.EndWith(TestStack.Trace("A", "B", "C")).Should().BeTrue();
-            stack.EndWith(TestStack.Trace("B", "C")).Should().BeFalse();
-            stack.EndWith(new StackTrace()).Should().BeTrue();
+            stack.StartsWith(TestStack.Trace("A", "B")).Should().BeTrue();
+            stack.StartsWith(TestStack.Trace("A", "B", "C")).Should().BeTrue();
+            stack.StartsWith(TestStack.Trace("B", "C")).Should().BeFalse();
+            stack.StartsWith(new StackTrace()).Should().BeTrue();
 
             var tooLong = TestStack.Trace("A", "B", "C", "D");
-            stack.EndWith(tooLong, out var tooLongMessage).Should().BeFalse();
+            stack.StartsWith(tooLong, out var tooLongMessage).Should().BeFalse();
             tooLongMessage.Should().Contain("fewer frames");
             tooLongMessage.Should().Contain(stack.ToString());
             tooLongMessage.Should().Contain(tooLong.ToString());
 
             var mismatch = TestStack.Trace("A", "Z");
-            stack.EndWith(mismatch, out var mismatchMessage).Should().BeFalse();
+            stack.StartsWith(mismatch, out var mismatchMessage).Should().BeFalse();
             mismatchMessage.Should().Contain("First mismatch at compared frame index 1");
             mismatchMessage.Should().Contain(mismatch[1].ToString());
             mismatchMessage.Should().Contain(stack[1].ToString());
@@ -39,42 +39,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
         }
 
         [Fact]
-        public void Contains_StopsAtTheFirstCandidate_AndThrowsOnTheOffByOne()
-        {
-            var stack = TestStack.Trace("A", "X", "A", "B");
-
-            stack.Contains(TestStack.Trace("A", "X")).Should().BeTrue();
-            stack.Contains(TestStack.Trace("A", "B")).Should().BeFalse();
-            stack.Contains(TestStack.Trace("X", "A", "B")).Should().BeTrue();
-            TestStack.Trace("A").Contains(TestStack.Trace("A", "B")).Should().BeFalse();
-
-            var shortStack = TestStack.Trace("A", "B");
-            Action offByOne = () => shortStack.Contains(TestStack.Trace("B", "C"));
-            offByOne.Should().Throw<ArgumentOutOfRangeException>();
-
-            Action emptyNeedle = () => stack.Contains(new StackTrace());
-            emptyNeedle.Should().Throw<ArgumentOutOfRangeException>();
-        }
-
-        [Fact]
-        public void StartsWith_MatchesEndWith_IncludingTheFailureMessage()
-        {
-            var stack = TestStack.Trace("A", "B", "C");
-            var prefix = TestStack.Trace("A", "B");
-            var suffix = TestStack.Trace("B", "C");
-
-            stack.StartsWith(prefix).Should().Be(stack.EndWith(prefix));
-            stack.StartsWith(suffix).Should().BeFalse();
-            stack.StartsWith(new StackTrace()).Should().BeTrue();
-
-            var mismatch = TestStack.Trace("A", "Z");
-            stack.EndWith(mismatch, out var endWithMessage);
-            stack.StartsWith(mismatch, out var startsWithMessage).Should().BeFalse();
-            startsWithMessage.Should().Be(endWithMessage);
-        }
-
-        [Fact]
-        public void ContainsSequence_FindsAContiguousSequence_WithoutTheLegacyEdges()
+        public void ContainsSequence_FindsAContiguousSequence()
         {
             var stack = TestStack.Trace("A", "X", "A", "B");
 
