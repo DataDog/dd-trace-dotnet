@@ -66,8 +66,7 @@ public class FlagEvaluationBridgeTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void DependencyTelemetryCallbackReturnsBatchFromDeferredMetadata(bool stubThrew)
     {
         IReadOnlyList<IDictionary<string, object?>> batch =

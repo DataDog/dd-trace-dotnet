@@ -174,7 +174,7 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false, DependencyTelemetryCallback? getDependencyTelemetry = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, bool deferredExposure, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, DependencyTelemetryCallback? getDependencyTelemetry = null)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
@@ -555,13 +555,7 @@ internal static class FeatureFlagsSdk
 
     // A value is a boolean or a number only when the tracer listed it as one, so a string feature
     // whose value looks like a boolean or a number stays a string.
-    private static object ConvertFeatureValue(string value, char type) => type switch
-    {
-        'b' when value == "true" => true,
-        'b' when value == "false" => false,
-        'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
-        _ => value,
-    };
+    private static object ConvertFeatureValue(string value, char type) => FeatureFlagTypeCodec.DecodeValue(value, type);
 
     private static IReadOnlyList<DependencyEvaluationState>? ParseDependencyTelemetry(IReadOnlyList<IDictionary<string, object?>>? records)
     {

@@ -200,7 +200,7 @@ public class FeatureFlagsSdkTests
         captured!["user"].Should().BeEquivalentTo(new Dictionary<string, object?>
         {
             ["country"] = "US",
-            ["tags"] = new object?[] { "paid", false },
+            ["tags"] = ["paid", false],
         });
     }
 

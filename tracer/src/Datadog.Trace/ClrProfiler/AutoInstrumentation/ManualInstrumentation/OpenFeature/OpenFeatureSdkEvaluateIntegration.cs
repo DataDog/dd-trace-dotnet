@@ -40,12 +40,14 @@ public sealed class OpenFeatureSdkEvaluateIntegration
 
     internal static int GetContextOmissionReasons(IDictionary<string, object?>? attributes)
     {
+        if (attributes is null || !attributes.TryDuckCast<ContextAttributesWithOmissions>(out var contextAttributes))
+        {
+            return 0;
+        }
+
         try
         {
-            if (attributes is not null && attributes.TryDuckCast<ContextAttributesWithOmissions>(out var contextAttributes))
-            {
-                return contextAttributes.ContextOmissionReasons;
-            }
+            return contextAttributes.ContextOmissionReasons;
         }
         catch
         {

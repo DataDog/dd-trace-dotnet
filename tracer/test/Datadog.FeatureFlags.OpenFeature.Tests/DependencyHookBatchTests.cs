@@ -90,13 +90,12 @@ public class DependencyHookBatchTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, true)]
-    public async Task DependencyExposureCallbacksRequireSuccessfulRootAndCommit(bool rootError, bool commit)
+    [CombinatorialData]
+    public async Task DependencyExposureCallbacksRequireSuccessfulRootAndCommit(bool rootError)
     {
         var records = new List<IDictionary<string, object?>> { Dependency("parent", exposureEligible: true) };
         var resolution = Resolution("root", rootError ? "GENERAL" : null, records);
-        if (commit)
+        if (rootError)
         {
             FeatureFlagsSdk.CommitPendingExposure(resolution.FlagMetadata, _ => ExposureCommitResult.New);
         }

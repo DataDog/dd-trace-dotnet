@@ -64,7 +64,7 @@ public class ExposureCommitTests
         var domain = $"exposure-success-{Guid.NewGuid():N}";
         using var provider = Provider((key, type, fallback, targetingKey, attributes) =>
         {
-            var ownedBatch = new[] { $"{key}-dependency", key };
+            string[] ownedBatch = [$"{key}-dependency", key];
             return new TestEvaluation(key, () => batches.Enqueue(ownedBatch));
         });
         await Api.Instance.SetProviderAsync(domain, provider);
