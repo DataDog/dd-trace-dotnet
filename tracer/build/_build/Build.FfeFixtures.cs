@@ -11,6 +11,20 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
+    private static readonly HashSet<string> FfeFixtureCopyDisallowList = new(StringComparer.Ordinal)
+    {
+        ".git",
+        ".github",
+        ".gitignore",
+        "ci",
+        "CONTRIBUTING.md",
+        "LICENSE",
+        "LICENSE-3rdparty.csv",
+        "NOTICE",
+        "README.md",
+        "SOURCE.md",
+    };
+
     [Parameter("Branch, tag, or commit to copy from DataDog/ffe-system-test-data")]
     readonly string FfeFixtureRef = "main";
 
@@ -117,11 +131,15 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
 
     private static void CopyFixtureSnapshot(AbsolutePath source, AbsolutePath snapshot)
     {
-        CopyEntry(new FileInfo(source / "ufc-config.json"), snapshot / "ufc-config.json");
-        CopyEntry(new DirectoryInfo(source / "evaluation-cases"), snapshot / "evaluation-cases");
-        CopyEntry(
-            new DirectoryInfo(source / "evaluation-suites" / "dependent-flags"),
-            snapshot / "evaluation-suites" / "dependent-flags");
+        foreach (var entry in new DirectoryInfo(source).EnumerateFileSystemInfos())
+        {
+            if (FfeFixtureCopyDisallowList.Contains(entry.Name))
+            {
+                continue;
+            }
+
+            CopyEntry(entry, Path.Combine(snapshot, entry.Name));
+        }
     }
 
     private static void CopyEntry(FileSystemInfo source, string destination)
@@ -206,6 +224,34 @@ The weekly update workflow runs `./tracer/build.sh UpdateFfeFixtures` and opens 
             }
 
             fixtureCount += selectionCases.GetArrayLength();
+        }
+
+        var dependentConfigPath = snapshot / "evaluation-suites" / "dependent-flags" / "ufc-config.json";
+        var dependentCasesDirectory = snapshot / "evaluation-suites" / "dependent-flags" / "cases";
+        if (!File.Exists(dependentConfigPath) || !Directory.Exists(dependentCasesDirectory))
+        {
+            throw new InvalidOperationException("FFE fixture repository does not contain the dependent-flags evaluation suite");
+        }
+
+        using (var config = JsonDocument.Parse(File.ReadAllText(dependentConfigPath)))
+        {
+        }
+
+        var dependentCaseFiles = Directory.GetFiles(dependentCasesDirectory, "*.json").OrderBy(path => path, StringComparer.Ordinal).ToArray();
+        if (dependentCaseFiles.Length == 0)
+        {
+            throw new InvalidOperationException("The dependent-flags evaluation suite does not contain JSON fixture cases");
+        }
+
+        foreach (var caseFile in dependentCaseFiles)
+        {
+            using var cases = JsonDocument.Parse(File.ReadAllText(caseFile));
+            if (cases.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException($"{caseFile} must contain a JSON array of test cases");
+            }
+
+            fixtureCount += cases.RootElement.GetArrayLength();
         }
 
         return fixtureCount;

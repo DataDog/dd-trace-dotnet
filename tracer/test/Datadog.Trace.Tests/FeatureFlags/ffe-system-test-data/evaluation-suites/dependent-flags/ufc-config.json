@@ -26,7 +26,8 @@
           "splits": [
             {
               "variationKey": "on",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -68,7 +69,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -78,7 +80,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -120,7 +123,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -130,7 +134,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -172,7 +177,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -182,7 +188,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -224,7 +231,8 @@
           "splits": [
             {
               "variationKey": "parent-on",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -234,7 +242,8 @@
           "splits": [
             {
               "variationKey": "parent-off",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -276,7 +285,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -286,7 +296,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -324,7 +335,8 @@
           "splits": [
             {
               "variationKey": "ready",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -362,7 +374,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -411,7 +424,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -421,7 +435,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -470,7 +485,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -480,7 +496,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -529,7 +546,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -554,7 +572,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -564,7 +583,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -613,7 +633,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -623,7 +644,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -670,7 +692,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -724,7 +747,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -734,7 +758,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -781,7 +806,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -819,7 +845,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -857,7 +884,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -895,7 +923,8 @@
           "splits": [
             {
               "variationKey": "a",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -933,7 +962,8 @@
           "splits": [
             {
               "variationKey": "b",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -979,7 +1009,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -989,7 +1020,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true

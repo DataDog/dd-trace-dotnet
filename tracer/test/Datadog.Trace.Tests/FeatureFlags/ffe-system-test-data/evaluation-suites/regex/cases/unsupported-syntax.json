@@ -1,0 +1,77 @@
+[
+  {
+    "description": "Lookahead is not supported. The flag has a parse error.",
+    "attributes": {
+      "value": "a"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-lookahead",
+    "result": {
+      "errorCode": "PARSE_ERROR",
+      "reason": "ERROR",
+      "value": "no-match"
+    },
+    "targetingKey": "lookahead-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Lookbehind is not supported. The flag has a parse error.",
+    "attributes": {
+      "value": "b"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-lookbehind",
+    "result": {
+      "errorCode": "PARSE_ERROR",
+      "reason": "ERROR",
+      "value": "no-match"
+    },
+    "targetingKey": "lookbehind-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Backreferences are not supported. The flag has a parse error.",
+    "attributes": {
+      "value": "aa"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-backreference",
+    "result": {
+      "errorCode": "PARSE_ERROR",
+      "reason": "ERROR",
+      "value": "no-match"
+    },
+    "targetingKey": "backreference-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Atomic groups are not supported. The flag has a parse error.",
+    "attributes": {
+      "value": "a"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-atomic-group",
+    "result": {
+      "errorCode": "PARSE_ERROR",
+      "reason": "ERROR",
+      "value": "no-match"
+    },
+    "targetingKey": "atomic-group-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Unsupported syntax is a parse error for NOT_MATCHES too.",
+    "attributes": {
+      "value": "b"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-not-matches-lookahead",
+    "result": {
+      "errorCode": "PARSE_ERROR",
+      "reason": "ERROR",
+      "value": "no-match"
+    },
+    "targetingKey": "not-matches-lookahead-0",
+    "variationType": "STRING"
+  }
+]

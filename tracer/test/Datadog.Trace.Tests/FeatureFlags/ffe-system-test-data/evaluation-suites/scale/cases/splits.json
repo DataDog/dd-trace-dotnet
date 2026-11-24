@@ -1,0 +1,14 @@
+[
+  {"flag":"scale-rollout-allocations","variationType":"STRING","defaultValue":"default","targetingKey":"subject-0","attributes":{},"result":{"value":"rollout-0049","reason":"SPLIT"}},
+  {"flag":"scale-rollout-allocations","variationType":"STRING","defaultValue":"default","targetingKey":"subject-38","attributes":{},"result":{"value":"rollout-0000","reason":"SPLIT"}},
+  {"flag":"scale-rollout-allocations","variationType":"STRING","defaultValue":"default","targetingKey":"subject-21","attributes":{},"result":{"value":"rollout-0025","reason":"SPLIT"}},
+  {"flag":"scale-many-splits","variationType":"STRING","defaultValue":"default","targetingKey":"subject-85","attributes":{},"result":{"value":"arm-0000","reason":"SPLIT"}},
+  {"flag":"scale-many-splits","variationType":"STRING","defaultValue":"default","targetingKey":"subject-20","attributes":{},"result":{"value":"arm-0099","reason":"SPLIT"}},
+  {"flag":"scale-many-splits","variationType":"STRING","defaultValue":"default","targetingKey":"subject-0","attributes":{},"result":{"value":"holdout","reason":"STATIC"}},
+  {"flag":"scale-shard-ranges","variationType":"STRING","defaultValue":"default","targetingKey":"subject-6140","attributes":{},"result":{"value":"in","reason":"SPLIT"}},
+  {"flag":"scale-shard-ranges","variationType":"STRING","defaultValue":"default","targetingKey":"subject-2266","attributes":{},"result":{"value":"in","reason":"SPLIT"}},
+  {"flag":"scale-shard-ranges","variationType":"STRING","defaultValue":"default","targetingKey":"subject-0","attributes":{},"result":{"value":"out","reason":"STATIC"}},
+  {"flag":"scale-targeted-rollouts","variationType":"STRING","defaultValue":"default","targetingKey":"subject-67","attributes":{"plan":"pro"},"result":{"value":"targeted-0000","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-targeted-rollouts","variationType":"STRING","defaultValue":"default","targetingKey":"subject-48","attributes":{"plan":"pro"},"result":{"value":"targeted-0019","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-targeted-rollouts","variationType":"STRING","defaultValue":"default","targetingKey":"subject-0","attributes":{"plan":"pro"},"result":{"value":"fallback","reason":"STATIC"}}
+]

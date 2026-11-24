@@ -1,0 +1,4 @@
+evaluation-suites/scale/ufc-config.json linguist-generated=true
+evaluation-suites/scale/cases/*.json linguist-generated=true
+evaluation-suites/scale-json/ufc-config.json linguist-generated=true
+evaluation-suites/scale-json/cases/*.json linguist-generated=true

@@ -1,0 +1,378 @@
+[
+  {
+    "description": "$ matches only at the end of the input, not before a final line feed. A final line feed is not the end of the input.",
+    "attributes": {
+      "value": "site.test\n"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-end-before-newline",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "end-before-newline-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": ". matches any character except a line feed. A carriage return is matched by .",
+    "attributes": {
+      "value": "a\rb"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-dot-and-line-feed",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "dot-and-line-feed-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": ". matches any character except a line feed. A line feed is not matched by .",
+    "attributes": {
+      "value": "a\nb"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-dot-and-line-feed",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "dot-and-line-feed-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "With the m flag, ^ and $ match at line boundaries. beta is a whole line.",
+    "attributes": {
+      "value": "x\nbeta\ny"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-multiline-flag",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "multiline-flag-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "With the s flag, . also matches a line feed. The s flag lets . match the line feed.",
+    "attributes": {
+      "value": "a\nb"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-dot-all-flag",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "dot-all-flag-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "With the i flag, the match ignores case. The case differs but the text is the same.",
+    "attributes": {
+      "value": "ADMIN@corp.example"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-case-insensitive-flag",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "case-insensitive-flag-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A character class with a literal suffix. Every character is in the class.",
+    "attributes": {
+      "value": "John.Doe+x@site.test"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-email-class",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "email-class-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A character class with a literal suffix. A space is not in the class.",
+    "attributes": {
+      "value": "bad char@site.test"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-email-class",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "email-class-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A character class with a literal suffix. A final line feed is not the end of the input.",
+    "attributes": {
+      "value": "john@site.test\n"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-email-class",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "email-class-2",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A bracketed POSIX class. Letters and digits only.",
+    "attributes": {
+      "value": "abc123"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-posix-class",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "posix-class-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A bracketed POSIX class. A hyphen is not alphanumeric.",
+    "attributes": {
+      "value": "abc-123"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-posix-class",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "posix-class-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A counted repetition with a lower and an upper bound. Two is in the range.",
+    "attributes": {
+      "value": "aa"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-counted-repetition",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "counted-repetition-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A counted repetition with a lower and an upper bound. Four is above the range.",
+    "attributes": {
+      "value": "aaaa"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-counted-repetition",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "counted-repetition-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "The u flag is accepted. A word boundary uses Unicode word characters. Spaces are on both sides of the word.",
+    "attributes": {
+      "value": "llega mañana temprano"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-flag-word-boundary",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unicode-flag-word-boundary-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "The u flag is accepted. A word boundary uses Unicode word characters. ñ is a word character, so there is no boundary before m.",
+    "attributes": {
+      "value": "ñmañana"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-flag-word-boundary",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "unicode-flag-word-boundary-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "The u flag is accepted. A word boundary uses Unicode word characters. s is a word character, so there is no boundary after a.",
+    "attributes": {
+      "value": "mañanas"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-flag-word-boundary",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "unicode-flag-word-boundary-2",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A word boundary uses Unicode word characters. foo is a whole word.",
+    "attributes": {
+      "value": "a foo b"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-word-boundary",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "word-boundary-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A word boundary uses Unicode word characters. é is a word character, so there is no boundary before f.",
+    "attributes": {
+      "value": "éfoo"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-word-boundary",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "word-boundary-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\d matches any Unicode decimal digit. Arabic-Indic digits are decimal digits.",
+    "attributes": {
+      "value": "٣٤٥"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-digit",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unicode-digit-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\d matches any Unicode decimal digit. Fullwidth digits are decimal digits.",
+    "attributes": {
+      "value": "１２３"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-digit",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unicode-digit-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\d matches any Unicode decimal digit. a is not a digit.",
+    "attributes": {
+      "value": "12a"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-digit",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "unicode-digit-2",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\s matches any Unicode white space. A no-break space (U+00A0) is white space.",
+    "attributes": {
+      "value": "a\u00a0b"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-space",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unicode-space-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\s matches any Unicode white space. An ideographic space (U+3000) is white space.",
+    "attributes": {
+      "value": "a\u3000b"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-space",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "unicode-space-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "\\s matches any Unicode white space. A zero-width space (U+200B) is not white space.",
+    "attributes": {
+      "value": "a\u200bb"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-unicode-space",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "unicode-space-2",
+    "variationType": "STRING"
+  },
+  {
+    "description": "NOT_MATCHES is true when the pattern does not match. The pattern does not match.",
+    "attributes": {
+      "value": "a@other.com"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-not-matches",
+    "result": {
+      "reason": "TARGETING_MATCH",
+      "value": "match"
+    },
+    "targetingKey": "not-matches-0",
+    "variationType": "STRING"
+  },
+  {
+    "description": "NOT_MATCHES is true when the pattern does not match. The pattern matches.",
+    "attributes": {
+      "value": "a@example.com"
+    },
+    "defaultValue": "no-match",
+    "flag": "regex-not-matches",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "not-matches-1",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A missing attribute fails the condition, also for NOT_MATCHES. The attribute is missing.",
+    "attributes": {},
+    "defaultValue": "no-match",
+    "flag": "regex-not-matches-missing-attribute",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "no-match"
+    },
+    "targetingKey": "not-matches-missing-attribute-0",
+    "variationType": "STRING"
+  }
+]

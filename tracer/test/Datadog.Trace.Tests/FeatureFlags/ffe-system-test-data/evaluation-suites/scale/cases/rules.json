@@ -1,0 +1,7 @@
+[
+  {"flag":"scale-deep-rules","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"country":"c00","age":30,"plan":"pro","email":"user@deep.test"},"result":{"value":"rule-00","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-deep-rules","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"country":"c19","age":30,"plan":"pro","email":"user@deep.test"},"result":{"value":"rule-19","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-deep-rules","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"country":"c07","age":30,"plan":"pro","email":"user@deep.test"},"result":{"value":"rule-07","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-deep-rules","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"country":"c19","age":70,"plan":"pro","email":"user@deep.test"},"result":{"value":"fallback","reason":"STATIC"}},
+  {"flag":"scale-deep-rules","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"country":"c19","age":30,"plan":"pro","email":"user@deep.test.example"},"result":{"value":"fallback","reason":"STATIC"}}
+]

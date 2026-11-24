@@ -1,0 +1,170 @@
+[
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "checkout-banner",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "checkout-pricing",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "search-ranking",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "summer-sale",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "ops-kill-switch",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  },
+  {
+    "description": "Not selected: no flag has the tag team:nobody, so the server applies the selection, returns an empty flags object and omits every flag.",
+    "flag": "untagged-flag",
+    "variationType": "BOOLEAN",
+    "defaultValue": false,
+    "targetingKey": "alice",
+    "attributes": {},
+    "providerOptions": {
+      "flagSelection": {
+        "tags": [
+          "team:nobody"
+        ]
+      }
+    },
+    "expectations": {
+      "configurationRequest": {
+        "selectedFlagTags": [
+          "team:nobody"
+        ],
+        "selectedFlagKeyPatterns": []
+      }
+    },
+    "result": {
+      "value": false,
+      "reason": "ERROR",
+      "errorCode": "FLAG_NOT_FOUND"
+    }
+  }
+]

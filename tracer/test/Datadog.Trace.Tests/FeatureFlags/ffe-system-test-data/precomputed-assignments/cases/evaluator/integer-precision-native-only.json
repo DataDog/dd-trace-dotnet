@@ -1,6 +1,6 @@
 {
   "name": "integer-precision-native-only",
-  "description": "Validates that native SDKs preserve integer values outside JavaScript's safe integer range (Number.MAX_SAFE_INTEGER = 2^53-1). Web browsers represent all numbers as IEEE 754 doubles and lose precision on integers larger than 2^53, so this fixture is skipped for the web SDK.",
+  "description": "Validates that SDKs with 64-bit integer flag evaluation preserve values outside JavaScript's safe integer range (Number.MAX_SAFE_INTEGER = 2^53-1).",
   "context": {
     "targetingKey": "precomputed-user",
     "attributes": {}
@@ -48,10 +48,14 @@
       }
     ]
   },
-  "_skip": [
+  "_include": [
     {
-      "reason": "JavaScript cannot represent integers beyond 2^53-1 without loss of precision. Native SDKs (iOS, Android, etc.) have true 64-bit integer types. This fixture uses values outside safe JS integer range.",
-      "platform": "web"
+      "platform": "ios",
+      "reason": "The native integer API preserves signed 64-bit integers. Browser Dart must report separate applicability."
+    },
+    {
+      "platform": "flutter",
+      "reason": "The native integer API preserves signed 64-bit integers. Browser Dart must report separate applicability."
     }
   ]
 }
