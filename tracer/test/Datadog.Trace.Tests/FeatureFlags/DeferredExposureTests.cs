@@ -477,7 +477,7 @@ public class DeferredExposureTests
                             {
                                 FlagEvaluation = new FlagEvaluationConfiguration { Key = "flag" },
                                 Operator = ConditionOperator.ONE_OF,
-                                Value = ["on"],
+                                Value = new object?[] { "on" },
                             },
                         ]),
                     ],
@@ -503,12 +503,12 @@ public class DeferredExposureTests
                     [
                         new Rule(
                         [
-                            new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = ["paid"] },
+                            new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = new object?[] { "paid" } },
                             new ConditionConfiguration
                             {
                                 FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" },
                                 Operator = ConditionOperator.ONE_OF,
-                                Value = ["on"],
+                                Value = new object?[] { "on" },
                             },
                         ]),
                     ],

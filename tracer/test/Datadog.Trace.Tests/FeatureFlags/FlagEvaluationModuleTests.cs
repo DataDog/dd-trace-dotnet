@@ -86,7 +86,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new object?[] { "on" } }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],
@@ -182,7 +182,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                         {
                             Key = "root-allocation",
                             DoLog = false,
-                            Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
+                            Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new object?[] { "on" } }])],
                             Splits = [new Split { VariationKey = "selected", Shards = [] }],
                         },
                     ],
@@ -234,7 +234,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new object?[] { "on" } }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],
@@ -290,7 +290,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         FlagEvaluation = new FlagEvaluationConfiguration { Key = key },
                         Operator = ConditionOperator.ONE_OF,
-                        Value = ["on"],
+                        Value = new object?[] { "on" },
                     });
             }
 
@@ -471,7 +471,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" }, Operator = ConditionOperator.ONE_OF, Value = new object?[] { "on" } }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],
