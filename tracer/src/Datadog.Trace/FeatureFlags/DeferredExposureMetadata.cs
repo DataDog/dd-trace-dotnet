@@ -56,7 +56,7 @@ namespace Datadog.Trace.FeatureFlags
                     eligible ??= new Dictionary<string, IDictionary<string, object?>>(System.StringComparer.Ordinal);
                     // Memoized prerequisites normally produce one record. Keep the first record
                     // if a malformed batch contains a duplicate, matching the previous scan.
-                    if (!eligible.TryGetValue(flagKey, out _))
+                    if (!eligible.ContainsKey(flagKey))
                     {
                         eligible.Add(flagKey, record);
                     }

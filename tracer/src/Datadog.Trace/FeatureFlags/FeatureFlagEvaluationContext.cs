@@ -7,7 +7,6 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags;
 
@@ -17,7 +16,7 @@ internal static class FeatureFlagEvaluationContext
         => new()
         {
             ["service"] = settings.DefaultServiceName,
-            ["env"] = StringUtil.IsNullOrEmpty(settings.Environment) ? "unknown" : settings.Environment,
-            ["version"] = StringUtil.IsNullOrEmpty(settings.ServiceVersion) ? "unknown" : settings.ServiceVersion,
+            ["env"] = string.IsNullOrEmpty(settings.Environment) ? "unknown" : settings.Environment,
+            ["version"] = string.IsNullOrEmpty(settings.ServiceVersion) ? "unknown" : settings.ServiceVersion,
         };
 }
