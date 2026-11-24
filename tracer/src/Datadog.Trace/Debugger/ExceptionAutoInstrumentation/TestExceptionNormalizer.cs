@@ -31,7 +31,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         protected override int HashLine(ReadOnlySpan<char> line, int fnvHashCode)
         {
+#pragma warning disable MA0028 // Optimize StringBuilder usage - only runs when a test passes in a debug builder
             _debug?.AppendLine(line.ToString());
+#pragma warning restore MA0028
             return base.HashLine(line, fnvHashCode);
         }
     }

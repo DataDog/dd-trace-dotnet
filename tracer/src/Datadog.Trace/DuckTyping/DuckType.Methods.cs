@@ -53,7 +53,7 @@ namespace Datadog.Trace.DuckTyping
                         if (!methodAlreadySelected)
                         {
                             MethodInfo? prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
-                            if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
+                            if (prevMethod == null || !prevMethod.HasCustomAttribute<DuckIgnoreAttribute>())
                             {
                                 selectedMethods.Add(interfaceMethod);
                             }
@@ -73,7 +73,7 @@ namespace Datadog.Trace.DuckTyping
                     // You can still proxy those methods if they are defined in an interface, or if you add the DuckInclude attribute.
                     if (method.DeclaringType == typeof(object))
                     {
-                        bool include = method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null;
+                        bool include = method.HasCustomAttribute<DuckIncludeAttribute>();
 
                         if (!include)
                         {
@@ -109,7 +109,7 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (var method in targetMethodsDefinitions)
             {
-                if (method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null)
+                if (method.HasCustomAttribute<DuckIncludeAttribute>())
                 {
                     proxyMethodsDefinitions.Add(method);
                 }
@@ -118,13 +118,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (MethodInfo proxyMethodDefinition in proxyMethodsDefinitions)
             {
                 // Ignore the method marked with `DuckIgnore` attribute
-                if (proxyMethodDefinition.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyMethodDefinition.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
 
                 // Check if proxy method is a reverse method (shouldn't be called from here)
-                if (proxyMethodDefinition.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (proxyMethodDefinition.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     return DuckTypeIncorrectReverseMethodUsageException.Create(proxyMethodDefinition);
                 }
@@ -146,7 +146,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Check if target method is a reverse method (shouldn't be called from here)
-                if (targetMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (targetMethod.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     return DuckTypeIncorrectReverseMethodUsageException.Create(targetMethod);
                 }
@@ -296,7 +296,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 MethodInfo implementationMethod = immutableImplementationMethod;
                 // Ignore methods without a `DuckReverse` attribute
-                if (implementationMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (!implementationMethod.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     continue;
                 }
@@ -415,7 +415,7 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            if (overriddenMethods.Any(x => x.IsAbstract))
+            if (overriddenMethods.Exists(x => x.IsAbstract))
             {
                 return DuckTypeReverseProxyMissingMethodImplementationException.Create(overriddenMethods.Where(x => x.IsAbstract));
             }
@@ -510,7 +510,7 @@ namespace Datadog.Trace.DuckTyping
                     else
                     {
                         // Nested types are separated with a "." on explicit implementation.
-                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
+                        interfaceTypeName = interfaceTypeName.Replace('+', '.');
 
                         name = interfaceTypeName + "." + name;
                     }

@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            if (obj.GetType() != GetType())
+            if (obj.GetType() != typeof(FilterList))
             {
                 return false;
             }

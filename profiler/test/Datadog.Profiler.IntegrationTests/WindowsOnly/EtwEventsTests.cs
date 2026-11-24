@@ -3,10 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using FluentAssertions;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,21 +21,17 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void CheckErrorWhenNoAgentIsAvailable(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
+        public void CheckErrorWhenNoAgentIsAvailable(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var lines = File.ReadAllLines(logFile);
-
-            lines.Should().ContainMatch("*Impossible to connect to the Datadog Agent named pipe*");
+            ProfilerLogSet.Read(runner.Environment.LogDir).NativeProfiler
+                .Should().ContainLine("Impossible to connect to the Datadog Agent named pipe");
         }
     }
 }
