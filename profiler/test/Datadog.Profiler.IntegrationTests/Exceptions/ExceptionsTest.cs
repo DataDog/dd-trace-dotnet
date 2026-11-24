@@ -484,7 +484,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
         [Flaky("Flaky on ARM64")]
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
         public void ThrowExceptionsInParallelWithNewCpuProfiler(TestAppContext app)
         {
             StackTrace expectedStack;

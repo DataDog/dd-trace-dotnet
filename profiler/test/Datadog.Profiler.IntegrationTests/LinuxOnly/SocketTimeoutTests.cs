@@ -20,10 +20,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", Frameworks = new[] { "net6.0", "net7.0" })]
-        public void CheckSocketOperationsTimeoutIsFullfilled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7)]
+        public void CheckSocketOperationsTimeoutIsFullfilled(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 22", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 22", output: _output);
             // TODO: On Alpine, we need to investigate why there is only one pprof file and 2-3 empty profiles.
             // In the log we can see this message (seen with net6.0):
             // The profiler for application IntegrationTest-Samples.Computer01 (runtime id:b9f1d85c-6df4-46f4-83eb-f2c9f6722aea) have empty profile. Nothing will be sent.
