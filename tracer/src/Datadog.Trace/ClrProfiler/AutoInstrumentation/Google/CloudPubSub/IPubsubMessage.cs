@@ -58,6 +58,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
     internal interface IPubsubTimestamp
     {
         /// <summary>
+        /// Gets the seconds since the Unix epoch (0 when the timestamp is unset).
+        /// </summary>
+        long Seconds { get; }
+
+        /// <summary>
         /// Converts the timestamp to a DateTime in UTC.
         /// </summary>
         System.DateTime ToDateTime();

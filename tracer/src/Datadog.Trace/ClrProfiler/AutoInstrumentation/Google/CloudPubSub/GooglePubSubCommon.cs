@@ -111,14 +111,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
         {
             try
             {
-                if (message?.Instance is not null && message.PublishTime is not null)
+                if (message?.Instance is not null && message.PublishTime is { Seconds: > 0 } publishTime)
                 {
                     var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.PublishTime.ToDateTime();
-                    if (produceTime > DateTime.MinValue)
-                    {
-                        return Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                    }
+                    var produceTime = publishTime.ToDateTime();
+                    return Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
                 }
             }
             catch (Exception ex)
