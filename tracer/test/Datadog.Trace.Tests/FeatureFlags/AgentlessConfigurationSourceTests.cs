@@ -537,7 +537,7 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
         source.OmitsFlagSelection.Should().BeFalse();
     }
 
@@ -551,7 +551,7 @@ public class AgentlessConfigurationSourceTests
         await source.PollAsync();
 
         source.OmitsFlagSelection.Should().BeTrue();
-        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl));
+        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?cap_dependent-flags-variant-key=v1"));
     }
 
     [Fact]
@@ -563,7 +563,7 @@ public class AgentlessConfigurationSourceTests
         source.UpdateEnvironment("staging");
         await source.PollAsync();
 
-        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?dd_env=staging&selected_flag_tags=mobile");
+        factory.RequestsSent[0].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=staging&selected_flag_tags=mobile");
     }
 
     [Fact]
@@ -577,7 +577,7 @@ public class AgentlessConfigurationSourceTests
         source.UpdateFlagSelection(Mobile);
         await source.PollAsync();
 
-        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=mobile");
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile");
         factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match", "the ETag identifies the configuration of a different selection");
     }
 
@@ -802,7 +802,7 @@ public class AgentlessConfigurationSourceTests
         }
 
         factory.RequestsSent.Should().HaveCount(2, "the poll interval never elapses in this test");
-        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=beta");
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?cap_dependent-flags-variant-key=v1&selected_flag_tags=beta");
     }
 
     [Fact]
@@ -841,7 +841,7 @@ public class AgentlessConfigurationSourceTests
 
         await Task.Delay(200);
         factory.RequestsSent.Should().HaveCount(2, "the claim ends the retry delay, and the poll interval never elapses in this test");
-        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?selected_flag_tags=beta");
+        factory.RequestsSent[1].Endpoint.AbsoluteUri.Should().Be(EndpointUrl + "?cap_dependent-flags-variant-key=v1&selected_flag_tags=beta");
     }
 
 #if NETCOREAPP3_1_OR_GREATER

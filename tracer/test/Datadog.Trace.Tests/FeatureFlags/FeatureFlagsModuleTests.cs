@@ -1164,7 +1164,7 @@ public class FeatureFlagsModuleTests
         module.Activate();
 
         (await Task.WhenAny(module.FirstConfigReceived, Task.Delay(TimeSpan.FromSeconds(30)))).Should().Be(module.FirstConfigReceived);
-        factory.RequestsSent[0].Endpoint.Query.Should().Be("?selected_flag_tags=beta&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+        factory.RequestsSent[0].Endpoint.Query.Should().Be("?cap_dependent-flags-variant-key=v1&selected_flag_tags=beta&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
     }
 
     [Fact]
