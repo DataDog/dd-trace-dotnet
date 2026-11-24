@@ -94,12 +94,7 @@ internal sealed class ExposureApi : IDisposable
         void UpdateContext(MutableSettings settings)
         {
             _log.Debug("ExposureApi::UpdateContext -> Applying settings");
-            var context = new Dictionary<string, string>
-            {
-                { "service", settings.DefaultServiceName },
-                { "env", settings.Environment ?? "unknown" },
-                { "version", settings.ServiceVersion ?? "unknown" }
-            };
+            var context = FeatureFlagEvaluationContext.Create(settings);
             Interlocked.Exchange(ref _context!, context);
         }
     }

@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -624,7 +623,7 @@ namespace Datadog.Trace.FeatureFlags
             => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false, reportRootEvaluation: false);
 
         // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure, bool reportRootEvaluation = false, int contextOmissionReasons = 0)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure, bool reportRootEvaluation, int contextOmissionReasons = 0)
         {
             var evaluationTime = DateTime.UtcNow;
             var context = new EvaluationContext(targetingKey, attributes, (ContextOmissionReason)contextOmissionReasons);
@@ -820,14 +819,7 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)
-        {
-            return new Dictionary<string, string>
-            {
-                ["service"] = settings.DefaultServiceName,
-                ["env"] = settings.Environment ?? "unknown",
-                ["version"] = settings.ServiceVersion ?? "unknown",
-            };
-        }
+            => FeatureFlagEvaluationContext.Create(settings);
 
         private void SubscribeToEvaluationDelivery()
         {
@@ -1461,13 +1453,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 var key = pair.Key.Substring(prefix.Length);
                 var type = featureTypes is not null && featureTypes.TryGetValue(key, out var encodedType) ? encodedType : '\0';
-                object value = type switch
-                {
-                    'b' when pair.Value == "true" => true,
-                    'b' when pair.Value == "false" => false,
-                    'n' when double.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
-                    _ => pair.Value,
-                };
+                var value = FeatureFlagTypeCodec.DecodeValue(pair.Value, type);
                 (features ??= new Dictionary<string, object?>(StringComparer.Ordinal))[key] = value;
             }
 

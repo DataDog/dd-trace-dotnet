@@ -39,6 +39,15 @@ namespace Datadog.Trace.FeatureFlags
             return types;
         }
 
+        internal static object DecodeValue(string value, char type)
+            => type switch
+            {
+                'b' when value == "true" => true,
+                'b' when value == "false" => false,
+                'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
+                _ => value,
+            };
+
         private static bool TryParseLength(string encoded, int start, int length, out int value)
         {
 #if NETCOREAPP3_0_OR_GREATER

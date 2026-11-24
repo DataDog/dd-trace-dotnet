@@ -86,7 +86,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],
@@ -109,8 +109,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task DependencyEvaluationFeaturesAreTypedAndSplitAggregationBuckets(bool consent)
     {
         using var agent = MockTracerAgent.Create(_output);
@@ -183,7 +182,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                         {
                             Key = "root-allocation",
                             DoLog = false,
-                            Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                            Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
                             Splits = [new Split { VariationKey = "selected", Shards = [] }],
                         },
                     ],
@@ -235,7 +234,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],
@@ -291,7 +290,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         FlagEvaluation = new FlagEvaluationConfiguration { Key = key },
                         Operator = ConditionOperator.ONE_OF,
-                        Value = new[] { "on" },
+                        Value = ["on"],
                     });
             }
 
@@ -333,8 +332,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task ClosedOrFullWriterSkipsLegacyRootTelemetrySnapshot(bool closed)
     {
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -473,7 +471,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                     {
                         Key = "root-allocation",
                         DoLog = false,
-                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" }, Operator = ConditionOperator.ONE_OF, Value = ["on"] }])],
                         Splits = [new Split { VariationKey = "selected", Shards = [] }],
                     },
                 ],

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
@@ -107,11 +108,11 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        internal bool TryTakePendingExposureBatch(out PendingExposureBatch batch)
+        internal bool TryTakePendingExposureBatch([NotNullWhen(true)] out PendingExposureBatch? batch)
         {
             if (Interlocked.CompareExchange(ref _state, Taken, Pending) != Pending)
             {
-                batch = null!;
+                batch = null;
                 return false;
             }
 
