@@ -43,6 +43,16 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const int MaxRequestUrlBytes = 8192;
 
+    /// <summary>
+    /// The query parameter selecting UFCs that can contain dependent flag conditions.
+    /// </summary>
+    internal const string DependentFlagsParameterName = "cap_dependent-flags-variant-key";
+
+    /// <summary>
+    /// The complete dependent-flags capability query parameter.
+    /// </summary>
+    internal const string DependentFlagsParameter = DependentFlagsParameterName + "=v1";
+
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
@@ -239,9 +249,9 @@ internal sealed class AgentlessEndpoint
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// Without a flag selection, a configured base URL is opaque: it is requested exactly as the
-    /// operator wrote it, since it may hold credentials, routing, or a scope of its own. Only the
-    /// managed endpoint carries <c>dd_env</c>, which matches the other tracers.
+    /// A configured base URL retains its existing query parameters, which may hold credentials,
+    /// routing, or a scope of its own. Only the managed endpoint carries <c>dd_env</c>, which
+    /// matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
@@ -249,7 +259,17 @@ internal sealed class AgentlessEndpoint
     public Uri BuildRequestUri(string? env)
     {
         var normalized = RequestEnvironment(env);
-        return normalized is null ? Uri : AppendQuery(Uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
+        var builder = new UriBuilder(Uri)
+        {
+            Query = AddOrReplaceDependentFlagsParameter(Uri.Query),
+        };
+
+        if (normalized is not null)
+        {
+            builder.Query += "&" + EnvParameterName + "=" + Uri.EscapeDataString(normalized);
+        }
+
+        return builder.Uri;
     }
 
     /// <summary>
@@ -295,5 +315,96 @@ internal sealed class AgentlessEndpoint
         };
 
         return new Uri(uri.GetLeftPart(UriPartial.Query) + separator + parameters + uri.Fragment);
+    }
+
+    private static string AddOrReplaceDependentFlagsParameter(string query)
+    {
+        var queryStart = query.Length > 0 && query[0] == '?' ? 1 : 0;
+        if (queryStart == query.Length)
+        {
+            return DependentFlagsParameter;
+        }
+
+        var result = new StringBuilder(query.Length - queryStart + DependentFlagsParameter.Length + 1);
+        var segmentStart = queryStart;
+        var replaced = false;
+        var hasRetainedSegment = false;
+        while (segmentStart <= query.Length)
+        {
+            var segmentEnd = query.IndexOf('&', segmentStart);
+            if (segmentEnd < 0)
+            {
+                segmentEnd = query.Length;
+            }
+
+            var equals = query.IndexOf('=', segmentStart, segmentEnd - segmentStart);
+            var nameEnd = equals < 0 ? segmentEnd : equals;
+            var isDependentFlagsParameter = IsDependentFlagsParameter(query, segmentStart, nameEnd - segmentStart);
+            if (!isDependentFlagsParameter || !replaced)
+            {
+                if (hasRetainedSegment)
+                {
+                    result.Append('&');
+                }
+
+                if (isDependentFlagsParameter)
+                {
+                    result.Append(DependentFlagsParameter);
+                    replaced = true;
+                }
+                else
+                {
+                    result.Append(query, segmentStart, segmentEnd - segmentStart);
+                }
+
+                hasRetainedSegment = true;
+            }
+
+            if (segmentEnd == query.Length)
+            {
+                break;
+            }
+
+            segmentStart = segmentEnd + 1;
+        }
+
+        if (!replaced)
+        {
+            if (query[query.Length - 1] != '&')
+            {
+                result.Append('&');
+            }
+
+            result.Append(DependentFlagsParameter);
+        }
+
+        return result.ToString();
+    }
+
+    private static bool IsDependentFlagsParameter(string query, int nameStart, int nameLength)
+    {
+        if (nameLength == DependentFlagsParameterName.Length
+         && string.CompareOrdinal(query, nameStart, DependentFlagsParameterName, 0, nameLength) == 0)
+        {
+            return true;
+        }
+
+        if (query.IndexOf('%', nameStart, nameLength) < 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.Equals(
+                Uri.UnescapeDataString(query.Substring(nameStart, nameLength)),
+                DependentFlagsParameterName,
+                StringComparison.Ordinal);
+        }
+        catch (UriFormatException)
+        {
+            // Preserve malformed custom query segments instead of rejecting the configured URL.
+            return false;
+        }
     }
 }

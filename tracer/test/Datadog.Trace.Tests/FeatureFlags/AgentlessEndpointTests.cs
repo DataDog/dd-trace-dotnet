@@ -40,7 +40,7 @@ public class AgentlessEndpointTests
 
     [Fact]
     public void AddsDdEnvWhenEnvIsConfigured()
-        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?dd_env=production");
+        => Create("datadoghq.com").BuildRequestUri("production").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=production");
 
     [Theory]
     [InlineData(null)]
@@ -50,7 +50,7 @@ public class AgentlessEndpointTests
     // normalizes away. Spans are tagged the same way, so no environment is reported either.
     [InlineData("2024")]
     public void DoesNotAddDdEnvWhenEnvIsNotConfigured(string? env)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().BeEmpty();
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1");
 
     [Theory]
     // Normalized exactly as the tracer normalizes the environment before tagging spans: lowercased,
@@ -60,31 +60,33 @@ public class AgentlessEndpointTests
     [InlineData("  staging  ", "staging")]
     [InlineData("my env&test", "my_env_test")]
     public void NormalizesDdEnvValue(string env, string expected)
-        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?dd_env=" + expected);
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + expected);
 
     [Fact]
     public void EscapesDdEnvValue()
         // "/" survives normalization but cannot be carried unescaped in a query value.
-        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?dd_env=team%2Fa");
+        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=team%2Fa");
 
     [Fact]
     public void TruncatesAnOverlongDdEnvValue()
         => Create("datadoghq.com").BuildRequestUri(new string('a', 500))
-                                  .Query.Should().Be("?dd_env=" + new string('a', 200));
+                                  .Query.Should().Be("?cap_dependent-flags-variant-key=v1&dd_env=" + new string('a', 200));
 
     [Theory]
-    // A configured base URL is opaque: the operator may have scoped it themselves, and it may carry
-    // credentials or routing, so it is requested exactly as written. Java, JS, Go and Python all
-    // treat a custom endpoint the same way.
-    [InlineData("https://flags.example.com/ufc")]
-    [InlineData("https://flags.example.com/ufc?token=abc")]
-    [InlineData("https://flags.example.com/ufc?dd_env=staging")]
-    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging")]
-    public void DoesNotAddDdEnvToACustomEndpoint(string baseUrl)
+    [InlineData("https://flags.example.com/ufc", "?cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb", "?token=a%2Bb&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?dd_env=staging", "?dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "?token=abc&dd_env=staging&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=a%2Bb&&scope=one%2Ftwo&", "?token=a%2Bb&&scope=one%2Ftwo&cap_dependent-flags-variant-key=v1")]
+    [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=old&scope=one%2Ftwo", "?token=abc&cap_dependent-flags-variant-key=v1&scope=one%2Ftwo")]
+    [InlineData("https://flags.example.com/ufc?cap_dependent-flags-variant-key=old&token=a%2Bb&cap_dependent-flags-variant-key=v2&scope=one%2Ftwo&cap_dependent-flags-variant-key", "?cap_dependent-flags-variant-key=v1&token=a%2Bb&scope=one%2Ftwo")]
+    [InlineData("https://flags.example.com/ufc?%63ap_dependent-flags-variant-key=old&token=abc", "?cap_dependent-flags-variant-key=v1&token=abc")]
+    [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent%2Dflags-variant-key=old", "?token=abc&cap_dependent-flags-variant-key=v1")]
+    public void AddsCapabilityWithoutAddingEnvironmentToACustomEndpoint(string baseUrl, string expectedQuery)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
 
-        endpoint.BuildRequestUri("production").Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri("production").Query.Should().Be(expectedQuery);
     }
 
     [Theory]
@@ -175,7 +177,7 @@ public class AgentlessEndpointTests
 
         endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out var omitted).Should().Be(endpoint.BuildRequestUri("production"));
         omitted.Should().BeFalse();
-        endpoint.BuildRequestUri(null, FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri(null, FlagSelection.AllFlags, out _).Should().Be(endpoint.BuildRequestUri(null));
     }
 
     [Fact]
@@ -184,32 +186,32 @@ public class AgentlessEndpointTests
         var endpoint = Create("datadoghq.com");
 
         endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile", null], null), out var omitted)
-                .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production");
+                .AbsoluteUri.Should().Be(ManagedUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production");
         omitted.Should().BeFalse("the selection was dropped before the URL was built");
     }
 
     [Fact]
     public void AppendsTheSelectionAfterDdEnvWithTagsFirst()
         => Create("datadoghq.com").BuildRequestUri("production", FlagSelection.Create(["mobile"], ["checkout.*"]), out _)
-                                  .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+                                  .AbsoluteUri.Should().Be(ManagedUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
 
     [Theory]
-    [InlineData("https://flags.example.com/ufc", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc??x=1", "https://flags.example.com/ufc??x=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc???x=1", "https://flags.example.com/ufc???x=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?x=?inside", "https://flags.example.com/ufc?x=?inside&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?%3Fx=1", "https://flags.example.com/ufc?%3Fx=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?x=1#frag", "https://flags.example.com/ufc?x=1&selected_flag_tags=mobile#frag")]
-    [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc", "https://flags.example.com/ufc?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc??x=1", "https://flags.example.com/ufc?x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc???x=1", "https://flags.example.com/ufc??x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=?inside", "https://flags.example.com/ufc?x=?inside&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?%3Fx=1", "https://flags.example.com/ufc?%3Fx=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=1#frag", "https://flags.example.com/ufc?x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile#frag")]
+    [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
     public void MergesTheSelectionIntoACustomEndpointQuery(string baseUrl, string expected)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
 
         endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile"], null), out _).AbsoluteUri.Should().Be(expected);
-        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.BuildRequestUri("production"));
     }
 
     [Theory]
@@ -235,7 +237,7 @@ public class AgentlessEndpointTests
     public void SystemUriKeepsThePercentEncoding(string character, string encoded)
     {
         var value = "v" + character + "v";
-        var expectedQuery = "?selected_flag_tags=v" + encoded + "v&selected_flag_key_patterns=v" + encoded + "v";
+        var expectedQuery = "?cap_dependent-flags-variant-key=v1&selected_flag_tags=v" + encoded + "v&selected_flag_key_patterns=v" + encoded + "v";
 
         var uri = Create("datadoghq.com").BuildRequestUri(null, FlagSelection.Create([value], [value]), out _);
 
