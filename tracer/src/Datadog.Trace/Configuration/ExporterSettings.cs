@@ -627,10 +627,8 @@ namespace Datadog.Trace.Configuration
                                      .AsInt32(500, value => value > 0)
                                      .Value;
 
-                // OpenTelemetry semantics mode and DD_SDK_MODE=otel make OTLP the default traces exporter.
-                // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode, so DD_SDK_MODE=otel changes no default then.
-                var otelSdkMode = TracerSettings.GetSdkMode(in config, out _) == SdkModeValues.Otel
-                               && !TracerSettings.IsOtelSdkDisabled(in config);
+                // OpenTelemetry semantics mode and DD_SDK_MODE=otel make OTLP the default traces exporter
+                var otelSdkMode = TracerSettings.GetSdkMode(in config, out _) == SdkModeValues.Otel;
                 var otelSemanticsEnabled = TracerSettings.WithSdkModeDefault(
                     config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBoolResult(),
                     otelSdkMode);

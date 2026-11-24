@@ -909,41 +909,33 @@ namespace Datadog.Trace.Tests.Configuration
             settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
         }
 
-        [Theory]
-        [InlineData(null, false)]
-        [InlineData("true", true)]
-        public void SdkMode_OtelSdkDisabledTakesPrecedence(string traceEnabled, bool expectedTraceEnabled)
+        [Fact]
+        public void SdkMode_OtelSdkDisabledTakesPrecedence()
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.SdkMode, "otel"),
-                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
-                (ConfigurationKeys.TraceEnabled, traceEnabled));
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
 
-            // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode, so DD_SDK_MODE=otel changes no default:
-            // tracing, when DD_TRACE_ENABLED re-enables it, uses the Datadog protocol and semantic conventions
             using var scope = new AssertionScope();
             settings.SdkMode.Should().Be(SdkModeValues.Otel);
             settings.IsActivityListenerEnabled.Should().BeFalse();
-            settings.OtelSemanticsEnabled.Should().BeFalse();
             settings.OpenTelemetryMetricsEnabled.Should().BeFalse();
             settings.OpenTelemetryLogsEnabled.Should().BeFalse();
-            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeFalse();
-            settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedTraceEnabled);
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
 
-            string[] sdkModeKeys =
+            // DD_SDK_MODE=otel doesn't enable the signals that OTEL_SDK_DISABLED=true turns off
+            string[] signalKeys =
             [
                 ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
-                ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled,
                 ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
                 ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
-                ConfigurationKeys.OpenTelemetry.TracesExporter,
             ];
             telemetry.GetQueueForTesting()
-                     .Any(e => sdkModeKeys.Contains(e.Key) && e.Origin == ConfigurationOrigins.Calculated && (e.BoolValue == true || e.StringValue == "otlp"))
+                     .Any(e => signalKeys.Contains(e.Key) && e is { Origin: ConfigurationOrigins.Calculated, BoolValue: true })
                      .Should()
-                     .BeFalse("DD_SDK_MODE=otel shouldn't derive any default when OTEL_SDK_DISABLED=true");
+                     .BeFalse();
         }
 
         [Fact]
