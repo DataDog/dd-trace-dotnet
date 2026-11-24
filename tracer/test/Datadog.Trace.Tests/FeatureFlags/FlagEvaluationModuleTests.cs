@@ -408,7 +408,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             };
             module.ApplyConfiguration(new ServerConfiguration { Flags = new FlagCollection { ["root"] = flag } }).Should().BeTrue();
 
-            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposure: false, reportRootEvaluation: true).Variant.Should().Be("on");
+            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposure: false).Variant.Should().Be("on");
             await module.FlushAsync();
 
             var observation = JObject.Parse(received.Should().ContainSingle().Subject.BodyInJson)["flagEvaluations"]!.Should().ContainSingle().Subject;

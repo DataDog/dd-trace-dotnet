@@ -111,6 +111,9 @@ internal sealed class ExposureApi : IDisposable
         _queueAdmissionCallback = queueAdmissionCallback;
     }
 
+    [TestingOnly]
+    internal Queue<ExposureEvent> GetQueueForTesting() => _exposures;
+
     public void Dispose()
     {
         Task? sendLoopTask;

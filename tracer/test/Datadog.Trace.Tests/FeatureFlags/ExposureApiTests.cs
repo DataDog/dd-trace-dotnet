@@ -48,7 +48,7 @@ public class ExposureApiTests
             TimeSpan.FromHours(1),
             TimeSpan.FromSeconds(30),
             () => producerReachedAdmission.TrySetResult(true));
-        var exposures = typeof(ExposureApi).GetField("_exposures", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
+        var exposures = api.GetQueueForTesting();
         var drainStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var releaseDrain = new ManualResetEventSlim();
         var drain = Task.Factory.StartNew(
