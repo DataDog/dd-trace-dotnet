@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
@@ -57,6 +58,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         return 0;
     }
 
+    [TestingAndPrivateOnly]
     internal static bool HasEvaluationEventBridge(Type targetType)
         => GetBridgeAvailability(targetType).HasEvaluationEventBridge;
 

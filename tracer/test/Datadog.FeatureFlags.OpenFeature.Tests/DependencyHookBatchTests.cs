@@ -67,6 +67,9 @@ public class DependencyHookBatchTests
             });
 
         var attempted = new List<string>();
+        IReadOnlyDictionary<string, object>? secondFeatures = null;
+        bool? secondCacheHit = null;
+        long? secondSerialId = null;
         var hook = new ExposureHook(evaluation =>
         {
             attempted.Add(evaluation.FlagKey);
@@ -77,16 +80,20 @@ public class DependencyHookBatchTests
 
             if (evaluation.FlagKey == "second")
             {
-                var mutation = () => ((IDictionary<string, object>)evaluation.Features)["changed"] = true;
-                mutation.Should().Throw<NotSupportedException>();
-                evaluation.IsCacheHit.Should().BeTrue();
-                evaluation.SplitSerialId.Should().Be(7);
+                secondFeatures = evaluation.Features;
+                secondCacheHit = evaluation.IsCacheHit;
+                secondSerialId = evaluation.SplitSerialId;
             }
         });
 
         await hook.FinallyAsync(Context("root"), Details(resolution));
 
         attempted.Should().BeEquivalentTo("first", "second", "root");
+        secondFeatures.Should().NotBeNull();
+        var mutation = () => ((IDictionary<string, object>)secondFeatures!)["changed"] = true;
+        mutation.Should().Throw<NotSupportedException>();
+        secondCacheHit.Should().BeTrue();
+        secondSerialId.Should().Be(7);
     }
 
     [Theory]

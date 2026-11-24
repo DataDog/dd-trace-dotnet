@@ -6,7 +6,7 @@
 #nullable enable
 
 using System;
-using OpenFeature.Model;
+using OpenFeature.Constant;
 
 namespace Datadog.FeatureFlags.OpenFeature;
 

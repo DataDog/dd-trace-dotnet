@@ -8,6 +8,7 @@
 extern alias Tracer;
 
 using FluentAssertions;
+using OpenFeature.Constant;
 using OpenFeature.Model;
 using Xunit;
 
