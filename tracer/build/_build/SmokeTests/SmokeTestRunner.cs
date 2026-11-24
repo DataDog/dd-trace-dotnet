@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using System.Linq;
@@ -475,6 +476,7 @@ public static partial class SmokeTestRunner
             dumpsDir: dumpsDir,
             isWindowsScenario: false, // We don't yet support windows crash-tests
             environmentVariables);
+        var stopwatch = Stopwatch.StartNew();
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
             "crash-test", containerParams, ct);
 
@@ -483,9 +485,23 @@ public static partial class SmokeTestRunner
         onContainerStarted(containerId);
 
         // Wait for the container to exit (non-zero exit is expected)
-        var statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
+        long statusCode;
+        try
+        {
+            statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.Error("Crash test failed (mode D): timed out after {Duration}", stopwatch.Elapsed);
+            await DockerService.LogContainerStateAsync("Crash test", containerId);
+            throw;
+        }
+
+        Logger.Information("Crash test container ran for {Duration}", stopwatch.Elapsed);
+        await DockerService.LogContainerStateAsync("Crash test", containerId);
         if (statusCode == 0)
         {
+            Logger.Error("Crash test failed (mode D): container exited with code 0");
             throw new InvalidOperationException($"Crash test container unexpectedly exited with code {statusCode}");
         }
 
@@ -499,10 +515,33 @@ public static partial class SmokeTestRunner
         }
         else
         {
-            Logger.Error("Crash test failed: did not find expected message in logs:\n{Logs}", logs);
+            Logger.Error("Crash test failed (mode {Mode}): did not find expected message in logs:\n{Logs}", GetCrashTestFailureMode(logs), logs);
             throw new InvalidOperationException(
                 $"Crash test failed: did not find '{expectedMessage}' in container logs");
         }
+    }
+
+    // A: dd-dotnet did not run, B: dd-dotnet stopped with an error,
+    // C: the crash was not found suspicious, E: anything else (D, timeout or exit code 0, is handled by the caller)
+    static string GetCrashTestFailureMode(string logs)
+    {
+        if (logs.Contains("The crash is not suspicious"))
+        {
+            return "C";
+        }
+
+        if (logs.Contains("Datadog - Some errors occurred"))
+        {
+            return "B";
+        }
+
+        var ddDotnetStarted = logs.Contains("dd-dotnet invoked with command-line");
+        if (!ddDotnetStarted && !logs.Contains("Datadog -"))
+        {
+            return "A";
+        }
+
+        return ddDotnetStarted && !logs.Contains("dd-dotnet exited normally") ? "B" : "E";
     }
 
 
