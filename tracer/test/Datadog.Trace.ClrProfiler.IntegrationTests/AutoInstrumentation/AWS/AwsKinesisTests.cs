@@ -46,16 +46,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
             const string metadataSchemaVersion = "v0";
             var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-kinesis";
+            // The sample's default version is 3.3.3. Requests have StreamARN from 3.7.0 on.
+            var hasStreamArn = !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("3.7.0");
+            // The sample also puts records by stream ARN, which DataStreamsMonitoringAwsKinesisTests does not expect
+            SetEnvironmentVariable("KINESIS_SAMPLE_USE_STREAM_ARN", "true");
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 12;
+                // Two more spans by stream ARN, sync and async
+                var expectedCount = hasStreamArn ? 16 : 12;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 7;
+                var expectedCount = hasStreamArn ? 9 : 7;
                 var frameworkName = "NetCore";
 #endif
                 var spans = await agent.WaitForSpansAsync(expectedCount);
@@ -68,7 +73,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var snapshotSuffix = hasStreamArn ? string.Empty : "_pre3_7_0";
+                settings.UseFileName($"{nameof(AwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_kinesis");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_kinesis");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_kinesis");

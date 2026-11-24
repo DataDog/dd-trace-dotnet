@@ -11,6 +11,8 @@ namespace Samples.AWS.DynamoDBv2
     {
 
         private const string TableName = "MyTableName";
+        // The table's ARN with LocalStack's default region and account
+        private const string TableArn = "arn:aws:dynamodb:us-east-1:000000000000:table/" + TableName;
 
         public static async Task StartDynamoDBTasks(AmazonDynamoDBClient dynamoDBClient)
         {
@@ -24,6 +26,7 @@ namespace Samples.AWS.DynamoDBv2
                 Thread.Sleep(1000);
                 await PutItemAsync(dynamoDBClient);
                 await GetItemAsync(dynamoDBClient);
+                await GetItemByTableArnAsync(dynamoDBClient);
                 await UpdateItemAsync(dynamoDBClient);
                 await DeleteItemAsync(dynamoDBClient);
                 
@@ -126,6 +129,30 @@ namespace Samples.AWS.DynamoDBv2
 
             var response = await dynamoDBClient.BatchWriteItemAsync(batchWriteItemRequest);
             Console.WriteLine($"BatchWriteItemAsync(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
+        // A table can be named by its ARN, which the span tags as aws.table.arn
+        public static async Task GetItemByTableArnAsync(AmazonDynamoDBClient dynamoDBClient)
+        {
+            var getItemRequest = new GetItemRequest
+            {
+                TableName = TableArn,
+                Key = new Dictionary<string, AttributeValue>
+                {
+                    ["id"] = new() { S = "1" },
+                    ["name"] = new() { S = "Jordan" }
+                }
+            };
+
+            try
+            {
+                var response = await dynamoDBClient.GetItemAsync(getItemRequest);
+                Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN HTTP status code: {response.HttpStatusCode}");
+            }
+            catch (AmazonDynamoDBException e)
+            {
+                Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN failed: {e.Message}");
+            }
         }
 
         public static async Task GetItemAsync(AmazonDynamoDBClient dynamoDBClient)
