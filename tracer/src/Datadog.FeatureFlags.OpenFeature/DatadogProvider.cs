@@ -88,14 +88,12 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     }
 
     // Unit tests stand in for both tracer entry points and for the capability probe.
-    [TestingOnly]
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
         : this(evaluate, evaluateDeferred, canDeferExposures, commitExposure, FeatureFlagsSdk.GetDependencyTelemetry)
     {
     }
 
     // Unit tests can exercise the complete profiler bridge without exposing tracer-private metadata.
-    [TestingOnly]
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure, FeatureFlagsSdk.DependencyTelemetryCallback getDependencyTelemetry)
         : this(new DatadogProviderOptions(), FeatureFlagsSdk.SetFlagSelection, FeatureFlagsSdk.ReleaseFlagSelection, canDeferExposures, commitExposure)
     {

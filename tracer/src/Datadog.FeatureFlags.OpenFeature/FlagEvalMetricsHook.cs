@@ -130,6 +130,5 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         Reason.Error => "error",
         _ => reason.ToLower(CultureInfo.InvariantCulture)
     };
-
 }
 #endif
