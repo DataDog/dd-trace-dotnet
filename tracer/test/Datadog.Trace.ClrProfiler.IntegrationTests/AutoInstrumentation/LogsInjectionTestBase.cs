@@ -124,28 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
-                    var traceIds = new List<string>();
-                    if (use128Bits)
-                    {
-                        foreach (var span in spans)
-                        {
-                            var lower = span.TraceId.ToString("x16");
-                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
-                            if (string.IsNullOrEmpty(upper))
-                            {
-                                continue;
-                            }
-
-                            var combined = upper + lower;
-                            traceIds.Add(combined);
-                        }
-
-                        traceIds = traceIds.Distinct().ToList();
-                    }
-                    else
-                    {
-                        traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
-                    }
+                    var traceIds = GetExpectedLogTraceIds(spans, use128Bits);
 
                     traceIds.Count.Should().BePositive();
 
@@ -266,6 +245,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the trace IDs we expect to see in correlated logs for the provided spans
+        /// </summary>
+        protected static List<string> GetExpectedLogTraceIds(IEnumerable<MockSpan> spans, bool use128Bits)
+        {
+            if (!use128Bits)
+            {
+                return spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+            }
+
+            var traceIds = new List<string>();
+            foreach (var span in spans)
+            {
+                var lower = span.TraceId.ToString("x16");
+                var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
+                if (string.IsNullOrEmpty(upper))
+                {
+                    continue;
+                }
+
+                traceIds.Add(upper + lower);
+            }
+
+            return traceIds.Distinct().ToList();
         }
 
         public class LogFileTest
