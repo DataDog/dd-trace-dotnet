@@ -26,11 +26,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             profile.AddSample(
                 new long[] { 0, 1 },
                 new[] { mainLocation },
-                SyntheticProfile.SampleLabel.String("thread name", "main"));
+                SyntheticProfile.SampleLabel.String(ProfileLabelNames.ThreadName, "main"));
             profile.AddSample(
                 new long[] { 8, 1 },
                 new[] { workerLocation },
-                SyntheticProfile.SampleLabel.String("thread name", "worker"));
+                SyntheticProfile.SampleLabel.String(ProfileLabelNames.ThreadName, "worker"));
             profile.WriteRaw(directory.DirectoryPath, "profile.pprof");
 
             var output = ProfileReader.Read(directory.DirectoryPath);
@@ -38,12 +38,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             output.Sum(ProfileValue.CpuTime).Should().Be(8);
             output.WithNonZeroValue(ProfileValue.CpuTime).Should().ContainSingle()
                 .Which.Values.GetRequired(ProfileValue.CpuTime).Should().Be(8);
-            output.Samples.WithLabel("thread name", "main").Should().ContainSingle()
+            output.Samples.WithLabel(ProfileLabelNames.ThreadName, "main").Should().ContainSingle()
                 .Which.Values.GetRequired(ProfileValue.CpuTime).Should().Be(0);
             output.Labels.Should().HaveCount(2);
             output.CallStacks.Should().HaveCount(2);
             output.CallStacks[0][0].Function.Should().Be("Main");
-            output.Samples.WithLabel("thread name", "worker").CallStacks[0][0].Function.Should().Be("Worker");
+            output.Samples.WithLabel(ProfileLabelNames.ThreadName, "worker").CallStacks[0][0].Function.Should().Be("Worker");
 
             output.Profiles[0].Should().HaveSampleTypes(ProfileValue.CpuTime, ProfileValue.CpuSampleCount);
             var path = output.Profiles[0].Path;
@@ -52,6 +52,43 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
                 .Which.Message.Should().Contain("wall (nanoseconds)")
                 .And.Contain("cpu (nanoseconds)")
                 .And.Contain(path);
+        }
+
+        [Fact]
+        public void Output_LabelHelpers_AndSampleTypesOfEveryProfile()
+        {
+            using var directory = new TempPprofDirectory();
+            var first = new SyntheticProfile().SampleType("wall", "nanoseconds");
+            var location = first.Location(first.Function("Main", "Main.cs"), 1);
+            first.AddSample(new long[] { 1 }, new[] { location }, SyntheticProfile.SampleLabel.String(ProfileLabelNames.ThreadId, "1"));
+            first.AddSample(new long[] { 2 }, new[] { location }, SyntheticProfile.SampleLabel.String(ProfileLabelNames.ThreadId, "2"));
+            first.WriteRaw(directory.DirectoryPath, "first.pprof");
+            var second = new SyntheticProfile().SampleType("wall", "nanoseconds");
+            second.AddSample(new long[] { 3 }, new[] { second.Location(second.Function("Main", "Main.cs"), 1) }, SyntheticProfile.SampleLabel.String(ProfileLabelNames.ThreadId, "1"));
+            second.WriteRaw(directory.DirectoryPath, "second.pprof");
+
+            var output = ProfileReader.Read(directory.DirectoryPath);
+
+            output.Should().HaveSampleTypes(ProfileValue.WallTime);
+            Action wrongTypes = () => output.Should().HaveSampleTypes(ProfileValue.CpuTime);
+            wrongTypes.Should().Throw<Exception>();
+
+            output.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Should().BeEquivalentTo("1", "2");
+            output.Samples[0].Labels.Has(ProfileLabelNames.ThreadId).Should().BeTrue();
+            output.Samples[0].Labels.Has(ProfileLabelNames.ThreadName).Should().BeFalse();
+
+            output.AllSamplesMatch(sample => sample.Labels.Has(ProfileLabelNames.ThreadId)).Should().BeTrue();
+            output.AllSamplesMatch(sample => sample.Labels.GetRequired(ProfileLabelNames.ThreadId) == "1").Should().BeFalse();
+        }
+
+        [Fact]
+        public void AllSamplesMatch_IsFalseWithoutProfilesOrWithAnEmptyProfile()
+        {
+            using var directory = new TempPprofDirectory();
+            ProfileReader.Read(directory.DirectoryPath).AllSamplesMatch(_ => true).Should().BeFalse();
+
+            new SyntheticProfile().SampleType("wall", "nanoseconds").WriteRaw(directory.DirectoryPath, "empty.pprof");
+            ProfileReader.Read(directory.DirectoryPath).AllSamplesMatch(_ => true).Should().BeFalse();
         }
     }
 }

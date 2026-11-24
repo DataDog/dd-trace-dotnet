@@ -85,7 +85,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static string EnsureLeadingSlash(string value)
         {
-            return value.StartsWith("/", StringComparison.Ordinal) ? value : "/" + value;
+            return value.StartsWith('/') ? value : "/" + value;
         }
     }
 }

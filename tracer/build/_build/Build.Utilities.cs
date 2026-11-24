@@ -474,7 +474,7 @@ partial class Build
                foreach (var selected in tested.SelectedVersions)
                {
                    // Compare per-slot: entries can have multiple selected versions (one per glob or
-                   // per major), e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
+                   // per major), e.g. AWSSDK.DynamoDBv2's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
                    // to same-major and <= selected so each slot's previous max is found independently
                    // -- a 3.x backport is visible even when the 4.x slot is unchanged.
                    var previousMax = previouslyTested

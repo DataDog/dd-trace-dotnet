@@ -205,17 +205,17 @@ public class DatadogDiagnoser : IDiagnoser
         BenchmarkMetadata.GetIds(parameters.BenchmarkCase, out var traceId, out var spanId);
         var tracer = Tracer.Instance;
         var environment = parameters.Process.StartInfo.Environment;
-        if (!environment.TryGetValue(ConfigurationKeys.ServiceName, out _))
+        if (!environment.ContainsKey(ConfigurationKeys.ServiceName))
         {
             environment[ConfigurationKeys.ServiceName] = tracer.DefaultServiceName;
         }
 
-        if (!environment.TryGetValue(ConfigurationKeys.Environment, out _))
+        if (!environment.ContainsKey(ConfigurationKeys.Environment))
         {
             environment[ConfigurationKeys.Environment] = tracer.CurrentTraceSettings.Settings.Environment;
         }
 
-        if (!environment.TryGetValue(ConfigurationKeys.ServiceVersion, out _))
+        if (!environment.ContainsKey(ConfigurationKeys.ServiceVersion))
         {
             environment[ConfigurationKeys.ServiceVersion] = tracer.CurrentTraceSettings.Settings.ServiceVersion;
         }
@@ -250,49 +250,49 @@ public class DatadogDiagnoser : IDiagnoser
 
         // Profiler options
         const string profilerEnabled = "DD_PROFILING_ENABLED";
-        if (!environment.TryGetValue(profilerEnabled, out _))
+        if (!environment.ContainsKey(profilerEnabled))
         {
             environment[profilerEnabled] = "1";
         }
 
         const string profilerCPUEnabled = "DD_PROFILING_CPU_ENABLED";
-        if (!environment.TryGetValue(profilerCPUEnabled, out _))
+        if (!environment.ContainsKey(profilerCPUEnabled))
         {
             environment[profilerCPUEnabled] = "1";
         }
 
         const string profilerWalltimeEnabled = "DD_PROFILING_WALLTIME_ENABLED";
-        if (!environment.TryGetValue(profilerWalltimeEnabled, out _))
+        if (!environment.ContainsKey(profilerWalltimeEnabled))
         {
             environment[profilerWalltimeEnabled] = "1";
         }
 
         const string profilerExceptionEnabled = "DD_PROFILING_EXCEPTION_ENABLED";
-        if (!environment.TryGetValue(profilerExceptionEnabled, out _))
+        if (!environment.ContainsKey(profilerExceptionEnabled))
         {
             environment[profilerExceptionEnabled] = "1";
         }
 
         const string profilerAllocationEnabled = "DD_PROFILING_ALLOCATION_ENABLED";
-        if (!environment.TryGetValue(profilerAllocationEnabled, out _))
+        if (!environment.ContainsKey(profilerAllocationEnabled))
         {
             environment[profilerAllocationEnabled] = "1";
         }
 
         const string profilerLockEnabled = "DD_PROFILING_LOCK_ENABLED";
-        if (!environment.TryGetValue(profilerLockEnabled, out _))
+        if (!environment.ContainsKey(profilerLockEnabled))
         {
             environment[profilerLockEnabled] = "1";
         }
 
         const string profilerGcEnabled = "DD_PROFILING_GC_ENABLED";
-        if (!environment.TryGetValue(profilerGcEnabled, out _))
+        if (!environment.ContainsKey(profilerGcEnabled))
         {
             environment[profilerGcEnabled] = "1";
         }
 
         const string profilerHeapEnabled = "DD_PROFILING_HEAP_ENABLED";
-        if (!environment.TryGetValue(profilerHeapEnabled, out _))
+        if (!environment.ContainsKey(profilerHeapEnabled))
         {
             environment[profilerHeapEnabled] = "1";
         }

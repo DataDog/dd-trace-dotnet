@@ -198,7 +198,7 @@ internal static class ExceptionRedactor
                     typeName = pi[j].ParameterType.Name;
                 }
 
-                sb.Append(typeName + " " + pi[j].Name);
+                sb.Append(typeName).Append(' ').Append(pi[j].Name);
             }
 
             sb.Append(')');

@@ -12,10 +12,10 @@ using Datadog.Trace.Vendors.MessagePack;
 namespace Datadog.Trace.LibDatadog;
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct CString : IDisposable
+internal readonly struct CString : IDisposable
 {
-    public nint Ptr; // char*
-    public nuint Length; // size of the string, excluding null terminator
+    public readonly nint Ptr; // char*
+    public readonly nuint Length; // size of the string, excluding null terminator
 
     internal CString(string? str)
     {

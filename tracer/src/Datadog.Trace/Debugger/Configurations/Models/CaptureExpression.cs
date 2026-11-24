@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return obj.GetType() == GetType() && Equals((CaptureExpression)obj);
+            return obj.GetType() == typeof(CaptureExpression) && Equals((CaptureExpression)obj);
         }
 
         public override int GetHashCode()

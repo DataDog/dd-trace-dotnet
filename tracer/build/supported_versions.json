@@ -350,10 +350,10 @@
         "name": "AWSSDK.Core",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.11",
-        "maxVersionSupportedInclusive": "4.1.1.1",
-        "maxVersionAvailableInclusive": "4.1.1.1",
-        "maxVersionTestedInclusive": "4.1.0.1"
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.1.1.2",
+        "maxVersionAvailableInclusive": "4.1.1.2",
+        "maxVersionTestedInclusive": null
       }
     ]
   },
@@ -1175,16 +1175,16 @@
     "integrationName": "MySql",
     "assemblyName": "MySqlConnector",
     "minAssemblyVersionInclusive": "0.61.0",
-    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
     "packages": [
       {
         "name": "MySqlConnector",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "0.61.0",
         "minVersionTestedInclusive": "0.61.0",
-        "maxVersionSupportedInclusive": "2.6.2",
+        "maxVersionSupportedInclusive": "3.0.0",
         "maxVersionAvailableInclusive": "3.0.0",
-        "maxVersionTestedInclusive": "2.6.2"
+        "maxVersionTestedInclusive": "3.0.0"
       }
     ]
   },

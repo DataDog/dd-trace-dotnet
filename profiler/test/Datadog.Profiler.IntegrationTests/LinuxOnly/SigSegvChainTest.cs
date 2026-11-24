@@ -4,9 +4,8 @@
 // </copyright>
 
 using System;
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -29,29 +28,21 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         // of a thread must still reach the CLR handler: the thread must not loop forever on the faulting instruction.
         // On .NET 6 the process must also not crash on the 1st one: the CLR handler needs SA_ONSTACK.
         // https://github.com/DataDog/dd-trace-dotnet/issues/9563
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0", "net11.0" })]
-        public void CheckThatNullReferenceExceptionsAreHandledAfterHeapSnapshot(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void CheckThatNullReferenceExceptionsAreHandledAfterHeapSnapshot(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario)
-            {
-                // the application never stops if a thread is stuck: do not wait for the default (10 minutes)
-                MaxTestRunDuration = TimeSpan.FromSeconds(120)
-            };
+            var runner = app.CreateRunner(_output, commandLine: Scenario);
+            // the application never stops if a thread is stuck: do not wait for the default (10 minutes)
+            runner.MaxTestRunDuration = TimeSpan.FromSeconds(120);
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
             // throws if the process does not stop
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+            run.Logs.NativeProfiler.Should().ContainLine("Successfully setup signal handler for Segmentation fault");
 
-            File.ReadLines(logFile)
-                .Should().Contain(l => l.Contains("Successfully setup signal handler for Segmentation fault"));
-
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BeGreaterThan(0);
         }
     }
 }

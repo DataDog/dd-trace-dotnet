@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int defaultCount = 147;
             if (string.IsNullOrEmpty(packageVersionString))
             {
-                // Default version in Samples.MySqlConnector.csproj is 1.3.13
+                // Default version in Samples.MySqlConnector.csproj is 3.0.0
                 return defaultCount;
             }
 

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 
-internal struct NoThrowAwaiter : ICriticalNotifyCompletion
+internal readonly struct NoThrowAwaiter : ICriticalNotifyCompletion
 {
     private readonly Task _task;
     private readonly bool _preserveContext;
