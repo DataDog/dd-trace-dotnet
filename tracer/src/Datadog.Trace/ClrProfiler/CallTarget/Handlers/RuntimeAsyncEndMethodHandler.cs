@@ -30,7 +30,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 /// callbacks are bound against the type the method <em>declares</em>:
 /// <c>OnAsyncMethodEnd</c> exactly as <see cref="TaskContinuationGenerator{TIntegration, TTarget, TReturn}"/>
 /// binds it, and <c>OnMethodEnd</c> against <typeparamref name="TDeclaredReturn"/> with a
-/// synthesised already-completed value. A completed task is a faithful stand-in here - the
+/// synthesised already-completed value: a successful task, or one carrying the fault or
+/// cancellation (with a null exception argument). A completed task is a faithful stand-in here - the
 /// operation really has finished by this point, unlike the in-flight task a state-machine target
 /// would hand over.
 /// </para>
@@ -144,11 +145,10 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
 
         if (OnMethodEnd is not null)
         {
-            // On the exception path we pass the default value rather than a faulted task, matching
-            // what a state-machine target does when it throws before its first suspension: the
-            // exception is carried by the exception argument, not by the return value.
-            var handed = exception is null ? CompletedValue : default;
-            var returned = OnMethodEnd(instance, handed, exception, in state).GetReturnValue();
+            // A state-machine async method returns a task even if its body throws before its first
+            // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
+            var handed = exception is null ? CompletedValue : RuntimeAsyncHelper.CreateFailed<TDeclaredReturn>(exception);
+            var returned = OnMethodEnd(instance, handed, null, in state).GetReturnValue();
 
             // When an exception is propagating the rewritten method rethrows it, so the return
             // value never reaches the caller and there is nothing to honour.

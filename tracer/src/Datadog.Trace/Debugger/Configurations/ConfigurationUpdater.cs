@@ -82,7 +82,7 @@ namespace Datadog.Trace.Debugger.Configurations
             try
             {
                 var removedProbeIds = paths.Where(ProbeConfigurationUtils.IsProbePath).Select(ProbeConfigurationUtils.GetProbeIdFromPath).ToArray();
-                var isServiceConfigurationRemoved = paths.Any(path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
+                var isServiceConfigurationRemoved = paths.Exists(path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
                 foreach (var probeId in removedProbeIds)
                 {
                     _removedRcmProbeIds.Add(probeId);

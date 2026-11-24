@@ -38,10 +38,10 @@ namespace Datadog.Trace.Pdb
         private const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
         private const string AsyncStateMachineAttribute = "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
         private const int UnknownLocalLine = int.MaxValue;
-        private static readonly Guid SourceLink = new("CC110556-A091-4D38-9FEC-25AB9A351A6A");
-        private static readonly Guid EncLambdaAndClosureMap = new("A643004C-0240-496F-A783-30D64F4979DE");
-        private static readonly Guid EncLocalSlotMap = new("755F52A8-91C5-45BE-B4B8-209571E552BD");
-        private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
+        private static readonly Guid SourceLink = new Guid(0xCC110556u, 0xA091, 0x4D38, 0x9F, 0xEC, 0x25, 0xAB, 0x9A, 0x35, 0x1A, 0x6A); // CC110556-A091-4D38-9FEC-25AB9A351A6A
+        private static readonly Guid EncLambdaAndClosureMap = new Guid(0xA643004Cu, 0x0240, 0x496F, 0xA7, 0x83, 0x30, 0xD6, 0x4F, 0x49, 0x79, 0xDE); // A643004C-0240-496F-A783-30D64F4979DE
+        private static readonly Guid EncLocalSlotMap = new Guid(0x755F52A8u, 0x91C5, 0x45BE, 0xB4, 0xB8, 0x20, 0x95, 0x71, 0xE5, 0x52, 0xBD); // 755F52A8-91C5-45BE-B4B8-209571E552BD
+        private static readonly Guid StateMachineHoistedLocalScopes = new Guid(0x6DA9A61Eu, 0xF8C7, 0x4874, 0xBE, 0x62, 0x68, 0xBC, 0x56, 0x30, 0xDF, 0x71); // 6DA9A61E-F8C7-4874-BE62-68BC5630DF71
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
         private readonly PEReader _peReader;
         private readonly MetadataReaderProvider? _pdbReaderProvider;

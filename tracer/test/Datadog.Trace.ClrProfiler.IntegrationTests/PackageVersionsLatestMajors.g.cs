@@ -107,60 +107,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-      public static IEnumerable<object[]> AwsSdk =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NET48
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NETCOREAPP2_1
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NETCOREAPP3_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NETCOREAPP3_1
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET5_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET6_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET7_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET8_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET9_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET10_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#if NET11_0
-                new object[] { "3.7.501.1" },
-                new object[] { "4.1.0.1" },
-#endif
-#endif
-            };
-
       public static IEnumerable<object[]> AwsDynamoDb =>
 
             new List<object[]>
@@ -1556,56 +1502,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET5_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET6_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET7_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET8_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET9_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET10_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #if NET11_0
                 new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.6.2" },
+                new object[] { "3.0.0" },
 #endif
 #endif
             };

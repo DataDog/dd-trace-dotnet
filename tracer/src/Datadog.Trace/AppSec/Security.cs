@@ -23,6 +23,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 
@@ -131,7 +132,12 @@ namespace Datadog.Trace.AppSec
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult is { Status: LibraryInitializationResult.LoadStatus.ExportError };
 
-        internal string? WafRuleFileVersion { get; private set; }
+        internal string? WafRuleFileVersion
+        {
+            get;
+            [TestingAndPrivateOnly]
+            set;
+        }
 
         internal InitResult? WafInitResult => _wafInitResult;
 
@@ -649,15 +655,21 @@ namespace Datadog.Trace.AppSec
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
-            else if (_rateLimiter?.Allowed(span) ?? false)
+            else if (_rateLimiter is not null)
             {
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                if (setSource)
+                if (_rateLimiter.Allowed(span))
                 {
-                    span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                    span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                    if (setSource)
+                    {
+                        span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                    }
+
+                    span.Context.TraceContext?.AppSecRequestContext.MarkTraceKept();
+                    return true;
                 }
 
-                return true;
+                span.Context.TraceContext?.AppSecRequestContext.MarkTraceRateLimited();
             }
 
             return false;

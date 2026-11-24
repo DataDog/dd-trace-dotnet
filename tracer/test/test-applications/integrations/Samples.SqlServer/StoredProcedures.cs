@@ -16,11 +16,12 @@ namespace Samples.SqlServer
             Console.WriteLine("Starting SQL Server Stored Procedure Calls");
             // all the SQL here is based on DbCommandFactory
 
-            var tableName = $"[Stored-Proc-System-Data-SqlClient-Test-{Guid.NewGuid():N}]";
+            var tableId = $"Stored-Proc-System-Data-SqlClient-Test-{Guid.NewGuid():N}";
+            var tableName = $"[{tableId}]";
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = $"CREATE TABLE {tableName} (Id int PRIMARY KEY, Name varchar(100));";
+                command.CommandText = $"CREATE TABLE {tableName} (Id int CONSTRAINT [PK_{tableId}] PRIMARY KEY, Name varchar(100));";
                 await command.ExecuteNonQueryAsync(token);
 
                 command.CommandText = $"INSERT INTO {tableName} (Id, Name) VALUES (1, 'Name1'), (2, 'Name2'), (3, 'Name3');";

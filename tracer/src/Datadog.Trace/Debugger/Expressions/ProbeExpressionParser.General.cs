@@ -572,7 +572,7 @@ internal partial class ProbeExpressionParser<T>
         }
         else
         {
-            throw new ArgumentException($"Unsupported type: {typeof(T).FullName}");
+            throw new InvalidOperationException($"Unsupported type: {typeof(T).FullName}");
         }
     }
 
