@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 [UsesVerify]
 public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
 {
-    private const int ExpectedSpanCount = 5;
+    private const int ExpectedSpanCount = 7;
 
     public DataStreamsMonitoringAzureEventHubsTests(ITestOutputHelper output)
         : base("DataStreams.AzureEventHubs", output)
@@ -76,7 +76,7 @@ public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
             spans.Where(s => s.Tags.ContainsKey("pathway.hash"))
                  .Select(s => s.Tags["messaging.operation"])
                  .Should()
-                 .BeEquivalentTo("send", "create", "receive", "receive");
+                 .BeEquivalentTo("send", "create", "send", "receive", "receive", "receive");
         }
     }
 
