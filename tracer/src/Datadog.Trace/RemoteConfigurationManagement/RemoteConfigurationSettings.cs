@@ -36,7 +36,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         /// <summary>
         /// Gets a value indicating whether libdatadog's client is used where available, rather than the managed one.
-        /// A temporary switch, see <see cref="ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
+        /// See <see cref="ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled"/>.
         /// </summary>
         public bool NativeClientEnabled { get; }
 
