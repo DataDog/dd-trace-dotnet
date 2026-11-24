@@ -19,66 +19,98 @@ namespace Datadog.Trace.AppSec.ApiSec;
 /// </summary>
 internal static class AspNetRouteTemplate
 {
+#if NETFRAMEWORK
     /// <summary>
-    /// Gets whether the normalized route is computed, so that callers don't compute its inputs otherwise.
-    /// </summary>
-    /// <param name="security">The security instance</param>
-    /// <returns>Whether API Security is enabled</returns>
-    internal static bool IsEnabled(Security security) => security.AppsecEnabled && security.Settings.ApiSecurityEnabled;
-
-    /// <summary>
-    /// Gets the path that MVC routing matches: the app-relative path ("~/home/index") followed by the path info.
-    /// </summary>
-    /// <param name="appRelativePath">HttpRequest.AppRelativeCurrentExecutionFilePath</param>
-    /// <param name="pathInfo">HttpRequest.PathInfo</param>
-    /// <returns>The path relative to the application path, for example "/home/index"</returns>
-    internal static string? GetMvcRequestPath(string? appRelativePath, string? pathInfo)
-    {
-        if (appRelativePath is null)
-        {
-            return null;
-        }
-
-        var path = appRelativePath.StartsWith("~", StringComparison.Ordinal) ? appRelativePath.Substring(1) : appRelativePath;
-        return string.IsNullOrEmpty(pathInfo) ? path : path + pathInfo;
-    }
-
-    /// <summary>
-    /// Gets the path that Web API routing matches: the request path without the virtual path root.
-    /// </summary>
-    /// <param name="absolutePath">The request URI absolute path</param>
-    /// <param name="virtualPathRoot">The virtual path root of the request context</param>
-    /// <returns>The path relative to the virtual path root, for example "/api/values"</returns>
-    internal static string? GetWebApiRequestPath(string? absolutePath, string? virtualPathRoot)
-    {
-        if (absolutePath is null)
-        {
-            return null;
-        }
-
-        var root = virtualPathRoot?.TrimEnd('/');
-        return !string.IsNullOrEmpty(root) && absolutePath.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-                   ? absolutePath.Substring(root!.Length)
-                   : absolutePath;
-    }
-
-    /// <summary>
-    /// Sets the normalized route on the span when API Security is enabled.
+    /// Sets the normalized route on the span when API Security is enabled, for MVC and web-hosted Web API, whose routing
+    /// matches the app-relative path ("~/home/index") followed by the path info.
     /// </summary>
     /// <param name="security">The security instance</param>
     /// <param name="span">The span that has the http.route tag</param>
     /// <param name="routeTemplate">The route template</param>
     /// <param name="routeValues">The route values matched for the request</param>
-    /// <param name="applicationPath">The application path, which is the mount prefix of the route</param>
-    /// <param name="requestPath">The request path that the route matched, relative to <paramref name="applicationPath"/></param>
-    internal static void SetTag(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, string? applicationPath, string? requestPath)
+    /// <param name="request">The request</param>
+    internal static void SetTag(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, System.Web.HttpRequestBase request)
+    {
+        if (NormalizedRouteBuilder.IsEnabledFor(security))
+        {
+            SetTag(security, span, routeTemplate, routeValues, request.ApplicationPath, request.AppRelativeCurrentExecutionFilePath, request.PathInfo);
+        }
+    }
+
+    /// <inheritdoc cref="SetTag(Security, Span, string?, IDictionary{string, object}?, System.Web.HttpRequestBase)"/>
+    internal static void SetTag(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, System.Web.HttpRequest request)
+    {
+        if (NormalizedRouteBuilder.IsEnabledFor(security))
+        {
+            SetTag(security, span, routeTemplate, routeValues, request.ApplicationPath, request.AppRelativeCurrentExecutionFilePath, request.PathInfo);
+        }
+    }
+
+    private static void SetTag(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, string? applicationPath, string? appRelativePath, string? pathInfo)
+        => SetTag(security, span, routeTemplate, routeValues, applicationPath, appRelativePath, GetAppRelativePathStart(appRelativePath), pathInfo);
+#endif
+
+    /// <summary>
+    /// Sets the normalized route on the span when API Security is enabled, for self-hosted Web API, whose routing matches
+    /// the decoded request path without the virtual path root.
+    /// </summary>
+    /// <param name="security">The security instance</param>
+    /// <param name="span">The span that has the http.route tag</param>
+    /// <param name="routeTemplate">The route template</param>
+    /// <param name="routeValues">The route values matched for the request</param>
+    /// <param name="virtualPathRoot">The virtual path root of the request context</param>
+    /// <param name="requestUri">The request URI</param>
+    internal static void SetTagForSelfHost(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, string? virtualPathRoot, Uri? requestUri)
+    {
+        if (!NormalizedRouteBuilder.IsEnabledFor(security))
+        {
+            return;
+        }
+
+        var path = requestUri is null ? null : Uri.UnescapeDataString(requestUri.AbsolutePath);
+        SetTag(security, span, routeTemplate, routeValues, virtualPathRoot, path, GetVirtualPathRootLength(path, virtualPathRoot), requestPathSuffix: null);
+    }
+
+    /// <summary>
+    /// Gets the index where the path relative to the application path starts in an app-relative path, after the "~".
+    /// </summary>
+    /// <param name="appRelativePath">The app-relative path, for example "~/home/index"</param>
+    /// <returns>The index of the relative path</returns>
+    internal static int GetAppRelativePathStart(string? appRelativePath)
+        => appRelativePath?.StartsWith("~", StringComparison.Ordinal) == true ? 1 : 0;
+
+    /// <summary>
+    /// Gets the length of the virtual path root at the start of the path, without its trailing slash.
+    /// </summary>
+    /// <param name="path">The decoded request path</param>
+    /// <param name="virtualPathRoot">The virtual path root</param>
+    /// <returns>The index where the path relative to the virtual path root starts</returns>
+    internal static int GetVirtualPathRootLength(string? path, string? virtualPathRoot)
+    {
+        if (path is null || virtualPathRoot is null)
+        {
+            return 0;
+        }
+
+        var rootLength = virtualPathRoot.Length;
+        while (rootLength > 0 && virtualPathRoot[rootLength - 1] == '/')
+        {
+            rootLength--;
+        }
+
+        return rootLength > 0 && path.Length >= rootLength && string.Compare(path, 0, virtualPathRoot, 0, rootLength, StringComparison.OrdinalIgnoreCase) == 0
+                   ? rootLength
+                   : 0;
+    }
+
+    private static void SetTag(Security security, Span span, string? routeTemplate, IDictionary<string, object>? routeValues, string? applicationPath, string? requestPath, int requestPathStart, string? requestPathSuffix)
     {
         if (routeTemplate is null || routeValues is null)
         {
             return;
         }
 
-        var normalizedRoute = NormalizedRouteBuilder.Create(security, applicationPath, requestPath);
+        var normalizedRoute = NormalizedRouteBuilder.Create(security, applicationPath, requestPath, requestPathStart, requestPathSuffix);
         if (!normalizedRoute.IsEnabled)
         {
             return;
@@ -172,8 +204,11 @@ internal static class AspNetRouteTemplate
 
             var name = template.Substring(nameStart, nameEnd - nameStart);
             routeValues.TryGetValue(name, out var value);
-            // Any parameter may come from a default, which fills the segments that aren't in the request
-            normalizedRoute.AddParameter(name, IsOptionalSentinel(value) ? null : value, isOptional: false, isCatchAll, hasDefault: true);
+
+            // Any parameter may come from a default, which fills the segments that aren't in the request. When the request
+            // path is unknown, a parameter with a value is kept, so that the mandatory parameters are never left out.
+            var hasRequestPath = normalizedRoute.HasRequestPath;
+            normalizedRoute.AddParameter(name, IsOptionalSentinel(value) ? null : value, isOptional: !hasRequestPath, isCatchAll, hasDefault: hasRequestPath);
 
             i = close + 1;
             literalStart = i;

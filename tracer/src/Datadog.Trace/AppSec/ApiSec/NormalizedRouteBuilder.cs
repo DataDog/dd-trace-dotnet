@@ -55,6 +55,11 @@ internal struct NormalizedRouteBuilder
     public readonly bool IsEnabled => _sb is not null;
 
     /// <summary>
+    /// Gets a value indicating whether the request path is known, so that the presence of the parameters can be resolved against it
+    /// </summary>
+    public readonly bool HasRequestPath => _requestSegmentCount >= 0;
+
+    /// <summary>
     /// Gets whether the normalized route is computed, so that callers don't compute its inputs otherwise.
     /// </summary>
     /// <param name="security">The security instance</param>

@@ -89,11 +89,13 @@ public class AspNetRouteTemplateTests
         Normalize(template, "id=1", "/api/1", applicationPath).Should().Be(expected);
     }
 
-    [Fact]
-    public void AddRouteTemplate_LeavesOutParametersWhenTheRequestPathIsUnknown()
+    [Theory]
+    [InlineData("controller=Values&id=5", "/api/{controller}/{id}")]
+    [InlineData("controller=Values", "/api/{controller}")]
+    public void AddRouteTemplate_KeepsTheParametersWithAValueWhenTheRequestPathIsUnknown(string routeValues, string expected)
     {
-        // Presence can't be determined, so the RFC-1125 fallback leaves the parameters out
-        Normalize("api/{controller}/{id}", "controller=Values&id=5", requestPath: null).Should().Be("/api");
+        // The defaults can't be told apart from the request values, so a parameter with a value is kept
+        Normalize("api/{controller}/{id}", routeValues, requestPath: null).Should().Be(expected);
     }
 
     [Theory]
@@ -105,23 +107,25 @@ public class AspNetRouteTemplateTests
     }
 
     [Theory]
-    [InlineData("~/home/index", "", "/home/index")]
-    [InlineData("~/home/index", "/extra", "/home/index/extra")]
-    [InlineData("~/", "", "/")]
-    [InlineData(null, "", null)]
-    public void GetMvcRequestPath_RemovesTheAppRelativePrefix(string appRelativePath, string pathInfo, string expected)
+    [InlineData("~/home/index", 1)]
+    [InlineData("~/", 1)]
+    [InlineData("/home/index", 0)]
+    [InlineData(null, 0)]
+    public void GetAppRelativePathStart_SkipsTheTilde(string appRelativePath, int expected)
     {
-        AspNetRouteTemplate.GetMvcRequestPath(appRelativePath, pathInfo).Should().Be(expected);
+        AspNetRouteTemplate.GetAppRelativePathStart(appRelativePath).Should().Be(expected);
     }
 
     [Theory]
-    [InlineData("/api/values/5", "/", "/api/values/5")]
-    [InlineData("/MyApp/api/values/5", "/MyApp", "/api/values/5")]
-    [InlineData("/MyApp/api/values/5", "/myapp/", "/api/values/5")]
-    [InlineData("/api/values", null, "/api/values")]
-    public void GetWebApiRequestPath_RemovesTheVirtualPathRoot(string absolutePath, string virtualPathRoot, string expected)
+    [InlineData("/api/values/5", "/", 0)]
+    [InlineData("/MyApp/api/values/5", "/MyApp", 6)]
+    [InlineData("/MyApp/api/values/5", "/myapp/", 6)]
+    [InlineData("/My App/api/values", "/My App", 7)]
+    [InlineData("/Other/api/values", "/MyApp", 0)]
+    [InlineData("/api/values", null, 0)]
+    public void GetVirtualPathRootLength_FindsTheRootAtTheStart(string path, string virtualPathRoot, int expected)
     {
-        AspNetRouteTemplate.GetWebApiRequestPath(absolutePath, virtualPathRoot).Should().Be(expected);
+        AspNetRouteTemplate.GetVirtualPathRootLength(path, virtualPathRoot).Should().Be(expected);
     }
 
     // Mirrors AspNetRouteTemplate.SetTag, which doesn't emit the tag for an invalid template

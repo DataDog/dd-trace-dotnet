@@ -179,17 +179,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     HttpSemanticConventions.SetHttpRoute(serverSpan, route);
                     serverSpan.ResourceName = resourceName;
 
-                    if (AspNetRouteTemplate.IsEnabled(Security.Instance))
-                    {
-                        var virtualPathRoot = controllerContext.RequestContext.VirtualPathRoot;
-                        AspNetRouteTemplate.SetTag(
-                            Security.Instance,
-                            serverSpan,
-                            route,
-                            controllerContext.RouteData?.Values,
-                            virtualPathRoot,
-                            AspNetRouteTemplate.GetWebApiRequestPath(controllerContext.Request?.RequestUri?.AbsolutePath, virtualPathRoot));
-                    }
+                    SetNormalizedRoute(serverSpan, route, controllerContext.RouteData?.Values, controllerContext, httpContext);
                 }
 
                 if (httpContext is not null)
@@ -318,16 +308,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
                     }
 
-                    if (span.Context.TraceContext.RootSpan is { } rootSpan && AspNetRouteTemplate.IsEnabled(Security.Instance))
+                    if (span.Context.TraceContext.RootSpan is { } rootSpan)
                     {
-                        var virtualPathRoot = controllerContext.RequestContext.VirtualPathRoot;
-                        AspNetRouteTemplate.SetTag(
-                            Security.Instance,
-                            rootSpan,
-                            route,
-                            routeValues,
-                            virtualPathRoot,
-                            AspNetRouteTemplate.GetWebApiRequestPath(controllerContext.Request?.RequestUri?.AbsolutePath, virtualPathRoot));
+                        SetNormalizedRoute(rootSpan, route, routeValues, controllerContext, System.Web.HttpContext.Current);
                     }
                 }
 
@@ -377,6 +360,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return null;
+        }
+
+        private static void SetNormalizedRoute(Span span, string route, IDictionary<string, object> routeValues, IHttpControllerContext controllerContext, HttpContext httpContext)
+        {
+            // Web-hosted Web API is routed by System.Web on the app-relative path, like MVC
+            if (httpContext?.Request is { } request)
+            {
+                AspNetRouteTemplate.SetTag(Security.Instance, span, route, routeValues, request);
+            }
+            else
+            {
+                AspNetRouteTemplate.SetTagForSelfHost(Security.Instance, span, route, routeValues, controllerContext.RequestContext.VirtualPathRoot, controllerContext.Request?.RequestUri);
+            }
         }
 
         /// <summary>
