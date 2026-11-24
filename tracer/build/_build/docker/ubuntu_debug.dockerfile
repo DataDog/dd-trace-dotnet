@@ -64,7 +64,9 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ln -s `which clang-16` /usr/bin/clang && \
     ln -s `which clang++-16` /usr/bin/clang++ && \
     ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
-    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
+    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy && \
+    # llvm.sh installs lldb-16, which makes apt remove Ubuntu's lldb package, so only the versioned binary is left
+    ln -s `which lldb-16` /usr/bin/lldb
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
@@ -102,7 +104,8 @@ RUN dotnet tool install --global dotnet-counters
 RUN dotnet tool install --global dotnet-coverage
 RUN dotnet tool install --global dotnet-dump
 RUN dotnet tool install --global dotnet-gcdump
-RUN dotnet tool install --global dotnet-monitor
+# dotnet-monitor 10.x can't be installed with the .NET 9 SDK used by the dump launchers
+RUN dotnet tool install --global dotnet-monitor --version "9.*"
 RUN dotnet tool install --global dotnet-trace
 RUN dotnet tool install --global dotnet-stack
 RUN dotnet tool install --global dotnet-symbol
