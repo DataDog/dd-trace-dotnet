@@ -94,7 +94,7 @@ check_linux_ci_images() {
     done
     if [ "$check_failed" -ne 0 ]; then
         echo 'This job only checks availability; retrying it does NOT build or publish images.' >&2
-        echo "If images are missing, review the changes and manually run 'build-linux-ci-images-$check_arch' in the root pipeline." >&2
+        echo "If images are missing, review the changes and manually run the matching toolchain entries under 'build-linux-ci-images-$check_arch' in the root pipeline." >&2
         echo "Wait for publication, retry 'check-linux-ci-images-$check_arch', then retry any skipped consumers." >&2
         echo 'For authentication/network errors, resolve those before retrying; rebuilding may not be needed.' >&2
         return 1
@@ -106,7 +106,7 @@ pull_linux_ci_image() {
     pull_image=$(linux_ci_image "$1" "$2" "$pull_arch") || return 1
     if ! docker pull "$pull_image" >&2; then
         echo "Cannot pull Linux CI image: $pull_image" >&2
-        echo "If it is missing, review the image changes and manually run 'build-linux-ci-images-$pull_arch' in the root pipeline, then retry this job." >&2
+        echo "If it is missing, review the image changes and manually run 'build-linux-ci-images-$pull_arch: [$1]' in the root pipeline, then retry this job." >&2
         echo 'This job never builds or publishes images. For authentication/network errors, resolve those before retrying; rebuilding may not be needed.' >&2
         return 1
     fi
@@ -115,12 +115,20 @@ pull_linux_ci_image() {
 
 publish_linux_ci_images() {
     publish_arch=$1
+    publish_family=${2:-}
     if [ "$publish_arch" != "$(linux_ci_architecture)" ]; then
         echo 'Image publication must run on the matching runner architecture' >&2
         return 1
     fi
-    resolve_linux_ci_images || return 1
+    case "$publish_family" in
+        ''|*[!a-z0-9-]*) echo 'An image toolchain family is required for publication' >&2; return 1 ;;
+    esac
     publish_variants=$(linux_ci_variants "$publish_arch") || return 1
+    publish_variants=$(printf '%s\n' "$publish_variants" | grep "^$publish_family/") || {
+        echo 'Unsupported Linux CI image toolchain/architecture combination' >&2
+        return 1
+    }
+    resolve_linux_ci_images || return 1
     case "$publish_arch" in
         x64) DOCKER_DEFAULT_PLATFORM=linux/amd64 ;;
         arm64) DOCKER_DEFAULT_PLATFORM=linux/arm64 ;;
