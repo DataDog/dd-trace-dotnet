@@ -1,5 +1,6 @@
 extern alias DatadogTrace;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using CallTargetNativeTest.NoOp;
 using DatadogTrace::Datadog.Trace.ClrProfiler;
 using DatadogTrace::Datadog.Trace.ClrProfiler.CallTarget;
@@ -27,7 +29,47 @@ namespace CallTargetNativeTest
         {
             VerifyRuntimeAsyncCompilation();
             InjectCallTargetDefinitions();
-            RunTests(args);
+            RunWithoutUnobservedTaskExceptions(() => RunTests(args));
+        }
+
+        /// <summary>
+        /// Fails if a task faulted by one of this sample's targets or integrations is never observed. The instrumentation
+        /// can create tasks the caller never sees, such as a continuation task or the faulted task OnMethodEnd gets for a
+        /// failed runtime-async target. If one of those is left unobserved, the app gets a second UnobservedTaskException
+        /// for every failed call.
+        /// </summary>
+        static void RunWithoutUnobservedTaskExceptions(Action tests)
+        {
+            var unobserved = new ConcurrentQueue<Exception>();
+            EventHandler<UnobservedTaskExceptionEventArgs> handler = (_, args) =>
+            {
+                // The tracer's own background work is out of scope; only count exceptions thrown by this sample
+                if (args.Exception.InnerExceptions.Any(ex => ex.TargetSite?.DeclaringType?.Assembly == typeof(Program).Assembly))
+                {
+                    unobserved.Enqueue(args.Exception);
+                }
+            };
+
+            TaskScheduler.UnobservedTaskException += handler;
+            try
+            {
+                tests();
+
+                // The failure integration keeps the last task it was handed, which would stop it being finalized
+                RuntimeAsyncFailureIntegration.Reset();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+            finally
+            {
+                TaskScheduler.UnobservedTaskException -= handler;
+            }
+
+            if (!unobserved.IsEmpty)
+            {
+                throw new AggregateException("Task exceptions were left unobserved", unobserved);
+            }
         }
 
         /// <summary>

@@ -437,7 +437,8 @@ namespace Datadog.Trace.Tools.Runner.Aot
                         return false;
                     }
 
-                    if (!m.GetParameters().Last().ParameterType.IsByRef)
+                    var endMethodParameters = m.GetParameters();
+                    if (!endMethodParameters[endMethodParameters.Length - 1].ParameterType.IsByRef)
                     {
                         return false;
                     }
@@ -494,7 +495,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 // ***
                 // IL Rewriting
                 // ***
-                var beginOriginalMethodInstruction = methodBody.Instructions.First();
+                var beginOriginalMethodInstruction = methodBody.Instructions[0];
                 var index = 0;
 
                 // Initialize

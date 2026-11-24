@@ -1,0 +1,11 @@
+_v: 1
+name: Log4Net
+display_name: log4net
+description: Instruments log4net to inject trace-correlation fields into log events and, when configured, submit formatted
+  log records directly to Datadog.
+packages:
+- name: log4net
+category:
+- log.emission
+systems: []
+creation_date: '2019-06-19'

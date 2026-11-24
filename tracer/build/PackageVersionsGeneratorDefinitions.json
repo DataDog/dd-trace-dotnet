@@ -485,12 +485,11 @@
     "SampleProjectName": "Samples.MySqlConnector",
     "NugetPackageSearchName": "MySqlConnector",
     "MinVersion": "0.61.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "0.61.*",
-      "1.0.*",
-      "1.*.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ]
   },
   {
@@ -959,7 +958,11 @@
       "1.3.2",
       "1.5.1",
       "1.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "1.21.0",
+      "ExcludeTargetFrameworks": ["net9.0"]
+    }]
   },
   {
     "IntegrationName": "Yarp",

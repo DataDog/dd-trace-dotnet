@@ -400,6 +400,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (httpResponse.HeadersWritten)
         {
+            MarkBlockFailed();
             Log.Warning<int>("Headers have already been written, unable to modify response and set status code to {0}", blockingAction.StatusCode);
             return;
         }

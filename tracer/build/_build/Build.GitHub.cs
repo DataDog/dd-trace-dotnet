@@ -665,16 +665,19 @@ partial class Build
             static (string category, Issue issue) CategorizeIssue(Issue issue)
             {
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
-                var areaLabelToComponentMap = new Dictionary<string, string>() {
-                    { "area:tracer", tracer },
-                    { "area:ci-visibility", ciVisibility },
-                    { "area:asm", appSecMonitoring },
-                    { "asm-iast", appSecMonitoring },
-                    { "area:profiler", profiler },
-                    { "area:debugger", debugger },
-                    { "area:serverless", serverless },
-                    { "area:ffe", featureFlags },
-                    { "area:data-streams-monitoring", dsm },
+                // Checked in order, so the first match wins. FFE PRs are also labelled
+                // area:tracer (they live in Datadog.Trace), so FFE must come first
+                var areaLabelToComponentMap = new (string Label, string Component)[] {
+                    ("area:ffe", featureFlags),
+                    ("feature_flags", featureFlags),
+                    ("area:tracer", tracer),
+                    ("area:ci-visibility", ciVisibility),
+                    ("area:asm", appSecMonitoring),
+                    ("area:asm-iast", appSecMonitoring),
+                    ("area:profiler", profiler),
+                    ("area:debugger", debugger),
+                    ("area:serverless", serverless),
+                    ("area:data-streams-monitoring", dsm),
                 };
 
                 var buildAndTestIssues = new []

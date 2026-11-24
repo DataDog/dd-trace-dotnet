@@ -18,6 +18,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -943,7 +944,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     private static void SetAnyRetryPassed(object testMethodKey, string cacheKey, bool passed)
     {
         var cache = AnyRetryPassedCache.GetOrCreateValue(testMethodKey);
-        cache.AddOrUpdate(cacheKey, passed, (k, v) => passed || v);
+        cache.AddOrUpdate(cacheKey, static (_, p) => p, static (_, v, p) => p || v, passed);
     }
 
     /// <summary>

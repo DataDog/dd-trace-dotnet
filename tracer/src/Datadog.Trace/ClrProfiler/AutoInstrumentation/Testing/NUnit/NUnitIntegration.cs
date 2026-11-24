@@ -209,7 +209,7 @@ internal static class NUnitIntegration
             ExtractTraits(currentTest, ref traits);
         }
 
-        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isUnskippable = traits?.ContainsKey(IntelligentTestRunnerTags.UnskippableTraitName) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;
         var shouldSkip = itrShouldSkip && !isUnskippable;
         skippableTest = shouldSkip ? matchedSkippableTest : null;

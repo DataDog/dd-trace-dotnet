@@ -1,0 +1,13 @@
+_v: 1
+name: ILogger
+display_name: Microsoft.Extensions.Logging
+description: Instruments Microsoft.Extensions.Logging ILogger records to enrich them with trace correlation and service metadata,
+  and optionally submits them directly to Datadog or exports them as OpenTelemetry (OTLP) logs.
+packages:
+- name: Microsoft.Extensions.Logging
+- name: Microsoft.Extensions.Logging.Abstractions
+- name: Microsoft.Extensions.Telemetry
+category:
+- log.emission
+systems: []
+creation_date: '2021-08-23'

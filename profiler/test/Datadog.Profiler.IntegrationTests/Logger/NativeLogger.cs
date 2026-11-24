@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
 using Xunit.Abstractions;
 
@@ -21,28 +21,20 @@ namespace Datadog.Profiler.IntegrationTests.Logger
         }
 
         // only one framework suffice for this test
-        [TestAppFact("Samples.Computer01", frameworks: new[] { "net7.0" })]
-        public void EnsureBackCompatibilityForLogDirectory(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net7)]
+        public void EnsureBackCompatibilityForLogDirectory(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1");
             runner.TestDurationInSeconds = 2;
 
             var deprecatedLogPath = Path.Combine(Path.GetTempPath(), "deprecated", System.Environment.ProcessId.ToString());
             runner.Environment.SetVariable("DD_PROFILING_LOG_DIR", deprecatedLogPath);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            ProfilerLogSet.Read(deprecatedLogPath).NativeProfiler.Files.Should().ContainSingle();
 
-            Directory.GetFiles(deprecatedLogPath)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"))
-                .Should()
-                .NotBeNullOrEmpty();
-
-            Directory.GetFiles(runner.Environment.LogDir)
-                .SingleOrDefault(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"))
-                .Should()
-                .BeNullOrEmpty();
+            run.Logs.NativeProfiler.Should().NotContainFiles();
         }
     }
 }

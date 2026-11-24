@@ -383,7 +383,7 @@ namespace Datadog.Trace.Configuration
             {
                 OtlpProtocol.Grpc => new Uri(baseUri),
                 OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"{baseUri}/v1/{signal}"),
-                _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
+                _ => throw new ArgumentException($"Invalid protocol: {protocol}", nameof(protocol)),
             };
         }
 

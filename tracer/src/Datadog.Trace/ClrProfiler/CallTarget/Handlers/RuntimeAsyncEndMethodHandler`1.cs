@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 /// with the unwrapped type - which is what they pass too - so duck typing, proxy creation and
 /// generic constraints behave identically. <c>OnMethodEnd</c> is bound against
 /// <typeparamref name="TDeclaredReturn"/>, the declared <c>Task&lt;T&gt;</c>/<c>ValueTask&lt;T&gt;</c>,
-/// and handed a completed instance carrying the real result.
+/// and handed a completed instance carrying the result, fault, or cancellation.
 /// </para>
 /// <para>
 /// An integration may declare both, and then both run, in the same order as
@@ -143,13 +143,12 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
 
         if (OnMethodEnd is not null)
         {
-            // On the exception path we pass the default value rather than a faulted task, matching
-            // what a state-machine target does when it throws before its first suspension: the
-            // exception is carried by the exception argument, not by the return value.
+            // A state-machine async method returns a task even if its body throws before its first
+            // suspension. OnMethodEnd sees the failure in that task, with a null exception argument.
             var declared = exception is null
                                ? RuntimeAsyncHelper.CreateCompletedFromResult<TReturn, TDeclaredReturn>(returnValue)
-                               : default;
-            var returned = OnMethodEnd(instance, declared, exception, in state).GetReturnValue();
+                               : RuntimeAsyncHelper.CreateFailed<TReturn, TDeclaredReturn>(exception);
+            var returned = OnMethodEnd(instance, declared, null, in state).GetReturnValue();
 
             // When an exception is propagating the rewritten method rethrows it, so the return value
             // never reaches the caller and there is nothing to honour.

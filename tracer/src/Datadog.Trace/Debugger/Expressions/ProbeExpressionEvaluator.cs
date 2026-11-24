@@ -287,7 +287,7 @@ internal sealed class ProbeExpressionEvaluator
                     }
                     else
                     {
-                        HandleException(ref result, compiledExpressions[i], new ArgumentException("invalid template"));
+                        HandleException(ref result, compiledExpressions[i], new InvalidOperationException("invalid template"));
                     }
                 }
                 catch (Exception e)

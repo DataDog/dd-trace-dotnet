@@ -100,6 +100,22 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
 
+        public ProfilerTestRun Run()
+        {
+            var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            try
+            {
+                Run(agent);
+                return ProfilerTestRun.From(this, agent);
+            }
+            catch
+            {
+                // The caller does not receive a run on failure, so dispose one here. That dispose stops the agent.
+                agent.Dispose();
+                throw;
+            }
+        }
+
         public void Run(MockDatadogAgent agent)
         {
             RunTest(agent);

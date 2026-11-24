@@ -28,6 +28,7 @@ internal static class SeleniumCommon
     internal const string CommandQuit = "quit";
     private const string CookieName = "datadog-ci-visibility-test-execution-id";
 
+#pragma warning disable MA0136 // Raw String contains an implicit end of line character - line endings are irrelevant in the injected JavaScript
     private const string RumStopSessionScript = """
                                                 if (window.DD_RUM && window.DD_RUM.stopSession) {
                                                    window.DD_RUM.stopSession();
@@ -36,6 +37,7 @@ internal static class SeleniumCommon
                                                    return false;
                                                 }
                                                 """;
+#pragma warning restore MA0136
 
     internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
     private static Type? _seleniumCookieType;
