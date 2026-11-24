@@ -173,7 +173,10 @@ namespace Datadog.Trace.AppSec
             var count = 0;
             for (var i = start; i < memberExtractors.Length; i++)
             {
-                if (memberExtractors[i] is { } memberExtractor && memberExtractor.IsEmitted(memberExtractor.Accessor.Invoke(body)))
+                // a member that is always emitted counts without reading it; only an EmitDefaultValue = false one, which
+                // the serializer reads too to decide whether to omit it, is read
+                if (memberExtractors[i] is { } memberExtractor
+                    && (memberExtractor.EmitDefaultValue || memberExtractor.IsEmitted(memberExtractor.Accessor.Invoke(body))))
                 {
                     count++;
                 }
