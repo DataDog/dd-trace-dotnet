@@ -99,7 +99,10 @@ namespace Datadog.Trace.FeatureFlags
         // Opt-in requires prerequisite evaluation, error propagation, and exposure reporting.
         internal static IReadOnlyCollection<string> GetCapabilities() => SupportedCapabilities;
 
-        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure = false)
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
+
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
             if (TryEvaluateIndependent(flagKey, resultType, defaultValue, context, out var independent) && independent is not null)
             {

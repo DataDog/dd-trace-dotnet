@@ -27,7 +27,7 @@ public class DependencyEvaluationTests
         object? value = terminal;
         for (var depth = 0; depth < 31; depth++)
         {
-            value = new object?[] { value };
+            value = [value];
         }
 
         DependencyEvaluation.SnapshotContext(
@@ -44,7 +44,7 @@ public class DependencyEvaluationTests
         var snapshot = new Dictionary<string, object?>
         {
             ["user"] = new Dictionary<string, object?> { ["country"] = "US" },
-            ["tags"] = new object?[] { "paid", false },
+            ["tags"] = ["paid", false],
         };
 
         var flattened = DependencyEvaluation.FlattenContext(snapshot, out _);
@@ -76,7 +76,7 @@ public class DependencyEvaluationTests
         var snapshot = new Dictionary<string, object?>
         {
             [oversizedKey] = Enumerable.Range(0, 256).Cast<object?>().ToArray(),
-            [new string('y', 255)] = new object?[] { "too-long" },
+            [new string('y', 255)] = ["too-long"],
             ["valid"] = "retained",
         };
 
