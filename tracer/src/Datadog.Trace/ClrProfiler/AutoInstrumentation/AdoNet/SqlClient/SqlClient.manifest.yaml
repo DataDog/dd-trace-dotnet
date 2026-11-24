@@ -1,0 +1,13 @@
+_v: 1
+name: SqlClient
+display_name: SQL Server
+description: Instruments ADO.NET SQL Server provider command execution, including optional Database Monitoring propagation
+  and security instrumentation.
+packages:
+- name: Microsoft.Data.SqlClient
+- name: System.Data.SqlClient
+category:
+- db.client
+systems:
+- microsoft.sql_server
+creation_date: '2018-09-10'

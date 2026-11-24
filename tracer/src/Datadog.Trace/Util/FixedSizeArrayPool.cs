@@ -107,7 +107,7 @@ internal sealed class FixedSizeArrayPool<T>
             _owner = owner;
         }
 
-        public T[] Array
+        public readonly T[] Array
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get

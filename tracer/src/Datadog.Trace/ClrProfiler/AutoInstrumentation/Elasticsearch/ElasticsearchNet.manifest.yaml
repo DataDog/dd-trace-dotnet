@@ -1,0 +1,12 @@
+_v: 1
+name: ElasticsearchNet
+display_name: Elasticsearch.Net
+description: Instruments Elasticsearch.Net low-level client requests, including document, search, index, cat, cluster, machine-learning
+  job, and security management API calls.
+packages:
+- name: Elasticsearch.Net
+category:
+- db.client
+systems:
+- elasticsearch
+creation_date: '2018-10-09'
