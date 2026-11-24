@@ -20,12 +20,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
 {
     internal static class GooglePubSubCommon
     {
-        internal const string DefaultProduceEdgeTag = "type:google-pubsub";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GooglePubSubCommon));
 
-        // The consume checkpoint tags the subscription (decision DSM2-747, matching Java; the Python
-        // integration tags the same edge topic:<subscription> for now).
+        // The consume checkpoint tags the subscription (DSM2-747 decision, matching Java; Python diverges).
         private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:google-pubsub"]);
         private static readonly EdgeTags DefaultConsumeEdgeTags = new(["direction:in", "type:google-pubsub"]);
 

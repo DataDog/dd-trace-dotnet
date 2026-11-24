@@ -69,23 +69,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
                 }
             }
 
-            BaggageScope? baggageScope = null;
-
-            try
-            {
-                baggageScope = BaggageScope.Capture(extractedContext.Baggage);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error setting the current baggage of a Google Cloud Pub/Sub message");
-            }
+            var baggageScope = BaggageScope.Capture(extractedContext.Baggage);
 
             var subscriptionId = GooglePubSubCommon.GetSubscription(instance);
 
             var scope = GooglePubSubCommon.CreateConsumerSpan(tracer, subscriptionId, extractedContext);
             if (scope is null)
             {
-                baggageScope?.Dispose();
+                baggageScope.Dispose();
                 return CallTargetState.GetDefault();
             }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace;
 using Google.Api.Gax;
 using Google.Api.Gax.Grpc;
 using Google.Cloud.PubSub.V1;
@@ -72,7 +73,8 @@ namespace Samples.DataStreams.GoogleCloudPubSub
             var consumeTask = subscriber.StartAsync((message, cancellationToken) =>
             {
                 var number = message.Data.ToStringUtf8();
-                Datadog.Trace.Baggage.Current.TryGetValue(BaggageKey, out var baggageValue);
+                var currentBaggage = Baggage.Current;
+                var baggageValue = currentBaggage.ContainsKey(BaggageKey) ? currentBaggage[BaggageKey] : null;
                 Console.WriteLine($"Consumed: {number}, baggage: {baggageValue ?? "<none>"}");
                 if (Interlocked.Increment(ref consumed) >= MessageCount)
                 {
@@ -82,7 +84,7 @@ namespace Samples.DataStreams.GoogleCloudPubSub
                 return Task.FromResult(SubscriberClient.Reply.Ack);
             });
 
-            Datadog.Trace.Baggage.Current = new Dictionary<string, string?> { [BaggageKey] = BaggageValue };
+            Baggage.Current = new Dictionary<string, string?> { [BaggageKey] = BaggageValue };
 
             for (var i = 0; i < MessageCount; i++)
             {

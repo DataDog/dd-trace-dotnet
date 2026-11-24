@@ -56,7 +56,7 @@ services:
       - "15672"
 
   google-pubsub-emulator_arm64:
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators@sha256:17b4e7f940db19984c051a321c32f57bf679cb7148835fd16ddc7ce2908a70d8
     command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
     ports:
       - "8085"
@@ -126,7 +126,7 @@ services:
       - "127.0.0.1:15672:15672"
 
   google-pubsub-emulator:
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators@sha256:17b4e7f940db19984c051a321c32f57bf679cb7148835fd16ddc7ce2908a70d8
     profiles: ["group1"]
     command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
     ports:
