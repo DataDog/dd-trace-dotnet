@@ -1,0 +1,6 @@
+[
+  {"flag":"scale-bulk-00000","variationType":"BOOLEAN","defaultValue":false,"targetingKey":"scale-subject","attributes":{"cohort":"cohort-00"},"result":{"value":true,"reason":"TARGETING_MATCH"}},
+  {"flag":"scale-bulk-05000","variationType":"BOOLEAN","defaultValue":false,"targetingKey":"scale-subject","attributes":{"cohort":"cohort-01"},"result":{"value":false,"reason":"STATIC"}},
+  {"flag":"scale-bulk-09998","variationType":"BOOLEAN","defaultValue":false,"targetingKey":"scale-subject","attributes":{"cohort":"cohort-98"},"result":{"value":true,"reason":"TARGETING_MATCH"}},
+  {"flag":"scale-bulk-09999","variationType":"BOOLEAN","defaultValue":false,"targetingKey":"scale-subject","attributes":{"cohort":"cohort-99"},"result":{"value":false,"reason":"DISABLED"}}
+]

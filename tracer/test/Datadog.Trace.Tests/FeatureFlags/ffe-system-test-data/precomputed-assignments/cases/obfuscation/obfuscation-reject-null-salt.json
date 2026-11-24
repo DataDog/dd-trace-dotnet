@@ -1,0 +1,50 @@
+{
+  "name": "obfuscation-reject-null-salt",
+  "description": "obfuscation reject null salt.",
+  "context": {
+    "targetingKey": "fixture-subject",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {},
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": null
+        }
+      }
+    }
+  },
+  "evaluations": [],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [],
+    "evaluationEvents": []
+  },
+  "_include": [
+    {
+      "platform": "ios",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "android",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "flutter",
+      "reason": "Implements assignment-encoding-flag-key-256-v1."
+    },
+    {
+      "platform": "react-native",
+      "reason": "Reject invalid or unsupported encoding before installation."
+    },
+    {
+      "platform": "unity",
+      "reason": "Reject invalid or unsupported encoding before installation."
+    }
+  ],
+  "expectedResponseError": "INVALID_RESPONSE"
+}

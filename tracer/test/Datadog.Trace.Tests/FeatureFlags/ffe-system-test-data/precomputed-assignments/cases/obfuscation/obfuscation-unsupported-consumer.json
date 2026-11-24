@@ -1,0 +1,47 @@
+{
+  "name": "obfuscation-unsupported-consumer",
+  "description": "obfuscation unsupported consumer.",
+  "context": {
+    "targetingKey": "fixture-subject",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-01-01T00:00:00Z",
+        "flags": {
+          "9817872c144b018abd77e3915bd77e2c27f4f534dccff8ffaca27361e3a5e1ee": {
+            "allocationKey": "allocation",
+            "variationKey": "variant",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          }
+        },
+        "obfuscated": true,
+        "obfuscation": {
+          "scheme": "flag-key-sha256-v1",
+          "salt": "000102030405060708090a0b0c0d0e0f"
+        }
+      }
+    }
+  },
+  "evaluations": [],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [],
+    "evaluationEvents": []
+  },
+  "_include": [
+    {
+      "platform": "react-native",
+      "reason": "Encoded assignments are unsupported; reject rather than install digest keys."
+    },
+    {
+      "platform": "unity",
+      "reason": "Encoded assignments are unsupported; reject rather than install digest keys."
+    }
+  ],
+  "expectedResponseError": "INVALID_RESPONSE"
+}

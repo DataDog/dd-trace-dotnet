@@ -1,0 +1,12 @@
+[
+  {"flag":"scale-regex-distinct","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"org-0000-east-12"},"result":{"value":"pattern-0000","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-regex-distinct","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"org-0999-west-123456"},"result":{"value":"pattern-0999","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-regex-distinct","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"org-0999-west-1"},"result":{"value":"none","reason":"STATIC"}},
+  {"flag":"scale-regex-alternation","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"t0000"},"result":{"value":"match","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-regex-alternation","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"t0499"},"result":{"value":"match","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-regex-alternation","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"t0500"},"result":{"value":"no-match","reason":"STATIC"}},
+  {"flag":"scale-regex-alternation","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"tenant":"t0499x"},"result":{"value":"no-match","reason":"STATIC"}},
+  {"flag":"scale-regex-counted","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"handle":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.b1.b1.b1.b1.b1.b1.b1.b1@counted.test"},"result":{"value":"match","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-regex-counted","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"handle":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@counted.test"},"result":{"value":"no-match","reason":"STATIC"}},
+  {"flag":"scale-regex-counted","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"handle":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.b1.b1.b1.b1.b1.b1.b1.b1.b1@counted.test"},"result":{"value":"no-match","reason":"STATIC"}}
+]

@@ -1,0 +1,5 @@
+[
+  {"flag":"scale-numeric-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"score":0},"result":{"value":"n-00","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-numeric-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"score":495.5},"result":{"value":"n-49","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-numeric-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"score":500},"result":{"value":"fallback","reason":"STATIC"}}
+]

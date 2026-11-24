@@ -1,0 +1,8 @@
+[
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"1.0.0"},"result":{"value":"v1-00","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"1.49.3"},"result":{"value":"v1-49","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"1.49.3-beta.11.rc-7+build.20261117.sha.0123456789abcdef"},"result":{"value":"v1-49","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"1.50.0-alpha"},"result":{"value":"v1-49","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"2.0.0"},"result":{"value":"fallback","reason":"STATIC"}},
+  {"flag":"scale-semver-ladder","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"app_version":"not-a-version"},"result":{"value":"fallback","reason":"STATIC"}}
+]

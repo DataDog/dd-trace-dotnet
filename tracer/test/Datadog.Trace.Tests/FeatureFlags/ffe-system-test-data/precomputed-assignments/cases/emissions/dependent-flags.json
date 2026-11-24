@@ -1,0 +1,189 @@
+{
+  "name": "dependent-flags",
+  "description": "A successful dependency graph emits all reached evaluations and exposures; a graph with a missing node returns the caller default, emits the missing and propagated ancestor evaluations, and emits no exposures.",
+  "_include": [
+    {
+      "platform": "web"
+    }
+  ],
+  "context": {
+    "targetingKey": "dependent-subject",
+    "attributes": {
+      "plan": "pro"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "createdAt": "2026-10-21T00:00:00Z",
+        "flags": {
+          "fixture.dependent.success": {
+            "allocationKey": "allocation-success-root",
+            "variationKey": "success-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true,
+            "dependencyEvaluations": [
+              {
+                "flagKey": "fixture.dependent.success.leaf",
+                "isPresentInAssignment": true
+              },
+              {
+                "flagKey": "fixture.dependent.success.parent",
+                "isPresentInAssignment": true
+              }
+            ]
+          },
+          "fixture.dependent.success.leaf": {
+            "allocationKey": "allocation-success-leaf",
+            "variationKey": "leaf-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.dependent.success.parent": {
+            "allocationKey": "allocation-success-parent",
+            "variationKey": "parent-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.dependent.failure.leaf": {
+            "allocationKey": "allocation-failure-leaf",
+            "variationKey": "leaf-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        },
+        "flagEvaluationErrors": {
+          "fixture.dependent.failure": {
+            "reason": "ERROR",
+            "errorCode": "GENERAL",
+            "dependencyEvaluations": [
+              {
+                "flagKey": "fixture.dependent.failure.leaf",
+                "isPresentInAssignment": false
+              },
+              {
+                "flagKey": "fixture.dependent.failure.missing",
+                "reason": "ERROR",
+                "errorCode": "FLAG_NOT_FOUND"
+              },
+              {
+                "flagKey": "fixture.dependent.failure.parent",
+                "reason": "ERROR",
+                "errorCode": "GENERAL"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.dependent.success",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "success-on"
+      }
+    },
+    {
+      "flag": "fixture.dependent.failure",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": "ERROR",
+        "errorCode": "GENERAL",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "orderedEvents": true,
+    "exposures": [
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success.leaf"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success.parent"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success"
+        }
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success.leaf"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success.parent"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.success"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.failure.leaf"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.failure.missing"
+        },
+        "error": {
+          "message": "FLAG_NOT_FOUND"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.failure.parent"
+        },
+        "error": {
+          "message": "GENERAL"
+        }
+      },
+      {
+        "_count": 1,
+        "flag": {
+          "key": "fixture.dependent.failure"
+        },
+        "error": {
+          "message": "GENERAL"
+        }
+      }
+    ]
+  }
+}

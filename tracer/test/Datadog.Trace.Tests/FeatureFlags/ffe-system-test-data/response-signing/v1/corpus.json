@@ -1,0 +1,3906 @@
+{
+  "schema_version": 1,
+  "profile_sha256": "a32c6919d1f730b076994f89317ef441fa4c4b4556c093edf0216632a882f783",
+  "synthetic": true,
+  "anchor_der_base64": "MIIB9TCCAZygAwIBAgIUQmfdcyqdry8YfhE+hvwNjHlpk4kwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MDkxMTAwMDAwMFoXDTM2MDkwODAzMTgwOFowRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAvmRtWpy01JOlef99amBe3hVi6PFhaxsx4X07KlFMwnqKI3u7cuub0E7PoAIbE9eoXwoCfteUWlogk9y7lxyS6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFIK0DwksM2iEGrA4Vc2PJKmgK6b7MB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIFkx4k1mNISsliG06Ixs9s4WxyeTMqmX9/5Xg8vZlgMUAiBNIJGrAMJeC0cAXu/jeAlQSqnLkue/hS8pES2PIkf+8w==",
+  "cases": [
+    {
+      "id": "valid-current",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAEMdE6KAiC4TmNqM4Bt71Nlq7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh/6Ng8TcBPzzrxF/TDOL/e9gFxG7FxwZhrfj79251AdPAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAA1zeW50aGV0aWMtYXBwAAEAAAAEdHJ1ZQEAAAATcmVzcG9uc2Utc2lnbmluZy12MQAAyAAAAABq3/eQAAAAAGrf+LwAAAAAAAAAbBjoo2BVrsFBvsb7/kndkWuEJugJckBE6x8yNdHqNEVJRcItIW5R3g9HUNvRJ/XL7q3vK8O0JsuV1oKrzIjJIQuK5IXeXBsvfM61fHg4wyYFpic/Ia2/EMmSIZ43j2NQqw==",
+      "credential": {
+        "version": 1,
+        "generation": "valid-current",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3CTaM180jSh+DN3yEcdUy5NiXg9uiqIbKMXo8tIQfxmhRANCAARaDtotVSlwOC7NQIAf4qDzIzSW8SMsy1Urpmz23gC13FvbhS0QL7EwIdl7kLrQ+Xdnz9sH/szvPtBiGRa7OyXg",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      }
+    },
+    {
+      "id": "valid-rotated-leaf",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "b084e174f44268eb20c9c57c8b657043"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUbbxT5F1oO8a622lOub/ZuFM/CicwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyODAwMDAwMFoXDTI2MTAzMTAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJor0Q5yD/5eZ0R3aG9ExYfqrd7tA1QdDMJ2yINXKWNeky1tiUPo3GMKxeamrh6Sx2XhTPyRTxjDyzLVlfSuFQijdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBSxz84fQhhH4M9rSLgGSmAtkarVFDAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEA1wf5UGnba0g/Kiznp2Se8q5eH3YB0oeOnxNiUzxJEOYCIQDVG7cJO74duQe25Z6/VMI/St0mqNrmvFUmoHjE5uUplg=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "cf4d8ddea4eb7488565aad4a8972f54eb14667b3bba101cad62ddec7a78df150"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793149200"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793149500"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIQCq4s0R1CNG3jnRd/b5oz3OwQW87duBI+off+4UM0W3lAIgUfc5rIKlrpBUgjlfHYImStzEH55aGZmKxv8pJEFQPaw="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793149200,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAELCE4XT0QmjrIMnFfItlcEO7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh/6Ng8TcBPzzrxF/TDOL/e9gFxG7FxwZhrfj79251AdPAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAA1zeW50aGV0aWMtYXBwAAEAAAAEdHJ1ZQEAAAATcmVzcG9uc2Utc2lnbmluZy12MQAAyAAAAABq4UkQAAAAAGrhSjwAAAAAAAAAbBjoo2BVrsFBvsb7/kndkWuEJugJckBE6x8yNdHqNEVJz02N3qTrdIhWWq1KiXL1TrFGZ7O7oQHK1i3ex6eN8VCK5IXeXBsvfM61fHg4wyYFpic/Ia2/EMmSIZ43j2NQqw==",
+      "credential": {
+        "version": 1,
+        "generation": "valid-rotated-leaf",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwC/wEAvEHp17U5iE9eBVoTZTRKZG21oZSpbTGLDFW3ChRANCAASaK9EOcg/+XmdEd2hvRMWH6q3e7QNUHQzCdsiDVyljXpMtbYlD6NxjCsXmpq4eksdl4Uz8kU8Yw8sy1ZX0rhUI",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUbbxT5F1oO8a622lOub/ZuFM/CicwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyODAwMDAwMFoXDTI2MTAzMTAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJor0Q5yD/5eZ0R3aG9ExYfqrd7tA1QdDMJ2yINXKWNeky1tiUPo3GMKxeamrh6Sx2XhTPyRTxjDyzLVlfSuFQijdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBSxz84fQhhH4M9rSLgGSmAtkarVFDAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEA1wf5UGnba0g/Kiznp2Se8q5eH3YB0oeOnxNiUzxJEOYCIQDVG7cJO74duQe25Z6/VMI/St0mqNrmvFUmoHjE5uUplg==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      }
+    },
+    {
+      "id": "valid-2032-rotated-intermediate-no-history",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "ec61af9e519a35c38a1e2171cc461a56"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwTCCAWegAwIBAgIUELzwFGNXZgLkQw4JTzbWZU9xKsQwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDMyMB4XDTMyMTAyNzAwMDAwMFoXDTMyMTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABKLQ+uG6YnviGgd69e5UjzNH7wOXELWuE55W7Gj1dB3nebFMpzkPD2da7yt6krkOiome9eeW5kbCXjvE5W5TOSijdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBRqkRAgOB6L04PmS7QvyUSU6UkVczAfBgNVHSMEGDAWgBTgfi7nbPGJ/PkdeLXNeS2REcCq5jATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiBDUlLKHbgfcHfJI+f+fYQmX1ULCH1pW1rUt2/Tph2bqgIhAP7OCQiHespuBPI++IPo78YahJkzqHgHb56gichcwC7q"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1TCCAXugAwIBAgIUPuerTobptaJ/3XUE2PJiVuugBZowCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTMyMDgwMTAwMDAwMFoXDTMzMDgwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDMyMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE7Mk0KeIDxf851NPhhiw77R4jF45W4wdxFCbsttSWvv+i2XQXpbGPrXX0NK1HoLzvzb8XDfYp403KsUGPlb/n7qNmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFOB+Luds8Yn8+R14tc15LZERwKrmMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0gAMEUCIQC8jGuYxrpN6/HynW9uE1LGnvyILs4vZ1W20NuN+jlPigIgQ5LjnsplGtwbkGQPUEMZalz3ZM1d0cZHWfv+t5yvIF8="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "3fac7cf4052f56246f58d4422fb163a5acfafc336dc73291af0f4003da157dd6"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1982451600"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1982451900"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCLIyP9lCVEqhrfcepTbsUp3Pk3CvdQ6utsdbuAZaGwEgIhAIjDNHBAWbl48IFPDT5hKV/h2pInNlgtpTPG50OeCFVM"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1982451600,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAEOxhr55RmjXDih4hccxGGla7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh/6Ng8TcBPzzrxF/TDOL/e9gFxG7FxwZhrfj79251AdPAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAA1zeW50aGV0aWMtYXBwAAEAAAAEdHJ1ZQEAAAATcmVzcG9uc2Utc2lnbmluZy12MQAAyAAAAAB2Kc+QAAAAAHYp0LwAAAAAAAAAbBjoo2BVrsFBvsb7/kndkWuEJugJckBE6x8yNdHqNEVJP6x89AUvViRvWNRCL7Fjpaz6/DNtxzKRrw9AA9oVfdbsrwZDVu1DbcPUGCPr+3U9ajZ72TmVotSFkuEUgmVJHw==",
+      "credential": {
+        "version": 1,
+        "generation": "valid-2032-rotated-intermediate-no-history",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgC6muD4mmxVRTtVOBrzBPgiAUnq+Ow0H/KOBkjszlUcqhRANCAASi0PrhumJ74hoHevXuVI8zR+8DlxC1rhOeVuxo9XQd53mxTKc5Dw9nWu8repK5DoqJnvXnluZGwl47xOVuUzko",
+        "certificate_der_base64": "MIIBwTCCAWegAwIBAgIUELzwFGNXZgLkQw4JTzbWZU9xKsQwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDMyMB4XDTMyMTAyNzAwMDAwMFoXDTMyMTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABKLQ+uG6YnviGgd69e5UjzNH7wOXELWuE55W7Gj1dB3nebFMpzkPD2da7yt6krkOiome9eeW5kbCXjvE5W5TOSijdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBRqkRAgOB6L04PmS7QvyUSU6UkVczAfBgNVHSMEGDAWgBTgfi7nbPGJ/PkdeLXNeS2REcCq5jATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiBDUlLKHbgfcHfJI+f+fYQmX1ULCH1pW1rUt2/Tph2bqgIhAP7OCQiHespuBPI++IPo78YahJkzqHgHb56gichcwC7q",
+        "intermediate_der_base64": "MIIB1TCCAXugAwIBAgIUPuerTobptaJ/3XUE2PJiVuugBZowCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTMyMDgwMTAwMDAwMFoXDTMzMDgwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDMyMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE7Mk0KeIDxf851NPhhiw77R4jF45W4wdxFCbsttSWvv+i2XQXpbGPrXX0NK1HoLzvzb8XDfYp403KsUGPlb/n7qNmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFOB+Luds8Yn8+R14tc15LZERwKrmMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0gAMEUCIQC8jGuYxrpN6/HynW9uE1LGnvyILs4vZ1W20NuN+jlPigIgQ5LjnsplGtwbkGQPUEMZalz3ZM1d0cZHWfv+t5yvIF8="
+      }
+    },
+    {
+      "id": "valid-effective-token-and-authorization",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "978aa8a4db6c2abc2b02d25f5ae1f209"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-overridden-token"
+          ],
+          [
+            "authorization",
+            "Bearer synthetic-opaque-value"
+          ],
+          [
+            "dd-application-id",
+            ""
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQD1xqwACO9mhmGZhrcZqSIKNcR9DCFEAbumv39iXZZZ8QIhAJM1QASAfflzBR1vgnjl00ANW+XU4rIIFDgcWDG2JXJy"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAEJeKqKTbbCq8KwLSX1rh8gm7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh8Q8ICUwTvIr1x0EuMyLFsMcYoDPLjOM+HbOot30IzBxAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAAAAAQAAAAR0cnVlAQAAABNyZXNwb25zZS1zaWduaW5nLXYxAWei0CtlNcV8HrSmyHb7oVR2HhX8LBssttu2KRTUEJRwAMgAAAAAat/3kAAAAABq3/i8AAAAAAAAAGwY6KNgVa7BQb7G+/5J3ZFrhCboCXJAROsfMjXR6jRFSUXCLSFuUd4PR1Db0Sf1y+6t7yvDtCbLldaCq8yIySELiuSF3lwbL3zOtXx4OMMmBaYnPyGtvxDJkiGeN49jUKs=",
+      "credential": {
+        "version": 1,
+        "generation": "valid-effective-token-and-authorization",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3CTaM180jSh+DN3yEcdUy5NiXg9uiqIbKMXo8tIQfxmhRANCAARaDtotVSlwOC7NQIAf4qDzIzSW8SMsy1Urpmz23gC13FvbhS0QL7EwIdl7kLrQ+Xdnz9sH/szvPtBiGRa7OyXg",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      }
+    },
+    {
+      "id": "valid-gzip-application-bytes",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "f761d583fb7db3d9fb7c9d61ffea04fb"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIAs2gaOYJe4m9gOvcivU0WVJs1JI+DWTG+a2T6pCcFiIAiEAxKjjrtPUrDYD3rCy9gSLs28Y6u1s/01Z47foFgcOcAk="
+          ],
+          [
+            "content-encoding",
+            "gzip"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9",
+        "wire_body_base64": "H4sIAAAAAAACAyXMwQnDMAxG4V3+c3Lo1WN0A9WVEoFqg+UYgvFAnaOLxSXXj8frEKPNETpi0aqRbH3zJ/+hUVGqmhMCsgiWKXYwgpA5j7GgHMb+5KZ+V36muvO8rOUxc6MX2+RI8vtiXPbTAXRsAAAA"
+      },
+      "now": 1793062800,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAEPdh1YP7fbPZ+3ydYf/qBPu7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh/6Ng8TcBPzzrxF/TDOL/e9gFxG7FxwZhrfj79251AdPAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAA1zeW50aGV0aWMtYXBwAAEAAAAEdHJ1ZQEAAAATcmVzcG9uc2Utc2lnbmluZy12MQAAyAAAAABq3/eQAAAAAGrf+LwAAAAAAAAAbBjoo2BVrsFBvsb7/kndkWuEJugJckBE6x8yNdHqNEVJRcItIW5R3g9HUNvRJ/XL7q3vK8O0JsuV1oKrzIjJIQuK5IXeXBsvfM61fHg4wyYFpic/Ia2/EMmSIZ43j2NQqw==",
+      "credential": {
+        "version": 1,
+        "generation": "valid-gzip-application-bytes",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3CTaM180jSh+DN3yEcdUy5NiXg9uiqIbKMXo8tIQfxmhRANCAARaDtotVSlwOC7NQIAf4qDzIzSW8SMsy1Urpmz23gC13FvbhS0QL7EwIdl7kLrQ+Xdnz9sH/szvPtBiGRa7OyXg",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      }
+    },
+    {
+      "id": "valid-ipv6-and-absent-optional-headers",
+      "request": {
+        "url": "https://[2001:db8::1]:8443/precompute/assignments",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "a4d64860448a5590839bca5da9145485"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIBAXoWE/r3pVjS1VgSHkb0M5guk3rXcJ4J70gzKlXyUiAiEA0FAFPL3pOFgWXNqdMiHjQe08D9fZntc5kCTiiXyksxI="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": true,
+      "rejection_reason": null,
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAElsyMDAxOmRiODo6MV06ODQ0MwAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAAAAAAAQpNZIYESKVZCDm8pdqRRUhbtFNiQ2aDDsic8G9+jVrApunQq/2rpJ/EIfKA3ilyeH/o2DxNwE/POvEX9MM4v972AXEbsXHBmGt+Pv3bnUB08BAAAAEGFwcGxpY2F0aW9uL2pzb24AAAABAAAAE3Jlc3BvbnNlLXNpZ25pbmctdjEAAMgAAAAAat/3kAAAAABq3/i8AAAAAAAAAGwY6KNgVa7BQb7G+/5J3ZFrhCboCXJAROsfMjXR6jRFSUXCLSFuUd4PR1Db0Sf1y+6t7yvDtCbLldaCq8yIySELiuSF3lwbL3zOtXx4OMMmBaYnPyGtvxDJkiGeN49jUKs=",
+      "credential": {
+        "version": 1,
+        "generation": "valid-ipv6-and-absent-optional-headers",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3CTaM180jSh+DN3yEcdUy5NiXg9uiqIbKMXo8tIQfxmhRANCAARaDtotVSlwOC7NQIAf4qDzIzSW8SMsy1Urpmz23gC13FvbhS0QL7EwIdl7kLrQ+Xdnz9sH/szvPtBiGRa7OyXg",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      }
+    },
+    {
+      "id": "unrelated-root",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "b3af7f5ee6238788725f7994369aea7e"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwTCCAWigAwIBAgIUNSnieC/lr1+SySpX3qFmltip1JUwCgYIKoZIzj0EAwIwJzElMCMGA1UEAwwcU3ludGhldGljIFdyb25nIEludGVybWVkaWF0ZTAeFw0yNjEwMjcwMDAwMDBaFw0yNjEwMzAwMDAwMDBaMCQxIjAgBgNVBAMMGVN5bnRoZXRpYyBBc3NpZ25tZW50IExlYWYwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARcE2mhNdQh/k60iz/gwYRgD3fokpfPRHY71cnDC3qUdInCQSMyDFcy7qpZma5TgQtDyxPVELoYX2cruXPkPJl7o3UwczAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIHgDAdBgNVHQ4EFgQUU6ZXP4KRvaEMJ9U8xY7RphbeiVowHwYDVR0jBBgwFoAUKR7SpwWRm1+g/VdCsO7aVB26NtQwEwYDVR0lBAwwCgYIKwYBBQUHAwMwCgYIKoZIzj0EAwIDRwAwRAIgbyYGQcIFX1DcxFo54Ykh9iIuvdoDMpz/nkOi3kewrvECIGTe6xq2uK215tyaZMHdPEmr5ziy1EEk+jxFffSSkT2m"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIBsTCCAVigAwIBAgIUaeod8AKuaJbjjboA/CcCw/nrxEIwCgYIKoZIzj0EAwIwIzEhMB8GA1UEAwwYU3ludGhldGljIFVucmVsYXRlZCBSb290MB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJzElMCMGA1UEAwwcU3ludGhldGljIFdyb25nIEludGVybWVkaWF0ZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI98J29jBUK2Cw1AiuTBAi1q3wlaMnKTh/QVvCqnomcAvLcKqK0nRvgUlz5ami5y9FejNb+xSRUDH5IVhVpLxJijZjBkMBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBQpHtKnBZGbX6D9V0Kw7tpUHbo21DAfBgNVHSMEGDAWgBSGLmdOWQCk6VNv34Z/MrGD56e8wTAKBggqhkjOPQQDAgNHADBEAiBD+8k3LfXdZT9dDKuvd6eUVnUhdaNIK+jMPkj24Gv1SgIgCpNoLLEVq70TDtD8DAxtcUJuTGyzQ/EELuKLULoadXY="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "58525b25bc94e658a751d51bfc84463a80c8596633e394e7d20aca3a35e5ffdf"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCCxhskwSMt5i+toRPke2sfrw/0eIyvdw8/4Et+ygKKOgIhAJ90XWtg/E9VyogRKrMFGiDARkr9bt2xun7E0w8SahLn"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "chain-root"
+    },
+    {
+      "id": "direct-leaf-under-root",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "0e8289ef86c04552d8a8a14238a628af"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIB4jCCAYigAwIBAgIUYIfR0WvsyOBVFMXhQgCC5jmnBVMwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBrJ7/DDvElwApEqI0gN84BmNy15yrpMEZlf1qmHB3K9ATRORw20AVhA83D63wtt2kLAiEfN+IfA5zelAdDRyuSjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBQ5ijDvmIYjuzsNmBK1xZp1N9CaRTAfBgNVHSMEGDAWgBSCtA8JLDNohBqwOFXNjySpoCum+zATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiEApXGUQlPjvdK9Ivilpa2vcs6oB4fee4GLRu+49D1qQrgCIBImHWPCj1TDlZYC4sUzcHpLyj2JBV0bC8bjc2G8kV8d"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "2b34e67e464c65984be02e70f0f097a337a8bb4558ec7fe0f7dbefca2805da91"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCWFDwkpVCs1f6dxUaznhfxtXhwVBVlBYnusbv7Qfph+AIhAOMhMqn1XHw8F8GqwSe+9igpggD21VhBXA/2qFgnvKdW"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "chain-link"
+    },
+    {
+      "id": "expired-leaf",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "010af83c18b7d379c974a1b5777a2942"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUP471IdBbxQuvm51RQ+tJ60yKNREwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNDAxMDAwMFoXDTI2MTAyNzAwNTk1OVowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFHMLt22A1atapOo7ttDTZBTRdY7D7pxv9oJOPDn0iOwO7qebd58ejLEFBGWhPyOCTdXjvYxER9pFOEUUCql5wmjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBTOZeOOjXOC6Zgs/pX4epx7Ym7UrzAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEA6fdFGKCEf/ps/Vy7gNXWUMj1tPSaFnxdRia/l1sWo9cCIQDSTCbXL6sDXmWETrTuqmsC2Z406PruucGbS5viOH/aLA=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "2aa858bace1a5117edd7635cae459f22e35272344a7d66a3ceaf2abfaa4b7baf"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCxZbqnWeYUdZpfsBQT21qCoS8W5ojSXUaHKg4YPgA2AwIhALxwsGksh6poPMgX8ZFEUrv7lVMhKGyY9OFWs6VCrp/v"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "certificate-time"
+    },
+    {
+      "id": "future-leaf",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c72c65bd4026fa000618d359a02851ed"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwTCCAWegAwIBAgIUNngD5VRqFvvITVgbnSFXxS5H1jAwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAxMDAwMVoXDTI2MTAzMDAxMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABKJ6NzGdJp9aH6XZbn60/YGgMYGFQIZj7jCgaJxl/0FWckt1MkRbLXvj29ddE0ZZo9hZbzn0l34GpEfMI04Vr5yjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBRtdA9u0ydqWoezzKYRPPVpB8i9dzAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiBb5Ck0qEKb0mvd+zZa5R+Ia37w79HVB+GDHLpNkADyFwIhANeTH/jzPkYx2TzZKtg3z9PEo8LFQrhgf1jfBL3OJ7Y+"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "330eb5c3438a6b9abdfecc90c04d98a845eb9afda7d04f64a823275a05a2d75c"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQClzJIkNmkYd1whftbB9dlOLg8MBpuVzPeVFafWnX5FlAIhAKaxgKDUiWLG6pNNWJzASPW6nn0FCg3sXHKjFhY6n2ni"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "certificate-time"
+    },
+    {
+      "id": "leaf-ca-true",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "71fce3a2123581ff2d96d741f8ec97ac"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIByDCCAW2gAwIBAgIUCmLAE6HQivvTntDvMbq7wpqtWvUwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJWcvmBJkMaMEkukp55SjQjRmj85pl5RF/7gB9frHzGI2TdZLSACnuzjrh049Yej4N1ZEmEeacs9qYzFPR0IePejezB5MBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBTNJzFEK0d52f9tbcxyILY7K2pk+jAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAgArTas2GlLNP8t/9HKPvChSEErIdl7xogH5/89P+ibICIQDUk05P3yM455R0ebalB/4M9UCyVPGP0ztJZpISFboAlA=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "96c2b5c3acd536df0aab7a5812d8c8053094f52fd6e4770d364502c6ac0442d8"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIBbTfossIOLuB0mIYFIuuXaqQoiiJ2oa+RLmbEFwSh91AiATJbPUZyiV66mIM2+ZLADmIXOlqMq+zndzTUoBxVfSHQ=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "leaf-basic-constraints"
+    },
+    {
+      "id": "leaf-wrong-key-usage",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "ff1e84b2cc4ef66c975cbdc0696ffbf4"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUB7euD87CbExMn9wWKxFplRgrjgkwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABEFSMbdya3NWK7bNqo5nym8Fy75zQMt6nqPJrGS4w7fjC1hPpizxZQ2EBy2XguTeNmaoNDEhAtgjmox+huEOYE2jdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBSWEQboBSHVxiacRn6de23RqWC+ojAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAuFqnzKkWe3RChUOz9q7wXZQl8Zndq/iwJURvD1JY/XoCIQC8oSGmnx4nh+z2MU7VAp3J5z2ztuWMq0FzvtiDkwMjwg=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "aa89ca53c8c2c9e66e67b344789b7a6a526a18951d784c34601329ab6a9dafc8"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCrCEfBj9R1ghDomUoWPGK8rFEDZ45oYjO4k2sWE80nhgIhAIIi1N52/IxvoRzO4Trj+WT3onkC9D2Dix0AFtluvPu/"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "leaf-key-usage"
+    },
+    {
+      "id": "leaf-wrong-eku",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "97d70c3e4d1b5f9fe3998734bef1af52"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwDCCAWegAwIBAgIUXkunTy2WAMJdJJelARxx2OSuLyEwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABH15T04fOBVi6o6bTPQJv+Oo5/ZnrjI1Mi9LruZ6nA1ko1sxwJup8cFxL8uXWM5lGMnbNBqxNMXAn+nVb1cGbL+jdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBSaYOURMyjEqHxJebzg9J2F+WiN7TAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDATAKBggqhkjOPQQDAgNHADBEAiBfEDnYPzp4qePWnJ7xqjRp8ebcVqZFO/y89SG1o6LTXwIgCWcJBuPEBSTjJ+gbO1H7kJ8HOA5M+fA7iWBTzseQvwg="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "9393ba9d2c0145915f252190454710fd54e670549948cab1e1ced7936caf578c"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIGwaLhvYnBGapsVtb1zdZXVHEcknrrijuqfiKBMSttnxAiEAsNBSW8oaWbYTRyJmRzZi2lmdoHorghhukCSxVVIO6a0="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "leaf-eku"
+    },
+    {
+      "id": "leaf-unknown-critical-extension",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "e43ef752cb2a4faf58a916d26629df6e"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIB1DCCAXqgAwIBAgIUAr+wnZ8YHJbZDn/WcFSdPvvH98owCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABKIYbyEYqturrj00tWuUph4+JaXgLgrS4jEE0CyotrdNSkah3R9M/1T5NG5vdbwZOaM92FdMTjTBd/XKL7fn1fWjgYcwgYQwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0OBBYEFMrc7p3+9P+iIO0kZFm00gILuuYyMB8GA1UdIwQYMBaAFGflQq+p4fra5WqIDdjQE7XLbnlEMBMGA1UdJQQMMAoGCCsGAQUFBwMDMA8GBioDBAUGBwEB/wQCBQAwCgYIKoZIzj0EAwIDSAAwRQIgR+JG/PmiLKRvhN3foK4VSbXNH740nBhtrXYa6NF8SJICIQDtkjyDdxZUciP/TyALVZcOB4Xo99mNoCwFNyLhCX/fjA=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "238dbeae944be5435f22b6b47033de06ab849aedb9dd3bd34f3da6d191e41dc0"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIFORPhE2OBRvUMbgDU2eUdYAN1Bx0O3vBqfNpjgepY1LAiAVC9juuKnmWLC8sgngi9FVruXUFPc21wBfSxw/LGmGGA=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "critical-extension"
+    },
+    {
+      "id": "leaf-issuer-name-mismatch",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "f605458fd30d1e49d8e0399b26946802"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBuzCCAWGgAwIBAgIURTKZsCAsU5WA+VhPf1/TH3lOD/8wCgYIKoZIzj0EAwIwIDEeMBwGA1UEAwwVRGlmZmVyZW50IElzc3VlciBOYW1lMB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJZWZjau4nyJ3mwoRPUXh+CjrGCitnZ5cUCL/luMBZZmiLofc4A3PwnAQnfkLEiW9hVZpLXYDCn3zDZiIPQfvEijdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBQ6xnA6AVxqU3GFNNofa6zXXszz+jAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiEAhEWnIBC22/Ikk4yeqbYlGh3TEIMvWPrBzaZJfR70wBECIFsIUQB0cjMAlZ7sikhWm5PVehIWMGdPSqB0VBu5y9zJ"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "5dee23817f349b8d86b4bb4c3bb5a3f958cd5342019edbde9bc31fcf5d83e31d"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQC3erenjRqo2EujO0nHoDeuF49/onreKl2IUMNrpDuqywIhAJL9O+06Kk/Yh3kp3qq/Dp788P3FTTkL16OZrV5MTcxI"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "chain-name"
+    },
+    {
+      "id": "leaf-aki-mismatch",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "73d9950b53f669d2fe992ecede6c53fe"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwTCCAWegAwIBAgIUGQ3uc5UY6XIw8bdXo80PqXilkgMwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABHVTNzL2wSY4FaAtC8uErCtCedZGMxiuBMlpnziRhMjxzo8ATTo1+TFARIdS1sgSiZdltAASMdSarqchSc4SRdOjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7iRlzVm2pfryKPG6GwDYNq315kjAfBgNVHSMEGDAWgBRCQkJCQkJCQkJCQkJCQkJCQkJCQjATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiA8YtN37DLiBirhuFFda/ahkm45RuVFbc7tVG7dbiwl0gIhALjC3WsA6BiRyRGfF3S7clPW+aADZ/5t4MpnCyIzv1SI"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "c64c33d5fc16fbcb8d748d9d3e1fe21db53cf0408ea996b9e91e4d920881fe17"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIB2JBQQsZwztn7xomgeIk4FHa+gt2VabEXbYby5IrUnxAiAc7O1QrCGPT3gHl4GhupSpe8NrmDtSHCxlDQ/6RmLDkg=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "key-identifier"
+    },
+    {
+      "id": "leaf-outlives-intermediate",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "0a6a05be529531595c84b49deea9520d"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwTCCAWegAwIBAgIUcrxly1TRhGY8dy685AU/aLUjrHEwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI3MTAwMTAwMDAwMVowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNaE9wwolmfopBYjFsGKi8zk9n+JBXFQU1o4fpm8WbwymKJLx5zxgZTyrCQqxVS7DuvmLxPun9JMJaF8S5Kn/lejdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBRXA90Qkl6BIfyOcrKKA0vQ0vrSZDAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNIADBFAiAbBqSXnqcG5QmbxLyl1BdfPV9BPyfHOW1v60KM8Fpz2AIhAPDtKfAcRSoYO2LAV/3b7YkgbzHjRei3Ug6vVoRm2LqC"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "d8c9a6389cb315b72852cfd8db09c9075120e356e3247b141fdef412260d33c6"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIGCqpqbwBvlhcOAKqUnUGnl853i0VzL2BUaJz3gICEc6AiEAk5EDQUo0DqgSbXX3/J1fn2Mbt5iuMM5FjOJfo/3O2Oc="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "validity-containment"
+    },
+    {
+      "id": "leaf-unsupported-name-constraints",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "b824bd8d9693f2aeb5b344eb33e1c540"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIB5jCCAYygAwIBAgIUW1cXjMXRVr7Bxh357EgFRJqHkJQwCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABIqzX8XUQe+w4DphiwTMa1EQFiC8w0kA3v79jFeOrjhqmOAPA1peVF5oeLPHq6nN958fmchBZ9CixWBQmHDLzQWjgZkwgZYwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0OBBYEFLp1pvL28lQEYe7hpNrxFc9TY1I0MB8GA1UdIwQYMBaAFGflQq+p4fra5WqIDdjQE7XLbnlEMBMGA1UdJQQMMAoGCCsGAQUFBwMDMCEGA1UdHgEB/wQXMBWgEzARgg9yZXN0cmljdGVkLnRlc3QwCgYIKoZIzj0EAwIDSAAwRQIhAPdGHoWwJEtAidIUofBA50A9JkoMI3gsLzH/SjHQc0bWAiBUJYyVAb1F8F40X3jx3F5x1NDQ2rHw7vtCMYKEQrGa0A=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "9e2d0758617cd73314a5092fdef33af82a30463be2c7dc956a8e164954dbf789"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQDjjeouGWrkJdtqr7YsjjrAd6h7JB62+n/Rys6FshKExQIhAOlrp4yVLAG9ln7xr0BZL+FoWU49h8zBy2AAO+GwOu/I"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "unsupported-constraint"
+    },
+    {
+      "id": "intermediate-ca-false",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "e61d0ff7f8ca1dabcb2e2d40c32f55aa"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBvDCCAWGgAwIBAgIUfWB4XKjBGNjLQ13GQe8ZbOs8gQAwCgYIKoZIzj0EAwIwIDEeMBwGA1UEAwwVaW50ZXJtZWRpYXRlLWNhLWZhbHNlMB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABKUcKWvOMt7BKVaXDRh8MB2RkUJK/SjrbbaewtXhjM2ZZJLSpSKbhsOd0f8qgw91AQlNtLkTFdSEbUD43VjU8ZqjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBSThhKE2loKZCGPX+bs/NcEX/XCSDAfBgNVHSMEGDAWgBQQwUBIGRKVlhA3efw/v5vlcyOhczATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAwppjAvsjrJ4S0IIXv7LKgQGIyaMqLjL56T9C3H1qTbYCIQCA0S1Q4yGGU5+TVeW3SkTXEhAI7RuSZ90/fCRVUSkv/Q=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIByTCCAW+gAwIBAgIUQLMEkxHZi64K2aBQF/wvti5ImcwwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowIDEeMBwGA1UEAwwVaW50ZXJtZWRpYXRlLWNhLWZhbHNlMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEI1Di9d+74TGkBNkbg/11Sbe3KxfedKiGAm5sqEL3xatSDYfFLpkx1VuqwKxuqRxO+sW97AqcUw7wpz2jt6gh7KNgMF4wDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0OBBYEFBDBQEgZEpWWEDd5/D+/m+VzI6FzMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0gAMEUCIQCCvCFXyJswbQ/qUf55afqOK35JAgcBMFVPKOEhW6WsIwIgQXS1WBsT63PVMQpMHbgMuezUSdjfzHdx8kq/qKXzXeo="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "5919631fd5b1cfb80c5f307c7826c7200ec07bb412239cb0b3dc0d30456b2669"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQCoMJRHO9b6AALuqnc6tNf2+D378jy/M2jxKkWReU4rNAIhAJ6zZiH09UIP0puxyfiBqFadPhnpQhdOjG8ISuOg9ySN"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "intermediate-basic-constraints"
+    },
+    {
+      "id": "intermediate-pathlen-one",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "8580b6e8e400bcc46dafe62e0d80d346"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBvzCCAWSgAwIBAgIUKsKYORTlHZEeWEQ+ZQzoTGJ0sFAwCgYIKoZIzj0EAwIwIzEhMB8GA1UEAwwYaW50ZXJtZWRpYXRlLXBhdGhsZW4tb25lMB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJuLgYlGrxkSkD+xmUrB/J/73hwyhebJVVY0HzpC6zx2XSxu7lqGsbxNx6cINX0kc/2gWpdKwnQstV4wShRpkeSjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBTcztUSal+XslkaQT4iyS2KZ2GjXjAfBgNVHSMEGDAWgBRmPg3PijuE+CNf9zc+KWUKqwHMVzATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAi1RF9OQU7H1zvrTgYcS4Q8heFoYBOHG2e30ixdrSykYCIQD34ekgAiAwRlIcqugnN7cbM+rip9PvqyIg43fLXNlthw=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB0jCCAXigAwIBAgIUK5qPEd3PoiOLb6FbxdjsZAWeyXgwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowIzEhMB8GA1UEAwwYaW50ZXJtZWRpYXRlLXBhdGhsZW4tb25lMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6fy74J25gHAlI9g1HbuIVc8WmipKY+iJgipvWUouwZ+jOD2h70yjD2fevfR/mJcZdDtDNgejNrOVJ3Wjk0qSRqNmMGQwEgYDVR0TAQH/BAgwBgEB/wIBATAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGY+Dc+KO4T4I1/3Nz4pZQqrAcxXMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0gAMEUCIQDq8gGW70uoFfef1kLvaR8j4JEDfo5zaoCU2C+csMhv7AIgcOZ3CDZ3LomXoFt9HY7PNg3E84jq47OViwbnM8CgbLw="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "a3c3b95c29d220cc8a0b8c97e03bfce362b30d3ae27aa050dfab2e96d91ae05a"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIQCfveMF4xSDCfqVjakyhBVnuP2QsKX/iw5grlJeinjQUwIgVaCe9tzTiPUl9IPVo8a/yTU7RMhRNkqFSfpCe32Kup8="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "intermediate-path-length"
+    },
+    {
+      "id": "intermediate-ku-missing-crl-sign",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "8c88e64d5e0f02037e96b7c975cae16d"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBxzCCAWygAwIBAgIUbIKxxug5TMzREcl58m6kcG/kyXgwCgYIKoZIzj0EAwIwKzEpMCcGA1UEAwwgaW50ZXJtZWRpYXRlLWt1LW1pc3NpbmctY3JsLXNpZ24wHhcNMjYxMDI3MDAwMDAwWhcNMjYxMDMwMDAwMDAwWjAkMSIwIAYDVQQDDBlTeW50aGV0aWMgQXNzaWdubWVudCBMZWFmMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+J4cSUk3X2So01ZrEik9Jgqfpn2R2ON5Zp8hMnJ4MkboFqm1xh/KB6HgL3fXeciY2Bq7bD2Llv44LFp+/JZgmqN1MHMwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0OBBYEFN/pCF+LkAk+jcoI728SwS7teuHNMB8GA1UdIwQYMBaAFAokz3roNhmlo4bMKXCBpZCX0UdNMBMGA1UdJQQMMAoGCCsGAQUFBwMDMAoGCCqGSM49BAMCA0kAMEYCIQD2sjpBCdNIUtlN7nmdXqGFRnYz45dFNZY63I8ZjUeUfQIhANc4tcPqNb9JGd832FH6lFxWXENaJC2fEv4B8qcT72iP"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB2zCCAYCgAwIBAgIUHYY7GZ2V/GhHcmwOAVZA2HJhrEcwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowKzEpMCcGA1UEAwwgaW50ZXJtZWRpYXRlLWt1LW1pc3NpbmctY3JsLXNpZ24wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATqEwgz0qSySbSHK3MiDz97yLYZwa/PHg29TxTqMJ+YsxxQ6At4YxdLKrdv62jIi0PSQqvmAR4vv31zkOZDoLDno2YwZDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwICBDAdBgNVHQ4EFgQUCiTPeug2GaWjhswpcIGlkJfRR00wHwYDVR0jBBgwFoAUgrQPCSwzaIQasDhVzY8kqaArpvswCgYIKoZIzj0EAwIDSQAwRgIhAMAwXMrMYba1AKlPjs5wbKLwV5FqOhFzxLO64+PAuXbVAiEA5YkNeRGk9GVwY8vjNe0bytVbsumokaxxjAeNqFx4/Lk="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "63a129b0de6969717795479c9232a1d1bf6c58be564fcd261bb92a7adad3e4de"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEYCIQD9RXhaWTuzXjKx/JBCd2bpbXNtW6Jm8xpB4gZvy4nHbAIhANWVC5phRXxgaenK9+dXiB7Zk7mnFPVEWGgWkh/GUz7u"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "intermediate-key-usage"
+    },
+    {
+      "id": "intermediate-wrong-eku",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "5bdf4b234bfad3dc7e6517e77043648f"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBuzCCAWKgAwIBAgIUWV3UPSW9yL44M7+45ktJqrU6rawwCgYIKoZIzj0EAwIwITEfMB0GA1UEAwwWaW50ZXJtZWRpYXRlLXdyb25nLWVrdTAeFw0yNjEwMjcwMDAwMDBaFw0yNjEwMzAwMDAwMDBaMCQxIjAgBgNVBAMMGVN5bnRoZXRpYyBBc3NpZ25tZW50IExlYWYwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASZd9qy5Id/qxw6ln9cQ45HhfIySylBvAZrnZ/F9OIm8NU8EXhVwkjQ8WzxGamUWupw9qPZYsHtr0ovDHQdgez3o3UwczAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIHgDAdBgNVHQ4EFgQUyUbGkh+sKGhC4TqgteDpJRSVUiswHwYDVR0jBBgwFoAUtdSf5evKe2tDutS0mImiCyoIAWEwEwYDVR0lBAwwCgYIKwYBBQUHAwMwCgYIKoZIzj0EAwIDRwAwRAIgKlOCzhlCibN66EZJSWAZQUXTvvh9HrFvxjdF/rDdHlECIEBk/5A3DkcBHS7Oo1kHnHBW53ahToXE/dQPJo8sUQhA"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB5jCCAYugAwIBAgIUcnulxCBEyvJ1eqC+nP1b5f4agUgwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowITEfMB0GA1UEAwwWaW50ZXJtZWRpYXRlLXdyb25nLWVrdTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABGnrZdO2xc5zjLtmclMeREz5+mYUEgTKlMHdduKH12bDJbBcfSZyX0bwPopqG4ob/zbKXDajEVW1SlOshYhjPKijezB5MBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBS11J/l68p7a0O61LSYiaILKggBYTAfBgNVHSMEGDAWgBSCtA8JLDNohBqwOFXNjySpoCum+zATBgNVHSUEDDAKBggrBgEFBQcDATAKBggqhkjOPQQDAgNJADBGAiEAq2nDqHEJRCQL56vavTndl3/RS9s7eVILXbUKuLhBiroCIQD49lk6onhlT834sB6hUxwcIOiFpCTcCZu93TjkbFLX+Q=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "12c4e27455bf5fdc4c79b1e77027711b1ba54c9ccd5e64a15af747e2ca05b0b0"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIEvhZAjZvrZRpCmG0DN37Z0DdT5Kg2OqvsZSSsKRrhkvAiA4mVf1rM4oBN6vU7JksE87ihhLCS7ngyqkKOXr4wW3ww=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "intermediate-eku"
+    },
+    {
+      "id": "missing-intermediate",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "missing-proof"
+    },
+    {
+      "id": "changed-response-bytes",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9IA=="
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-request-body",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9IA=="
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-nonce",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "00000000000000000000000000000000"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-effective-token",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ],
+          [
+            "dd-client-token",
+            "different-token"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-query-order",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?marker=a%2Fb&dd_env=production",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-authority",
+      "request": {
+        "url": "https://other.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-semantic-header",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ],
+          [
+            "x-use-cache",
+            "false"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "changed-http-status",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 201,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "response-status"
+    },
+    {
+      "id": "future-issued-at",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "ad832a44e6bec72a3220423d65f6b43b"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062831"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063131"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIBB37dVs7yRgZC95g3VgymmRVMgvK4JdtC6nLZEwmBeMAiBYJo5ISVZdVNkRUfaznQrFZNmIdU4GUJxFigEum1gZRg=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "response-time"
+    },
+    {
+      "id": "expired-response",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "d783022838666584f35b7092089aed97"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062500"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIQDbxbwVdc8+/pxG+emSpQu+c8siFcG/dJzvfUShJIom9gIgeGTgFwq86nh1VkaHPmNxhdvire51ZTSTLS7nz23GWac="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "response-time"
+    },
+    {
+      "id": "excess-response-lifetime",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "751225c66509b0751e32201fd6c25360"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063101"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIDiHXBJGNyqhE5RliLaF/W78HCzJ9qLlWOJLT2oKoUp/AiAvpb/CYu8RFoZ4Kaxqb/IXroTR1am946tc6nS8KGzTyw=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "response-time"
+    },
+    {
+      "id": "noncanonical-issued-at",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "01793062800"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "canonical-time"
+    },
+    {
+      "id": "duplicate-proof-header",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "duplicate-proof"
+    },
+    {
+      "id": "comma-combined-proof-header",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1, 1"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "combined-proof"
+    },
+    {
+      "id": "oversized-certificate",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "certificate-size"
+    },
+    {
+      "id": "malformed-certificate-base64",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "not@base64"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "certificate-encoding"
+    },
+    {
+      "id": "signature-trailing-der",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6gA="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "signature-encoding"
+    },
+    {
+      "id": "certificate-trailing-der",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "6738a6d5b76925e3a967b90c0932d159bf8524ad2db2d14b7a7bc705719bffaa"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCIAtONBn1e9+mX5CtPvimsYrBLuc6T3VZF3LlVdCzuXiUAiAtr/SytbKwdYTAEJqIqvtVqCbuQUJit8MsvIcdY45ZgA=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5gA="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "certificate-encoding",
+      "transcript_base64": "ZGF0YWRvZy5mZWF0dXJlLWZsYWdzLnByZWNvbXB1dGVkLWFzc2lnbm1lbnRzLnYxAAAAAARQT1NUAAAABWh0dHBzAAAAEmZsYWdzLmV4YW1wbGUudGVzdAAAABcvcHJlY29tcHV0ZS9hc3NpZ25tZW50cwAAAB8/ZGRfZW52PXByb2R1Y3Rpb24mbWFya2VyPWElMkZiAAAAEMdE6KAiC4TmNqM4Bt71Nlq7RTYkNmgw7InPBvfo1awKbp0Kv9q6SfxCHygN4pcnh/6Ng8TcBPzzrxF/TDOL/e9gFxG7FxwZhrfj79251AdPAQAAABBhcHBsaWNhdGlvbi9qc29uAQAAAA1zeW50aGV0aWMtYXBwAAEAAAAEdHJ1ZQEAAAATcmVzcG9uc2Utc2lnbmluZy12MQAAyAAAAABq3/eQAAAAAGrf+LwAAAAAAAAAbBjoo2BVrsFBvsb7/kndkWuEJugJckBE6x8yNdHqNEVJZzim1bdpJeOpZ7kMCTLRWb+FJK0tstFLenvHBXGb/6qK5IXeXBsvfM61fHg4wyYFpic/Ia2/EMmSIZ43j2NQqw=="
+    },
+    {
+      "id": "cryptographic-signature-tampering",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIQCnD2grHkrMYeEO2i5nlpjCBqBBgIAD68ZQjKyQd+ZbbgIgdQTrofgLk4BzZL1y1yYM2lxwI6a6h1EAFLqEkKYBOxw="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-signature"
+    },
+    {
+      "id": "duplicate-request-semantic-header",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "duplicate-semantic-header"
+    },
+    {
+      "id": "unsupported-prototype-version-2",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "2"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "protocol-version"
+    },
+    {
+      "id": "unsupported-prototype-version-3",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEQCICd4gJ6SS+b86toF0aHTSFmKhhl15NCZSYSzddUH8363AiANVhVk9z3UFZVeShs2xdX9wtT8yyL3Jbpdt7CpU7jD6g=="
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "3"
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "protocol-version"
+    },
+    {
+      "id": "draft-v3-domain",
+      "request": {
+        "url": "https://flags.example.test:443/precompute/assignments?dd_env=production&marker=a%2Fb",
+        "method": "POST",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "dd-client-token",
+            "synthetic-client-token"
+          ],
+          [
+            "dd-application-id",
+            "synthetic-app"
+          ],
+          [
+            "x-use-cache",
+            "true"
+          ],
+          [
+            "x-dd-feature-flags-capabilities",
+            "response-signing-v1"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-request-nonce",
+            "c744e8a0220b84e636a33806def5365a"
+          ]
+        ],
+        "body_base64": "eyJzdWJqZWN0Ijp7ImlkIjoic3ludGhldGljLXVzZXIiLCJjb3VudHJ5IjoiVVMifSwiZGRfZW52IjoicHJvZHVjdGlvbiJ9"
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ],
+          [
+            "cache-control",
+            "no-store, no-transform"
+          ],
+          [
+            "x-datadog-feature-flags-signature-version",
+            "1"
+          ],
+          [
+            "x-datadog-feature-flags-signing-certificate",
+            "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g=="
+          ],
+          [
+            "x-datadog-feature-flags-signing-intermediate",
+            "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+          ],
+          [
+            "x-datadog-feature-flags-certificate-id",
+            "45c22d216e51de0f4750dbd127f5cbeeadef2bc3b426cb95d682abcc88c9210b"
+          ],
+          [
+            "x-datadog-feature-flags-issued-at",
+            "1793062800"
+          ],
+          [
+            "x-datadog-feature-flags-expires-at",
+            "1793063100"
+          ],
+          [
+            "x-datadog-feature-flags-signature",
+            "MEUCIGi+neryDrq8ct6gfZ70vBYqoDY8Yybr3oDXpSNQtggNAiEAqhF7MuNBS2wa0RAARKElenwStq1XFV62qMKlhYDVmUA="
+          ]
+        ],
+        "body_base64": "eyJmbGFncyI6eyJjcml0aWNhbC1kZW1vIjp7InZhcmlhdGlvbiI6Im9mZiIsInZhbHVlIjpmYWxzZX19LCJydWxlc1JldmlzaW9uIjoic3ludGhldGljLXIxIiwibGFiZWwiOiJjYWbDqSJ9"
+      },
+      "now": 1793062800,
+      "expected_accept": false,
+      "rejection_reason": "transcript-domain"
+    }
+  ],
+  "signing_cases": [
+    {
+      "id": "signer-valid-key-pair",
+      "case_id": "valid-current",
+      "credential": {
+        "version": 1,
+        "generation": "valid-current",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3CTaM180jSh+DN3yEcdUy5NiXg9uiqIbKMXo8tIQfxmhRANCAARaDtotVSlwOC7NQIAf4qDzIzSW8SMsy1Urpmz23gC13FvbhS0QL7EwIdl7kLrQ+Xdnz9sH/szvPtBiGRa7OyXg",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      },
+      "expected_signing": true
+    },
+    {
+      "id": "signer-private-key-mismatch",
+      "case_id": "valid-current",
+      "credential": {
+        "version": 1,
+        "generation": "valid-current",
+        "private_key_pkcs8_der_base64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgIq7QsEW3oCouCspfgP++htttxioVzmc/Vg+2FyIf7yOhRANCAAQVvEQJe29jJq+Y7toSaGoYzjvFg/BYOpJzomfHo5zhJ5zaA+uo3Qt73edHXrCZfY89vv/+LG5CWo3bWfntpC0e",
+        "certificate_der_base64": "MIIBwjCCAWegAwIBAgIUKw/B9HQAbo1nZOnaO8W4WoVAyL4wCgYIKoZIzj0EAwIwJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MB4XDTI2MTAyNzAwMDAwMFoXDTI2MTAzMDAwMDAwMFowJDEiMCAGA1UEAwwZU3ludGhldGljIEFzc2lnbm1lbnQgTGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFoO2i1VKXA4Ls1AgB/ioPMjNJbxIyzLVSumbPbeALXcW9uFLRAvsTAh2XuQutD5d2fP2wf+zO8+0GIZFrs7JeCjdTBzMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMB0GA1UdDgQWBBR7CCGoeUbMlCn2rP/SnBtO5IJPIjAfBgNVHSMEGDAWgBRn5UKvqeH62uVqiA3Y0BO1y255RDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEAkK0KpDu+WOQKzTBKEOkZlOMsHX+yh5ln4mpHsf6FmxMCIQDTLFsk/ZZs/34rxkl0RpTfzjjaebPgU14nTXYCzxcS5g==",
+        "intermediate_der_base64": "MIIB1DCCAXugAwIBAgIUO/1Iri7DvrD+lmmsoxTRbxWLGSEwCgYIKoZIzj0EAwIwRzFFMEMGA1UEAww8U1lOVEhFVElDIFJFU1BPTlNFIFNJR05JTkcgVjEgVEVTVCBST09UIC0gTk9UIEZPUiBQUk9EVUNUSU9OMB4XDTI2MTAwMTAwMDAwMFoXDTI3MTAwMTAwMDAwMFowJjEkMCIGA1UEAwwbU3ludGhldGljIEludGVybWVkaWF0ZSAyMDI2MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHGrqgrc1Zws9fw/SNHEnBgiLedEmrL62mTK8Q/6eOVxwOO7qhPE9evVpHP+Mqn/emgNt7yfWdM7hHjnvp4cty6NmMGQwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFGflQq+p4fra5WqIDdjQE7XLbnlEMB8GA1UdIwQYMBaAFIK0DwksM2iEGrA4Vc2PJKmgK6b7MAoGCCqGSM49BAMCA0cAMEQCIEnBtRRCWHn3LHQTIFyzHO73LM6zuiZlGCZoOaMj8aleAiA/kBE3rmtnPVuMEhJVEcli8NT8EaNP+U6k20e0dsIf8w=="
+      },
+      "expected_signing": false
+    }
+  ]
+}

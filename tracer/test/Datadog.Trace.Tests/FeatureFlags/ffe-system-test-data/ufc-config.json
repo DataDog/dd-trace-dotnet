@@ -62,7 +62,8 @@
           "splits": [
             {
               "variationKey": "pi",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true,
@@ -117,7 +118,8 @@
           "splits": [
             {
               "variationKey": "comma-quantifier",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -138,7 +140,8 @@
           "splits": [
             {
               "variationKey": "literal-whitespace",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -159,7 +162,8 @@
           "splits": [
             {
               "variationKey": "capturing-groups",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -180,7 +184,8 @@
           "splits": [
             {
               "variationKey": "unicode-word-boundary",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -201,7 +206,8 @@
           "splits": [
             {
               "variationKey": "partial-example",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -222,7 +228,8 @@
           "splits": [
             {
               "variationKey": "test",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -266,7 +273,8 @@
           "splits": [
             {
               "variationKey": "1",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -289,7 +297,8 @@
           "splits": [
             {
               "variationKey": "2",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -312,7 +321,8 @@
           "splits": [
             {
               "variationKey": "3",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -364,7 +374,8 @@
           "splits": [
             {
               "variationKey": "1",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -385,7 +396,8 @@
           "splits": [
             {
               "variationKey": "2",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -408,7 +420,8 @@
           "splits": [
             {
               "variationKey": "3",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -429,7 +442,8 @@
           "splits": [
             {
               "variationKey": "4",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -452,7 +466,8 @@
           "splits": [
             {
               "variationKey": "5",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -502,7 +517,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -524,7 +540,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true
@@ -577,7 +594,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -609,7 +627,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -620,7 +639,8 @@
           "splits": [
             {
               "variationKey": "off",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -662,7 +682,8 @@
           "splits": [
             {
               "variationKey": "small",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -688,7 +709,8 @@
           "splits": [
             {
               "variationKey": "medium",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -709,7 +731,8 @@
           "splits": [
             {
               "variationKey": "large",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -763,7 +786,8 @@
           "splits": [
             {
               "variationKey": "maximum",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -798,7 +822,8 @@
           "splits": [
             {
               "variationKey": "legacy",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -824,7 +849,8 @@
           "splits": [
             {
               "variationKey": "stable",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -850,7 +876,8 @@
           "splits": [
             {
               "variationKey": "beta",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -871,7 +898,8 @@
           "splits": [
             {
               "variationKey": "launch",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -897,7 +925,8 @@
           "splits": [
             {
               "variationKey": "future",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -932,7 +961,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -971,7 +1001,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -982,7 +1013,8 @@
           "splits": [
             {
               "variationKey": "fallback",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -1013,7 +1045,8 @@
           "splits": [
             {
               "variationKey": "old",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "endAt": "2002-10-31T09:00:00.594Z",
@@ -1025,7 +1058,8 @@
           "splits": [
             {
               "variationKey": "new",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "startAt": "2052-10-31T09:00:00.594Z",
@@ -1037,13 +1071,149 @@
           "splits": [
             {
               "variationKey": "current",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "startAt": "2022-10-31T09:00:00.594Z",
           "endAt": "2050-10-31T09:00:00.594Z",
           "doLog": true,
           "randomizationActivatedAt": "2026-10-20T12:00:00Z"
+        }
+      ]
+    },
+    "time-bounded-holdout-flag": {
+      "key": "time-bounded-holdout-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "status-quo": {
+          "key": "status-quo",
+          "value": "status-quo"
+        },
+        "shipped": {
+          "key": "shipped",
+          "value": "shipped"
+        },
+        "targeted": {
+          "key": "targeted",
+          "value": "targeted"
+        }
+      },
+      "allocations": [
+        {
+          "key": "targeted-override",
+          "startAt": "2022-10-31T09:00:00.594Z",
+          "endAt": "2050-10-31T09:00:00.594Z",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "tier",
+                  "operator": "ONE_OF",
+                  "value": [
+                    "internal"
+                  ]
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "targeted",
+              "serialId": 201,
+              "shards": [
+                {
+                  "salt": "targeted-override",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ],
+              "reason": "TARGETING_MATCH"
+            }
+          ],
+          "doLog": false
+        },
+        {
+          "key": "holdout-a",
+          "splits": [
+            {
+              "variationKey": "status-quo",
+              "shards": [
+                {
+                  "salt": "holdout-a-holdout-traffic",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2560000
+                    }
+                  ],
+                  "totalShards": 5120000
+                },
+                {
+                  "salt": "holdout-a-holdout-split",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ],
+                  "totalShards": 10000
+                }
+              ],
+              "serialId": 202,
+              "reason": "SPLIT"
+            },
+            {
+              "variationKey": "shipped",
+              "shards": [
+                {
+                  "salt": "holdout-a-holdout-traffic",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2560000
+                    }
+                  ],
+                  "totalShards": 5120000
+                },
+                {
+                  "salt": "holdout-a-holdout-split",
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ],
+                  "totalShards": 10000
+                }
+              ],
+              "serialId": 203,
+              "reason": "SPLIT"
+            }
+          ],
+          "startAt": "2022-10-31T09:00:00.594Z",
+          "endAt": "2050-10-31T09:00:00.594Z",
+          "doLog": true,
+          "randomizationActivatedAt": "2022-10-31T09:00:00.594Z"
+        },
+        {
+          "key": "rollout",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "shipped",
+              "shards": [],
+              "serialId": 204,
+              "reason": "STATIC"
+            }
+          ],
+          "doLog": false
         }
       ]
     },
@@ -1087,7 +1257,8 @@
           "splits": [
             {
               "variationKey": "old",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -1108,7 +1279,8 @@
           "splits": [
             {
               "variationKey": "new",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -1162,7 +1334,8 @@
           "splits": [
             {
               "variationKey": "purple",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": false
@@ -1183,7 +1356,8 @@
           "splits": [
             {
               "variationKey": "green",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": false
@@ -1229,7 +1403,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             },
             {
               "variationKey": "red",
@@ -1254,7 +1429,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             },
             {
               "variationKey": "yellow",
@@ -1279,7 +1455,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true,
@@ -1320,7 +1497,8 @@
               "extraLogging": {
                 "allocationvalue_type": "rollout",
                 "owner": "hippo"
-              }
+              },
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -1386,7 +1564,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true,
@@ -1409,7 +1588,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             },
             {
               "variationKey": "two",
@@ -1424,7 +1604,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true,
@@ -1488,7 +1669,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -1520,7 +1702,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             },
             {
               "variationKey": "two",
@@ -1545,7 +1728,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true
@@ -1603,7 +1787,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             },
             {
               "variationKey": "ua",
@@ -1618,7 +1803,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             },
             {
               "variationKey": "zh",
@@ -1633,7 +1819,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             },
             {
               "variationKey": "emoji",
@@ -1648,7 +1835,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true,
@@ -1659,7 +1847,8 @@
           "splits": [
             {
               "variationKey": "de",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": false
@@ -1956,7 +2145,8 @@
           "splits": [
             {
               "variationKey": "string_with_spaces",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -1979,7 +2169,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_space",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2002,7 +2193,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_spaces",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2025,7 +2217,8 @@
           "splits": [
             {
               "variationKey": "string_with_dots",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2048,7 +2241,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_dot",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2071,7 +2265,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_dots",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2094,7 +2289,8 @@
           "splits": [
             {
               "variationKey": "string_with_comas",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2117,7 +2313,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_coma",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2140,7 +2337,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_comas",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2163,7 +2361,8 @@
           "splits": [
             {
               "variationKey": "string_with_colons",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2186,7 +2385,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_colon",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2209,7 +2409,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_colons",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2232,7 +2433,8 @@
           "splits": [
             {
               "variationKey": "string_with_semicolons",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2255,7 +2457,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_semicolon",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2278,7 +2481,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_semicolons",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2301,7 +2505,8 @@
           "splits": [
             {
               "variationKey": "string_with_slashes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2324,7 +2529,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_slash",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2347,7 +2553,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_slashes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2370,7 +2577,8 @@
           "splits": [
             {
               "variationKey": "string_with_dashes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2393,7 +2601,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_dash",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2416,7 +2625,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_dashes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2439,7 +2649,8 @@
           "splits": [
             {
               "variationKey": "string_with_underscores",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2462,7 +2673,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_underscore",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2485,7 +2697,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_underscores",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2508,7 +2721,8 @@
           "splits": [
             {
               "variationKey": "string_with_plus_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2531,7 +2745,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_plus_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2554,7 +2769,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_plus_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2577,7 +2793,8 @@
           "splits": [
             {
               "variationKey": "string_with_equal_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2600,7 +2817,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_equal_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2623,7 +2841,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_equal_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2646,7 +2865,8 @@
           "splits": [
             {
               "variationKey": "string_with_dollar_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2669,7 +2889,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_dollar_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2692,7 +2913,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_dollar_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2715,7 +2937,8 @@
           "splits": [
             {
               "variationKey": "string_with_at_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2738,7 +2961,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_at_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2761,7 +2985,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_at_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2784,7 +3009,8 @@
           "splits": [
             {
               "variationKey": "string_with_amp_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2807,7 +3033,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_amp_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2830,7 +3057,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_amp_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2853,7 +3081,8 @@
           "splits": [
             {
               "variationKey": "string_with_hash_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2876,7 +3105,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_hash_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2899,7 +3129,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_hash_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2922,7 +3153,8 @@
           "splits": [
             {
               "variationKey": "string_with_percentage_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2945,7 +3177,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_percentage_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2968,7 +3201,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_percentage_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -2991,7 +3225,8 @@
           "splits": [
             {
               "variationKey": "string_with_tilde_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3014,7 +3249,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_tilde_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3037,7 +3273,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_tilde_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3060,7 +3297,8 @@
           "splits": [
             {
               "variationKey": "string_with_asterix_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3083,7 +3321,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_asterix_sign",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3106,7 +3345,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_asterix_signs",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3129,7 +3369,8 @@
           "splits": [
             {
               "variationKey": "string_with_single_quotes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3152,7 +3393,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_single_quote",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3175,7 +3417,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_single_quotes",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3198,7 +3441,8 @@
           "splits": [
             {
               "variationKey": "string_with_question_marks",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3221,7 +3465,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_question_mark",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3244,7 +3489,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_question_marks",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3267,7 +3513,8 @@
           "splits": [
             {
               "variationKey": "string_with_exclamation_marks",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3290,7 +3537,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_exclamation_mark",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3313,7 +3561,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_exclamation_marks",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3336,7 +3585,8 @@
           "splits": [
             {
               "variationKey": "string_with_opening_parentheses",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3359,7 +3609,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_opening_parenthese",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3382,7 +3633,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_opening_parentheses",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3405,7 +3657,8 @@
           "splits": [
             {
               "variationKey": "string_with_closing_parentheses",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3428,7 +3681,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_one_closing_parenthese",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3451,7 +3705,8 @@
           "splits": [
             {
               "variationKey": "string_with_only_multiple_closing_parentheses",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3491,7 +3746,8 @@
           "splits": [
             {
               "variationKey": "false-variation",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3514,7 +3770,8 @@
           "splits": [
             {
               "variationKey": "true-variation",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3555,7 +3812,8 @@
           "splits": [
             {
               "variationKey": "empty-content",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3578,7 +3836,8 @@
           "splits": [
             {
               "variationKey": "detailed-content",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3619,7 +3878,8 @@
           "splits": [
             {
               "variationKey": "zero-limit",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3642,7 +3902,8 @@
           "splits": [
             {
               "variationKey": "premium-limit",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3671,7 +3932,8 @@
           "splits": [
             {
               "variationKey": "on",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -3702,7 +3964,8 @@
           "splits": [
             {
               "variationKey": "expired",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "endAt": "2002-10-31T09:00:00.594321Z",
@@ -3713,7 +3976,8 @@
           "splits": [
             {
               "variationKey": "future",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "startAt": "2052-10-31T09:00:00.123456Z",
@@ -3724,7 +3988,8 @@
           "splits": [
             {
               "variationKey": "active",
-              "shards": []
+              "shards": [],
+              "reason": "DEFAULT"
             }
           ],
           "startAt": "2022-10-31T09:00:00.235982Z",
@@ -3782,7 +4047,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3821,7 +4087,8 @@
           "splits": [
             {
               "variationKey": "trap",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3832,7 +4099,8 @@
           "splits": [
             {
               "variationKey": "on",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -3871,7 +4139,8 @@
           "splits": [
             {
               "variationKey": "invalid-regex-match",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3882,7 +4151,8 @@
           "splits": [
             {
               "variationKey": "catch-all",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -3911,7 +4181,8 @@
           "splits": [
             {
               "variationKey": "invalid",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -3950,7 +4221,8 @@
           "splits": [
             {
               "variationKey": "trap",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -3961,7 +4233,8 @@
           "splits": [
             {
               "variationKey": "catch-all",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -4000,7 +4273,8 @@
           "splits": [
             {
               "variationKey": "trap",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4011,7 +4285,8 @@
           "splits": [
             {
               "variationKey": "catch-all",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -4050,7 +4325,8 @@
           "splits": [
             {
               "variationKey": "trap",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4061,7 +4337,8 @@
           "splits": [
             {
               "variationKey": "catch-all",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -4134,7 +4411,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true
@@ -4170,7 +4448,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "reason": "SPLIT"
             }
           ],
           "doLog": true
@@ -4218,7 +4497,8 @@
           "splits": [
             {
               "variationKey": "catch-all",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -4243,7 +4523,8 @@
           "splits": [
             {
               "variationKey": "expected",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -4319,7 +4600,8 @@
           "splits": [
             {
               "variationKey": "numeric-prerelease",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4345,7 +4627,8 @@
           "splits": [
             {
               "variationKey": "build-equal-precedence",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4371,7 +4654,8 @@
           "splits": [
             {
               "variationKey": "build-dotted-eq",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4397,7 +4681,8 @@
           "splits": [
             {
               "variationKey": "build-lte",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4423,7 +4708,8 @@
           "splits": [
             {
               "variationKey": "build-gte",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4449,7 +4735,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4475,7 +4762,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4501,7 +4789,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4527,7 +4816,8 @@
           "splits": [
             {
               "variationKey": "alpha-before-alpha-1",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4553,7 +4843,8 @@
           "splits": [
             {
               "variationKey": "alpha-1-before-alpha-beta",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4579,7 +4870,8 @@
           "splits": [
             {
               "variationKey": "alpha-beta-before-beta",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4605,7 +4897,8 @@
           "splits": [
             {
               "variationKey": "beta-before-release",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4659,7 +4952,8 @@
           "splits": [
             {
               "variationKey": "one-part-input",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4687,7 +4981,8 @@
           "splits": [
             {
               "variationKey": "two-part-input",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4715,7 +5010,8 @@
           "splits": [
             {
               "variationKey": "four-part-input",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4743,7 +5039,8 @@
           "splits": [
             {
               "variationKey": "five-part-input",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4778,7 +5075,8 @@
           "splits": [
             {
               "variationKey": "one-part-comparand",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4813,7 +5111,8 @@
           "splits": [
             {
               "variationKey": "two-part-comparand",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4848,7 +5147,8 @@
           "splits": [
             {
               "variationKey": "four-part-comparand",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4883,7 +5183,8 @@
           "splits": [
             {
               "variationKey": "five-part-comparand",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4918,7 +5219,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4953,7 +5255,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -4988,7 +5291,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5023,7 +5327,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5058,7 +5363,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5093,7 +5399,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5128,7 +5435,8 @@
           "splits": [
             {
               "variationKey": "matched",
-              "shards": []
+              "shards": [],
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5157,7 +5465,8 @@
             {
               "variationKey": "on",
               "shards": [],
-              "serialId": 42
+              "serialId": 42,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5186,7 +5495,8 @@
             {
               "variationKey": "on",
               "shards": [],
-              "serialId": 0
+              "serialId": 0,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5214,7 +5524,8 @@
           "splits": [
             {
               "variationKey": "control",
-              "shards": []
+              "shards": [],
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5255,7 +5566,8 @@
             {
               "variationKey": "vip",
               "shards": [],
-              "serialId": 201
+              "serialId": 201,
+              "reason": "TARGETING_MATCH"
             }
           ],
           "doLog": true
@@ -5267,7 +5579,8 @@
             {
               "variationKey": "standard",
               "shards": [],
-              "serialId": 200
+              "serialId": 200,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5296,7 +5609,8 @@
             {
               "variationKey": "on",
               "shards": [],
-              "serialId": 100
+              "serialId": 100,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5325,7 +5639,8 @@
             {
               "variationKey": "treatment",
               "shards": [],
-              "serialId": 108
+              "serialId": 108,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5355,7 +5670,8 @@
             {
               "variationKey": "on",
               "shards": [],
-              "serialId": 200
+              "serialId": 200,
+              "reason": "STATIC"
             }
           ],
           "doLog": false
@@ -5380,7 +5696,8 @@
             {
               "variationKey": "v1",
               "shards": [],
-              "serialId": 128
+              "serialId": 128,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5405,7 +5722,8 @@
             {
               "variationKey": "v2",
               "shards": [],
-              "serialId": 130
+              "serialId": 130,
+              "reason": "STATIC"
             }
           ],
           "doLog": true
@@ -5494,7 +5812,8 @@
                     "hook"
                   ]
                 }
-              ]
+              ],
+              "reason": "STATIC"
             }
           ]
         }
@@ -5619,9 +5938,295 @@
                   "value": true,
                   "destinations": "HOOK"
                 }
-              ]
+              ],
+              "reason": "STATIC"
             }
           ]
+        }
+      ]
+    },
+    "layer-checkout-layout": {
+      "key": "layer-checkout-layout",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-layout-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 31001,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-layout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 31002,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-layout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-layout-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 31003,
+              "reason": "STATIC",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "layer-checkout-pricing": {
+      "key": "layer-checkout-pricing",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-pricing-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 32001,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 2500,
+                      "end": 5000
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-pricing-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 32002,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 2500,
+                      "end": 5000
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-pricing-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-pricing-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 32003,
+              "reason": "STATIC",
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "layer-checkout-messaging": {
+      "key": "layer-checkout-messaging",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-messaging-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 33001,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 7500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-messaging-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 33002,
+              "reason": "SPLIT",
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 7500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-messaging-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-messaging-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 33003,
+              "reason": "STATIC",
+              "shards": []
+            }
+          ],
+          "doLog": false
         }
       ]
     },
@@ -5667,7 +6272,8 @@
                     "EVALUATION"
                   ]
                 }
-              ]
+              ],
+              "reason": "TARGETING_MATCH"
             }
           ]
         },
@@ -5689,9 +6295,91 @@
                     "EVALUATION"
                   ]
                 }
-              ]
+              ],
+              "reason": "STATIC"
             }
           ]
+        }
+      ]
+    },
+    "json-number-precision-flag": {
+      "key": "json-number-precision-flag",
+      "enabled": true,
+      "variationType": "JSON",
+      "variations": {
+        "within-double": {
+          "key": "within-double",
+          "value": {
+            "zero": 0,
+            "small": 5,
+            "negative": -7,
+            "int32Max": 2147483647,
+            "int32Min": -2147483648,
+            "aboveInt32": 2147483648,
+            "maxSafeInteger": 9007199254740991,
+            "float": 5.0,
+            "fraction": 0.25,
+            "nested": {
+              "count": 3,
+              "values": [
+                1,
+                2.5,
+                -3
+              ]
+            }
+          }
+        },
+        "above-double": {
+          "key": "above-double",
+          "value": {
+            "aboveMaxSafeInteger": 9007199254740993,
+            "int64Max": 9223372036854775807,
+            "int64Min": -9223372036854775808,
+            "nested": {
+              "ids": [
+                9007199254740993,
+                18014398509481985
+              ]
+            }
+          }
+        }
+      },
+      "allocations": [
+        {
+          "key": "above-double-precision",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "precision",
+                  "operator": "ONE_OF",
+                  "value": [
+                    "above-double"
+                  ]
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "above-double",
+              "shards": [],
+              "reason": "TARGETING_MATCH"
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "within-double-precision",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "within-double",
+              "shards": [],
+              "reason": "STATIC"
+            }
+          ],
+          "doLog": true
         }
       ]
     }

@@ -1,0 +1,4 @@
+{
+  "schemaVersion": 1,
+  "resources": [{"id": "canonical-evaluator", "source": "ufc-config.json"}]
+}
