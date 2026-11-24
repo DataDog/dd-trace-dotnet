@@ -177,7 +177,7 @@ public class AgentlessEndpointTests
 
         endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out var omitted).Should().Be(endpoint.BuildRequestUri("production"));
         omitted.Should().BeFalse();
-        endpoint.BuildRequestUri(null, FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri(null, FlagSelection.AllFlags, out _).Should().Be(endpoint.BuildRequestUri(null));
     }
 
     [Fact]
@@ -186,32 +186,32 @@ public class AgentlessEndpointTests
         var endpoint = Create("datadoghq.com");
 
         endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile", null], null), out var omitted)
-                .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production");
+                .AbsoluteUri.Should().Be(ManagedUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production");
         omitted.Should().BeFalse("the selection was dropped before the URL was built");
     }
 
     [Fact]
     public void AppendsTheSelectionAfterDdEnvWithTagsFirst()
         => Create("datadoghq.com").BuildRequestUri("production", FlagSelection.Create(["mobile"], ["checkout.*"]), out _)
-                                  .AbsoluteUri.Should().Be(ManagedUrl + "?dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
+                                  .AbsoluteUri.Should().Be(ManagedUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production&selected_flag_tags=mobile&selected_flag_key_patterns=checkout.%2A");
 
     [Theory]
-    [InlineData("https://flags.example.com/ufc", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc??x=1", "https://flags.example.com/ufc??x=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc???x=1", "https://flags.example.com/ufc???x=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?x=?inside", "https://flags.example.com/ufc?x=?inside&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?%3Fx=1", "https://flags.example.com/ufc?%3Fx=1&selected_flag_tags=mobile")]
-    [InlineData("https://flags.example.com/ufc?x=1#frag", "https://flags.example.com/ufc?x=1&selected_flag_tags=mobile#frag")]
-    [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc", "https://flags.example.com/ufc?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc", "https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging", "https://flags.example.com/ufc?token=abc&dd_env=staging&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?", "https://flags.example.com/ufc?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc??x=1", "https://flags.example.com/ufc??x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc???x=1", "https://flags.example.com/ufc???x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=?inside", "https://flags.example.com/ufc?x=?inside&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?%3Fx=1", "https://flags.example.com/ufc?%3Fx=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
+    [InlineData("https://flags.example.com/ufc?x=1#frag", "https://flags.example.com/ufc?x=1&cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile#frag")]
+    [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath + "?cap_dependent-flags-variant-key=v1&selected_flag_tags=mobile")]
     public void MergesTheSelectionIntoACustomEndpointQuery(string baseUrl, string expected)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
 
         endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile"], null), out _).AbsoluteUri.Should().Be(expected);
-        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
+        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.BuildRequestUri("production"));
     }
 
     [Theory]
@@ -237,7 +237,7 @@ public class AgentlessEndpointTests
     public void SystemUriKeepsThePercentEncoding(string character, string encoded)
     {
         var value = "v" + character + "v";
-        var expectedQuery = "?selected_flag_tags=v" + encoded + "v&selected_flag_key_patterns=v" + encoded + "v";
+        var expectedQuery = "?cap_dependent-flags-variant-key=v1&selected_flag_tags=v" + encoded + "v&selected_flag_key_patterns=v" + encoded + "v";
 
         var uri = Create("datadoghq.com").BuildRequestUri(null, FlagSelection.Create([value], [value]), out _);
 

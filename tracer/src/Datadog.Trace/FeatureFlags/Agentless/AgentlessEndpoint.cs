@@ -259,8 +259,17 @@ internal sealed class AgentlessEndpoint
     public Uri BuildRequestUri(string? env)
     {
         var normalized = RequestEnvironment(env);
-        var uri = AppendQuery(Uri, DependentFlagsParameter);
-        return normalized is null ? uri : AppendQuery(uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
+        var builder = new UriBuilder(Uri)
+        {
+            Query = AddOrReplaceDependentFlagsParameter(Uri.Query),
+        };
+
+        if (normalized is not null)
+        {
+            builder.Query += "&" + EnvParameterName + "=" + Uri.EscapeDataString(normalized);
+        }
+
+        return builder.Uri;
     }
 
     /// <summary>
