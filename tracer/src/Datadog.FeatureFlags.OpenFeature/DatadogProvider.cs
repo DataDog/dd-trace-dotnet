@@ -100,7 +100,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     }
 
     // Canonical tests can inject the real evaluation hook while routing its events to an isolated writer.
-    [TestingOnly]
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure, FeatureFlagsSdk.DependencyTelemetryCallback getDependencyTelemetry, FlagEvalEVPHook? evaluationEventsHook)
         : this(new DatadogProviderOptions(), FeatureFlagsSdk.SetFlagSelection, FeatureFlagsSdk.ReleaseFlagSelection, canDeferExposures, commitExposure)
     {
