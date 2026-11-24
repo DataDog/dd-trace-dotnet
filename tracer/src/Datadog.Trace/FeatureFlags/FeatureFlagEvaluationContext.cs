@@ -13,10 +13,14 @@ namespace Datadog.Trace.FeatureFlags;
 internal static class FeatureFlagEvaluationContext
 {
     internal static Dictionary<string, string> Create(MutableSettings settings)
-        => new()
+    {
+        var environment = settings.Environment;
+        var serviceVersion = settings.ServiceVersion;
+        return new Dictionary<string, string>
         {
             ["service"] = settings.DefaultServiceName,
-            ["env"] = string.IsNullOrEmpty(settings.Environment) ? "unknown" : settings.Environment,
-            ["version"] = string.IsNullOrEmpty(settings.ServiceVersion) ? "unknown" : settings.ServiceVersion,
+            ["env"] = string.IsNullOrEmpty(environment) ? "unknown" : environment!,
+            ["version"] = string.IsNullOrEmpty(serviceVersion) ? "unknown" : serviceVersion!,
         };
+    }
 }
