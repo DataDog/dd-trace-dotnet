@@ -59,7 +59,7 @@ public class FeatureFlagsDependentFlagTests
         published.Should().BeEmpty();
         var metadata = result.FlagMetadata.Should().BeOfType<DeferredExposureMetadata>().Subject;
         metadata.TryTakePendingExposureBatch(out var batch).Should().BeTrue();
-        batch.Exposures!.Select(exposure => exposure.Flag.Key).Should().Equal("prerequisite", "root");
+        batch!.Exposures!.Select(exposure => exposure.Flag.Key).Should().Equal("prerequisite", "root");
     }
 
     [Fact]
