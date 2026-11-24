@@ -330,8 +330,7 @@ internal sealed class AgentlessEndpoint
 
             var equals = existing.IndexOf('=', segmentStart, segmentEnd - segmentStart);
             var nameEnd = equals < 0 ? segmentEnd : equals;
-            var isDependentFlagsParameter = nameEnd - segmentStart == DependentFlagsParameterName.Length
-                                         && string.CompareOrdinal(existing, segmentStart, DependentFlagsParameterName, 0, DependentFlagsParameterName.Length) == 0;
+            var isDependentFlagsParameter = IsDependentFlagsParameter(existing, segmentStart, nameEnd - segmentStart);
             if (!isDependentFlagsParameter || !replaced)
             {
                 if (hasRetainedSegment)
@@ -371,5 +370,32 @@ internal sealed class AgentlessEndpoint
         }
 
         return result.ToString();
+    }
+
+    private static bool IsDependentFlagsParameter(string query, int nameStart, int nameLength)
+    {
+        if (nameLength == DependentFlagsParameterName.Length
+         && string.CompareOrdinal(query, nameStart, DependentFlagsParameterName, 0, nameLength) == 0)
+        {
+            return true;
+        }
+
+        if (query.IndexOf('%', nameStart, nameLength) < 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.Equals(
+                Uri.UnescapeDataString(query.Substring(nameStart, nameLength)),
+                DependentFlagsParameterName,
+                StringComparison.Ordinal);
+        }
+        catch (UriFormatException)
+        {
+            // Preserve malformed custom query segments instead of rejecting the configured URL.
+            return false;
+        }
     }
 }

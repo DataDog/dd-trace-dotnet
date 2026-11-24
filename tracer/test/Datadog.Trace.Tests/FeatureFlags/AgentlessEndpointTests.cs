@@ -80,6 +80,8 @@ public class AgentlessEndpointTests
     [InlineData("https://flags.example.com/ufc?token=a%2Bb&&scope=one%2Ftwo&", "?token=a%2Bb&&scope=one%2Ftwo&cap_dependent-flags-variant-key=v1")]
     [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent-flags-variant-key=old&scope=one%2Ftwo", "?token=abc&cap_dependent-flags-variant-key=v1&scope=one%2Ftwo")]
     [InlineData("https://flags.example.com/ufc?cap_dependent-flags-variant-key=old&token=a%2Bb&cap_dependent-flags-variant-key=v2&scope=one%2Ftwo&cap_dependent-flags-variant-key", "?cap_dependent-flags-variant-key=v1&token=a%2Bb&scope=one%2Ftwo")]
+    [InlineData("https://flags.example.com/ufc?%63ap_dependent-flags-variant-key=old&token=abc", "?cap_dependent-flags-variant-key=v1&token=abc")]
+    [InlineData("https://flags.example.com/ufc?token=abc&cap_dependent%2Dflags-variant-key=old", "?token=abc&cap_dependent-flags-variant-key=v1")]
     public void AddsCapabilityWithoutAddingEnvironmentToACustomEndpoint(string baseUrl, string expectedQuery)
     {
         var endpoint = Create("datadoghq.com", baseUrl);
