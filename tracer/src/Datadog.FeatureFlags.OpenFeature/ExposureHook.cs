@@ -59,20 +59,42 @@ public sealed class ExposureHook : Hook
         IReadOnlyDictionary<string, object>? hints = null,
         CancellationToken cancellationToken = default)
     {
+        var result = FeatureFlagsSdk.GetResult(details.FlagMetadata);
+        var evaluationContext = result?.EvaluatedContext ?? context.EvaluationContext;
+        if (details.ErrorType == ErrorType.None
+         && result is not null
+         && Volatile.Read(ref result.ExposureCommitCompleted) != 0
+         && result.DependencyEvaluations is { } dependencies)
+        {
+            for (var i = 0; i < dependencies.Count; i++)
+            {
+                if (dependencies[i].Exposure is { } exposure)
+                {
+                    Invoke(new ExposureEvaluation(exposure, evaluationContext));
+                }
+            }
+        }
+
+        // Report the requested flag as well as any committed dependency candidates.
+        Invoke(
+            new ExposureEvaluation(
+                details.ErrorType == ErrorType.None,
+                details.FlagKey,
+                details.Variant,
+                details.FlagMetadata?.GetString(FeatureFlagMetadataKeys.AllocationKey),
+                evaluationContext?.TargetingKey,
+                evaluationContext,
+                details.FlagMetadata,
+                result));
+
+        return default;
+    }
+
+    private void Invoke(ExposureEvaluation evaluation)
+    {
         try
         {
-            var result = FeatureFlagsSdk.GetResult(details.FlagMetadata);
-            var evaluationContext = result?.EvaluatedContext ?? context.EvaluationContext;
-            _onEvaluation(
-                new ExposureEvaluation(
-                    details.ErrorType == ErrorType.None,
-                    details.FlagKey,
-                    details.Variant,
-                    details.FlagMetadata?.GetString(FeatureFlagMetadataKeys.AllocationKey),
-                    evaluationContext?.TargetingKey,
-                    evaluationContext,
-                    details.FlagMetadata,
-                    result));
+            _onEvaluation(evaluation);
         }
         catch (Exception ex)
         {
@@ -94,7 +116,5 @@ public sealed class ExposureHook : Hook
                 _logger?.LogDebug(ex, "Exposure callback failed");
             }
         }
-
-        return default;
     }
 }

@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature;
@@ -34,26 +35,37 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
     }
 
     /// <inheritdoc/>
+    public override ValueTask AfterAsync<T>(
+        HookContext<T> context,
+        FlagEvaluationDetails<T> details,
+        IReadOnlyDictionary<string, object>? hints = null,
+        CancellationToken cancellationToken = default)
+    {
+        RecordDependencies(details.FlagMetadata);
+        return default;
+    }
+
+    /// <inheritdoc/>
     public override ValueTask FinallyAsync<T>(
         HookContext<T> context,
         FlagEvaluationDetails<T> details,
         IReadOnlyDictionary<string, object>? hints = null,
         CancellationToken cancellationToken = default)
     {
+        RecordDependencies(details.FlagMetadata);
+
         try
         {
             var flagKey = context.FlagKey;
             var variant = details.Variant ?? string.Empty;
 
-            // Reason is already in lower_snake_case format from the provider
-            // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-            var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
+            var reason = ToTelemetryReason(details.Reason);
 
             // Extract error type if present
             string? errorType = null;
             if (details.ErrorType != ErrorType.None)
             {
-                errorType = ErrorTypeToString(details.ErrorType);
+                errorType = FeatureFlagEvaluationMappings.ToTelemetryErrorCode(details.ErrorType);
             }
 
             // Extract allocation key from metadata if present
@@ -61,13 +73,40 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
 
             _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Metrics recording should never break flag evaluation.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex}");
         }
 
         return default;
+    }
+
+    private void RecordDependencies(ImmutableMetadata? metadata)
+    {
+        if (FeatureFlagsSdk.GetResult(metadata) is not { } state
+         || !state.TryTakeDependencyEvaluations(out var dependencies)
+         || dependencies is null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < dependencies.Count; i++)
+        {
+            try
+            {
+                var dependency = dependencies[i];
+                _metrics.Record(
+                    dependency.FlagKey,
+                    dependency.Variant,
+                    FeatureFlagEvaluationMappings.ToReason((Datadog.Trace.FeatureFlags.EvaluationReason)dependency.Reason),
+                    FeatureFlagEvaluationMappings.ToTelemetryErrorCode(dependency.ErrorCode),
+                    dependency.AllocationKey);
+            }
+            catch (Exception)
+            {
+                // A malformed dependency record must not suppress later dependencies or the root.
+            }
+        }
     }
 
     /// <inheritdoc/>
@@ -76,20 +115,20 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         _metrics.Dispose();
     }
 
-    private static string ErrorTypeToString(ErrorType errorType)
+    // OpenFeature reasons are canonical uppercase strings, while the Datadog telemetry
+    // convention uses lower_snake_case tags. Cache the standard mappings on this hot path.
+    private static string ToTelemetryReason(string? reason) => reason switch
     {
-        return errorType switch
-        {
-            ErrorType.ProviderNotReady => "provider_not_ready",
-            ErrorType.FlagNotFound => "flag_not_found",
-            ErrorType.ParseError => "parse_error",
-            ErrorType.TypeMismatch => "type_mismatch",
-            ErrorType.TargetingKeyMissing => "targeting_key_missing",
-            ErrorType.InvalidContext => "invalid_context",
-            ErrorType.ProviderFatal => "provider_fatal",
-            ErrorType.General => "general",
-            _ => "general"
-        };
-    }
+        null or "" => "unknown",
+        Reason.TargetingMatch => "targeting_match",
+        Reason.Split => "split",
+        Reason.Disabled => "disabled",
+        Reason.Default => "default",
+        Reason.Static => "static",
+        Reason.Cached => "cached",
+        Reason.Unknown => "unknown",
+        Reason.Error => "error",
+        _ => reason.ToLower(CultureInfo.InvariantCulture)
+    };
 }
 #endif

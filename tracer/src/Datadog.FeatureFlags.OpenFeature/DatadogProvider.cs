@@ -37,6 +37,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluateDeferred;
     private readonly Action _releaseFlagSelection;
+    private readonly FeatureFlagsSdk.DependencyTelemetryCallback? _getDependencyTelemetry;
 
     // Asked once: when the tracer supports it, exposures are sent only after OpenFeature completes the
     // evaluation. Otherwise the tracer sends them during the evaluation, as older providers expect.
@@ -52,7 +53,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
     // Startup gate: enabling events later requires a new provider (or application restart).
     private readonly FlagEvalEVPHook? _evpHook;
-
     // Hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
     private readonly IImmutableList<Hook> _providerHooks;
 
@@ -89,10 +89,17 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     // Unit tests stand in for both tracer entry points and for the capability probe.
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
+        : this(evaluate, evaluateDeferred, canDeferExposures, commitExposure, FeatureFlagsSdk.GetDependencyTelemetry)
+    {
+    }
+
+    // Unit tests can exercise the complete profiler bridge without exposing tracer-private metadata.
+    internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure, FeatureFlagsSdk.DependencyTelemetryCallback getDependencyTelemetry)
         : this(new DatadogProviderOptions(), FeatureFlagsSdk.SetFlagSelection, FeatureFlagsSdk.ReleaseFlagSelection, canDeferExposures, commitExposure)
     {
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
         _evaluateDeferred = evaluateDeferred ?? throw new ArgumentNullException(nameof(evaluateDeferred));
+        _getDependencyTelemetry = getDependencyTelemetry ?? throw new ArgumentNullException(nameof(getDependencyTelemetry));
     }
 
     private DatadogProvider(DatadogProviderOptions options, Func<string?[]?, string?[]?, bool> setFlagSelection, Action releaseFlagSelection, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
@@ -300,7 +307,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook, getDependencyTelemetry: _getDependencyTelemetry);
         return Task.FromResult(res);
     }
 
@@ -313,7 +320,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook, getDependencyTelemetry: _getDependencyTelemetry);
         return Task.FromResult(res);
     }
 
@@ -326,7 +333,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook, getDependencyTelemetry: _getDependencyTelemetry);
         return Task.FromResult(res);
     }
 
@@ -339,7 +346,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook, getDependencyTelemetry: _getDependencyTelemetry);
         return Task.FromResult(res);
     }
 
@@ -352,7 +359,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, deferredExposure: _deferExposures, evaluate: Evaluator(), evaluationEventsHook: _evpHook, getDependencyTelemetry: _getDependencyTelemetry);
         return Task.FromResult(res);
     }
 

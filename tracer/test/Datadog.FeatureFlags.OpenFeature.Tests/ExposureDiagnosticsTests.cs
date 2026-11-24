@@ -74,9 +74,9 @@ public class ExposureDiagnosticsTests
             Datadog.Trace.FeatureFlags.ValueType.Boolean,
             false,
             DeferredExposureTests.Context(),
-            (f, t, d, k, a) => new ExposureHookTests.TestEvaluation(Metadata()),
-            null,
-            deferredExposure: false);
+            deferredExposure: false,
+            evaluate: (f, t, d, k, a) => new ExposureHookTests.TestEvaluation(Metadata()),
+            evaluationEventsHook: null);
 
     private static FlagEvaluationDetails<bool> Details(bool deferred)
     {
