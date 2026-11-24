@@ -27,7 +27,7 @@ public class FeatureFlagEvaluationMappingsTests
     [InlineData((int)Tracer::Datadog.Trace.FeatureFlags.EvaluationReason.Error, "error")]
     [InlineData(int.MaxValue, "unknown")]
     public void MapsEvaluationReasons(int reason, string expected)
-        => FeatureFlagEvaluationMappings.ToReason((Tracer::Datadog.Trace.FeatureFlags.EvaluationReason)reason).Should().Be(expected);
+        => FeatureFlagEvaluationMappings.ToReason((Datadog.Trace.FeatureFlags.EvaluationReason)reason).Should().Be(expected);
 
     [Theory]
     [InlineData("PROVIDER_NOT_READY", (int)ErrorType.ProviderNotReady)]
