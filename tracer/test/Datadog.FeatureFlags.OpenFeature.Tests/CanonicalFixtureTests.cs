@@ -163,74 +163,74 @@ public class CanonicalFixtureTests
                 new Dictionary<string, string>());
             try
             {
-            var evaluationHook = new FlagEvalEVPHook(
-                writer.CanAdmit,
-                (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, flags) =>
-                    EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features: null, flags),
-                () => { },
-                FlagEvaluationContextSnapshot.Capture,
-                writer.CanAdmit,
-                (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags) =>
-                    EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags));
-            using var module = new TracerFlags.FeatureFlagsModule(
-                new Tracer::Datadog.Trace.Configuration.TracerSettings(
-                    new Tracer::Datadog.Trace.Configuration.NameValueConfigurationSource(new NameValueCollection())),
-                new Mock<Tracer::Datadog.Trace.RemoteConfigurationManagement.IRcmSubscriptionManager>().Object);
-            module.SetEvaluationWriterForTesting(writer);
-            module.ApplyConfiguration(configuration).Should().BeTrue();
-            var context = EvaluationContext.Builder().SetTargetingKey(testCase["targetingKey"]!.Value<string>()!);
-            foreach (var attribute in ((JsonLinq.JObject)testCase["attributes"]!).Properties())
-            {
-                context.Set(attribute.Name, ToOpenFeatureValue(attribute.Value));
-            }
+                var evaluationHook = new FlagEvalEVPHook(
+                    writer.CanAdmit,
+                    (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, flags) =>
+                        EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features: null, flags),
+                    () => { },
+                    FlagEvaluationContextSnapshot.Capture,
+                    writer.CanAdmit,
+                    (flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags) =>
+                        EnqueueRoot(flagKey, variant, allocationKey, targetingKey, evaluationTimeMs, errorCode, attributes, features, flags));
+                using var module = new TracerFlags.FeatureFlagsModule(
+                    new Tracer::Datadog.Trace.Configuration.TracerSettings(
+                        new Tracer::Datadog.Trace.Configuration.NameValueConfigurationSource(new NameValueCollection())),
+                    new Mock<Tracer::Datadog.Trace.RemoteConfigurationManagement.IRcmSubscriptionManager>().Object);
+                module.SetEvaluationWriterForTesting(writer);
+                module.ApplyConfiguration(configuration).Should().BeTrue();
+                var context = EvaluationContext.Builder().SetTargetingKey(testCase["targetingKey"]!.Value<string>()!);
+                foreach (var attribute in ((JsonLinq.JObject)testCase["attributes"]!).Properties())
+                {
+                    context.Set(attribute.Name, ToOpenFeatureValue(attribute.Value));
+                }
 
-            var commitCalls = 0;
-            using var provider = new DatadogProvider(
-                (key, type, fallback, targetingKey, attributes) => throw new InvalidOperationException("the provider must use deferred graph evaluation"),
-                (key, type, fallback, targetingKey, attributes) => new EvaluationAdapter(
-                    module.Evaluate(key, (TracerFlags.ValueType)type, fallback, targetingKey, attributes, deferExposure: true, reportRootEvaluation: false)),
-                () => true,
-                metadata =>
-                {
-                    commitCalls++;
-                    return module.CommitExposure(metadata);
-                },
-                metadata => (metadata as TracerFlags.DeferredExposureMetadata)?.DependencyTelemetry,
-                evaluationHook);
-            await global::OpenFeature.Api.Instance.SetProviderAsync(domain, provider);
-            var exposures = new List<JsonLinq.JObject>();
-            var client = global::OpenFeature.Api.Instance.GetClient(domain);
-            client.AddHooks(
-                new ExposureHook(evaluation =>
-                {
-                    if (evaluation.IsExposure)
+                var commitCalls = 0;
+                using var provider = new DatadogProvider(
+                    (key, type, fallback, targetingKey, attributes) => throw new InvalidOperationException("the provider must use deferred graph evaluation"),
+                    (key, type, fallback, targetingKey, attributes) => new EvaluationAdapter(
+                        module.Evaluate(key, (TracerFlags.ValueType)type, fallback, targetingKey, attributes, deferExposure: true, reportRootEvaluation: false)),
+                    () => true,
+                    metadata =>
                     {
-                        exposures.Add(
-                            new JsonLinq.JObject
-                            {
-                                ["flag"] = evaluation.FlagKey,
-                                ["allocation"] = evaluation.AllocationKey,
-                                ["variant"] = evaluation.Variant,
-                            });
-                    }
-                }));
-            var resolution = await client.GetStringDetailsAsync(
-                testCase["flag"]!.Value<string>()!,
-                testCase["defaultValue"]!.Value<string>()!,
-                context.Build());
+                        commitCalls++;
+                        return module.CommitExposure(metadata);
+                    },
+                    metadata => (metadata as TracerFlags.DeferredExposureMetadata)?.DependencyTelemetry,
+                    evaluationHook);
+                await global::OpenFeature.Api.Instance.SetProviderAsync(domain, provider);
+                var exposures = new List<JsonLinq.JObject>();
+                var client = global::OpenFeature.Api.Instance.GetClient(domain);
+                client.AddHooks(
+                    new ExposureHook(evaluation =>
+                    {
+                        if (evaluation.IsExposure)
+                        {
+                            exposures.Add(
+                                new JsonLinq.JObject
+                                {
+                                    ["flag"] = evaluation.FlagKey,
+                                    ["allocation"] = evaluation.AllocationKey,
+                                    ["variant"] = evaluation.Variant,
+                                });
+                        }
+                    }));
+                var resolution = await client.GetStringDetailsAsync(
+                    testCase["flag"]!.Value<string>()!,
+                    testCase["defaultValue"]!.Value<string>()!,
+                    context.Build());
 
-            AssertResolution<string>(testCase, resolution);
-            await writer.FlushAsync();
-            var evaluations = EvaluationEvents(payloads);
-            commitCalls.Should().Be(
-                resolution.ErrorType == ErrorType.None && exposures.Count > 0 ? 1 : 0,
-                "only a successful complete graph with exposure candidates is committed");
-            if (testCase["expectations"] is not JsonLinq.JObject expectations)
-            {
-                continue;
-            }
+                AssertResolution<string>(testCase, resolution);
+                await writer.FlushAsync();
+                var evaluations = EvaluationEvents(payloads);
+                commitCalls.Should().Be(
+                    resolution.ErrorType == ErrorType.None && exposures.Count > 0 ? 1 : 0,
+                    "only a successful complete graph with exposure candidates is committed");
+                if (testCase["expectations"] is not JsonLinq.JObject expectations)
+                {
+                    continue;
+                }
 
-            AssertExpectedTelemetry(expectations, exposures, evaluations);
+                AssertExpectedTelemetry(expectations, exposures, evaluations);
             }
             finally
             {
@@ -284,8 +284,8 @@ public class CanonicalFixtureTests
             [missingCategory == "exposures" ? "evaluationEvents" : "exposures"] = new JsonLinq.JArray(),
             ["noUnmatchedEvents"] = true,
         };
-        var exposures = missingCategory == "exposures" ? new[] { Event("flag") } : Array.Empty<JsonLinq.JObject>();
-        var evaluations = missingCategory == "evaluationEvents" ? new[] { Event("flag") } : Array.Empty<JsonLinq.JObject>();
+        JsonLinq.JObject[] exposures = missingCategory == "exposures" ? [Event("flag")] : [];
+        JsonLinq.JObject[] evaluations = missingCategory == "evaluationEvents" ? [Event("flag")] : [];
 
         Action assertion = () => AssertExpectedTelemetry(expectations, exposures, evaluations);
 
@@ -331,7 +331,7 @@ public class CanonicalFixtureTests
                 var index = remaining.FindIndex(actual => expected.Properties()
                     .Where(property => property.Name != "_count")
                     .All(property => JsonLinq.JToken.DeepEquals(actual[property.Name], property.Value)));
-                index.Should().BeGreaterThanOrEqualTo(0, "expected event {0} should be present", expected);
+                index.Should().BeGreaterThanOrEqualTo(0);
                 remaining.RemoveAt(index);
             }
         }
@@ -422,11 +422,12 @@ public class CanonicalFixtureTests
             return new EvaluationAdapter(evaluator.Evaluate(key, (TracerFlags.ValueType)type, fallback, new TracerFlags.EvaluationContext(targetingKey, attributes)));
         });
 
-        foreach (var (context, expectedCount) in new[]
-                 {
-                     (CreateContext(includeBudgetHeavyNestedValue: false), 301),
-                     (CreateContext(includeBudgetHeavyNestedValue: true), 302),
-                 })
+        (EvaluationContext Context, int ExpectedCount)[] contexts =
+        [
+            (CreateContext(includeBudgetHeavyNestedValue: false), 301),
+            (CreateContext(includeBudgetHeavyNestedValue: true), 302),
+        ];
+        foreach (var (context, expectedCount) in contexts)
         {
             var resolution = await provider.ResolveStringValueAsync("flag", "caller-default", context);
 
