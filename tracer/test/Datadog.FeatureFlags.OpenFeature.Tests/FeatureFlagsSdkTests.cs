@@ -16,6 +16,27 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class FeatureFlagsSdkTests
 {
+    [Fact]
+    public void PrivatePendingMarkerRetainsDependencyOnlyExposureBatch()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            [FeatureFlagMetadataKeys.PendingExposure] = "true",
+            [FeatureFlagMetadataKeys.DoLog] = "false",
+        };
+        var commits = 0;
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("root", false, new TestEvaluation(metadata), null, deferredExposure: true);
+        FeatureFlagsSdk.CommitPendingExposure(result.FlagMetadata, _ =>
+        {
+            commits++;
+            return ExposureCommitResult.New;
+        });
+
+        commits.Should().Be(1);
+        result.FlagMetadata!.GetString(FeatureFlagMetadataKeys.PendingExposure).Should().BeNull();
+    }
+
     [Theory]
     [InlineData(null, false)]
     [InlineData("false", false)]
