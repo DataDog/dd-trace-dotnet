@@ -350,10 +350,10 @@
         "name": "AWSSDK.Core",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.11",
-        "maxVersionSupportedInclusive": "4.1.1.1",
-        "maxVersionAvailableInclusive": "4.1.1.1",
-        "maxVersionTestedInclusive": "4.1.0.1"
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.1.1.2",
+        "maxVersionAvailableInclusive": "4.1.1.2",
+        "maxVersionTestedInclusive": null
       }
     ]
   },
