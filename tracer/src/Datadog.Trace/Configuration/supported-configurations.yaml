@@ -2480,6 +2480,20 @@ supportedConfigurations:
       On .NET 8+, defaults to <c>true</c> (enabled). On .NET 6+, defaults to <c>true</c> (enabled) 
       only when <c>DD_RUNTIME_METRICS_ENABLED</c> is not explicitly set. Otherwise defaults to
       <c>false</c> (disabled).
+  DD_SDK_MODE:
+  - implementation: A
+    scope: managed
+    type: string
+    default: datadog
+    documentation: |-
+      Configuration key for selecting how the Datadog SDK runs. Valid values are "datadog" and "otel" (case-insensitive).
+      "datadog" (the default) keeps the Datadog semantic conventions and the Datadog protocol.
+      "otel" makes <c>true</c> the default of <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled"/>,
+      <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>, <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
+      (.NET 6+) and <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/> (.NET Core 3.1+), and "otlp" the default of
+      <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>. Explicitly configured values of these settings take precedence,
+      and "otel" changes no default when <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> is <c>true</c>.
+      Other values are invalid and keep "datadog".
   DD_SERVICE:
   - implementation: D
     scope: managed, native
@@ -4187,7 +4201,8 @@ supportedConfigurations:
       the experimental export of traces using OTLP. The value 'none' disables
       the export of traces entirely, which is the equivalent of setting
       <see cref="ConfigurationKeys.TraceEnabled"/> to false.
-      When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled.
+      When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled,
+      or if <see cref="ConfigurationKeys.SdkMode"/> is 'otel'.
   OTEL_TRACES_SAMPLER:
   - implementation: C
     scope: managed

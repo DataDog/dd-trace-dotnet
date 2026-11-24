@@ -537,6 +537,47 @@ namespace Datadog.Trace.Tests.Configuration
             settings.TracesEncoding.Should().Be((TracesEncoding)expected);
         }
 
+        [Theory]
+        [InlineData("otel", null, null, TracesEncoding.OtlpProtobuf)]
+        [InlineData("OTEL", null, null, TracesEncoding.OtlpProtobuf)]
+        [InlineData("otel", null, "false", TracesEncoding.OtlpProtobuf)] // DD_SDK_MODE=otel makes OTLP the default on its own
+        [InlineData("otel", "none", null, TracesEncoding.DatadogV0_4)] // an explicit exporter takes precedence
+        [InlineData("datadog", null, null, TracesEncoding.DatadogV0_4)]
+        [InlineData("invalid", null, null, TracesEncoding.DatadogV0_4)]
+        [InlineData(null, null, null, TracesEncoding.DatadogV0_4)]
+        public void TracesEncoding_DefaultsToOtlpInOtelSdkMode(string sdkMode, string tracesExporter, string otelSemanticsEnabled, object expected)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.SdkMode, sdkMode },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter },
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled },
+            });
+
+            var settings = Setup(source, NoFile());
+
+            settings.TracesEncoding.Should().Be((TracesEncoding)expected);
+        }
+
+        [Theory]
+        [InlineData("otel", null, ConfigurationOrigins.Calculated)]
+        [InlineData("otel", "otlp", ConfigurationOrigins.Code)] // NameValueConfigurationSource reports the code origin
+        public void TracesExporter_RecordsItsOriginInOtelSdkMode(string sdkMode, string tracesExporter, object expectedOrigin)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.SdkMode, sdkMode },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter },
+            });
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            var entry = LastEntry(telemetry, ConfigurationKeys.OpenTelemetry.TracesExporter);
+            entry.StringValue.Should().Be("otlp");
+            entry.Origin.Should().Be((ConfigurationOrigins)expectedOrigin);
+        }
+
         private static ConfigurationTelemetry.ConfigurationTelemetryEntry LastEntry(ConfigurationTelemetry telemetry, string key)
             => telemetry.GetQueueForTesting().Where(e => e.Key == key).OrderByDescending(e => e.SeqId).First();
 

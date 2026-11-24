@@ -268,7 +268,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether traces are exported using OTLP encoding. Depends on OTEL_TRACES_EXPORTER=otlp,
-        /// which is the default when DD_TRACE_OTEL_SEMANTICS_ENABLED=true.
+        /// which is the default when DD_TRACE_OTEL_SEMANTICS_ENABLED=true or DD_SDK_MODE=otel.
         /// </summary>
         internal bool IsOtlpTraceExport => TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson;
 
@@ -627,9 +627,27 @@ namespace Datadog.Trace.Configuration
                                      .AsInt32(500, value => value > 0)
                                      .Value;
 
-                // OpenTelemetry semantics mode makes OTLP the default traces exporter
-                var otelSemanticsEnabled = config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBool(defaultValue: false);
-                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString(otelSemanticsEnabled ? () => "otlp" : null, validator: null)?.Trim();
+                // OpenTelemetry semantics mode and DD_SDK_MODE=otel make OTLP the default traces exporter.
+                // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode, so DD_SDK_MODE=otel changes no default then.
+                var otelSdkMode = TracerSettings.GetSdkMode(in config, out _) == SdkModeValues.Otel
+                               && !TracerSettings.IsOtelSdkDisabled(in config);
+                var otelSemanticsEnabled = TracerSettings.WithSdkModeDefault(
+                    config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBoolResult(),
+                    otelSdkMode);
+                var otelTracesExporterResult = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
+                if (otelTracesExporterResult.ConfigurationResult is { IsValid: true, Result: { } otelTracesExporter })
+                {
+                    OtelTracesExporter = otelTracesExporter.Trim();
+                }
+                else if (otelSdkMode)
+                {
+                    OtelTracesExporter = "otlp";
+                    telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesExporter, OtelTracesExporter, recordValue: true, ConfigurationOrigins.Calculated);
+                }
+                else if (otelSemanticsEnabled)
+                {
+                    OtelTracesExporter = otelTracesExporterResult.WithDefault(new DefaultResult<string>("otlp", "otlp"));
+                }
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
@@ -730,10 +748,11 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Gets the OTEL traces exporter.
             /// If set to "otlp", the traces will be exported using the OTLP protocol.
-            /// Defaults to "otlp" when OpenTelemetry semantics mode is enabled.
+            /// Defaults to "otlp" when OpenTelemetry semantics mode is enabled, or when <c>DD_SDK_MODE=otel</c>.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
+            /// <seealso cref="ConfigurationKeys.SdkMode"/>
             public string? OtelTracesExporter { get; }
 
             /// <summary>

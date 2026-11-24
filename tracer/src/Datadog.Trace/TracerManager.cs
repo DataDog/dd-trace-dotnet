@@ -577,6 +577,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
+                    writer.WritePropertyName("DD_SDK_MODE");
+                    writer.WriteValue(instanceSettings.SdkMode);
+
                     writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
