@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -19,15 +20,37 @@ namespace Datadog.Trace.AppSec.ApiSec;
 /// </summary>
 internal struct NormalizedRouteBuilder
 {
-    private readonly StringBuilder? _sb;
-    private int _segmentStart;
-    private string? _pendingSeparator;
+    // Reused per thread: a builder is created and completed in the same synchronous call
+    [ThreadStatic]
+    private static List<string>? _declaredNamesCache;
+    [ThreadStatic]
+    private static List<NameSpan>? _replacedNamesCache;
 
-    private NormalizedRouteBuilder(StringBuilder sb)
+    private readonly StringBuilder? _sb;
+
+    // Number of segments of the request path (relative to the path base), or -1 when unknown
+    private readonly int _requestSegmentCount;
+    private readonly bool _requestEndsWithSlash;
+    private int _segmentStart;
+    private int _segmentIndex;
+    private string? _pendingSeparator;
+    private bool _absentTrailingCatchAll;
+
+    // Parameter names, for the collision suffixes of RFC-1125
+    private List<string>? _declaredNames;
+    private List<NameSpan>? _replacedNames;
+
+    private NormalizedRouteBuilder(StringBuilder sb, int requestSegmentCount, bool requestEndsWithSlash)
     {
         _sb = sb;
+        _requestSegmentCount = requestSegmentCount;
+        _requestEndsWithSlash = requestEndsWithSlash;
         _segmentStart = 0;
+        _segmentIndex = -1;
         _pendingSeparator = null;
+        _absentTrailingCatchAll = false;
+        _declaredNames = null;
+        _replacedNames = null;
     }
 
     public readonly bool IsEnabled => _sb is not null;
@@ -37,15 +60,17 @@ internal struct NormalizedRouteBuilder
     /// </summary>
     /// <param name="security">The security instance</param>
     /// <param name="pathBase">The mount prefix of the route, for example the ASP.NET Core PathBase</param>
-    public static NormalizedRouteBuilder Create(Security security, string? pathBase)
-        => security.AppsecEnabled && security.Settings.ApiSecurityEnabled ? Create(pathBase) : default;
+    /// <param name="requestPath">The request path, relative to <paramref name="pathBase"/></param>
+    public static NormalizedRouteBuilder Create(Security security, string? pathBase, string? requestPath)
+        => security.AppsecEnabled && security.Settings.ApiSecurityEnabled ? Create(pathBase, requestPath) : default;
 
     /// <summary>
     /// Creates an enabled builder.
     /// </summary>
     /// <param name="pathBase">The mount prefix of the route, for example the ASP.NET Core PathBase</param>
+    /// <param name="requestPath">The request path, relative to <paramref name="pathBase"/>, or null when unknown</param>
     [TestingAndPrivateOnly]
-    public static NormalizedRouteBuilder Create(string? pathBase)
+    public static NormalizedRouteBuilder Create(string? pathBase, string? requestPath = null)
     {
         var sb = StringBuilderCache.Acquire();
 
@@ -70,7 +95,30 @@ internal struct NormalizedRouteBuilder
             }
         }
 
-        return new NormalizedRouteBuilder(sb);
+        var requestSegmentCount = -1;
+        var requestEndsWithSlash = false;
+        if (requestPath is not null)
+        {
+            // The framework matches a request with or without the trailing slash, and fills the missing trailing
+            // segments with the parameter defaults, so a segment is in the request when its index is below this count.
+            var trimmed = requestPath.TrimEnd('/');
+            requestEndsWithSlash = trimmed.Length < requestPath.Length;
+            requestSegmentCount = 0;
+            foreach (var c in trimmed)
+            {
+                if (c == '/')
+                {
+                    requestSegmentCount++;
+                }
+            }
+
+            if (trimmed.Length > 0 && trimmed[0] != '/')
+            {
+                requestSegmentCount++;
+            }
+        }
+
+        return new NormalizedRouteBuilder(sb, requestSegmentCount, requestEndsWithSlash);
     }
 
     public void StartSegment()
@@ -80,6 +128,7 @@ internal struct NormalizedRouteBuilder
             return;
         }
 
+        _segmentIndex++;
         _segmentStart = _sb.Length;
         _pendingSeparator = null;
         _sb.Append('/');
@@ -117,32 +166,68 @@ internal struct NormalizedRouteBuilder
     }
 
     /// <summary>
-    /// Adds a dynamic parameter "{name}" to the current segment. An optional parameter is resolved against the value
-    /// the framework matched for the request, and is left out, with its separator, when the request doesn't contain it.
+    /// Adds a dynamic parameter "{name}" to the current segment. A parameter that the request may not contain is
+    /// resolved against the request, and is left out, with its separator, when the request doesn't contain it (RFC-1125).
     /// </summary>
     /// <param name="name">The parameter name</param>
     /// <param name="value">The value matched for the request</param>
-    /// <param name="isOptional">Whether the request may not contain the parameter, e.g. an optional or catch-all parameter</param>
-    public void AddParameter(string name, object? value, bool isOptional)
+    /// <param name="isOptional">Whether the parameter is optional</param>
+    /// <param name="isCatchAll">Whether the parameter is a catch-all</param>
+    /// <param name="hasDefault">Whether the parameter has a default value, used when its segment is not in the request</param>
+    public void AddParameter(string name, object? value, bool isOptional, bool isCatchAll = false, bool hasDefault = false)
     {
         if (_sb is null)
         {
             return;
         }
 
-        if (isOptional && value is null or string { Length: 0 })
+        if (_declaredNames is null)
+        {
+            _declaredNames = _declaredNamesCache ??= new List<string>();
+            _declaredNames.Clear();
+        }
+
+        _declaredNames.Add(name);
+
+        if (!IsInRequest(value, isOptional, isCatchAll, hasDefault))
         {
             _pendingSeparator = null;
+            _absentTrailingCatchAll = isCatchAll;
             return;
         }
 
         AppendPendingSeparator(_sb);
 
-        // Parameter names only contain [a-zA-Z0-9_], any other character is replaced with "_" (RFC-1125)
+        // Parameter names only contain [a-zA-Z0-9_], each other code point is replaced with "_" (RFC-1125)
         _sb.Append('{');
-        foreach (var c in name)
+        var start = _sb.Length;
+        var replaced = false;
+        for (var i = 0; i < name.Length; i++)
         {
-            _sb.Append(char.IsAsciiLetterOrDigit(c) ? c : '_');
+            var c = name[i];
+            if (char.IsAsciiLetterOrDigit(c) || c == '_')
+            {
+                _sb.Append(c);
+                continue;
+            }
+
+            replaced = true;
+            _sb.Append('_');
+            if (char.IsHighSurrogate(c) && i + 1 < name.Length && char.IsLowSurrogate(name[i + 1]))
+            {
+                i++;
+            }
+        }
+
+        if (replaced)
+        {
+            if (_replacedNames is null)
+            {
+                _replacedNames = _replacedNamesCache ??= new List<NameSpan>();
+                _replacedNames.Clear();
+            }
+
+            _replacedNames.Add(new NameSpan(start, _sb.Length - start));
         }
 
         _sb.Append('}');
@@ -195,17 +280,64 @@ internal struct NormalizedRouteBuilder
             return null;
         }
 
+        if (_replacedNames is not null)
+        {
+            ResolveNameCollisions(_sb, _declaredNames!, _replacedNames);
+        }
+
         if (_sb.Length == 0)
         {
             _sb.Append('/');
         }
-        else if (template.EndsWith("/", StringComparison.Ordinal))
+        else if (template.EndsWith("/", StringComparison.Ordinal)
+              || (_absentTrailingCatchAll && _requestEndsWithSlash))
         {
-            // The trailing slash is kept only when the route declares it (rule 1)
+            // The trailing slash is kept only when the route declares it, or when the route ends with an empty
+            // catch-all that follows a slash in the request: "/files/{*path}" hit with "/files/" is "/files/" (RFC-1125)
             _sb.Append('/');
         }
 
         return StringBuilderCache.GetStringAndRelease(_sb);
+    }
+
+    // A replaced name that equals another name of the route gets the smallest numeric suffix not used in the route,
+    // in path order: "/a/{user-id}/{user_id}" is "/a/{user_id_2}/{user_id}" (RFC-1125)
+    private static void ResolveNameCollisions(StringBuilder sb, List<string> declaredNames, List<NameSpan> replacedNames)
+    {
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var declared in declaredNames)
+        {
+            used.Add(declared);
+        }
+
+        var suffixes = new string?[replacedNames.Count];
+        for (var i = 0; i < replacedNames.Count; i++)
+        {
+            var name = sb.ToString(replacedNames[i].Start, replacedNames[i].Length);
+            if (used.Add(name))
+            {
+                continue;
+            }
+
+            for (var n = 2; ; n++)
+            {
+                var suffix = "_" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (used.Add(name + suffix))
+                {
+                    suffixes[i] = suffix;
+                    break;
+                }
+            }
+        }
+
+        // Insert the suffixes from the end, so that the earlier offsets stay valid
+        for (var i = replacedNames.Count - 1; i >= 0; i--)
+        {
+            if (suffixes[i] is { } suffix)
+            {
+                sb.Insert(replacedNames[i].Start + replacedNames[i].Length, suffix);
+            }
+        }
     }
 
     // Static constants only contain [A-Za-z0-9.-~_]; any other character is percent-encoded (rule 3)
@@ -269,12 +401,47 @@ internal struct NormalizedRouteBuilder
     private static void AppendPercentEncoded(StringBuilder sb, int b)
         => sb.Append('%').Append(HexConverter.ToCharUpper(b >> 4)).Append(HexConverter.ToCharUpper(b));
 
+    private readonly bool IsInRequest(object? value, bool isOptional, bool isCatchAll, bool hasDefault)
+    {
+        if (isCatchAll)
+        {
+            // Every catch-all is optional, and absent when it matched an empty value or only "/" (RFC-1125)
+            return value is not (null or string { Length: 0 } or "/");
+        }
+
+        if (isOptional)
+        {
+            return value is not (null or string { Length: 0 });
+        }
+
+        if (hasDefault)
+        {
+            // A value that only comes from the default is absent. When the request path is unknown, presence can't be
+            // determined, so the parameter is left out (RFC-1125 fallback).
+            return _segmentIndex < _requestSegmentCount && value is not (null or string { Length: 0 });
+        }
+
+        return true;
+    }
+
     private void AppendPendingSeparator(StringBuilder sb)
     {
         if (_pendingSeparator is not null)
         {
             AppendStaticConstant(sb, _pendingSeparator, 0, _pendingSeparator.Length, preserveEscapes: false);
             _pendingSeparator = null;
+        }
+    }
+
+    private readonly struct NameSpan
+    {
+        public readonly int Start;
+        public readonly int Length;
+
+        public NameSpan(int start, int length)
+        {
+            Start = start;
+            Length = length;
         }
     }
 }

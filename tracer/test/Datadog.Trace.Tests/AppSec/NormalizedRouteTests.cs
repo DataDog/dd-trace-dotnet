@@ -35,7 +35,6 @@ public class NormalizedRouteTests
         { "/sample_rate_route/{i:int}", "i=0", "/sample_rate_route/{i}" },
         { "tag_value/{tag_value}/{status_code}", "tag_value=foo&status_code=200", "/tag_value/{tag_value}/{status_code}" },
         { "v2/{name:regex(^[a-z]+$)}/blobs", "name=foo", "/v2/{name}/blobs" },
-        { "items/{page=1}", "page=1", "/items/{page}" },
 
         // Trailing slash is kept only when declared
         { "api/{v}/", "v=1", "/api/{v}/" },
@@ -53,11 +52,18 @@ public class NormalizedRouteTests
         { "users/{user_id}", "user_id=1", "/users/{user_id}" },
         { "users/{user-id}", "user-id=1", "/users/{user_id}" },
         { "users/{café}", "café=1", "/users/{caf_}" },
+        { "u/{f\U0001F600o}", "f\U0001F600o=1", "/u/{f_o}" },
 
-        // Catch-all parameters
+        // A replaced name that collides with another name gets the smallest free suffix, in path order (RFC-1125)
+        { "a/{user-id}/{user_id}", "user-id=1&user_id=2", "/a/{user_id_2}/{user_id}" },
+        { "a/{x-y}/{x_y}/{x_y_2}", "x-y=1&x_y=2&x_y_2=3", "/a/{x_y_3}/{x_y}/{x_y_2}" },
+        { "a/{x-y}/{x.y}", "x-y=1&x.y=2", "/a/{x_y}/{x_y_2}" },
+
+        // Catch-all parameters, absent when empty or only "/" (RFC-1125)
         { "files/{*path}", "path=a/b", "/files/{path}" },
         { "files/{**path}", "path=a/b", "/files/{path}" },
         { "files/{*path}", string.Empty, "/files" },
+        { "files/{*path}", "path=/", "/files" },
 
         // Optional parameters are resolved against the matched values, with the separator that precedes them
         { "users/{id?}", "id=1", "/users/{id}" },
@@ -68,8 +74,6 @@ public class NormalizedRouteTests
         { "{controller}.{format?}", "controller=Home&format=json", "/{controller}.{format}" },
 
         // The area, controller and action route values are parameters like any other (rule 4)
-        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/{controller}/{action}" },
-        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index&id=5", "/{controller}/{action}/{id}" },
         { "{area:exists}/{controller}/{action}", "area=Admin&controller=Home&action=Index", "/{area}/{controller}/{action}" },
         { "prefix-{controller}-{id}", "controller=Home&id=1", "/prefix-{controller}-{id}" },
         { "{id}-{controller}", "controller=Home&id=1", "/{id}-{controller}" },
@@ -87,6 +91,30 @@ public class NormalizedRouteTests
     /// Gets the <see cref="Routes"/> that <see cref="TemplateParser"/> accepts in every ASP.NET Core version
     /// </summary>
     public static TheoryData<string, string, string> TemplateRoutes { get; } = GetTemplateRoutes();
+
+    /// <summary>
+    /// Gets the route template, the route values matched for the request, the request path, and the expected normalized
+    /// route, for the parameters whose presence depends on the request path: defaults and empty catch-alls (RFC-1125)
+    /// </summary>
+    public static TheoryData<string, string, string, string> RequestPathRoutes { get; } = new()
+    {
+        // A value that only comes from the default is absent
+        { "posts/{page=1}", "page=1", "/posts", "/posts" },
+        { "posts/{page=1}", "page=1", "/posts/1", "/posts/{page}" },
+        { "posts/{page=1}", "page=1", "/posts/", "/posts" },
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/", "/" },
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/Home", "/{controller}" },
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/Home/Index", "/{controller}/{action}" },
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index&id=5", "/Home/Index/5", "/{controller}/{action}/{id}" },
+
+        // When the request path is unknown, a parameter with a default is left out (fallback)
+        { "posts/{page=1}", "page=1", null, "/posts" },
+
+        // An empty catch-all keeps the slash that precedes it in the request
+        { "files/{*path}", string.Empty, "/files", "/files" },
+        { "files/{*path}", string.Empty, "/files/", "/files/" },
+        { "files/{*path}", "path=/", "/files//", "/files/" },
+    };
 
     /// <summary>
     /// Gets the route template, the path base, and the expected normalized route
@@ -136,6 +164,60 @@ public class NormalizedRouteTests
         normalizedRoute.Complete(routePattern.RawText).Should().Be(expected);
     }
 #endif
+
+    [Theory]
+    [MemberData(nameof(RequestPathRoutes))]
+    public void SimplifyRoutePattern_ResolvesPresenceFromTheRequestPath(string template, string routeValues, string requestPath, string expected)
+    {
+        var routePattern = RoutePatternFactory.Parse(template).DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var values = ParseRouteValues(routeValues);
+        var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null, requestPath);
+
+        _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern,
+            values,
+            areaName: null,
+            controllerName: values.TryGetValue("controller", out var controller) ? controller as string : null,
+            actionName: values.TryGetValue("action", out var action) ? action as string : null,
+            expandRouteParameters: false,
+            ref normalizedRoute);
+
+        normalizedRoute.Complete(routePattern.RawText).Should().Be(expected);
+    }
+
+#if NET6_0_OR_GREATER
+    [Theory]
+    [MemberData(nameof(RequestPathRoutes))]
+    public void SingleSpan_SimplifyRoutePattern_ResolvesPresenceFromTheRequestPath(string template, string routeValues, string requestPath, string expected)
+    {
+        var routePattern = RoutePatternFactory.Parse(template).DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null, requestPath);
+
+        _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, ParseRouteValues(routeValues), expandRouteParameters: false, ref normalizedRoute);
+
+        normalizedRoute.Complete(routePattern.RawText).Should().Be(expected);
+    }
+#endif
+
+    [Theory]
+    [MemberData(nameof(RequestPathRoutes))]
+    public void SimplifyRouteTemplate_ResolvesPresenceFromTheRequestPath(string template, string routeValues, string requestPath, string expected)
+    {
+        var routeTemplate = TemplateParser.Parse(template);
+        var values = ParseRouteValues(routeValues);
+        var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null, requestPath);
+
+        _ = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+            routeTemplate,
+            values,
+            areaName: null,
+            controllerName: (values.TryGetValue("controller", out var controller) ? controller as string : null)?.ToLowerInvariant(),
+            actionName: (values.TryGetValue("action", out var action) ? action as string : null)?.ToLowerInvariant(),
+            expandRouteParameters: false,
+            ref normalizedRoute);
+
+        normalizedRoute.Complete(routeTemplate.TemplateText).Should().Be(expected);
+    }
 
     [Theory]
     [MemberData(nameof(TemplateRoutes))]

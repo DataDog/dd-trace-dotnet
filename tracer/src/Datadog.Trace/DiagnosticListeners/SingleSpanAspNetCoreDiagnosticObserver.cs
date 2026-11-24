@@ -258,7 +258,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
                     var apiSecurityRoute = routePattern.RawText is not null
-                                               ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
+                                               ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value, request.Path.Value)
                                                : default;
 
                     // The OTel semantics don't use the simplified route pattern, so only walk the route for API Security

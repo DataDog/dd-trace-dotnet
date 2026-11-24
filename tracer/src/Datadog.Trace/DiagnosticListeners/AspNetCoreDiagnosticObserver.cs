@@ -373,7 +373,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (!isUsingEndpointRouting && isFirstExecution)
                     {
-                        apiSecurityRoute = NormalizedRouteBuilder.Create(security, request.PathBase.Value);
+                        apiSecurityRoute = NormalizedRouteBuilder.Create(security, request.PathBase.Value, request.Path.Value);
                     }
 
                     // The OTel semantics don't use the simplified route template, so only walk the route for API Security
@@ -597,7 +597,7 @@ namespace Datadog.Trace.DiagnosticListeners
                                       : null;
 
                 var apiSecurityRoute = isFirstExecution && normalizedRoute is not null
-                                           ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
+                                           ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value, request.Path.Value)
                                            : default;
 
                 // The OTel semantics don't use the simplified route pattern, so only walk the route for API Security
@@ -875,6 +875,7 @@ namespace Datadog.Trace.DiagnosticListeners
             public string Method;
             public RouteValueDictionary RouteValues;
             public PathString PathBase;
+            public PathString Path;
         }
 
         /// <summary>

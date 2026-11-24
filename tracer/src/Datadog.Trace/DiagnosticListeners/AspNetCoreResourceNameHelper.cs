@@ -78,7 +78,12 @@ internal static class AspNetCoreResourceNameHelper
                 {
                     var parameterName = parameter.Name;
                     var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
-                    normalizedRoute.AddParameter(parameterName, value, isOptional: parameter.IsOptional || parameter.IsCatchAll);
+                    normalizedRoute.AddParameter(
+                        parameterName,
+                        value,
+                        parameter.IsOptional,
+                        parameter.IsCatchAll,
+                        hasDefault: normalizedRoute.IsEnabled && routePattern.Defaults?.ContainsKey(parameterName) == true);
 
                     if (!parameter.IsOptional || haveParameter)
                     {
@@ -236,7 +241,12 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
-                    normalizedRoute.AddParameter(parameterName, value, isOptional: parameter.IsOptional || parameter.IsCatchAll);
+                    normalizedRoute.AddParameter(
+                        parameterName,
+                        value,
+                        parameter.IsOptional,
+                        parameter.IsCatchAll,
+                        hasDefault: normalizedRoute.IsEnabled && routePattern.Defaults?.ContainsKey(parameterName) == true);
 
                     if (parameter.IsOptional && !haveParameter)
                     {
@@ -403,7 +413,7 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
-                    normalizedRoute.AddParameter(parameterName, value, isOptional: part.IsOptional || part.IsCatchAll);
+                    normalizedRoute.AddParameter(parameterName, value, part.IsOptional, part.IsCatchAll, hasDefault: part.DefaultValue is not null);
 
                     if (part.IsOptional && !haveParameter)
                     {

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -25,5 +26,10 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Gets the RoutePattern.RawText
         /// </summary>
         public string? RawText;
+
+        /// <summary>
+        /// Gets the RoutePattern.Defaults, including the inline defaults of the parameters
+        /// </summary>
+        public IReadOnlyDictionary<string, object?>? Defaults;
     }
 }
