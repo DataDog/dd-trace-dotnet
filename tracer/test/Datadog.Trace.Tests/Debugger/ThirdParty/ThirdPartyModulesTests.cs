@@ -24,6 +24,7 @@ public class ThirdPartyModulesTests
     [InlineData("Akka.Cluster")]
     [InlineData("Datadog.Trace")]
     [InlineData("Datadog.Trace.ClrProfiler.Managed.Loader")]
+    [InlineData("Microsoft.AspNetCore.Grpc.JsonTranscoding")] // native skip prefix only
     public void Contains_HandlesKnownModules(string module)
     {
         ThirdPartyModules.Contains(module).Should().BeTrue();
@@ -33,6 +34,7 @@ public class ThirdPartyModulesTests
     [InlineData("NotAModule")]
     [InlineData("Datadog.Trace.IDontExist")]
     [InlineData("datadog.trace")] // wrong casing
+    [InlineData("System.WebApp")] // the System.Web. prefix needs the dot
     public void Contains_HandlesUnknownModules(string module)
     {
         ThirdPartyModules.Contains(module).Should().BeFalse();

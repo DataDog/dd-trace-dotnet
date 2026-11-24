@@ -9,6 +9,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -42,12 +43,13 @@ namespace Datadog.Trace.Debugger.Symbols
                 return true;
             }
 
-            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName!);
+            return IsThirdPartyCode(assemblyName!);
         }
 
-        private static bool IsThirdPartyCode(string assemblyName)
+        [TestingAndPrivateOnly]
+        internal static bool IsThirdPartyCode(string assemblyName)
         {
-            return ThirdPartyModules.Contains(GetAssemblyNameWithoutExtension(assemblyName));
+            return IsDatadogAssembly(assemblyName) || ThirdPartyModules.Contains(GetAssemblyNameWithoutExtension(assemblyName));
         }
 
         internal static bool IsDatadogAssembly(string? assemblyName)

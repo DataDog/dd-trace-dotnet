@@ -31,6 +31,8 @@ const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::azure_app_services_app_pool_id,
                                     environment::azure_app_services_cli_telemetry_profile_value};
 
+// A trailing dot doesn't match the root assembly (System.Web. skips System.Web.Extensions, not System.Web). Add integration
+// targets under a prefix to include_assemblies, and mirror prefix changes in ThirdPartyModules.cs. NativeModuleFilterTests checks both.
 const shared::WSTRING skip_assembly_prefixes[]{
     WStr("Microsoft.AI"),
     WStr("Microsoft.ApplicationInsights"),
@@ -91,7 +93,7 @@ const shared::WSTRING include_assemblies[]{
     WStr("System.Net.Requests"),
     WStr("System.Security.Cryptography"),
     WStr("System.Security.Cryptography.Primitives"),
-    WStr("System.ServiceModel.Web"),
+    WStr("System.ServiceModel.Web"), // Not a target: a type in it derives from XmlObjectSerializer, a derived target.
     WStr("System.Web.Http"),
     WStr("System.Web.Mvc"),
 };
