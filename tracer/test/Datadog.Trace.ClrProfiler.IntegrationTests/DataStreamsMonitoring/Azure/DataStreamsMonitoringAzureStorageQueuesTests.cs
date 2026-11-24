@@ -55,7 +55,8 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
             spans.Should().HaveCount(6);
 
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(6);
+            // The final empty receive records no checkpoint, so only 5 of the 6 spans carry a pathway hash
+            taggedSpans.Should().HaveCount(5);
 
             var producerSpans = spans.Where(s => s.Tags["span.kind"] == SpanKinds.Producer).ToList();
             var consumerSpans = spans.Where(s => s.Tags["span.kind"] == SpanKinds.Consumer).ToList();
@@ -79,6 +80,9 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
 
             SumCheckpointCounts(producePoints).Should().Be(3);
             SumCheckpointCounts(consumePoints).Should().Be(3);
+
+            SumNonZeroPayloadSizeCounts(producePoints).Should().Be(3);
+            SumNonZeroPayloadSizeCounts(consumePoints).Should().Be(3);
 
             var produceHashes = producePoints.Select(p => p.Hash).ToHashSet();
             var linkedConsumePoints = consumePoints.Where(p => p.ParentHash != 0 && produceHashes.Contains(p.ParentHash)).ToList();
@@ -118,7 +122,10 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
     private static double SumCheckpointCounts(IEnumerable<MockDataStreamsStatsPoint> points)
         => points.Sum(p => ReadSketchCount(p.PathwayLatency));
 
-    private static double ReadSketchCount(byte[] sketch)
+    private static double SumNonZeroPayloadSizeCounts(IEnumerable<MockDataStreamsStatsPoint> points)
+        => points.Sum(p => ReadSketchCount(p.PayloadSize, positiveValuesOnly: true));
+
+    private static double ReadSketchCount(byte[] sketch, bool positiveValuesOnly = false)
     {
         var position = 0;
         var count = 0D;
@@ -136,23 +143,24 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
             }
             else if (wireType == 1)
             {
-                if (field == 4)
+                AssertRemainingBytes(sketch, position, sizeof(double));
+                if (field == 4 && !positiveValuesOnly)
                 {
                     count += BitConverter.ToDouble(sketch, position);
                 }
 
-                position += 8;
+                position += sizeof(double);
             }
             else if (wireType == 2)
             {
                 var (length, after) = ReadVarint(sketch, position);
-                position = after;
-                if (field is 2 or 3)
+                var fieldLength = AssertRemainingBytes(sketch, after, length);
+                if (field is 2 or 3 && (!positiveValuesOnly || field == 2))
                 {
-                    count += ReadStoreCount(sketch, position, position + (int)length);
+                    count += ReadStoreCount(sketch, after, after + fieldLength);
                 }
 
-                position += (int)length;
+                position = after + fieldLength;
             }
             else
             {
@@ -181,17 +189,23 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
                 else if (wireType == 2 && field == 2)
                 {
                     var (length, after) = ReadVarint(buffer, position);
-                    position = after;
-                    for (var offset = 0; offset < (int)length; offset += sizeof(double))
+                    var arrayLength = AssertRemainingBytes(buffer, after, length);
+                    if (arrayLength % sizeof(double) != 0)
                     {
-                        count += BitConverter.ToDouble(buffer, position + offset);
+                        throw new InvalidOperationException("Bin count array in a serialized store is truncated.");
                     }
 
-                    position += (int)length;
+                    for (var offset = 0; offset < arrayLength; offset += sizeof(double))
+                    {
+                        count += BitConverter.ToDouble(buffer, after + offset);
+                    }
+
+                    position = after + arrayLength;
                 }
                 else if (wireType == 1)
                 {
-                    position += 8;
+                    AssertRemainingBytes(buffer, position, sizeof(double));
+                    position += sizeof(double);
                 }
                 else
                 {
@@ -199,8 +213,23 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
                 }
             }
 
+            if (position != end)
+            {
+                throw new InvalidOperationException("Serialized store payload has trailing content.");
+            }
+
             return count;
         }
+    }
+
+    private static int AssertRemainingBytes(byte[] buffer, int position, uint byteCount)
+    {
+        if (byteCount > (uint)(buffer.Length - position))
+        {
+            throw new InvalidOperationException("Serialized sketch payload is truncated or corrupt.");
+        }
+
+        return (int)byteCount;
     }
 
     private static (uint Value, int Next) ReadVarint(byte[] buffer, int position)
@@ -215,6 +244,11 @@ public class DataStreamsMonitoringAzureStorageQueuesTests : TracingIntegrationTe
             if ((b & 0x80) == 0)
             {
                 return (value, position);
+            }
+
+            if (shift >= 28)
+            {
+                throw new InvalidOperationException("Varint in a serialized sketch is too long.");
             }
 
             shift += 7;

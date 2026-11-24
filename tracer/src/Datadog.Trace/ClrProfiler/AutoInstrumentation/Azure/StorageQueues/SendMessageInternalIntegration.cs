@@ -58,10 +58,9 @@ public sealed class SendMessageInternalIntegration
 
         var payloadSizeBytes = 0L;
         if (!dataStreamsManager.IsInDefaultState
-            && message?.TryDuckCast<IQueueMessageBody>(out var messageBody) == true
-            && messageBody.Body is { } body)
+            && message?.TryDuckCast<IBinaryData>(out var binaryData) == true)
         {
-            payloadSizeBytes = body.ToMemory().Length;
+            payloadSizeBytes = binaryData.ToMemory().Length;
         }
 
         var edgeTags = AzureStorageQueuesCommon.GetEdgeTags(dataStreamsManager, instance.Name, isConsume: false);

@@ -14,6 +14,12 @@ namespace Datadog.Trace.Tagging
     {
         private string _spanKind;
 
+        // Required by TagsListTests.CheckProperties, which instantiates every tags type via Activator
+        public AzureStorageQueuesTags()
+            : this(SpanKinds.Producer)
+        {
+        }
+
         public AzureStorageQueuesTags(string spanKind)
         {
             _spanKind = spanKind;

@@ -71,32 +71,9 @@ public sealed class EncodeMessageBodyIntegration
             return new CallTargetReturn<string>(result);
         }
 
-        try
-        {
-            var messageText = encoding == Base64Encoding
-                ? Encoding.UTF8.GetString(Convert.FromBase64String(result))
-                : result;
+        var encodedResult = AzureStorageQueuesCommon.EncodeMessageTextWithPathwayContext(
+            dataStreamsManager, result, encoding == Base64Encoding, pathwayContext);
 
-            var injected = AzureStorageQueuesCommon.InjectPathwayContextIntoMessageText(dataStreamsManager, messageText, pathwayContext);
-            if (injected is null || ReferenceEquals(injected, messageText))
-            {
-                return new CallTargetReturn<string>(result);
-            }
-
-            var encodedResult = encoding == Base64Encoding
-                ? Convert.ToBase64String(Encoding.UTF8.GetBytes(injected))
-                : injected;
-
-            if (Encoding.UTF8.GetByteCount(encodedResult) > AzureStorageQueuesCommon.MaxMessageSizeBytes)
-            {
-                return new CallTargetReturn<string>(result);
-            }
-
-            return new CallTargetReturn<string>(encodedResult);
-        }
-        catch
-        {
-            return new CallTargetReturn<string>(result);
-        }
+        return new CallTargetReturn<string>(encodedResult ?? result);
     }
 }

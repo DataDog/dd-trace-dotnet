@@ -34,6 +34,8 @@ internal static class AzureStorageQueuesCommon
 
     internal const int MaxMessageSizeBytes = 64 * 1024;
 
+    private const string DatadogPropertyName = "\"" + PayloadKey + "\"";
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureStorageQueuesCommon));
 
     private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", $"type:{QueueTypeTag}"]);
@@ -115,7 +117,8 @@ internal static class AzureStorageQueuesCommon
 
         try
         {
-            if (!messageText.StartsWith('{'))
+            var properties = ScanTopLevelProperties(messageText);
+            if (properties is null)
             {
                 return messageText;
             }
@@ -128,21 +131,57 @@ internal static class AzureStorageQueuesCommon
 
             var datadogContext = new Dictionary<string, object>();
             dataStreamsManager.InjectPathwayContextAsBase64String(pathwayContext, new AzureHeadersCollectionAdapter(datadogContext));
-
-            payload[PayloadKey] = datadogContext;
-
-            var injected = SerializeDictionary(payload);
-            if (Encoding.UTF8.GetByteCount(injected) > MaxMessageSizeBytes)
+            if (datadogContext.Count == 0)
             {
                 return messageText;
             }
 
-            return injected;
+            var contextJson = SerializeDictionary(datadogContext);
+
+            // Existing property values are spliced in verbatim: re-serializing them would round-trip
+            // numeric tokens through double and silently alter high-precision application data.
+            var builder = new StringBuilder(messageText.Length + contextJson.Length + PayloadKey.Length + 8 + properties.Count);
+            builder.Append('{').Append('"').Append(PayloadKey).Append("\":").Append(contextJson);
+            foreach (var property in properties)
+            {
+                builder.Append(',').Append(messageText, property.Start, property.End - property.Start);
+            }
+
+            return builder.Append('}').ToString();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Unable to inject pathway context into an Azure Storage Queues message.");
             return messageText;
+        }
+    }
+
+    internal static string? EncodeMessageTextWithPathwayContext(DataStreamsManager dataStreamsManager, string? encodedResult, bool isBase64, PathwayContext? pathwayContext)
+    {
+        if (encodedResult is null || pathwayContext is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var messageText = isBase64 ? Encoding.UTF8.GetString(Convert.FromBase64String(encodedResult)) : encodedResult;
+            var injected = InjectPathwayContextIntoMessageText(dataStreamsManager, messageText, pathwayContext);
+            if (injected is null || ReferenceEquals(injected, messageText))
+            {
+                return null;
+            }
+
+            var encoded = isBase64 ? Convert.ToBase64String(Encoding.UTF8.GetBytes(injected)) : injected;
+
+            // Azure rejects the encoded message text, so the limit applies after Base64 expansion,
+            // which grows the payload by roughly a third even when the decoded size fits.
+            return Encoding.UTF8.GetByteCount(encoded) <= MaxMessageSizeBytes ? encoded : null;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Unable to inject pathway context into an Azure Storage Queues message body.");
+            return null;
         }
     }
 
@@ -199,7 +238,6 @@ internal static class AzureStorageQueuesCommon
             {
                 ArrayPool = JsonArrayPool.Shared,
                 DateParseHandling = DateParseHandling.None,
-                FloatParseHandling = FloatParseHandling.Decimal,
             };
             var serializer = new JsonSerializer();
             return serializer.Deserialize<Dictionary<string, object>>(reader);
@@ -220,5 +258,231 @@ internal static class AzureStorageQueuesCommon
         serializer.Serialize(writer, dictionary);
         writer.Flush();
         return stringBuilder.ToString();
+    }
+
+    private static List<PropertySpan>? ScanTopLevelProperties(string text)
+    {
+        var index = SkipWhitespace(text, 0);
+        if (index >= text.Length || text[index] != '{')
+        {
+            return null;
+        }
+
+        var properties = new List<PropertySpan>();
+        index++;
+
+        while (true)
+        {
+            index = SkipWhitespace(text, index);
+            if (index >= text.Length)
+            {
+                return null;
+            }
+
+            if (text[index] == '}')
+            {
+                index++;
+                break;
+            }
+
+            var nameStart = index;
+            if (!TrySkipString(text, ref index))
+            {
+                return null;
+            }
+
+            var isDatadogProperty = IsDatadogPropertyName(text, nameStart, index);
+
+            index = SkipWhitespace(text, index);
+            if (index >= text.Length || text[index] != ':')
+            {
+                return null;
+            }
+
+            index = SkipWhitespace(text, index + 1);
+            if (!TrySkipValue(text, ref index))
+            {
+                return null;
+            }
+
+            if (!isDatadogProperty)
+            {
+                properties.Add(new PropertySpan(nameStart, index));
+            }
+
+            index = SkipWhitespace(text, index);
+            if (index < text.Length && text[index] == ',')
+            {
+                index++;
+                continue;
+            }
+
+            if (index < text.Length && text[index] == '}')
+            {
+                index++;
+                break;
+            }
+
+            return null;
+        }
+
+        return SkipWhitespace(text, index) == text.Length ? properties : null;
+    }
+
+    private static int SkipWhitespace(string text, int index)
+    {
+        while (index < text.Length && char.IsWhiteSpace(text[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static bool IsDatadogPropertyName(string text, int start, int end)
+    {
+        for (var i = start; i < end; i++)
+        {
+            if (text[i] == '\\')
+            {
+                try
+                {
+                    return JsonHelper.DeserializeObject<string>(text.Substring(start, end - start)) == PayloadKey;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        var length = end - start;
+        if (length != DatadogPropertyName.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < length; i++)
+        {
+            if (text[start + i] != DatadogPropertyName[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TrySkipValue(string text, ref int index)
+    {
+        if (index >= text.Length)
+        {
+            return false;
+        }
+
+        var character = text[index];
+        if (character == '"')
+        {
+            return TrySkipString(text, ref index);
+        }
+
+        if (character == '{' || character == '[')
+        {
+            return TrySkipContainer(text, ref index);
+        }
+
+        var start = index;
+        while (index < text.Length && !IsValueDelimiter(text[index]))
+        {
+            index++;
+        }
+
+        return index > start;
+    }
+
+    private static bool IsValueDelimiter(char character)
+        => character is ',' or '}' or ']' or '/' || char.IsWhiteSpace(character);
+
+    private static bool TrySkipContainer(string text, ref int index)
+    {
+        var depth = 0;
+        while (index < text.Length)
+        {
+            var character = text[index];
+            if (character == '"')
+            {
+                if (!TrySkipString(text, ref index))
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (character == '/')
+            {
+                return false;
+            }
+
+            if (character == '{' || character == '[')
+            {
+                depth++;
+            }
+            else if (character == '}' || character == ']')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    index++;
+                    return true;
+                }
+            }
+
+            index++;
+        }
+
+        return false;
+    }
+
+    private static bool TrySkipString(string text, ref int index)
+    {
+        if (index >= text.Length || text[index] != '"')
+        {
+            return false;
+        }
+
+        index++;
+        while (index < text.Length)
+        {
+            var character = text[index];
+            if (character == '\\')
+            {
+                index += 2;
+                continue;
+            }
+
+            if (character == '"')
+            {
+                index++;
+                return true;
+            }
+
+            index++;
+        }
+
+        return false;
+    }
+
+    private readonly struct PropertySpan
+    {
+        public PropertySpan(int start, int end)
+        {
+            Start = start;
+            End = end;
+        }
+
+        public int Start { get; }
+
+        public int End { get; }
     }
 }
