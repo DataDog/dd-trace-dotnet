@@ -32,6 +32,8 @@ internal static class EventHubsCommon
 
     private static readonly ConditionalWeakTable<object, StrongBox<PathwayContext>> ConsumePathways = new();
 
+    private static readonly ConditionalWeakTable<object, StrongBox<PathwayContext>> PendingBatchAddPathways = new();
+
     internal static CallTargetState CreateSenderSpan(
         IEventHubProducerClient instance,
         string operationName,
@@ -177,15 +179,43 @@ internal static class EventHubsCommon
         }
     }
 
-    internal static void SetProduceCheckpoint(Tracer tracer, IEventData eventData, string? eventHubName)
+    internal static void SetBatchAddProduceCheckpoint(Tracer tracer, IEventData eventData, string? eventHubName)
     {
         var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-        if (dataStreamsManager is not { IsEnabled: true })
+        if (dataStreamsManager is not { IsEnabled: true } || eventData.Instance is not { } instance)
         {
             return;
         }
 
-        SetProduceCheckpoint(dataStreamsManager, tracer.InternalActiveScope?.Span, eventData, GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false));
+        try
+        {
+            if (PendingBatchAddPathways.TryGetValue(instance, out var pending))
+            {
+                if (eventData.Properties is { } properties)
+                {
+                    dataStreamsManager.InjectPathwayContextAsBase64String(pending.Value, new AzureHeadersCollectionAdapter(properties));
+                }
+
+                return;
+            }
+
+            if (SetProduceCheckpoint(dataStreamsManager, tracer.InternalActiveScope?.Span, eventData, GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false)) is { } pathway)
+            {
+                PendingBatchAddPathways.Add(instance, new StrongBox<PathwayContext>(pathway));
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error setting produce checkpoint for Event Hubs event added to a batch");
+        }
+    }
+
+    internal static void CompleteBatchAdd(object eventData, bool accepted)
+    {
+        if (accepted)
+        {
+            PendingBatchAddPathways.Remove(eventData);
+        }
     }
 
     internal static void SetConsumeCheckpoints(Tracer tracer, IReadOnlyList<object> events, string? eventHubName, Span? span)
@@ -247,13 +277,13 @@ internal static class EventHubsCommon
         }
     }
 
-    private static void SetProduceCheckpoint(DataStreamsManager dataStreamsManager, Span? span, IEventData eventData, EdgeTags edgeTags)
+    private static PathwayContext? SetProduceCheckpoint(DataStreamsManager dataStreamsManager, Span? span, IEventData eventData, EdgeTags edgeTags)
     {
         try
         {
             if (eventData.Properties is not { } properties)
             {
-                return;
+                return null;
             }
 
             var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetEventSize(eventData);
@@ -274,10 +304,13 @@ internal static class EventHubsCommon
             dataStreamsManager.InjectPathwayContextAsBase64String(
                 pathway,
                 new AzureHeadersCollectionAdapter(properties));
+
+            return pathway;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error setting produce checkpoint for Event Hubs event");
+            return null;
         }
     }
 

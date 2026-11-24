@@ -60,9 +60,9 @@ public sealed class EventDataBatchTryAddIntegration
 
         // The batch snapshots the event's properties as part of TryAdd, so the pathway must be
         // injected into them here rather than at the later SendAsync(EventDataBatch) call.
-        EventHubsCommon.SetProduceCheckpoint(tracer, eventData, instance.EventHubName);
+        EventHubsCommon.SetBatchAddProduceCheckpoint(tracer, eventData, instance.EventHubName);
 
-        return state;
+        return new CallTargetState(state.Scope, eventData.Instance);
     }
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(
@@ -71,6 +71,11 @@ public sealed class EventDataBatchTryAddIntegration
         Exception? exception,
         in CallTargetState state)
     {
+        if (state.State is { } eventData)
+        {
+            EventHubsCommon.CompleteBatchAdd(eventData, exception == null && returnValue is true);
+        }
+
         if (state.Scope != null)
         {
             if (exception == null && returnValue is bool success && success && instance != null)
