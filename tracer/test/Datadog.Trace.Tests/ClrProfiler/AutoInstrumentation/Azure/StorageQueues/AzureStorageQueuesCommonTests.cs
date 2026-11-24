@@ -142,6 +142,29 @@ public class AzureStorageQueuesCommonTests
     }
 
     [Fact]
+    public async Task EncodeMessageTextWithPathwayContext_InvalidUtf8_ReturnsNoRewrite()
+    {
+        var dataStreamsManager = GetDataStreamsManager();
+        try
+        {
+            var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
+
+            // 0xFF is not valid UTF-8; a lenient decode would replace it with U+FFFD and the
+            // rewritten body would replace the customer's byte on the wire.
+            var messageBytes = new byte[] { (byte)'{', (byte)'"', (byte)'a', (byte)'"', (byte)':', (byte)'"', 0xFF, (byte)'"', (byte)'}' };
+            var encoded = Convert.ToBase64String(messageBytes);
+
+            var rewritten = AzureStorageQueuesCommon.EncodeMessageTextWithPathwayContext(dataStreamsManager, encoded, isBase64: true, context);
+
+            rewritten.Should().BeNull();
+        }
+        finally
+        {
+            await dataStreamsManager.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task EncodeMessageTextWithPathwayContext_Base64NearSizeLimit_ReturnsNoRewrite()
     {
         var dataStreamsManager = GetDataStreamsManager();

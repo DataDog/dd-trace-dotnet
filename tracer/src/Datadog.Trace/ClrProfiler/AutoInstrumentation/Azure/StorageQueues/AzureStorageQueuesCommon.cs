@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -165,7 +166,7 @@ internal static class AzureStorageQueuesCommon
 
         try
         {
-            var messageText = isBase64 ? Encoding.UTF8.GetString(Convert.FromBase64String(encodedResult)) : encodedResult;
+            var messageText = isBase64 ? EncodingHelpers.Utf8NoBom.GetString(Convert.FromBase64String(encodedResult)) : encodedResult;
             var injected = InjectPathwayContextIntoMessageText(dataStreamsManager, messageText, pathwayContext);
             if (injected is null || ReferenceEquals(injected, messageText))
             {
