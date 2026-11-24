@@ -70,6 +70,8 @@ public class QuartzTests : TracingIntegrationTest
 
             if (suffix.StartsWith("V4", StringComparison.Ordinal))
             {
+                // Fire-on-acquire landed in Quartz 4.4.0.
+                var firesOnAcquire = new Version(packageVersion) >= new Version("4.4.0");
                 var acquisitionSpans = allSpans.Where(isAcquisitionSpan).ToList();
                 acquisitionSpans.Should().NotBeEmpty();
                 acquisitionSpans.Should().AllBeEquivalentTo(new
@@ -87,7 +89,7 @@ public class QuartzTests : TracingIntegrationTest
                     span.Tags.Should().ContainKey("quartz.scheduler.name");
                     span.Metrics.Should().ContainKey("quartz.jobstore.trigger.count");
                     span.GetMetric("quartz.jobstore.trigger.count").Should().BeGreaterOrEqualTo(0);
-                    if (suffix is "V4_4" or "V4_8")
+                    if (firesOnAcquire)
                     {
                         span.Metrics.Should().ContainKey("quartz.jobstore.trigger.fired_on_acquire");
                     }
@@ -95,7 +97,7 @@ public class QuartzTests : TracingIntegrationTest
 
                 // Each of the three scheduled triggers is acquired once; empty polls add zero.
                 acquisitionSpans.Sum(span => span.GetMetric("quartz.jobstore.trigger.count") ?? 0).Should().Be(3);
-                if (suffix is "V4_4" or "V4_8")
+                if (firesOnAcquire)
                 {
                     acquisitionSpans.Sum(span => span.GetMetric("quartz.jobstore.trigger.fired_on_acquire") ?? 0).Should().Be(3);
                 }
