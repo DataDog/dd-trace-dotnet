@@ -1,0 +1,13 @@
+_v: 1
+name: MySql
+display_name: MySQL
+description: Instruments ADO.NET command execution through MySql.Data and MySqlConnector provider implementations, producing
+  MySQL query spans with optional Database Monitoring propagation and security analysis.
+packages:
+- name: MySql.Data
+- name: MySqlConnector
+category:
+- db.client
+systems:
+- mysql
+creation_date: '2021-01-29'
