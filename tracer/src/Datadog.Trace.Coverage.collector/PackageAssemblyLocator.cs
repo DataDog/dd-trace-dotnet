@@ -189,7 +189,8 @@ internal static class PackageAssemblyLocator
                     IsRelativePathInside(asset.Name) &&
                     string.Equals(Path.GetExtension(asset.Name), ".dll", StringComparison.OrdinalIgnoreCase))
                 {
-                    assetPaths.Add(Path.Combine(libraryPath, asset.Name));
+                    // deps.json paths always use '/', so switch to the platform separator to keep candidate paths canonical.
+                    assetPaths.Add(Path.Combine(libraryPath, asset.Name).Replace('/', Path.DirectorySeparatorChar));
                 }
             }
         }
