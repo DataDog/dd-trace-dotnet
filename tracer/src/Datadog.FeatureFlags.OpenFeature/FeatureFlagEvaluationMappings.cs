@@ -5,7 +5,6 @@
 
 #nullable enable
 
-#if NET6_0_OR_GREATER
 using System;
 using OpenFeature.Model;
 
@@ -62,4 +61,3 @@ internal static class FeatureFlagEvaluationMappings
         _ => "general",
     };
 }
-#endif
