@@ -24,6 +24,13 @@ internal static partial class ConfigurationKeys
         public const string Enabled = "DD_DATA_STREAMS_ENABLED";
 
         /// <summary>
+        /// Configuration key for restoring the legacy double Base64 encoding of the Data Streams pathway context in SQS and SNS messages.
+        /// Enable while consumers still run a tracer version older than 3.55.0.
+        /// <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyEncodingBehaviorEnabled"/>
+        /// </summary>
+        public const string LegacyEncodingBehaviorEnabled = "DD_DATA_STREAMS_LEGACY_ENCODING_BEHAVIOR_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
         /// false by default if DSM is in default state, true otherwise
         /// <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>

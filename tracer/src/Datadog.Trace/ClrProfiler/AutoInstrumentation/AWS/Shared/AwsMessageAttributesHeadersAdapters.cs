@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 
 internal static class AwsMessageAttributesHeadersAdapters
 {
-    public static IBinaryHeadersCollection GetInjectionAdapter(StringBuilder carrier)
+    public static IBinaryHeadersCollection GetInjectionAdapter(StringBuilder carrier, bool legacyEncodingBehaviorEnabled)
     {
-        return new StringBuilderJsonAdapter(carrier);
+        return new StringBuilderJsonAdapter(carrier, legacyEncodingBehaviorEnabled);
     }
 
     public static IBinaryHeadersCollection GetExtractionAdapter(IDictionary? messageAttributes)
@@ -36,10 +36,12 @@ internal static class AwsMessageAttributesHeadersAdapters
     private readonly struct StringBuilderJsonAdapter : IBinaryHeadersCollection
     {
         private readonly StringBuilder _carrier;
+        private readonly bool _legacyEncodingBehaviorEnabled;
 
-        public StringBuilderJsonAdapter(StringBuilder carrier)
+        public StringBuilderJsonAdapter(StringBuilder carrier, bool legacyEncodingBehaviorEnabled)
         {
             _carrier = carrier;
+            _legacyEncodingBehaviorEnabled = legacyEncodingBehaviorEnabled;
         }
 
         public byte[] TryGetLastBytes(string name)
@@ -49,16 +51,18 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public void Add(string key, byte[] value)
         {
-            // FIXME BREAKING CHANGE:
-            // We are preserving the existing bug with the extra Base64 layer on the Base64 pathway header
-            // We will address this as a follow up
             _carrier
                .Append(value: '"')
                .Append(key)
                .Append("\":\"")
-               .Append(Convert.ToBase64String(value))
+               .Append(ToJsonSafeString(key, value))
                .Append("\",");
         }
+
+        private string ToJsonSafeString(string key, byte[] value)
+            => key == DataStreamsPropagationHeaders.PropagationKeyBase64 && !_legacyEncodingBehaviorEnabled
+                   ? Encoding.UTF8.GetString(value)
+                   : Convert.ToBase64String(value);
     }
 
     /// <summary>
