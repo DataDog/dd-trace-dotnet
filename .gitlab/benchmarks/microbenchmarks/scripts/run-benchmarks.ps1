@@ -116,6 +116,12 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
+# The tracer built from the branch under test reports the same version as the upcoming
+# release, so don't send its instrumentation telemetry: configuration keys that only exist
+# on the branch would look like they came from a released tracer. CI Visibility results
+# are still uploaded.
+$env:DD_INSTRUMENTATION_TELEMETRY_ENABLED = "false"
+
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.

@@ -1,0 +1,12 @@
+_v: 1
+name: AwsLambda
+display_name: AWS Lambda
+description: Instruments AWS Lambda .NET handler invocations, propagating invocation context and reporting invocation outcomes
+  through the Datadog Lambda extension.
+packages:
+- name: Amazon.Lambda.RuntimeSupport
+category:
+- faas
+systems:
+- aws.lambda
+creation_date: '2022-01-25'
