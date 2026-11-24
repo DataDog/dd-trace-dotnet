@@ -101,7 +101,6 @@
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\ufc-config.json" />
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\evaluation-cases\*.json" />
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\flag-selection\selection-vectors.json" />
-    <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\evaluation-suites\**\*.json" />
     <None Remove="Telemetry\telemetry_*.json" />
     <EmbeddedResource Include="Telemetry\telemetry_*.json" />
     <None Remove="Telemetry\Metrics\*.json" />
