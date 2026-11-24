@@ -39,7 +39,7 @@ public class FeatureFlagsEvaluatorBenchmark
                     {
                         FlagEvaluation = new FlagEvaluationConfiguration { Key = "parent" },
                         Operator = ConditionOperator.ONE_OF,
-                        Value = ["on"],
+                        Value = new[] { "on" },
                     },
                 ]),
             ];

@@ -341,7 +341,7 @@ public class FeatureFlagsDependentFlagTests
     [Fact]
     public void ConditionSerializationPreservesTheSelectedSourcePresence()
     {
-        var attribute = new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = ["paid"] };
+        var attribute = new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } };
         var dependency = Dependency("prerequisite", "on");
 
         var attributeJson = JObject.Parse(JsonConvert.SerializeObject(attribute));
@@ -358,7 +358,7 @@ public class FeatureFlagsDependentFlagTests
     [Fact]
     public void ConditionSerializationRetainsExplicitNullForValidation()
     {
-        var condition = new ConditionConfiguration { Attribute = null, Operator = ConditionOperator.ONE_OF, Value = ["paid"] };
+        var condition = new ConditionConfiguration { Attribute = null, Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } };
 
         var json = JObject.Parse(JsonConvert.SerializeObject(condition));
         var roundTrip = JsonConvert.DeserializeObject<ConditionConfiguration>(json.ToString())!;
@@ -794,10 +794,10 @@ public class FeatureFlagsDependentFlagTests
         };
 
     private static ConditionConfiguration Dependency(string key, string variant)
-        => new() { FlagEvaluation = new FlagEvaluationConfiguration { Key = key }, Operator = ConditionOperator.ONE_OF, Value = [variant] };
+        => new() { FlagEvaluation = new FlagEvaluationConfiguration { Key = key }, Operator = ConditionOperator.ONE_OF, Value = new[] { variant } };
 
     private static ConditionConfiguration Attribute(string key, string value)
-        => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = [value] };
+        => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = new[] { value } };
 
     private static JObject EvaluatorOptions(object? maxDependencyDepth)
         => new() { ["maxDependencyDepth"] = maxDependencyDepth is null ? JValue.CreateNull() : JToken.FromObject(maxDependencyDepth) };
