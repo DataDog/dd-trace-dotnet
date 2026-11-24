@@ -335,7 +335,8 @@ internal static class AspNetCoreResourceNameHelper
         string? actionName,
         bool expandRouteParameters,
         ref NormalizedRouteBuilder normalizedRoute,
-        bool returnResourceName = true)
+        bool returnResourceName = true,
+        RouteValueDictionary? routeDefaults = null)
     {
         // note that this is not accurate if expandRouteParameters=true, but we don't have a good fallback for that
         var maxSize = (routePattern.TemplateText?.Length ?? 0)
@@ -413,7 +414,12 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
-                    normalizedRoute.AddParameter(parameterName, value, part.IsOptional, part.IsCatchAll, hasDefault: part.DefaultValue is not null);
+                    normalizedRoute.AddParameter(
+                        parameterName,
+                        value,
+                        part.IsOptional,
+                        part.IsCatchAll,
+                        hasDefault: part.DefaultValue is not null || (normalizedRoute.IsEnabled && routeDefaults?.ContainsKey(parameterName) == true));
 
                     if (part.IsOptional && !haveParameter)
                     {

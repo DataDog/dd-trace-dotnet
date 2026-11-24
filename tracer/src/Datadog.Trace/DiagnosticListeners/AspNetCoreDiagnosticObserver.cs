@@ -344,6 +344,7 @@ namespace Datadog.Trace.DiagnosticListeners
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
             RouteTemplate routeTemplate = null;
+            RouteValueDictionary routeDefaults = null;
             var apiSecurityRoute = default(NormalizedRouteBuilder);
 
             if (aspNetRoute is null || resourceName is null)
@@ -366,6 +367,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     {
                         var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
                         routeTemplate = route?.ParsedTemplate;
+
+                        // Conventional routes declare most of their defaults outside the template
+                        routeDefaults = route?.Defaults;
                     }
                 }
 
@@ -386,7 +390,8 @@ namespace Datadog.Trace.DiagnosticListeners
                                                    actionName: actionName,
                                                    expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled,
                                                    ref apiSecurityRoute,
-                                                   returnResourceName: !otelSemanticsEnabled)
+                                                   returnResourceName: !otelSemanticsEnabled,
+                                                   routeDefaults: routeDefaults)
                                                : string.Empty;
 
                     if (otelSemanticsEnabled)

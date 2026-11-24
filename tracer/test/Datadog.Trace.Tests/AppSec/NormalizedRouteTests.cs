@@ -64,6 +64,11 @@ public class NormalizedRouteTests
         { "files/{**path}", "path=a/b", "/files/{path}" },
         { "files/{*path}", string.Empty, "/files" },
         { "files/{*path}", "path=/", "/files" },
+        { "files/{*path}", "path=//", "/files" },
+
+        // A parameter keeps its suffix whether the previous parameters are in the request or not (RFC-1125)
+        { "a/{x-y?}/{x.y}", "x-y=1&x.y=2", "/a/{x_y}/{x_y_2}" },
+        { "a/{x-y?}/{x.y}", "x.y=2", "/a/{x_y_2}" },
 
         // Optional parameters are resolved against the matched values, with the separator that precedes them
         { "users/{id?}", "id=1", "/users/{id}" },
@@ -114,6 +119,10 @@ public class NormalizedRouteTests
         { "files/{*path}", string.Empty, "/files", "/files" },
         { "files/{*path}", string.Empty, "/files/", "/files/" },
         { "files/{*path}", "path=/", "/files//", "/files/" },
+
+        // A catch-all value that only comes from the default is absent
+        { "files/{*path=index}", "path=index", "/files", "/files" },
+        { "files/{*path=index}", "path=a/b", "/files/a/b", "/files/{path}" },
     };
 
     /// <summary>
@@ -215,6 +224,31 @@ public class NormalizedRouteTests
             actionName: (values.TryGetValue("action", out var action) ? action as string : null)?.ToLowerInvariant(),
             expandRouteParameters: false,
             ref normalizedRoute);
+
+        normalizedRoute.Complete(routeTemplate.TemplateText).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("/", "/")]
+    [InlineData("/Home", "/{controller}")]
+    [InlineData("/Home/Index/5", "/{controller}/{action}/{id}")]
+    public void SimplifyRouteTemplate_UsesTheRouteDefaults(string requestPath, string expected)
+    {
+        // Conventional routes declare their defaults outside the template, e.g. MapRoute(..., defaults: new { controller = "Home" })
+        var routeTemplate = TemplateParser.Parse("{controller}/{action}/{id?}");
+        var routeDefaults = new RouteValueDictionary { { "controller", "Home" }, { "action", "Index" } };
+        var values = ParseRouteValues(requestPath == "/Home/Index/5" ? "controller=Home&action=Index&id=5" : "controller=Home&action=Index");
+        var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null, requestPath);
+
+        _ = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+            routeTemplate,
+            values,
+            areaName: null,
+            controllerName: "home",
+            actionName: "index",
+            expandRouteParameters: false,
+            ref normalizedRoute,
+            routeDefaults: routeDefaults);
 
         normalizedRoute.Complete(routeTemplate.TemplateText).Should().Be(expected);
     }

@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -22,9 +23,7 @@ internal struct NormalizedRouteBuilder
 {
     // Reused per thread: a builder is created and completed in the same synchronous call
     [ThreadStatic]
-    private static List<string>? _declaredNamesCache;
-    [ThreadStatic]
-    private static List<NameSpan>? _replacedNamesCache;
+    private static List<Parameter>? _parametersCache;
 
     private readonly StringBuilder? _sb;
 
@@ -36,9 +35,9 @@ internal struct NormalizedRouteBuilder
     private string? _pendingSeparator;
     private bool _absentTrailingCatchAll;
 
-    // Parameter names, for the collision suffixes of RFC-1125
-    private List<string>? _declaredNames;
-    private List<NameSpan>? _replacedNames;
+    // Every declared parameter, for the collision suffixes of RFC-1125
+    private List<Parameter>? _parameters;
+    private bool _hasReplacedName;
 
     private NormalizedRouteBuilder(StringBuilder sb, int requestSegmentCount, bool requestEndsWithSlash)
     {
@@ -49,11 +48,18 @@ internal struct NormalizedRouteBuilder
         _segmentIndex = -1;
         _pendingSeparator = null;
         _absentTrailingCatchAll = false;
-        _declaredNames = null;
-        _replacedNames = null;
+        _parameters = null;
+        _hasReplacedName = false;
     }
 
     public readonly bool IsEnabled => _sb is not null;
+
+    /// <summary>
+    /// Gets whether the normalized route is computed, so that callers don't compute its inputs otherwise.
+    /// </summary>
+    /// <param name="security">The security instance</param>
+    /// <returns>Whether AppSec and API Security are enabled</returns>
+    public static bool IsEnabledFor(Security security) => security.AppsecEnabled && security.Settings.ApiSecurityEnabled;
 
     /// <summary>
     /// Creates a builder when API Security is enabled, and a disabled builder otherwise.
@@ -62,7 +68,20 @@ internal struct NormalizedRouteBuilder
     /// <param name="pathBase">The mount prefix of the route, for example the ASP.NET Core PathBase</param>
     /// <param name="requestPath">The request path, relative to <paramref name="pathBase"/></param>
     public static NormalizedRouteBuilder Create(Security security, string? pathBase, string? requestPath)
-        => security.AppsecEnabled && security.Settings.ApiSecurityEnabled ? Create(pathBase, requestPath) : default;
+        => IsEnabledFor(security) ? Create(pathBase, requestPath, requestPathStart: 0, requestPathSuffix: null) : default;
+
+    /// <summary>
+    /// Creates a builder when API Security is enabled, and a disabled builder otherwise.
+    /// The request path is <paramref name="requestPath"/> from <paramref name="requestPathStart"/>, followed by
+    /// <paramref name="requestPathSuffix"/>, so that callers don't allocate it.
+    /// </summary>
+    /// <param name="security">The security instance</param>
+    /// <param name="pathBase">The mount prefix of the route</param>
+    /// <param name="requestPath">The string that contains the request path, or null when unknown</param>
+    /// <param name="requestPathStart">The index where the request path, relative to <paramref name="pathBase"/>, starts</param>
+    /// <param name="requestPathSuffix">The rest of the request path, for example the ASP.NET PathInfo</param>
+    public static NormalizedRouteBuilder Create(Security security, string? pathBase, string? requestPath, int requestPathStart, string? requestPathSuffix)
+        => IsEnabledFor(security) ? Create(pathBase, requestPath, requestPathStart, requestPathSuffix) : default;
 
     /// <summary>
     /// Creates an enabled builder.
@@ -71,6 +90,9 @@ internal struct NormalizedRouteBuilder
     /// <param name="requestPath">The request path, relative to <paramref name="pathBase"/>, or null when unknown</param>
     [TestingAndPrivateOnly]
     public static NormalizedRouteBuilder Create(string? pathBase, string? requestPath = null)
+        => Create(pathBase, requestPath, requestPathStart: 0, requestPathSuffix: null);
+
+    private static NormalizedRouteBuilder Create(string? pathBase, string? requestPath, int requestPathStart, string? requestPathSuffix)
     {
         var sb = StringBuilderCache.Acquire();
 
@@ -99,26 +121,37 @@ internal struct NormalizedRouteBuilder
         var requestEndsWithSlash = false;
         if (requestPath is not null)
         {
-            // The framework matches a request with or without the trailing slash, and fills the missing trailing
-            // segments with the parameter defaults, so a segment is in the request when its index is below this count.
-            var trimmed = requestPath.TrimEnd('/');
-            requestEndsWithSlash = trimmed.Length < requestPath.Length;
-            requestSegmentCount = 0;
-            foreach (var c in trimmed)
-            {
-                if (c == '/')
-                {
-                    requestSegmentCount++;
-                }
-            }
-
-            if (trimmed.Length > 0 && trimmed[0] != '/')
-            {
-                requestSegmentCount++;
-            }
+            CountSegments(requestPath, requestPathStart, requestPathSuffix ?? string.Empty, out requestSegmentCount, out requestEndsWithSlash);
         }
 
         return new NormalizedRouteBuilder(sb, requestSegmentCount, requestEndsWithSlash);
+    }
+
+    // The frameworks match a request with or without its trailing slash, and fill the missing trailing segments with
+    // the parameter defaults, so a route segment is in the request when its index is below the segment count.
+    // The path is path[start..] followed by suffix.
+    private static void CountSegments(string path, int start, string suffix, out int segmentCount, out bool endsWithSlash)
+    {
+        var pathLength = Math.Max(path.Length - start, 0);
+        var length = pathLength + suffix.Length;
+        var end = length;
+        while (end > 0 && CharAt(path, start, pathLength, suffix, end - 1) == '/')
+        {
+            end--;
+        }
+
+        endsWithSlash = end < length;
+        segmentCount = end > 0 && CharAt(path, start, pathLength, suffix, 0) != '/' ? 1 : 0;
+        for (var i = 0; i < end; i++)
+        {
+            if (CharAt(path, start, pathLength, suffix, i) == '/')
+            {
+                segmentCount++;
+            }
+        }
+
+        static char CharAt(string path, int start, int pathLength, string suffix, int index)
+            => index < pathLength ? path[start + index] : suffix[index - pathLength];
     }
 
     public void StartSegment()
@@ -174,62 +207,36 @@ internal struct NormalizedRouteBuilder
     /// <param name="isOptional">Whether the parameter is optional</param>
     /// <param name="isCatchAll">Whether the parameter is a catch-all</param>
     /// <param name="hasDefault">Whether the parameter has a default value, used when its segment is not in the request</param>
-    public void AddParameter(string name, object? value, bool isOptional, bool isCatchAll = false, bool hasDefault = false)
+    public void AddParameter(string name, object? value, bool isOptional, bool isCatchAll, bool hasDefault)
     {
         if (_sb is null)
         {
             return;
         }
 
-        if (_declaredNames is null)
+        if (_parameters is null)
         {
-            _declaredNames = _declaredNamesCache ??= new List<string>();
-            _declaredNames.Clear();
+            _parameters = _parametersCache ??= [];
+            _parameters.Clear();
         }
 
-        _declaredNames.Add(name);
+        var isReplaced = !IsValidName(name);
+        _hasReplacedName |= isReplaced;
 
         if (!IsInRequest(value, isOptional, isCatchAll, hasDefault))
         {
+            // The collision suffixes are resolved over every declared parameter, so that a parameter keeps its name
+            // whether the previous ones are in the request or not
+            _parameters.Add(new Parameter(name, isReplaced, start: -1));
             _pendingSeparator = null;
             _absentTrailingCatchAll = isCatchAll;
             return;
         }
 
         AppendPendingSeparator(_sb);
-
-        // Parameter names only contain [a-zA-Z0-9_], each other code point is replaced with "_" (RFC-1125)
         _sb.Append('{');
-        var start = _sb.Length;
-        var replaced = false;
-        for (var i = 0; i < name.Length; i++)
-        {
-            var c = name[i];
-            if (char.IsAsciiLetterOrDigit(c) || c == '_')
-            {
-                _sb.Append(c);
-                continue;
-            }
-
-            replaced = true;
-            _sb.Append('_');
-            if (char.IsHighSurrogate(c) && i + 1 < name.Length && char.IsLowSurrogate(name[i + 1]))
-            {
-                i++;
-            }
-        }
-
-        if (replaced)
-        {
-            if (_replacedNames is null)
-            {
-                _replacedNames = _replacedNamesCache ??= new List<NameSpan>();
-                _replacedNames.Clear();
-            }
-
-            _replacedNames.Add(new NameSpan(start, _sb.Length - start));
-        }
-
+        _parameters.Add(new Parameter(name, isReplaced, _sb.Length));
+        AppendName(_sb, name);
         _sb.Append('}');
     }
 
@@ -280,9 +287,9 @@ internal struct NormalizedRouteBuilder
             return null;
         }
 
-        if (_replacedNames is not null)
+        if (_hasReplacedName && _parameters is { } parameters)
         {
-            ResolveNameCollisions(_sb, _declaredNames!, _replacedNames);
+            ResolveNameCollisions(_sb, parameters);
         }
 
         if (_sb.Length == 0)
@@ -300,20 +307,30 @@ internal struct NormalizedRouteBuilder
         return StringBuilderCache.GetStringAndRelease(_sb);
     }
 
+    // Parameter names only contain [a-zA-Z0-9_]; each other code point is replaced with "_" (RFC-1125).
     // A replaced name that equals another name of the route gets the smallest numeric suffix not used in the route,
-    // in path order: "/a/{user-id}/{user_id}" is "/a/{user_id_2}/{user_id}" (RFC-1125)
-    private static void ResolveNameCollisions(StringBuilder sb, List<string> declaredNames, List<NameSpan> replacedNames)
+    // in path order: "/a/{user-id}/{user_id}" is "/a/{user_id_2}/{user_id}". Names that are already valid keep them.
+    private static void ResolveNameCollisions(StringBuilder sb, List<Parameter> parameters)
     {
         var used = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var declared in declaredNames)
+        foreach (var parameter in parameters)
         {
-            used.Add(declared);
+            if (!parameter.IsReplaced)
+            {
+                used.Add(parameter.Name);
+            }
         }
 
-        var suffixes = new string?[replacedNames.Count];
-        for (var i = 0; i < replacedNames.Count; i++)
+        // Positions in the builder and suffixes of the parameters that are in the request and get a suffix
+        var insertions = new List<KeyValuePair<int, string>>();
+        foreach (var parameter in parameters)
         {
-            var name = sb.ToString(replacedNames[i].Start, replacedNames[i].Length);
+            if (!parameter.IsReplaced)
+            {
+                continue;
+            }
+
+            var name = SanitizeName(parameter.Name);
             if (used.Add(name))
             {
                 continue;
@@ -321,23 +338,87 @@ internal struct NormalizedRouteBuilder
 
             for (var n = 2; ; n++)
             {
-                var suffix = "_" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var suffix = "_" + n.ToString(CultureInfo.InvariantCulture);
                 if (used.Add(name + suffix))
                 {
-                    suffixes[i] = suffix;
+                    if (parameter.Start >= 0)
+                    {
+                        insertions.Add(new KeyValuePair<int, string>(parameter.Start + name.Length, suffix));
+                    }
+
                     break;
                 }
             }
         }
 
-        // Insert the suffixes from the end, so that the earlier offsets stay valid
-        for (var i = replacedNames.Count - 1; i >= 0; i--)
+        // Insert the suffixes from the end, so that the earlier positions stay valid
+        for (var i = insertions.Count - 1; i >= 0; i--)
         {
-            if (suffixes[i] is { } suffix)
+            sb.Insert(insertions[i].Key, insertions[i].Value);
+        }
+    }
+
+    private static bool IsValidName(string name)
+    {
+        foreach (var c in name)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c != '_')
             {
-                sb.Insert(replacedNames[i].Start + replacedNames[i].Length, suffix);
+                return false;
             }
         }
+
+        return true;
+    }
+
+    private static void AppendName(StringBuilder sb, string name)
+    {
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (char.IsAsciiLetterOrDigit(c) || c == '_')
+            {
+                sb.Append(c);
+                continue;
+            }
+
+            sb.Append('_');
+            if (char.IsHighSurrogate(c) && i + 1 < name.Length && char.IsLowSurrogate(name[i + 1]))
+            {
+                i++;
+            }
+        }
+    }
+
+    private static string SanitizeName(string name)
+    {
+        var sb = StringBuilderCache.Acquire();
+        AppendName(sb, name);
+        return StringBuilderCache.GetStringAndRelease(sb);
+    }
+
+    // Every catch-all is optional, and absent when it matched an empty value or only slashes (RFC-1125)
+    private static bool IsEmptyCatchAllValue(object? value)
+    {
+        if (value is null)
+        {
+            return true;
+        }
+
+        if (value is not string s)
+        {
+            return false;
+        }
+
+        foreach (var c in s)
+        {
+            if (c != '/')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Static constants only contain [A-Za-z0-9.-~_]; any other character is percent-encoded (rule 3)
@@ -403,25 +484,19 @@ internal struct NormalizedRouteBuilder
 
     private readonly bool IsInRequest(object? value, bool isOptional, bool isCatchAll, bool hasDefault)
     {
+        // A value that only comes from the default is absent. When the request path is unknown, presence can't be
+        // determined, so the parameter is left out (RFC-1125 fallback).
+        if (hasDefault && _segmentIndex >= _requestSegmentCount)
+        {
+            return false;
+        }
+
         if (isCatchAll)
         {
-            // Every catch-all is optional, and absent when it matched an empty value or only "/" (RFC-1125)
-            return value is not (null or string { Length: 0 } or "/");
+            return !IsEmptyCatchAllValue(value);
         }
 
-        if (isOptional)
-        {
-            return value is not (null or string { Length: 0 });
-        }
-
-        if (hasDefault)
-        {
-            // A value that only comes from the default is absent. When the request path is unknown, presence can't be
-            // determined, so the parameter is left out (RFC-1125 fallback).
-            return _segmentIndex < _requestSegmentCount && value is not (null or string { Length: 0 });
-        }
-
-        return true;
+        return !(isOptional || hasDefault) || value is not (null or string { Length: 0 });
     }
 
     private void AppendPendingSeparator(StringBuilder sb)
@@ -433,15 +508,19 @@ internal struct NormalizedRouteBuilder
         }
     }
 
-    private readonly struct NameSpan
+    private readonly struct Parameter
     {
-        public readonly int Start;
-        public readonly int Length;
+        public readonly string Name;
+        public readonly bool IsReplaced;
 
-        public NameSpan(int start, int length)
+        // Position of the name in the builder, or -1 when the parameter is not in the request
+        public readonly int Start;
+
+        public Parameter(string name, bool isReplaced, int start)
         {
+            Name = name;
+            IsReplaced = isReplaced;
             Start = start;
-            Length = length;
         }
     }
 }
