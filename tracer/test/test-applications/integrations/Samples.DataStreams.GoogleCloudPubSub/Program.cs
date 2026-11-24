@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
@@ -29,11 +31,22 @@ namespace Samples.DataStreams.GoogleCloudPubSub
                 return;
             }
 
+#if !NET5_0_OR_GREATER
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
+
+#if NET5_0_OR_GREATER
+            var grpcAdapter = GrpcNetClientAdapter.Default.WithAdditionalOptions(
+                options => options.HttpClient = new HttpClient(new Http2PriorKnowledgeHandler()));
+#else
+            GrpcAdapter? grpcAdapter = null;
+#endif
+
             Console.WriteLine($"Topic: {topicId}");
             Console.WriteLine($"Subscription: {subscriptionId}");
 
-            var publisherApi = new PublisherServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly }.Build();
-            var subscriberApi = new SubscriberServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly }.Build();
+            var publisherApi = new PublisherServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly, GrpcAdapter = grpcAdapter }.Build();
+            var subscriberApi = new SubscriberServiceApiClientBuilder { EmulatorDetection = EmulatorDetection.EmulatorOnly, GrpcAdapter = grpcAdapter }.Build();
 
             try
             {
@@ -59,12 +72,14 @@ namespace Samples.DataStreams.GoogleCloudPubSub
             {
                 TopicName = new TopicName(ProjectId, topicId),
                 EmulatorDetection = EmulatorDetection.EmulatorOnly,
+                GrpcAdapter = grpcAdapter,
             }.Build();
 
             await using var subscriber = new SubscriberClientBuilder
             {
                 SubscriptionName = new SubscriptionName(ProjectId, subscriptionId),
                 EmulatorDetection = EmulatorDetection.EmulatorOnly,
+                GrpcAdapter = grpcAdapter,
             }.Build();
 
             var consumed = 0;
@@ -111,5 +126,21 @@ namespace Samples.DataStreams.GoogleCloudPubSub
 
             Console.WriteLine($"Done, consumed {consumed} messages");
         }
+
+#if NET5_0_OR_GREATER
+        private sealed class Http2PriorKnowledgeHandler : DelegatingHandler
+        {
+            public Http2PriorKnowledgeHandler()
+                : base(new SocketsHttpHandler())
+            {
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                return base.SendAsync(request, cancellationToken);
+            }
+        }
+#endif
     }
 }
