@@ -27,6 +27,7 @@ namespace Datadog.Trace.Coverage.Collector;
 internal static class PackageAssemblyLocator
 {
     private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly Lazy<string[]> HostRuntimeIdentifiers = new(() => GetHostRuntimeIdentifiers().Distinct(StringComparer.Ordinal).ToArray());
     private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string[]>>> CachedAssetPaths = new(PathComparer);
 
     /// <summary>
@@ -35,7 +36,7 @@ internal static class PackageAssemblyLocator
     /// <param name="outputDirectory">The directory with the target assembly and its dependency manifests.</param>
     /// <param name="assemblyName">The simple name of the requested assembly.</param>
     /// <returns>The candidate paths, in probing order.</returns>
-    internal static IEnumerable<string> GetCandidatePaths(string outputDirectory, string assemblyName)
+    internal static string[] GetCandidatePaths(string outputDirectory, string assemblyName)
     {
         if (StringUtil.IsNullOrEmpty(outputDirectory) || StringUtil.IsNullOrEmpty(assemblyName))
         {
@@ -49,7 +50,7 @@ internal static class PackageAssemblyLocator
                                                  () => DiscoverAssetPaths(directory, GetPackageRoots(directory, Environment.GetEnvironmentVariable, GetUserProfileDirectory())),
                                                  LazyThreadSafetyMode.ExecutionAndPublication))
                                          .Value;
-        return assetPaths.TryGetValue(assemblyName, out var paths) ? paths.Where(File.Exists) : [];
+        return assetPaths.TryGetValue(assemblyName, out var paths) ? paths.Where(File.Exists).ToArray() : [];
     }
 
     /// <summary>
@@ -174,7 +175,6 @@ internal static class PackageAssemblyLocator
         foreach (var targetLibrary in target.Properties())
         {
             if (targetLibrary.Value is not JObject targetLibraryValue ||
-                targetLibraryValue["runtime"] is not JObject runtimeAssets ||
                 libraries[targetLibrary.Name] is not JObject library ||
                 GetString(library["type"]) != "package")
             {
@@ -183,7 +183,7 @@ internal static class PackageAssemblyLocator
 
             // Like the host, combine the library path (or its lowercase "name/version" key) with each asset path.
             var libraryPath = GetString(library["path"]) is { Length: > 0 } path ? path : targetLibrary.Name.ToLowerInvariant();
-            foreach (var asset in runtimeAssets.Properties())
+            foreach (var asset in GetManagedRuntimeAssets(targetLibraryValue))
             {
                 if (IsRelativePathInside(libraryPath) &&
                     IsRelativePathInside(asset.Name) &&
@@ -195,6 +195,90 @@ internal static class PackageAssemblyLocator
         }
 
         return assetPaths;
+    }
+
+    private static IEnumerable<JProperty> GetManagedRuntimeAssets(JObject library)
+    {
+        if (library["runtimeTargets"] is JObject runtimeTargets)
+        {
+            var groups = runtimeTargets.Properties()
+                                       .Where(asset => asset.Value is JObject metadata && GetString(metadata["assetType"]) == "runtime")
+                                       .ToLookup(asset => GetString(asset.Value["rid"]));
+            // The host selects one managed asset group for the entire package, including an empty group marked by _._.
+            var match = groups.Count > 0 ? HostRuntimeIdentifiers.Value.FirstOrDefault(groups.Contains) : null;
+            if (match is not null)
+            {
+                return groups[match];
+            }
+        }
+
+        return (library["runtime"] as JObject)?.Properties() ?? [];
+    }
+
+    private static IEnumerable<string> GetHostRuntimeIdentifiers()
+    {
+        var architecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        var windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var linux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        var platform = windows ? "win" : linux ? "linux" : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" : null;
+        var hostRid = AppContext.GetData("RUNTIME_IDENTIFIER") as string;
+
+        if (hostRid is { Length: > 0 })
+        {
+            yield return hostRid;
+        }
+
+        var framework = AppContext.GetData("FX_DEPS_FILE") is string { Length: > 0 } depsFile ? TryReadJson(depsFile) : null;
+        var targetName = GetString((framework?["runtimeTarget"] as JObject)?["name"]);
+        var buildRid = targetName?.Split('/').LastOrDefault() ?? hostRid;
+
+        // Older hosts use the expanded RID fallback list shipped with their shared framework.
+        var useGraph = Environment.Version.Major < 8 || (AppContext.TryGetSwitch("System.Runtime.Loader.UseRidGraph", out var useRidGraph) && useRidGraph);
+        var graphRid = hostRid ?? buildRid;
+        if (useGraph && graphRid is not null && (framework?["runtimes"] as JObject)?[graphRid] is JArray fallbacks)
+        {
+            yield return graphRid;
+            foreach (var fallback in fallbacks)
+            {
+                if (GetString(fallback) is { Length: > 0 } rid)
+                {
+                    yield return rid;
+                }
+            }
+
+            yield break;
+        }
+
+        // Portable hosts probe their build RID (even with an explicit RID override), then the OS and Unix fallbacks.
+        if (buildRid is { Length: > 0 })
+        {
+            yield return buildRid;
+            var suffix = "-" + architecture;
+            if (buildRid.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                yield return buildRid.Substring(0, buildRid.Length - suffix.Length);
+            }
+
+            if (linux && buildRid.StartsWith("alpine", StringComparison.Ordinal))
+            {
+                yield return $"linux-musl-{architecture}";
+                yield return "linux-musl";
+            }
+        }
+
+        if (platform is not null)
+        {
+            yield return $"{platform}-{architecture}";
+            yield return platform;
+        }
+
+        if (!windows)
+        {
+            yield return $"unix-{architecture}";
+            yield return "unix";
+        }
+
+        yield return "any";
     }
 
     private static JObject? GetRuntimeTarget(JObject depsJson)

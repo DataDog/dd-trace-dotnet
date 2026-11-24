@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using Datadog.Trace.Coverage.Collector;
@@ -309,6 +310,88 @@ public class CoverageResolverTests
         using var rewrittenAssembly = AssemblyDefinition.ReadAssembly(assemblyPath);
         var method = rewrittenAssembly.MainModule.GetTypes().SelectMany(type => type.Methods).Single(method => method.Name == "MethodWithPackageEnumDefault");
         method.Parameters.Single().Constant.Should().Be(0);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void ResolvePackageAssemblyPrefersExactIdentityWhenVersionsCoexist(bool includeFirstVersion)
+    {
+        using var directory = TemporaryDirectory.Create();
+        const string Name = "Package.Enums";
+        string[] probingRoots = [directory.Path, Path.Combine(directory.Path, "mirror")];
+        for (var version = includeFirstVersion ? 1 : 2; version <= 2; version++)
+        {
+            var packageVersion = $"{version}.0.0";
+            foreach (var root in probingRoots)
+            {
+                var packageDirectory = Directory.CreateDirectory(Path.Combine(root, "package.enums", packageVersion));
+                CreateAssembly(packageDirectory.FullName, Name, new Version(version, 0, 0, 0));
+            }
+
+            File.WriteAllText(Path.Combine(directory.Path, $"{version}.deps.json"), CreateDepsJson(Name, packageVersion, Name + ".dll"));
+        }
+
+        File.WriteAllText(Path.Combine(directory.Path, "Tests.runtimeconfig.dev.json"), CreateRuntimeConfigWithProbingPaths(probingRoots));
+        using var resolver = CreateResolver(directory.Path);
+        var first = new AssemblyNameReference(Name, new Version(1, 0, 0, 0));
+        var second = new AssemblyNameReference(Name, new Version(2, 0, 0, 0));
+
+        resolver.Resolve(second).Name.FullName.Should().Be(second.FullName);
+        resolver.Resolve(first).Name.FullName.Should().Be(includeFirstVersion ? first.FullName : second.FullName);
+
+        if (includeFirstVersion)
+        {
+            var missing = new AssemblyNameReference(Name, new Version(3, 0, 0, 0));
+            var resolveMissing = () => resolver.Resolve(missing);
+            resolveMissing.Should().Throw<AssemblyResolutionException>();
+        }
+    }
+
+    [Theory]
+    [InlineData(true, true, "platform")]
+    [InlineData(false, true, "any")]
+    [InlineData(false, false, "portable")]
+    public void ResolvePackageAssemblySelectsCompatibleManagedGroup(bool includePlatform, bool includeAny, string expectedGroup)
+    {
+        using var directory = TemporaryDirectory.Create();
+        const string Name = "Rid.Assembly";
+        var platform = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" :
+                       RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" : "linux";
+        var rid = $"{platform}-{RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}";
+        var platformRid = includePlatform ? rid : "other-os";
+        var fallbackRid = includeAny ? "any" : "other-os";
+        var portableAssets = includePlatform ? string.Empty : """
+            "runtime": { "portable/Rid.Assembly.dll": {} },
+            """;
+
+        string[] groups = ["portable", "native", "any", "platform"];
+        foreach (var group in groups)
+        {
+            var folder = Directory.CreateDirectory(Path.Combine(directory.Path, "rid.assembly", "1.0", group));
+            CreateAssembly(folder.FullName, Name, new Version(1, 0, 0, 0));
+        }
+
+        var deps = $$"""
+            {
+              "runtimeTarget": { "name": "net8.0" },
+              "targets": { "net8.0": { "Rid.Assembly/1.0": {
+                {{portableAssets}}
+                "runtimeTargets": {
+                  "native/Rid.Assembly.dll": { "rid": "{{rid}}", "assetType": "native" },
+                  "any/Rid.Assembly.dll": { "rid": "{{fallbackRid}}", "assetType": "runtime" },
+                  "platform/Rid.Assembly.dll": { "rid": "{{platformRid}}", "assetType": "runtime" }
+                }
+              } } },
+              "libraries": { "Rid.Assembly/1.0": { "type": "package" } }
+            }
+            """;
+        File.WriteAllText(Path.Combine(directory.Path, "Tests.deps.json"), deps);
+        File.WriteAllText(Path.Combine(directory.Path, "Tests.runtimeconfig.dev.json"), CreateRuntimeConfigWithProbingPaths(directory.Path));
+        using var resolver = CreateResolver(directory.Path);
+
+        var assembly = resolver.Resolve(new AssemblyNameReference(Name, new Version(1, 0, 0, 0)));
+
+        assembly.MainModule.FileName.Should().Be(Path.Combine(directory.Path, "rid.assembly", "1.0", expectedGroup, Name + ".dll"));
     }
 
     /// <summary>

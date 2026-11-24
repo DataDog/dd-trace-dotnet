@@ -140,9 +140,9 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return assemblyFromSharedFramework;
         }
 
-        // Package assets declared by the output directory's deps.json files, like the search directories, match by file name.
-        IEnumerable<string> packageAssemblyPaths = name.IsWindowsRuntime ? [] : PackageAssemblyLocator.GetCandidatePaths(_preferredSearchDirectory, name.Name);
-        var assemblyFromPackages = ResolveFromFiles(name, packageAssemblyPaths, requireMatchingIdentity: false);
+        // Different manifests can provide distinct versions. Copies of the same package in multiple probing roots can still unify a reference.
+        string[] packageAssemblyPaths = name.IsWindowsRuntime ? [] : PackageAssemblyLocator.GetCandidatePaths(_preferredSearchDirectory, name.Name);
+        var assemblyFromPackages = ResolveFromFiles(name, packageAssemblyPaths, requireMatchingIdentity: packageAssemblyPaths.Length > 1, allowUnambiguousFallback: true);
         if (assemblyFromPackages is not null)
         {
             return assemblyFromPackages;
@@ -175,8 +175,10 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         return ResolveFromFiles(name, directories.SelectMany(directory => extensions.Select(extension => Path.Combine(directory, name.Name + extension))), requireMatchingIdentity);
     }
 
-    private AssemblyDefinition? ResolveFromFiles(AssemblyNameReference name, IEnumerable<string> paths, bool requireMatchingIdentity)
+    private AssemblyDefinition? ResolveFromFiles(AssemblyNameReference name, IEnumerable<string> paths, bool requireMatchingIdentity, bool allowUnambiguousFallback = false)
     {
+        string? fallbackIdentity = null;
+        string? fallbackPath = null;
         foreach (var path in paths)
         {
             _logger.Debug($"Looking for: {path}");
@@ -190,6 +192,19 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
                 var assembly = ReadAssembly(path);
                 if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
                 {
+                    if (allowUnambiguousFallback)
+                    {
+                        if (fallbackIdentity is null)
+                        {
+                            fallbackIdentity = assembly.Name.FullName;
+                            fallbackPath = path;
+                        }
+                        else if (!string.Equals(fallbackIdentity, assembly.Name.FullName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            fallbackPath = null;
+                        }
+                    }
+
                     assembly.Dispose();
                     continue;
                 }
@@ -202,7 +217,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             }
         }
 
-        return null;
+        return fallbackPath is null ? null : ReadAndCache(name.FullName, fallbackPath);
     }
 
     private IEnumerable<string> GetSearchDirectoryCandidates()
