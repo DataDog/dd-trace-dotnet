@@ -179,7 +179,8 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         // key or value may not contain whitespace, control characters, or characters outside the Basic Latin Unicode Block
         // key   may not contain any of the following characters: " , ; \ ( ) / : < = > ? @ [ ] { }
         // value may not contain any of the following characters: " , ; \
-        if (c < 0x20 || c > 0x7E || char.IsWhiteSpace(c) || c is '"' or ',' or ';' or '\\')
+        // always encode '%' so a literal '%' is not misread as the start of an escape sequence on extract
+        if (c < 0x20 || c > 0x7E || char.IsWhiteSpace(c) || c is '"' or ',' or ';' or '\\' or '%')
         {
             return true;
         }

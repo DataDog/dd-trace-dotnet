@@ -16,6 +16,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -38,11 +40,13 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
     private const string OperationName = "azure_servicebus.receive";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessagesAsyncIntegration));
+    private static readonly object ProcessorReceiveState = new();
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, bool isProcessor, CancellationToken cancellationToken)
         where TTarget : IServiceBusReceiver, IDuckType
     {
-        return CallTargetState.GetDefault();
+        var receiveState = isProcessor ? ProcessorReceiveState : null;
+        return new CallTargetState(scope: null, state: receiveState);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
@@ -66,8 +70,15 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var spanLinks = ExtractSpanLinksFromMessages(tracer, messagesList);
         var scope = CreateAndConfigureSpan(tracer, spanLinks, instance, messagesList);
 
-        // Re-inject the new span context into all messages so Azure Functions will use it as parent
-        if (scope != null && messagesList != null && messageCount > 0)
+        var isProcessorReceive = ReferenceEquals(state.State, ProcessorReceiveState);
+        var shouldReinjectContext = ShouldReinjectContext(
+            isProcessorReceive,
+            AzureInfo.Instance.IsIsolatedFunctionHostProcess,
+            tracer.Settings.PropagationBehaviorExtract);
+
+        // Preserve reinjection for non-processor receives and the isolated Functions trigger handoff.
+        // Other processor receives keep the producer context only when extraction continues the trace.
+        if (scope != null && messagesList != null && messageCount > 0 && shouldReinjectContext)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
         }
@@ -79,6 +90,24 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         return returnValue;
     }
+
+    // Decides whether the receive-span context should be written back into the received messages so a
+    // downstream reader parents to it. Preserve the existing behavior for:
+    //   - Non-processor receives in any hosting environment, for backwards compatibility.
+    //   - Isolated Functions host: the host receives and serializes the message over gRPC; the worker
+    //     parents its function span by extracting the context from UserProperties (see
+    //     AzureFunctionsCommon.CreateIsolatedFunctionScope), so the host must reinject.
+    //
+    // Restart and ignore also retain reinjection so the SDK does not continue the producer trace.
+    // With continue, it must NOT run for a user-created ServiceBusProcessor: with the Azure activity source enabled the
+    // SDK's ServiceBusProcessor.ProcessMessage activity parents to the message context, so overwriting it
+    // here splits the producer and consumer into separate traces.
+    //
+    // With continue, the in-process Functions trigger is intentionally excluded too: its function span is created at
+    // FunctionExecutor.TryExecuteAsync and parents to the active scope, not by reading the message, so it
+    // does not depend on reinjection. Do not re-enable it for that case.
+    internal static bool ShouldReinjectContext(bool isProcessorReceive, bool isIsolatedFunctionHostProcess, ExtractBehavior extractionBehavior)
+        => !isProcessorReceive || isIsolatedFunctionHostProcess || extractionBehavior != ExtractBehavior.Continue;
 
     private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {

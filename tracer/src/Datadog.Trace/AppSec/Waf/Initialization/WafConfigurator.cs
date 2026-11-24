@@ -12,6 +12,8 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -216,6 +218,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         internal UpdateResult Update(IntPtr wafBuilderHandle, ConfigurationState configurationState, IEncoder encoder, ref DdwafObjectStruct diagnostics, string? rulesFile = null, bool updating = true)
         {
             var wafHandle = IntPtr.Zero;
+            var totalConfigErrors = 0;
             if (wafBuilderHandle == IntPtr.Zero)
             {
                 Log.Error("rc::asm_dd::diagnostic Error: WAF builder initialization failed."); // Check were all these error codes are defined
@@ -258,6 +261,14 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                                     Log.Debug("WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
                                 }
 
+                                // only the last config's diagnostics survive this loop, so count each one now
+                                var configErrors = DiagnosticResultUtils.CountConfigErrors(configDiagnostics);
+                                if (configErrors > 0)
+                                {
+                                    TelemetryFactory.Metrics.RecordCountWafConfigErrors(updating ? MetricTags.WafConfigAction.Update : MetricTags.WafConfigAction.Init, configErrors);
+                                    totalConfigErrors += configErrors;
+                                }
+
                                 _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
                                 diagnostics = configDiagnostics;
                             }
@@ -275,11 +286,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
-                    result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
+                    result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
                 }
                 else
                 {
-                    result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+                    result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
                 }
 
                 if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||

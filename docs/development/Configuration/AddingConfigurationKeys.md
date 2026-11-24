@@ -212,7 +212,8 @@ Aliases use the normal `WithKeys()` fallback chain. When a key marked for redact
 - **Banned API Analyzer** - Uses Microsoft's `BannedApiAnalyzers` package to prevent direct usage of `System.Environment.GetEnvironmentVariable()` throughout the codebase.
 
 **Configuration:**
-- **`BannedSymbols.txt`** (`tracer/src/Datadog.Trace.Tools.Analyzers/ConfigurationAnalyzers/BannedSymbols.txt`) - Defines banned APIs with custom error messages
+- **`BannedSymbols.txt`** (repo root) - Defines banned APIs with custom error messages, applied to every project under `tracer/` that wires it up via `AdditionalFiles`
+- **`BannedSymbols.NetFx.txt`** (repo root) - Additional bans applied only when building `Datadog.Trace` for `net461`
 - **`.editorconfig`** - Configures RS0030 diagnostic severity as error, with exceptions for vendored code and `EnvironmentConfigurationSource.cs`
 
 ##### Diagnostic rules:

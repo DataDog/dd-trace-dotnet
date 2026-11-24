@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
-using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using FluentAssertions;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,11 +32,11 @@ namespace Datadog.Profiler.SmokeTests
         //  4: start a thread to compute pi at a certain precision(high CPU usage)
         //  5: start a to compute fibonacci (high CPU usage + deep stacks)
         // -----------------------------------------------------------------------------------------
-        [TestAppFact("Samples.Computer01")]
-        public void CheckAppDomain(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckAppDomain(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -48,11 +46,11 @@ namespace Datadog.Profiler.SmokeTests
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckGenerics(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckGenerics(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 2", output: _output);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -62,11 +60,11 @@ namespace Datadog.Profiler.SmokeTests
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckPi(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckPi(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 4", output: _output);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -76,11 +74,11 @@ namespace Datadog.Profiler.SmokeTests
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckFibonacci(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckFibonacci(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 5", output: _output);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -91,10 +89,10 @@ namespace Datadog.Profiler.SmokeTests
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.Computer01")]
-        public void CheckAppDomainForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckAppDomainForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
@@ -104,10 +102,10 @@ namespace Datadog.Profiler.SmokeTests
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.Computer01")]
-        public void CheckGenericsForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckGenericsForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 2", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
@@ -117,10 +115,10 @@ namespace Datadog.Profiler.SmokeTests
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.Computer01")]
-        public void CheckPiForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckPiForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 4", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
@@ -130,10 +128,10 @@ namespace Datadog.Profiler.SmokeTests
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.Computer01")]
-        public void CheckFibonacciForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckFibonacciForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 5", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
@@ -142,13 +140,14 @@ namespace Datadog.Profiler.SmokeTests
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckCustomGetFunctionFromIP(string appName, string framework, string appAssembly)
+        [Flaky("Intermittently finds an error message in the profiler log file in CI")]
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckCustomGetFunctionFromIP(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 0", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 0", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
-            if (framework == "net48")
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -157,10 +156,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.RunAndCheck();
 
             // Then check for custom get function from IP enabled
-            var logFile = Directory.GetFiles(runner.EnvironmentHelper.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-            File.ReadLines(logFile).Should()
-                .Contain(l => l.Contains("ManagedCodeCache initialized successfully"));
+            ProfilerLogSet.Read(runner.EnvironmentHelper.LogDir).NativeProfiler
+                .Should().ContainLine("ManagedCodeCache initialized successfully");
         }
     }
 }

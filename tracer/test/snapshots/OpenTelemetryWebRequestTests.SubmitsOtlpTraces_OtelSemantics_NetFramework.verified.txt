@@ -65,6 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "WebRequestRequestAsync",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -73,6 +74,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -120,6 +122,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -167,6 +170,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "HTTP",
               "kind": 3,
@@ -220,6 +224,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -267,6 +272,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -349,6 +355,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -431,6 +438,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,

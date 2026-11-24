@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        MethodName = "ExecuteOp",
        ReturnTypeName = ClrNames.Task,
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseConnectionV3TypeName, CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
-       MinimumVersion = "3.1.3",
+       MinimumVersion = "3.1.2",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(

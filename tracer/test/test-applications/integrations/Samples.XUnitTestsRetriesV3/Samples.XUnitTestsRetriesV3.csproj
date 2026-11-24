@@ -3,8 +3,8 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.0.0</ApiVersion>
     <!-- xunit.v3 1.x.x supports net6.0+   -->
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <TargetFrameworks Condition="$(ApiVersion) &lt; 2.0.0">net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(ApiVersion) &lt; 2.0.0">net6.0;net7.0;net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <MicrosoftTestSDKVersion>17.12.0</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">17.13.0</MicrosoftTestSDKVersion>
     <XunitRunnerVisualStudioVersion>3.0.1</XunitRunnerVisualStudioVersion>
@@ -19,6 +19,12 @@
     <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The multi-package sample builds do not build Datadog.Trace.Manual, so compile the attributes it ships. -->
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\NoAutoRetryAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\..\src\Datadog.Trace\Ci\PreventFailureSuppressionAttribute.cs" Link="Ci\%(Filename)%(Extension)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />

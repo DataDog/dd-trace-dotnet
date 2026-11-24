@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
@@ -36,6 +37,12 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const string EnvParameterName = "dd_env";
 
+    /// <summary>
+    /// The longest request URL sent with a flag selection. Fastly answers longer URLs with 414 URI Too
+    /// Long (https://docs.fastly.com/products/network-services-resource-limits).
+    /// </summary>
+    internal const int MaxRequestUrlBytes = 8192;
+
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
@@ -43,7 +50,7 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
-    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri"/> to get the
+    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri(string?, FlagSelection, out bool)"/> to get the
     /// URI to request.
     /// </summary>
     public Uri Uri { get; }
@@ -62,7 +69,7 @@ internal sealed class AgentlessEndpoint
     /// is an origin receives the canonical path; one that carries a path is used verbatim.
     /// <para>
     /// The environment is not part of the endpoint: it can be changed in code while the application
-    /// runs, so it is applied per request by <see cref="BuildRequestUri"/> instead.
+    /// runs, so it is applied per request by <see cref="BuildRequestUri(string?, FlagSelection, out bool)"/> instead.
     /// </para>
     /// </summary>
     /// <param name="site">The Datadog site, for example <c>datadoghq.com</c>.</param>
@@ -78,28 +85,12 @@ internal sealed class AgentlessEndpoint
         var configured = baseUrl?.Trim();
         if (StringUtil.IsNullOrEmpty(configured))
         {
-            var trimmedSite = site?.Trim();
-            if (StringUtil.IsNullOrEmpty(trimmedSite))
+            if (!TryNormalizeSite(site, out var normalizedSite, out error))
             {
-                error = "No Datadog site is configured";
                 return false;
             }
 
-            // The site is concatenated into a host, so every character that can change what a URL means
-            // has to be rejected before that happens. "@" is the dangerous one: it would make the rest of
-            // the value the real host, and the API key would be sent there. "/", "?" and "#" would start a
-            // path, query or fragment, and ":" a port or a scheme. Uri.TryCreate accepts several of these,
-            // so it cannot be relied on to catch them. The other tracers reject the same set.
-            foreach (var character in trimmedSite)
-            {
-                if (char.IsWhiteSpace(character) || character is '/' or '?' or '#' or '@' or ':')
-                {
-                    error = "The configured Datadog site is not valid";
-                    return false;
-                }
-            }
-
-            var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
+            var managedHost = ManagedHostPrefix + normalizedSite;
 
             if (!Uri.TryCreate($"https://{managedHost}{DefaultPath}", UriKind.Absolute, out var managedUri))
             {
@@ -145,42 +136,164 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
+    /// Validates and normalizes a Datadog site before it is appended to a managed hostname.
+    /// Configuration and event delivery use this same method so credentials cannot be routed by
+    /// two subtly different parsers.
+    /// </summary>
+    internal static bool TryNormalizeSite(string? site, out string normalizedSite, out string? error)
+    {
+        normalizedSite = string.Empty;
+        error = null;
+
+        var trimmedSite = site?.Trim();
+        if (StringUtil.IsNullOrEmpty(trimmedSite))
+        {
+            error = "No Datadog site is configured";
+            return false;
+        }
+
+        // The complete managed host must remain below the DNS limit once either the configuration
+        // or event-intake prefix is applied.
+        if (trimmedSite.Length > 230)
+        {
+            error = "The configured Datadog site is not valid";
+            return false;
+        }
+
+        // Accept only DNS label characters before concatenating the site into a managed host.
+        // Uri parsing alone accepts delimiters such as '@' that can redirect the API key to a
+        // different host, as well as '/', '?', '#', and ':' that change the URL's meaning.
+        var labelLength = 0;
+        var previousWasHyphen = false;
+        foreach (var character in trimmedSite)
+        {
+            if (character == '.')
+            {
+                if (labelLength == 0 || previousWasHyphen)
+                {
+                    error = "The configured Datadog site is not valid";
+                    return false;
+                }
+
+                labelLength = 0;
+                previousWasHyphen = false;
+                continue;
+            }
+
+            if (character is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9')
+            {
+                labelLength++;
+                previousWasHyphen = false;
+            }
+            else if (character == '-' && labelLength > 0)
+            {
+                labelLength++;
+                previousWasHyphen = true;
+            }
+            else
+            {
+                error = "The configured Datadog site is not valid";
+                return false;
+            }
+
+            if (labelLength > 63)
+            {
+                error = "The configured Datadog site is not valid";
+                return false;
+            }
+        }
+
+        if (labelLength == 0 || previousWasHyphen)
+        {
+            error = "The configured Datadog site is not valid";
+            return false;
+        }
+
+        normalizedSite = StringUtil.ToLowerInvariant(trimmedSite);
+        return true;
+    }
+
+    /// <summary>
+    /// Returns the environment that <see cref="BuildRequestUri(string?)"/> sends as <c>dd_env</c>, or
+    /// <c>null</c> when none is sent: a configured base URL never carries one, and a value that
+    /// normalizes to nothing is treated as no environment at all.
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <returns>The normalized environment, or <c>null</c>.</returns>
+    public string? RequestEnvironment(string? env)
+    {
+        if (!IsManaged)
+        {
+            return null;
+        }
+
+        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
+        // targeting and span tags agree on what the environment is. It also bounds the value at 200
+        // characters, which keeps a misconfigured environment from producing an unusable URL.
+        var normalized = TraceUtil.NormalizeTag(env);
+        return StringUtil.IsNullOrEmpty(normalized) ? null : normalized;
+    }
+
+    /// <summary>
     /// Returns the URI to request configuration for <paramref name="env"/>. The environment is
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// A configured base URL is opaque: it is requested exactly as the operator wrote it, since it
-    /// may hold credentials, routing, or a scope of its own. Only the managed endpoint carries
-    /// <c>dd_env</c>, which matches the other tracers.
+    /// Without a flag selection, a configured base URL is opaque: it is requested exactly as the
+    /// operator wrote it, since it may hold credentials, routing, or a scope of its own. Only the
+    /// managed endpoint carries <c>dd_env</c>, which matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (!IsManaged)
+        var normalized = RequestEnvironment(env);
+        return normalized is null ? Uri : AppendQuery(Uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
+    }
+
+    /// <summary>
+    /// Returns the URI to request configuration for <paramref name="env"/> and the flag selection,
+    /// whose parameters follow the existing query, a configured base URL's included. When they would
+    /// make the URL longer than <see cref="MaxRequestUrlBytes"/>, the URI is returned without them.
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <param name="selection">The claimed flag selection.</param>
+    /// <param name="selectionOmitted">Whether the selection was left out because the URL would be too long with it.</param>
+    /// <returns>The URI to request.</returns>
+    public Uri BuildRequestUri(string? env, FlagSelection selection, out bool selectionOmitted)
+    {
+        selectionOmitted = false;
+        var uri = BuildRequestUri(env);
+        if (!selection.HasValues)
         {
-            return Uri;
+            return uri;
         }
 
-        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
-        // targeting and span tags agree on what the environment is. It also bounds the value at 200
-        // characters, which keeps a misconfigured environment from producing an unusable URL.
-        // A value that normalizes to nothing is treated as no environment at all.
-        var normalized = TraceUtil.NormalizeTag(env);
-        if (StringUtil.IsNullOrEmpty(normalized))
+        // The whole URL string after percent-encoding is measured, as the browser SDK does
+        // (https://github.com/DataDog/openfeature-js-client/blob/main/packages/browser/src/transport/flagSelection.ts).
+        var withSelection = AppendQuery(uri, selection.ToQuery());
+        if (Encoding.UTF8.GetByteCount(withSelection.AbsoluteUri) > MaxRequestUrlBytes)
         {
-            return Uri;
+            selectionOmitted = true;
+            return uri;
         }
 
-        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(normalized);
-        var builder = new UriBuilder(Uri);
+        return withSelection;
+    }
 
-        // The getter returns the query with its leading "?", while the setter prepends one of its
-        // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
-        // ending in a bare "?" reports a query of "?", which the length check treats as no query.
-        var existing = builder.Query;
-        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameter : parameter;
-        return builder.Uri;
+    private static Uri AppendQuery(Uri uri, string parameters)
+    {
+        // Built as a string rather than with UriBuilder, whose Query setter adds a "?" on .NET Framework
+        // but not on .NET Core when the value already starts with one, so a query whose data starts
+        // with "?" would lose it. A URL ending in a bare "?" reports a query of "?".
+        var separator = uri.Query.Length switch
+        {
+            0 => "?",
+            1 => string.Empty,
+            _ => "&",
+        };
+
+        return new Uri(uri.GetLeftPart(UriPartial.Query) + separator + parameters + uri.Fragment);
     }
 }

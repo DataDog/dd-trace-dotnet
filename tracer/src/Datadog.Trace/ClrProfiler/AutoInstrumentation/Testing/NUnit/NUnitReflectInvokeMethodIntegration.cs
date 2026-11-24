@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     ReturnTypeName = ClrNames.Object,
     ParameterTypeNames = ["System.Reflection.MethodInfo", ClrNames.Object, "System.Object[]"],
     MinimumVersion = "3.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

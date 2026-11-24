@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -91,6 +92,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, true);
+            yield return (s => s.AzureEventGridBatchLinksEnabled, true);
             yield return (s => s.AgentFeaturePollingEnabled, true);
         }
 
@@ -117,6 +119,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (ConfigurationKeys.ServiceName, "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
             yield return ("DD_SERVICE_NAME", "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
+
+            yield return (ConfigurationKeys.AzureEventGridBatchLinksEnabled, "false", s => s.AzureEventGridBatchLinksEnabled, false);
 
             yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", s => s.Manager.InitialMutableSettings.DisabledIntegrationNames.Count, 3); // The OpenTelemetry integration is disabled by defau)t
 
@@ -241,6 +245,56 @@ namespace Datadog.Trace.Tests.Configuration
                 object actualValue = settingGetter(settings);
                 Assert.Equal(expectedValue, actualValue);
             }
+        }
+
+        [SkippableTheory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
+        [EnvironmentRestorer(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.ServiceName)]
+        public void EnvironmentConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
+        {
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            // Windows and .NET 8 or earlier remove a variable set to an empty value
+            Skip.If(value.Length == 0 && Environment.GetEnvironmentVariable(key) is null, "This runtime removes environment variables set to an empty value.");
+            IConfigurationSource source = new EnvironmentConfigurationSource();
+
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+
+            result.IsPresent.Should().Be(expectedFound);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
+        public void NameValueConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
+        {
+            IConfigurationSource source = new NameValueConfigurationSource(new NameValueCollection { { key, value } });
+
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+
+            result.IsPresent.Should().Be(expectedFound);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
+        public void JsonConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
+        {
+            var json = JsonConvert.SerializeObject(new Dictionary<string, string> { { key, value } });
+            IConfigurationSource source = new JsonConfigurationSource(json, ConfigurationOrigins.Code);
+
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+
+            result.IsPresent.Should().Be(expectedFound);
         }
 
         // Special case for dictionary-typed settings in JSON

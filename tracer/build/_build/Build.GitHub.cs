@@ -71,8 +71,6 @@ partial class Build
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
 
-    string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
-
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
@@ -320,7 +318,6 @@ partial class Build
     Target CloseMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async() =>
        {
             var client = GetGitHubClient();
@@ -355,7 +352,6 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async() =>
         {
             var client = GetGitHubClient();
@@ -386,13 +382,13 @@ partial class Build
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
        .After(UpdateVersion)
-       .Requires(() => Version)
        .Executes(async () =>
         {
             Console.WriteLine("Using version to " + FullVersion);
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
+            Console.WriteLine("::set-output name=version_suffix::" + VersionSuffix);
             Console.WriteLine("::set-output name=lib_waf_version::" + LibDdwafVersion);
 
             var rulesPath = Solution.GetProject(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
@@ -409,7 +405,6 @@ partial class Build
 
     Target CalculateNextVersion => _ => _
        .Unlisted()
-       .Requires(() => Version)
        .Executes(() =>
         {
             Console.WriteLine("Current version is " + Version);
@@ -438,6 +433,7 @@ partial class Build
             Console.WriteLine("::set-output name=full_version::" + nextVersion);
             Console.WriteLine("::set-output name=previous_version::" + Version);
             Console.WriteLine("::set-output name=isprerelease::false");
+            Console.WriteLine("::set-output name=version_suffix::");
         });
 
     Target VerifyChangedFilesFromVersionBump => _ => _
@@ -446,20 +442,12 @@ partial class Build
        .After(UpdateVersion, UpdateChangeLog)
        .Executes(() =>
         {
+            // Most of the repository derives its version from version.props - see
+            // version.props and build/cmake/DdVersion.cmake - so a bump only has to touch the
+            // canonical file and the samples.
             var expectedFileChanges = new List<string>
             {
-                ".azure-pipelines/ultimate-pipeline.yml",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
-                "profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
-                "profiler/src/ProfilerEngine/ProductVersion.props",
-                "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
-                "shared/src/msi-installer/WindowsInstaller.wixproj",
-                "shared/src/native-src/version.h",
-                "tracer/build/artifacts/dd-dotnet.sh",
-                "tracer/build/_build/Build.cs",
+                "tracer/build/_build/version.props",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
@@ -471,12 +459,6 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
-                "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
-                "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Directory.Build.props",
-                "tracer/src/Datadog.Trace/TracerConstants.cs",
             };
 
             if (ExpectChangelogUpdate)
@@ -547,7 +529,6 @@ partial class Build
 
     Target UpdateChangeLog => _ => _
        .Unlisted()
-       .Requires(() => Version)
        .Executes(() =>
         {
             var releaseNotes = Environment.GetEnvironmentVariable("RELEASE_NOTES");
@@ -588,7 +569,6 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async () =>
         {
             const string fixes = "Fixes";
@@ -600,6 +580,7 @@ partial class Build
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
             const string serverless = "Serverless";
+            const string featureFlags = "Feature Flags";
             const string dsm = "Data Streams Monitoring";
 
             var nextVersion = FullVersion;
@@ -684,15 +665,19 @@ partial class Build
             static (string category, Issue issue) CategorizeIssue(Issue issue)
             {
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
-                var areaLabelToComponentMap = new Dictionary<string, string>() {
-                    { "area:tracer", tracer },
-                    { "area:ci-visibility", ciVisibility },
-                    { "area:asm", appSecMonitoring },
-                    { "asm-iast", appSecMonitoring },
-                    { "area:profiler", profiler },
-                    { "area:debugger", debugger },
-                    { "area:serverless", serverless },
-                    { "area:data-streams-monitoring", dsm },
+                // Checked in order, so the first match wins. FFE PRs are also labelled
+                // area:tracer (they live in Datadog.Trace), so FFE must come first
+                var areaLabelToComponentMap = new (string Label, string Component)[] {
+                    ("area:ffe", featureFlags),
+                    ("feature_flags", featureFlags),
+                    ("area:tracer", tracer),
+                    ("area:ci-visibility", ciVisibility),
+                    ("area:asm", appSecMonitoring),
+                    ("area:asm-iast", appSecMonitoring),
+                    ("area:profiler", profiler),
+                    ("area:debugger", debugger),
+                    ("area:serverless", serverless),
+                    ("area:data-streams-monitoring", dsm),
                 };
 
                 var buildAndTestIssues = new []
@@ -738,8 +723,9 @@ partial class Build
                 profiler => 3,
                 debugger => 4,
                 serverless => 5,
-                fixes => 6,
-                _ => 7
+                featureFlags => 6,
+                fixes => 7,
+                _ => 8
             };
         });
 
@@ -747,7 +733,6 @@ partial class Build
         .Unlisted()
         .Description("Downloads the release artifacts from the specified Azure DevOps BuildId")
         .DependsOn(CreateRequiredDirectories)
-        .Requires(() => Version)
         .Requires(() => AzureDevopsBuildId)
         .Executes(async () =>
         {
@@ -769,7 +754,6 @@ partial class Build
        .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
-       .Requires(() => Version)
        .Requires(() => TargetBranch)
        .Executes(async () =>
        {
@@ -1343,18 +1327,20 @@ partial class Build
             await DownloadArtifact(client, destination, fileToDownload);
         }
 
-        // Ensure that the fleet-installer artifact is available for download, for later in the release
-        // We don't actually need the file now, we just need to make sure it's available, so that we can
-        // use it in GitLab later to build the OCI image.
+        // Ensure that the artifacts used by GitLab to build the OCI images are available for download.
+        // We don't actually need the files now, we just need to make sure they're available for later in the release.
         var tempDir = TempDirectory / Path.GetRandomFileName();
         Directory.CreateDirectory(tempDir);
         await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
+        await DownloadArtifact(client, tempDir, $"{awsUri}otel-operator-startup-hook/OpenTelemetry.AutoInstrumentation.StartupHook.dll");
 
-        // Overwrite the unsigned NuGet packages Azure DevOps built (in `artifactsPath`, what we
-        // actually push to nuget.org) with GitLab's Authenticode-signed copies - see
-        // SignNuGetPackageContents in Build.Gitlab.cs. Do this before the sha512.txt checksums are
-        // computed by the caller, so the recorded hashes describe what actually gets pushed.
-        await ReplaceWithSignedNuGetPackages(client, destination, awsUri, artifactsPath);
+        // Overwrite the NuGet packages Azure DevOps built (in `artifactsPath`, what we actually push
+        // to nuget.org) with the copies GitLab built and Authenticode-signed - see SignDlls and
+        // SignNuGetPackageContents in Build.Gitlab.cs. This includes the .snupkg symbol packages,
+        // which must come from the same build as the .nupkg files they describe. Do this before the
+        // sha512.txt checksums are computed by the caller, so the recorded hashes describe what
+        // actually gets pushed.
+        await ReplaceWithGitlabNuGetPackages(client, destination, awsUri, artifactsPath);
 
         return;
 
@@ -1368,28 +1354,34 @@ partial class Build
         }
     }
 
-    // Downloads the Authenticode-signed .nupkg files produced by GitLab's `sign-nuget-packages` job
-    // and replaces every .nupkg in `artifactsPath` with its signed counterpart.
-    static async Task ReplaceWithSignedNuGetPackages(HttpClient client, AbsolutePath destination, string awsUri, AbsolutePath artifactsPath)
+    // Downloads the NuGet packages (and symbol packages) that GitLab published to S3 for this commit
+    // and replaces every .nupkg/.snupkg in `artifactsPath` with its GitLab counterpart.
+    static async Task ReplaceWithGitlabNuGetPackages(HttpClient client, AbsolutePath destination, string awsUri, AbsolutePath artifactsPath)
     {
-        var signedDir = destination / "signed-nuget-packages";
-        EnsureExistingDirectory(signedDir);
+        var gitlabDir = destination / "signed-nuget-packages";
+        EnsureExistingDirectory(gitlabDir);
 
-        var unsignedPackages = artifactsPath.GlobFiles("*.nupkg");
-        foreach (var unsignedFile in unsignedPackages)
+        // `dotnet nuget push *.nupkg` implicitly pushes the sibling .snupkg, so we have to replace both
+        var azurePackages = artifactsPath.GlobFiles("*.nupkg", "*.snupkg");
+        if (azurePackages.Count == 0)
         {
-            var name = unsignedFile.Name;
-            var signedUrl = $"{awsUri}signed-nuget-packages/{name}";
-            var signedFile = signedDir / name;
+            throw new Exception($"No .nupkg or .snupkg files found in {artifactsPath}");
+        }
+
+        foreach (var azureFile in azurePackages)
+        {
+            var name = azureFile.Name;
+            var gitlabUrl = $"{awsUri}signed-nuget-packages/{name}";
+            var gitlabFile = gitlabDir / name;
 
             await DownloadFileWithRetry(
                 client,
-                signedUrl,
-                signedFile,
-                $"Error downloading Authenticode-signed NuGet package '{name}'. Check that the 'sign-nuget-packages' GitLab job ran (and published) this package for this commit");
+                gitlabUrl,
+                gitlabFile,
+                $"Error downloading '{name}' from GitLab. Check that the 'publish' GitLab job uploaded this file for this commit (the .nupkg files come from the 'build' and 'sign-nuget-packages' jobs, the .snupkg files from 'build')");
 
-            File.Copy(signedFile, unsignedFile, overwrite: true);
-            Console.WriteLine($"Replaced {name} with the Authenticode-signed copy from {signedUrl}");
+            File.Copy(gitlabFile, azureFile, overwrite: true);
+            Console.WriteLine($"Replaced {name} with the GitLab copy from {gitlabUrl}");
         }
     }
 

@@ -1,8 +1,23 @@
 ﻿ARG DOTNETSDK_VERSION
 ARG RUNTIME_IMAGE
 
+# The SDK still ships the distrusted eMudhra / AAA Certificate Services roots in its
+# NuGet trust lists (sdk/*/trustedroots/*.pem), so drop those certificates (APPSEC-71273)
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as sdk-patched
+RUN set -e; \
+    for f in /usr/share/dotnet/sdk/*/trustedroots/*.pem; do \
+      [ -f "$f" ] || continue; \
+      d=$(mktemp -d); \
+      awk -v d="$d" '/-----BEGIN CERTIFICATE-----/ { n++; out = sprintf("%s/%05d.pem", d, n) } out { print > out } /-----END CERTIFICATE-----/ { close(out); out = "" }' "$f"; \
+      : > "$f"; \
+      for c in "$d"/*.pem; do \
+        sed '/-----/d' "$c" | tr -d '\r' | base64 -d | grep -aqE 'emSign (ECC Root CA|Root TLS CA|Root CS CA) - G3|AAA Certificate Services' || cat "$c" >> "$f"; \
+      done; \
+      rm -rf "$d"; \
+    done
+
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
+FROM sdk-patched as builder
 
 # Build the smoke test app
 WORKDIR /src

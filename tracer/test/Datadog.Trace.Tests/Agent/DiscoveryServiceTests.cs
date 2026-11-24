@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
@@ -28,6 +29,73 @@ public class DiscoveryServiceTests
     private const int RecheckIntervalMs = 300_000;
 
     private static readonly ServiceRemappingHash DisabledServiceRemappingHash = new(null);
+
+    [Fact]
+    public async Task EndpointReplacementClearsCachedCapabilitiesAndPublishesEqualConfiguration()
+    {
+        var settingsA = new ExporterSettings();
+        var settingsB = new ExporterSettings();
+        var notifications = new List<AgentConfiguration>();
+        var factoryA = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: GetConfig()));
+        var factoryB = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: GetConfig()));
+        await using var discovery = new DiscoveryService(factoryA, DisabledServiceRemappingHash, 1, 1, RecheckIntervalMs, autoStartLoop: false, exporterSettings: settingsA);
+        discovery.SubscribeToChanges(notifications.Add);
+        await discovery.RunOneIterationAsync(null);
+        discovery.SetCurrentConfigStateHash(discovery.ConfigStateHash);
+        discovery.RequireRefresh(discovery.ConfigStateHash, DateTimeOffset.UtcNow).Should().BeFalse();
+
+        discovery.UpdateRequestFactory(factoryB, settingsB);
+
+        discovery.ConfigStateHash.Should().BeNull();
+        var newSubscriber = new List<AgentConfiguration>();
+        discovery.SubscribeToChanges(newSubscriber.Add);
+        newSubscriber.Should().BeEmpty("cached capabilities belonged to the previous endpoint");
+        await discovery.RunOneIterationAsync(null);
+
+        factoryB.RequestsSent.Should().ContainSingle();
+        notifications.Should().HaveCount(2, "even an identical /info body belongs to a new endpoint");
+        notifications[0].DiscoverySettings.Should().BeSameAs(settingsA);
+        notifications[1].DiscoverySettings.Should().BeSameAs(settingsB);
+        newSubscriber.Should().ContainSingle().Which.DiscoverySettings.Should().BeSameAs(settingsB);
+        notifications[1].ToString().Should().NotContain(nameof(AgentConfiguration.DiscoverySettings));
+    }
+
+    [Fact]
+    public async Task LateResponseFromPreviousEndpointCannotOverwriteNewConfigurationOrHashes()
+    {
+        var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var notifications = new List<AgentConfiguration>();
+        var serviceHash = new ServiceRemappingHash("service:test");
+        var factoryA = new TestRequestFactory(uri => new DelayedDiscoveryRequest(uri, started, release, GetConfig(version: "old-agent")));
+        var factoryB = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: GetConfig(version: "new-agent"), responseHeaders: new() { { AgentHttpHeaderNames.ContainerTagsHash, "new-tags" } }));
+        await using var discovery = new DiscoveryService(factoryA, serviceHash, 1, 1, RecheckIntervalMs, autoStartLoop: false, exporterSettings: new ExporterSettings());
+        discovery.SubscribeToChanges(notifications.Add);
+        var oldResponse = discovery.RunOneIterationAsync(null);
+        await started.Task;
+        try
+        {
+            var settingsB = new ExporterSettings();
+            discovery.UpdateRequestFactory(factoryB, settingsB);
+            await discovery.RunOneIterationAsync(null);
+            var currentHash = discovery.ConfigStateHash;
+
+            release.SetResult(true);
+            await oldResponse;
+
+            notifications.Should().ContainSingle().Which.AgentVersion.Should().Be("new-agent");
+            discovery.ConfigStateHash.Should().Be(currentHash);
+            serviceHash.ContainerTagsHash.Should().Be("new-tags");
+            AgentConfiguration cached = null;
+            discovery.SubscribeToChanges(config => cached = config);
+            cached.DiscoverySettings.Should().BeSameAs(settingsB);
+        }
+        finally
+        {
+            release.TrySetResult(true);
+            await oldResponse;
+        }
+    }
 
     [Fact]
     public async Task HandlesFlakyConfiguration()
@@ -76,7 +144,30 @@ public class DiscoveryServiceTests
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
         config.DataStreamsMonitoringEndpoint.Should().NotBeNullOrEmpty();
         config.EventPlatformProxyEndpoint.Should().Be(evpProxyEndpoint);
+        config.EventPlatformProxySupportsEvpOriginHeaders.Should().BeFalse();
         await ds.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData("null", false)]
+    [InlineData("[]", false)]
+    [InlineData("[\"DD-EVP-ORIGIN\"]", false)]
+    [InlineData("[\"DD-EVP-ORIGIN-VERSION\"]", false)]
+    [InlineData("[\" dd-evp-origin-version \",\"dd-evp-origin\"]", true)]
+    public async Task ReportsWhetherEvpProxyCanForwardLogicalProducerIdentity(string allowedHeaders, bool expected)
+    {
+        AgentConfiguration config = null;
+        var response = $"{{\"endpoints\":[\"/evp_proxy/v4/\"],\"evp_proxy_allowed_headers\":{allowedHeaders}}}";
+        var factory = new TestRequestFactory(x => new TestApiRequest(x, responseContent: response));
+
+        await using var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs, autoStartLoop: false);
+        ds.SubscribeToChanges(x => config = x);
+
+        await ds.RunOneIterationAsync(previousRetryDuration: null);
+
+        config.Should().NotBeNull();
+        config.EventPlatformProxyEndpoint.Should().Be("evp_proxy/v4");
+        config.EventPlatformProxySupportsEvpOriginHeaders.Should().Be(expected);
     }
 
     [Fact]
@@ -388,6 +479,16 @@ public class DiscoveryServiceTests
 
     private string GetConfig(bool dropP0 = true, string version = null)
         => JsonConvert.SerializeObject(new MockTracerAgent.AgentConfiguration() { ClientDropP0s = dropP0, AgentVersion = version });
+
+    internal sealed class DelayedDiscoveryRequest(Uri endpoint, TaskCompletionSource<bool> started, TaskCompletionSource<bool> release, string body) : TestApiRequest(endpoint)
+    {
+        public override async Task<IApiResponse> GetAsync()
+        {
+            started.TrySetResult(true);
+            await release.Task;
+            return new TestApiResponse(200, body, "application/json", headers: new() { { AgentHttpHeaderNames.ContainerTagsHash, "old-tags" } });
+        }
+    }
 
     internal class ThrowingRequest : TestApiRequest
     {

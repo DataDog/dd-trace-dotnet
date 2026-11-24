@@ -1,5 +1,6 @@
 extern alias DatadogTrace;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using CallTargetNativeTest.NoOp;
 using DatadogTrace::Datadog.Trace.ClrProfiler;
 using DatadogTrace::Datadog.Trace.ClrProfiler.CallTarget;
@@ -25,8 +27,74 @@ namespace CallTargetNativeTest
 
         static void Main(string[] args)
         {
+            VerifyRuntimeAsyncCompilation();
             InjectCallTargetDefinitions();
-            RunTests(args);
+            RunWithoutUnobservedTaskExceptions(() => RunTests(args));
+        }
+
+        /// <summary>
+        /// Fails if a task faulted by one of this sample's targets or integrations is never observed. The instrumentation
+        /// can create tasks the caller never sees, such as a continuation task or the faulted task OnMethodEnd gets for a
+        /// failed runtime-async target. If one of those is left unobserved, the app gets a second UnobservedTaskException
+        /// for every failed call.
+        /// </summary>
+        static void RunWithoutUnobservedTaskExceptions(Action tests)
+        {
+            var unobserved = new ConcurrentQueue<Exception>();
+            EventHandler<UnobservedTaskExceptionEventArgs> handler = (_, args) =>
+            {
+                // The tracer's own background work is out of scope; only count exceptions thrown by this sample
+                if (args.Exception.InnerExceptions.Any(ex => ex.TargetSite?.DeclaringType?.Assembly == typeof(Program).Assembly))
+                {
+                    unobserved.Enqueue(args.Exception);
+                }
+            };
+
+            TaskScheduler.UnobservedTaskException += handler;
+            try
+            {
+                tests();
+
+                // The failure integration keeps the last task it was handed, which would stop it being finalized
+                RuntimeAsyncFailureIntegration.Reset();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+            finally
+            {
+                TaskScheduler.UnobservedTaskException -= handler;
+            }
+
+            if (!unobserved.IsEmpty)
+            {
+                throw new AggregateException("Task exceptions were left unobserved", unobserved);
+            }
+        }
+
+        /// <summary>
+        /// On .NET 11+ this sample is built twice: by default, and with DD_RuntimeAsync=true, which enables runtime-async.
+        /// Verify that the sample was really built in the mode expected
+        /// </summary>
+        static void VerifyRuntimeAsyncCompilation()
+        {
+#if NET11_0_OR_GREATER
+            // MethodImplAttributes.Async: set on a runtime-async method instead of generating a state machine
+            const MethodImplAttributes runtimeAsyncFlag = (MethodImplAttributes)0x2000;
+#if RUNTIME_ASYNC_BUILD
+            const bool expected = true;
+#else
+            const bool expected = false;
+#endif
+            var method = typeof(With0ArgumentsTasks).GetMethod(nameof(With0ArgumentsTasks.ReturnTaskAsync));
+            var isRuntimeAsync = (method.MethodImplementationFlags & runtimeAsyncFlag) != 0;
+            if (isRuntimeAsync != expected)
+            {
+                throw new Exception($"Expected async methods to be compiled with runtime-async={expected}, but {method.DeclaringType}.{method.Name} has runtime-async={isRuntimeAsync}");
+            }
+
+            Console.WriteLine($"RuntimeAsyncCompiled: {isRuntimeAsync}");
+#endif
         }
 
         static void InjectCallTargetDefinitions()
@@ -158,6 +226,8 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "Void2ReadOnlyRefStructMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructTwoParametersVoidIntegration).FullName));
 
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidMixedMethod", new[] { "_", "_", "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructFourParametersVoidIntegration).FullName));
+
+            AddRuntimeAsyncDefinitions(definitionsList);
             
             definitionsId = Guid.NewGuid().ToString("N");
             definitions = definitionsList.ToArray();
@@ -351,6 +421,11 @@ namespace CallTargetNativeTest
                     InstrumentationExceptions();
                     break;
                 }
+                case "runtimeasync":
+                {
+                    RuntimeAsync();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -435,10 +510,12 @@ namespace CallTargetNativeTest
                         CallSite();
                         // .
                         WithRefStructArguments();
+                        // .
+                        RuntimeAsync();
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/runtimeasync/all as an argument.");
                     return;
             }
 

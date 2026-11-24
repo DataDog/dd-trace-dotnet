@@ -35,7 +35,8 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.type")
             .IsOptional("error.stack")
             .IsOptional("_dd.git.repository_url")
-            .IsOptional("_dd.git.commit.sha");
+            .IsOptional("_dd.git.commit.sha")
+            .IsOptional("_dd.sdk.otlp_export"); // export-mode marker, written once per payload by the serializer in use
 
         public static void DefaultMetricAssertions(SpanTagAssertion<T> s) => s
             .IsOptional("_dd.tracer_kr")

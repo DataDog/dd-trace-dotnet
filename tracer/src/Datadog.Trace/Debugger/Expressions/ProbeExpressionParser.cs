@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -162,7 +163,9 @@ internal partial class ProbeExpressionParser<T>
         const int maxIteration = 100000;
         while (ConditionalRead(reader, shouldAdvanceReader) && safeguard++ <= maxIteration)
         {
-            var readerValue = reader.Value?.ToString();
+            // Only property names and strings are read as text; other tokens use the typed reader.Value, because
+            // formatting it (e.g. a double or a negative number) would depend on the current culture
+            var readerValue = reader.Value as string;
             try
             {
                 switch (reader.TokenType)
@@ -342,7 +345,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.String:
                         {
-                            if (readerValue?.StartsWith("#") == true)
+                            if (readerValue?.StartsWith('#') == true)
                             {
                                 // skip comment
                                 return ParseTree(reader, parameters, itParameter);
@@ -374,7 +377,7 @@ internal partial class ProbeExpressionParser<T>
                                 if (itParameter == null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
-                                    return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
+                                    return Expression.Parameter(UndefinedValueType, UndefinedValueDump);
                                 }
 
                                 return itParameter;
@@ -419,12 +422,12 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Integer:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Int32, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.Float:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Double, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.StartArray:
@@ -446,7 +449,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Boolean:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean));
+                            return Expression.Constant(Convert.ChangeType(reader.Value, TypeCode.Boolean, CultureInfo.InvariantCulture));
                         }
                 }
             }
@@ -576,7 +579,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            var ex = new ArgumentException("Method has been called with an invalid argument");
+            var ex = new InvalidOperationException("Method has been called with an invalid argument");
             Log.Error(
                 ex,
                 "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",
@@ -599,7 +602,7 @@ internal partial class ProbeExpressionParser<T>
         ParameterExpression returnParameterExpression;
         if (returnType == null || returnType == typeof(void))
         {
-            returnParameterExpression = Expression.Parameter(@return.GetType());
+            returnParameterExpression = Expression.Parameter(typeof(ScopeMember));
             var returnVariable = Expression.Variable(typeof(string), Return);
             expressions.Add(Expression.Assign(returnVariable, Expression.Constant($"Return type is {typeof(void).FullName}")));
             scopeMembers.Add(returnVariable);
@@ -649,7 +652,7 @@ internal partial class ProbeExpressionParser<T>
 
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
-        var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        var parameterExpression = Expression.Parameter(typeof(ScopeMember));
         if (type.ContainsGenericParameters)
         {
             type = CloseOpenGenericType(scopeMember.Value?.GetType() ?? type);

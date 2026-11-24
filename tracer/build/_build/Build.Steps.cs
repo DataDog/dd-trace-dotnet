@@ -62,6 +62,7 @@ partial class Build
     AbsolutePath ReleaseArtifactsDirectory => BuildArtifactsDirectory / "release-artifacts";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
+    AbsolutePath OpenTelemetryStartupHookDirectory => ArtifactsDirectory / "otel-operator-startup-hook";
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
@@ -93,6 +94,7 @@ partial class Build
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath ToolsDirectory => TracerDirectory / "tools";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
@@ -124,6 +126,7 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
+    [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -207,15 +210,15 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Everything else e.g. MaxOS, linux-x64 etc
         // Same as Windows just without the .NET FX
-        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -365,7 +368,43 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+
+            VerifyOtelThreadContextSymbolIsExported();
         });
+
+    /// <summary>
+    /// OTEP 4947 requires `otel_thread_ctx_v1` to be an exported ELF TLS symbol in the dynamic symbol
+    /// table: it is how out-of-process readers locate the thread context. Nothing at runtime would tell
+    /// us if it went missing - readers would simply never find any context - so a change to the compiler,
+    /// the linker or the project's visibility settings could silently break the feature. Assert it here,
+    /// right where the symbol is produced. See docs/OTelContextPropagation.md.
+    /// </summary>
+    private void VerifyOtelThreadContextSymbolIsExported()
+    {
+        const string symbol = "otel_thread_ctx_v1";
+
+        var (_, extension) = GetUnixArchitectureAndExtension();
+        var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
+
+        var symbols = ReadElf.Value(arguments: $"--dyn-syms --wide \"{nativeTracer}\"", logOutput: false);
+        var expectedSymbol = new Regex(
+            $@"^\s*\d+:\s+[0-9a-fA-F]+\s+8\s+TLS\s+GLOBAL\s+DEFAULT\s+\d+\s+{Regex.Escape(symbol)}\s*$",
+            RegexOptions.CultureInvariant);
+
+        if (!symbols.Any(line => expectedSymbol.IsMatch(line.Text)))
+        {
+            throw new Exception(
+                $"{symbol} is not exported from {nativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol. " +
+                "The OpenTelemetry thread context cannot be discovered by external readers without it. " +
+                "Check that otel_thread_ctx.cpp is part of the " +
+                $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
+        }
+
+        Logger.Information(
+            "{Symbol} is exported from {NativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol",
+            symbol,
+            nativeTracer);
+    }
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
@@ -465,8 +504,8 @@ partial class Build
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
         });
 
     Target CppCheckNativeSrc => _ => _
@@ -482,6 +521,16 @@ partial class Build
         .Executes(() =>
         {
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
+        });
+
+    Target CompileOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .Description("Compiles the OpenTelemetry auto-instrumentation startup hook (stub)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook).Path }, noRestore: false, noDependencies: false);
         });
 
     Target CompileManagedSrc => _ => _
@@ -508,7 +557,7 @@ partial class Build
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
@@ -759,8 +808,7 @@ partial class Build
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project!.Directory;
-                var frameworks = project.GetTargetFrameworks();
+                var frameworks = project.TryGetTargetFrameworks();
 
                 if (Framework is not null)
                 {
@@ -800,7 +848,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var frameworks = project.GetTargetFrameworks();
+                    var frameworks = project.TryGetTargetFrameworks();
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -913,6 +961,20 @@ partial class Build
             );
         });
 
+    Target PublishOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .DependsOn(CompileOpenTelemetryStartupHook)
+        .Executes(() =>
+        {
+            const string startupHookFileName = "OpenTelemetry.AutoInstrumentation.StartupHook.dll";
+            var source = GetProjectBinDirectory(Projects.OpenTelemetryAutoInstrumentationStartupHook, TargetFramework.NETCOREAPP3_1)
+                       / startupHookFileName;
+            var destination = OpenTelemetryStartupHookDirectory / startupHookFileName;
+
+            EnsureCleanDirectory(OpenTelemetryStartupHookDirectory);
+            CopyFile(source, destination);
+        });
+
     Target PublishNativeSymbolsWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -1001,7 +1063,7 @@ partial class Build
         {
             // Build the fleet installer project
             var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
-            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            var tfms = Solution.GetProject(project).TryGetTargetFrameworks();
             // we should only have a single tfm for fleet installer
             if (tfms.Count != 1)
             {
@@ -1074,8 +1136,25 @@ partial class Build
 
             // Add the dd-dotnet scripts
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyDdDotnetScript(BundleHomeDirectory);
         });
+
+    private void CopyDdDotnetScript(AbsolutePath destination)
+    {
+        const string placeholder = "@DD_VERSION@";
+
+        // Copy first and rewrite in place, so the destination directory and executable bit are handled for us
+        CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", destination, FileExistsPolicy.Overwrite);
+        var script = destination / "dd-dotnet.sh";
+        var original = File.ReadAllText(script);
+        if (!original.Contains(placeholder))
+        {
+            throw new InvalidOperationException($"Expected to find the {placeholder} placeholder in {script}");
+        }
+
+        // Always LF: this is a shell script that ships to Linux.
+        File.WriteAllText(script, original.Replace(placeholder, FullVersion).Replace("\r\n", "\n"));
+    }
 
     Target CreateBenchmarkIntegrationHome => _ => _
         .Unlisted()
@@ -1136,12 +1215,18 @@ partial class Build
         .After(BuildDdDotnet)
         .Executes(() =>
         {
-            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            if (IsWin)
+            {
+                CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyDdDotnetScript(MonitoringHomeDirectory);
+            }
 
             if (IsLinux)
             {
-                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / "dd-dotnet.sh");
             }
         });
 
@@ -1176,7 +1261,6 @@ partial class Build
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
-        .Requires(() => Version)
         .Executes(() =>
         {
             var tar = Tar.Value;
@@ -1240,10 +1324,10 @@ partial class Build
 
                     var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
                     {
-                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
-                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
-                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{FullVersion}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{FullVersion}.{a.ToString().ToLower()}.tar.gz",
                     };
 
                     tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
@@ -1264,7 +1348,7 @@ partial class Build
                          name: "{packageName}"
                          arch: "{nFpmArch}"
                          platform: "linux"
-                         version: "{Version}"
+                         version: "{FullVersion}"
                          maintainer: "Datadog Packages <package@datadoghq.com>"
                          description: "Datadog APM client library for .NET"
                          vendor: "Datadog <package@datadoghq.com>"
@@ -1299,6 +1383,14 @@ partial class Build
                     // overwrites if it exists
                     File.WriteAllText(npfmConfig, yaml);
                     nfpm($"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
+
+                    // deb and rpm use `~` instead of `-` for a sem-ver prerelease, and nfpm puts it in the file name,
+                    // but we can't use that in the filename as it gets mangled by GitHub. The file itself has the
+                    // correct ~ embedded in the metadata though.
+                    foreach (var package in workingDirectory.GlobFiles($"*~*.{packageType}"))
+                    {
+                        MoveFile(package, workingDirectory / package.Name.Replace('~', '-'));
+                    }
                 }
             }
 
@@ -1587,7 +1679,7 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+                    .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) == true);
 
             if (!IsWin)
             {
@@ -1668,6 +1760,7 @@ partial class Build
                                 .SetMSBuildPath()
                                 .SetTargets("Restore", "Build")
                                 .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatformAnyCPU()
                                 .SetProperty("ApiVersion", ApiVersion)
                                 .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
                                 .SetProperty("BuildInParallel", "true")
@@ -1677,6 +1770,12 @@ partial class Build
               {
                   // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
                   DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .When(string.IsNullOrWhiteSpace(SampleName), x => x.SetProperty("Platform", "Any CPU"))
+                                              .When(!string.IsNullOrWhiteSpace(SampleName), x => x.SetTargetPlatformAnyCPU())
+                                              // Project references outside the generated samples solution can otherwise
+                                              // retain the build host's PlatformTarget and produce architecture-specific
+                                              // managed assemblies in the shared artifacts.
+                                              .SetProperty("PlatformTarget", "AnyCPU")
                                               .SetProperty("BuildInParallel", "true")
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
@@ -1792,6 +1891,7 @@ partial class Build
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .SetRuntime(rid)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
@@ -1813,6 +1913,16 @@ partial class Build
                 foreach (var project in directDatadogTraceReferences)
                 {
                     DotnetBuild(project, framework: Framework);
+                }
+
+                // Build for runtime-async tests on .NET 11.
+                // DD_RuntimeAsync gives this build its own artifacts pivot (see CallTargetNativeTest.csproj)
+                if (Framework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
+                {
+                    DotnetBuild(
+                        Solution.GetProject("CallTargetNativeTest"),
+                        framework: Framework,
+                        properties: new Dictionary<string, object> { ["DD_RuntimeAsync"] = "true" });
                 }
             }
         });
@@ -1909,12 +2019,14 @@ partial class Build
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
+        .DependsOn(PublishOpenTelemetryStartupHook)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(GetFilter());
+            var filter = AddAreaFilter(AddDockerFilter(GetFilter()));
+            var parallelFilter = AddAreaFilter(AddDockerFilter(Filter));
 
             try
             {
@@ -1938,10 +2050,11 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
+                    // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
+                    .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
@@ -1961,6 +2074,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
@@ -1978,19 +2092,12 @@ partial class Build
 
             string GetFilter()
             {
-                var dockerFilter = IncludeTestsRequiringDocker switch
-                {
-                    true => "&(RequiresDockerDependency=true)",
-                    false => "&(RequiresDockerDependency!=true)",
-                    null => string.Empty,
-                };
-
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"({Filter})&(SkipInCI!=True){dockerFilter}{armFilter}",
-                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
+                    (false, _) => $"({Filter})&(SkipInCI!=True){armFilter}",
+                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
@@ -1999,6 +2106,23 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddDockerFilter(string filter)
+    {
+        var dockerFilter = IncludeTestsRequiringDocker switch
+        {
+            true => "(RequiresDockerDependency=true)",
+            false => "(RequiresDockerDependency!=true)",
+            null => null,
+        };
+
+        if (dockerFilter is null)
+        {
+            return filter;
+        }
+
+        return string.IsNullOrWhiteSpace(filter) ? dockerFilter : $"({filter})&{dockerFilter}";
+    }
 
     private string AddAreaFilter(string filter)
     {
@@ -2020,7 +2144,7 @@ partial class Build
             return areaFilter;
         }
 
-        return filter + $"&{areaFilter}";
+        return $"({filter})&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
@@ -2287,6 +2411,8 @@ partial class Build
                 .SetToolInstallationPath(ToolInstallDirectory)
                 .SetSources(ToolSourceDirectory)
                 .SetProcessArgumentConfigurator(args => args.Add("--no-cache"))
+                // Explicit, because without a version dotnet tool install ignores prerelease packages
+                .SetVersion(FullVersion)
                 .SetPackageName("dd-trace"));
          });
 
@@ -2385,6 +2511,34 @@ partial class Build
                CopyDumpsToBuildData();
            }
        });
+
+    Target BuildBundleArtifactTests => _ => _
+       .Description("Builds the Datadog.Trace.Bundle artifacts tests")
+       .After(CompileManagedTestHelpers)
+       .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.BundleArtifactsTests));
+        });
+
+    Target RunBundleArtifactTests => _ => _
+       .Description("Runs the Datadog.Trace.Bundle artifacts tests, using the Datadog.Trace.Bundle and Datadog.Trace packages found in the nuget artifacts directory")
+       .After(BuildBundleArtifactTests)
+       .Executes(() =>
+        {
+            var isDebugRun = IsDebugRun();
+            var project = Solution.GetProject(Projects.BundleArtifactsTests);
+
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetIsDebugRun(isDebugRun)
+                .SetProcessEnvironmentVariable("NugetArtifactsDirectory", ArtifactsDirectory / "nuget")
+                .SetLogsDirectory(TestLogsDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project))
+                .WithDatadogLogger());
+        });
 
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
@@ -2707,12 +2861,6 @@ partial class Build
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
 
-           // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
-           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
-           {
-               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
-           }
-
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
@@ -2886,17 +3034,19 @@ partial class Build
         Project project,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true
+        bool noDependencies = true,
+        IDictionary<string, object> properties = null
         )
     {
-        DotnetBuild(new[] { project.Path }, framework, noRestore, noDependencies);
+        DotnetBuild(new[] { project.Path }, framework, noRestore, noDependencies, properties);
     }
 
     private void DotnetBuild(
         IEnumerable<AbsolutePath> projPaths,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true)
+        bool noDependencies = true,
+        IDictionary<string, object> properties = null)
     {
         DotNetBuild(s => s
             .SetConfiguration(BuildConfiguration)
@@ -2909,6 +3059,7 @@ partial class Build
             .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
             .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
             .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            .When(properties is not null, o => properties.Aggregate(o, (settings, property) => settings.SetProperty(property.Key, property.Value)))
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));

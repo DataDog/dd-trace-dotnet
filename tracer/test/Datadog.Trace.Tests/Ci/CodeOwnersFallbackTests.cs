@@ -346,12 +346,12 @@ public class CodeOwnersFallbackTests
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
-        var srcDir = Path.Combine(repoRoot, "tracer", "test", "benchmarks", "Benchmarks.Trace");
+        var srcDir = Path.Combine(repoRoot, "tracer", "test", "benchmarks", "Benchmarks.Trace", "Tracing");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
         const string codeOwnersFile = """
             *                                          @global
-            /tracer/test/benchmarks/Benchmarks.Trace/  @owner
+            /tracer/test/benchmarks/Benchmarks.Trace/Tracing/  @owner
 
             """;
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), codeOwnersFile);
@@ -360,7 +360,7 @@ public class CodeOwnersFallbackTests
         var ciValues = new TestCIEnvironmentValues("/go/src/github.com/DataDog/apm-reliability/dd-trace-dotnet", repoRoot);
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/Tracing/SpanBenchmark.cs", ownership.RepositoryRelativePath);
         Assert.True(ownership.IsRepositoryRelative);
         Assert.Equal(["@owner"], ownership.MatchingOwners);
     }

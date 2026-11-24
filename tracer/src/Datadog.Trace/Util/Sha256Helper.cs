@@ -45,7 +45,7 @@ internal static class Sha256Helper
         using var sha256 = SHA256.Create();
         if (!sha256.TryComputeHash(encodedInput, buffer, out var byteCount))
         {
-            ThrowHelper.ThrowArgumentException($"Error computing SHA256 hash for {input}: ");
+            ThrowHelper.ThrowInvalidOperationException($"Error computing SHA256 hash for {input}: ");
         }
 #endif
 

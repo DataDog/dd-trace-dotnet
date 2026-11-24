@@ -3,4 +3,4 @@
 
 #pragma once
 
-constexpr auto PROFILER_VERSION = "3.54.0";
+#include "../../../../shared/src/native-src/version.h"

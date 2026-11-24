@@ -1,0 +1,15 @@
+<linker>
+  <!--
+    dd-dotnet never configures a Symweb (authenticated Azure symbol server) URL or a
+    SymbolTokenCredential, so ClrMD's SymbolServer.IsSymweb is always false at runtime.
+    SymbolServer's constructor unconditionally references Azure.Identity.InteractiveBrowserCredential
+    inside the `if (IsSymweb)` branch, which roots the whole Azure.Identity/MSAL/System.Text.Json
+    dependency chain for the AOT trimmer even though it's never reachable in practice.
+    Forcing this getter to a constant lets the trimmer prove the branch dead and remove it.
+  -->
+  <assembly fullname="Microsoft.Diagnostics.Runtime">
+    <type fullname="Microsoft.Diagnostics.Runtime.Implementation.SymbolServer">
+      <method signature="System.Boolean get_IsSymweb()" body="stub" value="false" />
+    </type>
+  </assembly>
+</linker>

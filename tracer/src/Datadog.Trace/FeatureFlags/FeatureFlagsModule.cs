@@ -7,97 +7,1067 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Agentless;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsModule : IDisposable
     {
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+        // Deferred exposures without any commit call before the one-time warning.
+        private const int UncommittedExposureWarningThreshold = 1_000;
 
-        private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
-        private readonly ISubscription _rcmSubscription;
-        private readonly FfeProduct _ffeProduct;
-        private readonly ExposureApi _exposureApi;
+        // Static, so the warning that debug logs include raw evaluation data is written once per
+        // process even when the tracer is reconfigured and a new module is created.
+        private static int _rawEvaluationDataWarningLogged;
+
+        // Activation, disposal and exposure-API creation all mutate the same state from different
+        // threads, so they share one lock rather than individual interlocked flags: a flag set
+        // before its accompanying setup completes lets a concurrent caller observe a half-activated
+        // module, and a disposal interleaved with activation leaks the delivery path it started.
+        private readonly object _stateLock = new();
+
+        // Guards configuration installation, the handler and its generation counters. Separate from _stateLock,
+        // which covers activation and disposal: a configuration event must not wait on either.
+        private readonly object _handlerLock = new();
+
+        // Settings callbacks run under the settings manager's lock. They must not take
+        // _stateLock, which is held while activation subscribes and receives settings replay.
+        private readonly object _evaluationLock = new();
+
+        private readonly FeatureFlagsSettings _settings;
+
+        // Injectable so tests can assert the onboarding diagnostics without a global log sink.
+        private readonly IDatadogLogger _log;
+
+        // The agentless source targets flags by environment, which customers can change in code
+        // after startup, so it needs the manager rather than a captured value.
+        private readonly TracerSettings.SettingsManager _settingsManager;
+        private readonly bool _isRemoteConfigurationAvailable;
+
+        // ExposureApi reads only settings.Manager but takes TracerSettings. Held so the API can be
+        // built on the first exposure instead of at startup.
+        private readonly TracerSettings _tracerSettings;
+        private readonly IDiscoveryService _discoveryService;
+
+        // A factory rather than the static Create, so a test can supply a source that records what the
+        // module does with it: whether it is started before activation, and whether it is disposed.
+        private readonly Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?> _agentlessSourceFactory;
         private readonly bool _spanEnrichmentEnabled;
+        private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
+        private readonly FlagSelectionDiagnostics _flagSelectionDiagnostics;
+        private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private Action? _onNewConfigEventHander;
+        // Replaced, under _handlerLock, when a new claim selects other flags than the held configuration
+        // was loaded for, so the provider that made the claim waits for configuration of its own.
+        private TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Guarded by _handlerLock: the selection readiness waits for, and the one the held configuration
+        // was requested with. Null for the Remote Configuration source, which never sends a selection.
+        private FlagSelection? _awaitedFlagSelection;
+        private FlagSelection? _loadedFlagSelection;
+
+        private ISubscription? _rcmSubscription;
+
+        private Action? _onNewConfigEventHandler;
+
+        // Counts configuration events, and records the last one handed to the current handler. A
+        // registration can run at the same time as an arriving configuration, and without these two
+        // the registration replay and the delivery path both hand the handler the same configuration.
+        private long _configGeneration;
+        private long _handlerDeliveredGeneration;
+
+        // Only the provider's hooks commit deferred exposures. These detect hooks that never run, for
+        // example under a wrapper that drops them. Counting ends at the first commit call or the warning;
+        // after that, evaluations and commits only read _uncommittedExposureCheckDone.
+        private int _exposuresDeferredWithoutCommit;
+        private int _uncommittedExposureCheckDone;
+
         private FeatureFlagsEvaluator? _evaluator;
+        private IFeatureFlagsDeliverySource? _agentlessSource;
+        private ExposureApi? _exposureApi;
+        private FeatureFlagsEvpTransport? _evaluationTransport;
+        private FlagEvaluationWriter? _evaluationWriter;
+        private FlagEvaluationWriter? _availableEvaluationWriter;
+        private IDisposable? _evaluationSettingsSubscription;
+        private Action<AgentConfiguration>? _evaluationDiscoveryCallback;
+        private FeatureFlagsEvpTransport? _evpTransport;
+        private string? _deliveryUnavailableReason;
+        private int _initializationTimedOut;
+        private bool _activated;
+        private bool _disposed;
+        private bool _deliveryStarted;
+        private FlagSelection _claimedFlagSelection = FlagSelection.AllFlags;
+        private int _flagSelectionClaims;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        // Providers whose selection equals the claimed one, constructed before the source existed:
+        // whether the request URL is too long with it is only known once the source is created.
+        private int _flagSelectionClaimsBeforeSource;
+
+        internal FeatureFlagsModule(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+            IDiscoveryService? discoveryService = null,
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
         {
-            Log.Debug("FeatureFlagsModule ENABLED");
+            _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+            _flagSelectionDiagnostics = flagSelectionDiagnostics ?? FlagSelectionDiagnostics.Shared;
+            _settings = settings.FeatureFlags;
+            _settingsManager = settings.Manager;
+            _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
+            _tracerSettings = settings;
+            _agentlessSourceFactory = agentlessSourceFactory
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyAgentlessConfiguration, module._log, module._claimedFlagSelection, module._flagSelectionDiagnostics));
             _rcmSubscriptionManager = rcmSubscriptionManager;
-            _exposureApi = new ExposureApi(settings);
-            _ffeProduct = new FfeProduct(UpdateRemoteConfig);
-            _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
-            _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
-            _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+            _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
+
+            _log.Debug<FeatureFlagsSource, double>(
+                "Feature Flags: enabled with configuration source {Source} (initialization timeout {TimeoutMs}ms)",
+                _settings.Source,
+                _settings.InitializationTimeout.TotalMilliseconds);
         }
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        /// <summary>
+        /// Gets a task that completes once configuration has been applied for the first time.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal Task FirstConfigReceived => Volatile.Read(ref _firstConfigReceived).Task;
+
+        [TestingAndPrivateOnly]
+        internal FeatureFlagsSettings Settings => _settings;
+
+        [TestingAndPrivateOnly]
+        internal bool HasExposureApi => Volatile.Read(ref _exposureApi) is not null;
+
+        /// <summary>
+        /// Gets a value indicating whether configuration is currently held, so evaluations can resolve
+        /// flags. Goes back to <c>false</c> when Remote Configuration withdraws it.
+        /// </summary>
+        internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
+
+        internal FlagEvaluationWriter? EvaluationWriter => Volatile.Read(ref _availableEvaluationWriter);
+
+        internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
+
+        /// <summary>Gets the flag selection the agentless source requests.</summary>
+        [TestingAndPrivateOnly]
+        internal FlagSelection ClaimedFlagSelection
         {
-            if (settings.IsFlaggingProviderEnabled)
+            get
             {
-                return new FeatureFlagsModule(settings, rcmSubscriptionManager);
+                lock (_stateLock)
+                {
+                    return _claimedFlagSelection;
+                }
+            }
+        }
+
+        public static FeatureFlagsModule? Create(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+            IDiscoveryService? discoveryService = null,
+            IDatadogLogger? logger = null,
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
+        {
+            if (!settings.FeatureFlags.Enabled)
+            {
+                var log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+
+                // Offline is resolved to disabled by the settings, so no module exists for Activate to report it from.
+                if (settings.FeatureFlags.Source == FeatureFlagsSource.Offline)
+                {
+                    log.Debug("Feature Flags: disabled because the configuration source is offline; set DD_FEATURE_FLAGS_CONFIGURATION_SOURCE to agentless or remote_config to receive configuration");
+                }
+                else
+                {
+                    log.Debug("Feature Flags: disabled; set DD_FEATURE_FLAGS_ENABLED=true to enable");
+                }
+
+                return null;
             }
 
-            return null;
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger, flagSelectionDiagnostics);
+
+            // Subscribing from here rather than the constructor, so the callback can only ever reach
+            // a fully constructed module.
+            if (settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            {
+                module.SubscribeToRemoteConfiguration();
+            }
+
+            return module;
         }
 
-        public void Dispose()
+        public void Dispose() => _ = DisposeAsync();
+
+        [TestingAndPrivateOnly]
+        internal static void ResetRawEvaluationDataWarning() => Volatile.Write(ref _rawEvaluationDataWarningLogged, 0);
+
+        internal Task DisposeAsync()
         {
-            _exposureApi.Dispose();
+            ISubscription? subscription;
+            IFeatureFlagsDeliverySource? agentlessSource;
+            ExposureApi? exposureApi;
+            FlagEvaluationWriter? writer;
+            FeatureFlagsEvpTransport? evaluationTransport;
+            IDisposable? settingsSubscription;
+            Action<AgentConfiguration>? discoveryCallback;
+            FeatureFlagsEvpTransport? evpTransport;
+
+            lock (_stateLock)
+            {
+                if (_disposed)
+                {
+                    return _disposeCompletion.Task;
+                }
+
+                _disposed = true;
+
+                subscription = _rcmSubscription;
+                agentlessSource = _agentlessSource;
+                exposureApi = _exposureApi;
+                lock (_evaluationLock)
+                {
+                    writer = _evaluationWriter;
+                    evaluationTransport = _evaluationTransport;
+                    Volatile.Write(ref _availableEvaluationWriter, null);
+                    Volatile.Write(ref _evaluationWriter, null);
+                    _evaluationTransport = null;
+                }
+
+                settingsSubscription = _evaluationSettingsSubscription;
+                discoveryCallback = _evaluationDiscoveryCallback;
+                evpTransport = _evpTransport;
+
+                _rcmSubscription = null;
+                _agentlessSource = null;
+                Volatile.Write(ref _exposureApi, null);
+                _evaluationSettingsSubscription = null;
+                _evaluationDiscoveryCallback = null;
+                _evpTransport = null;
+            }
+
+            // Only what stops is reported: the evaluator is kept, so an evaluation that still reaches
+            // this module resolves against the last applied configuration.
+            _log.Debug("Feature Flags: shutting down; configuration delivery and exposure reporting stop");
+
+            // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
+            var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
+            _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
+            return _disposeCompletion.Task;
+        }
+
+        // Drain already accepted events even if an Agent change has closed admission.
+        internal Task FlushAsync() => Volatile.Read(ref _evaluationWriter)?.FlushAsync() ?? Task.CompletedTask;
+
+        /// <summary>
+        /// Signals that application code initialized the provider. Idempotent.
+        /// <para>
+        /// This is where the agentless source starts, because its requests go straight to Datadog and
+        /// are billable, so nothing is sent until the application adopts the provider. The Remote
+        /// Configuration source does not wait here: it rides the poll the agent already performs, and
+        /// every other tracer subscribes to it at startup.
+        /// </para>
+        /// </summary>
+        internal void Activate()
+        {
+            // Every evaluation calls this, so the steady state must not take the lock. The flag only
+            // ever goes false to true, so a stale read costs one lock acquisition and nothing else:
+            // the check inside the lock is what decides.
+            if (Volatile.Read(ref _activated))
+            {
+                return;
+            }
+
+            IFeatureFlagsDeliverySource? sourceToStart = null;
+            int claimsBeforeSource;
+
+            lock (_stateLock)
+            {
+                if (_activated || _disposed)
+                {
+                    return;
+                }
+
+                claimsBeforeSource = _flagSelectionClaimsBeforeSource;
+                _flagSelectionClaimsBeforeSource = 0;
+
+                SubscribeToEvaluationDelivery();
+                Volatile.Write(ref _activated, true);
+
+                switch (_settings.Source)
+                {
+                    case FeatureFlagsSource.Agentless:
+                        // Polling is billable, so it starts here rather than at construction.
+                        var source = _agentlessSourceFactory(this);
+                        if (source is null)
+                        {
+                            // Create logs the specific reason, which may name configuration the
+                            // message must not repeat back to the application.
+                            _deliveryUnavailableReason = "the agentless source could not be started, see the Datadog logs for the reason";
+                            break;
+                        }
+
+                        _agentlessSource = source;
+                        sourceToStart = source;
+                        _deliveryStarted = true;
+                        break;
+                }
+            }
+
+            if (sourceToStart?.OmitsFlagSelection == true)
+            {
+                for (var i = 0; i < claimsBeforeSource; i++)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                }
+            }
+
+            // Outside the lock, so that a source which does any work of its own before returning cannot
+            // hold up a Dispose(). A Dispose() that interleaves here has already signalled the source's
+            // shutdown, which makes its poll loop exit before the first request.
+            sourceToStart?.Start();
+
+            // Warned here rather than at construction: Feature Flags are enabled by default, so the
+            // module exists in applications that never use a provider.
+            if (_log.IsEnabled(LogEventLevel.Debug))
+            {
+                WarnRawEvaluationDataOnce();
+            }
+        }
+
+        /// <summary>
+        /// Activates delivery and waits for the first configuration, so that a provider reported as
+        /// ready can resolve flags.
+        /// <para>
+        /// Returns without throwing when the wait times out: delivery being slow is transient, and
+        /// OpenFeature marks the provider ready on a normal return, so evaluations return their
+        /// defaults with PROVIDER_NOT_READY until the configuration lands. Throws
+        /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
+        /// which OpenFeature turns into an error status: a provider that can never resolve a flag is
+        /// in error, not ready.
+        /// </para>
+        /// <para>
+        /// The wait ends only when a configuration arrives, so a service with no flag configuration
+        /// waits the whole timeout. The application is blocked for that long, because OpenFeature
+        /// awaits this from <c>SetProviderAsync</c>, so the timeout has to stay below whatever budget
+        /// the application's readiness probe allows.
+        /// </para>
+        /// </summary>
+        internal async Task InitializeAsync(CancellationToken cancellationToken)
+        {
+            _log.Debug<FeatureFlagsSource, double>("Feature Flags: provider initialization started (source={Source}, timeout={TimeoutMs}ms)", _settings.Source, _settings.InitializationTimeout.TotalMilliseconds);
+            Activate();
+
+            var firstConfigReceived = Volatile.Read(ref _firstConfigReceived).Task;
+            if (firstConfigReceived.IsCompleted)
+            {
+                _log.Debug("Feature Flags: provider initialized successfully (configuration already received)");
+                return;
+            }
+
+            // Read under the lock so a concurrent activation is seen through, rather than reporting no
+            // delivery because its source had not finished starting.
+            bool deliveryStarted;
+            string? deliveryUnavailableReason;
+            lock (_stateLock)
+            {
+                deliveryStarted = _deliveryStarted;
+                deliveryUnavailableReason = _deliveryUnavailableReason;
+            }
+
+            // When no delivery source could start (agentless without an API key, or the Remote
+            // Configuration source where Remote Configuration is unavailable), no configuration can
+            // ever arrive, so waiting would only delay startup.
+            // Returning instead would report the provider as usable while every evaluation keeps
+            // returning its default, so the failure is raised: the SDK turns it into an error status
+            // and an error event without taking the application down.
+            if (!deliveryStarted)
+            {
+                var exception = new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
+
+                // Skips telemetry: this is customer configuration, not a tracer bug, and the specific
+                // cause has already been logged where it was discovered.
+                _log.ErrorSkipTelemetry(exception, "Feature Flags: provider failed to initialize");
+                throw exception;
+            }
+
+            _log.Debug<double>("Feature Flags: waiting up to {TimeoutMs}ms for provider initialization...", _settings.InitializationTimeout.TotalMilliseconds);
+
+            // The caller's cancellation is turned into a completed task rather than passed to anything
+            // that throws on it, because an exception on this path can crash buggy runtimes.
+            var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = cancellationToken.Register(() => cancelled.TrySetResult(true));
+
+            // The timeout is cancelled on the way out, so an initialization that completes in
+            // milliseconds does not leave a timer armed for the rest of the timeout.
+            using var timeoutCancellation = new CancellationTokenSource();
+            var timeout = Task.Delay(_settings.InitializationTimeout, timeoutCancellation.Token);
+            var completed = await Task.WhenAny(firstConfigReceived, timeout, cancelled.Task).ConfigureAwait(false);
+
+            if (completed != timeout)
+            {
+                timeoutCancellation.Cancel();
+
+                if (completed == firstConfigReceived)
+                {
+                    _log.Debug("Feature Flags: provider initialized successfully");
+                }
+                else
+                {
+                    _log.Debug("Feature Flags: provider initialization was cancelled before configuration arrived");
+                }
+            }
+            else
+            {
+                // Lets the configuration that eventually arrives report the recovery this warning promises.
+                Interlocked.Exchange(ref _initializationTimedOut, 1);
+                if (HasConfiguration)
+                {
+                    // Only a configuration loaded for a released, different flag selection is held here.
+                    _log.Warning<double>(
+                        "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use the configuration loaded for the previous flag selection until it does.",
+                        _settings.InitializationTimeout.TotalMilliseconds);
+                }
+                else
+                {
+                    _log.Warning<double>(
+                        "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
+                        _settings.InitializationTimeout.TotalMilliseconds);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Claims the flag selection a provider was constructed with, or every flag when it has none.
+        /// One agentless source serves every provider in the process, so a provider constructed while
+        /// another one holds the claim uses the claimed selection.
+        /// Called from the provider's constructor rather than from its initialization, because an
+        /// evaluation before initialization also activates delivery.
+        /// </summary>
+        internal void SetFlagSelection(string?[]? tags, string?[]? keyPatterns)
+        {
+            try
+            {
+                var selection = FlagSelection.Create(tags, keyPatterns);
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig)
+                {
+                    if (selection.IsSet)
+                    {
+                        _flagSelectionDiagnostics.WarnRemoteConfig(_log);
+                    }
+
+                    return;
+                }
+
+                FlagSelection claimed;
+                IFeatureFlagsDeliverySource? source;
+                lock (_stateLock)
+                {
+                    if (_disposed)
+                    {
+                        return;
+                    }
+
+                    if (_flagSelectionClaims++ == 0)
+                    {
+                        _claimedFlagSelection = selection;
+                        _flagSelectionClaimsBeforeSource = 0;
+                        AwaitConfigurationFor(selection);
+
+                        // Under the lock, so a concurrent activation cannot start the source with the previous claim.
+                        _agentlessSource?.UpdateFlagSelection(selection);
+                    }
+
+                    claimed = _claimedFlagSelection;
+                    source = _agentlessSource;
+                    if (source is null && selection.Equals(claimed))
+                    {
+                        _flagSelectionClaimsBeforeSource++;
+                    }
+                }
+
+                if (!selection.Equals(claimed))
+                {
+                    // A different selection is not used: it reports its own drop, and warns only if it would
+                    // load other flags, since a dropped selection and no selection both load every flag.
+                    if (selection.DropReason is { } ownReason)
+                    {
+                        _flagSelectionDiagnostics.ReportDropped(_log, ownReason);
+                    }
+
+                    var loadedFlags = claimed.HasValues && source?.OmitsFlagSelection != true ? claimed : FlagSelection.AllFlags;
+                    if (!(selection.HasValues ? selection : FlagSelection.AllFlags).Equals(loadedFlags))
+                    {
+                        _flagSelectionDiagnostics.WarnDifferentSelection(_log);
+                    }
+
+                    return;
+                }
+
+                // Logged for every provider whose selection is not sent.
+                if (claimed.DropReason is { } reason)
+                {
+                    _flagSelectionDiagnostics.ReportDropped(_log, reason);
+                }
+                else if (source?.OmitsFlagSelection == true)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Feature Flags: the flag selection could not be applied");
+            }
+        }
+
+        /// <summary>
+        /// Releases a claim when its provider shuts down. Once none is left, the next provider
+        /// constructed claims its own selection.
+        /// </summary>
+        internal void ReleaseFlagSelection()
+        {
+            lock (_stateLock)
+            {
+                if (_flagSelectionClaims > 0)
+                {
+                    _flagSelectionClaims--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Makes readiness wait for configuration requested with <paramref name="selection"/>. When the
+        /// held configuration was loaded for a released, different selection, the provider that made the
+        /// claim waits for its own configuration rather than becoming ready on the previous one. A claim
+        /// for the selection the held configuration was loaded for is ready on it, even when a claim for
+        /// other flags made since then reset readiness.
+        /// Callers hold <see cref="_stateLock"/>, and call this before the source requests the new selection,
+        /// so a response to that request can never be discarded as one for the previous selection.
+        /// </summary>
+        private void AwaitConfigurationFor(FlagSelection selection)
+        {
+            lock (_handlerLock)
+            {
+                _awaitedFlagSelection = selection;
+                if (Volatile.Read(ref _evaluator) is null)
+                {
+                    return;
+                }
+
+                if (selection.Equals(_loadedFlagSelection))
+                {
+                    _firstConfigReceived.TrySetResult(true);
+                }
+                else if (_firstConfigReceived.Task.IsCompleted)
+                {
+                    Volatile.Write(ref _firstConfigReceived, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+                    Interlocked.Exchange(ref _initializationTimedOut, 0);
+                }
+            }
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
-            _onNewConfigEventHander = onNewConfig;
+            Action? replay;
+
+            lock (_handlerLock)
+            {
+                if (!ReferenceEquals(_onNewConfigEventHandler, onNewConfig))
+                {
+                    // A handler that was never called cannot have received a configuration.
+                    _handlerDeliveredGeneration = 0;
+                }
+
+                _onNewConfigEventHandler = onNewConfig;
+
+                // Configuration can already be held here: the Remote Configuration subscription is
+                // live from construction, long before application code builds a provider and registers
+                // a handler. The handler only fires on a change, so without this replay it never runs
+                // for a configuration that arrived first, and a caller waiting on it waits forever.
+                // A withdrawal is not replayed: no configuration is the state a fresh handler assumes.
+                replay = onNewConfig is not null
+                      && Volatile.Read(ref _evaluator) is not null
+                      && _handlerDeliveredGeneration != _configGeneration
+                             ? ClaimHandler()
+                             : null;
+            }
+
+            InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false);
+
+        // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
             {
-                Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, null, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
+                var notReady = new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "PROVIDER_NOT_READY",
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
+                    });
+
+                LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);
+
+                return notReady;
             }
 
-            Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            var context = new EvaluationContext(targetingKey, attributes);
+            var evaluation = deferExposure
+                                 ? evaluator.EvaluateWithDeferredExposure(flagKey, resultType, defaultValue, context)
+                                 : evaluator.Evaluate(flagKey, resultType, defaultValue, context);
+            if (evaluation.FlagMetadata is DeferredExposureMetadata { IsPending: true })
+            {
+                WarnIfExposuresStayUncommitted();
+            }
+
+            LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
+
+            return evaluation;
         }
 
-        private void UpdateRemoteConfig(List<KeyValuePair<string, ServerConfiguration>> list)
+        [TestingAndPrivateOnly]
+        internal bool ApplyConfiguration(ServerConfiguration configuration)
+            => ApplyAgentlessConfiguration(configuration, requestedSelection: null) == ConfigurationApplyResult.Applied;
+
+        /// <summary>
+        /// Installs a configuration that the agentless source requested with <paramref name="requestedSelection"/>.
+        /// A response to a request made before the current claim is discarded: installing it would make a
+        /// provider that claimed other flags ready on the previous selection's configuration.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal ConfigurationApplyResult ApplyAgentlessConfiguration(ServerConfiguration configuration, FlagSelection? requestedSelection)
         {
-            Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
+            FeatureFlagsEvaluator? previous;
+            bool isFirst;
             try
             {
-                // Feed configs to the rules evaluator
-                if (list.Count > 0)
+                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled);
+                lock (_handlerLock)
                 {
-                    var selectedConfig = MergeConfigs(list);
-                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig, _spanEnrichmentEnabled));
-                }
-                else
-                {
-                    // RC reset: clear evaluator so Evaluate() returns PROVIDER_NOT_READY
-                    Interlocked.Exchange(ref _evaluator, null);
-                }
+                    if (requestedSelection is not null && _awaitedFlagSelection is { } awaited && !requestedSelection.Equals(awaited))
+                    {
+                        _log.Debug("Feature Flags: discarded a configuration requested for a previous flag selection");
+                        return ConfigurationApplyResult.Superseded;
+                    }
 
-                _onNewConfigEventHander?.Invoke();
+                    // Keep first-configuration detection with installation so concurrent updates
+                    // cannot make the first configuration look like recovery from a withdrawal.
+                    previous = Interlocked.Exchange(ref _evaluator, evaluator);
+                    _loadedFlagSelection = requestedSelection ?? _awaitedFlagSelection;
+                    isFirst = _firstConfigReceived.TrySetResult(true);
+                }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::UpdateRemoteConfig -> Error processing new config");
+                _log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
+                _log.Debug<string>(
+                    "Feature Flags: configuration was not applied; {State}",
+                    HasConfiguration ? "the previously applied configuration remains active" : "no configuration is active, so evaluations return their default values");
+                return ConfigurationApplyResult.Failed;
+            }
+
+            // Reported once the evaluator is installed and readiness is signalled, so neither depends
+            // on the log being written.
+            if (isFirst && Volatile.Read(ref _initializationTimedOut) != 0)
+            {
+                // Only for the first configuration, and the counterpart of the timeout warning, so it is not debug-only.
+                _log.Information("Feature Flags configuration arrived after the initialization timeout. Evaluations now resolve flags.");
+            }
+            else if (!isFirst && previous is null)
+            {
+                _log.Debug("Feature Flags: configuration is available again after it was removed; evaluations resolve flags again");
+            }
+
+            NotifyNewConfiguration("ApplyConfiguration");
+
+            return ConfigurationApplyResult.Applied;
+        }
+
+        private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)
+        {
+            return new Dictionary<string, string>
+            {
+                ["service"] = settings.DefaultServiceName,
+                ["env"] = settings.Environment ?? "unknown",
+                ["version"] = settings.ServiceVersion ?? "unknown",
+            };
+        }
+
+        private void SubscribeToEvaluationDelivery()
+        {
+            if (!_settings.EvaluationEventsEnabled)
+            {
+                return;
+            }
+
+            // Each track owns an instance: an evaluation delivery failure must not change
+            // exposure routing or disposal. Both instances reuse the same transport policy.
+            var transport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
+            _evaluationTransport = transport;
+            var exporter = _settingsManager.InitialExporterSettings;
+            var context = CreateEvaluationContext(_settingsManager.InitialMutableSettings);
+            AgentConfiguration? agent = null;
+            AgentConfiguration? pendingAgent = null;
+            _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
+            {
+                lock (_evaluationLock)
+                {
+                    if (Volatile.Read(ref _disposed))
+                    {
+                        return;
+                    }
+
+                    // Replay supplies the current values even when only one setting changed.
+                    exporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+                    // Discovery receives settings before this module and can respond first.
+                    // Reconcile that response only with its exact exporter snapshot, not
+                    // capabilities retained from an earlier visit to the same address.
+                    if (ReferenceEquals(pendingAgent?.DiscoverySettings, exporter))
+                    {
+                        agent = pendingAgent;
+                    }
+                    else if (!MatchesCurrentAgent(agent))
+                    {
+                        agent = null;
+                    }
+
+                    pendingAgent = null;
+                    if (_evaluationWriter is null)
+                    {
+                        context = CreateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable);
+                    }
+
+                    if (_settings.Source == FeatureFlagsSource.RemoteConfig && changes.UpdatedExporter is not null)
+                    {
+                        Volatile.Write(ref _availableEvaluationWriter, null);
+                    }
+
+                    UpdateAvailability();
+                }
+            });
+
+            if (_settings.Source != FeatureFlagsSource.RemoteConfig)
+            {
+                // Agentless collection does not wait for a route. The bounded worker sends
+                // through the transport's existing discovery/fallback policy.
+                lock (_evaluationLock)
+                {
+                    UpdateAvailability();
+                }
+
+                return;
+            }
+
+            _evaluationDiscoveryCallback = configuration =>
+            {
+                lock (_evaluationLock)
+                {
+                    if (Volatile.Read(ref _disposed))
+                    {
+                        return;
+                    }
+
+                    if (!MatchesCurrentAgent(configuration))
+                    {
+                        // This may precede its settings callback or be a late old response.
+                        // Keep at most one pending capability snapshot; do not change current
+                        // admission until the matching settings update confirms it.
+                        pendingAgent = configuration;
+                        return;
+                    }
+
+                    agent = configuration;
+                    UpdateAvailability();
+                }
+            };
+            _discoveryService.SubscribeToChanges(_evaluationDiscoveryCallback);
+
+            // Called only under _evaluationLock. Remote Config retains its Agent capability gate.
+            // Agentless uses the existing bounded queue while the transport chooses a route.
+            void UpdateAvailability()
+            {
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig
+                 && (StringUtil.IsNullOrEmpty(agent?.EventPlatformProxyEndpoint) || !MatchesCurrentAgent(agent)))
+                {
+                    Volatile.Write(ref _availableEvaluationWriter, null);
+                    return;
+                }
+
+                if (_evaluationWriter is null)
+                {
+                    try
+                    {
+                        // Keep tags for this writer's lifetime; changing the Agent must not
+                        // relabel observations that have already been accepted.
+                        var writer = new FlagEvaluationWriter(transport.SendFlagEvaluationsAsync, context);
+                        Volatile.Write(ref _evaluationWriter, writer);
+                    }
+                    catch (Exception)
+                    {
+                        _log.Debug("FeatureFlags flagevaluation writer could not be started.");
+                    }
+                }
+
+                Volatile.Write(ref _availableEvaluationWriter, _evaluationWriter);
+            }
+
+            bool MatchesCurrentAgent(AgentConfiguration? configuration)
+            {
+                // Returning to the same address creates a new exporter generation. A delayed
+                // callback from an earlier visit must not change the current admission state.
+                return ReferenceEquals(configuration?.DiscoverySettings, exporter);
+            }
+        }
+
+        private async Task FinishDisposalAsync(
+            Task close,
+            FeatureFlagsEvpTransport? evaluationTransport,
+            IDisposable? settingsSubscription,
+            Action<AgentConfiguration>? discoveryCallback,
+            ISubscription? subscription,
+            IFeatureFlagsDeliverySource? agentlessSource,
+            ExposureApi? exposureApi,
+            FeatureFlagsEvpTransport? evpTransport)
+        {
+            try
+            {
+                settingsSubscription?.Dispose();
+                if (discoveryCallback is not null)
+                {
+                    _discoveryService.RemoveSubscription(discoveryCallback);
+                }
+
+                if (subscription is not null)
+                {
+                    _rcmSubscriptionManager.Unsubscribe(subscription);
+                }
+
+                agentlessSource?.Dispose();
+                exposureApi?.Dispose();
+            }
+            catch (Exception)
+            {
+                _log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
+            }
+            finally
+            {
+                try
+                {
+                    await close.ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    _log.Debug("FeatureFlags flagevaluation shutdown failed.");
+                }
+                finally
+                {
+                    // Dispose stops new sends but preserves any request still live after the deadline.
+                    evaluationTransport?.Dispose();
+                    evpTransport?.Dispose();
+                    _log.Debug("Feature Flags: shutdown complete");
+                    _disposeCompletion.TrySetResult(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Logs the provider's resolution with its raw inputs and outputs, so a customer can explain a
+        /// result from the log alone. Provider conversion and application hooks run afterwards and
+        /// are not reflected here. Checks the debug level before formatting any values.
+        /// </summary>
+        private void LogEvaluation(Evaluation evaluation, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, ServerConfiguration? configuration)
+        {
+            try
+            {
+                if (!_log.IsEnabled(LogEventLevel.Debug))
+                {
+                    return;
+                }
+
+                // Debug logging can be switched on after startup, as a tracer flare does.
+                WarnRawEvaluationDataOnce();
+
+                _log.Debug(
+                    "FeatureFlagsModule::Evaluate -> Evaluator resolved {FlagKey} ({ResultType}) before provider conversion: value={Value}, variant={Variant}, reason={Reason}, error={ErrorCode}, errorDetail={Error}, default={DefaultValue}, targetingKey={TargetingKey}, attributes={Attributes}, metadata={Metadata}, configuration createdAt={CreatedAt}",
+                    [
+                        evaluation.FlagKey,
+                        resultType,
+                        FeatureFlagsDiagnostics.FormatValue(evaluation.Value),
+                        evaluation.Variant ?? "none",
+                        evaluation.Reason,
+                        FeatureFlagsEvaluator.ErrorCode(evaluation) ?? evaluation.Error ?? "none",
+                        evaluation.Error ?? "none",
+                        FeatureFlagsDiagnostics.FormatValue(defaultValue),
+                        FeatureFlagsDiagnostics.FormatValue(targetingKey),
+                        FeatureFlagsDiagnostics.FormatMap(attributes),
+                        FeatureFlagsDiagnostics.FormatMap(evaluation.FlagMetadata),
+                        configuration is null ? "none (no configuration is applied)" : configuration.CreatedAt ?? "unset",
+                    ]);
+            }
+            catch
+            {
+                // A diagnostic must never change what an evaluation returns.
+            }
+        }
+
+        // Callers check the debug level first. A warning is not sent to telemetry, which only
+        // collects errors.
+        private void WarnRawEvaluationDataOnce()
+        {
+            if (Interlocked.CompareExchange(ref _rawEvaluationDataWarningLogged, 1, 0) == 0)
+            {
+                _log.Warning("Feature Flags: debug logging is enabled, so feature flag logs include raw evaluation data (targeting keys, evaluation context attributes, flag values, and default values) that may contain personal or sensitive information. Unset DD_TRACE_DEBUG when you no longer need it.");
+            }
+        }
+
+        /// <summary>
+        /// Hands one configuration event to the registered handler, whether a configuration arrived or
+        /// was withdrawn. Claiming the event under the lock and calling the handler outside it keeps
+        /// application code off the lock, and stops a concurrent registration from replaying the same
+        /// configuration the handler has just been given.
+        /// </summary>
+        private void NotifyNewConfiguration(string caller)
+        {
+            Action? handler;
+
+            lock (_handlerLock)
+            {
+                _configGeneration++;
+                handler = _onNewConfigEventHandler is null ? null : ClaimHandler();
+            }
+
+            InvokeConfigurationHandler(handler, caller);
+        }
+
+        /// <summary>
+        /// Records the current configuration as delivered to the current handler and returns that
+        /// handler. Callers hold <see cref="_handlerLock"/>.
+        /// </summary>
+        private Action? ClaimHandler()
+        {
+            _handlerDeliveredGeneration = _configGeneration;
+            return _onNewConfigEventHandler;
+        }
+
+        /// <summary>
+        /// Calls the handler, which is application code. The agentless source reads the return value of
+        /// <see cref="ApplyConfiguration"/> to decide whether to advance its ETag. Reporting a failed
+        /// apply because a handler threw would make every later poll re-download the whole payload
+        /// instead of getting a 304, and the configuration is applied before the handler runs anyway.
+        /// </summary>
+        private void InvokeConfigurationHandler(Action? handler, string caller)
+        {
+            if (handler is null)
+            {
+                return;
+            }
+
+            try
+            {
+                handler();
+            }
+            catch (Exception ex)
+            {
+                _log.Warning<string>(ex, "FeatureFlagsModule::{Caller} -> Error in the configuration event handler", caller);
+            }
+        }
+
+        /// <summary>
+        /// Subscribes to the Remote Configuration product carrying flag configuration. Called at
+        /// startup, not on activation: the configuration arrives on the poll the agent already makes,
+        /// so subscribing early adds no request, and every other tracer subscribes at startup too.
+        /// Deferring it made .NET the one tracer that never advertised the capability until the
+        /// application resolved a flag.
+        /// </summary>
+        private void SubscribeToRemoteConfiguration()
+        {
+            lock (_stateLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                if (!_isRemoteConfigurationAvailable)
+                {
+                    _log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                    _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
+                    return;
+                }
+
+                var ffeProduct = new FfeProduct(ApplyRemoteConfigurations, _log);
+                _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
+                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
+                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+                _deliveryStarted = true;
+                _log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Starting remote_config configuration source (Agent Remote Configuration)");
+            }
+        }
+
+        private void ApplyRemoteConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
+        {
+            _log.Debug<int>("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration received ({FileCount} file(s))", list.Count);
+            try
+            {
+                if (list.Count > 0)
+                {
+                    var selectedConfig = MergeConfigs(list);
+
+                    // Logged only once applied: "applied" must not be reported for a configuration
+                    // the evaluator rejected, which ApplyConfiguration already warns about.
+                    if (ApplyConfiguration(selectedConfig) && _log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        _log.Debug<int, int, string, string, string>(
+                            "FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration applied successfully ({UsableFlagCount} usable flag(s), {RejectedFlagCount} rejected, configuration env={Environment}, createdAt={CreatedAt}, files={Files})",
+                            selectedConfig.Flags?.ValidFlags.Count() ?? 0,
+                            selectedConfig.Flags?.InvalidFlagKeys.Count() ?? 0,
+                            selectedConfig.Environment?.Name ?? "unset",
+                            selectedConfig.CreatedAt ?? "unset",
+                            string.Join(", ", list.Select(p => p.Key)));
+                        FeatureFlagsDiagnostics.LogRejectedFlags(_log, "remote_config", selectedConfig);
+                    }
+                }
+                else
+                {
+                    // The configuration was withdrawn, so every evaluation returns PROVIDER_NOT_READY
+                    // from here on. The handler is notified either way, and reads HasConfiguration to
+                    // tell a withdrawal from an update.
+                    Interlocked.Exchange(ref _evaluator, null);
+                    _log.Debug("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration removed; evaluations return default values until a new configuration is applied");
+                    NotifyNewConfiguration("ApplyRemoteConfigurations");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning(ex, "FeatureFlagsModule::ApplyRemoteConfigurations -> Error processing new config");
             }
 
             static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)
@@ -107,7 +1077,9 @@ namespace Datadog.Trace.FeatureFlags
                     return list[0].Value;
                 }
 
-                var res = new ServerConfiguration();
+                // Recompute from the active files, not the previous merged result. Seeding
+                // from the first file keeps the configuration's default consent false.
+                var res = new ServerConfiguration { ObserveFullEvaluationData = list[0].Value.ObserveFullEvaluationData };
                 foreach (var conf in list)
                 {
                     res.Merge(conf.Value);
@@ -117,9 +1089,93 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void ReportExposure(in ExposureEvent exposure)
+        /// <summary>
+        /// Records and sends the exposure deferred by an evaluation, once that evaluation has completed
+        /// without an error. Returns one of the <see cref="ExposureCommitResult"/> values; a second
+        /// commit for the same evaluation finds nothing pending.
+        /// </summary>
+        internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
         {
-            _exposureApi?.SendExposure(exposure);
+            // A commit call proves the provider's hooks run.
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) == 0)
+            {
+                Volatile.Write(ref _uncommittedExposureCheckDone, 1);
+            }
+
+            if (evaluationMetadata is not DeferredExposureMetadata deferred
+                || !deferred.TryTakePendingExposure(out var pending))
+            {
+                return ExposureCommitResult.NothingPending;
+            }
+
+            return ReportExposure(in pending) switch
+            {
+                ExposureRecordResult.New => ExposureCommitResult.New,
+                ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
+                // Reporting has stopped, so nothing was recorded and there is no verdict to give.
+                _ => ExposureCommitResult.NothingPending,
+            };
+        }
+
+        private void WarnIfExposuresStayUncommitted()
+        {
+            if (Volatile.Read(ref _uncommittedExposureCheckDone) != 0)
+            {
+                return;
+            }
+
+            if (Interlocked.Increment(ref _exposuresDeferredWithoutCommit) == UncommittedExposureWarningThreshold
+                && Interlocked.Exchange(ref _uncommittedExposureCheckDone, 1) == 0)
+            {
+                _log.Warning<int>(
+                    "Feature Flags: {Count} flag evaluations left their exposure uncommitted. The Datadog provider's OpenFeature hooks record and send exposures: evaluate flags through an OpenFeature client, and when you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
+                    UncommittedExposureWarningThreshold);
+            }
+        }
+
+        private ExposureRecordResult ReportExposure(in ExposureEvent exposure)
+        {
+            // Nothing would ever dispose an API created after disposal, leaving its send loop running
+            // for the rest of the process, so exposures are dropped from that point on.
+            if (GetExposureApi() is { } exposureApi)
+            {
+                return exposureApi.SendExposure(exposure);
+            }
+
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+            return ExposureRecordResult.NotRecorded;
+        }
+
+        // Created on first use because most applications never evaluate a flag, and under the lock
+        // because the evaluation path races disposal. Only the very first exposure takes the lock:
+        // afterwards the field is read directly, keeping the exposure path lock-free.
+        [TestingAndPrivateOnly]
+        internal ExposureApi? GetExposureApi()
+        {
+            var exposureApi = Volatile.Read(ref _exposureApi);
+            if (exposureApi is not null)
+            {
+                return exposureApi;
+            }
+
+            lock (_stateLock)
+            {
+                if (_disposed)
+                {
+                    return null;
+                }
+
+                exposureApi = _exposureApi;
+                if (exposureApi is null)
+                {
+                    // Keep the HTTP client and its settings subscription lazy with the first exposure.
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
+                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport, logger: _log);
+                    Volatile.Write(ref _exposureApi, exposureApi);
+                }
+
+                return exposureApi;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -62,6 +63,30 @@ internal static class HexString
 
         var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
         HexConverter.EncodeToUtf16(bytes, chars, casing);
+    }
+
+    /// <summary>
+    /// Converts the specified <see cref="ulong"/> value into 16 hexadecimal UTF-8 bytes using network byte order
+    /// (aka big endian), with the most significant byte first, and places the result into the specified buffer.
+    /// </summary>
+    /// <param name="value">The value to convert into hexadecimal bytes.</param>
+    /// <param name="bytes">The buffer to place the output into. Must be at least 16 bytes long.</param>
+    /// <param name="lowerCase"><c>true</c> to generate lower-case characters, <c>false</c> otherwise.</param>
+    public static void ToHexBytes(ulong value, Span<byte> bytes, bool lowerCase = true)
+    {
+        if (bytes.Length < sizeof(ulong) * 2)
+        {
+            ThrowHelper.ThrowArgumentException("Target buffer is too small for the provided value.", nameof(bytes));
+        }
+
+        var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
+
+        // Walk the value from the most significant byte down, so the output is big endian
+        // regardless of the endianness of the machine we are running on.
+        for (var i = 0; i < sizeof(ulong); i++)
+        {
+            HexConverter.ToBytesBuffer((byte)(value >> ((sizeof(ulong) - 1 - i) * 8)), bytes, startingIndex: i * 2, casing);
+        }
     }
 
     /// <summary>

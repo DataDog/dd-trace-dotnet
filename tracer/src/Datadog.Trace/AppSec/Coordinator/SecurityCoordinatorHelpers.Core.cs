@@ -94,6 +94,12 @@ internal static class SecurityCoordinatorHelpers
             var args = BuildResponseArgs(httpContext.Response.StatusCode, httpContext.Response.Headers);
             if (securityCoordinator.RunWaf(args, true) is { } result)
             {
+                if (result.ShouldBlock)
+                {
+                    // the response is already on the wire, so the block can't be applied
+                    securityCoordinator.MarkBlockFailed();
+                }
+
                 securityCoordinator.Reporter.TryReport(result, blocked: false);
             }
         }
@@ -110,7 +116,7 @@ internal static class SecurityCoordinatorHelpers
 
     private static Dictionary<string, object> BuildResponseArgs(int statusCode, IHeaderDictionary headers)
     {
-        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToString() } };
+        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToStringInvariant() } };
 
         if (SecurityCoordinator.ExtractHeadersFromRequest(headers) is { } extractedHeaders)
         {

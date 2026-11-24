@@ -129,13 +129,13 @@ internal static class OtlpLogsSerializer
 
         if (!StringUtil.IsNullOrEmpty(settings.Environment))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment.name", settings.Environment);
         }
 
         // Write telemetry SDK attributes
         writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.name", "datadog");
         writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.language", "dotnet");
-        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.version", TracerConstants.SemanticVersion);
 
         if (settings.GlobalTags.Count > 0)
         {

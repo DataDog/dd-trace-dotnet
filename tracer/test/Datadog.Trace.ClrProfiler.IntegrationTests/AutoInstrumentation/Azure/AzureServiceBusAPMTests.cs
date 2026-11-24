@@ -1,0 +1,514 @@
+// <copyright file="AzureServiceBusAPMTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Versioning;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using FluentAssertions.Execution;
+using VerifyXunit;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
+{
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
+    [Trait("Category", "ArmUnsupported")]
+    [UsesVerify]
+    [Collection(AzureMessagingEmulatorTestsCollection.Name)]
+    public class AzureServiceBusAPMTests : TracingIntegrationTest
+    {
+        public AzureServiceBusAPMTests(ITestOutputHelper output)
+            : base("AzureServiceBus.APM", output)
+        {
+        }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
+        {
+            SpanKinds.Consumer => span.IsAzureServiceBusInboundAPM(metadataSchemaVersion),
+            SpanKinds.Producer when span.Name == "azure_servicebus.create" => span.IsAzureServiceBusCreateAPM(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAzureServiceBusOutboundAPM(metadataSchemaVersion),
+            _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the Azure Service Bus integration: {span.Tags["span.kind"]}", nameof(span)),
+        };
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestSendMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "SendMessages");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send");
+
+                Output.WriteLine($"Datadog Service Bus send spans found: {sendSpans.Count()}");
+
+                if (sendSpans.Any())
+                {
+                    foreach (var span in sendSpans)
+                    {
+                        var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                        result.Success.Should().BeTrue($"Span validation failed: {result}");
+                    }
+                }
+                else
+                {
+                    var diagnosticInfo = $"No Datadog Service Bus spans found. " +
+                        $"Total spans: {spans.Count()}, " +
+                        $"Operations: [{string.Join(", ", spans.Select(s => s.Name).Distinct())}]";
+                    Assert.Fail(diagnosticInfo);
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestReceiveMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessages");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var receiveSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.receive")).ToList();
+                var sendSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.send")).ToList();
+
+                Output.WriteLine($"Service Bus spans found: {receiveSpans.Count}");
+
+                receiveSpans.Should().NotBeEmpty("Expected to find consumer spans for message receiving operations");
+
+                foreach (var span in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestReceiveMessagesAsyncIntegrationMultiple(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessagesMultiple");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var receiveSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.receive")).ToList();
+                var sendSpans = spans.Where(span => span.Name.StartsWith("azure_servicebus.send")).ToList();
+
+                Output.WriteLine($"Service Bus spans found: {receiveSpans.Count}");
+
+                receiveSpans.Should().NotBeEmpty("Expected to find consumer spans for message receiving operations");
+
+                foreach (var span in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                ValidateSpanLinks(sendSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestServiceBusMessageBatchIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "TestServiceBusMessageBatch");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+
+                var createSpans = spans.Where(span => span.Name == "azure_servicebus.create").ToList();
+                var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+
+                Output.WriteLine($"Create spans found: {createSpans.Count}");
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                createSpans.Should().HaveCount(3, "Expected 3 TryAddMessage spans with azure_servicebus.create operation");
+                sendSpans.Should().HaveCount(1, "Expected 1 SendMessagesAsync span with azure_servicebus.send operation");
+                receiveSpans.Should().HaveCount(1, "Expected 1 ReceiveMessagesAsync span");
+
+                var individualMessageSpans = createSpans.Where(s => s.Resource == "samples-azureservicebus-queue").ToList();
+                individualMessageSpans.Should().HaveCount(3, "Expected 3 individual message spans from TryAddMessage operations");
+
+                var batchSendSpans = sendSpans.Where(s => s.Resource == "samples-azureservicebus-queue").ToList();
+                batchSendSpans.Should().HaveCount(1, "Expected 1 batch send span from SendMessagesAsync operation");
+
+                foreach (var createSpan in createSpans)
+                {
+                    var result = ValidateIntegrationSpan(createSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Create span validation failed: {result}");
+                }
+
+                foreach (var sendSpan in sendSpans)
+                {
+                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                }
+
+                var allProducerSpans = createSpans.Concat(sendSpans).ToList();
+                ValidateSpanLinks(allProducerSpans, receiveSpans, spans);
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestServiceBusMessageBatchIntegrationWithoutBatchLinks(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "false");
+            SetEnvironmentVariable("ASB_TEST_MODE", "TestServiceBusMessageBatch");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
+                }
+
+                var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
+                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+
+                Output.WriteLine($"Send spans found: {sendSpans.Count}");
+                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+
+                sendSpans.Should().HaveCount(1, "Expected 1 SendMessagesAsync span (no individual TryAddMessage spans when batch links disabled)");
+                receiveSpans.Should().HaveCount(1, "Expected 1 ReceiveMessagesAsync span");
+
+                var createSpans = spans.Where(span => span.Name == "azure_servicebus.create").ToList();
+                createSpans.Should().BeEmpty("Expected no individual message spans (azure_servicebus.create) when batch links disabled");
+
+                foreach (var span in spans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Service Bus span validation failed: {result}");
+                }
+
+                foreach (var receiveSpan in receiveSpans)
+                {
+                    receiveSpan.SpanLinks.Should().BeNullOrEmpty("No span links expected when batch linking is disabled");
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestScheduleMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "ScheduleMessages");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                var scheduleSpans = spans.Where(span => span.Name == "azure_servicebus.send" &&
+                                                        span.Tags.ContainsKey("messaging.operation") &&
+                                                        span.Tags["messaging.operation"] == "send").ToList();
+
+                Output.WriteLine($"Datadog Service Bus schedule spans found: {scheduleSpans.Count}");
+
+                if (scheduleSpans.Any())
+                {
+                    scheduleSpans.Should().HaveCount(1, "Expected exactly 1 span from ScheduleMessagesAsync");
+
+                    foreach (var span in scheduleSpans)
+                    {
+                        var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                        result.Success.Should().BeTrue($"Schedule span validation failed: {result}");
+                    }
+                }
+                else
+                {
+                    var diagnosticInfo = $"No Datadog Service Bus schedule spans found. " +
+                        $"Total spans: {spans.Count}, " +
+                        $"Operations: [{string.Join(", ", spans.Select(s => s.Name).Distinct())}]";
+                    Assert.Fail(diagnosticInfo);
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorConnectsToProducerTrace(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            // Reproduces a ServiceBusProcessor consumer with the Azure activity source
+            // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
+            // The producer's send and the consumer's ServiceBusProcessor.ProcessMessage should end up
+            // on the same distributed trace. The receive integration must not overwrite the message
+            // context used by the SDK-created ProcessMessage activity.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                // Wait until the consumer-side process span has been emitted, but return every span.
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
+
+                // The core assertion: producer and consumer must share the same distributed trace.
+                const string because = "the ServiceBusProcessor.ProcessMessage span must be part of the producer's trace, otherwise producer and consumer show up as two disconnected traces";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            // Azure Functions detection is process-wide, so this covers a processor consumer running
+            // inside an in-process Functions-hosted app rather than a Functions Service Bus trigger handoff.
+            // Disable Continuous Profiler activation because this console sample only starts the tracer.
+            SetEnvironmentVariable("DD_PROFILING_ENABLED", "0");
+            SetEnvironmentVariable("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
+            SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate in Azure App Service
+            SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment));
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"[AzureFunctionsEnvironment] TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
+
+                const string because = "processor receives must preserve the producer context even when the process is detected as Azure Functions";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
+        [SkippableTheory]
+        [InlineData("continue")]
+        [InlineData("restart")]
+        [InlineData("ignore")]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorExtractionBehavior(string extractionBehavior)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", "v1");
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT", extractionBehavior);
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_INJECT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_EXTRACT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+            foreach (var span in spans)
+            {
+                Output.WriteLine($"Behavior={extractionBehavior}, Name={span.Name}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                foreach (var link in span.SpanLinks ?? [])
+                {
+                    Output.WriteLine($"  Link: TraceIdHigh={link.TraceIdHigh}, TraceIdLow={link.TraceIdLow}, SpanId={link.SpanId}");
+                }
+            }
+
+            var sendSpan = spans.Single(span => span.Name == "azure_servicebus.send");
+            var processSpan = spans.Single(span => span.Name == "servicebus.process");
+            var receiveSpan = spans.Single(span => span.Name == "azure_servicebus.receive");
+
+            using var assertions = new AssertionScope();
+            if (extractionBehavior == "continue")
+            {
+                processSpan.TraceId.Should().Be(sendSpan.TraceId);
+                processSpan.ParentId.Should().Be(sendSpan.SpanId);
+            }
+            else
+            {
+                processSpan.TraceId.Should().NotBe(sendSpan.TraceId, $"{extractionBehavior} must not continue the producer trace");
+                processSpan.TraceId.Should().Be(receiveSpan.TraceId);
+                processSpan.ParentId.Should().Be(receiveSpan.SpanId, "restart and ignore retain the existing receive context reinjection");
+                // Restart's missing producer link predates this fix and is a separate issue.
+                if (extractionBehavior == "ignore")
+                {
+                    spans.Where(span => span.TraceId == processSpan.TraceId)
+                         .SelectMany(span => span.SpanLinks ?? [])
+                         .Should().NotContain(link => link.TraceIdLow == sendSpan.TraceId, "ignore should discard the producer context");
+                }
+            }
+        }
+
+        private static void ValidateSpanLinks(
+            IList<MockSpan> sendSpans,
+            IList<MockSpan> receiveSpans,
+            IReadOnlyCollection<MockSpan> allSpans)
+        {
+            sendSpans.Should().NotBeEmpty("Need producer spans to validate span links");
+            receiveSpans.Should().NotBeEmpty("Need consumer spans to validate span links");
+
+            var spanLinksFoundOnBatchSend = false;
+            var spanLinksFoundOnReceive = false;
+
+            var batchSendSpans = sendSpans.Where(s => s.Name == "azure_servicebus.send").ToList();
+            var individualMessageSpans = sendSpans.Where(s => s.Name == "azure_servicebus.create").ToList();
+
+            foreach (var batchSendSpan in batchSendSpans)
+            {
+                if (batchSendSpan.SpanLinks != null && batchSendSpan.SpanLinks.Count > 0)
+                {
+                    spanLinksFoundOnBatchSend = true;
+
+                    foreach (var link in batchSendSpan.SpanLinks)
+                    {
+                        var linkedIndividualSpan = individualMessageSpans.FirstOrDefault(s => s.TraceId == link.TraceIdLow && s.SpanId == link.SpanId);
+                        linkedIndividualSpan.Should().NotBeNull(
+                            $"Batch send span {batchSendSpan.SpanId} has link to span {link.SpanId} in trace {link.TraceIdLow}, " +
+                            $"but corresponding individual message span not found");
+                    }
+                }
+            }
+
+            foreach (var receiveSpan in receiveSpans)
+            {
+                if (receiveSpan.SpanLinks != null && receiveSpan.SpanLinks.Count > 0)
+                {
+                    spanLinksFoundOnReceive = true;
+
+                    foreach (var link in receiveSpan.SpanLinks)
+                    {
+                        var linkedSendSpan = sendSpans.FirstOrDefault(s => s.TraceId == link.TraceIdLow && s.SpanId == link.SpanId);
+                        linkedSendSpan.Should().NotBeNull(
+                            $"Receive span {receiveSpan.SpanId} has link to span {link.SpanId} in trace {link.TraceIdLow}, " +
+                            $"but corresponding send span not found");
+                    }
+                }
+            }
+
+            if (individualMessageSpans.Any())
+            {
+                spanLinksFoundOnBatchSend.Should().BeTrue(
+                    "Batch send span should have span links to individual message spans, " +
+                    "indicating that batch span linking is working correctly.");
+            }
+
+            (spanLinksFoundOnReceive || spanLinksFoundOnBatchSend).Should().BeTrue(
+                "At least one span should have span links, " +
+                "indicating that span linking is working correctly for message contexts.");
+        }
+
+        private IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
+            => spans
+                .OrderBy(x => x.Start)
+                .ThenBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
+                .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
+                .ThenBy(x => x.Duration);
+    }
+}

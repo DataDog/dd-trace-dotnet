@@ -21,7 +21,7 @@ if not exist c:\mnt\ goto nomntdir
 @echo PARAMS %*
 
 call "%VSTUDIO_ROOT%\vc\auxiliary\build\vcvars64.bat"
-SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\VisualStudio\v17.0
+SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\VisualStudio\v18.0
 
 cd c:\mnt\
 
@@ -40,7 +40,11 @@ if "%nuke_args%"=="" (
 :: and if the variable is not set, it will write to %USERPROFILE%\.aws\credentials
 c:\devtools\ci-identities-gitlab-job-client.exe assume-role
 
-dotnet run --project tracer/build/_build/_build.csproj -- %nuke_args% --Artifacts "build-out\%CI_JOB_ID%"
+dotnet build "tracer\build\_build\_build.csproj" /nodeReuse:false /p:UseSharedCompilation=false
+
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+
+dotnet "tracer\build\_build\bin\x64\Debug\_build.dll" %nuke_args% --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 

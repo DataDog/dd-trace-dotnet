@@ -5,9 +5,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Ipc;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -20,6 +23,9 @@ public class CircularChannelTests
     private const int BufferSize = 8192;
     private const int HeaderSize = 4;
     private const int AvailableBufferSize = BufferSize - HeaderSize;
+
+    // Only keeps a broken channel from hanging the test run
+    private static readonly TimeSpan HangTimeout = TimeSpan.FromSeconds(30);
 
     public static IEnumerable<object[]> GetWriteData()
     {
@@ -52,8 +58,9 @@ public class CircularChannelTests
         // Message size
         var messageSize = writer.GetMessageSize(in valueSegment);
 
-        // Calculate how many messages we can write
-        var messagesCount = AvailableBufferSize / messageSize;
+        // Calculate how many messages we can write. One byte always stays free, so a full buffer can be told
+        // apart from an empty one.
+        var messagesCount = (AvailableBufferSize - 1) / messageSize;
 
         using var scope = new AssertionScope();
         for (var i = 0; i < messagesCount; i++)
@@ -63,6 +70,170 @@ public class CircularChannelTests
 
         // If we write one more message, we should get a false result
         writer.TryWrite(in valueSegment).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ReaderReleasesAnAbandonedMutexBeforeReceivingMoreMessages()
+    {
+        var name = nameof(ReaderReleasesAnAbandonedMutexBeforeReceivingMoreMessages) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, new CircularChannelSettings { PollingInterval = 10, MutexTimeout = 200 });
+        using var writer = channel.GetWriter();
+        var message = new ArraySegment<byte>([1]);
+        writer.TryWrite(in message).Should().BeTrue();
+
+        AbandonMutex(name);
+
+        using var firstMessageReceived = new ManualResetEventSlim();
+        using var messagesReceived = new CountdownEvent(2);
+        using var reader = channel.GetReader();
+        reader.SetCallback(_ =>
+        {
+            messagesReceived.Signal();
+            firstMessageReceived.Set();
+        });
+
+        firstMessageReceived.Wait(5_000).Should().BeTrue();
+        // Receiving the first message alone can hide a recursive mutex acquisition leak.
+        writer.TryWrite(in message).Should().BeTrue("the reader must release ownership before another thread can send");
+        messagesReceived.Wait(5_000).Should().BeTrue();
+    }
+
+    [Fact]
+    public void OpeningAChannelAndWritingAcquireAnAbandonedMutex()
+    {
+        var name = nameof(OpeningAChannelAndWritingAcquireAnAbandonedMutex) + "-" + Guid.NewGuid().ToString("n");
+        var settings = new CircularChannelSettings { PollingInterval = 10, MutexTimeout = 200 };
+        using var channel = new CircularChannel(name, settings);
+
+        AbandonMutex(name);
+        using var attachedChannel = new CircularChannel(name, settings);
+        AbandonMutex(name);
+        using var writer = attachedChannel.GetWriter();
+        var message = new ArraySegment<byte>([1]);
+        writer.TryWrite(in message).Should().BeTrue();
+
+        using var received = new ManualResetEventSlim();
+        using var reader = channel.GetReader();
+        reader.SetCallback(_ => received.Set());
+        received.Wait(HangTimeout).Should().BeTrue("opening the channel and writing must release the mutex they acquired");
+    }
+
+    [Fact]
+    public void OpeningAnExistingChannelKeepsUnreadMessages()
+    {
+        var name = nameof(OpeningAnExistingChannelKeepsUnreadMessages) + "-" + Guid.NewGuid().ToString("n");
+        var settings = new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 50 };
+        using var readerChannel = new CircularChannel(name, settings);
+
+        var valueSegment = new ArraySegment<byte>([1, 2, 3, 4]);
+        using (var writerChannel = new CircularChannel(name, settings))
+        {
+            writerChannel.GetWriter().TryWrite(in valueSegment).Should().BeTrue();
+        }
+
+        // Another process opening the same channel must not reset the pointers and drop the unread message
+        using var otherChannel = new CircularChannel(name, settings);
+
+        byte[]? receivedValue = null;
+        var received = new ManualResetEventSlim(false);
+        using var reader = readerChannel.GetReader();
+        reader.SetCallback(bytes =>
+        {
+            receivedValue = bytes.ToArray();
+            received.Set();
+        });
+
+        received.Wait(HangTimeout).Should().BeTrue("the message written before the channel was reopened should still be delivered");
+        receivedValue.Should().Equal(valueSegment);
+    }
+
+    [Fact]
+    public async Task DisposingAReaderReadsMessagesWrittenBeforeIt()
+    {
+        // With an infinite polling interval the reader polls once when it starts and then only when it's disposed,
+        // so the message below is read either by that first poll or by Dispose.
+        var name = nameof(DisposingAReaderReadsMessagesWrittenBeforeIt) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = Timeout.Infinite });
+        using var writer = channel.GetWriter();
+        using var received = new ManualResetEventSlim();
+        var reader = channel.GetReader();
+        reader.SetCallback(_ => received.Set());
+
+        var message = new ArraySegment<byte>([1]);
+        writer.TryWrite(in message).Should().BeTrue();
+
+        // Dispose wakes the reader and polls once more before it returns
+        var disposing = Task.Run(reader.Dispose);
+        (await Task.WhenAny(disposing, Task.Delay(HangTimeout))).Should().BeSameAs(disposing);
+        received.IsSet.Should().BeTrue();
+    }
+
+    [Fact]
+    public void BufferNeverFillsCompletelyWithTheDefaultSize()
+    {
+        // Older versions marked a completely full buffer with a virtual write position past the end of the buffer.
+        // With the default 64 KB buffer that overflowed the ushort write pointer, so the reader saw data that wasn't
+        // there and kept re-reading the same messages while holding the lock, until the process ran out of memory.
+        var name = nameof(BufferNeverFillsCompletelyWithTheDefaultSize) + "-" + Guid.NewGuid().ToString("n");
+        var settings = new CircularChannelSettings { PollingInterval = 50 };
+        using var writerChannel = new CircularChannel(name, settings);
+        using var writer = writerChannel.GetWriter();
+
+        // Write and read a first message, so the read position is no longer at the start of the buffer
+        var message = new ArraySegment<byte>(new byte[998]);
+        var messageSize = writer.GetMessageSize(in message);
+        using (var firstChannel = new CircularChannel(name, settings))
+        {
+            var firstReceived = new ManualResetEventSlim(false);
+            firstChannel.GetReader().SetCallback(_ => firstReceived.Set());
+            writer.TryWrite(in message).Should().BeTrue();
+            firstReceived.Wait(HangTimeout).Should().BeTrue();
+        }
+
+        var messagesCount = writerChannel.BufferBodySize / messageSize;
+        for (var i = 0; i < messagesCount; i++)
+        {
+            writer.TryWrite(in message).Should().BeTrue();
+        }
+
+        // Checked before any reader attaches, so a regression fails here instead of spinning the reader forever
+        var remainingSpace = writerChannel.BufferBodySize - (messagesCount * messageSize);
+        var exactFit = new ArraySegment<byte>(new byte[remainingSpace - 2]);
+        writer.TryWrite(in exactFit).Should().BeFalse("a message taking all the remaining space would leave no free byte");
+
+        var lastMessage = new ArraySegment<byte>(new byte[remainingSpace - 3]);
+        writer.TryWrite(in lastMessage).Should().BeTrue();
+
+        var expectedSizes = Enumerable.Repeat(message.Count, messagesCount).Append(lastMessage.Count).ToArray();
+        var receivedSizes = new ConcurrentQueue<int>();
+        using var allReceived = new CountdownEvent(expectedSizes.Length);
+        using var readerChannel = new CircularChannel(name, settings);
+        var reader = readerChannel.GetReader();
+        reader.SetCallback(
+            bytes =>
+            {
+                receivedSizes.Enqueue(bytes.Count);
+                allReceived.Signal();
+            });
+
+        allReceived.Wait(HangTimeout).Should().BeTrue();
+
+        // Disposing the reader stops its polling, so anything it delivered twice is in the queue now
+        reader.Dispose();
+        receivedSizes.Should().Equal(expectedSizes);
+    }
+
+    private static void AbandonMutex(string channelName)
+    {
+        // A terminated owner makes the next WaitOne on the channel's mutex acquire it and throw.
+        var mutexName = FrameworkDescription.Instance.IsWindows() ? @"Global\" + channelName : channelName;
+        var owner = new Thread(() =>
+        {
+            using var mutex = new Mutex(initiallyOwned: false, mutexName);
+            mutex.WaitOne();
+        });
+        owner.Start();
+        owner.Join(5_000).Should().BeTrue();
     }
 
     [Collection(nameof(HighConcurrencyTestCollection))]

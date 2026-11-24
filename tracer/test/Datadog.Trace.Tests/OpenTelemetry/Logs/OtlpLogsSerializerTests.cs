@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text;
 using Datadog.Trace.OpenTelemetry.Logs;
 using FluentAssertions;
 using Xunit;
@@ -31,6 +32,22 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
 
             result.Should().BeTrue();
             contentLength.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public void TrySerializeLogs_EnvironmentUsesStableResourceAttribute()
+        {
+            var logs = new List<LogPoint>
+            {
+                new() { Message = "hello", LogLevel = 2, CategoryName = "Test" },
+            };
+            var buffer = new byte[InitialBufferSize];
+
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var contentLength);
+
+            result.Should().BeTrue();
+            ContainsProtobufString(buffer.AsSpan(0, contentLength), "deployment.environment.name").Should().BeTrue();
+            ContainsProtobufString(buffer.AsSpan(0, contentLength), "deployment.environment").Should().BeFalse();
         }
 
         [Fact]
@@ -139,6 +156,16 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
                 environment: "test-env",
                 serviceVersion: "1.0.0",
                 globalTags: new ReadOnlyDictionary<string, string>(new Dictionary<string, string>()));
+
+        private static bool ContainsProtobufString(ReadOnlySpan<byte> buffer, string value)
+        {
+            var encodedValue = Encoding.UTF8.GetBytes(value);
+            var encodedField = new byte[encodedValue.Length + 2];
+            encodedField[0] = 0x0a;
+            encodedField[1] = (byte)encodedValue.Length;
+            encodedValue.CopyTo(encodedField, 2);
+            return buffer.IndexOf(encodedField) >= 0;
+        }
 
         private sealed class ThrowingToString(Exception exception)
         {

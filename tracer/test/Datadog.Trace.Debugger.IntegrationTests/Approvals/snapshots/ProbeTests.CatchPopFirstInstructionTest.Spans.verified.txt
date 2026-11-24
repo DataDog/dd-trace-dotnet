@@ -1,0 +1,29 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: dd.dynamic.span,
+    Resource: CatchPopFirstInstructionTest+CatchPopSm.MoveNext,
+    Service: Probes,
+    Error: 1,
+    Tags: {
+      component: trace,
+      debugger.probeid: Guid_1,
+      env: integration_tests,
+      error.msg: Intentional exception that was thrown from an integration test. catch pop first instruction,
+      error.stack:
+Samples.Probes.TestRuns.ExceptionReplayIntentionalException: Intentional exception that was thrown from an integration test. catch pop first instruction
+at Samples.Probes.TestRuns.ExceptionReplay.CatchPopFirstInstructionTest.CatchPopSm.MoveNext(),
+      error.type: Samples.Probes.TestRuns.ExceptionReplayIntentionalException,
+      language: dotnet,
+      runtime-id: Guid_2,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

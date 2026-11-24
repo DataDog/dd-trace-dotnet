@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
@@ -89,6 +90,7 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
+                handler = ResolveHandler(sourceName, activity.OperationName, handler);
                 handler.ActivityStarted(sName, activity);
             }
             else
@@ -103,12 +105,43 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
+                handler = ResolveHandler(sourceName, activity.OperationName, handler);
                 handler.ActivityStopped(sName, activity);
             }
             else
             {
                 Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
             }
+        }
+
+        internal static IActivityHandler ResolveHandler(string? sourceName, string? operationName, IActivityHandler handler)
+        {
+            // If the source lookup only found the default handler, use the operation name as a fallback.
+            if (StringUtil.IsNullOrEmpty(sourceName) && handler is DefaultActivityHandler)
+            {
+                return FindIntegrationHandlerByOperationName(operationName) ?? handler;
+            }
+
+            return handler;
+        }
+
+        private static IActivityHandler? FindIntegrationHandlerByOperationName(string? operationName)
+        {
+            if (StringUtil.IsNullOrEmpty(operationName))
+            {
+                return null;
+            }
+
+            foreach (var handler in ActivityHandlersRegister.Handlers)
+            {
+                if (handler is IActivityHandlerWithOperationName operationNameHandler
+                 && operationNameHandler.ShouldListenToOperationName(operationName))
+                {
+                    return handler;
+                }
+            }
+
+            return null;
         }
     }
 }

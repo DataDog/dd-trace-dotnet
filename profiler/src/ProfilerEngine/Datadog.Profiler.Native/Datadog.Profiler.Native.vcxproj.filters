@@ -534,7 +534,7 @@
     <ClInclude Include="TypeReferenceTreeBinarySerializer.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
-    <ClInclude Include="VisitedObjectSet.h">
+    <ClInclude Include="VisitedAddressBitmap.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
     <ClInclude Include="IGCDumpListener.h" />

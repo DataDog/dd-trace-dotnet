@@ -1,0 +1,99 @@
+// <copyright file="OracleTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using VerifyXunit;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet;
+
+[Trait("RequiresDockerDependency", "true")]
+[UsesVerify]
+[Trait("SkipInCI", "True")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
+public class OracleTests : TracingIntegrationTest
+{
+    public OracleTests(ITestOutputHelper output)
+        : base("OracleMDA", output)
+    {
+        SetServiceVersion("1.0.0");
+    }
+
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")] // the docker image used doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
+    public async Task SubmitsTraces(
+        [MetadataSchemaVersionData] string metadataSchemaVersion,
+        [CombinatorialValues("", "service", "full")] string dbmPropagation)
+    {
+        SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+        SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+        var expectedSpanCount = 112;
+
+        using var telemetry = this.ConfigureTelemetry();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = await RunSampleAndWaitForExit(agent);
+
+        var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+        spans.Count.Should().Be(expectedSpanCount);
+        await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Oracle);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        // database name is generated with a random suffix
+        settings.AddRegexScrubber(new Regex("oracletest[a-f0-9]{10}"), "oracletest{rand}");
+        settings.AddSimpleScrubber("localhost:", "host:");
+        settings.AddSimpleScrubber("oracle:", "host:");
+
+        var fileName = nameof(OracleTests);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .DisableRequireUniquePrefix()
+                          .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
+    }
+
+    [SkippableTheory]
+    [InlineData("disabled")]
+    [InlineData("service")]
+    [InlineData("dynamic_service")]
+    [InlineData("full")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public async Task InjectsServiceCommentsIntoStoredProcedureInvocations(string dbmPropagation)
+    {
+        SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+        SetEnvironmentVariable("DD_SERVICE", "oracle-stored-procedure-comments");
+        // Oracle service comments do not require SQL Server's stored-procedure rewriting flag.
+        SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", "false");
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "--stored-procedure-comments");
+
+        process.StandardOutput.Should().Contain("Stored procedure comment checks passed.");
+
+        // dynamic_service writes the service hash to the session ACTION: the backend resolves the service from spans with the same hash.
+        var actionHash = Regex.Match(process.StandardOutput, "Oracle service hash ACTION: (\\S+)");
+        actionHash.Success.Should().Be(dbmPropagation == "dynamic_service");
+        var oracleSpans = agent.Spans.Where(s => s.Type == SpanTypes.Sql && s.Tags.TryGetValue(Tags.DbType, out var dbType) && dbType == "oracle").ToList();
+        oracleSpans.Should().NotBeEmpty();
+        foreach (var span in oracleSpans)
+        {
+            span.Tags.TryGetValue(Tags.BaseHash, out var spanHash);
+            spanHash.Should().Be(actionHash.Success ? actionHash.Groups[1].Value : null);
+        }
+    }
+
+    public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
+    {
+        return span.IsOracle(metadataSchemaVersion);
+    }
+}

@@ -89,6 +89,7 @@ namespace Honeypot
             NugetPackages.Add("log4net", new [] { "log4net" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Extensions.DurableTask", new string[] { "Microsoft.Azure.Functions.Worker.Extensions.DurableTask" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
@@ -109,6 +110,8 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Diagnostics", new[] { "Microsoft.AspNetCore.Diagnostics" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
             NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
+            NugetPackages.Add("Azure.Messaging.EventGrid", new string[] { "Azure.Messaging.EventGrid" });
+            NugetPackages.Add("Azure.Messaging.EventGrid.Namespaces", new string[] { "Azure.Messaging.EventGrid.Namespaces" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Ocelot", new [] { "Ocelot" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });

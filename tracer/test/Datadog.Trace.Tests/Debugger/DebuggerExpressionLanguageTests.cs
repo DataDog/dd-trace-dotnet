@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -93,6 +94,15 @@ namespace Datadog.Trace.Tests.Debugger
             yield return [new SortedDictionary<string, string> { { "password", secret }, { "public", "hello" } }];
             yield return [new ConcurrentDictionary<string, string>(new[] { new KeyValuePair<string, string>("password", secret), new KeyValuePair<string, string>("public", "hello") })];
             yield return [new Hashtable { { "password", secret }, { "public", "hello" } }];
+        }
+
+        public static IEnumerable<object[]> IndexerArgumentsImplicitlyConvertibleToInt32()
+        {
+            yield return [(sbyte)1];
+            yield return [(byte)1];
+            yield return [(short)1];
+            yield return [(ushort)1];
+            yield return [(char)1];
         }
 
         public static IEnumerable<object[]> SensitiveDictionaryValueOperations()
@@ -256,6 +266,96 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_IntKeyDictionaryIndex_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 }, { 4, 4 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<int>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal(4, result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_MissingIntKeyDictionaryIndex_ReturnsNull()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Null(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Theory]
+        [MemberData(nameof(IndexerArgumentsImplicitlyConvertibleToInt32))]
+        public void ProbeExpressionParser_ImplicitInt32ListIndex_ReturnsValue(object index)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("IndexLocal", index.GetType(), index, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "CollectionLocal" },
+                                    { "ref": "IndexLocal" }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal("1st Item", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_FractionalListIndex_ReturnsEvaluationError()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "CollectionLocal" },
+                                    1.9
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Single(compiled.Errors);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_NonNullableValueTypeComparedToNull_DoesNotThrow()
         {
             var scopeMembers = CreateScopeMembers();
@@ -289,6 +389,45 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.True(notEqualsResult);
             Assert.True(notEqualsCompiled.Errors == null || notEqualsCompiled.Errors.Length == 0);
+        }
+
+        [Theory]
+        [InlineData("3.14159", 3.14159, false)]
+        [InlineData("3.14159", 3.14159, true)]
+        [InlineData("-5", -5, false)]
+        [InlineData("-5", -5, true)]
+        public void ProbeExpressionParser_NumericLiteral_DoesNotDependOnCurrentCulture(string literal, object localValue, bool useAdverseCulture)
+        {
+            var original = CultureInfo.CurrentCulture;
+            try
+            {
+                if (useAdverseCulture)
+                {
+                    // Build the culture explicitly rather than using e.g. de-DE, because without ICU (globalization-invariant
+                    // mode, e.g. on Alpine) every predefined culture formats like the invariant culture
+                    var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+                    culture.NumberFormat.NumberDecimalSeparator = ",";
+                    culture.NumberFormat.NumberGroupSeparator = ".";
+                    culture.NumberFormat.NegativeSign = ((char)0x2212).ToString(); // U+2212 MINUS SIGN, used by e.g. sv-SE under ICU
+                    CultureInfo.CurrentCulture = culture;
+
+                    string.Format(CultureInfo.CurrentCulture, "{0}", localValue).Should().NotBe(literal, "the current culture must format the literal differently for this test to be meaningful");
+                }
+
+                var scopeMembers = CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("NumericLocal", localValue.GetType(), localValue, ScopeMemberKind.Local));
+
+                var json = $$"""{ "eq": [ { "ref": "NumericLocal" }, {{literal}} ] }""";
+
+                var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+
+                compiled.Errors.Should().BeNullOrEmpty();
+                EvaluateCompiled(compiled, scopeMembers).Should().BeTrue($"the literal {literal} should equal the local value {localValue}");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = original;
+            }
         }
 
         [Fact]
@@ -1706,7 +1845,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
-            Assert.Equal("{REDACTED}", result);
+            Assert.Equal("{redacted}", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -1740,7 +1879,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
-            Assert.Equal("{REDACTED}", result);
+            Assert.Equal("{redacted}", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -2064,7 +2203,7 @@ namespace Datadog.Trace.Tests.Debugger
             var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.NotEqual(secret, sensitiveResult);
-            Assert.Equal("{REDACTED}", sensitiveResult);
+            Assert.Equal("{redacted}", sensitiveResult);
 
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
             var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
@@ -2281,7 +2420,7 @@ namespace Datadog.Trace.Tests.Debugger
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
             var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
-            Assert.Equal("{REDACTED}", sensitiveResult);
+            Assert.Equal("{redacted}", sensitiveResult);
             Assert.Equal(publicValue, publicResult);
             Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -2417,8 +2556,8 @@ namespace Datadog.Trace.Tests.Debugger
             var stringCompiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
             var stringResult = EvaluateCompiled(stringCompiled, scopeMembers);
 
-            Assert.Equal("{REDACTED}", objectResult);
-            Assert.Equal("{REDACTED}", stringResult);
+            Assert.Equal("{redacted}", objectResult);
+            Assert.Equal("{redacted}", stringResult);
             Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
             var objectError = Assert.Single(objectCompiled.Errors);
             Assert.Contains("cannot be safely read", objectError.Message);
@@ -3078,7 +3217,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             result.Template.Should().NotContain(passwordSecret);
             result.Template.Should().NotContain(apiKeySecret);
-            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain("{redacted}");
             result.Template.Should().Contain(publicValue);
             result.Errors.Should().BeNullOrEmpty();
         }
@@ -3099,7 +3238,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             var result = evaluator.Evaluate(scopeMembers);
 
-            result.Template.Should().Be("{REDACTED}");
+            result.Template.Should().Be("{redacted}");
             result.Errors.Should().BeNullOrEmpty();
         }
 
@@ -3121,7 +3260,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             var result = evaluator.Evaluate(scopeMembers);
 
-            result.Template.Should().Contain("Authorization={REDACTED}");
+            result.Template.Should().Contain("Authorization={redacted}");
             result.Template.Should().NotContain(authorizationSecret);
             result.Template.Should().NotContain(authorizationPublicValue);
             result.Errors.Should().BeNullOrEmpty();
@@ -3146,7 +3285,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers);
 
             result.Template.Should().Contain("Authorization");
-            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain("{redacted}");
             result.Template.Should().NotContain(authorizationSecret);
             result.Template.Should().Contain(publicValue);
             result.Errors.Should().BeNullOrEmpty();
@@ -3180,7 +3319,7 @@ namespace Datadog.Trace.Tests.Debugger
             decoration.TagName.Should().Be("tag");
             decoration.Value.Should().NotContain(passwordSecret);
             decoration.Value.Should().NotContain(apiKeySecret);
-            decoration.Value.Should().Contain("{REDACTED}");
+            decoration.Value.Should().Contain("{redacted}");
             decoration.Value.Should().Contain(publicValue);
             decoration.Errors.Should().BeNullOrEmpty();
             result.Errors.Should().BeNullOrEmpty();

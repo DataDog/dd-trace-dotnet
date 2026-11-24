@@ -127,7 +127,7 @@ namespace Datadog.Trace.Activity
             // Fixup "env" tag
             if (traceContext is not null
              && traceContext.Environment is null
-             && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
+             && (span.GetTag("deployment.environment.name") ?? span.GetTag("deployment.environment")) is { Length: > 0 } otelServiceEnv)
             {
                 traceContext.Environment = otelServiceEnv;
             }
@@ -330,7 +330,7 @@ namespace Datadog.Trace.Activity
                                     if (item?.ToString() is { } value)
                                     {
                                         attributes ??= new();
-                                        attributes.Add(new($"{kvp.Key}.{index}", value));
+                                        attributes.Add(new($"{kvp.Key}.{IntStringCache.ToInvariantString(index)}", value));
                                         index++;
                                     }
                                 }
@@ -470,7 +470,7 @@ namespace Datadog.Trace.Activity
                         foreach (var element in (enumerable))
                         {
                             // we are only supporting a single level of unrolling
-                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
+                            SetTagObject(span, $"{key}.{IntStringCache.ToInvariantString(index)}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
                             index++;
                         }
 
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Activity
                 case "operation.name":
                     if (setKnownValues)
                     {
-                        span.OperationName = value?.ToLowerInvariant();
+                        span.OperationName = StringUtil.ToLowerInvariant(value);
                     }
 
                     break;

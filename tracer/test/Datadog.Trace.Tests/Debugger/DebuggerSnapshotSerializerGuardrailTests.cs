@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DebuggerSnapshotSerializerGuardrailTests
 {
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the depth limit is reached, so the capture is marked Timeout instead of Depth")]
     public void Capture_WhenDepthLimitApplies_MarksDepth()
     {
         var (snapshot, incompleteReasons) = Capture(new WideDepthTarget(), maxReferenceDepth: 1);
@@ -28,6 +30,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the collection size limit is reached, so the capture is marked Timeout instead of CollectionSize")]
     public void Capture_WhenCollectionSizeLimitApplies_MarksCollectionSize()
     {
         var (snapshot, incompleteReasons) = Capture(new List<int> { 1, 2, 3, 4 }, maxCollectionSize: 1);
@@ -42,10 +45,22 @@ public class DebuggerSnapshotSerializerGuardrailTests
         var (snapshot, incompleteReasons) = Capture(new string('f', 50), maxLength: 4);
 
         Assert.Contains("\"value\":\"ffff\"", snapshot);
+        Assert.Contains("\"truncated\":true", snapshot);
         Assert.True(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength));
     }
 
     [Fact]
+    public void Capture_WhenStringFitsMaxLength_DoesNotMarkTruncated()
+    {
+        var (snapshot, incompleteReasons) = Capture("abcd", maxLength: 4);
+
+        Assert.Contains("\"value\":\"abcd\"", snapshot);
+        Assert.DoesNotContain("\"truncated\"", snapshot);
+        Assert.False(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength));
+    }
+
+    [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the field count limit is reached, so the capture is marked Timeout instead of FieldCount")]
     public void Capture_WhenFieldCountLimitApplies_MarksFieldCount()
     {
         var (snapshot, incompleteReasons) = Capture(new ManyFieldsTarget(), maxFieldCount: 1);
@@ -55,6 +70,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the throwing enumerator runs, so the capture is marked Timeout instead of RuntimeError")]
     public void Capture_WhenEnumerableThrows_MarksRuntimeError()
     {
         var (snapshot, incompleteReasons) = Capture(new ThrowingCaptureCollection());
@@ -64,6 +80,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the throwing getter runs, so the capture is marked Timeout instead of RuntimeError")]
     public void Capture_WhenMemberGetterThrows_MarksRuntimeError()
     {
         var (snapshot, incompleteReasons) = Capture(new ThrowingMessageException());

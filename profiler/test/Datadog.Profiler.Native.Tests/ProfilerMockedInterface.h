@@ -116,6 +116,14 @@ public:
         return std::chrono::seconds(10);
     }
 
+    // Same rationale as GetLibrariesInfoCacheStartTimeout() above: a mocked zero would make
+    std::chrono::milliseconds WatcherStartTimeout = std::chrono::seconds(10);
+
+    std::chrono::milliseconds GetWatcherStartTimeout() const override
+    {
+        return WatcherStartTimeout;
+    }
+
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
@@ -140,6 +148,7 @@ class MockSamplesCollector : public ISamplesCollector
 public:
     MOCK_METHOD(void, Register, (ISamplesProvider* sampleProvider), (override));
     MOCK_METHOD(void, RegisterBatchedProvider, (IBatchedSamplesProvider* sampleProvider), (override));
+    MOCK_METHOD(void, DrainSamples, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
@@ -159,6 +168,8 @@ public:
     MOCK_METHOD(bool, IsLongLived, (), (const override));
     MOCK_METHOD(bool, IsProfilerEnabled, (), (override));
     MOCK_METHOD(bool, IsProfilerStarted, (), (override));
+    MOCK_METHOD(void, OnDelayedStartFailed, (), (override));
+    MOCK_METHOD(bool, IsProfilingPermanentlyDisabled, (), (const override));
     MOCK_METHOD(void, ProcessStart, (), (override));
     MOCK_METHOD(void, ProcessEnd, (), (override));
     MOCK_METHOD(SkipProfileHeuristicType, GetSkipProfileHeuristic, (), (const override));

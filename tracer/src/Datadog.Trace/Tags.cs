@@ -280,6 +280,11 @@ namespace Datadog.Trace
         internal const string NetworkPeerAddress = "network.peer.address";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention peer port of the network connection.
+        /// </summary>
+        internal const string NetworkPeerPort = "network.peer.port";
+
+        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         internal const string AspNetRoute = "aspnet.route";
@@ -638,24 +643,44 @@ namespace Datadog.Trace
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
         /// <summary>
-        /// The type of trigger for an azure function
+        /// The type of trigger for an azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionTriggerType = "aas.function.trigger";
 
         /// <summary>
-        /// The UI name of the azure function
+        /// The UI name of the azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionName = "aas.function.name";
 
         /// <summary>
-        /// The full method name of the azure function
+        /// The full method name of the azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionMethod = "aas.function.method";
 
         /// <summary>
-        /// The literal type of the binding for the azure function trigger
+        /// The literal type of the binding for the azure function trigger hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionBindingSource = "aas.function.binding";
+
+        /// <summary>
+        /// The type of trigger for an azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionTriggerType = "aca.function.trigger";
+
+        /// <summary>
+        /// The UI name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionName = "aca.function.name";
+
+        /// <summary>
+        /// The full method name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionMethod = "aca.function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionBindingSource = "aca.function.binding";
 
         /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization
@@ -882,6 +907,21 @@ namespace Datadog.Trace
         /// was set by an integration, or null when the default service name is used.
         /// </summary>
         internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
+        /// Declares the export mode the tracer used for the payload: "true" when the payload is
+        /// exported with OTLP encoding, "false" when it is exported with the native Datadog
+        /// encoding. Written by the serializer for the encoding in use, so it cannot disagree with
+        /// how the spans actually left the process. Payload-scoped: written once per payload, not
+        /// on every span.
+        /// </summary>
+        internal const string SdkOtlpExport = "_dd.sdk.otlp_export";
+
+        /// <summary>
+        /// OTLP resource attribute declaring which semantic conventions the SDK applied:
+        /// "otel" when OTel semantics are enabled, "datadog" otherwise.
+        /// </summary>
+        internal const string SdkSemantics = "datadog.sdk.semantics";
 
         /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id

@@ -31,44 +31,21 @@ namespace Datadog.Trace.TestHelpers
         public MockLogsIntake(int? initialPort = null, int retries = 5)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            var port = initialPort ?? TcpPortProvider.GetOpenPort();
-
-            // try up to 5 consecutive ports before giving up
-            while (true)
-            {
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                listener.Prefixes.Add($"http://localhost:{port}/");
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/v1/input/");
-                listener.Prefixes.Add($"http://localhost:{port}/v1/input/");
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/api/v2/logs/");
-                listener.Prefixes.Add($"http://localhost:{port}/api/v2/logs/");
-
-                try
-                {
-                    listener.Start();
-
-                    // successfully listening
-                    Port = port;
-                    _listener = listener;
-
-                    _listenerTask = HandleHttpRequests();
-
-                    return;
-                }
-                catch (HttpListenerException) when (retries > 0)
-                {
-                    // only catch the exception if there are retries left
-                    port = TcpPortProvider.GetOpenPort();
-                    retries--;
-                }
-
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
-            }
+            _listener = TcpPortProvider.StartHttpListener(
+                port =>
+                [
+                    $"http://127.0.0.1:{port}/",
+                    $"http://localhost:{port}/",
+                    $"http://127.0.0.1:{port}/v1/input/",
+                    $"http://localhost:{port}/v1/input/",
+                    $"http://127.0.0.1:{port}/api/v2/logs/",
+                    $"http://localhost:{port}/api/v2/logs/",
+                ],
+                out var boundPort,
+                initialPort,
+                retries);
+            Port = boundPort;
+            _listenerTask = HandleHttpRequests();
         }
 
         public event EventHandler<EventArgs<IList<T>>> RequestDeserialized;

@@ -182,6 +182,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
         try
         {
             ModifyFile();
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
 
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
@@ -228,7 +229,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
             var addOutput = RunGitCommand($"add {GetTestFile()}");
             addOutput.ExitCode.Should().Be(0, $"Failed to stage changes: {addOutput.Error}");
 
-            var commitOutput = RunGitCommand("commit -m \"Test modifications for impact detection test\"");
+            var commitOutput = RunGitCommand("-c user.name=DatadogCI -c user.email=ci@datadoghq.com commit -m \"Test modifications for impact detection test\"");
             commitOutput.ExitCode.Should().Be(0, $"Failed to commit changes: {commitOutput.Error}");
 
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "True");
@@ -250,7 +251,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
             }
 
             ProcessHelpers.CommandOutput checkoutOutput;
-            if (!string.IsNullOrEmpty(originalBranch))
+            if (!StringUtil.IsNullOrEmpty(originalBranch))
             {
                 checkoutOutput = RunGitCommand($"checkout {originalBranch}");
             }

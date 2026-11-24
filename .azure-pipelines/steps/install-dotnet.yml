@@ -65,6 +65,13 @@ steps:
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
+  displayName: install dotnet core ${{ parameters.packageType }} 10.0
+  inputs:
+    packageType: ${{ parameters.packageType }}
+    version: 10.0.x
+  retryCountOnTaskFailure: 5
+
+- task: UseDotNet@2
   displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk

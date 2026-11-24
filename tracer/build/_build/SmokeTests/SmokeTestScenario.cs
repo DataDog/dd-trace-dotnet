@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SmokeTests;
 
@@ -10,7 +11,8 @@ public abstract record SmokeTestScenario
     protected const string DefaultSnapshotIgnoredAttrs =
         "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
         + "meta.network.client.ip" + ",meta.http.client_ip" + ",metrics.process_id" + ",meta._dd.p.dm" + ","
-        + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.tags.process" + ",meta._dd.appsec.s.req.params" + ","
+        + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.tags.process" + ",meta._dd.sdk.otlp_export" + ","
+        + "meta._dd.appsec.s.req.params" + ","
         + "meta._dd.appsec.s.res.body" + ",meta._dd.appsec.s.req.headers" + ","
         + "meta._dd.appsec.s.res.headers" + ",meta._dd.appsec.fp.http.endpoint" + ","
         + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network";
@@ -23,7 +25,6 @@ public abstract record SmokeTestScenario
     public required string OsVersion { get; init; }
 
     public bool RunCrashTest { get; init; } = true;
-    public bool ExcludeWhenPrerelease { get; init; }
     public bool IsNoop { get; init; }
 
     public virtual string SnapshotFile
@@ -36,16 +37,28 @@ public abstract record SmokeTestScenario
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public bool IsWindows => Os == "windows";
 
-    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest) =>
-        isCrashTest
-            ? new()
+    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        if (isCrashTest)
+        {
+            return new()
             {
                 {"DD_PROFILING_ENABLED", "0"},
                 {"CRASH_APP_ON_STARTUP", "1"},
                 {"DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE", "1"},
                 {"COMPlus_DbgEnableMiniDump", "0"},
-            }
-            : new() {{"DD_PROFILING_ENABLED", "1"}};
+            };
+        }
+
+        var env = new Dictionary<string, string> {{"DD_PROFILING_ENABLED", "1"}};
+
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            env["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
+        }
+
+        return env;
+    }
 
 }
 
@@ -64,6 +77,7 @@ public record NuGetScenario : SmokeTestScenario
 {
     public required string RuntimeId { get; init; }
     public required string NuGetPackageName { get; init; }
+    public bool IncludeDdDotnetScenario { get; init; }
     public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
     public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
 

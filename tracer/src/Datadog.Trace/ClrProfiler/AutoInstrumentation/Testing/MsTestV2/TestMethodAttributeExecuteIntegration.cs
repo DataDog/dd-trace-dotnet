@@ -18,6 +18,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -119,7 +120,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
     {
-        if (!MsTestIntegration.IsEnabled || instance is SkipTestMethodExecutor)
+        if (!MsTestIntegration.IsEnabled || SkipTestMethodExecutor.IsReplacement(instance))
         {
             return CallTargetState.GetDefault();
         }
@@ -137,12 +138,21 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             DuckTypeException.Throw("Failed to duck type the test method instance to ITestMethodV3 or ITestMethodV4.");
         }
 
-        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: false));
+        var execution = MsTestExecution.GetForTestMethod(testMethodProxy.Instance);
+        execution?.ObserveTestMethod(testMethodProxy);
+        var isNativeRetry = execution is { HasNativeRetry: true, IsNativeRetry: true };
+        var retryContext = execution is { HasNativeRetry: true } ? new MsTestRetryContext(testMethodProxy) : null;
+        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: isNativeRetry), execution, retryContext);
         return new CallTargetState(Tracer.Instance.InternalActiveScope, testRunnerState);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        if (state.State is TestRunnerState { Test: not null, Execution: { HasNativeRetry: true } } testState && ReferenceEquals(Test.Current, testState.Test))
+        {
+            Test.Current = null;
+        }
+
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 
@@ -157,23 +167,44 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             var isAttemptToFix = false;
             var allowRetries = false;
             var resultStatus = TestStatus.Skip;
+            var execution = testMethodState.Execution;
 
             if (!(returnValue is IList { Count: > 0 } returnValueList))
             {
                 Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to extract TestResult from return value");
-                testMethodState.Test.Close(TestStatus.Fail);
+                if (exception is not null)
+                {
+                    testMethodState.Test.SetErrorInfo(exception);
+                }
+
+                if (execution is { HasNativeRetry: true })
+                {
+                    ApplyRetryTags(testMethodState.Test.GetTags(), new RetryState { IsNativeRetry = execution.IsNativeRetry });
+                    execution.FinishAttempt(testMethodState.Test, null, TestStatus.Fail, null);
+                }
+                else
+                {
+                    testMethodState.Test.Close(TestStatus.Fail);
+                }
+
                 return returnValue;
             }
 
-            MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
+            execution?.ObserveResults(returnValueList);
+            if (execution is not { HasNativeRetry: true, IsNativeRetry: true })
+            {
+                MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
+            }
+
             var initialExecutionPassed = false;
             var initialExecutionFailed = false;
+            var hasInitialFailure = HasFailedResult(returnValueList, exception);
             for (var i = 0; i < returnValueList.Count; i++)
             {
-                var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
+                var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: execution is { HasNativeRetry: true, IsNativeRetry: true }, testMethodState.Test.StartTime);
                 if (test?.GetTags() is { } testTags)
                 {
-                    if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+                    if (testTags.AutomationExclusions.AllowAutoRetry && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
                         isEfdTest = isEfdTest || testTags.TestIsNew == "true";
                         if (isEfdTest && duration.TotalMinutes >= 5)
@@ -184,20 +215,22 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
                     if (testOptimization.TestManagementFeature?.Enabled == true)
                     {
-                        isAttemptToFix = isAttemptToFix || testTags.IsAttemptToFix == "true";
+                        isAttemptToFix = isAttemptToFix || Common.IsAttemptToFix(testTags);
                     }
 
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
                         // Check if this test will have EFD/ATF retries (based on tags)
-                        var testIsEfd = testTags.TestIsNew == "true";
-                        var testIsAtf = testTags.IsAttemptToFix == "true";
+                        var testIsEfd = testTags.AutomationExclusions.AllowAutoRetry && testTags.TestIsNew == "true";
+                        var testIsAtf = Common.IsAttemptToFix(testTags);
 
                         var retryState = new RetryState
                         {
-                            SelectedRetryMode = testIsAtf ? TestRetryMode.AttemptToFix : testIsEfd ? TestRetryMode.EarlyFlakeDetection : TestRetryMode.None
+                            IsNativeRetry = execution is { HasNativeRetry: true, IsNativeRetry: true },
+                            SelectedRetryMode = testIsAtf ? TestRetryMode.AttemptToFix : testIsEfd ? TestRetryMode.EarlyFlakeDetection : TestRetryMode.None,
+                            AttemptToFixFailed = testIsAtf && hasInitialFailure
                         };
-                        resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState);
+                        resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState, execution);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
 
                         // Track if initial execution passed/failed (for final_status) - both aggregate and per-row
@@ -225,107 +258,162 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
             }
 
-            if ((isEfdTest || isAttemptToFix) && allowRetries)
+            var attempt = new TestAttemptResult
             {
-                var remainingRetries = 0;
-                var retryReason = string.Empty;
-
-                // Get retries number and reason
-                if (isEfdTest)
-                {
-                    remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
-                    retryReason = "Early flake detection";
-                }
-                else if (isAttemptToFix)
-                {
-                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
-                    retryReason = "Attempt to fix";
-                }
-
-                if (remainingRetries > 0)
-                {
-                    var retryState = new RetryState
-                    {
-                        IsARetry = true,
-                        SelectedRetryMode = isAttemptToFix ? TestRetryMode.AttemptToFix : TestRetryMode.EarlyFlakeDetection,
-                        TotalExecutions = 1 + remainingRetries,
-                        InitialExecutionPassed = initialExecutionPassed,
-                        InitialExecutionFailed = initialExecutionFailed,
-                    };
-
-                    // Handle retries
-                    List<IList> results = [returnValueList];
-                    Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: We need to retry {Times} times", retryReason, remainingRetries);
-                    for (var i = 0; i < remainingRetries; i++)
-                    {
-                        retryState.IsLastRetry = i == remainingRetries - 1;
-                        Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
-                        await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
-                    }
-
-                    // Calculate final results
-                    returnValue = (TReturn?)GetFinalResults(results);
-                }
-            }
-            else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
+                Duration = duration,
+                IsEfdTest = isEfdTest,
+                IsAttemptToFix = isAttemptToFix,
+                AllowRetries = allowRetries,
+                ResultStatus = resultStatus,
+                InitialExecutionPassed = initialExecutionPassed,
+                InitialExecutionFailed = initialExecutionFailed,
+            };
+            if (execution is { HasNativeRetry: true })
             {
-                // check if is the first execution and the dynamic instrumentation feature is enabled
-                if (testOptimization.DynamicInstrumentationFeature?.Enabled == true)
-                {
-                    // let's wait for the instrumentation of an exception has been done
-                    Common.Log.Debug("TestMethodAttributeExecuteIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                    testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).SafeWait();
-                    Common.Log.Debug("TestMethodAttributeExecuteIntegration: Exception instrumentation was set or timed out.");
-                }
-
-                // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
-                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
-                if (remainingRetries > 0)
-                {
-                    var retryState = new RetryState
-                    {
-                        IsARetry = true,
-                        SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
-                        TotalExecutions = 1 + remainingRetries,
-                        InitialExecutionPassed = initialExecutionPassed,
-                        InitialExecutionFailed = initialExecutionFailed,
-                    };
-
-                    // Handle retries
-                    var results = new List<IList> { returnValueList };
-                    for (var i = 0; i < remainingRetries; i++)
-                    {
-                        retryState.IsLastRetry = i == remainingRetries - 1;
-
-                        if (Interlocked.Decrement(ref _totalRetries) <= 0)
-                        {
-                            Common.Log.Debug("TestMethodAttributeExecuteIntegration: FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
-                            break;
-                        }
-
-                        Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
-                        var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
-
-                        // If the retried test passed, we can stop the retries
-                        if (!failedResult)
-                        {
-                            Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
-                            break;
-                        }
-                    }
-
-                    // Calculate final results
-                    returnValue = (TReturn)GetFinalResults(results);
-                }
+                execution.RecordNativeAttempt(returnValueList, testMethodState, attempt);
+                return returnValue;
             }
+
+            returnValue = (TReturn?)await RunRetriesAsync(returnValueList, testMethodState, attempt).ConfigureAwait(false);
         }
 
         return returnValue;
+    }
 
-        static async Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
+    /// <summary>
+    /// Applies the existing EFD, Attempt to Fix, or automatic retry policy to the selected results.
+    /// Native retry policies call this before MSTest cleanup, once their own outcome is known.
+    /// </summary>
+    internal static async Task<IList> RunRetriesAsync(IList returnValueList, TestRunnerState testMethodState, TestAttemptResult attempt, string? retryDisplayName = null)
+    {
+        var testOptimization = TestOptimization.Instance;
+        var testMethod = testMethodState.TestMethod;
+        if (!TestAutomationExclusions.From(testMethod.MethodInfo).AllowAutoRetry)
+        {
+            return returnValueList;
+        }
+
+        // A single failure proves the fix did not work.
+        if (attempt is { IsAttemptToFix: true, InitialExecutionFailed: true })
+        {
+            return returnValueList;
+        }
+
+        if ((attempt.IsEfdTest || attempt.IsAttemptToFix) && attempt.AllowRetries)
+        {
+            var remainingRetries = 0;
+            var retryReason = string.Empty;
+
+            // Get retries number and reason
+            if (attempt.IsAttemptToFix)
+            {
+                remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
+                retryReason = "Attempt to fix";
+            }
+            else if (attempt.IsEfdTest)
+            {
+                remainingRetries = Common.GetNumberOfExecutionsForDuration(attempt.Duration) - 1;
+                retryReason = "Early flake detection";
+            }
+
+            if (remainingRetries > 0)
+            {
+                var retryState = new RetryState
+                {
+                    IsARetry = true,
+                    SelectedRetryMode = attempt.IsAttemptToFix ? TestRetryMode.AttemptToFix : TestRetryMode.EarlyFlakeDetection,
+                    TotalExecutions = 1 + remainingRetries,
+                    InitialExecutionPassed = attempt.InitialExecutionPassed,
+                    InitialExecutionFailed = attempt.InitialExecutionFailed,
+                };
+
+                // Handle retries
+                List<IList> results = [returnValueList];
+                Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: We need to retry {Times} times", retryReason, remainingRetries);
+                for (var i = 0; i < remainingRetries; i++)
+                {
+                    retryState.IsLastRetry = i == remainingRetries - 1;
+                    Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
+                    var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results, retryDisplayName).ConfigureAwait(false);
+                    if (failedResult && attempt.IsAttemptToFix)
+                    {
+                        break;
+                    }
+                }
+
+                // Calculate final results
+                returnValueList = GetFinalResults(results, preserveFailure: attempt.IsAttemptToFix);
+            }
+        }
+        else if (testOptimization.FlakyRetryFeature?.Enabled == true && attempt.ResultStatus == TestStatus.Fail)
+        {
+            // check if is the first execution and the dynamic instrumentation feature is enabled
+            if (testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+            {
+                // let's wait for the instrumentation of an exception has been done
+                Common.Log.Debug("TestMethodAttributeExecuteIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
+                testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).SafeWait();
+                Common.Log.Debug("TestMethodAttributeExecuteIntegration: Exception instrumentation was set or timed out.");
+            }
+
+            // Flaky retry is enabled and the test failed
+            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+            var remainingRetries = testOptimization.FlakyRetryFeature?.GetFlakyRetryCount(attempt.Duration) ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
+            if (remainingRetries > 0)
+            {
+                var retryState = new RetryState
+                {
+                    IsARetry = true,
+                    SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
+                    TotalExecutions = 1 + remainingRetries,
+                    InitialExecutionPassed = attempt.InitialExecutionPassed,
+                    InitialExecutionFailed = attempt.InitialExecutionFailed,
+                };
+
+                // Handle retries
+                var results = new List<IList> { returnValueList };
+                for (var i = 0; i < remainingRetries; i++)
+                {
+                    retryState.IsLastRetry = i == remainingRetries - 1;
+
+                    if (Interlocked.Decrement(ref _totalRetries) <= 0)
+                    {
+                        Common.Log.Debug("TestMethodAttributeExecuteIntegration: FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
+                        break;
+                    }
+
+                    Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
+                    var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results, retryDisplayName).ConfigureAwait(false);
+
+                    // If the retried test passed, we can stop the retries
+                    if (!failedResult)
+                    {
+                        Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
+                        break;
+                    }
+                }
+
+                // Calculate final results
+                returnValueList = GetFinalResults(results);
+            }
+        }
+
+        return returnValueList;
+
+        static Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection, string? retryDisplayName)
+            => testMethodState.RetryContext is { } context
+                   ? context.RunAsync(() => InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection, retryDisplayName))
+                   : InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection, retryDisplayName);
+
+        static async Task<bool> InvokeRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection, string? retryDisplayName)
         {
             var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+            if (retryTest is not null && !StringUtil.IsNullOrEmpty(retryDisplayName))
+            {
+                retryTest.SetName(retryDisplayName);
+                MsTestIntegration.UpdateTestParameters(retryTest, testMethod, retryDisplayName);
+            }
+
             object? retryTestResult = null;
             Exception? retryException = null;
             var hasFailed = false;
@@ -333,11 +421,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             {
                 if (testMethodState.TestMethod is ITestMethodV4 testMethodV4)
                 {
-                    retryTestResult = await testMethodV4.InvokeAsync(null);
+                    retryTestResult = await testMethodV4.InvokeAsync(testMethod.Arguments);
                 }
                 else if (testMethodState.TestMethod is ITestMethodV3 testMethodV3)
                 {
-                    retryTestResult = testMethodV3.Invoke(null);
+                    retryTestResult = testMethodV3.Invoke(testMethod.Arguments);
                 }
                 else
                 {
@@ -350,6 +438,17 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             }
             finally
             {
+                // Every result of the failing execution must see it as the last one.
+                if (retryState.SelectedRetryMode == TestRetryMode.AttemptToFix && HasFailedResult(retryTestResult as IList ?? new List<object?> { retryTestResult }, retryException))
+                {
+                    retryState.IsLastRetry = true;
+                }
+
+                if (retryDisplayName is not null && retryTestResult.TryDuckCast<ITestResult>(out var namedResult))
+                {
+                    namedResult.DisplayName = retryDisplayName;
+                }
+
                 if (retryTestResult is IList { Count: > 0 } retryTestResultList)
                 {
                     for (var j = 0; j < retryTestResultList.Count; j++)
@@ -360,7 +459,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                             continue;
                         }
 
-                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException, retryState) == TestStatus.Fail)
+                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException, retryState, testMethodState.Execution) == TestStatus.Fail)
                         {
                             hasFailed = true;
                         }
@@ -370,7 +469,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
                 else
                 {
-                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException, retryState) == TestStatus.Fail)
+                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException, retryState, testMethodState.Execution) == TestStatus.Fail)
                     {
                         hasFailed = true;
                     }
@@ -383,7 +482,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
     }
 
-    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, RetryState retryState)
+    /// <summary>
+    /// Records one executor result and either closes its test or defers closure for native retry tags.
+    /// </summary>
+    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, RetryState retryState, MsTestExecution? execution)
         where TTestResult : ITestResult
     {
         var testException = testResult.TestFailureException?.InnerException ??
@@ -447,9 +549,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
 
                 // Set final_status before closing
-                SetFinalStatusIfApplicable(test, testMethod, cacheKey, TestStatus.Fail, retryState);
+                if (execution is not { HasNativeRetry: true })
+                {
+                    SetFinalStatusIfApplicable(test, testMethod, cacheKey, TestStatus.Fail, retryState);
+                }
 
-                test.Close(TestStatus.Fail);
+                FinishAttempt(TestStatus.Fail);
                 return TestStatus.Fail;
             }
 
@@ -499,7 +604,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             }
 
             // Set final_status before closing the test
-            SetFinalStatusIfApplicable(test, testMethod, cacheKey, testStatus, retryState);
+            if (execution is not { HasNativeRetry: true })
+            {
+                SetFinalStatusIfApplicable(test, testMethod, cacheKey, testStatus, retryState);
+            }
 
             // Determine if we should mask outcome (quarantined/ATF) - only on final execution
             var testTags = test.GetTags();
@@ -508,33 +616,24 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 ApplyRetryTags(testTags, retryState);
             }
 
-            if (TestOptimization.Instance.TestManagementFeature?.Enabled == true && testTags is not null)
+            if (execution is not { HasNativeRetry: true } && TestOptimization.Instance.TestManagementFeature?.Enabled == true)
             {
-                var isQuarantined = testTags.IsQuarantined == "true";
-                var isAttemptToFix = testTags.IsAttemptToFix == "true";
-                var isDisabled = testTags.IsDisabled == "true";
-
-                // Only mask outcome on final execution for ATF
-                // Quarantined and disabled tests always mask outcome
-                if (isQuarantined || isDisabled || (isAttemptToFix && (retryState.IsLastRetry || (!retryState.IsARetry && !retryState.RetriesUnconditionally))))
-                {
-                    shouldMaskOutcome = true;
-                }
+                shouldMaskOutcome = testTags.ShouldMaskTestManagementOutcome();
             }
 
             switch (testStatus)
             {
                 case TestStatus.Fail:
-                    test.Close(TestStatus.Fail);
+                    FinishAttempt(TestStatus.Fail);
                     return TestStatus.Fail;
                 case TestStatus.Skip:
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, testException?.Message ?? string.Empty);
+                    FinishAttempt(TestStatus.Skip, testException?.Message ?? string.Empty);
                     return TestStatus.Skip;
                 case TestStatus.Pass:
-                    test.Close(TestStatus.Pass);
+                    FinishAttempt(TestStatus.Pass);
                     return TestStatus.Pass;
                 default:
-                    test.Close(TestStatus.Fail);
+                    FinishAttempt(TestStatus.Fail);
                     return TestStatus.Fail;
             }
         }
@@ -542,19 +641,41 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         {
             if (shouldMaskOutcome)
             {
-                Common.Log.Debug("TestMethodAttributeExecuteIntegration: Test is quarantined, disabled, or is an attempt to fix (final). Masking outcome.");
+                Common.Log.Debug("TestMethodAttributeExecuteIntegration: Test is quarantined or disabled. Masking outcome.");
                 testResult.Outcome = UnitTestOutcome.Ignored;
                 testResult.TestFailureException = null;
             }
         }
+
+        void FinishAttempt(TestStatus status, string? skipReason = null)
+        {
+            if (execution is { HasNativeRetry: true })
+            {
+                execution.FinishAttempt(test, testResult, status, skipReason, isDatadogRetry: retryState.IsARetry);
+            }
+            else
+            {
+                test.Close(status, status == TestStatus.Skip ? TimeSpan.Zero : null, skipReason);
+            }
+        }
     }
 
+    /// <summary>
+    /// Labels the current attempt without guessing whether the native policy will retry again.
+    /// </summary>
     private static void ApplyRetryTags(Ci.Tagging.TestSpanTags testTags, RetryState retryState)
     {
+        if (retryState.IsNativeRetry)
+        {
+            testTags.TestIsRetry = "true";
+            testTags.TestRetryReason = null;
+            return;
+        }
+
         Common.ApplyRetryTags(testTags, retryState.IsARetry, retryState.SelectedRetryMode);
     }
 
-    private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
+    internal static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
     {
         return outcome switch
         {
@@ -608,9 +729,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             // Initial execution - it's final if no retries will happen
             // For EFD/ATF, retries will always happen
             // For ATR, retries happen only if test fails and ATR is enabled
-            var atrEnabled = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+            var atrEnabled = testTags.AutomationExclusions.AllowAutoRetry && !Common.IsAttemptToFix(testTags) && TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
             var willHaveAtrRetries = atrEnabled && testStatus == TestStatus.Fail;
-            isFinalExecution = !retryState.RetriesUnconditionally && !willHaveAtrRetries;
+            isFinalExecution = retryState.AttemptToFixFailed || (!retryState.RetriesUnconditionally && !willHaveAtrRetries);
         }
 
         if (!isFinalExecution)
@@ -621,7 +742,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         // Only set retry-specific tags for tests with actual retries
         if (retryState.TotalExecutions > 1)
         {
-            if (retryState.AllRetriesFailed)
+            if (retryState.AllRetriesFailed && retryState.SelectedRetryMode != TestRetryMode.AttemptToFix)
             {
                 testTags.HasFailedAllRetries = "true";
             }
@@ -663,13 +784,31 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
         // ATF: AttemptToFixPassed should be consistent with final_status
         // If any execution failed, the fix didn't work
-        if (retryState.TotalExecutions > 1 && retryState.SelectedRetryMode == TestRetryMode.AttemptToFix)
+        if ((retryState.TotalExecutions > 1 || anyExecutionFailed) && retryState.SelectedRetryMode == TestRetryMode.AttemptToFix)
         {
             testTags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
         }
     }
 
-    private static IList GetFinalResults(List<IList> executionStatuses)
+    private static bool HasFailedResult(IList results, Exception? exception)
+    {
+        if (exception is not null)
+        {
+            return true;
+        }
+
+        foreach (var result in results)
+        {
+            if (result.TryDuckCast<ITestResult>(out var testResult) && GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IList GetFinalResults(List<IList> executionStatuses, bool preserveFailure = false)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
@@ -712,7 +851,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         lstExceptions.Add(testFailureException);
                     }
 
-                    if (resultsCount++ == 0 || testResult.Outcome == UnitTestOutcome.Passed)
+                    // When preserving failures, a failure always wins, but a pass can still replace a skipped or inconclusive result.
+                    var replacesFinalResult = preserveFailure
+                                                  ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && (GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail || testResult.Outcome == UnitTestOutcome.Passed)
+                                                  : testResult.Outcome == UnitTestOutcome.Passed;
+                    if (resultsCount++ == 0 || replacesFinalResult)
                     {
                         finalResult = testResult;
                     }
@@ -801,7 +944,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     private static void SetAnyRetryPassed(object testMethodKey, string cacheKey, bool passed)
     {
         var cache = AnyRetryPassedCache.GetOrCreateValue(testMethodKey);
-        cache.AddOrUpdate(cacheKey, passed, (k, v) => passed || v);
+        cache.AddOrUpdate(cacheKey, static (_, p) => p, static (_, v, p) => p || v, passed);
     }
 
     /// <summary>
@@ -848,15 +991,21 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         cache[cacheKey] = allPassed;
     }
 
-    private readonly struct TestRunnerState
+    internal readonly struct TestRunnerState
     {
         private readonly TraceClock _clock;
         public readonly ITestMethod TestMethod;
         public readonly Test? Test;
         public readonly DateTimeOffset StartTime;
+        public readonly MsTestExecution? Execution;
+        public readonly MsTestRetryContext? RetryContext;
+        public readonly int NativeRowIndex;
 
-        public TestRunnerState(ITestMethod testMethod, Test? test)
+        public TestRunnerState(ITestMethod testMethod, Test? test, MsTestExecution? execution, MsTestRetryContext? retryContext)
         {
+            Execution = execution;
+            NativeRowIndex = execution?.NextNativeRowIndex ?? 0;
+            RetryContext = retryContext;
             TestMethod = testMethod;
             Test = test;
             _clock = TraceClock.Instance;
@@ -868,6 +1017,8 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
     private sealed class RetryState
     {
+        public bool IsNativeRetry { get; set; }
+
         public bool IsARetry { get; set; }
 
         public bool IsLastRetry { get; set; }
@@ -877,6 +1028,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         public bool AllRetriesFailed { get; set; } = true;
 
         public TestRetryMode SelectedRetryMode { get; set; } = TestRetryMode.None;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the initial execution failed an Attempt to Fix, which stops its retries.
+        /// </summary>
+        public bool AttemptToFixFailed { get; set; }
 
         public bool RetriesUnconditionally => SelectedRetryMode is TestRetryMode.EarlyFlakeDetection or TestRetryMode.AttemptToFix;
 

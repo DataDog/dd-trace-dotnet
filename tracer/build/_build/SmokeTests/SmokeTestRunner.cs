@@ -99,22 +99,18 @@ public static partial class SmokeTestRunner
             LogSection("Starting test agent");
             var sourceSnapshotsDir = tracerDir / "build" / "smoke_test_snapshots";
             var testAgentImage = await Builder.BuildTestAgentImageAsync(scenario, tracerDir);
-            testAgentContainerId = await DockerService.CreateAndStartContainerWithRetryAsync(
-                TestAgentAlias, BuildTestAgentContainerParams(
+            // 4/5. Start the test-agent and wait for it to be healthy, recreating it if it never becomes ready.
+            //      Capture the container id via callback so the finally block can still clean it up if this throws.
+            using var httpClient = await StartTestAgentAsync(
+                environment,
+                BuildTestAgentContainerParams(
                     testAgentImage: testAgentImage,
                     networkName: networkName,
                     snapshotsDir: environment.ToHostPath(sourceSnapshotsDir),
                     debugSnapshotsDir: environment.ToHostPath(debugSnapshotsDir),
                     snapshotIgnoredAttrs: scenario.SnapshotIgnoredAttrs,
-                    isWindowsScenario: scenario.IsWindows));
-
-            // 4. Determine how to reach the test-agent's HTTP API
-            var testAgentBaseUrl = await DockerService.GetContainerUrlAsync(environment, testAgentContainerId, TestAgentAlias, 8126);
-            Logger.Information("Test agent reachable at {Url}", testAgentBaseUrl);
-
-            // 5. Wait for test-agent to be healthy
-            using var httpClient = new HttpClient { BaseAddress = new Uri(testAgentBaseUrl) };
-            await WaitForTestAgentAsync(httpClient);
+                    isWindowsScenario: scenario.IsWindows),
+                id => testAgentContainerId = id);
 
             // 6. Start a trace session
             var sessionToken = Guid.NewGuid().ToString();
@@ -299,6 +295,64 @@ public static partial class SmokeTestRunner
     // ──────────────────────────────────────────────────────────────
     // Test agent helpers
     // ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Starts the test-agent container and waits for it to accept requests. The test-agent occasionally
+    /// never starts listening (connection refused for the whole timeout, with no container logs), so
+    /// when that happens we remove the container and start a fresh one.
+    /// Returns an <see cref="HttpClient"/> for the ready test-agent.
+    /// </summary>
+    static async Task<HttpClient> StartTestAgentAsync(
+        DockerService.DockerEnvironment environment,
+        CreateContainerParameters createParams,
+        Action<string> onContainerStarted)
+    {
+        const int maxAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(TestAgentAlias, createParams);
+            onContainerStarted(containerId);
+
+            HttpClient httpClient = null;
+            try
+            {
+                // Determine how to reach the test-agent's HTTP API (the mapped host port changes per container)
+                var baseUrl = await DockerService.GetContainerUrlAsync(environment, containerId, TestAgentAlias, 8126);
+                Logger.Information("Test agent reachable at {Url}", baseUrl);
+
+                httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+                await WaitForTestAgentAsync(httpClient);
+                return httpClient;
+            }
+            catch (Exception ex)
+            {
+                httpClient?.Dispose();
+                await DockerService.LogContainerStateAsync(TestAgentAlias, containerId);
+
+                if (attempt >= maxAttempts)
+                {
+                    Logger.Error(ex, "Test agent did not become ready after {Total} attempts", maxAttempts);
+                    throw;
+                }
+
+                Logger.Warning(
+                    ex,
+                    "Test agent did not become ready (attempt {Attempt}/{Total}), recreating container...",
+                    attempt,
+                    maxAttempts);
+                await DumpContainerLogsAsync(TestAgentAlias, containerId);
+
+                // If the old container is still attached to the network, a new one would share its
+                // DNS alias, so give up instead (and keep tracking it so the caller cleans it up)
+                if (!await DockerService.RemoveContainerAsync(containerId))
+                {
+                    throw;
+                }
+
+                onContainerStarted(null);
+            }
+        }
+    }
 
     static async Task WaitForTestAgentAsync(HttpClient httpClient)
     {

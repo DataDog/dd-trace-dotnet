@@ -49,13 +49,13 @@ Filename: `reference_tree.json`
   "tt": ["System.String", "System.Object[]", "MyApp.Order"],
   "r": [
     {
-      "t": 0, "c": "K", "ic": 42, "ts": 1680,
+      "t": 0, "c": "K", "ic": 42, "ts": 0,
       "ch": [
-        { "t": 2, "ic": 10, "ts": 512,
-          "ch": [{ "t": 1, "ic": 5, "ts": 200 }] }
+        { "t": 2, "ic": 10,
+          "ch": [{ "t": 1, "ic": 5 }] }
       ]
     },
-    { "t": 2, "c": "S", "ic": 100, "ts": 8000, "fn": "_staticOrders" }
+    { "t": 2, "c": "S", "ic": 100, "ts": 0, "fn": "_staticOrders" }
   ]
 }
 ```
@@ -70,9 +70,14 @@ Filename: `reference_tree.json`
 | `t`   | node/root  | uint32   | Index into `tt` |
 | `c`   | root only  | string   | Root category code (see table below) |
 | `ic`  | node/root  | uint64   | Instance count at this tree position |
-| `ts`  | node/root  | uint64   | Total size in bytes |
+| `ts`  | node/root  | uint64   | Reserved compatibility field. Roots emit `0`; child nodes omit it when zero |
 | `fn`  | root only  | string?  | Static field name (only for `"c":"S"` roots) |
 | `ch`  | node/root  | array?   | Children (recursive, omitted when empty) |
+
+Reference-tree sizes are intentionally not collected. The class histogram in the
+same heap snapshot is the authoritative source for per-type instance counts and
+bytes. Reference-tree `ic` remains path-position multiplicity, not a unique-object
+count.
 
 ### Root Category Codes
 
@@ -118,7 +123,7 @@ platform.
 │   type_index   : varint                         │
 │   category     : uint8 (RootCategory ordinal)   │
 │   inst_count   : varint                         │
-│   total_size   : varint                         │
+│   total_size   : varint (reserved, always 0)    │
 │   field_len    : varint (0 = no field name)     │
 │   field_bytes  : uint8[field_len]  (UTF-8)      │
 │   child_count  : varint                         │
@@ -127,7 +132,7 @@ platform.
 │ Tree Nodes (recursive children)                 │
 │   type_index   : varint                         │
 │   inst_count   : varint                         │
-│   total_size   : varint                         │
+│   total_size   : varint (reserved, always 0)    │
 │   child_count  : varint                         │
 │   [children follow inline in DFS order]         │
 └─────────────────────────────────────────────────┘

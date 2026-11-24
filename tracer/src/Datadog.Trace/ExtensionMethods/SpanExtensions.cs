@@ -45,7 +45,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         /// <summary>
         /// Decorates an HTTP server span using the Datadog HTTP semantics. Callers using OpenTelemetry
-        /// semantics must call <see cref="Datadog.Trace.OpenTelemetry.HttpSemanticConventions.SetHttpServerRequestValues"/>
+        /// semantics must call Datadog.Trace.OpenTelemetry.HttpSemanticConventions.SetHttpServerRequestValues
         /// instead: use exactly one of the two for a given span, never both.
         /// </summary>
         internal static void DecorateWebServerSpan(
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ExtensionMethods
             else
             {
                 var rawHttpStatusCode = span.GetHttpStatusCodeString();
-                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                if (rawHttpStatusCode == null || !int.TryParseInvariant(rawHttpStatusCode, out var httpStatusCode))
                 {
                     return null;
                 }

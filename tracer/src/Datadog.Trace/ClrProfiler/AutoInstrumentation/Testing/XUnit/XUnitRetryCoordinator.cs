@@ -57,7 +57,7 @@ internal static class XUnitRetryCoordinator
                     XUnitIntegration.InitializeTotalExecutions(
                         testOptimization,
                         testCaseMetadata,
-                        () => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummary.Time)));
+                        TimeSpan.FromSeconds((double)runSummary.Time));
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
@@ -94,6 +94,10 @@ internal static class XUnitRetryCoordinator
                     if (testCaseMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
                     {
                         runSummary.HideQuarantinedOrDisabledResult();
+                    }
+                    else if (testCaseMetadata.ShouldReportAttemptToFixFailure)
+                    {
+                        runSummary.ReportFailedResult();
                     }
                     else
                     {

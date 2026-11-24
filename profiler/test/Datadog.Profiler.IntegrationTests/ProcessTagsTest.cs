@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using MessagePack;
@@ -29,10 +30,10 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsPropagation(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsPropagation(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
@@ -42,10 +43,11 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             Assert.Equal(profilerProcessTags, tracerProcessTags);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsNotPropagatedWhenDisabled(string appName, string framework, string appAssembly)
+        [Flaky("Test flaked in CI")]
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsNotPropagatedWhenDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "false";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
@@ -54,10 +56,10 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             Assert.Empty(tracerProcessTags);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsOnlyInTracerWhenProfilerDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsOnlyInTracerWhenProfilerDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
             runner.Environment.CustomEnvironmentVariables["DD_PROFILING_ENABLED"] = "0";
 
@@ -67,10 +69,10 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             Assert.NotEmpty(tracerProcessTags);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsContentFormat(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsContentFormat(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);

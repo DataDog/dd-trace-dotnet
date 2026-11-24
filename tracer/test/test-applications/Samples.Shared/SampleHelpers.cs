@@ -63,7 +63,7 @@ namespace Samples
 #else
         private static readonly MethodInfo? SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static);
 #endif
-        private static readonly FieldInfo? TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
+        private static readonly FieldInfo? TracerSemanticVersionField = TracerConstantsType?.GetField("SemanticVersion");
 
         static SampleHelpers()
         {
@@ -153,7 +153,7 @@ namespace Samples
         {
             try
             {
-                return (string?)TracerThreePartVersionField?.GetValue(null) ?? "None";
+                return (string?)TracerSemanticVersionField?.GetValue(null) ?? "None";
             }
             catch (Exception e)
             {

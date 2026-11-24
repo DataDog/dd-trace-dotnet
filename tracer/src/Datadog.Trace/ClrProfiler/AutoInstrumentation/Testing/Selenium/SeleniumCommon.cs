@@ -28,6 +28,7 @@ internal static class SeleniumCommon
     internal const string CommandQuit = "quit";
     private const string CookieName = "datadog-ci-visibility-test-execution-id";
 
+#pragma warning disable MA0136 // Raw String contains an implicit end of line character - line endings are irrelevant in the injected JavaScript
     private const string RumStopSessionScript = """
                                                 if (window.DD_RUM && window.DD_RUM.stopSession) {
                                                    window.DD_RUM.stopSession();
@@ -36,6 +37,7 @@ internal static class SeleniumCommon
                                                    return false;
                                                 }
                                                 """;
+#pragma warning restore MA0136
 
     internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
     private static Type? _seleniumCookieType;
@@ -117,10 +119,10 @@ internal static class SeleniumCommon
                     tags.BrowserVersion = browserVersion;
                 }
 
-                // Add an action when the test close to flush the RUM data
-                // in case the test never calls to driver.Close() or driver.Quit()
+                // Flush RUM data when test execution finishes, even if final retry tags are still pending
+                // and the test never called driver.Close() or driver.Quit().
                 // CloseAndFlush can be called multiple times.
-                test.AddOnCloseAction(t => CloseAndFlush(instance, t));
+                test.AddOnExecutionCompletedAction(t => CloseAndFlush(instance, t));
             }
         }
         else

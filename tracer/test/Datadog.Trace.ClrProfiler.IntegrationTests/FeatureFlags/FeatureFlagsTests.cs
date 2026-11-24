@@ -15,8 +15,6 @@ using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
-#pragma warning disable SA1402 // File may only contain a single type
-
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 
 #if NETFRAMEWORK
@@ -24,35 +22,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 // Include these tests in the ManualInstrumentation batch
 [Collection(nameof(ManualInstrumentationTests))]
 #endif
-public class FeatureFlagsTests : FeatureFlagsTestsBase
+public class FeatureFlagsTests : TestHelper
 {
     public FeatureFlagsTests(ITestOutputHelper output)
-        : base("FeatureFlags", output)
-    {
-    }
-}
-
-#if NETFRAMEWORK
-[Collection(nameof(ManualInstrumentationTests))]
-#endif
-public class OpenFeatureFeatureFlagsTests : FeatureFlagsTestsBase
-{
-    public OpenFeatureFeatureFlagsTests(ITestOutputHelper output)
         : base("OpenFeature", output)
     {
     }
-}
 
-public abstract class FeatureFlagsTestsBase : TestHelper
-{
-    public FeatureFlagsTestsBase(string sampleName, ITestOutputHelper output)
-        : base(sampleName, output)
-    {
-    }
-
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.OpenFeature), MemberType = typeof(PackageVersions))]
     [Trait("RunOnWindows", "True")]
-    public async Task FfeEnabled()
+    public async Task FfeEnabled(string packageVersion)
     {
         int eventsReceived = 0;
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -78,10 +58,11 @@ public abstract class FeatureFlagsTestsBase : TestHelper
             }
         };
 
-        var output = await RunTest(agent, enabled: true);
+        var output = await RunTest(agent, enabled: true, packageVersion: packageVersion);
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
+        Assert.Contains("<INITIALIZED: READY>", output);
         Assert.Contains("Eval (nonexistent) : ", output);
         Assert.Contains("Eval (simple-string) : <OK: ", output);
         Assert.Contains("Eval (rule-based-flag) : <OK: ", output);
@@ -103,16 +84,14 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         Assert.Contains("FeatureFlagsSdk is disabled", output);
     }
 
-    private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
+    private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false, string packageVersion = "")
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
         SetEnvironmentVariable("DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED", enabled ? "1" : "0");
         using var telemetry = this.ConfigureTelemetry();
         using var assert = new AssertionScope();
-        using var process = await RunSampleAndWaitForExit(agent, usePublishWithRID: usePublishWithRID);
+        using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, usePublishWithRID: usePublishWithRID);
 
         return process.StandardOutput.ToString();
     }
 }
-
-#pragma warning restore SA1402 // File may only contain a single type

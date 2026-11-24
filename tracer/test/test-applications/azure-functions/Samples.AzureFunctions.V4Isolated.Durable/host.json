@@ -1,0 +1,22 @@
+{
+  "version": "2.0",
+  "logging": {
+    "logLevel": {
+      "default": "Trace",
+      "Host.*": "Trace",
+      "Microsoft.*": "Trace"
+    },
+    "console": {
+      "isEnabled": true
+    }
+  },
+  "extensions": {
+    "durableTask": {
+      "hubName": "%TASKHUB_NAME%",
+      "tracing": {
+        "distributedTracingEnabled": true,
+        "version": "V2"
+      }
+    }
+  }
+}

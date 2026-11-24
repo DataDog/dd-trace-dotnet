@@ -37,11 +37,12 @@ internal sealed partial class TestOptimizationClient
         }
 
         _skippableTestsUrl ??= GetUriFromPath(SkippableUrlPath);
+        var requestConfigurations = GetTestConfigurations(testBundle: scope.TestBundle);
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
                 null,
                 SkippableType,
-                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations(testBundle: scope.TestBundle), SkippableTestsRequestScope.TestLevel)),
+                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, requestConfigurations, SkippableTestsRequestScope.TestLevel)),
             null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
@@ -60,7 +61,7 @@ internal sealed partial class TestOptimizationClient
         }
 
         Log.Debug("TestOptimizationClient: Skippable.JSON RS = {Json}", queryResponse);
-        return ParseSkippableTestsResponse(queryResponse, scope);
+        return ParseSkippableTestsResponse(queryResponse, scope, requestConfigurations);
     }
 
     /// <summary>
@@ -68,8 +69,9 @@ internal sealed partial class TestOptimizationClient
     /// </summary>
     /// <param name="queryResponse">Raw JSON response returned by the skippable-tests endpoint.</param>
     /// <param name="scope">Request scope used to ask for the backend candidates.</param>
+    /// <param name="requestConfigurations">Exact configurations sent in the request, which the backend omits from candidate configurations.</param>
     /// <returns>The skippable tests, correlation id, and decoded coverage backfill data.</returns>
-    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, SkippableTestsRequestScope scope = default)
+    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, SkippableTestsRequestScope scope = default, TestsConfigurations? requestConfigurations = null)
     {
         if (StringUtil.IsNullOrEmpty(queryResponse))
         {
@@ -111,6 +113,16 @@ internal sealed partial class TestOptimizationClient
                 continue;
             }
 
+            if (requestConfigurations is { } configurations)
+            {
+                item = new SkippableTest(
+                    item.Name,
+                    item.Suite,
+                    item.RawParameters,
+                    MergeSkippableTestConfigurations(configurations, item.Configurations),
+                    item.MissingLineCodeCoverage);
+            }
+
             testAttributes.Add(item);
         }
 
@@ -121,6 +133,43 @@ internal sealed partial class TestOptimizationClient
 
         TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(testAttributes.Count);
         return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, testAttributes, coverageBackfillData, isCoverageBackfillSafe: coverageBackfillData.IsValid);
+    }
+
+    private static TestsConfigurations MergeSkippableTestConfigurations(TestsConfigurations request, TestsConfigurations? response)
+    {
+        // The backend removes dimensions already fixed by the request. Restore them before coverage scope
+        // validation, while preserving explicit backend dimensions so incompatible candidates remain distinct.
+        if (response is not { } configurations)
+        {
+            return request;
+        }
+
+        var custom = configurations.Custom;
+        if (request.Custom is { Count: > 0 } requestCustom)
+        {
+            if (custom is { Count: > 0 })
+            {
+                custom = new Dictionary<string, string>(requestCustom, StringComparer.Ordinal);
+                foreach (var item in configurations.Custom!)
+                {
+                    custom[item.Key] = item.Value;
+                }
+            }
+            else
+            {
+                custom = requestCustom;
+            }
+        }
+
+        return new TestsConfigurations(
+            StringUtil.IsNullOrEmpty(configurations.OSPlatform) ? request.OSPlatform : configurations.OSPlatform,
+            StringUtil.IsNullOrEmpty(configurations.OSVersion) ? request.OSVersion : configurations.OSVersion,
+            StringUtil.IsNullOrEmpty(configurations.OSArchitecture) ? request.OSArchitecture : configurations.OSArchitecture,
+            StringUtil.IsNullOrEmpty(configurations.RuntimeName) ? request.RuntimeName : configurations.RuntimeName,
+            StringUtil.IsNullOrEmpty(configurations.RuntimeVersion) ? request.RuntimeVersion : configurations.RuntimeVersion,
+            StringUtil.IsNullOrEmpty(configurations.RuntimeArchitecture) ? request.RuntimeArchitecture : configurations.RuntimeArchitecture,
+            custom,
+            StringUtil.IsNullOrEmpty(configurations.TestBundle) ? request.TestBundle : configurations.TestBundle);
     }
 
     private readonly struct SkippableCallbacks : ICallbacks

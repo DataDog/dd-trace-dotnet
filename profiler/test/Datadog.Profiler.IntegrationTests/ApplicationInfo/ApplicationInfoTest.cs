@@ -24,14 +24,12 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void UseTracerServiceName(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void UseTracerServiceName(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true)
-            {
-                // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
-                ServiceName = null
-            };
+            var runner = app.CreateRunner(_output, enableTracer: true);
+            // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
+            runner.ServiceName = null;
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
@@ -56,10 +54,10 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             infos.Last().Should().Be(("BuggyBitsService", "BuggyBitsEnv", "BuggyBitsVersion"));
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckMetadataAreSent(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckMetadataAreSent(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
+            var runner = app.CreateRunner(_output);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
@@ -77,12 +75,13 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             infos.Select(x => x.ToJsonString()).Should().OnlyContain(x => x != "{}");
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckInfoJsonContainsEnvVarsAndOverrides(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckInfoJsonContainsEnvVarsAndOverrides(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1", enableProfiler: true);
 
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            EnvironmentHelper.ForceInjectionIfRequired(runner, app.Framework);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

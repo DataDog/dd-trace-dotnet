@@ -4,9 +4,13 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AspNet;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.AspNet
@@ -57,6 +61,55 @@ namespace Datadog.Trace.Tests.AspNet
             Assert.Equal(scope3, SharedItems.TryPopScope(context, key));
             Assert.Equal(scope2, SharedItems.TryPopScope(context, key));
             Assert.Equal(scope1, SharedItems.TryPopScope(context, key));
+        }
+
+        [Fact]
+        public void TryMarkExceptionRecordedReturnsFalseForSameSpanAndException()
+        {
+            var span = Mock.Of<ISpan>();
+            var exception = new Exception();
+
+            Assert.True(SharedItems.TryMarkExceptionRecorded(span, exception));
+            Assert.False(SharedItems.TryMarkExceptionRecorded(span, exception));
+        }
+
+        [Fact]
+        public void TryMarkExceptionRecordedTracksExceptionsByReference()
+        {
+            var span = Mock.Of<ISpan>();
+
+            Assert.True(SharedItems.TryMarkExceptionRecorded(span, new Exception("same message")));
+            Assert.True(SharedItems.TryMarkExceptionRecorded(span, new Exception("same message")));
+        }
+
+        [Fact]
+        public void TryMarkExceptionRecordedTracksSpansIndependently()
+        {
+            var exception = new Exception();
+
+            Assert.True(SharedItems.TryMarkExceptionRecorded(Mock.Of<ISpan>(), exception));
+            Assert.True(SharedItems.TryMarkExceptionRecorded(Mock.Of<ISpan>(), exception));
+        }
+
+        [Fact]
+        public void TryMarkExceptionRecordedIsAtomic()
+        {
+            var span = Mock.Of<ISpan>();
+            var exception = new Exception();
+            var recordedCount = 0;
+
+            Parallel.For(
+                0,
+                100,
+                _ =>
+                {
+                    if (SharedItems.TryMarkExceptionRecorded(span, exception))
+                    {
+                        Interlocked.Increment(ref recordedCount);
+                    }
+                });
+
+            Assert.Equal(1, recordedCount);
         }
 
         private HttpContext CreateContext()

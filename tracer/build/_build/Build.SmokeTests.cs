@@ -23,8 +23,8 @@ partial class Build
                 TracerDirectory,
                 ArtifactsDirectory,
                 BuildDataDirectory,
-                Version,
-                GetDotnetSdkVersion(RootDirectory));
+                FullVersion,
+                GetDotnetSdkImageTag(RootDirectory));
         });
 
     Target UpdateSmokeTestImageDigests => _ => _

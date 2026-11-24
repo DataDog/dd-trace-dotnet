@@ -28,7 +28,7 @@ internal sealed class ApmAgentWriter : IEventWriter
 
     public ApmAgentWriter(
         TracerSettings settings,
-        Action<Dictionary<string, float>> updateSampleRates,
+        Action<Dictionary<string, double>> updateSampleRates,
         Action<string>? updateConfigHash,
         IDiscoveryService discoveryService,
         int maxBufferSize = DefaultMaxBufferSize)

@@ -1,4 +1,4 @@
-﻿// <copyright file="TestRequestFactory.cs" company="Datadog">
+// <copyright file="TestRequestFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,7 @@ internal class TestRequestFactory : IApiRequestFactory
 {
     private readonly Uri _baseEndpoint;
     private readonly Func<Uri, TestApiRequest>[] _requestsToSend;
+    private readonly object _requestsLock = new();
 
     public TestRequestFactory(params Func<Uri, TestApiRequest>[] requestsToSend)
         : this(new Uri("http://localhost"), requestsToSend)
@@ -38,13 +39,16 @@ internal class TestRequestFactory : IApiRequestFactory
 
     public IApiRequest Create(Uri endpoint)
     {
-        var request = (_requestsToSend is null || RequestsSent.Count >= _requestsToSend.Length)
-                          ? new TestApiRequest(endpoint)
-                          : _requestsToSend[RequestsSent.Count](endpoint);
+        lock (_requestsLock)
+        {
+            var request = (_requestsToSend is null || RequestsSent.Count >= _requestsToSend.Length)
+                              ? new TestApiRequest(endpoint)
+                              : _requestsToSend[RequestsSent.Count](endpoint);
 
-        RequestsSent.Add(request);
+            RequestsSent.Add(request);
 
-        return request;
+            return request;
+        }
     }
 
     public void SetProxy(WebProxy proxy, NetworkCredential credential)

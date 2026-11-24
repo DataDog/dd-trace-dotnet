@@ -9,8 +9,12 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+#if NETCOREAPP
+using Microsoft.Extensions.Primitives;
+#endif
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
 
@@ -62,7 +66,8 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         resultDic["ListStrings"].Should().BeOfType<List<object>>();
         resultDic["ListStrings"].Should().BeEquivalentTo(listStrings);
         resultDic["ListDecimals"].Should().BeOfType<List<object>>();
-        resultDic["ListDecimals"].Should().BeEquivalentTo(listDecimals);
+        // the WAF has no decimal type, so decimals are narrowed to doubles when encoded (see Encoder.Encode)
+        resultDic["ListDecimals"].Should().BeEquivalentTo(listDecimals.Select(d => (double)d));
         resultDic["ListUlongs"].Should().BeOfType<List<object>>();
         resultDic["ListUlongs"].Should().BeEquivalentTo(listUlongs);
         resultDic["ListFloats"].Should().BeOfType<List<object>>();
@@ -143,6 +148,32 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         result.Should().NotBeNull();
         result.Should().HaveCount(expectedLength);
         result.Should().AllBeEquivalentTo("test");
+    }
+
+    [SkippableTheory]
+    [InlineData(WafConstants.MaxContainerSize, false)]
+    [InlineData(WafConstants.MaxContainerSize + 1, true)]
+    public void GivenANonIListEnumerableAtTheLimit_WhenEncoded_ThenItIsOnlyTruncatedPastIt(int length, bool truncated)
+    {
+        Skip.If(_encoder is not Encoder, "The legacy encoder encodes a non-IList enumerable with its ToString()");
+
+        using var result = _encoder.Encode(Enumerable.Repeat((object)"test", length), applySafetyLimits: true);
+
+        result.Truncation.Truncated.Should().Be(truncated);
+        result.Truncation.ContainerSize.Should().Be(truncated ? length : 0);
+    }
+
+    [SkippableFact]
+    public void GivenACountedCollectionThatIsNotAnIListLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        Skip.If(_encoder is not Encoder, "The legacy encoder encodes a non-IList enumerable with its ToString()");
+
+        // LinkedList exposes its count through the non-generic ICollection, without being an IList
+        var list = new LinkedList<int>(Enumerable.Range(0, 300));
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", list } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
     }
 
     [SkippableTheory]
@@ -297,6 +328,98 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         attributes["signed"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", -42L } });
         attributes["double"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 3.14D } });
         attributes["bool"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", true } });
+    }
+
+    [SkippableFact]
+    public void GivenAStringLongerThanTheLimit_WhenEncoded_ThenItsLengthIsRecorded()
+    {
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", new string('a', 5000) } }, applySafetyLimits: true);
+
+        result.Truncation.StringLength.Should().Be(5000);
+        result.Truncation.ContainerSize.Should().Be(0);
+        result.Truncation.ContainerDepth.Should().Be(0);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.StringTooLong);
+    }
+
+    [SkippableFact]
+    public void GivenAMapLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        var map = Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)$"value{i}");
+
+        using var result = _encoder.Encode(map, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+
+    [SkippableFact]
+    public void GivenAListLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        var list = Enumerable.Range(0, 300).Select(i => $"value{i}").ToList();
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", list } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+
+#if NETCOREAPP
+    [SkippableFact]
+    public void GivenAMultiValueHeaderLargerThanTheLimit_WhenEncoded_ThenItsSizeIsRecorded()
+    {
+        // ASP.NET Core headers with several values are sent to the WAF as StringValues
+        var header = new StringValues(Enumerable.Range(0, 300).Select(i => $"value{i}").ToArray());
+
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", header } }, applySafetyLimits: true);
+
+        result.Truncation.ContainerSize.Should().Be(300);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ListOrMapTooLarge);
+    }
+#endif
+
+    [SkippableFact]
+    public void GivenAnObjectDeeperThanTheLimit_WhenEncoded_ThenTheDepthWhereItWasCutIsRecorded()
+    {
+        using var result = _encoder.Encode(MakeNestedMap(25), applySafetyLimits: true);
+
+        result.Truncation.ContainerDepth.Should().Be(WafConstants.MaxContainerDepth + 1);
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.ObjectTooDeep);
+    }
+
+    [SkippableFact]
+    public void GivenEveryKindOfTruncation_WhenEncoded_ThenTheReasonHoldsAllTheFlags()
+    {
+        var payload = new Dictionary<string, object>
+        {
+            { "deepObject", MakeNestedMap(25) },
+            { "longValue", new string('a', 5000) },
+            { "largeObject", Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)$"value{i}") },
+        };
+
+        using var result = _encoder.Encode(payload, applySafetyLimits: true);
+
+        result.Truncation.Reason.Should().Be(MetricTags.TruncationReason.StringTooLongAndListOrMapTooLargeAndObjectTooDeep);
+        result.Truncation.StringLength.Should().Be(5000);
+        result.Truncation.ContainerSize.Should().Be(300);
+    }
+
+    [SkippableFact]
+    public void GivenInputsWithinTheLimits_WhenEncoded_ThenNothingIsRecorded()
+    {
+        using var result = _encoder.Encode(new Dictionary<string, object> { { "key", "value" }, { "list", new List<string> { "a", "b" } } }, applySafetyLimits: true);
+
+        result.Truncation.Truncated.Should().BeFalse();
+        result.Truncation.Reason.Should().BeNull();
+    }
+
+    [SkippableFact]
+    public void GivenNoSafetyLimits_WhenALongStringAndALargeMapAreEncoded_ThenNothingIsRecorded()
+    {
+        var map = Enumerable.Range(0, 300).ToDictionary(i => $"key{i}", i => (object)new string('a', 5000));
+
+        using var result = _encoder.Encode(map, applySafetyLimits: false);
+
+        result.Truncation.Truncated.Should().BeFalse();
     }
 
     private static List<object> MakeNestedList(int nestingDepth)

@@ -200,6 +200,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength);
                     jsonWriter.WriteValue(stringValue.Substring(0, limitInfo.MaxLength));
+                    jsonWriter.WritePropertyName("truncated");
+                    jsonWriter.WriteValue(true);
                 }
                 else
                 {
@@ -231,7 +233,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
-            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
+            // A boxed T? is a boxed T. Nullable<T>'s own fields can't be read from it, so walk T's fields instead.
+            var fieldsType = Nullable.GetUnderlyingType(type) ?? type;
+            WriteFields(source, fieldsType, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
         private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized, ref uint incompleteReasons)
@@ -535,7 +539,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
             bool serializedValue;
-            if (key is string keyName && Redaction.Instance.IsRedactedKeyword(keyName))
+            if (key is string keyName && Redaction.Instance.IsRedactedDataKey(keyName))
             {
                 WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier, ref incompleteReasons);
                 serializedValue = true;

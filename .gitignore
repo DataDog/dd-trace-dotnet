@@ -402,3 +402,7 @@ tools/dumps/
 
 # test optimization temp/run folder
 .dd/
+
+# NetEscapades.ProjectInfo output. Unlike our other generators, this one emits the version
+# number, so a committed copy would have to be regenerated on every version bump.
+**/Generated/**/NetEscapades.ProjectInfo/

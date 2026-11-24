@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +25,7 @@ using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
@@ -36,6 +38,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -388,6 +391,25 @@ namespace Datadog.Trace
                         writer.WriteEndArray();
                     }
 
+                    void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
+                    {
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
+                        writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
+
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
+                        writer.WriteValue(ExporterSettings.GetOtlpProtocolName(protocol));
+
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_HEADERS");
+                        writer.WriteStartObject();
+                        foreach (var header in headers)
+                        {
+                            writer.WritePropertyName(header.Key);
+                            writer.WriteValue("<redacted>");
+                        }
+
+                        writer.WriteEndObject();
+                    }
+
                     // ReSharper disable MethodHasAsyncOverload
                     writer.WriteStartObject();
 
@@ -401,7 +423,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.AssemblyVersion);
+                    writer.WriteValue(TracerConstants.SemanticVersion);
 
                     writer.WritePropertyName("native_tracer_version");
                     writer.WriteValue(Instrumentation.GetNativeTracerVersion());
@@ -555,6 +577,125 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
+                    writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
+                    writer.WritePropertyName("OTEL_TRACES_EXPORTER");
+                    writer.WriteValue(mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport ? "otlp" : "none");
+
+                    writer.WritePropertyName("DD_METRICS_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.OpenTelemetryMetricsEnabled);
+
+                    writer.WritePropertyName("DD_LOGS_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.OpenTelemetryLogsEnabled);
+
+                    writer.WritePropertyName("DD_TRACE_OTEL_SEMANTICS_ENABLED");
+                    writer.WriteValue(instanceSettings.OtelSemanticsEnabled);
+
+                    writer.WritePropertyName("OTEL_LOG_LEVEL");
+                    writer.WriteValue(DatadogLogging.LoggingLevelSwitch.MinimumLevel switch
+                    {
+                        LogEventLevel.Verbose => "trace",
+                        LogEventLevel.Debug => "debug",
+                        LogEventLevel.Information => "info",
+                        LogEventLevel.Warning => "warn",
+                        LogEventLevel.Error => "error",
+                        LogEventLevel.Fatal => "fatal",
+                        _ => null,
+                    });
+
+                    writer.WritePropertyName("OTEL_SERVICE_NAME");
+                    writer.WriteValue(mutableSettings.DefaultServiceName);
+
+                    writer.WritePropertyName("OTEL_RESOURCE_ATTRIBUTES");
+                    // Restore promoted attributes as the OTLP serializers do to expose the effective resource configuration.
+                    var resourceAttributes = mutableSettings.GlobalTags
+                                                            .Where(static kvp => !OtlpMapper.IsHandledResourceAttribute(kvp.Key))
+                                                            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    if (!StringUtil.IsNullOrEmpty(mutableSettings.ServiceVersion))
+                    {
+                        resourceAttributes["service.version"] = mutableSettings.ServiceVersion;
+                    }
+
+                    if (!StringUtil.IsNullOrEmpty(mutableSettings.Environment))
+                    {
+                        resourceAttributes["deployment.environment.name"] = mutableSettings.Environment;
+                    }
+
+                    WriteDictionary(resourceAttributes);
+
+                    if (instance.SpanContextPropagator.InjectorNames.SequenceEqual(instance.SpanContextPropagator.ExtractorNames))
+                    {
+                        writer.WritePropertyName("OTEL_PROPAGATORS");
+                        writer.WriteValue(instance.SpanContextPropagator.InjectorNames.Any() ? string.Join(',', instance.SpanContextPropagator.InjectorNames) : "none");
+                    }
+
+                    // Custom samplers may ignore the configured global rate; an unset or invalid rate
+                    // has no fixed-rate OTel sampler equivalent.
+                    // Local or remote custom rules take precedence over the global rate, so report them instead.
+                    if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler managedSampler
+                     && managedSampler.GetRules().Any(static rule => rule is CustomSamplingRule))
+                    {
+                        writer.WritePropertyName("OTEL_TRACES_SAMPLER");
+                        writer.WriteValue("datadog_custom_rules");
+                    }
+                    else if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler
+                          && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
+                    {
+                        var sampler = sampleRate switch
+                        {
+                            0 => "parentbased_always_off",
+                            1 => "parentbased_always_on",
+                            > 0 and < 1 => "parentbased_traceidratio",
+                            _ => null,
+                        };
+
+                        if (sampler is not null)
+                        {
+                            writer.WritePropertyName("OTEL_TRACES_SAMPLER");
+                            writer.WriteValue(sampler);
+
+                            if (sampler == "parentbased_traceidratio")
+                            {
+                                writer.WritePropertyName("OTEL_TRACES_SAMPLER_ARG");
+                                writer.WriteValue(sampleRate);
+                            }
+                        }
+                    }
+
+                    writer.WritePropertyName("OTEL_LOGS_EXPORTER");
+                    writer.WriteValue(instanceSettings.OtelLogsExporterEnabled ? "otlp" : "none");
+
+                    if (exporterSettings.IsOtlpTraceExport)
+                    {
+                        WriteOtlpExporterSettings("TRACES", exporterSettings.OtlpTracesEndpoint, exporterSettings.OtlpTracesProtocol, exporterSettings.OtlpTracesHeaders);
+                    }
+
+                    if (instanceSettings.OtlpMetricsExportEnabled)
+                    {
+                        WriteOtlpExporterSettings("METRICS", exporterSettings.OtlpMetricsEndpoint, exporterSettings.OtlpMetricsProtocol, exporterSettings.OtlpMetricsHeaders);
+
+                        writer.WritePropertyName("OTEL_METRIC_EXPORT_INTERVAL");
+                        writer.WriteValue(instanceSettings.OtelMetricExportIntervalMs);
+
+                        writer.WritePropertyName("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE");
+                        writer.WriteValue(StringUtil.ToLowerInvariant(instanceSettings.OtlpMetricsTemporalityPreference.ToString()));
+                    }
+
+                    if (instanceSettings.OtlpLogsExportEnabled)
+                    {
+                        WriteOtlpExporterSettings("LOGS", exporterSettings.OtlpLogsEndpoint, exporterSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+
+                        writer.WritePropertyName("OTEL_BLRP_SCHEDULE_DELAY");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchPeriod.TotalMilliseconds);
+
+                        writer.WritePropertyName("OTEL_BLRP_MAX_QUEUE_SIZE");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.QueueSizeLimit);
+
+                        writer.WritePropertyName("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchSizeLimit);
+                    }
+
                     writer.WritePropertyName("profiler_enabled");
                     writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
 
@@ -598,7 +739,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
 
                     writer.WritePropertyName("tracer_datadog_json_configuration_filepaths");
-                    writer.WriteValue(string.Join(";", instanceSettings.JsonConfigurationFilePaths));
+                    writer.WriteValue(string.Join(';', instanceSettings.JsonConfigurationFilePaths));
 
                     writer.WritePropertyName("trace_propagation_behavior_extract");
                     writer.WriteValue(instanceSettings.PropagationBehaviorExtract);
@@ -769,10 +910,10 @@ namespace Datadog.Trace
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
                     Log.Debug("Disposing FeatureFlagsManager");
-                    instance.FeatureFlags?.Dispose();
+                    var featureFlagsTask = instance.FeatureFlags?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask, featureFlagsTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

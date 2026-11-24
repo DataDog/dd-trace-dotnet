@@ -72,6 +72,12 @@ public sealed class TestSession
     /// </summary>
     private long _lastCoverageIpcMessageTicks;
 
+    /// <summary>
+    /// Tracks the tests executed by test runners: 0 until one reports, 1 while every report counted zero tests,
+    /// and 2 once a runner executed tests or could not count them.
+    /// </summary>
+    private int _executedTestsState;
+
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         // First we make sure that CI Visibility is initialized.
@@ -102,7 +108,7 @@ public sealed class TestSession
         tags.SetCIEnvironmentValues(ciValues);
 
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
+            string.IsNullOrEmpty(framework) ? "test_session" : $"{StringUtil.ToLowerInvariant(framework)}.test_session",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
@@ -248,6 +254,30 @@ public sealed class TestSession
         }
 
         return new TestSession(command, workingDirectory, framework, startDate, propagateEnvironmentVariables);
+    }
+
+    /// <summary>
+    /// Sends the number of tests a runner executed to the test session behind <paramref name="ipcClient"/>.
+    /// </summary>
+    /// <param name="ipcClient">IPC client connected to the test session.</param>
+    /// <param name="executedTests">Number of executed tests, or null when the runner could not count them.</param>
+    /// <returns>False when the session's channel stayed full and the count was lost.</returns>
+    internal static bool TrySendExecutedTests(IpcClient ipcClient, long? executedTests)
+    {
+        // A lost count could let another runner's zero count report the session as empty. The session drains the
+        // channel every 100 ms, so a full channel is retried for a short while.
+        var message = new SessionExecutedTestsMessage(executedTests);
+        for (var attempt = 1; !ipcClient.TrySendMessage(message); attempt++)
+        {
+            if (attempt == 10)
+            {
+                return false;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -440,6 +470,15 @@ public sealed class TestSession
         }
 
         WaitForActiveIpcCallbacks(TimeSpan.FromMilliseconds(100));
+
+        // Test runners report over IPC, and disposing the server above reads every report already sent.
+        if (status == TestStatus.Pass && Volatile.Read(ref _executedTestsState) == 1)
+        {
+            Tags.Status = TestTags.StatusSkip;
+            SetTag(TestTags.SkipReason, TestTags.SkipReasonNoTestsExecuted);
+            SetTag(TestTags.SessionEmptyReason, TestTags.SessionEmptyReasonZeroTests);
+        }
+
         // Coverlet XML fallback can be processed in-process before the final close path.
         // In that case there is no persisted fallback result to wait for.
         var waitForCoverletXmlFallback =
@@ -527,6 +566,23 @@ public sealed class TestSession
     internal TestModule CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate, Tags);
+    }
+
+    /// <summary>
+    /// Records the number of tests executed by a test runner, such as vstest.console. A session that closes as passed
+    /// is reported as skipped when every runner that reported executed zero tests.
+    /// </summary>
+    /// <param name="executedTests">Number of executed tests, or null when the runner could not count them.</param>
+    internal void RecordExecutedTests(long? executedTests)
+    {
+        if (executedTests == 0)
+        {
+            Interlocked.CompareExchange(ref _executedTestsState, 1, 0);
+        }
+        else
+        {
+            Volatile.Write(ref _executedTestsState, 2);
+        }
     }
 
     internal bool EnableIpcServer()
@@ -782,6 +838,11 @@ public sealed class TestSession
                     _testOptimization.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
                     SetTag(tagMessage.Name, tagMessage.NumberValue);
                 }
+            }
+            else if (message is SessionExecutedTestsMessage executedTestsMessage)
+            {
+                _testOptimization.Log.Information<long?>("TestSession.ReceiveMessage (executed tests): {ExecutedTests}", executedTestsMessage.ExecutedTests);
+                RecordExecutedTests(executedTestsMessage.ExecutedTests);
             }
             else if (message is SessionCodeCoverageReferenceMessage codeCoverageReferenceMessage)
             {

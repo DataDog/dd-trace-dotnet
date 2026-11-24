@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
@@ -45,6 +46,12 @@ public sealed class FunctionExecutionMiddlewareInvokeIntegration
     [PreserveContext]
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
+        if (state.Scope is not null
+         && exception?.GetType().FullName == "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Exceptions.DurableSerializationException")
+        {
+            exception = exception.DuckAs<IDurableSerializationException>()?.FromException ?? exception;
+        }
+
         // The worker's FunctionExecutionMiddleware catches this exception internally,
         // so the aspnet_core.request span otherwise records status 200. Annotate it here.
         if (exception is not null && state.State is Scope aspNetCoreScope)

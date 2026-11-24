@@ -112,6 +112,44 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             DisableDefaultProfilers(runner.EnvironmentHelper);
         }
 
+        /// <summary>
+        /// Must be called by any test that enables single step instrumentation (<see cref="EnvironmentVariables.SsiDeployed"/>).
+        /// The single step guard rails abort instrumentation on preview runtimes, so when a <paramref name="framework"/>
+        /// is in preview we have to force injection (<see cref="EnvironmentVariables.SsiInjectionForced"/>) for it,
+        /// otherwise the profiler is never loaded and nothing is exported. No supported framework currently needs this.
+        /// </summary>
+        internal static void ForceInjectionIfRequired(TestApplicationRunner runner, TestFramework framework)
+        {
+            if (IsRunningOnWindows())
+            {
+                // in SSI on Windows log buffering is enabled, which means we don't write
+                // any logs unless we inject, which makes debugging issues harder
+                runner.Environment.SetVariable(EnvironmentVariables.SsiLogBufferingEnabled, "0");
+            }
+        }
+
+        internal static bool IsDataSource(ProfilerFeature feature)
+        {
+            switch (feature)
+            {
+                case ProfilerFeature.Cpu:
+                case ProfilerFeature.WallTime:
+                case ProfilerFeature.Exceptions:
+                case ProfilerFeature.Allocations:
+                case ProfilerFeature.LockContention:
+                case ProfilerFeature.GarbageCollection:
+                case ProfilerFeature.LiveHeap:
+                case ProfilerFeature.Timeline:
+                case ProfilerFeature.Network:
+                case ProfilerFeature.GcThreadsCpuTime:
+                case ProfilerFeature.HeapSnapshot:
+                case ProfilerFeature.WaitHandleContention:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         internal void EnableTracer()
         {
             AddTracerEnvironmentVariables();
@@ -120,6 +158,49 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         internal void SetVariable(string key, string value)
         {
             CustomEnvironmentVariables[key] = value;
+        }
+
+        /// <summary>
+        /// Enables the listed features. Every other profiler data source is disabled.
+        /// Options that change how profiles are built (code hotspots, endpoint, ETW, managed activation,
+        /// managed code cache...) are set only when listed: their default depends on the platform
+        /// (for example the managed code cache is on by default on ARM64), so disabling them would change the test.
+        /// </summary>
+        internal void EnableOnly(params ProfilerFeature[] features)
+        {
+            var enabled = new HashSet<ProfilerFeature>();
+            if (features is not null)
+            {
+                foreach (var feature in features)
+                {
+                    enabled.Add(feature);
+                }
+            }
+
+            foreach (ProfilerFeature feature in Enum.GetValues(typeof(ProfilerFeature)))
+            {
+                if (enabled.Contains(feature))
+                {
+                    SetVariable(VariableName(feature), "1");
+                }
+                else if (IsDataSource(feature))
+                {
+                    SetVariable(VariableName(feature), "0");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Puts the listed features back to their default value (no variable set) and disables every other profiler data source.
+        /// Use it to check that a feature is enabled by default.
+        /// </summary>
+        internal void ResetToDefault(params ProfilerFeature[] features)
+        {
+            EnableOnly(features);
+            foreach (var feature in features)
+            {
+                CustomEnvironmentVariables.Remove(VariableName(feature));
+            }
         }
 
         internal string GetLibraryExtension()
@@ -152,13 +233,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetProfilerNativeLibraryPath();
             var tracerPath = GetTracerNativeLibraryPath();
+            var architecture = GetArchitectureSubfolder(IsAlpine);
 
-            var loaderConfigFilePath = Path.GetTempFileName();
-            using var sw = new StreamWriter(loaderConfigFilePath);
-
-            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
-            return loaderConfigFilePath;
+            return WriteLoaderConfigFile(
+                $"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{architecture};{profilerPath}",
+                $"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{architecture};{tracerPath}");
         }
 
         internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
@@ -199,6 +278,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // populate the libraries cache, and the profiler silently falls back to slower unwinding.
             environmentVariables[EnvironmentVariables.LibrariesInfoCacheStartTimeout] = "10000";
 
+            // On x86 (WOW64) CI machines, the whole process can stall for a few seconds at startup, which makes
+            // the default 2s watcher start timeout expire and the profiler abort its initialization.
+            // Tests can still override it (e.g. "0" to force a start failure) via CustomEnvironmentVariables.
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+            {
+                environmentVariables[EnvironmentVariables.WatcherStartTimeout] = "10000";
+            }
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
@@ -232,6 +319,59 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         internal string GetTestOutputPath()
         {
             return _testOutputPath;
+        }
+
+        private static string VariableName(ProfilerFeature feature)
+        {
+            switch (feature)
+            {
+                case ProfilerFeature.Cpu:
+                    return EnvironmentVariables.CpuProfilerEnabled;
+                case ProfilerFeature.WallTime:
+                    return EnvironmentVariables.WallTimeProfilerEnabled;
+                case ProfilerFeature.Exceptions:
+                    return EnvironmentVariables.ExceptionProfilerEnabled;
+                case ProfilerFeature.Allocations:
+                    return EnvironmentVariables.AllocationProfilerEnabled;
+                case ProfilerFeature.LockContention:
+                    return EnvironmentVariables.ContentionProfilerEnabled;
+                case ProfilerFeature.GarbageCollection:
+                    return EnvironmentVariables.GarbageCollectionProfilerEnabled;
+                case ProfilerFeature.LiveHeap:
+                    return EnvironmentVariables.LiveHeapProfilerEnabled;
+                case ProfilerFeature.Timeline:
+                    return EnvironmentVariables.ThreadLifetimeEnabled;
+                case ProfilerFeature.Network:
+                    return EnvironmentVariables.HttpProfilingEnabled;
+                case ProfilerFeature.CodeHotspots:
+                    return EnvironmentVariables.CodeHotSpotsEnable;
+                case ProfilerFeature.Endpoint:
+                    return EnvironmentVariables.EndpointProfilerEnabled;
+                case ProfilerFeature.TimestampsAsLabel:
+                    return EnvironmentVariables.TimestampsAsLabelEnabled;
+                case ProfilerFeature.DebugInfo:
+                    return EnvironmentVariables.DebugInfoEnabled;
+                case ProfilerFeature.GcThreadsCpuTime:
+                    return EnvironmentVariables.GcThreadsCpuTimeEnabled;
+                case ProfilerFeature.Etw:
+                    return EnvironmentVariables.EtwEnabled;
+                case ProfilerFeature.HeapSnapshot:
+                    return EnvironmentVariables.HeapSnapshotEnabled;
+                case ProfilerFeature.HeapSnapshotSkipTraversal:
+                    return EnvironmentVariables.HeapSnapshotSkipTraversal;
+                case ProfilerFeature.WaitHandleContention:
+                    return EnvironmentVariables.WaitHandleContentionProfilingEnabled;
+                case ProfilerFeature.ForceHttpSampling:
+                    return EnvironmentVariables.ForceHttpSamplingEnabled;
+                case ProfilerFeature.ManagedActivation:
+                    return EnvironmentVariables.ManagedActivationEnabled;
+                case ProfilerFeature.ManagedCodeCache:
+                    return EnvironmentVariables.UseManagedCodeCache;
+                case ProfilerFeature.MemoryFootprint:
+                    return EnvironmentVariables.MemoryFootprintEnabled;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(feature), feature, "Unknown profiler feature.");
+            }
         }
 
         private static void DisableDefaultProfilers(EnvironmentHelper env)
@@ -418,6 +558,39 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var baseOutputDir = GetTestOutputPath();
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
+        }
+
+        private string WriteLoaderConfigFile(string profilerLine, string tracerLine)
+        {
+            // Leave the file in the per-test output directory so CI uploads it with the logs.
+            // A test that starts several processes needs a distinct file for each one.
+            // CreateNew reserves the name before the write, so concurrent launches cannot share a path.
+            Directory.CreateDirectory(_testOutputPath);
+
+            for (var index = 1; ; index++)
+            {
+                var fileName = index == 1 ? "loader.conf" : $"loader-{index}.conf";
+                var path = Path.Combine(_testOutputPath, fileName);
+
+                FileStream stream;
+                try
+                {
+                    stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                }
+                catch (IOException) when (File.Exists(path))
+                {
+                    continue;
+                }
+
+                using (stream)
+                {
+                    using var writer = new StreamWriter(stream, leaveOpen: true);
+                    writer.WriteLine(profilerLine);
+                    writer.WriteLine(tracerLine);
+                }
+
+                return path;
+            }
         }
 
         private bool IsCoreClr()

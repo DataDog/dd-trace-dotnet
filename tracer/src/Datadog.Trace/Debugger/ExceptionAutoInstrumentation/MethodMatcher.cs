@@ -57,7 +57,7 @@ internal static class MethodMatcher
         // Handle .NET Core state machine format: Method()+MoveNext()
         if (methodText.Contains("()+MoveNext()"))
         {
-            var index = methodText.IndexOf("()+MoveNext()");
+            var index = methodText.IndexOfOrdinal("()+MoveNext()");
             if (index > 0)
             {
                 return methodText.Substring(0, index);
@@ -128,7 +128,7 @@ internal static class MethodMatcher
 
         // For async lambdas, the pattern is different (ends with ">d")
         var typeName = declaringType.Name;
-        var isAsyncLambda = typeName.Contains("b__") && typeName.EndsWith(">d");
+        var isAsyncLambda = typeName.Contains("b__") && typeName.EndsWithOrdinal(">d");
 
         // Only return true for regular async methods (not lambdas)
         return !isAsyncLambda && typeName.Contains(">d__");
@@ -149,7 +149,7 @@ internal static class MethodMatcher
 
         // Check for the async lambda pattern (double angle brackets and b__)
         var typeName = declaringType.Name;
-        return typeName.Contains("<<") && typeName.Contains("b__") && typeName.EndsWith(">d");
+        return typeName.Contains("<<") && typeName.Contains("b__") && typeName.EndsWithOrdinal(">d");
     }
 
     private static MethodBase? ResolveSpecialMethod(MethodBase method)
@@ -225,7 +225,7 @@ internal static class MethodMatcher
         var identifier = methodName.Substring(startIndex, endIndex - startIndex);
 
         // If we got the identifier with angle brackets, clean it up
-        if (identifier.StartsWith("<") && identifier.EndsWith(">"))
+        if (identifier.StartsWith('<') && identifier.EndsWith('>'))
         {
             identifier = identifier.Substring(1, identifier.Length - 2);
         }
@@ -248,13 +248,13 @@ internal static class MethodMatcher
 
         return declaringType.GetInterfaces()
                           .Any(i => i.FullName == "System.Collections.IEnumerator" ||
-                                  (i.FullName?.StartsWith("System.Collections.Generic.IEnumerator`") ?? false));
+                                  (i.FullName?.StartsWithOrdinal("System.Collections.Generic.IEnumerator`") ?? false));
     }
 
     private static bool IsLocalFunction(MethodBase method)
     {
         // Local functions have a generated name starting with "<"
-        return method.Name.StartsWith("<") && method.Name.Contains(">");
+        return method.Name.StartsWith('<') && method.Name.Contains(">");
     }
 
     private static MethodInfo? ResolveAsyncMethod(MethodBase moveNextMethod)
@@ -288,7 +288,7 @@ internal static class MethodMatcher
         // If we have multiple candidates, try to match by async method builder attribute
         if (candidates.Count > 1)
         {
-            var matchingMethod = candidates.FirstOrDefault(HasMatchingAsyncMethodBuilder);
+            var matchingMethod = candidates.Find(HasMatchingAsyncMethodBuilder);
             if (matchingMethod != null)
             {
                 return matchingMethod;
@@ -398,7 +398,7 @@ internal static class MethodMatcher
         var normalizedName = fullName;
         if (fullName.Contains(">d__") && !fullName.Contains("+"))
         {
-            var stateMachineIndex = fullName.IndexOf("<");
+            var stateMachineIndex = fullName.IndexOf('<');
             if (stateMachineIndex > 0)
             {
                 var lastDotBeforeStateMachine = fullName.LastIndexOf('.', stateMachineIndex);
@@ -490,12 +490,13 @@ internal static class MethodMatcher
             return true;
         }
 
+        var lastTypePart = methodBase.TypeParts.Length > 0 ? methodBase.TypeParts[methodBase.TypeParts.Length - 1] : null;
+
         // For async lambdas, we need special handling
         var stackTraceLambdaId = ExtractLambdaIdentifier(stackTrace.MethodName);
         if (!string.IsNullOrEmpty(stackTraceLambdaId))
         {
-            var lastTypePart = methodBase.TypeParts.LastOrDefault() ?? string.Empty;
-            var typePartLambdaId = ExtractLambdaIdentifier(lastTypePart);
+            var typePartLambdaId = ExtractLambdaIdentifier(lastTypePart ?? string.Empty);
 
             if (!string.IsNullOrEmpty(typePartLambdaId))
             {
@@ -504,12 +505,10 @@ internal static class MethodMatcher
         }
 
         // Check if this is a local function (but not an async lambda)
-        var isLocalFunction = methodBase.TypeParts.Length > 0 &&
-                             methodBase.TypeParts.Last().StartsWith("<<") &&
-                             methodBase.TypeParts.Last().EndsWith(">d") &&
-                             !methodBase.TypeParts.Last().Contains("b__");
-
-        if (isLocalFunction)
+        if (lastTypePart is not null &&
+            lastTypePart.StartsWithOrdinal("<<") &&
+            lastTypePart.EndsWithOrdinal(">d") &&
+            !lastTypePart.Contains("b__"))
         {
             var baseTypeParts = methodBase.TypeParts.Take(methodBase.TypeParts.Length - 1).ToArray();
             if (!AreArraysEqual(stackTrace.TypeParts, baseTypeParts))
@@ -524,8 +523,7 @@ internal static class MethodMatcher
             }
 
             // For .NET Core local functions, extract the original method name
-            var lastPart = methodBase.TypeParts.Last();
-            var functionName = lastPart.Substring(1, lastPart.Length - 3);
+            var functionName = lastTypePart.Substring(1, lastTypePart.Length - 3);
             return stackTrace.MethodName == functionName;
         }
 
@@ -550,15 +548,19 @@ internal static class MethodMatcher
                 return true;
             }
 
-            var lastPart = methodBase.TypeParts.Last();
-            var methodStart = lastPart.IndexOf('<') + 1;
-            var methodEnd = lastPart.LastIndexOf('>');
+            if (lastTypePart is null)
+            {
+                return false;
+            }
+
+            var methodStart = lastTypePart.IndexOf('<') + 1;
+            var methodEnd = lastTypePart.LastIndexOf('>');
             if (methodStart <= 0 || methodEnd <= methodStart)
             {
                 return false;
             }
 
-            var originalMethod = lastPart.Substring(methodStart, methodEnd - methodStart);
+            var originalMethod = lastTypePart.Substring(methodStart, methodEnd - methodStart);
             return stackTrace.MethodName == originalMethod;
         }
 

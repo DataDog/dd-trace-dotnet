@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <ProjectGuid>{48d12c26-6e63-419c-bfe2-e668e8550613}</ProjectGuid>
     <RootNamespace>DatadogNativeLoader</RootNamespace>
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>

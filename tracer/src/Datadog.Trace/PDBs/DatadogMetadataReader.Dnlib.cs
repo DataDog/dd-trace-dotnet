@@ -74,7 +74,7 @@ namespace Datadog.Trace.Pdb
                     continue;
                 }
 
-                if (local.Index > localVariablesCount)
+                if (local.Index >= localVariablesCount)
                 {
                     // PDB information is inconsistent with the locals that are actually in the metadata.
                     // This might be caused by code obfuscation tools that try to remove/modify locals, and neglect to update the PDB.

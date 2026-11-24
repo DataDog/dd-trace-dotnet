@@ -9,6 +9,7 @@ public static class Projects
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";
+    public const string OpenTelemetryAutoInstrumentationStartupHook = "OpenTelemetry.AutoInstrumentation.StartupHook";
     public const string ClrProfilerNative = "Datadog.Tracer.Native";
     public const string NativeTracerNativeTests = "Datadog.Tracer.Native.Tests";
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
@@ -32,6 +33,7 @@ public static class Projects
     public const string DdTraceArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
     public const string DdDotnetIntegrationTests = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests";
     public const string DdDotnetArtifactsTests = "Datadog.Trace.Tools.dd_dotnet.ArtifactTests";
+    public const string BundleArtifactsTests = "Datadog.Trace.Bundle.ArtifactTests";
 
     public const string DataDogThreadTest = "DataDogThreadTest";
 

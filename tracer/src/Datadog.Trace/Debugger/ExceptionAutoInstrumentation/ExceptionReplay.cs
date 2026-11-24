@@ -36,12 +36,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionReplay(settings);
         }
 
-        public void Initialize()
+        public bool Initialize()
         {
             Log.Information("Initializing Exception Replay");
 
             InitSnapshotsSink();
+            if (_isDisabled)
+            {
+                Settings.Disable();
+                return false;
+            }
+
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
+            return true;
         }
 
         private void InitSnapshotsSink()

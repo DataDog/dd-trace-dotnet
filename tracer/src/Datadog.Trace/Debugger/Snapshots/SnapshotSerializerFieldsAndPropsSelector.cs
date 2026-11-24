@@ -30,7 +30,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static SnapshotSerializerFieldsAndPropsSelector CreateDeepClonerFieldsAndPropsSelector(Type type)
         {
-            return CustomSelectors.FirstOrDefault(c => c.IsApplicable(type)) ?? Instance;
+            return CustomSelectors.Find(c => c.IsApplicable(type)) ?? Instance;
         }
 
         internal virtual bool IsApplicable(Type type) => true;

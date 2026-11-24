@@ -105,7 +105,9 @@ namespace Datadog.Trace.Configuration
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
 
             if (rawSettings.OtelTracesExporter == "otlp")
@@ -144,8 +146,16 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
+
+            var otlpLogsSettings = GetOtlpLogsTransport(signalEndpoint: rawSettings.OtlpLogsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpLogsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
+            OtlpLogsEndpoint = otlpLogsSettings.OtlpSignalEndpoint;
+            OtlpLogsProtocol = otlpLogsSettings.OtlpProtocol;
+
+            RecordOtlpGeneralDefaults(rawSettings.OtlpProtocol, rawSettings.OtlpEndpoint, rawSettings.TraceAgentHost);
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
@@ -191,7 +201,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting traces, if applicable.
-        /// Default is <c>null</c>
+        /// Default is <c>http/protobuf</c>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
@@ -257,7 +267,8 @@ namespace Datadog.Trace.Configuration
         internal TracesEncoding TracesEncoding { get; }
 
         /// <summary>
-        /// Gets a value indicating whether traces are exported using OTLP encoding. Depends on OTEL_TRACES_EXPORTER=otlp.
+        /// Gets a value indicating whether traces are exported using OTLP encoding. Depends on OTEL_TRACES_EXPORTER=otlp,
+        /// which is the default when DD_TRACE_OTEL_SEMANTICS_ENABLED=true.
         /// </summary>
         internal bool IsOtlpTraceExport => TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson;
 
@@ -274,7 +285,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting metrics, if applicable.
-        /// Default is <c>null</c>
+        /// Default is <c>http/protobuf</c>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
@@ -304,6 +315,21 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
         internal int OtlpMetricsTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for emitting logs.
+        /// Default is <c>http/protobuf</c>
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpLogsProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for logs export.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+        internal Uri OtlpLogsEndpoint { get; }
 
         /// <summary>
         /// Gets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
@@ -346,6 +372,21 @@ namespace Datadog.Trace.Configuration
             return resolved;
         }
 
+        private void RecordOtlpGeneralDefaults(string? generalProtocol, string? generalEndpoint, string? agentHost)
+        {
+            // Configured values are already recorded by the ConfigurationBuilder read in Raw
+            var protocol = ParseOtlpProtocol(generalProtocol);
+            if (protocol is null)
+            {
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, GetOtlpProtocolName(DefaultOtlpProtocol), recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            if (StringUtil.IsNullOrEmpty(generalEndpoint))
+            {
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"{GetDefaultOtlpBaseUri(protocol ?? DefaultOtlpProtocol, agentHost)}/", recordValue: true, ConfigurationOrigins.Default);
+            }
+        }
+
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {
             if (!string.IsNullOrEmpty(metricsUrl) && TryGetMetricsUriAndTransport(metricsUrl!, out var settingsFromUri))
@@ -367,7 +408,7 @@ namespace Datadog.Trace.Configuration
             MetricsTransportSettings settings;
 
             if (!string.IsNullOrEmpty(traceAgentUrl)
-             && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix)
+             && !traceAgentUrl!.StartsWithOrdinal(UnixDomainSocketPrefix)
              && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var tcpUri))
             {
                 SetUdp(
@@ -565,6 +606,8 @@ namespace Datadog.Trace.Configuration
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
                 TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
 
+                // Pre-record the default like AsString(defaultValue) does, as TraceAgentHost must stay null when unset
+                telemetry.Record(ConfigurationKeys.AgentHost, DefaultAgentHost, recordValue: true, ConfigurationOrigins.Default);
                 TraceAgentHost = config
                                .WithKeys(ConfigurationKeys.AgentHost)
                                .AsString()?.Trim();
@@ -584,7 +627,9 @@ namespace Datadog.Trace.Configuration
                                      .AsInt32(500, value => value > 0)
                                      .Value;
 
-                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()?.Trim();
+                // OpenTelemetry semantics mode makes OTLP the default traces exporter
+                var otelSemanticsEnabled = config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBool(defaultValue: false);
+                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString(otelSemanticsEnabled ? () => "otlp" : null, validator: null)?.Trim();
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
@@ -594,7 +639,8 @@ namespace Datadog.Trace.Configuration
                     .Value;
                 OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsRedactedString()?.Trim();
 
-                OtlpMetricsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol).AsString()?.Trim();
+                // Signal protocols are read without their OTEL_EXPORTER_OTLP_PROTOCOL alias, GetOtlpTransport falls back to it
+                OtlpMetricsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, includeAliases: false).AsString()?.Trim();
                 OtlpMetricsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint).AsString()?.Trim();
                 OtlpMetricsTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
@@ -602,7 +648,10 @@ namespace Datadog.Trace.Configuration
                     .Value;
                 OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsRedactedString()?.Trim();
 
-                OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
+                OtlpLogsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, includeAliases: false).AsString()?.Trim();
+                OtlpLogsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint).AsString()?.Trim();
+
+                OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, includeAliases: false).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
                 OtlpTracesTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs)
@@ -681,8 +730,10 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Gets the OTEL traces exporter.
             /// If set to "otlp", the traces will be exported using the OTLP protocol.
+            /// Defaults to "otlp" when OpenTelemetry semantics mode is enabled.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
             public string? OtelTracesExporter { get; }
 
             /// <summary>
@@ -736,10 +787,21 @@ namespace Datadog.Trace.Configuration
             internal int OtlpMetricsTimeoutMs { get; }
 
             /// <summary>
-            /// Gets the OTLP protocol for traces export with fallback behavior.
+            /// Gets the OTLP protocol for logs export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+            internal string? OtlpLogsProtocol { get; }
+
+            /// <summary>
+            /// Gets the OTLP endpoint URL for logs export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+            internal string? OtlpLogsEndpoint { get; }
+
+            /// <summary>
+            /// Gets the OTLP protocol for traces export.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
-            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
             internal string? OtlpTracesProtocol { get; }
 
             /// <summary>

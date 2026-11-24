@@ -545,7 +545,7 @@ internal partial class ProbeExpressionParser<T>
 
     private ConstantExpression RedactedValue()
     {
-        return Expression.Constant("{REDACTED}");
+        return Expression.Constant(RedactedValueDump);
     }
 
     private GotoExpression ReturnDefaultValueExpression()
@@ -572,7 +572,7 @@ internal partial class ProbeExpressionParser<T>
         }
         else
         {
-            throw new ArgumentException($"Unsupported type: {typeof(T).FullName}");
+            throw new InvalidOperationException($"Unsupported type: {typeof(T).FullName}");
         }
     }
 
@@ -603,7 +603,7 @@ internal partial class ProbeExpressionParser<T>
         var @namespace = type.Namespace;
         return @namespace != null &&
                (@namespace is "System" or "Microsoft" ||
-                @namespace.StartsWith("System.") ||
-                @namespace.StartsWith("Microsoft."));
+                @namespace.StartsWithOrdinal("System.") ||
+                @namespace.StartsWithOrdinal("Microsoft."));
     }
 }

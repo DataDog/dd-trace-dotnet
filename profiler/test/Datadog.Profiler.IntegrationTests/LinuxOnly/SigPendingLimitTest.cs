@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,32 +30,25 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckTimerCreateIsDowngradedWhenSignalQueueIsTooSmall(string appName, string framework, string appAssembly)
+        [Flaky("Test flaked in CI")]
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckTimerCreateIsDowngradedWhenSignalQueueIsTooSmall(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            // disable default profilers except CPU
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.Cpu);
 
             // asking for timer_create explicitly: the check must override the request, not only the default
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-               .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var logLines = File.ReadLines(logFile);
-
-            logLines.Should().ContainMatch("*Falling back to the manual CPU profiler*");
-            logLines.Should().ContainMatch("*Manual Cpu profiler is enabled*");
-            logLines.Should().NotContainMatch("*timer_create Cpu profiler is enabled*");
+            run.Logs.NativeProfiler.Should()
+                .ContainLine("Falling back to the manual CPU profiler")
+                .And.ContainLine("Manual Cpu profiler is enabled")
+                .And.NotContainLine("timer_create Cpu profiler is enabled");
 
             // the whole point of the fallback: CPU profiling keeps working
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
+            run.Profiles.Samples.Should().NotBeEmpty("No samples were found");
         }
     }
 }

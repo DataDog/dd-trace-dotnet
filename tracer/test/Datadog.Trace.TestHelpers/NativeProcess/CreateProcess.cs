@@ -5,6 +5,8 @@
 
 // Based on https://github.com/dotnet/runtime/blob/045e55abac82e89e0daaee47bcb8433e0fc9ccbc/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs
 
+#if !NET11_0_OR_GREATER
+
 #nullable enable
 
 using System;
@@ -356,3 +358,4 @@ public class CreateProcess
         }
     }
 }
+#endif

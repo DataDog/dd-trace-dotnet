@@ -21,13 +21,14 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
-        public void CheckHeapSnapshot(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void CheckHeapSnapshot(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 13");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 13");
             // runner.Environment.SetVariable(EnvironmentVariables.ManagedActivationEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            // Use the smallest non-zero threshold to exercise first-snapshot scheduling through the memory-pressure path.
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "1");
 
             // check the histogram.json files are sent with the profiles
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);

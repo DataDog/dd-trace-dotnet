@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Unconditionally add a prerelease suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
-    <Version Condition="!$(Version.EndsWith('-prerelease'))">$(Version)-prerelease</Version>
+    <!-- Unconditionally add a prerelease suffix to the package -->
+    <Version Condition="'$(DD_VersionSuffix)' == ''">$(Version)-prerelease</Version>
   </PropertyGroup>
 
   <PropertyGroup>

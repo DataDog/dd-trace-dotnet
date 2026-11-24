@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -26,13 +24,12 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
         // NOTE: we don't need to validate ALL runtimes but just one
         //
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
-        public void CheckEnvVarsInLogWithDefaultProfilers(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckEnvVarsInLogWithDefaultProfilers(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
             bool cpuIsLogged = false;
             bool walltimeIsLogged = false;
@@ -47,10 +44,9 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             bool threadLifetimeIsLogged = false;
             bool stableConfigIsLogged = false;
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                                   .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+            var lines = run.Logs.NativeProfiler.Files.Should().ContainSingle().Which.Lines;
 
-            foreach (var line in File.ReadLines(logFile))
+            foreach (var line in lines)
             {
                 if (line.Contains("DD_PROFILING_CPU_ENABLED"))
                 {
@@ -133,14 +129,14 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             stableConfigIsLogged.Should().BeTrue();
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
-        public void CheckEnvVarsInLogWithDisabledProfilers(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckEnvVarsInLogWithDisabledProfilers(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
+            // not EnableOnly(): it would also set variables that this test does not expect in the log
             EnvironmentHelper.DisableDefaultProfilers(runner);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
             bool cpuIsLogged = false;
             bool walltimeIsLogged = false;
@@ -155,10 +151,9 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
             bool threadLifetimeIsLogged = false;
             bool stableConfigIsLogged = false;
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                                   .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+            var lines = run.Logs.NativeProfiler.Files.Should().ContainSingle().Which.Lines;
 
-            foreach (var line in File.ReadLines(logFile))
+            foreach (var line in lines)
             {
                 if (line.Contains("DD_PROFILING_CPU_ENABLED"))
                 {

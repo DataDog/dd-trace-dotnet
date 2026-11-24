@@ -88,9 +88,11 @@ namespace Datadog.Trace.Configuration
         EmailHtmlInjection,
         Protobuf,
         AzureEventHubs,
+        AzureEventGrid,
         DatadogTraceVersionConflict,
         Hangfire,
         OpenFeature,
+        Quartz,
         ServerlessCompat
     }
 }

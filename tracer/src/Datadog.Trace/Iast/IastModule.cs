@@ -338,7 +338,7 @@ internal static partial class IastModule
 
         if ((argumentList is not null) && (argumentList.Count > 0))
         {
-            var joinList = StringModuleImpl.OnStringJoin(string.Join(" ", argumentList), argumentList);
+            var joinList = StringModuleImpl.OnStringJoin(string.Join(' ', argumentList), argumentList);
             var fileWithSpace = file + " ";
             _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace);
             return StringModuleImpl.OnStringConcat(fileWithSpace, joinList, string.Concat(fileWithSpace, joinList));
@@ -437,9 +437,9 @@ internal static partial class IastModule
 
         var vulnerability = new Vulnerability(
             VulnerabilityTypeUtils.SessionTimeout,
-            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
+            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes.ToStringInvariant()).GetStaticHashCode(),
             GetLocation(),
-            new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
+            new Evidence(StringUtil.Invariant($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes")),
             IntegrationId.SessionTimeout);
 
         AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability);
@@ -743,13 +743,18 @@ internal static partial class IastModule
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
         stack ??= StackWalker.GetStackTrace();
-        if (!StackWalker.TryGetFrame(stack, out var stackFrame))
+        if (stack is null)
+        {
+            return null;
+        }
+
+        if (!StackWalker.TryGetFrame(stack, out var stackFrame, out var identityFrame))
         {
             return null;
         }
 
         string? stackId = null;
-        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
+        if (Security.Instance.Settings.StackTraceEnabled)
         {
             if (currentSpan is null)
             {
@@ -761,7 +766,7 @@ internal static partial class IastModule
             }
         }
 
-        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
+        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId, identityFrame);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)

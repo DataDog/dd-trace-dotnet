@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using FluentAssertions;
 using Xunit;
 
@@ -70,6 +72,116 @@ public class StringUtilTests
         }
     }
 
+    [Fact]
+    public void ToUpperInvariant_Null_ReturnsNull()
+    {
+        StringUtil.ToUpperInvariant(null).Should().BeNull();
+    }
+
+    [Fact]
+    public void ToLowerInvariant_Null_ReturnsNull()
+    {
+        StringUtil.ToLowerInvariant(null).Should().BeNull();
+    }
+
+    // These use the StringUtil polyfills on .NET Framework, and the built-in char overloads on .NET Core
+    [Theory]
+    [InlineData("", '/')]
+    [InlineData("/", '/')]
+    [InlineData("/path", '/')]
+    [InlineData("path/", '/')]
+    [InlineData("path", '/')]
+    [InlineData("Path", 'p')]
+    public void StartsWithChar_BehavesAsStartsWithString(string value, char c)
+    {
+        value.StartsWith(c).Should().Be(value.StartsWith(c.ToString(), StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("", '/')]
+    [InlineData("/", '/')]
+    [InlineData("/path", '/')]
+    [InlineData("path/", '/')]
+    [InlineData("path", '/')]
+    [InlineData("patH", 'h')]
+    public void EndsWithChar_BehavesAsEndsWithString(string value, char c)
+    {
+        value.EndsWith(c).Should().Be(value.EndsWith(c.ToString(), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Invariant_FormatsHolesUsingInvariantCulture()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            // Build the culture explicitly rather than using e.g. de-DE, because without ICU (globalization-invariant
+            // mode, e.g. on Alpine) every predefined culture formats like the invariant culture
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            var minusSign = ((char)0x2212).ToString(); // U+2212 MINUS SIGN, used by e.g. sv-SE under ICU
+            culture.NumberFormat.NumberDecimalSeparator = ",";
+            culture.NumberFormat.NumberGroupSeparator = ".";
+            culture.NumberFormat.NegativeSign = minusSign;
+            culture.DateTimeFormat.TimeSeparator = ".";
+            CultureInfo.CurrentCulture = culture;
+
+            var negative = -1;
+            var big = 1234567890123L;
+            var fraction = 1.5;
+            int? missing = null;
+            int? present = 42;
+            var date = new DateTime(2024, 1, 2, 13, 5, 6, DateTimeKind.Utc);
+            string? nullString = null;
+
+            // Make sure the current culture really would format these differently
+            string.Format(CultureInfo.CurrentCulture, "{0}|{1}|{2:HH:mm:ss}", negative, fraction, date).Should().Be(minusSign + "1|1,5|13.05.06");
+
+            StringUtil.Invariant($"{negative}|{big}|{fraction}|{missing}|{present}|{date:HH:mm:ss}|{nullString}|{"text"}|{DayOfWeek.Monday}")
+                      .Should()
+                      .Be("-1|1234567890123|1.5||42|13:05:06||text|Monday");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [Fact]
+    public void Invariant_AppendsSpans()
+    {
+        var span = "span".AsSpan(1, 2);
+        StringUtil.Invariant($"[{span}]").Should().Be("[pa]");
+    }
+
+    [Fact]
+    public void Invariant_AppendsEmptySpans()
+    {
+        var span = ReadOnlySpan<char>.Empty;
+        StringUtil.Invariant($"[{span}]").Should().Be("[]");
+    }
+#endif
+
+    [Theory]
+    [InlineData(',')]
+    [InlineData(';')]
+    [InlineData('|')]
+    [InlineData(':')]
+    [InlineData(' ')]
+    [InlineData('\n')]
+    [InlineData('#')] // not one of the cached separators
+    public void JoinChar_BehavesAsJoinString(char separator)
+    {
+        var values = new[] { "a", null, string.Empty, "b" };
+        var separatorString = separator.ToString();
+
+        string.Join(separator, values).Should().Be(string.Join(separatorString, values));
+        string.Join(separator, "a", "b", "c").Should().Be(string.Join(separatorString, "a", "b", "c"));
+        string.Join(separator, new List<string?>(values)).Should().Be(string.Join(separatorString, new List<string?>(values)));
+        string.Join(separator, new[] { 1, 2, 3 }).Should().Be(string.Join(separatorString, new[] { 1, 2, 3 }));
+        string.Join(separator, Array.Empty<string>()).Should().Be(string.Empty);
+    }
+
 #if NETFRAMEWORK
     [Theory]
     [MemberData(nameof(Data.SemanticEquivalenceInputs), MemberType = typeof(Data))]
@@ -82,6 +194,29 @@ public class StringUtilTests
     [MemberData(nameof(Data.SemanticEquivalenceInputs), MemberType = typeof(Data))]
     public void ToLowerInvariant_IsSemanticallyEquivalentToBcl(string value)
     {
+        StringUtil.ToLowerInvariant(value).Should().Be(value.ToLowerInvariant());
+    }
+
+    // These take the code unit as an int, rather than the string directly, so that the unpaired
+    // surrogate never reaches the test's display name. vstest serializes display names over its
+    // JSON IPC channel, and an unpaired surrogate there aborts the entire test run.
+    [Theory]
+    [InlineData(0xD83D)] // lone high surrogate
+    [InlineData(0xDE00)] // lone low surrogate
+    public void ToUpperInvariant_LoneSurrogate_IsSemanticallyEquivalentToBcl(int codeUnit)
+    {
+        var value = ((char)codeUnit).ToString();
+
+        StringUtil.ToUpperInvariant(value).Should().Be(value.ToUpperInvariant());
+    }
+
+    [Theory]
+    [InlineData(0xD83D)] // lone high surrogate
+    [InlineData(0xDE00)] // lone low surrogate
+    public void ToLowerInvariant_LoneSurrogate_IsSemanticallyEquivalentToBcl(int codeUnit)
+    {
+        var value = ((char)codeUnit).ToString();
+
         StringUtil.ToLowerInvariant(value).Should().Be(value.ToLowerInvariant());
     }
 
@@ -150,8 +285,6 @@ public class StringUtilTests
             ["😀"], // surrogate pair (U+1F600), aligned at index 0
             ["a😀"], // surrogate pair unaligned to the 2-char stride
             ["ab😀"], // surrogate pair aligned again after an even prefix
-            ["\uD83D"], // lone high surrogate
-            ["\uDE00"], // lone low surrogate
             ["\u0000"], // NUL - lowest code point
             ["\u007F"], // DEL - last ASCII code point
             ["\u0080"], // first non-ASCII code point (C1 control range)

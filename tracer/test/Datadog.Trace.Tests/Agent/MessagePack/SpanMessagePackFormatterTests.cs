@@ -683,6 +683,84 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SdkOtlpExport_IsWrittenOncePerPayload(bool propagateProcessTags)
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.ServiceName, "test-service" },
+            { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+        });
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        // two separate traces (= two trace chunks). The writer was created with manual flush, so
+        // nothing is sent until FlushAsync(): both chunks end up in the same buffer, i.e. one payload.
+        using (_ = tracer.StartActive("trace1-root"))
+        {
+            using (_ = tracer.StartActive("trace1-child1"))
+            {
+            }
+
+            using (_ = tracer.StartActive("trace1-child2"))
+            {
+            }
+        }
+
+        using (_ = tracer.StartActive("trace2-root"))
+        {
+            using (_ = tracer.StartActive("trace2-child1"))
+            {
+            }
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Traces;
+
+        traceChunks.Should().HaveCount(2, "both traces should be batched into a single payload as two chunks");
+        traceChunks[0].Should().HaveCount(3);
+        traceChunks[1].Should().HaveCount(2);
+
+        var allSpans = traceChunks.SelectMany(chunk => chunk).ToList();
+
+        // reaching the MessagePack formatter means the payload uses the native Datadog encoding
+        allSpans.Where(span => span.GetTag(Tags.SdkOtlpExport) is not null)
+                .Should().HaveCount(1, "the OTLP export marker is payload-scoped: exactly one span in the whole payload carries it");
+
+        // the marker belongs on the very first span of the very first chunk...
+        traceChunks[0][0].GetTag(Tags.SdkOtlpExport).Should().Be("false", "the OTLP export marker belongs on the first span of the first chunk in the payload");
+
+        // ...and on nothing else, neither the rest of the first chunk (IsFirstSpanInChunk)
+        // nor any span of the following chunks (IsFirstChunkInPayload)
+        traceChunks[0][1].GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-span");
+        traceChunks[0][2].GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-span");
+
+        foreach (var span in traceChunks[1])
+        {
+            span.GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-chunk");
+        }
+
+        // A later flush starts a new payload and must write its own marker.
+        using (_ = tracer.StartActive("trace3-root"))
+        {
+            using (_ = tracer.StartActive("trace3-child"))
+            {
+            }
+        }
+
+        await tracer.FlushAsync();
+        traceChunks = mockApi.Traces;
+        traceChunks.Should().HaveCount(3);
+        traceChunks[2].Should().HaveCount(2);
+        traceChunks[2][0].GetTag(Tags.SdkOtlpExport).Should().Be("false");
+        traceChunks[2][1].GetTag(Tags.SdkOtlpExport).Should().BeNull();
+        traceChunks.SelectMany(chunk => chunk).Count(span => span.GetTag(Tags.SdkOtlpExport) is not null)
+                   .Should().Be(2, "each payload should carry exactly one marker");
+    }
+
     [Fact]
     public async Task ApmDisabled_WritesApmEnabledZero_OnAllSpans()
     {

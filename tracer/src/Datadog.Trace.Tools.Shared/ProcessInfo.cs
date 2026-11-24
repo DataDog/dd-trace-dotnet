@@ -19,7 +19,7 @@ public class ProcessInfo
         Name = process.ProcessName;
         Id = process.Id;
         EnvironmentVariables = ProcessEnvironment.ReadVariables(process);
-        MainModule = process.MainModule?.FileName;
+        MainModule = ProcessEnvironment.ReadModuleInformationWithRetry(process, static p => p.MainModule?.FileName);
 
         Modules = ProcessEnvironment.ReadModules(process);
 

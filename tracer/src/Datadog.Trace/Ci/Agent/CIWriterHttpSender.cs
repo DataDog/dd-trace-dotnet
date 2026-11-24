@@ -111,9 +111,9 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 {
                     request.AddHeader(EvpSubdomainHeader, payload.EventPlatformSubdomain);
                 }
-                else
+                else if (TestOptimization.Instance.Settings.ApiKey is { } apiKey)
                 {
-                    request.AddHeader(ApiKeyHeader, TestOptimization.Instance.Settings.ApiKey);
+                    request.AddHeader(ApiKeyHeader, apiKey);
                 }
             }
             catch (Exception ex)
@@ -187,11 +187,14 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
     private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
     {
+        // Discovery can change UseGZip while a request is being created. Keep the header tied to
+        // the encoding of these bytes, including retries, instead of reading UseGZip again.
+        var useGzip = payload.UseGZip;
         ArraySegment<byte> payloadArraySegment;
         MemoryStream? agentlessMemoryStream = null;
         try
         {
-            if (payload.UseGZip)
+            if (useGzip)
             {
                 agentlessMemoryStream = new MemoryStream();
                 int uncompressedSize;
@@ -203,7 +206,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 agentlessMemoryStream.TryGetBuffer(out payloadArraySegment);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0"), uncompressedSize.ToString("N0"));
+                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToStringInvariant("N0"), uncompressedSize.ToStringInvariant("N0"));
                 }
             }
             else
@@ -211,18 +214,17 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 payloadArraySegment = new ArraySegment<byte>(payload.ToArray());
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0"));
+                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToStringInvariant("N0"));
                 }
             }
 
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
 
-            await SendPayloadAsync(
-                    payload,
-                    static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseGZip ? "gzip" : null),
-                    payloadArraySegment)
-               .ConfigureAwait(false);
+            Func<IApiRequest, EventPlatformPayload, ArraySegment<byte>, Task<IApiResponse>> sender = useGzip
+                ? static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, "gzip")
+                : static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, null);
+            await SendPayloadAsync(payload, sender, payloadArraySegment).ConfigureAwait(false);
         }
         finally
         {

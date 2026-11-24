@@ -10,6 +10,10 @@ M:System.Environment.GetEnvironmentVariables();Avoid using this alltogether and 
 # Ban System.Environment.Version - allocates a new Version on every call; use the cached copy instead
 P:System.Environment.Version;Use FrameworkDescription.Instance.RuntimeVersion instead - Environment.Version allocates a new Version object on every call
 
+# Ban Attribute.IsDefined - use the HasCustomAttribute<T>() extension instead, which sits next to GetCustomAttribute<T>()
+M:System.Attribute.IsDefined(System.Reflection.MemberInfo,System.Type);Use the HasCustomAttribute<T>() extension method instead
+M:System.Attribute.IsDefined(System.Reflection.MemberInfo,System.Type,System.Boolean);Use the HasCustomAttribute<T>() extension method instead
+
 # Ban JsonConvert.SerializeObject - use JsonHelper in Datadog.Trace.Util.Json instead
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
@@ -56,3 +60,15 @@ M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextW
 # Ban System.Random constructors - use ThreadSafeRandom instead
 M:System.Random.#ctor;Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe, and before .NET 6 instances created in quick succession are seeded from the tick count and produce identical sequences
 M:System.Random.#ctor(System.Int32);Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe. If you genuinely need a deterministic seeded sequence, suppress RS0030 with a comment explaining why
+
+# Ban the culture-sensitive single-argument string comparison overloads - use the ordinal StringUtil helpers instead
+M:System.String.StartsWith(System.String);Use StartsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+M:System.String.EndsWith(System.String);Use EndsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+M:System.String.IndexOf(System.String);Use IndexOfOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+
+# Ban the culture-sensitive number parsing overloads - use the invariant StringUtil helpers instead
+M:System.Int32.TryParse(System.String,System.Int32@);Use int.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int32.Parse(System.String);Use int.ParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int64.TryParse(System.String,System.Int64@);Use long.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Double.TryParse(System.String,System.Double@);Use double.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int32.TryParse(System.ReadOnlySpan{System.Char},System.Int32@);Use int.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture

@@ -27,10 +27,10 @@ foreach ($TracerVersion in $TracerVersions) {
     }
 
     Write-Host "Changing tracer version to ${TracerVersion}"
-    & "$SolutionDirectory/build.ps1" UpdateVersion -NewVersion $TracerVersion -NewIsPrerelease $false -NoLogo -Verbosity minimal
+    & "$SolutionDirectory/build.ps1" UpdateVersion -NewVersion $TracerVersion -NoLogo -Verbosity minimal
 
     Write-Host "Building tracer ${TracerVersion} into ${TracerHomeDirectory}"
-    & "$SolutionDirectory/build.ps1" Clean BuildTracerHome PackageTracerHome -Version $TracerVersion -TracerHome $TracerHomeDirectory -NoLogo -Verbosity minimal
+    & "$SolutionDirectory/build.ps1" Clean BuildTracerHome PackageTracerHome -TracerHome $TracerHomeDirectory -NoLogo -Verbosity minimal
 
     if ($IsWindows) {
         Write-Host "Copying `$SolutionDirectory/bin/artifacts/nuget/Datadog.Trace.${TracerVersion}.nupkg to ${DestinationDirectory}"

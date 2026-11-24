@@ -5,6 +5,7 @@
 #include "fault_tolerant_envionrment_variables_util.h"
 #include "fault_tolerant_tracker.h"
 #include "logger.h"
+#include "runtime_async.h"
 
 fault_tolerant::FaultTolerantMethodDuplicator::FaultTolerantMethodDuplicator(CorProfiler* corProfiler,
     std::shared_ptr<trace::RejitHandler> rejit_handler, std::shared_ptr<trace::RejitWorkOffloader> work_offloader):
@@ -34,6 +35,18 @@ void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(const ModuleID 
 
     if (functionInfo.name == WStr(".ctor") || functionInfo.name == WStr(".cctor"))
     {
+        return;
+    }
+
+    // .NET 11 runtime-async methods are not supported by fault-tolerant instrumentation.
+    // Declining here rather than in the rewriter is deliberate: FaultTolerantRewriter::RewriteInternal
+    // runs ahead of DebuggerMethodRewriter::Rewrite, so the guard there never sees these methods.
+    // Not duplicating means IsKickoffMethod is never true for them, and the normal path - which does
+    // decline runtime-async - is the one that runs.
+    if (trace::IsMiAsync(functionInfo.method_impl_flags))
+    {
+        Logger::Debug("    * Skipping fault-tolerant duplication of .NET 11 runtime-async method: ",
+                      functionInfo.type.name, ".", functionInfo.name, "()");
         return;
     }
 
