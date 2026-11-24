@@ -14,8 +14,8 @@ namespace Datadog.Profiler.IntegrationTests.Threads
     public class ThreadLifetimeProviderTest
     {
         private const string ScenarioGenerics = "--scenario 14";
-        private const string ThreadStartFrame = "|lm: |ns: |ct: |cg: |fn:Thread Start |fg: |sg:";
-        private const string ThreadStopFrame = "|lm: |ns: |ct: |cg: |fn:Thread Stop |fg: |sg:";
+        private static readonly StackFrame ThreadStartFrame = StackFrame.Build().Function("Thread Start");
+        private static readonly StackFrame ThreadStopFrame = StackFrame.Build().Function("Thread Stop");
 
         private readonly ITestOutputHelper _output;
 
@@ -60,7 +60,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             // check fake call stack
             var frames = sample.CallStack;
             return frames.FramesCount == 1
-                && (frames[0].Equals(new StackFrame(ThreadStartFrame)) || frames[0].Equals(new StackFrame(ThreadStopFrame)));
+                && (frames[0].Equals(ThreadStartFrame) || frames[0].Equals(ThreadStopFrame));
         }
     }
 }
