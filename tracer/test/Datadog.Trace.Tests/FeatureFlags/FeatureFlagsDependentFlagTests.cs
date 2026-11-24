@@ -652,12 +652,12 @@ public class FeatureFlagsDependentFlagTests
     [Fact]
     public async Task MalformedEvaluatorOptionsLogErrorOncePerEvaluatorAndFallBackLazily()
     {
-        var options = new JToken?[]
-        {
+        JToken?[] options =
+        [
             null,
             new JValue("invalid"),
             EvaluatorOptions("invalid"),
-        };
+        ];
 
         foreach (var option in options)
         {
