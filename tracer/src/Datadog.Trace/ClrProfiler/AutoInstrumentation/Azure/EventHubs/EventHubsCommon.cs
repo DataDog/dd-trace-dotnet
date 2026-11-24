@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
@@ -32,7 +33,7 @@ internal static class EventHubsCommon
 
     private static readonly ConditionalWeakTable<object, StrongBox<PathwayContext>> ConsumePathways = new();
 
-    private static readonly ConditionalWeakTable<object, StrongBox<PathwayContext>> PendingBatchAddPathways = new();
+    private static readonly ConditionalWeakTable<object, PendingBatchAdd> PendingBatchAddPathways = new();
 
     internal static CallTargetState CreateSenderSpan(
         IEventHubProducerClient instance,
@@ -189,19 +190,36 @@ internal static class EventHubsCommon
 
         try
         {
+            var span = tracer.InternalActiveScope?.Span;
+
             if (PendingBatchAddPathways.TryGetValue(instance, out var pending))
             {
-                if (eventData.Properties is { } properties)
+                if (string.Equals(pending.EventHubName, eventHubName, StringComparison.Ordinal))
                 {
-                    dataStreamsManager.InjectPathwayContextAsBase64String(pending.Value, new AzureHeadersCollectionAdapter(properties));
+                    if (span is not null)
+                    {
+                        span.Context.ManuallySetPathwayContextToPairMessages(pending.Pathway);
+                        var hash = pending.Pathway.Hash.Value;
+                        if (!dataStreamsManager.IsInDefaultState && hash != 0)
+                        {
+                            span.SetTag("pathway.hash", hash.ToString(CultureInfo.InvariantCulture));
+                        }
+                    }
+
+                    if (eventData.Properties is { } properties)
+                    {
+                        dataStreamsManager.InjectPathwayContextAsBase64String(pending.Pathway, new AzureHeadersCollectionAdapter(properties));
+                    }
+
+                    return;
                 }
 
-                return;
+                PendingBatchAddPathways.Remove(instance);
             }
 
-            if (SetProduceCheckpoint(dataStreamsManager, tracer.InternalActiveScope?.Span, eventData, GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false)) is { } pathway)
+            if (SetProduceCheckpoint(dataStreamsManager, span, eventData, GetEdgeTags(dataStreamsManager, eventHubName, isConsume: false)) is { } pathway)
             {
-                PendingBatchAddPathways.Add(instance, new StrongBox<PathwayContext>(pathway));
+                PendingBatchAddPathways.Add(instance, new PendingBatchAdd(pathway, eventHubName));
             }
         }
         catch (Exception ex)
@@ -337,5 +355,18 @@ internal static class EventHubsCommon
         }
 
         return size;
+    }
+
+    private sealed class PendingBatchAdd
+    {
+        public PendingBatchAdd(PathwayContext pathway, string? eventHubName)
+        {
+            Pathway = pathway;
+            EventHubName = eventHubName;
+        }
+
+        public PathwayContext Pathway { get; }
+
+        public string? EventHubName { get; }
     }
 }
