@@ -21,6 +21,7 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
     private const string Queue = "samples-legacy-queue";
     private const string Topic = "samples-legacy-topic";
     private const string Subscription = "samples-legacy-topic/Subscriptions/samples-legacy-subscription";
+    private const string ForwardTopic = "samples-legacy-forward-topic";
 
     public DataStreamsMonitoringAzureServiceBusLegacyTests(ITestOutputHelper output)
         : base("AzureServiceBus.Legacy", output)
@@ -40,6 +41,7 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
         using var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
         processResult.StandardOutput.Should().Contain("Messages with dd-pathway-ctx-base64: 5 of 5");
+        processResult.StandardOutput.Should().Contain("Forwarded messages with a new dd-pathway-ctx-base64: 1 of 1");
 
         var expectedEdges = new[]
         {
@@ -47,6 +49,7 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
             EdgeTags("direction:in", $"topic:{Queue}"),
             EdgeTags("direction:out", $"topic:{Topic}"),
             EdgeTags("direction:in", $"topic:{Subscription}"),
+            EdgeTags("direction:out", $"topic:{ForwardTopic}"),
         };
         var payloads = await agent.WaitForDataStreamsAsync(
             timeoutInMilliseconds: 20_000,
@@ -57,11 +60,13 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
         var queueConsume = SinglePoint(points, "direction:in", $"topic:{Queue}");
         var topicProduce = SinglePoint(points, "direction:out", $"topic:{Topic}");
         var subscriptionConsume = SinglePoint(points, "direction:in", $"topic:{Subscription}");
+        var forwardProduce = SinglePoint(points, "direction:out", $"topic:{ForwardTopic}");
 
         queueProduce.ParentHash.Should().Be(0);
         topicProduce.ParentHash.Should().Be(0);
         queueConsume.ParentHash.Should().Be(queueProduce.Hash);
         subscriptionConsume.ParentHash.Should().Be(topicProduce.Hash);
+        forwardProduce.ParentHash.Should().Be(subscriptionConsume.Hash);
     }
 
     [SkippableTheory]
@@ -75,6 +80,7 @@ public class DataStreamsMonitoringAzureServiceBusLegacyTests : TestHelper
         using var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
         processResult.StandardOutput.Should().Contain("Messages with dd-pathway-ctx-base64: 0 of 5");
+        processResult.StandardOutput.Should().Contain("Forwarded messages with a new dd-pathway-ctx-base64: 0 of 1");
         agent.DataStreams.Should().BeEmpty();
     }
 

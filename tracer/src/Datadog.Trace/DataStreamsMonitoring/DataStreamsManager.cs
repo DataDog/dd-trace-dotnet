@@ -366,6 +366,16 @@ internal sealed class DataStreamsManager
     }
 
     /// <summary>
+    /// Makes a previously computed consume pathway current in this execution context, so a
+    /// subsequent checkpoint (e.g. a produce in a message handler) links to it
+    /// </summary>
+    /// <param name="pathway">The consume pathway to make current</param>
+    internal static void SetLastConsumePathway(PathwayContext? pathway)
+    {
+        LastConsumePathway.Value = pathway;
+    }
+
+    /// <summary>
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash cached on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.

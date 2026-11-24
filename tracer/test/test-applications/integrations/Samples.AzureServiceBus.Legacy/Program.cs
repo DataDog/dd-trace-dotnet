@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -15,6 +16,7 @@ namespace Samples.AzureServiceBus.Legacy
         private const string Queue = "samples-legacy-queue";
         private const string Topic = "samples-legacy-topic";
         private const string Subscription = Topic + "/Subscriptions/samples-legacy-subscription";
+        private const string ForwardTopic = "samples-legacy-forward-topic";
 
         public static async Task<int> Main()
         {
@@ -27,12 +29,14 @@ namespace Samples.AzureServiceBus.Legacy
             await SendWithoutNetwork(Topic, topicMessages, 1, (sender, messages) => sender.SendAsync(messages[0]));
 
             var received = await ReceiveWithoutNetwork(Queue, queueMessages);
-            received += await ReceiveWithoutNetwork(Subscription, topicMessages);
+            var forwardResult = await ReceiveAndForwardWithoutNetwork(Subscription, topicMessages, ForwardTopic);
+            received += forwardResult.Received;
 
             var all = queueMessages.Concat(topicMessages).ToList();
             var withHeader = all.Count(m => m.UserProperties.ContainsKey(PathwayHeader));
             Console.WriteLine($"Received {received} of {all.Count} messages");
             Console.WriteLine($"Messages with {PathwayHeader}: {withHeader} of {all.Count}");
+            Console.WriteLine($"Forwarded messages with a new {PathwayHeader}: {forwardResult.WithNewPathway} of {forwardResult.Forwarded}");
 
             return received == all.Count ? 0 : 1;
         }
@@ -63,6 +67,60 @@ namespace Samples.AzureServiceBus.Legacy
             return received?.Count ?? 0;
         }
 
+        private static async Task<ForwardResult> ReceiveAndForwardWithoutNetwork(
+            string entityPath,
+            IList<Message> messages,
+            string forwardPath)
+        {
+            var result = new ForwardResult();
+            var allMessagesForwarded = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sender = new MessageSender(ConnectionString, forwardPath);
+            sender.RegisterPlugin(new StopBeforeNetworkPlugin());
+            var receiver = new InMemoryMessageReceiver(ConnectionString, entityPath, messages);
+
+            receiver.RegisterMessageHandler(
+                async (message, cancellationToken) =>
+                {
+                    Interlocked.Increment(ref result.Received);
+                    var previousPathway = message.UserProperties?[PathwayHeader] as string;
+
+                    try
+                    {
+                        await sender.SendAsync(new[] { message });
+                        throw new InvalidOperationException("The forward was expected to stop before reaching the network");
+                    }
+                    catch (StopBeforeNetworkException)
+                    {
+                        Interlocked.Increment(ref result.Forwarded);
+                        var newPathway = message.UserProperties?[PathwayHeader] as string;
+                        if (previousPathway is not null && newPathway is not null && previousPathway != newPathway)
+                        {
+                            Interlocked.Increment(ref result.WithNewPathway);
+                        }
+                    }
+
+                    if (result.Received == messages.Count)
+                    {
+                        allMessagesForwarded.TrySetResult(true);
+                    }
+                },
+                new MessageHandlerOptions(_ => Task.CompletedTask)
+                {
+                    AutoComplete = false,
+                    MaxConcurrentCalls = 1
+                });
+
+            await Task.WhenAny(allMessagesForwarded.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            return result;
+        }
+
+        private sealed class ForwardResult
+        {
+            public int Received;
+            public int Forwarded;
+            public int WithNewPathway;
+        }
+
         private sealed class StopBeforeNetworkPlugin : ServiceBusPlugin
         {
             public override string Name => nameof(StopBeforeNetworkPlugin);
@@ -76,19 +134,29 @@ namespace Samples.AzureServiceBus.Legacy
 
         private sealed class InMemoryMessageReceiver : MessageReceiver
         {
-            private IList<Message> _pending;
+            private readonly Queue<Message> _pending;
 
             public InMemoryMessageReceiver(string connectionString, string entityPath, IList<Message> pending)
                 : base(new ServiceBusConnectionStringBuilder(connectionString) { EntityPath = entityPath }, ReceiveMode.ReceiveAndDelete)
             {
-                _pending = pending;
+                _pending = new Queue<Message>(pending);
             }
 
-            protected override Task<IList<Message>> OnReceiveAsync(int maxMessageCount, TimeSpan serverWaitTime)
+            protected override async Task<IList<Message>> OnReceiveAsync(int maxMessageCount, TimeSpan serverWaitTime)
             {
-                var result = _pending;
-                _pending = null;
-                return Task.FromResult(result);
+                var messages = new List<Message>(maxMessageCount);
+                while (messages.Count < maxMessageCount && _pending.TryDequeue(out var message))
+                {
+                    messages.Add(message);
+                }
+
+                if (messages.Count == 0)
+                {
+                    await Task.Delay(100);
+                    return null;
+                }
+
+                return messages;
             }
         }
     }

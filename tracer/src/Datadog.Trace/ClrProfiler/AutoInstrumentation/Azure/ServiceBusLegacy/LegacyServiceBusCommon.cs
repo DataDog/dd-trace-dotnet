@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
@@ -29,6 +30,24 @@ internal static class LegacyServiceBusCommon
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LegacyServiceBusCommon));
     private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:servicebus"]);
     private static readonly EdgeTags DefaultConsumeEdgeTags = new(["direction:in", "type:servicebus"]);
+    private static readonly ConditionalWeakTable<object, PathwayHolder> PendingConsumePathways = new();
+
+    internal static void OnDispatch<TMessage>(TMessage message)
+        where TMessage : class
+    {
+        try
+        {
+            if (PendingConsumePathways.TryGetValue(message, out var holder))
+            {
+                PendingConsumePathways.Remove(message);
+                DataStreamsManager.SetLastConsumePathway(holder.Pathway);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error restoring the DSM consume pathway of a Microsoft.Azure.ServiceBus message");
+        }
+    }
 
     internal static void OnProduce<TTarget>(TTarget instance, IEnumerable? messages)
         where TTarget : ILegacyClientEntity
@@ -92,13 +111,21 @@ internal static class LegacyServiceBusCommon
                                         : 0;
                 var payloadSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
 
+                PathwayContext? pathway;
                 if (span is not null)
                 {
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSize, timeInQueueMs, parent);
+                    pathway = span.Context.PathwayContext;
                 }
                 else
                 {
-                    dataStreamsManager.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, payloadSize, timeInQueueMs);
+                    pathway = dataStreamsManager.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, payloadSize, timeInQueueMs);
+                }
+
+                if (pathway is { } consumed)
+                {
+                    PendingConsumePathways.Remove(messageObj);
+                    PendingConsumePathways.Add(messageObj, new PathwayHolder(consumed));
                 }
             }
         }
@@ -145,5 +172,10 @@ internal static class LegacyServiceBusCommon
         }
 
         return size;
+    }
+
+    private sealed class PathwayHolder(PathwayContext pathway)
+    {
+        public PathwayContext Pathway { get; } = pathway;
     }
 }
