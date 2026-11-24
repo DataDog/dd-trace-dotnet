@@ -351,7 +351,9 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/Tracing/FlagEvaluationBenchmarks.cs @DataDog/feature-flagging-and-experimentation-sdk
 
 ### Datadog.Trace.Tests
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AWS/                          @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/     @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AwsLambdaSdkTests.cs           @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.Tests/Configuration/Debugger/                    @DataDog/apm-sdk-capabilities @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/Configuration/Serverless/AWS/              @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.Tests/Configuration/Serverless/Azure/            @DataDog/apm-serverless
