@@ -117,7 +117,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             sb.AppendLine();
             foreach (var err in gitInfo.Errors)
             {
-                sb.AppendLine(" Error: " + err);
+                sb.Append(" Error: ").AppendLine(err);
             }
 
             Log.Warning("CIEnvironmentValues: Errors detected in the local gitInfo: {Errors}", StringBuilderCache.GetStringAndRelease(sb));

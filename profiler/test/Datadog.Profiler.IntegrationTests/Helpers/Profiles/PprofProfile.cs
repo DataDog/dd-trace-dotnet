@@ -15,10 +15,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 {
     internal sealed class PprofProfile
     {
-        private PprofProfile(string path, DateTime timestampUtc, IReadOnlyList<ProfileValue> sampleTypes, IReadOnlyList<ProfileSample> samples)
+        private PprofProfile(string path, DateTime timestampUtc, long timeNanos, long durationNanos, IReadOnlyList<ProfileValue> sampleTypes, IReadOnlyList<ProfileSample> samples)
         {
             Path = path;
             TimestampUtc = timestampUtc;
+            TimeNanos = timeNanos;
+            DurationNanos = durationNanos;
             SampleTypes = sampleTypes;
             Samples = samples;
         }
@@ -26,6 +28,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         public string Path { get; }
 
         public DateTime TimestampUtc { get; }
+
+        public long TimeNanos { get; }
+
+        public long DurationNanos { get; }
 
         public IReadOnlyList<ProfileValue> SampleTypes { get; }
 
@@ -44,7 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 samples[i] = ReadSample(profile, profile.Sample[i], origin, sampleTypes, locations, functions, path);
             }
 
-            return new PprofProfile(path, timestampUtc, sampleTypes, Array.AsReadOnly(samples));
+            return new PprofProfile(path, timestampUtc, profile.TimeNanos, profile.DurationNanos, sampleTypes, Array.AsReadOnly(samples));
         }
 
         private static ProfileValue[] ReadSampleTypes(Profile profile, string path)

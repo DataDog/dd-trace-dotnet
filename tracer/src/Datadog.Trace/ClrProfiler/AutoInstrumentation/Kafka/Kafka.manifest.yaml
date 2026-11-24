@@ -1,0 +1,13 @@
+_v: 1
+name: Kafka
+display_name: Kafka
+description: Instruments Confluent.Kafka message production and consumption, including trace-context propagation and Data
+  Streams Monitoring.
+packages:
+- name: Confluent.Kafka
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- kafka
+creation_date: '2021-05-24'

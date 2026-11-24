@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -47,8 +48,9 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 _processors.AddOrUpdate(
                     probe.Id,
-                    _ => new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds),
-                    (s, processor) => processor.UpdateProbeProcessor(probe, maxEvaluationTimeInMilliseconds));
+                    static (_, args) => new ProbeProcessor(args.Probe, args.MaxEvaluationTimeInMilliseconds),
+                    static (_, processor, args) => processor.UpdateProbeProcessor(args.Probe, args.MaxEvaluationTimeInMilliseconds),
+                    new ProbeProcessorArgs(probe, maxEvaluationTimeInMilliseconds));
             }
             catch (Exception e)
             {
@@ -86,5 +88,7 @@ namespace Datadog.Trace.Debugger.Expressions
             _processors.TryGetValue(probeId, out var probeProcessor);
             return probeProcessor;
         }
+
+        private readonly record struct ProbeProcessorArgs(ProbeDefinition Probe, int MaxEvaluationTimeInMilliseconds);
     }
 }

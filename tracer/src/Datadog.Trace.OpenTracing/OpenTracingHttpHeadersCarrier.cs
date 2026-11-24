@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Net.Http.Headers;
 using OpenTracing.Propagation;
 
+#pragma warning disable MA0089 // Use an overload with char instead of string - string.Join(char, ...) isn't available on .NET Framework or .NET Standard 2.0, and this assembly has no polyfill
+
 namespace Datadog.Trace.OpenTracing
 {
     /// <summary>

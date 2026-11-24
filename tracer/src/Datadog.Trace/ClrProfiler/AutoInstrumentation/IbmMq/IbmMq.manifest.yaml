@@ -1,0 +1,11 @@
+_v: 1
+name: IbmMq
+display_name: IBM MQ
+description: Instruments IBM MQ message production and consumption.
+packages:
+- name: IBMMQDotnetClient
+category:
+- messaging.consumer
+- messaging.producer
+systems: []
+creation_date: '2023-11-09'

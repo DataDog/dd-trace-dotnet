@@ -16,8 +16,8 @@ namespace Datadog.Trace.Propagators;
 internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>, ICarrierSetter<IDictionary>
 {
     public static readonly Func<string, string> EnvironmentVariableKeyProcessor = key => StringUtil.ToUpperInvariant(
-        key.Replace(".", "_")
-           .Replace("-", "_"));
+        key.Replace('.', '_')
+           .Replace('-', '_'));
 
     private readonly Func<string, string>? _keyProcessor;
 

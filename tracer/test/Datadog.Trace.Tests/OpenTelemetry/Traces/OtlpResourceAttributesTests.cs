@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
@@ -21,10 +20,9 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Google.Protobuf;
 using Newtonsoft.Json.Linq;
-using OpenTelemetry.Proto.Collector.Trace.V1;
 using Xunit;
+using static Datadog.Trace.Tests.OpenTelemetry.Traces.OtlpTraceTestHelpers;
 
 namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 
@@ -383,26 +381,6 @@ public class OtlpResourceAttributesTests
         return new TracerSettings(new DictionaryConfigurationSource(config));
     }
 
-    private static Span CreateFinishedSpan(ScopedTracer tracer, string operationName, Action<Span>? configure = null)
-    {
-        using var scope = tracer.StartActive(operationName);
-        var span = (Span)scope.Span;
-        span.ResourceName = operationName;
-        configure?.Invoke(span);
-        return span;
-    }
-
-    private static JObject Serialize(bool useJson, SpanCollection spans)
-    {
-        ISpanBufferSerializer serializer = useJson ? new OtlpTracesJsonSerializer() : new OtlpTracesProtobufSerializer();
-        var chunk = new TraceChunkModel(in spans);
-        var buffer = new byte[64 * 1024];
-        var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
-        written.Should().BeGreaterThan(0);
-        written += serializer.FinishBody(ref buffer, written, maxSize: buffer.Length);
-        return Parse(useJson, buffer, written);
-    }
-
     private static JObject SerializePayload(bool useJson, params SpanCollection[] chunks)
     {
         ISpanBufferSerializer serializer = useJson ? new OtlpTracesJsonSerializer() : new OtlpTracesProtobufSerializer();
@@ -426,20 +404,6 @@ public class OtlpResourceAttributesTests
         return size;
     }
 
-    private static JObject Parse(bool useJson, byte[] buffer, int length)
-    {
-        var json = useJson
-                       ? Encoding.UTF8.GetString(buffer, 0, length)
-                       : JsonFormatter.Default.Format(ExportTraceServiceRequest.Parser.ParseFrom(buffer, 0, length));
-        return JObject.Parse(json);
-    }
-
     private static Dictionary<string, JToken> GetResourceAttributes(JToken resourceSpans)
         => GetAttributes(resourceSpans["resource"]!);
-
-    private static Dictionary<string, JToken> GetSpans(JToken resourceSpans)
-        => resourceSpans["scopeSpans"]!.SelectMany(s => s["spans"]!).ToDictionary(s => s["name"]!.Value<string>()!);
-
-    private static Dictionary<string, JToken> GetAttributes(JToken token)
-        => token["attributes"]?.ToDictionary(a => a["key"]!.Value<string>()!, a => a["value"]!) ?? new Dictionary<string, JToken>();
 }

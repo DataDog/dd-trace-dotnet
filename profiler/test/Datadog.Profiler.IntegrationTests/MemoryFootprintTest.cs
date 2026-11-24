@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -25,19 +25,22 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMemoryFootprintMetricsWhenEnabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMemoryFootprintMetricsWhenEnabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10");
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 10");
+            // CPU and GC are disabled: the other default profilers stay on
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline,
+                ProfilerFeature.MemoryFootprint);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var footprintMetrics = GetMemoryFootprintMetrics(runner.Environment.PprofDir);
+            var footprintMetrics = GetMemoryFootprintMetrics(run.ProfileDirectory);
             footprintMetrics.Should().NotBeEmpty("at least one dotnet_memory_footprint_* metric should be present when enabled");
 
             foreach (var metric in footprintMetrics)
@@ -46,30 +49,33 @@ namespace Datadog.Profiler.IntegrationTests
             }
 
             // Check that the shutdown log contains memory breakdown
-            var lines = GetNativeProfilerLogLines(runner.Environment.LogDir);
-            lines.Should().ContainMatch("*Profiler Memory Breakdown at Shutdown*");
-            lines.Should().ContainMatch("*Total measured profiler memory*");
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+            run.Logs.NativeProfiler.Should().ContainLine("Profiler Memory Breakdown at Shutdown");
+            run.Logs.NativeProfiler.Should().ContainLine("Total measured profiler memory");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMemoryFootprintMetricsAbsentWhenDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMemoryFootprintMetricsAbsentWhenDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10");
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            // Do NOT set MemoryFootprintEnabled - should be disabled by default
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 10");
+            // CPU and GC are disabled: the other default profilers stay on.
+            // Do NOT enable MemoryFootprint - should be disabled by default
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var footprintMetrics = GetMemoryFootprintMetrics(runner.Environment.PprofDir);
+            var footprintMetrics = GetMemoryFootprintMetrics(run.ProfileDirectory);
             footprintMetrics.Should().BeEmpty("no memory footprint metrics should be present when feature is disabled");
 
             // Check that the shutdown log does NOT contain memory breakdown
-            var lines = GetNativeProfilerLogLines(runner.Environment.LogDir);
-            lines.Should().NotContainMatch("*Profiler Memory Breakdown at Shutdown*");
-            lines.Should().NotContainMatch("*Total measured profiler memory*");
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+            run.Logs.NativeProfiler.Should().NotContainLine("Profiler Memory Breakdown at Shutdown");
+            run.Logs.NativeProfiler.Should().NotContainLine("Total measured profiler memory");
         }
 
         private static List<Tuple<string, double>> GetMemoryFootprintMetrics(string pprofDir)
@@ -85,14 +91,6 @@ namespace Datadog.Profiler.IntegrationTests
             }
 
             return footprintMetrics;
-        }
-
-        private static string[] GetNativeProfilerLogLines(string logDir)
-        {
-            var logFile = Directory.GetFiles(logDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            return File.ReadAllLines(logFile);
         }
     }
 }

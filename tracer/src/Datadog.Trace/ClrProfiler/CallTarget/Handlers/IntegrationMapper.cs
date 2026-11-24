@@ -681,7 +681,7 @@ internal static class IntegrationMapper
             }
         }
 
-        var preserveContext = onAsyncMethodEndMethodInfo.GetCustomAttribute<PreserveContextAttribute>() != null;
+        var preserveContext = onAsyncMethodEndMethodInfo.HasCustomAttribute<PreserveContextAttribute>();
 
         var callGenericTypes = new List<Type>();
 
