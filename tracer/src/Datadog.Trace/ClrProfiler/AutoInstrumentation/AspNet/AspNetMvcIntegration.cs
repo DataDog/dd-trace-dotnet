@@ -191,9 +191,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             existingServerSpan.ResourceName = resourceName;
                             HttpSemanticConventions.SetHttpRoute(existingServerSpan, routeUrl);
 
-                            if (!string.IsNullOrEmpty(routeUrl))
+                            if (!string.IsNullOrEmpty(routeUrl) && AspNetRouteTemplate.IsEnabled(Security.Instance))
                             {
-                                AspNetRouteTemplate.SetTag(Security.Instance, existingServerSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath);
+                                AspNetRouteTemplate.SetTag(Security.Instance, existingServerSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath, AspNetRouteTemplate.GetMvcRequestPath(httpContext.Request.AppRelativeCurrentExecutionFilePath, httpContext.Request.PathInfo));
                             }
                         }
 
@@ -307,9 +307,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             httpRouteSet = true;
                         }
 
-                        if (httpRouteSet && !string.IsNullOrEmpty(routeUrl))
+                        if (httpRouteSet && !string.IsNullOrEmpty(routeUrl) && AspNetRouteTemplate.IsEnabled(Security.Instance))
                         {
-                            AspNetRouteTemplate.SetTag(Security.Instance, span.Context.TraceContext.RootSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath);
+                            AspNetRouteTemplate.SetTag(Security.Instance, span.Context.TraceContext.RootSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath, AspNetRouteTemplate.GetMvcRequestPath(httpContext.Request.AppRelativeCurrentExecutionFilePath, httpContext.Request.PathInfo));
                         }
 
                         if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))

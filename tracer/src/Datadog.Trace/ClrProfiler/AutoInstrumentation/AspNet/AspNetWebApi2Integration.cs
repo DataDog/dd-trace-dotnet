@@ -179,7 +179,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     HttpSemanticConventions.SetHttpRoute(serverSpan, route);
                     serverSpan.ResourceName = resourceName;
 
-                    AspNetRouteTemplate.SetTag(Security.Instance, serverSpan, route, controllerContext.RouteData?.Values, controllerContext.RequestContext.VirtualPathRoot);
+                    if (AspNetRouteTemplate.IsEnabled(Security.Instance))
+                    {
+                        var virtualPathRoot = controllerContext.RequestContext.VirtualPathRoot;
+                        AspNetRouteTemplate.SetTag(
+                            Security.Instance,
+                            serverSpan,
+                            route,
+                            controllerContext.RouteData?.Values,
+                            virtualPathRoot,
+                            AspNetRouteTemplate.GetWebApiRequestPath(controllerContext.Request?.RequestUri?.AbsolutePath, virtualPathRoot));
+                    }
                 }
 
                 if (httpContext is not null)
@@ -308,9 +318,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
                     }
 
-                    if (span.Context.TraceContext.RootSpan is { } rootSpan)
+                    if (span.Context.TraceContext.RootSpan is { } rootSpan && AspNetRouteTemplate.IsEnabled(Security.Instance))
                     {
-                        AspNetRouteTemplate.SetTag(Security.Instance, rootSpan, route, routeValues, controllerContext.RequestContext.VirtualPathRoot);
+                        var virtualPathRoot = controllerContext.RequestContext.VirtualPathRoot;
+                        AspNetRouteTemplate.SetTag(
+                            Security.Instance,
+                            rootSpan,
+                            route,
+                            routeValues,
+                            virtualPathRoot,
+                            AspNetRouteTemplate.GetWebApiRequestPath(controllerContext.Request?.RequestUri?.AbsolutePath, virtualPathRoot));
                     }
                 }
 
