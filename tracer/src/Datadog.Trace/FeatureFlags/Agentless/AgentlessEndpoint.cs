@@ -310,27 +310,27 @@ internal sealed class AgentlessEndpoint
 
     private static string AddOrReplaceDependentFlagsParameter(string query)
     {
-        var existing = query.Length > 0 && query[0] == '?' ? query.Substring(1) : query;
-        if (existing.Length == 0)
+        var queryStart = query.Length > 0 && query[0] == '?' ? 1 : 0;
+        if (queryStart == query.Length)
         {
             return DependentFlagsParameter;
         }
 
-        var result = new StringBuilder(existing.Length + DependentFlagsParameter.Length + 1);
-        var segmentStart = 0;
+        var result = new StringBuilder(query.Length - queryStart + DependentFlagsParameter.Length + 1);
+        var segmentStart = queryStart;
         var replaced = false;
         var hasRetainedSegment = false;
-        while (segmentStart <= existing.Length)
+        while (segmentStart <= query.Length)
         {
-            var segmentEnd = existing.IndexOf('&', segmentStart);
+            var segmentEnd = query.IndexOf('&', segmentStart);
             if (segmentEnd < 0)
             {
-                segmentEnd = existing.Length;
+                segmentEnd = query.Length;
             }
 
-            var equals = existing.IndexOf('=', segmentStart, segmentEnd - segmentStart);
+            var equals = query.IndexOf('=', segmentStart, segmentEnd - segmentStart);
             var nameEnd = equals < 0 ? segmentEnd : equals;
-            var isDependentFlagsParameter = IsDependentFlagsParameter(existing, segmentStart, nameEnd - segmentStart);
+            var isDependentFlagsParameter = IsDependentFlagsParameter(query, segmentStart, nameEnd - segmentStart);
             if (!isDependentFlagsParameter || !replaced)
             {
                 if (hasRetainedSegment)
@@ -345,13 +345,13 @@ internal sealed class AgentlessEndpoint
                 }
                 else
                 {
-                    result.Append(existing, segmentStart, segmentEnd - segmentStart);
+                    result.Append(query, segmentStart, segmentEnd - segmentStart);
                 }
 
                 hasRetainedSegment = true;
             }
 
-            if (segmentEnd == existing.Length)
+            if (segmentEnd == query.Length)
             {
                 break;
             }
@@ -361,7 +361,7 @@ internal sealed class AgentlessEndpoint
 
         if (!replaced)
         {
-            if (existing[existing.Length - 1] != '&')
+            if (query[query.Length - 1] != '&')
             {
                 result.Append('&');
             }
