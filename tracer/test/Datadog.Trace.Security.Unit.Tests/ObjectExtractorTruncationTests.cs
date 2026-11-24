@@ -8,6 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NETFRAMEWORK
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.Serialization;
+#endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
@@ -77,6 +82,57 @@ public class ObjectExtractorTruncationTests : WafLibraryRequiredTest
 
         truncation.Truncated.Should().BeFalse();
     }
+
+#if NETFRAMEWORK
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GivenADataContractWithMoreMembersThanTheLimit_WhenExtracted_ThenOnlyTheEmittedMembersCount(bool lastMemberEmitted)
+    {
+        // the last member is [DataMember(EmitDefaultValue = false)], so the serializer omits it when it's null
+        var fields = CreateDataContractType(WafConstants.MaxContainerSize + 1).GetFields();
+        var instance = Activator.CreateInstance(fields[0].DeclaringType!);
+        for (var i = 0; i < fields.Length - 1; i++)
+        {
+            fields[i].SetValue(instance, "value");
+        }
+
+        fields[fields.Length - 1].SetValue(instance, lastMemberEmitted ? "value" : null);
+
+        var extracted = ObjectExtractor.ExtractDataContract(instance);
+
+        extracted.Should().BeAssignableTo<IReadOnlyDictionary<string, object?>>().Which.Should().HaveCount(WafConstants.MaxContainerSize);
+        if (lastMemberEmitted)
+        {
+            extracted.Should().BeAssignableTo<ITruncatedContainer>().Which.OriginalCount.Should().Be(WafConstants.MaxContainerSize + 1);
+        }
+        else
+        {
+            extracted.Should().NotBeAssignableTo<ITruncatedContainer>();
+        }
+    }
+
+    private static Type CreateDataContractType(int memberCount)
+    {
+        var module = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("ObjectExtractorTruncationTests.DataContracts"), AssemblyBuilderAccess.Run)
+                                    .DefineDynamicModule("DataContracts");
+        var type = module.DefineType("WideDataContract" + memberCount, TypeAttributes.Public | TypeAttributes.Class);
+        type.SetCustomAttribute(new CustomAttributeBuilder(typeof(DataContractAttribute).GetConstructor(Type.EmptyTypes)!, []));
+
+        var dataMember = typeof(DataMemberAttribute).GetConstructor(Type.EmptyTypes)!;
+        var emitDefaultValue = typeof(DataMemberAttribute).GetProperty(nameof(DataMemberAttribute.EmitDefaultValue))!;
+        for (var i = 0; i < memberCount; i++)
+        {
+            var field = type.DefineField($"Member{i}", typeof(string), FieldAttributes.Public);
+            field.SetCustomAttribute(
+                i == memberCount - 1
+                    ? new CustomAttributeBuilder(dataMember, [], [emitDefaultValue], [false])
+                    : new CustomAttributeBuilder(dataMember, []));
+        }
+
+        return type.CreateType()!;
+    }
+#endif
 
 #if NETCOREAPP
     [SkippableFact]

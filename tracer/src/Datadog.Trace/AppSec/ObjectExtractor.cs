@@ -130,7 +130,8 @@ namespace Datadog.Trace.AppSec
 
                 if (dict.Count >= WafConstants.MaxContainerSize)
                 {
-                    return new TruncatedDictionary(dict, memberExtractors.Length);
+                    var remaining = CountEmittedMembers(memberExtractors, i, body);
+                    return remaining > 0 ? new TruncatedDictionary(dict, dict.Count + remaining) : dict;
                 }
 
                 var memberExtractor = memberExtractors[i];
@@ -141,7 +142,7 @@ namespace Datadog.Trace.AppSec
 
                     // [DataMember(EmitDefaultValue = false)] means the serializer omits this member
                     // when its value is null/default — skip it to match the actual response body.
-                    if (!memberExtractor.EmitDefaultValue && memberExtractor.IsDefault(value))
+                    if (!memberExtractor.IsEmitted(value))
                     {
                         continue;
                     }
@@ -163,6 +164,22 @@ namespace Datadog.Trace.AppSec
             }
 
             return dict;
+        }
+
+        // Only the members the serializer would write count: an object whose remaining members are all
+        // omitted, by [DataMember(EmitDefaultValue = false)], isn't truncated
+        private static int CountEmittedMembers(MemberExtractor?[] memberExtractors, int start, object body)
+        {
+            var count = 0;
+            for (var i = start; i < memberExtractors.Length; i++)
+            {
+                if (memberExtractors[i] is { } memberExtractor && memberExtractor.IsEmitted(memberExtractor.Accessor.Invoke(body)))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private static MemberExtractor?[] CreateDefaultExtractors(Type bodyType)
@@ -855,7 +872,10 @@ namespace Datadog.Trace.AppSec
 
             public bool EmitDefaultValue { get; }
 
-            public bool IsDefault(object? value)
+            // whether the serializer writes the member with this value
+            public bool IsEmitted(object? value) => EmitDefaultValue || !IsDefault(value);
+
+            private bool IsDefault(object? value)
                 => value is null || (_valueTypeDefault is not null && value.Equals(_valueTypeDefault));
         }
     }
