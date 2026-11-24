@@ -27,6 +27,6 @@ internal sealed class RuleOverride
 
     public override string ToString()
     {
-        return $"{{{Id} : {Enabled}, on match actions: {string.Join(",", OnMatch ?? Array.Empty<string>())}, rule targets: {RulesTarget}}}";
+        return $"{{{Id} : {Enabled}, on match actions: {string.Join(',', OnMatch ?? Array.Empty<string>())}, rule targets: {RulesTarget}}}";
     }
 }

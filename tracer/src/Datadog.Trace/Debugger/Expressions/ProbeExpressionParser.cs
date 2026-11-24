@@ -579,7 +579,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            var ex = new ArgumentException("Method has been called with an invalid argument");
+            var ex = new InvalidOperationException("Method has been called with an invalid argument");
             Log.Error(
                 ex,
                 "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",
@@ -602,7 +602,7 @@ internal partial class ProbeExpressionParser<T>
         ParameterExpression returnParameterExpression;
         if (returnType == null || returnType == typeof(void))
         {
-            returnParameterExpression = Expression.Parameter(@return.GetType());
+            returnParameterExpression = Expression.Parameter(typeof(ScopeMember));
             var returnVariable = Expression.Variable(typeof(string), Return);
             expressions.Add(Expression.Assign(returnVariable, Expression.Constant($"Return type is {typeof(void).FullName}")));
             scopeMembers.Add(returnVariable);
@@ -652,7 +652,7 @@ internal partial class ProbeExpressionParser<T>
 
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
-        var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        var parameterExpression = Expression.Parameter(typeof(ScopeMember));
         if (type.ContainsGenericParameters)
         {
             type = CloseOpenGenericType(scopeMember.Value?.GetType() ?? type);

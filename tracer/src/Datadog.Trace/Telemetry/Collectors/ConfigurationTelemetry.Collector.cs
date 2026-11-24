@@ -203,15 +203,15 @@ namespace Datadog.Trace.Configuration.Telemetry
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             // We don't need to implement these for now as they're never called
-            public void Add(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+            public void Add(ConfigurationKeyValue item) => throw new System.NotSupportedException();
 
-            public void Clear() => throw new System.NotImplementedException();
+            public void Clear() => throw new System.NotSupportedException();
 
-            public bool Contains(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+            public bool Contains(ConfigurationKeyValue item) => throw new System.NotSupportedException();
 
-            public void CopyTo(ConfigurationKeyValue[] array, int arrayIndex) => throw new System.NotImplementedException();
+            public void CopyTo(ConfigurationKeyValue[] array, int arrayIndex) => throw new System.NotSupportedException();
 
-            public bool Remove(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+            public bool Remove(ConfigurationKeyValue item) => throw new System.NotSupportedException();
 
             internal struct Enumerator : IEnumerator<ConfigurationKeyValue>
             {

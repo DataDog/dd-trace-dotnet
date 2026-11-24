@@ -80,7 +80,19 @@ internal ref struct InvariantInterpolatedStringHandler
 #if NETCOREAPP2_1_OR_GREATER
         _builder.Append(value);
 #else
-        _builder.Append(value.ToString());
+        if (value.IsEmpty)
+        {
+            return;
+        }
+
+        // StringBuilder.Append(ReadOnlySpan<char>) isn't available here, so copy the chars without allocating a string
+        unsafe
+        {
+            fixed (char* chars = value)
+            {
+                _builder.Append(chars, value.Length);
+            }
+        }
 #endif
     }
 

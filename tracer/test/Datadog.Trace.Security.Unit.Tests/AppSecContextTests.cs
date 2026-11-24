@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -165,6 +166,8 @@ public class AppSecContextTests : WafLibraryRequiredTest
         public bool Timeout { get; }
 
         public bool Truncated { get; }
+
+        public TruncationInfo Truncation { get; }
 
         public bool ShouldBlock => throw new System.NotImplementedException();
 

@@ -20,14 +20,17 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0" })]
-        public void CheckMetrics(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8)]
+        public void CheckMetrics(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10 --threads 20");
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 10 --threads 20");
+            // CPU and GC are disabled: the other default profilers stay on
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasMetrics = false;

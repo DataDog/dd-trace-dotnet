@@ -409,7 +409,8 @@ public sealed class TracerSettings
                     $"Error setting {nameof(AgentUri)} to '{value}'. " +
                     $"{nameof(AgentUri)} can not be set to a UDS endpoint in code when running on Windows. " +
                     "If you need to use UDS on Windows, set the environment variable DD_TRACE_AGENT_URL instead to " +
-                    "ensure the app starts with the correct configuration");
+                    "ensure the app starts with the correct configuration",
+                    nameof(value));
             }
 
             _agentUri = _agentUri.Override(value);

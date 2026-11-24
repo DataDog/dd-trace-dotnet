@@ -29,13 +29,13 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainScenario(TestAppContext app)
         {
             // Scenario 1: Simple Chain (~1K objects)
             // Static Dictionary -> Order -> Customer -> Address
             //                            -> OrderItem[] -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -70,25 +70,24 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(TestAppContext app)
         {
             // Regression guard for fault handling: a memory access fault during one
             // snapshot's traversal must not disable reference chains for the following
             // snapshots. We run long enough for several snapshots and assert that a
             // valid reference tree is produced by each consecutive snapshot, not just
             // the first one.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 50;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "10");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
 
             // Group the emitted files by the export (snapshot) they belong to. Each
@@ -119,11 +118,11 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to still contain the Order->Customer->Address chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainBinaryFormat(TestAppContext app)
         {
             // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -155,11 +154,11 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one binary snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainBothFormats(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainBothFormats(TestAppContext app)
         {
             // Format=3 emits both JSON and binary files for the same tree — useful for validation.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -227,24 +226,24 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeTypesAreInClassHistogramBinary(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeTypesAreInClassHistogramBinary(TestAppContext app)
         {
-            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
+            CheckReferenceTreeTypesAreInClassHistogram(app, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
         }
 
         // Run against JSON as well: the two serializers build their type table independently,
         // so a type/index mismatch in one of them would not show up in the other.
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeTypesAreInClassHistogramJson(TestAppContext app)
         {
-            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
+            CheckReferenceTreeTypesAreInClassHistogram(app, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSkipTraversalProducesNoReferenceTree(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -264,22 +263,21 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             Assert.False(hasReferenceTree, "No reference tree should be sent when skip-traversal is enabled");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckCyclesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckCyclesScenario(TestAppContext app)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 3");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 3");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // Verify reference tree JSON files were created (cycle detection should prevent crashes)
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for cycle scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -292,21 +290,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain TreeNode self-referencing chain with finite depth");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckDeepHierarchyScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckDeepHierarchyScenario(TestAppContext app)
         {
             // Scenario 4: Deep Hierarchy - Root -> Level0 -> Level1 -> ... -> Level9
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 4");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 4");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for deep hierarchy scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -319,21 +316,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain the full Level0->Level1->...->Level9 chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMultipleRootsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMultipleRootsScenario(TestAppContext app)
         {
             // Scenario 2: Multiple Roots
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 2");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 2");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for multiple roots scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -347,21 +343,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Order->Customer chain and Product type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckWideTreeScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckWideTreeScenario(TestAppContext app)
         {
             // Scenario 5: Wide Tree - 100 branches x 50 leaves
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 5");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 5");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for wide tree scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -372,21 +367,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain WideBranch->Leaf chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMixedStructuresScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMixedStructuresScenario(TestAppContext app)
         {
             // Scenario 6: Mixed Structures - arrays of arrays, dictionaries, byte[] (value-type arrays skipped)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 6");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 6");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for mixed structures scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -400,21 +394,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Container->Payload->Metadata and Container->Leaf chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSharedReferencesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSharedReferencesScenario(TestAppContext app)
         {
             // Scenario 8: Shared References - multiple holders reference the same payload
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 8");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 8");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for shared references scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -427,21 +420,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SharedHolder->SharedPayload chain with InstanceCount > 0");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckLinkedListScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckLinkedListScenario(TestAppContext app)
         {
             // Scenario 9: Linked List - self-referencing type chain (LinkedNode -> LinkedNode -> ...)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 9");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 9");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for linked list scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -454,21 +446,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain LinkedNode self-referencing chain with depth >= 2");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckNullFieldsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckNullFieldsScenario(TestAppContext app)
         {
             // Scenario 10: Null Fields - objects with most reference fields intentionally null
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 10");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 10");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for null fields scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -494,23 +485,22 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckStructWithReferencesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckStructWithReferencesScenario(TestAppContext app)
         {
             // Scenario 11: Value type array with embedded reference fields
             // StructWithReferences[] -> Customer -> Address
             //                        -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 11");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 11");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for struct with references scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -524,24 +514,23 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckStaticRootScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckStaticRootScenario(TestAppContext app)
         {
             // Scenario 12: Same simple chain as Scenario 1 but held by a static field.
             // The GC reports static roots via GCBulkRootStaticVar, bypassing stack root handling.
             // Static List<Order> -> Order -> Customer -> Address
             //                             -> OrderItem[] -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 12");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 12");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for static root scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -557,21 +546,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckEventHandlerLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckEventHandlerLeakScenario(TestAppContext app)
         {
             // Scenario 13: Event handler leak - publisher holds subscribers via event delegate
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 13");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 13");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for event handler leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -583,21 +571,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain EventSubscriber->LeakedPayload chain and EventPublisher type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckClosureLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckClosureLeakScenario(TestAppContext app)
         {
             // Scenario 14: Closure / captured variable leak - lambdas capturing expensive objects
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 14");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 14");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for closure leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -607,21 +594,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain ClosureHolder->ExpensiveResource chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckTimerLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckTimerLeakScenario(TestAppContext app)
         {
             // Scenario 15: Timer callback leak - Timer keeping callback targets alive
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 15");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 15");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for timer leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -633,21 +619,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain MonitoredService->ServiceMetrics chain and TimerOwner type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckGCHandleLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckGCHandleLeakScenario(TestAppContext app)
         {
             // Scenario 16: Strong GCHandle leak - tests Handle root category
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 16");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 16");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for GCHandle leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -659,21 +644,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Handle root and HandleTarget->InteropPayload chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckWeakGCHandleScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckWeakGCHandleScenario(TestAppContext app)
         {
             // Scenario 17: weak handles must not be treated as retention roots
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for weak GCHandle scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -686,21 +670,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 tree => HasRootOfCategoryAndType(tree, "H", "WeakHandleTarget"));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckPinnedLeakScenario(TestAppContext app)
         {
             // Scenario 18: Pinned handle - tests Pinning root category
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 18");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 18");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for pinned leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -710,21 +693,20 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Pinning root");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckAsyncLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckAsyncLeakScenario(TestAppContext app)
         {
             // Scenario 19: Async state machine leak - never-completing Task capturing HeavyContext
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 19");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 19");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for async leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -736,23 +718,22 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckNestedValueTypeScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckNestedValueTypeScenario(TestAppContext app)
         {
             // Scenario 20: Nested inline value types - OuterHolder<InnerStruct> where InnerStruct
             // contains a reference (NestedVtTarget) and a nested struct (NestedInnerStruct) that
             // itself contains a reference (DeepVtTarget). Tests recursive inline VT traversal.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 20");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 20");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for nested value type scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -768,24 +749,23 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInheritanceMultiSeriesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInheritanceMultiSeriesScenario(TestAppContext app)
         {
             // Scenario 21: Inheritance with mixed ref/non-ref fields.
             // DerivedAfterGap inherits from BaseWithGap which has a ref + non-ref field.
             // This produces multiple GCDesc series, validating that GCDesc correctly
             // discovers refs across series without MergeParentLayout.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 21");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 21");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inheritance multi-series scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -799,23 +779,22 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain DerivedAfterGap and RefTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckVtArrayWithRefsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckVtArrayWithRefsScenario(TestAppContext app)
         {
             // Scenario 22: Value type array with reference fields.
             // VtArrayElement[] where each element struct has a reference field.
             // Tests GCDesc negative series count (ValSerieItem encoding).
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 22");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 22");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for VT array scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -826,23 +805,22 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain VtArrayTarget type (reachable via VT array element refs)");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInlineVtNonGenericScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInlineVtNonGenericScenario(TestAppContext app)
         {
             // Scenario 23: Non-generic inline VT with reference field.
             // HolderWithInlineVt has an embedded EmbeddedStruct (ELEMENT_TYPE_VALUETYPE)
             // that contains a reference field. Tests InlineVTCache detection of non-generic VTs.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 23");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 23");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT non-generic scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -854,24 +832,23 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain HolderWithInlineVt and InlineVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInlineVtGenericWithPrimitivesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInlineVtGenericWithPrimitivesScenario(TestAppContext app)
         {
             // Scenario 24: Generic inline VT with primitive type arguments.
             // HolderWithGenericVt embeds GenericVtWithPrimitiveArgs<int, string> whose
             // ELEMENT_TYPE_GENERICINST signature contains primitive args (ELEMENT_TYPE_I4,
             // ELEMENT_TYPE_STRING). Tests InlineVTCache primitive type arg resolution.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 24");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 24");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT generic with primitives scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
@@ -1297,9 +1274,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         private void CheckReferenceTreeTypesAreInClassHistogram(
-            string appName,
-            string framework,
-            string appAssembly,
+            TestAppContext app,
             string referenceTreeFormat,
             string treeFileName,
             string treeExtension)
@@ -1307,7 +1282,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // The class histogram and the reference tree are built from the same heap snapshot
             // and use the same type names, so every heap object type listed in the tree is
             // expected to appear in the histogram of that snapshot.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");

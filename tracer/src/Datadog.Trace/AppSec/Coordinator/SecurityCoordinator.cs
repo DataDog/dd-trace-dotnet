@@ -149,7 +149,7 @@ internal readonly partial struct SecurityCoordinator
             var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
-                stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+                stringBuilder.Append("Key: ").Append(kvp.Key).Append(" Value: ").Append(kvp.Value).Append(", ");
             }
 
             Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
@@ -229,7 +229,7 @@ internal readonly partial struct SecurityCoordinator
                 var stringBuilder = StringBuilderCache.Acquire();
                 foreach (var kvp in addresses)
                 {
-                    stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+                    stringBuilder.Append("Key: ").Append(kvp.Key).Append(" Value: ").Append(kvp.Value).Append(", ");
                 }
 
                 Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));

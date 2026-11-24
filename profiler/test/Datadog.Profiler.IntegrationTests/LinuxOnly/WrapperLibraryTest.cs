@@ -6,8 +6,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,18 +17,20 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
     [Trait("Category", "LinuxOnly")]
     public class WrapperLibraryTest
     {
+        private const string ExpectedErrorMessage = "It is not safe to start the profiler. See previous log messages for more info.";
         private readonly ITestOutputHelper _output;
-        private readonly string expectedErrorMessage = "*It is not safe to start the profiler. See previous log messages for more info.*";
 
         public WrapperLibraryTest(ITestOutputHelper output)
         {
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void EnsureProfilerIsDeactivatedIfNoWrapperLibrary(string appName, string framework, string appAssembly)
+        // The profiler does not start in the first three tests, so there is no profile directory:
+        // they keep a custom agent and read only the logs.
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void EnsureProfilerIsDeactivatedIfNoWrapperLibrary(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
@@ -37,18 +39,13 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             runner.Run(agent);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var lines = File.ReadAllLines(logFile);
-
-            lines.Should().ContainMatch(expectedErrorMessage);
+            ProfilerLogSet.Read(runner.Environment.LogDir).NativeProfiler.Should().ContainLine(ExpectedErrorMessage);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void EnsureProfilerIsDeactivatedIfWrongPathToWrapperLibrary(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void EnsureProfilerIsDeactivatedIfWrongPathToWrapperLibrary(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
@@ -56,18 +53,13 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var lines = File.ReadAllLines(logFile);
-
-            lines.Should().ContainMatch(expectedErrorMessage);
+            ProfilerLogSet.Read(runner.Environment.LogDir).NativeProfiler.Should().ContainLine(ExpectedErrorMessage);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1", enableTracer: true);
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
@@ -75,18 +67,14 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var lines = File.ReadAllLines(logFile);
-            lines.Should().ContainMatch(expectedErrorMessage);
+            ProfilerLogSet.Read(runner.Environment.LogDir).NativeProfiler.Should().ContainLine(ExpectedErrorMessage);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void GenerateDumpIfDbgRequested(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator)]
+        public void GenerateDumpIfDbgRequested(TestAppContext app)
         {
             // The continuous profiler is disabled for this test because it's not needed and it *might* be causing some failures
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, enableProfiler: false, commandLine: "--scenario 7");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 7", enableTracer: true, enableProfiler: false);
 
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");

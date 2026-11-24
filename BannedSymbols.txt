@@ -10,6 +10,10 @@ M:System.Environment.GetEnvironmentVariables();Avoid using this alltogether and 
 # Ban System.Environment.Version - allocates a new Version on every call; use the cached copy instead
 P:System.Environment.Version;Use FrameworkDescription.Instance.RuntimeVersion instead - Environment.Version allocates a new Version object on every call
 
+# Ban Attribute.IsDefined - use the HasCustomAttribute<T>() extension instead, which sits next to GetCustomAttribute<T>()
+M:System.Attribute.IsDefined(System.Reflection.MemberInfo,System.Type);Use the HasCustomAttribute<T>() extension method instead
+M:System.Attribute.IsDefined(System.Reflection.MemberInfo,System.Type,System.Boolean);Use the HasCustomAttribute<T>() extension method instead
+
 # Ban JsonConvert.SerializeObject - use JsonHelper in Datadog.Trace.Util.Json instead
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required

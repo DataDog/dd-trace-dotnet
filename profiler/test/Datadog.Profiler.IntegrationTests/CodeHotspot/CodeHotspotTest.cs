@@ -9,11 +9,11 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using MessagePack;
-using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 using ProfilerXunit = Datadog.Profiler.IntegrationTests.Xunit;
@@ -32,10 +32,10 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
@@ -76,14 +76,14 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // The profiler is configured to export/write pprof file every 3s, but
             // depending on the machine or if it's release or debug, the first pprof file
             // may not contains any trace context.
-            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
             Assert.NotEmpty(tracingContexts);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSpanContextAreAttachedForWalltimeProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckSpanContextAreAttachedForWalltimeProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
@@ -124,14 +124,14 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // The profiler is configured to export/write pprof file every 3s, but
             // depending on the machine or if it's release or debug, the first pprof file
             // may not contains any trace context.
-            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
             Assert.NotEmpty(tracingContexts);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckSpanContextAreAttachedForCpuProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
@@ -168,18 +168,18 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
             Assert.NotEmpty(tracingContexts);
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
         }
 
-        [TestAppFact("Samples.BuggyBits")]
+        [TestAppFact(TestApplication.BuggyBits)]
         [Trait("Category", "LinuxOnly")]
-        public void CheckSpanContextAreAttachedForCpuProfiler_TimerCreate(string appName, string framework, string appAssembly)
+        public void CheckSpanContextAreAttachedForCpuProfiler_TimerCreate(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
@@ -218,34 +218,32 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
             Assert.NotEmpty(tracingContexts);
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void NoTraceContextAttachedIfFeatureDeactivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            Assert.True(run.UploadCount > 0);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContexts(run.Profiles);
             Assert.Empty(tracingContexts);
         }
 
         [ProfilerXunit.Flaky("Endpoint association can race with the profiler's shutdown export on slow/32-bit runtimes")]
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckEndpointsAreAttached(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioEndpoint);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioEndpoint);
             runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
@@ -259,33 +257,25 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // keeps the samples and the endpoints in the same generation.
             runner.Environment.SetVariable("DD_PROFILING_UPLOAD_PERIOD", "600");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            Assert.True(run.UploadCount > 0);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
-
-            endpoints.Distinct().Should().BeEquivalentTo("GET /products/endpointprofiling");
+            run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEquivalentTo("GET /products/endpointprofiling");
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void NoEndpointsAttachedIfFeatureDeactivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioEndpoint);
+            var runner = app.CreateRunner(_output, enableTracer: true, commandLine: ScenarioEndpoint);
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            Assert.True(run.UploadCount > 0);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir).Distinct();
-
-            endpoints.Should().BeEmpty();
+            run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEmpty();
         }
 
         private static HashSet<string> ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
@@ -320,56 +310,21 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             return match.Groups["runtimeId"].Value;
         }
 
-        private static IEnumerable<string> GetEndpointsFromPprofFiles(string pprofDir)
-        {
-            foreach (var profile in SamplesHelper.GetProfiles(pprofDir))
-            {
-                foreach (var label in profile.Labels().SelectMany(_ => _))
-                {
-                    if (label.Name == "trace endpoint")
-                    {
-                        yield return label.Value;
-                    }
-                }
-            }
-        }
-
-        private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContextsFromPprofFiles(string pprofDir)
+        private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContexts(ProfileOutput profiles)
         {
             var tracingContext = new List<(ulong LocalRootSpanId, ulong SpanId)>();
-            foreach (var profile in SamplesHelper.GetProfiles(pprofDir))
+            foreach (var labels in profiles.Labels)
             {
-                tracingContext.AddRange(ExtractTracingContext(profile));
-            }
-
-            return tracingContext;
-        }
-
-        private static IEnumerable<(ulong LocalRootSpanId, ulong SpanId)> ExtractTracingContext(Profile profile)
-        {
-            foreach (var labelsPerSample in profile.Labels())
-            {
-                ulong localRootSpanId = 0;
-                ulong spanId = 0;
-
-                foreach (var label in labelsPerSample)
-                {
-                    if (label.Name == "local root span id")
-                    {
-                        localRootSpanId = (ulong)long.Parse(label.Value);
-                    }
-
-                    if (label.Name == "span id")
-                    {
-                        spanId = (ulong)long.Parse(label.Value);
-                    }
-                }
+                var localRootSpanId = labels.GetValues("local root span id").Select(value => (ulong)long.Parse(value)).LastOrDefault();
+                var spanId = labels.GetValues("span id").Select(value => (ulong)long.Parse(value)).LastOrDefault();
 
                 if (spanId != 0 && localRootSpanId != 0)
                 {
-                    yield return (localRootSpanId, spanId);
+                    tracingContext.Add((localRootSpanId, spanId));
                 }
             }
+
+            return tracingContext;
         }
     }
 }

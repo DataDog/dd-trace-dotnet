@@ -1,0 +1,11 @@
+_v: 1
+name: AdoNet
+display_name: ADO.NET
+description: Instruments ADO.NET command execution for providers without a dedicated integration by hooking generic System.Data.Common.DbCommand
+  execute methods and their provider overrides, adding SQL security checks and IAST taint tracking for DbDataReader values.
+packages:
+- name: System.Data.Common
+category:
+- db.client
+systems: []
+creation_date: '2019-01-17'

@@ -21,10 +21,10 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0", "net11.0" })]
-        public void CheckHeapSnapshot(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void CheckHeapSnapshot(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 13");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 13");
             // runner.Environment.SetVariable(EnvironmentVariables.ManagedActivationEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             // Use the smallest non-zero threshold to exercise first-snapshot scheduling through the memory-pressure path.

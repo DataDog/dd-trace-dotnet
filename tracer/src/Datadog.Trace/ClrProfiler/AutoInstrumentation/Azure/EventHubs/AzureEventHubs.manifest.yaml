@@ -1,0 +1,12 @@
+_v: 1
+name: AzureEventHubs
+display_name: Azure Event Hubs
+description: Instruments Azure Event Hubs message creation, sending, and receiving with trace-context propagation.
+packages:
+- name: Azure.Messaging.EventHubs
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- eventhubs
+creation_date: '2025-10-27'
