@@ -5,6 +5,9 @@
 
 #nullable enable
 
+#if !NETCOREAPP
+using System.Collections.Generic;
+#endif
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -15,7 +18,7 @@ namespace System;
 /// <summary>
 /// Provides some simple wrappers around string operations, primarily to provide nullable annotations for frameworks
 /// that don't support them i.e. .NET FX, .NET Standard 2.0. Also polyfills the string char overloads
-/// (<c>StartsWith(char)</c> and <c>EndsWith(char)</c>) on those frameworks.
+/// (<c>StartsWith(char)</c>, <c>EndsWith(char)</c> and <c>string.Join(char, ...)</c>) on those frameworks.
 /// </summary>
 internal static partial class StringUtil
 {
@@ -39,6 +42,38 @@ internal static partial class StringUtil
         /// <returns>true if the string ends with <paramref name="c"/>; otherwise, false.</returns>
         public bool EndsWith(char c) => value.Length != 0 && value[value.Length - 1] == c;
     }
+
+    extension(string)
+    {
+        /// <summary>
+        /// Polyfill for <c>string.Join(char, params string[])</c> on .NET Framework and .NET Standard 2.0.
+        /// </summary>
+        /// <param name="separator">The separator character</param>
+        /// <param name="value">The values to join</param>
+        /// <returns>The joined string</returns>
+        public static string Join(char separator, params string?[] value) => string.Join(SeparatorToString(separator), value);
+
+        /// <summary>
+        /// Polyfill for <c>string.Join&lt;T&gt;(char, IEnumerable&lt;T&gt;)</c> on .NET Framework and .NET Standard 2.0.
+        /// </summary>
+        /// <param name="separator">The separator character</param>
+        /// <param name="values">The values to join</param>
+        /// <typeparam name="T">The type of the values</typeparam>
+        /// <returns>The joined string</returns>
+        public static string Join<T>(char separator, IEnumerable<T> values) => string.Join(SeparatorToString(separator), values);
+    }
+
+    // Returns interned literals for the separators we use, so .NET Framework and .NET Standard 2.0 don't allocate a string per call
+    private static string SeparatorToString(char separator) => separator switch
+    {
+        ',' => ",",
+        ';' => ";",
+        '|' => "|",
+        ':' => ":",
+        ' ' => " ",
+        '\n' => "\n",
+        _ => separator.ToString(),
+    };
 #endif
 
     /// <summary>

@@ -291,7 +291,7 @@ namespace Datadog.Trace.Debugger
                     var invalidLineDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                      ? new LineProbeResolutionDiagnostics(
                                                          ProbeFile: sourceFile,
-                                                         RawLines: string.Join(",", probe.Where?.Lines ?? Array.Empty<string>()),
+                                                         RawLines: string.Join(',', probe.Where?.Lines ?? Array.Empty<string>()),
                                                          ProbeId: probe.Id)
                                                      : new LineProbeResolutionDiagnostics(ProbeFile: sourceFile, ProbeId: probe.Id);
 

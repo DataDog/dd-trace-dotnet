@@ -25,7 +25,7 @@ internal sealed class UrlTokenizer : ITokenizer
 
     public UrlTokenizer(TimeSpan timeout)
     {
-        _patternUrl = new Regex(string.Join("|", AuthorityRegex, QueryFragmentGroup), RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+        _patternUrl = new Regex(string.Join('|', AuthorityRegex, QueryFragmentGroup), RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
     }
 
     public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)

@@ -123,7 +123,7 @@ namespace Datadog.Trace.Configuration
                 return true;
             }
 
-            if (obj.GetType() != GetType())
+            if (obj.GetType() != typeof(IntegrationSettings))
             {
                 return false;
             }

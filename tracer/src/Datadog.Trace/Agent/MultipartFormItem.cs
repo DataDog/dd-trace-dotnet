@@ -56,7 +56,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Not valid if the name contains ' or "
-            if (Name.IndexOf("\"", StringComparison.Ordinal) != -1 || Name.IndexOf("'", StringComparison.Ordinal) != -1)
+            if (Name.IndexOf('"') != -1 || Name.IndexOf('\'') != -1)
             {
                 log.Warning("Error encoding multipart form item name: {Name}. Ignoring item.", Name);
                 return false;
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
 
             // Do the same checks for FileName if not null
             if (FileName is not null
-             && (FileName.IndexOf("\"", StringComparison.Ordinal) != -1 || FileName.IndexOf("'", StringComparison.Ordinal) != -1))
+             && (FileName.IndexOf('"') != -1 || FileName.IndexOf('\'') != -1))
             {
                 log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", FileName);
                 return false;
