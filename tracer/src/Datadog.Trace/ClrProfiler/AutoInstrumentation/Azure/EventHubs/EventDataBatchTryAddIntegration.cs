@@ -49,21 +49,20 @@ public sealed class EventDataBatchTryAddIntegration
             return CallTargetState.GetDefault();
         }
 
+        var state = tracer.Settings.AzureEventHubsBatchLinksEnabled
+                        ? EventHubsCommon.CreateSenderSpan(
+                            instance,
+                            OperationName,
+                            messages: new[] { eventData.Instance },
+                            messageCount: 1,
+                            spanLinks: null)
+                        : CallTargetState.GetDefault();
+
         // The batch snapshots the event's properties as part of TryAdd, so the pathway must be
         // injected into them here rather than at the later SendAsync(EventDataBatch) call.
         EventHubsCommon.SetProduceCheckpoint(tracer, eventData, instance.EventHubName);
 
-        if (!tracer.Settings.AzureEventHubsBatchLinksEnabled)
-        {
-            return CallTargetState.GetDefault();
-        }
-
-        return EventHubsCommon.CreateSenderSpan(
-            instance,
-            OperationName,
-            messages: new[] { eventData.Instance },
-            messageCount: 1,
-            spanLinks: null);
+        return state;
     }
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(

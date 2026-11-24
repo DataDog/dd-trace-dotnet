@@ -21,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 [UsesVerify]
 public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
 {
+    private const int ExpectedSpanCount = 5;
+
     public DataStreamsMonitoringAzureEventHubsTests(ITestOutputHelper output)
         : base("DataStreams.AzureEventHubs", output)
     {
@@ -44,8 +46,8 @@ public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Name.StartsWith("azure_eventhubs"));
-            var spans = await agent.WaitForSpansAsync(4);
-            spans.Should().HaveCount(4);
+            var spans = await agent.WaitForSpansAsync(ExpectedSpanCount);
+            spans.Should().HaveCount(ExpectedSpanCount);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
@@ -69,10 +71,12 @@ public class DataStreamsMonitoringAzureEventHubsTests : TestHelper
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             agent.SpanFilters.Add(s => s.Name.StartsWith("azure_eventhubs"));
-            var spans = await agent.WaitForSpansAsync(4);
-            spans.Should().HaveCount(4);
-            var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(4); // 2 events published, 2 events consumed
+            var spans = await agent.WaitForSpansAsync(ExpectedSpanCount);
+            spans.Should().HaveCount(ExpectedSpanCount);
+            spans.Where(s => s.Tags.ContainsKey("pathway.hash"))
+                 .Select(s => s.Tags["messaging.operation"])
+                 .Should()
+                 .BeEquivalentTo("send", "create", "receive", "receive");
         }
     }
 

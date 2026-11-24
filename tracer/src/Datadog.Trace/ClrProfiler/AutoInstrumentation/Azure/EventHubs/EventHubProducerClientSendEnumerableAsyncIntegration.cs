@@ -39,21 +39,12 @@ public sealed class EventHubProducerClientSendEnumerableAsyncIntegration
         CancellationToken cancellationToken)
         where TTarget : IEventHubProducerClient, IDuckType
     {
-        var tracer = Tracer.Instance;
-
-        var state = EventHubsCommon.CreateSenderSpan(
+        return EventHubsCommon.CreateSenderSpan(
             instance,
             OperationName,
             messages: eventBatch as IEnumerable,
             messageCount: null,
             spanLinks: null);
-
-        if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
-        {
-            EventHubsCommon.SetProduceCheckpoints(tracer, eventBatch as IEnumerable, instance.EventHubName);
-        }
-
-        return state;
     }
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
