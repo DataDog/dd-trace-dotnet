@@ -24,8 +24,15 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         // (see NativeThreadsCpuProviderBase::GetSamples). A larger allocation count forces more
         // (and longer) collections so the server GC threads reliably accrue measurable CPU time.
         private const string ScenarioAllocationsHeavy = "--scenario 26 --param 20000";
-        private static readonly StackFrame GcFrame = new("|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:");
-        private static readonly StackFrame ClrFrame = new("|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:");
+        private static readonly StackFrame GcFrame =
+            StackFrame.Build()
+                .Module("[native] GC")
+                .Function("Garbage Collector");
+
+        private static readonly StackFrame ClrFrame =
+            StackFrame.Build()
+                .Module("[native] CLR")
+                .Function(".NET");
 
         private static readonly StackTrace GcStack = new(GcFrame, ClrFrame);
 
