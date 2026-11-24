@@ -126,8 +126,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             try
             {
                 data.Position = 0;
-                var adapter = ReadPropagatedContext(data);
-                return adapter is { } headers ? dataStreamsManager.ExtractPathwayContext(headers) : null;
+                ReadPropagatedContext(data, out var stringHeaders, out var arrayHeaders);
+                if (stringHeaders is { } stringAdapter)
+                {
+                    try
+                    {
+                        var context = dataStreamsManager.ExtractPathwayContextAsBase64String(stringAdapter);
+                        if (context is not null)
+                        {
+                            return context;
+                        }
+                    }
+                    catch (FormatException)
+                    {
+                        Log.Debug("Invalid base64 Data Streams context in Kinesis data.");
+                    }
+                }
+
+                return arrayHeaders is { } arrayAdapter ? dataStreamsManager.ExtractPathwayContext(arrayAdapter) : null;
             }
             catch (Exception)
             {
@@ -140,14 +156,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
-        private static KinesisContextAdapter? ReadPropagatedContext(MemoryStream stream)
+        private static void ReadPropagatedContext(MemoryStream stream, out KinesisContextAdapter? stringHeaders, out KinesisContextAdapter? arrayHeaders)
         {
+            stringHeaders = null;
+            arrayHeaders = null;
+
             using var streamReader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
             using var reader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
 
             if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
             {
-                return null;
+                return;
             }
 
             while (reader.Read() && reader.TokenType == JsonToken.PropertyName)
@@ -161,10 +180,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                 if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
                 {
-                    return null;
+                    return;
                 }
 
-                var adapter = new KinesisContextAdapter();
                 var objectDepth = reader.Depth;
                 while (reader.Read() && reader.Depth > objectDepth)
                 {
@@ -177,7 +195,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     reader.Read();
                     if (reader.TokenType == JsonToken.String)
                     {
-                        adapter.Add(name, (string)reader.Value!);
+                        stringHeaders ??= new KinesisContextAdapter();
+                        stringHeaders.Value.Add(name, (string)reader.Value!);
                     }
                     else if (reader.TokenType == JsonToken.StartArray)
                     {
@@ -185,7 +204,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                         {
                             if (reader.TokenType == JsonToken.String)
                             {
-                                adapter.Add(name, (string)reader.Value!);
+                                arrayHeaders ??= new KinesisContextAdapter();
+                                arrayHeaders.Value.Add(name, (string)reader.Value!);
                             }
                         }
                     }
@@ -195,10 +215,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     }
                 }
 
-                return adapter;
+                return;
             }
-
-            return null;
         }
 
         [TestingAndPrivateOnly]

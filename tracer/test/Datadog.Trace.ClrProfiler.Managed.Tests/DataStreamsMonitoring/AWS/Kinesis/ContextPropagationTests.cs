@@ -289,12 +289,34 @@ public class ContextPropagationTests
     }
 
     [Fact]
+    public void ExtractPathwayContext_WithArrayValueAndStringHeaders_ReturnsContext()
+    {
+        var dsm = GetDataStreamsManager();
+        var context = new PathwayContext(new PathwayHash(321), 1_234_000_000, 5_678_000_000);
+        var adapter = new KinesisContextAdapter();
+        dsm.InjectPathwayContext(context, adapter);
+
+        var datadogDictionary = new Dictionary<string, object>(adapter.GetDictionary())
+        {
+            ["x-datadog-trace-id"] = "123",
+            ["x-datadog-parent-id"] = "456"
+        };
+        var data = new Dictionary<string, object>(PersonDictionary) { [DatadogKey] = datadogDictionary };
+        var stream = ContextPropagation.DictionaryToMemoryStream(data);
+
+        var extracted = ContextPropagation.ExtractPathwayContext(dsm, stream);
+
+        extracted.Should().NotBeNull();
+        extracted!.Value.Hash.Value.Should().Be(context.Hash.Value);
+    }
+
+    [Fact]
     public void ExtractPathwayContext_WithStringValue_ReturnsContext()
     {
         var dsm = GetDataStreamsManager();
         var context = new PathwayContext(new PathwayHash(456), 1_234_000_000, 5_678_000_000);
         var adapter = new KinesisContextAdapter();
-        dsm.InjectPathwayContext(context, adapter);
+        dsm.InjectPathwayContextAsBase64String(context, adapter);
         var encoded = adapter.GetValues("dd-pathway-ctx-base64").Should().ContainSingle().Subject;
 
         var json = $"{{\"before\":{{\"nested\":[1,2]}},\"{DatadogKey}\":{{\"x-datadog-trace-id\":\"1\",\"dd-pathway-ctx-base64\":\"{encoded}\"}},\"after\":true}}";
