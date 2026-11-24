@@ -381,7 +381,7 @@ internal static class FeatureFlagsSdk
                         ToMetadata(null, evalTimeMs, false, dependencyTelemetry: null));
         }
 
-        var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
+        var errorType = FeatureFlagEvaluationMappings.ToErrorType(evaluation.Error);
         var value = errorType != ErrorType.None
                         ? defaultValue
                         : typeof(T) == typeof(Value) ? (T)(object)JsonToValue(evaluation.Value) : (T)evaluation.Value!;
@@ -404,41 +404,12 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             value,
             errorType,
-            ToOpenFeatureReason(evaluation.Reason),
+            FeatureFlagEvaluationMappings.ToReason(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata, evalTimeMs, deferredExposure, dependencyTelemetry));
         return res;
     }
-
-    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)
-    {
-        return errorMessage switch
-        {
-            "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
-            "INVALID_CONTEXT" => ErrorType.InvalidContext,
-            "PARSE_ERROR" => ErrorType.ParseError,
-            "PROVIDER_FATAL" => ErrorType.ProviderFatal,
-            "PROVIDER_NOT_READY" => ErrorType.ProviderNotReady,
-            "TARGETING_KEY_MISSING" => ErrorType.TargetingKeyMissing,
-            "TYPE_MISMATCH" => ErrorType.TypeMismatch,
-            "GENERAL" => ErrorType.General,
-            _ => ErrorType.None,
-        };
-    }
-
-    private static string ToOpenFeatureReason(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
-    {
-        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
-        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
-        _ => "unknown"
-    };
 
     private static ImmutableMetadata? ToMetadata(
         IDictionary<string, string>? metadata,

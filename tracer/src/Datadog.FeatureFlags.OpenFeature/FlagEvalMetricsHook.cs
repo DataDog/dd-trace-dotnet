@@ -65,7 +65,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
             string? errorType = null;
             if (details.ErrorType != ErrorType.None)
             {
-                errorType = ErrorTypeToString(details.ErrorType);
+                errorType = FeatureFlagEvaluationMappings.ToTelemetryErrorCode(details.ErrorType);
             }
 
             // Extract allocation key from metadata if present
@@ -98,8 +98,8 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
                 _metrics.Record(
                     dependency.FlagKey,
                     dependency.Variant,
-                    ToTelemetryReason((Datadog.Trace.FeatureFlags.EvaluationReason)dependency.Reason),
-                    ErrorCodeToString(dependency.ErrorCode),
+                    FeatureFlagEvaluationMappings.ToReason((Datadog.Trace.FeatureFlags.EvaluationReason)dependency.Reason),
+                    FeatureFlagEvaluationMappings.ToTelemetryErrorCode(dependency.ErrorCode),
                     dependency.AllocationKey);
             }
             catch (Exception)
@@ -131,45 +131,5 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         _ => reason.ToLower(CultureInfo.InvariantCulture)
     };
 
-    private static string ToTelemetryReason(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
-    {
-        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
-        _ => "unknown",
-    };
-
-    private static string? ErrorCodeToString(string? errorCode) => errorCode switch
-    {
-        null or "" => null,
-        "PROVIDER_NOT_READY" => "provider_not_ready",
-        "FLAG_NOT_FOUND" => "flag_not_found",
-        "PARSE_ERROR" => "parse_error",
-        "TYPE_MISMATCH" => "type_mismatch",
-        "TARGETING_KEY_MISSING" => "targeting_key_missing",
-        "INVALID_CONTEXT" => "invalid_context",
-        "PROVIDER_FATAL" => "provider_fatal",
-        _ => "general",
-    };
-
-    private static string ErrorTypeToString(ErrorType errorType)
-    {
-        return errorType switch
-        {
-            ErrorType.ProviderNotReady => "provider_not_ready",
-            ErrorType.FlagNotFound => "flag_not_found",
-            ErrorType.ParseError => "parse_error",
-            ErrorType.TypeMismatch => "type_mismatch",
-            ErrorType.TargetingKeyMissing => "targeting_key_missing",
-            ErrorType.InvalidContext => "invalid_context",
-            ErrorType.ProviderFatal => "provider_fatal",
-            ErrorType.General => "general",
-            _ => "general"
-        };
-    }
 }
 #endif
