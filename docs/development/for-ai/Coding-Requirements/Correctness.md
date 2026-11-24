@@ -84,6 +84,11 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `OnMethodEnd` resets thread-local state while `OnAsyncMethodEnd` calls `securityCoordinator.BlockAndReport(...)`.
 - ✅ Block from an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`.
 
+### COR-5.5: Add a path separator or segment only when it is missing
+- Flag: code that always adds a leading `/` or a segment such as `v1/<signal>`. The value can already contain that part. The result is then a duplicated path such as `//api/foo` or `/v1/logs/v1/logs`.
+- ❌ `path = "/" + headerValue;`
+- ✅ `path = headerValue.StartsWith("/") ? headerValue : "/" + headerValue;`
+
 ## 6. Tests
 
 ### COR-6.1: Create a fresh instance per test instead of using a static `.Instance` or the global tracer
