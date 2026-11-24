@@ -118,7 +118,7 @@ internal static class LegacyServiceBusCommon
 
     private static EdgeTags GetEdgeTags(DataStreamsManager dataStreamsManager, string? entityPath, bool isConsume)
     {
-        if (string.IsNullOrEmpty(entityPath))
+        if (StringUtil.IsNullOrEmpty(entityPath))
         {
             return isConsume ? DefaultConsumeEdgeTags : DefaultProduceEdgeTags;
         }
