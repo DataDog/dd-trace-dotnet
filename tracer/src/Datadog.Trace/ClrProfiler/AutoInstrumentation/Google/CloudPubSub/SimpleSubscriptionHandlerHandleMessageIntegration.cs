@@ -69,11 +69,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
                 }
             }
 
+            BaggageScope? baggageScope = null;
+
+            try
+            {
+                baggageScope = BaggageScope.Capture(extractedContext.Baggage);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error setting the current baggage of a Google Cloud Pub/Sub message");
+            }
+
             var subscriptionId = GooglePubSubCommon.GetSubscription(instance);
 
             var scope = GooglePubSubCommon.CreateConsumerSpan(tracer, subscriptionId, extractedContext);
             if (scope is null)
             {
+                baggageScope?.Dispose();
                 return CallTargetState.GetDefault();
             }
 
@@ -115,11 +127,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
                 Log.Error(ex, "Error instrumenting a Google Cloud Pub/Sub message");
             }
 
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, baggageScope);
         }
 
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         {
+            (state.State as BaggageScope)?.Dispose();
             state.Scope?.DisposeWithException(exception);
             return response;
         }

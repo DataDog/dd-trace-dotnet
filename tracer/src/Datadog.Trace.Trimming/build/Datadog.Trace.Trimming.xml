@@ -24,6 +24,7 @@
    <assembly fullname="Datadog.Trace.OpenTracing" />
    <assembly fullname="dotnet" />
    <assembly fullname="Elasticsearch.Net" />
+   <assembly fullname="Google.Cloud.PubSub.V1" />
    <assembly fullname="Google.Protobuf" />
    <assembly fullname="GraphQL" />
    <assembly fullname="GraphQL.SystemReactive" />

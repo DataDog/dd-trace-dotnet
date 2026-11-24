@@ -12,4 +12,8 @@
   <ItemGroup>
     <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.40.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+  </ItemGroup>
 </Project>

@@ -669,7 +669,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTelemetry.AutoInstrumen
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{4958D7D8-4791-2CCE-6FFA-082B65933577}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.DataStreams.GoogleCloudPubSub", "tracer\test\test-applications\integrations\Samples.DataStreams.GoogleCloudPubSub\Samples.DataStreams.GoogleCloudPubSub.csproj", "{9568A01F-835B-4CC6-9D4C-F6BB369EDFBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.GoogleCloudPubSub", "tracer\test\test-applications\integrations\Samples.DataStreams.GoogleCloudPubSub\Samples.DataStreams.GoogleCloudPubSub.csproj", "{9568A01F-835B-4CC6-9D4C-F6BB369EDFBF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

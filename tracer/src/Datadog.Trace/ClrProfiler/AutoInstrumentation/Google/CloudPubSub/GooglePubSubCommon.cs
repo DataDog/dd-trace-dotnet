@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GooglePubSubCommon));
 
-        // The consume checkpoint tag (subscription vs topic) is pending DSM2-747; Java and the merged
-        // Python integration both identify the consume edge by subscription, so that is the default here.
+        // The consume checkpoint tags the subscription (decision DSM2-747, matching Java; the Python
+        // integration tags the same edge topic:<subscription> for now).
         private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:google-pubsub"]);
         private static readonly EdgeTags DefaultConsumeEdgeTags = new(["direction:in", "type:google-pubsub"]);
 
@@ -153,6 +153,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub
                 tags.MessagingDestinationName = topicId;
                 tags.LegacyMessageBusDestination = topicId;
                 span.SetTag(Tags.Measured, "1");
+                settings.Schema.RemapPeerService(tags);
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.GoogleCloudPubSub);
                 return scope;
