@@ -18,11 +18,11 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Source"/> struct
 /// </summary>
-internal struct TruncatedVulnerabilities
+internal readonly struct TruncatedVulnerabilities
 {
     public const string MaxSizeExceeded = "MAX SIZE EXCEEDED";
 
-    private List<Vulnerability> vulnerabilities;
+    private readonly List<Vulnerability> vulnerabilities;
 
     public TruncatedVulnerabilities(List<Vulnerability> vulnerabilities)
     {

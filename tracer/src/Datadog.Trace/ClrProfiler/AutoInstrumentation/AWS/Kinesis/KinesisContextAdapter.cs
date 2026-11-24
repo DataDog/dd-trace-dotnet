@@ -14,9 +14,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
-    internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
+    internal readonly struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
     {
-        private Dictionary<string, List<string>> headers = new Dictionary<string, List<string>>();
+        private readonly Dictionary<string, List<string>> headers = new Dictionary<string, List<string>>();
 
         public KinesisContextAdapter()
         {
