@@ -441,7 +441,8 @@ internal static class MetricTags
         [Description("integration_name:protobuf")] Protobuf,
         [Description("integration_name:hangfire")] Hangfire,
         [Description("integration_name:quartz")] Quartz,
-        [Description("integration_name:serverlesscompat")] ServerlessCompat
+        [Description("integration_name:serverlesscompat")] ServerlessCompat,
+        [Description("integration_name:awslambdasdk")] AwsLambdaSdk
     }
 
     public enum InstrumentationError

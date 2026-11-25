@@ -1,0 +1,131 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aws.lambda.invoke,
+    Resource: Lambda.Invoke default-context,
+    Service: Samples.AWS.Lambda.Invoke,
+    Type: http,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.lambda: default-context,
+      aws.operation: Invoke,
+      aws.requestId: test-request-id,
+      aws.service: Lambda,
+      aws_service: Lambda,
+      component: aws-sdk,
+      env: integration_tests,
+      functionname: default-context,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_2/2015-03-31/functions/default-context/invocations,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: aws.lambda.invoke,
+    Resource: Lambda.Invoke existing-custom,
+    Service: Samples.AWS.Lambda.Invoke,
+    Type: http,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.lambda: existing-custom,
+      aws.operation: Invoke,
+      aws.requestId: test-request-id,
+      aws.service: Lambda,
+      aws_service: Lambda,
+      component: aws-sdk,
+      env: integration_tests,
+      functionname: existing-custom,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_2/2015-03-31/functions/existing-custom/invocations,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: aws.lambda.invoke,
+    Resource: Lambda.Invoke existing-env,
+    Service: Samples.AWS.Lambda.Invoke,
+    Type: http,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.lambda: existing-env,
+      aws.operation: Invoke,
+      aws.requestId: test-request-id,
+      aws.service: Lambda,
+      aws_service: Lambda,
+      component: aws-sdk,
+      env: integration_tests,
+      functionname: existing-env,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_2/2015-03-31/functions/existing-env/invocations,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: aws.lambda.invoke,
+    Resource: Lambda.Invoke failed-invoke,
+    Service: Samples.AWS.Lambda.Invoke,
+    Type: http,
+    Error: 1,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.lambda: failed-invoke,
+      aws.operation: Invoke,
+      aws.service: Lambda,
+      aws_service: Lambda,
+      component: aws-sdk,
+      env: integration_tests,
+      error.msg: test failure,
+      error.stack:
+Amazon.Lambda.AmazonLambdaException: test failure
+---> Amazon.Runtime.Internal.HttpErrorResponseException: Exception of type 'Amazon.Runtime.Internal.HttpErrorResponseException' was thrown.
+at Amazon.Runtime.<transport>,
+      error.type: Amazon.Lambda.AmazonLambdaException,
+      functionname: failed-invoke,
+      http.method: POST,
+      http.url: http://localhost:00000/Guid_2/2015-03-31/functions/failed-invoke/invocations,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

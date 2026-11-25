@@ -1,5 +1,18 @@
 ﻿# AWS Lambda integration tests
 
+## AWS SDK Lambda Invoke client tests
+
+`AwsLambdaSdkTests` and `Samples.AWS.Lambda.Invoke` test outgoing `AmazonLambdaClient.Invoke` and
+`InvokeAsync` calls separately from the Lambda handler tests below. The sample sends requests to a
+local HTTP endpoint, which records `X-Amz-Client-Context` and the invocation payload. Tests verify
+that default and explicit `RequestResponse` invocations propagate the SDK span's context through
+`ClientContext.custom`, preserve existing fields, and leave the payload unchanged. `Event` and
+`DryRun` invocations are excluded. The client integration is controlled by `AwsLambdaSdk` and
+`AwsSdk`, independently of the `AwsLambda` handler integration. No AWS account or extension is
+needed for these tests; sync client calls are exercised on .NET Framework.
+
+## Lambda handler tests
+
 AWS Lambda instrumentation is a somewhat complex topic. The AWS lambda tests in the repository emulate the design of the .NET Tracer integration, without fully testing it. This documentation provides an explainer for what the tests are doing, and what we're testing.
 
 ## The AWS Lambda integration test setup

@@ -52,6 +52,8 @@ namespace Datadog.Trace.Propagators
 
         internal IEnumerable<string> ExtractorNames => _extractors.Select(static extractor => extractor.DisplayName);
 
+        internal bool IsInjectorEnabled(IContextInjector injector) => Array.IndexOf(_injectors, injector) >= 0;
+
         /// <summary>
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
         /// This locks the sampling priority for <paramref name="context"/>.

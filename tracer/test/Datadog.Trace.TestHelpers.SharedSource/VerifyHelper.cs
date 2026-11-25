@@ -32,6 +32,8 @@ namespace Datadog.Trace.TestHelpers
             // bytes differ slightly depending on platform
             (new(@"http.response.headers.content-length\: 2\d{3}", RegOptions), "http.response.headers.content-length: 2xxx"),
             (new(@"127.0.0.1\:\d+", RegOptions), "localhost:00000"),
+            // AWS SDK transport frames differ between SDK versions and .NET Framework/Core.
+            (new(@"^at Amazon\.Runtime\.[^\r\n]+", RegOptions | RegexOptions.Multiline), "at Amazon.Runtime.<transport>,"),
             // tests bind a dynamic port, so server.port changes between runs. The optional ".0"
             // covers the spans that record the port as a metric rather than as a string tag
             (new(@"server\.port: \d+(\.0)?", RegOptions), "server.port: 00000"),
