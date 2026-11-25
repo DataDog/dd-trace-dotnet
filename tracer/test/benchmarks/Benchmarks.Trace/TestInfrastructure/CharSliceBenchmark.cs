@@ -15,34 +15,31 @@ namespace Benchmarks.Trace;
 [IterationTime(500)]
 public class CharSliceBenchmark
 {
+    // Each invocation is a single construct/consume/dispose of the CharSlice.
+    // The native allocation is the measured work (the benchmark compares the
+    // allocation strategies of V0/V1/V2), so it must stay in the timed region.
+    // BenchmarkDotNet's pilot sizes the invocation count per iteration; there
+    // is no loop here and no OperationsPerInvoke, so per-operation means are
+    // reported directly and iteration sizing is left to BenchmarkDotNet.
     [Benchmark]
     public void OriginalCharSlice()
     {
-        for (var i = 0; i < 10000; i++)
-        {
-            using var slice = new CharSliceV0("This is a test string for CharSliceV0");
-            Consume(slice);
-        }
+        using var slice = new CharSliceV0("This is a test string for CharSliceV0");
+        Consume(slice);
     }
-    
+
     [Benchmark]
     public void OptimizedCharSlice()
     {
-        for (var i = 0; i < 10000; i++)
-        {
-            using var slice = new CharSliceV1("This is a test string for CharSliceV1");
-            Consume(slice);
-        }
+        using var slice = new CharSliceV1("This is a test string for CharSliceV1");
+        Consume(slice);
     }
-    
+
     [Benchmark]
     public void OptimizedCharSliceWithPool()
     {
-        for (var i = 0; i < 10000; i++)
-        {
-            using var slice = new CharSliceV2("This is a test string for CharSliceV2");
-            Consume(slice);
-        }
+        using var slice = new CharSliceV2("This is a test string for CharSliceV2");
+        Consume(slice);
     }
     
     [MethodImpl(MethodImplOptions.NoInlining)]
