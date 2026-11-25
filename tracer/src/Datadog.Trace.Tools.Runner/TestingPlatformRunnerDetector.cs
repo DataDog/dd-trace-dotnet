@@ -76,14 +76,10 @@ internal static class TestingPlatformRunnerDetector
 
     [TestingAndPrivateOnly]
     internal static int? GetSdkMajorVersion(string program, string? workingDirectory)
-        => GetSdkMajorVersion(program, workingDirectory, SdkVersionTimeout);
-
-    [TestingAndPrivateOnly]
-    internal static int? GetSdkMajorVersion(string program, string? workingDirectory, TimeSpan timeout)
     {
         try
         {
-            var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command(program, "--version", workingDirectory, timeout: timeout));
+            var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command(program, "--version", workingDirectory, timeout: SdkVersionTimeout));
             if (output is null)
             {
                 Log.Warning("RunCiCommand: '{Program} --version' couldn't be started, so the .NET SDK version is unknown.", program);
@@ -92,7 +88,7 @@ internal static class TestingPlatformRunnerDetector
 
             if (output.TimedOut)
             {
-                Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, timeout);
+                Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, SdkVersionTimeout);
                 return null;
             }
 
