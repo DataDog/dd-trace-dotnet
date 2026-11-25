@@ -113,7 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         {
             var name = StringAt(profile, label.Key, path, "label");
 
-            // Numeric when num or num_unit is set, including a numeric zero. Same rule as PprofHelper.Labels.
+            // Numeric when num or num_unit is set, including a numeric zero.
             if (label.Num != 0 || label.NumUnit != 0)
             {
                 var unit = label.NumUnit == 0 ? string.Empty : StringAt(profile, label.NumUnit, path, "label unit");
@@ -140,7 +140,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 throw new InvalidDataException("Profile '" + path + "' location " + locationId + " has no line.");
             }
 
-            // Inlined frames are extra lines on one location. The legacy reader keeps the first line only.
+            // Inlined frames are extra lines on one location. Only the first line is kept.
             var line = location.Line[0];
             if (!functions.TryGetValue(line.FunctionId, out var function))
             {

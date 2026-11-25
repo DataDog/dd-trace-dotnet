@@ -46,15 +46,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Line = line;
         }
 
-        public StackFrame(string module, string ns, string type, string function, string signature)
-        {
-            Module = module;
-            Namespace = ns;
-            Type = type;
-            Function = function;
-            Signature = signature;
-        }
-
         /// <summary>
         /// Starts a frame where each part is set by name. Parts that are not set are empty.
         /// The builder converts to a <see cref="StackFrame"/> implicitly.

@@ -892,7 +892,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
         private static (bool Matched, string Message) AssertExpectedStack_x86_64(StackTrace actualStack, StackTrace expectedStack)
         {
-            if (!actualStack.EndWith(expectedStack, out var failureDetail))
+            if (!actualStack.StartsWith(expectedStack, out var failureDetail))
             {
                 return (false, failureDetail);
             }

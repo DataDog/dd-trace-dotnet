@@ -14,7 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 {
     internal static class ProfileReader
     {
-        // Same bytes and order as SamplesHelper.GetStream.
+        // Magic numbers of the LZ4 and Zstd frame formats, as written by the profiler.
         private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
         private static readonly byte[] ZstdMagicNumber = BitConverter.GetBytes(0xFD2FB528);
 
