@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
@@ -159,7 +158,7 @@ namespace Datadog.Trace.Util
             if (!WaitForExit(processInfo, command.Timeout, stopwatch) ||
                 (outputTask is not null && errorTask is not null && !WaitForOutput(outputTask, errorTask, command.Timeout, stopwatch)))
             {
-                Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
+                Log.Warning<TimeSpan?>("Process timed out after {Timeout}. Killing process.", command.Timeout);
                 TryKill(processInfo);
                 return new CommandOutput(GetCompletedOutput(outputTask), GetCompletedOutput(errorTask), exitCode: -1, timedOut: true);
             }

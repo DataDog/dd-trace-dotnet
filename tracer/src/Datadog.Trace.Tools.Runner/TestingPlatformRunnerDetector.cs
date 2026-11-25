@@ -84,7 +84,13 @@ internal static class TestingPlatformRunnerDetector
         try
         {
             var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command(program, "--version", workingDirectory, timeout: timeout));
-            if (output is null || output.TimedOut)
+            if (output is null)
+            {
+                Log.Warning("RunCiCommand: '{Program} --version' couldn't be started, so the .NET SDK version is unknown.", program);
+                return null;
+            }
+
+            if (output.TimedOut)
             {
                 Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, timeout);
                 return null;
