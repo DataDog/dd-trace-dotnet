@@ -1,10 +1,17 @@
 SET(LIBUNWIND_VERSION "v1.8.3-custom-4")
 
-SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build)
+SET(LIBUNWIND_GIT_TAG 1e3629f07c6edbc1a85237dfb4d065248be22b0b)
+
+# The prefix depends on the pin: when GIT_TAG changes, an existing build folder
+# fetches and builds the new commit instead of reusing the old checkout.
+string(SUBSTRING ${LIBUNWIND_GIT_TAG} 0 12 LIBUNWIND_SHORT_SHA)
+SET(LIBUNWIND_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libunwind-${LIBUNWIND_SHORT_SHA})
+SET(LIBUNWIND_BINARY_DIR ${LIBUNWIND_PREFIX}/src/libunwind-build)
 
 ExternalProject_Add(libunwind
     GIT_REPOSITORY https://github.com/DataDog/libunwind.git
-    GIT_TAG 1e3629f07c6edbc1a85237dfb4d065248be22b0b
+    PREFIX ${LIBUNWIND_PREFIX}
+    GIT_TAG ${LIBUNWIND_GIT_TAG}
     GIT_PROGRESS false
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
@@ -22,8 +29,8 @@ ExternalProject_Add(libunwind
 add_library(libunwind-lib INTERFACE)
 
 target_include_directories(libunwind-lib INTERFACE
-    ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build/include
-    ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind/include
+    ${LIBUNWIND_PREFIX}/src/libunwind-build/include
+    ${LIBUNWIND_PREFIX}/src/libunwind/include
 )
 
 target_link_libraries(libunwind-lib INTERFACE
