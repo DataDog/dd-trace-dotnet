@@ -53,7 +53,7 @@ namespace Benchmarks.Trace
             var config = new CustomSettingsForTests(TracerHelper.DefaultConfig);
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
-            _tracer = TracerHelper.CreateTracer(settings);
+            _tracer = TracerHelper.CreateAndSetGlobalTracer(settings);
             _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
@@ -79,7 +79,7 @@ namespace Benchmarks.Trace
             _diagnosticManager.Dispose();
             _testServer.Dispose();
             _security.Dispose();
-            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
@@ -129,7 +129,7 @@ namespace Benchmarks.Trace
             var config = new CustomSettingsForTests(TracerHelper.DefaultConfig);
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
-            _tracer = TracerHelper.CreateTracer(settings);
+            _tracer = TracerHelper.CreateAndSetGlobalTracer(settings);
             _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
@@ -155,7 +155,7 @@ namespace Benchmarks.Trace
             _diagnosticManager.Dispose();
             _testServer.Dispose();
             _security.Dispose();
-            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
