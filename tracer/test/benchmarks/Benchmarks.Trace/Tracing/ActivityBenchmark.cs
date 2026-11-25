@@ -1,9 +1,10 @@
 #nullable enable
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using BenchmarkDotNet.Attributes;
+using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
 using ActivityIdFormat = System.Diagnostics.ActivityIdFormat;
 using ActivityListener = System.Diagnostics.ActivityListener;
@@ -19,10 +20,12 @@ public class ActivityBenchmark
     private static readonly DateTime _startTime = DateTimeOffset.FromUnixTimeSeconds(0).UtcDateTime;
     private static readonly DateTime _endTime = DateTimeOffset.FromUnixTimeSeconds(5).UtcDateTime;
 
-    private Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
     private ActivitySource? _source;
     private ActivityListener? _activityListener;
-    private DefaultActivityHandler? _handler;
+
+    // The delegates ActivityListener.Initialize() emits, so the benchmark drives the real listener->handler pipeline
+    private Action<Activity>? _onStarted;
+    private Action<Activity>? _onStopped;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -34,8 +37,16 @@ public class ActivityBenchmark
 
         ActivitySource.AddActivityListener(_activityListener);
 
-        _duckSource = new Datadog.Trace.Activity.DuckTypes.ActivitySource { Name = _source.Name, Version = _source.Version ?? string.Empty };
-        _handler = new();
+        // Register the source against the handler chain (resolves to DefaultActivityHandler), the
+        // same way ActivityListenerHandler.OnShouldListenTo would be called from the emitted
+        // ShouldListenTo delegate during real initialization.
+        ActivityListenerHandler.OnShouldListenTo(_source.DuckCast<IActivitySource>());
+
+        var onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public)!;
+        var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public)!;
+
+        _onStarted = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(typeof(Activity), onActivityStartedMethodInfo);
+        _onStopped = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(typeof(Activity), onActivityStoppedMethodInfo);
     }
 
     [GlobalCleanup]
@@ -63,14 +74,12 @@ public class ActivityBenchmark
     {
         using var parent = CreateActivity();
         using var child = CreateActivity(parent);
-        var parentMock = parent.DuckAs<IActivity6>()!;
-        var childMock = child.DuckAs<IActivity6>()!;
-        _handler!.ActivityStarted(SourceName, parentMock);
-        _handler.ActivityStarted(SourceName, childMock);
+        _onStarted!(parent);
+        _onStarted(child);
         child.Stop();
-        _handler.ActivityStopped(SourceName, childMock);
+        _onStopped!(child);
         parent.Stop();
-        _handler.ActivityStopped(SourceName, parentMock);
+        _onStopped(parent);
     }
 
     [Benchmark]
@@ -78,14 +87,12 @@ public class ActivityBenchmark
     {
         using var parent = CreateActivity(idFormat: ActivityIdFormat.Hierarchical);
         using var child = CreateActivity(parent, idFormat: ActivityIdFormat.Hierarchical);
-        var parentMock = parent.DuckAs<IActivity6>()!;
-        var childMock = child.DuckAs<IActivity6>()!;
-        _handler!.ActivityStarted(SourceName, parentMock);
-        _handler.ActivityStarted(SourceName, childMock);
+        _onStarted!(parent);
+        _onStarted(child);
         child.Stop();
-        _handler.ActivityStopped(SourceName, childMock);
+        _onStopped!(child);
         parent.Stop();
-        _handler.ActivityStopped(SourceName, parentMock);
+        _onStopped(parent);
     }
 
     private Activity CreateActivity(Activity? parent = null, ActivityIdFormat idFormat = ActivityIdFormat.W3C)
