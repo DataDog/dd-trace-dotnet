@@ -55,8 +55,7 @@ namespace Datadog.Trace.Activity.Handlers
                 return;
             }
 
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-            if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
+            if ((activity.Parent is not { } parent || parent.StartTimeUtc < span.StartTime.UtcDateTime)
              && activity.SpanId is not null
              && activity.TraceId is not null)
             {
@@ -76,7 +75,6 @@ namespace Datadog.Trace.Activity.Handlers
                 activity.RawId = null;
                 activity.RawParentId = null;
             }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
         }
 
         public bool ShouldListenTo(string sourceName, string? version)

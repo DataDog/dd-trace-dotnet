@@ -134,7 +134,7 @@ namespace Datadog.Trace.Activity.Handlers
              && activitySpanId is not null
              && activityTraceId is not null
              && Tracer.Instance.ActiveScope?.Span is Span activeSpan
-             && (activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime + ParentReorderingClockSkewTolerance))
+             && (activity.Parent is not { } activityParent || activityParent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime + ParentReorderingClockSkewTolerance))
             {
                 // We ensure the activity follows the same TraceId as the span
                 // And marks the ParentId the current spanId

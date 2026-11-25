@@ -38,7 +38,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         string? OperationName { get; }
 
-        IActivity? Parent { get; }
+        ActivityParent? Parent { get; }
 
         DateTime StartTimeUtc { get; }
 
