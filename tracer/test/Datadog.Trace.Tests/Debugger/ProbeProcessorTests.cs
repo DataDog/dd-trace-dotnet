@@ -822,6 +822,10 @@ public class ProbeProcessorTests
             return _results.Count == 0 || _results.Dequeue();
         }
 
+        public void CountSnapshot()
+        {
+        }
+
         public void Initialize()
         {
         }

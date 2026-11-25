@@ -15,16 +15,20 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
+using Xunit.Abstractions;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace.Tests.Debugger;
 
 [Collection(nameof(TracerInstanceTestCollection))]
 [TracerRestorer]
-public class CoordinatedSamplingTests
+public class CoordinatedSamplingTests(ITestOutputHelper output)
 {
     private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
     private const string TrueConditionJson = @"{ ""eq"": [1, 1] }";
@@ -69,6 +73,11 @@ public class CoordinatedSamplingTests
         Assert.Equal(1, firstGlobalLimiter.ShouldSampleCallCount);
         Assert.Equal(0, secondGlobalLimiter.ShouldSampleCallCount);
         Assert.Equal(0, thirdGlobalLimiter.ShouldSampleCallCount);
+
+        // The repeated hit of the first probe is dropped, so it isn't counted either.
+        firstGlobalLimiter.CountSnapshotCallCount.Should().Be(0);
+        secondGlobalLimiter.CountSnapshotCallCount.Should().Be(firstDecision ? 1 : 0);
+        thirdGlobalLimiter.CountSnapshotCallCount.Should().Be(firstDecision ? 1 : 0);
     }
 
     [Fact]
@@ -154,6 +163,7 @@ public class CoordinatedSamplingTests
         Assert.Equal(expectedSnapshots, snapshots);
         Assert.Equal(expectedSampleCalls, sampler.SampleCalls);
         Assert.Equal(expectedSampleCalls, globalLimiter.ShouldSampleCallCount);
+        globalLimiter.CountSnapshotCallCount.Should().Be(Math.Max(expectedSnapshots - 1, 0));
     }
 
     [Fact]
@@ -204,6 +214,152 @@ public class CoordinatedSamplingTests
 
         Assert.Equal(4, sampler.SampleCalls);
         Assert.Equal(4, globalLimiter.ShouldSampleCallCount);
+    }
+
+    [Fact]
+    public async Task EachEntryPointIsItsOwnParentAndSharedChildFollowsEveryParent()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+
+        var globalLimiter = new GlobalRateLimiterMock(true);
+        var childSampler = new CountingSampler(false);
+        var child = CreateProcessor(CreateLogProbe("probe-b", captureSnapshot: true), globalLimiter);
+        CountingSampler[] parentSamplers = [new(true), new(true), new(true)];
+        string[] parentIds = ["probe-a", "probe-c", "probe-d"];
+        var parents = parentIds
+                     .Select(id => CreateProcessor(CreateLogProbe(id, captureSnapshot: true), globalLimiter))
+                     .ToArray();
+
+        var snapshots = 0;
+        for (var i = 0; i < parents.Length; i++)
+        {
+            // Entry point i calls B, in its own trace.
+            using (tracer.StartActive($"entry-{i}"))
+            {
+                snapshots += TryBeginAndDispose(parents[i], parentSamplers[i]) ? 1 : 0;
+                snapshots += TryBeginAndDispose(child, childSampler) ? 1 : 0;
+            }
+        }
+
+        // One snapshot per parent plus one from B for each of the three traces, and all six count toward the global limit.
+        snapshots.Should().Be(6);
+        parentSamplers.Select(static sampler => sampler.SampleCalls).Should().AllBeEquivalentTo(1);
+        childSampler.SampleCalls.Should().Be(0);
+        globalLimiter.ShouldSampleCallCount.Should().Be(3);
+        globalLimiter.CountSnapshotCallCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task LaterSnapshotsCountTowardGlobalLimitWithoutBeingRefused()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+
+        var globalLimiter = new GlobalRateLimiterMock(true, budget: 2);
+        var sampler = new CountingSampler(true);
+        var parent = CreateProcessor(CreateLogProbe("parent", captureSnapshot: true), globalLimiter);
+        string[] childIds = ["child-1", "child-2"];
+        var children = childIds
+                      .Select(id => CreateProcessor(CreateLogProbe(id, captureSnapshot: true), globalLimiter))
+                      .ToArray();
+
+        var snapshotsPerTrace = new int[3];
+        for (var i = 0; i < snapshotsPerTrace.Length; i++)
+        {
+            if (i == 2)
+            {
+                globalLimiter.MakeUp(2);
+            }
+
+            using (tracer.StartActive($"request-{i}"))
+            {
+                snapshotsPerTrace[i] += TryBeginAndDispose(parent, sampler) ? 1 : 0;
+                foreach (var child in children)
+                {
+                    snapshotsPerTrace[i] += TryBeginAndDispose(child, sampler) ? 1 : 0;
+                }
+            }
+        }
+
+        // The first trace takes 3 snapshots against a budget of 2. Its children aren't refused, but the excess makes the
+        // limiter refuse the second trace. Once it's made up, the third trace is admitted and completes too.
+        snapshotsPerTrace.Should().Equal(3, 0, 3);
+        globalLimiter.ShouldSampleCallCount.Should().Be(3);
+        globalLimiter.CountSnapshotCallCount.Should().Be(4);
+        sampler.SampleCalls.Should().Be(2);
+
+        // Only the refused trace records global skips: its parent and the two children that followed its decision.
+        collector.AssertHasCount("events.skipped", "reason:rateLimitGlobal", "event_type:snapshot", expected: 3);
+    }
+
+    [Fact]
+    public async Task GlobalLimitHoldsOverTimeWhenLaterSnapshotsWouldExceedIt()
+    {
+        // Five entry points at 2 snapshots/s each, and every request hits three later probes: 40 snapshots/s if only
+        // parents counted, against a global limit of 10/s. The clock is simulated: 100 requests a second for a minute.
+        const int globalRate = 10;
+        const int entryPoints = 5;
+        const int entryPointRate = 2;
+        const int requestsPerSecond = 100;
+        const int laterProbes = 3;
+        const int seconds = 60;
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+
+        long now = 0;
+        using var globalLimiter = new DebuggerGlobalRateLimiter(
+            rate => new ClockedBucket(new BorrowingTokenBucket(rate), () => now),
+            new NullLogRateLimiter());
+        globalLimiter.SetRate(globalRate);
+
+        var entrySamplers = Enumerable.Range(0, entryPoints).Select(static _ => new QuotaSampler(entryPointRate)).ToArray();
+        var entryProbes = Enumerable.Range(0, entryPoints)
+                                    .Select(i => CreateProcessor(CreateLogProbe($"entry-{i}", captureSnapshot: true), globalLimiter))
+                                    .ToArray();
+        var laterSampler = new CountingSampler(false);
+        var later = Enumerable.Range(0, laterProbes)
+                              .Select(i => CreateProcessor(CreateLogProbe($"later-{i}", captureSnapshot: true), globalLimiter))
+                              .ToArray();
+
+        // A seeded order, so token refills don't line up with one entry point.
+        var random = new Random(42);
+        var snapshotsPerSecond = new int[seconds];
+        var incompleteTraces = 0;
+        for (var second = 0; second < seconds; second++)
+        {
+            foreach (var entrySampler in entrySamplers)
+            {
+                entrySampler.StartSecond();
+            }
+
+            for (var request = 0; request < requestsPerSecond; request++)
+            {
+                now = (second * Stopwatch.Frequency) + (request * Stopwatch.Frequency / requestsPerSecond);
+                var entryPoint = random.Next(entryPoints);
+                using (tracer.StartActive("request"))
+                {
+                    var snapshots = TryBeginAndDispose(entryProbes[entryPoint], entrySamplers[entryPoint]) ? 1 : 0;
+                    foreach (var probe in later)
+                    {
+                        snapshots += TryBeginAndDispose(probe, laterSampler) ? 1 : 0;
+                    }
+
+                    incompleteTraces += snapshots is 0 or 1 + laterProbes ? 0 : 1;
+                    snapshotsPerSecond[second] += snapshots;
+                }
+            }
+        }
+
+        var total = snapshotsPerSecond.Sum();
+        output.WriteLine($"{total} snapshots in {seconds} s, at most {snapshotsPerSecond.Max()} in one second");
+
+        // A full bucket of 10, then 10/s, and the later snapshots of the last admitted trace.
+        total.Should().BeInRange(globalRate * seconds * 95 / 100, globalRate + (globalRate * seconds) + laterProbes);
+        incompleteTraces.Should().Be(0);
+        laterSampler.SampleCalls.Should().Be(0);
     }
 
     [Theory]
@@ -259,6 +415,7 @@ public class CoordinatedSamplingTests
         Assert.Equal(expectedEmissions, results.Count(static result => result));
         Assert.Equal(1, sampler.SampleCalls);
         Assert.Equal(1, globalLimiter.ShouldSampleCallCount);
+        globalLimiter.CountSnapshotCallCount.Should().Be(Math.Max(expectedEmissions - 1, 0));
     }
 
     [Fact]
@@ -266,18 +423,23 @@ public class CoordinatedSamplingTests
     {
         var coordinator = new DebuggerSamplingCoordinator();
         var calls = 0;
+        var counted = 0;
 
         bool Sample()
         {
             Interlocked.Increment(ref calls);
-            Assert.Equal(DebuggerSamplingDecision.DropProbe, coordinator.TrySample("nested", new DelegateProvider(Sample)));
+            Assert.Equal(DebuggerSamplingDecision.DropProbe, coordinator.TrySample("nested", new DelegateProvider(Sample, Count)));
             return true;
         }
 
-        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("outer", new DelegateProvider(Sample)));
+        void Count() => counted++;
+
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("outer", new DelegateProvider(Sample, Count)));
         Assert.Equal(1, calls);
-        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("nested", new DelegateProvider(Sample)));
+        counted.Should().Be(0, "neither the first probe nor the dropped nested hit is a later snapshot");
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("nested", new DelegateProvider(Sample, Count)));
         Assert.Equal(1, calls);
+        counted.Should().Be(1);
     }
 
     [Fact]
@@ -666,10 +828,12 @@ public class CoordinatedSamplingTests
     {
     }
 
-    private readonly struct DelegateProvider(Func<bool> sample) : IDebuggerSamplingDecisionProvider
+    private readonly struct DelegateProvider(Func<bool> sample, Action countLaterSnapshot = null) : IDebuggerSamplingDecisionProvider
     {
         public DebuggerSamplingDecision Sample()
             => sample() ? DebuggerSamplingDecision.Keep : DebuggerSamplingDecision.DropProbe;
+
+        public void CountLaterSnapshot() => countLaterSnapshot?.Invoke();
     }
 
     private sealed class BlockingSampler(bool result, ManualResetEventSlim entered, ManualResetEventSlim release) : IAdaptiveSampler
@@ -720,17 +884,85 @@ public class CoordinatedSamplingTests
         }
     }
 
-    private sealed class GlobalRateLimiterMock(bool result) : IDebuggerGlobalRateLimiter
+    private sealed class ClockedBucket(BorrowingTokenBucket bucket, Func<long> clock) : IAdaptiveSampler
+    {
+        public bool Sample() => bucket.TryTake(clock());
+
+        public bool Keep()
+        {
+            bucket.Take(clock());
+            return true;
+        }
+
+        public bool Drop() => false;
+
+        public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+        }
+    }
+
+    // Admits up to perSecond samples between calls to StartSecond.
+    private sealed class QuotaSampler(int perSecond) : IAdaptiveSampler
+    {
+        private int _sampled;
+
+        public void StartSecond() => _sampled = 0;
+
+        public bool Sample()
+        {
+            if (_sampled == perSecond)
+            {
+                return false;
+            }
+
+            _sampled++;
+            return true;
+        }
+
+        public bool Keep() => Sample();
+
+        public bool Drop() => false;
+
+        public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+        }
+    }
+
+    // Refuses every snapshot if result is false. Otherwise admits while fewer than budget snapshots are counted.
+    // CountSnapshot counts past the budget, and MakeUp takes counted snapshots off, as time passing would.
+    private sealed class GlobalRateLimiterMock(bool result, int budget = int.MaxValue) : IDebuggerGlobalRateLimiter
     {
         private int _shouldSampleCallCount;
+        private int _countSnapshotCallCount;
+        private int _counted;
 
         public int ShouldSampleCallCount => Volatile.Read(ref _shouldSampleCallCount);
+
+        public int CountSnapshotCallCount => Volatile.Read(ref _countSnapshotCallCount);
 
         public bool ShouldSampleSnapshot(string probeId)
         {
             Interlocked.Increment(ref _shouldSampleCallCount);
-            return result;
+            if (!result || Volatile.Read(ref _counted) >= budget)
+            {
+                return false;
+            }
+
+            Interlocked.Increment(ref _counted);
+            return true;
         }
+
+        public void CountSnapshot()
+        {
+            Interlocked.Increment(ref _countSnapshotCallCount);
+            Interlocked.Increment(ref _counted);
+        }
+
+        public void MakeUp(int snapshots) => _counted = Math.Max(_counted - snapshots, 0);
 
         public void Initialize()
         {

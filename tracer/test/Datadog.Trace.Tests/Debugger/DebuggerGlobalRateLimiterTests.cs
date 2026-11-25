@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using FluentAssertions;
@@ -42,7 +43,7 @@ public class DebuggerGlobalRateLimiterTests
     [Fact]
     public void ShouldSampleSnapshot_RateBelowOnePerSecond_AdmitsOneSnapshotPerInterval()
     {
-        using var limiter = new DebuggerGlobalRateLimiter(AdaptiveSamplerLifetime.Create, new NullLogRateLimiter());
+        using var limiter = new DebuggerGlobalRateLimiter(BorrowingTokenBucket.Create, new NullLogRateLimiter());
 
         limiter.SetRate(1.0 / 300);
 
@@ -142,6 +143,38 @@ public class DebuggerGlobalRateLimiterTests
         Assert.Equal(0, factory.Samplers[0].SampleCallCount);
     }
 
+    [Fact]
+    public void CountSnapshot_KeepsOnTheCurrentSampler()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+
+        limiter.CountSnapshot();
+        limiter.SetRate(42);
+        limiter.CountSnapshot();
+        limiter.Dispose();
+        limiter.CountSnapshot();
+        limiter.Initialize();
+        limiter.CountSnapshot();
+
+        factory.Samplers.Select(static sampler => sampler.KeepCallCount).Should().Equal(1, 1, 1);
+        factory.Samplers.Select(static sampler => sampler.SampleCallCount).Should().Equal(0, 0, 0);
+    }
+
+    [Fact]
+    public void CountSnapshot_TakesTheOnlyTokenSoTheNextSnapshotWaitsForTheRefillOrANewRate()
+    {
+        // The default limiter. At one snapshot a minute, the counted snapshot takes the only token for a minute.
+        using var limiter = new DebuggerGlobalRateLimiter();
+        limiter.SetRate(1.0 / 60);
+
+        limiter.CountSnapshot();
+        limiter.ShouldSampleSnapshot("parent").Should().BeFalse();
+
+        limiter.SetRate(1.0 / 60);
+        limiter.ShouldSampleSnapshot("parent").Should().BeTrue();
+    }
+
     private sealed class RecordingSamplerFactory
     {
         public List<double> RequestedRates { get; } = [];
@@ -165,6 +198,8 @@ public class DebuggerGlobalRateLimiterTests
 
         public int SampleCallCount { get; private set; }
 
+        public int KeepCallCount { get; private set; }
+
         public void SetResults(params bool[] results)
         {
             _results.Clear();
@@ -180,7 +215,11 @@ public class DebuggerGlobalRateLimiterTests
             return _results.Count == 0 || _results.Dequeue();
         }
 
-        public bool Keep() => true;
+        public bool Keep()
+        {
+            KeepCallCount++;
+            return true;
+        }
 
         public bool Drop() => false;
 

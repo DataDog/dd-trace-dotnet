@@ -1760,6 +1760,10 @@ public class DynamicInstrumentationTests
 
         public bool ShouldSampleSnapshot(string probeId) => true;
 
+        public void CountSnapshot()
+        {
+        }
+
         public void Initialize()
         {
             InitializeCallCount++;

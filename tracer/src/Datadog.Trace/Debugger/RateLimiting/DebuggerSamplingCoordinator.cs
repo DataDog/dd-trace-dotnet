@@ -45,15 +45,19 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return samplingDecision;
                 }
 
-                if (_decision == (int)DebuggerSamplingDecision.Keep)
+                if (_decision != (int)DebuggerSamplingDecision.Keep)
                 {
-                    return _emittedProbeIds!.Add(probeId)
-                               ? DebuggerSamplingDecision.Keep
-                               : DebuggerSamplingDecision.DropProbe;
+                    return (DebuggerSamplingDecision)_decision;
                 }
 
-                return (DebuggerSamplingDecision)_decision;
+                if (!_emittedProbeIds!.Add(probeId))
+                {
+                    return DebuggerSamplingDecision.DropProbe;
+                }
             }
+
+            samplingDecisionProvider.CountLaterSnapshot();
+            return DebuggerSamplingDecision.Keep;
         }
     }
 }
