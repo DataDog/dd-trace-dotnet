@@ -17,5 +17,5 @@ internal interface IXunitTestMethodRunnerV3
     /// </summary>
     /// <param name="context">Test context</param>
     /// <param name="testCase">Test case</param>
-    IDuckTypeTask<object> RunTestCase(object context, object testCase);
+    IDuckTypeValueTask<object> RunTestCase(object context, object testCase);
 }
