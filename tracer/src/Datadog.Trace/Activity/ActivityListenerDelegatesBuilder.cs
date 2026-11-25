@@ -16,7 +16,7 @@ namespace Datadog.Trace.Activity
 {
     internal static class ActivityListenerDelegatesBuilder
     {
-        public static Delegate CreateOnActivityStartedDelegate(Type activityType, MethodInfo onActivityStartedMethodInfo)
+        public static Delegate CreateOnActivityStartedDelegate(Type activityType, ActivityShape shape)
         {
             var dynMethod = new DynamicMethod(
                 "OnActivityStartedDyn",
@@ -25,11 +25,8 @@ namespace Datadog.Trace.Activity
                 typeof(ActivityListener).Module,
                 true);
 
-            var activityProxyType = typeof(IActivity5);
-            if (activityType.Assembly.GetName().Version?.Major >= 6)
-            {
-                activityProxyType = typeof(IActivity6);
-            }
+            var activityProxyType = GetActivityProxyType(shape);
+            var onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnActivityStarted), BindingFlags.Static | BindingFlags.Public)!;
 
             var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
             var proxyType = proxyResult.ProxyType;
@@ -50,7 +47,7 @@ namespace Datadog.Trace.Activity
             return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
         }
 
-        public static Delegate CreateOnActivityStoppedDelegate(Type activityType, MethodInfo onActivityStoppedMethodInfo)
+        public static Delegate CreateOnActivityStoppedDelegate(Type activityType, ActivityShape shape)
         {
             var dynMethod = new DynamicMethod(
                 "OnActivityStoppedDyn",
@@ -59,11 +56,8 @@ namespace Datadog.Trace.Activity
                 typeof(ActivityListener).Module,
                 true);
 
-            var activityProxyType = typeof(IActivity5);
-            if (activityType.Assembly.GetName().Version?.Major >= 6)
-            {
-                activityProxyType = typeof(IActivity6);
-            }
+            var activityProxyType = GetActivityProxyType(shape);
+            var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnActivityStopped), BindingFlags.Static | BindingFlags.Public)!;
 
             var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
             var proxyType = proxyResult.ProxyType;
@@ -142,6 +136,12 @@ namespace Datadog.Trace.Activity
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(activitySourceType, typeof(bool)));
+        }
+
+        private static Type GetActivityProxyType(ActivityShape shape)
+        {
+            System.Diagnostics.Debug.Assert(shape is ActivityShape.Activity5 or ActivityShape.Activity6, "Only the ActivityListener shapes use these delegates");
+            return shape == ActivityShape.Activity6 ? typeof(IActivity6) : typeof(IActivity5);
         }
     }
 }

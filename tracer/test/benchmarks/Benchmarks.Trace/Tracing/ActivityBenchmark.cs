@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
@@ -42,11 +41,9 @@ public class ActivityBenchmark
         // ShouldListenTo delegate during real initialization.
         ActivityListenerHandler.OnShouldListenTo(_source.DuckCast<IActivitySource>());
 
-        var onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public)!;
-        var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public)!;
-
-        _onStarted = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(typeof(Activity), onActivityStartedMethodInfo);
-        _onStopped = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(typeof(Activity), onActivityStoppedMethodInfo);
+        // Benchmarks.Trace references DiagnosticSource 6.0+, which Initialize() maps to the Activity6 shape
+        _onStarted = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(typeof(Activity), ActivityShape.Activity6);
+        _onStopped = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(typeof(Activity), ActivityShape.Activity6);
     }
 
     [GlobalCleanup]

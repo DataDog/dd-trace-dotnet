@@ -33,6 +33,9 @@ namespace Datadog.Trace.Activity
         private static int _initialized;
         private static int _stopped;
 
+        // Set once in Initialize() and never reset, so GetCurrentActivity() keeps working after StopListeners()
+        private static ActivityShape _shape;
+
         public static bool IsRunning
         {
             get
@@ -65,9 +68,13 @@ namespace Datadog.Trace.Activity
                 return null;
             }
 
-            return activity.DuckAs<IActivity6>() ??
-                   activity.DuckAs<IActivity5>() ??
-                   activity.DuckAs<IActivity>();
+            return _shape switch
+            {
+                ActivityShape.Activity6 => activity.DuckAs<IActivity6>(),
+                ActivityShape.Activity5 => activity.DuckAs<IActivity5>(),
+                ActivityShape.Legacy => activity.DuckAs<IActivity>(),
+                _ => null,
+            };
         }
 
         public static void SetActivityKind(IActivity5 activity, ActivityKind activityKind)
@@ -139,13 +146,22 @@ namespace Datadog.Trace.Activity
                     return;
                 }
 
+                // Set before the Activity.Current delegate, so a failure later in Initialize() cannot leave the delegate without a shape
+                var shape = version.Major switch
+                {
+                    >= 6 => ActivityShape.Activity6,
+                    5 => ActivityShape.Activity5,
+                    _ => ActivityShape.Legacy,
+                };
+                _shape = shape;
+
                 CreateCurrentActivityDelegates(activityType);
                 ChangeActivityDefaultFormat(activityType);
 
-                if (version.Major >= 5)
+                if (shape != ActivityShape.Legacy)
                 {
                     // if Version >= 5 loaded (Uses ActivityListener implementation)
-                    CreateActivityListenerInstance(activityType);
+                    CreateActivityListenerInstance(activityType, shape);
                     var activityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false);
                     if (activityKindType is not null)
                     {
@@ -210,7 +226,7 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        private static void CreateActivityListenerInstance(Type activityType)
+        private static void CreateActivityListenerInstance(Type activityType, ActivityShape shape)
         {
             var activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
             var activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
@@ -219,8 +235,6 @@ namespace Datadog.Trace.Activity
             var activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
             var sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
 
-            var onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public)!;
-            var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public)!;
             var onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public)!;
             var onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public)!;
             var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public)!;
@@ -235,8 +249,8 @@ namespace Datadog.Trace.Activity
                 ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityListenerType} is null");
             }
 
-            activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(activityType, onActivityStartedMethodInfo);
-            activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(activityType, onActivityStoppedMethodInfo);
+            activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(activityType, shape);
+            activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(activityType, shape);
             activityListenerProxy.Sample = ActivityListenerDelegatesBuilder.CreateOnSampleDelegate(activitySamplingResultType, activityCreationOptionsType, activityContextType, sampleActivityType, onSampleMethodInfo);
             activityListenerProxy.SampleUsingParentId = ActivityListenerDelegatesBuilder.CreateOnSampleUsingParentIdDelegate(activitySamplingResultType, activityCreationOptionsType, sampleActivityType, onSampleUsingParentIdMethodInfo);
             activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate(activitySourceType, onShouldListenToMethodInfo);
