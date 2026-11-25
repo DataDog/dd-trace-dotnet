@@ -55,6 +55,7 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
             CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
             CodeCoverageMode = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageMode).AsString();
+            CodeCoveragePortablePdbEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePortablePdbEnabled).AsBool(true);
 
             // Git upload
             GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
@@ -199,6 +200,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the code coverage mode
         /// </summary>
         public string? CodeCoverageMode { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Code Coverage collector writes portable PDBs for assemblies that have Windows PDBs.
+        /// </summary>
+        public bool CodeCoveragePortablePdbEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.

@@ -222,7 +222,7 @@ public class CoverageRewriteTests
                 var processor = main.Body.GetILProcessor();
                 processor.InsertBefore(firstInstruction, processor.Create(OpCodes.Newobj, constructor));
                 processor.InsertBefore(firstInstruction, processor.Create(OpCodes.Throw));
-                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null);
+                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null, writePortablePdb: true);
             }
 
             var asmProcessor = new AssemblyProcessor(tempFileName, new CoverageSettings(null, string.Empty));
@@ -292,7 +292,7 @@ public class CoverageRewriteTests
                         EndColumn = templateSequencePoint.EndColumn,
                     });
 
-                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null);
+                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null, writePortablePdb: true);
             }
 
             var assemblyProcessor = new AssemblyProcessor(tempFileName, new CoverageSettings(null, string.Empty));
@@ -360,7 +360,7 @@ public class CoverageRewriteTests
 
             using (var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true }))
             {
-                AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, File.ReadAllBytes(assemblySnkPath));
+                AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, File.ReadAllBytes(assemblySnkPath), writePortablePdb: true);
             }
 
             byte[] originalPublicKey;
@@ -407,7 +407,7 @@ public class CoverageRewriteTests
 
             using (var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true }))
             {
-                AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, File.ReadAllBytes(configuredSnkPath));
+                AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, File.ReadAllBytes(configuredSnkPath), writePortablePdb: true);
             }
 
             byte[] originalPublicKey;

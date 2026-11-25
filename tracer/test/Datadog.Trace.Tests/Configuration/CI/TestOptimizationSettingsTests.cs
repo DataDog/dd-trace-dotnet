@@ -180,6 +180,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void CodeCoveragePortablePdbEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoveragePortablePdbEnabled, value));
+            var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.CodeCoveragePortablePdbEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(NullableBooleanTestCases), null)]
         public void GitUploadEnabled(string value, bool? expected)
         {
