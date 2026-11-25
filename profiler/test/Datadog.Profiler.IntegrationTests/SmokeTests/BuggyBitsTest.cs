@@ -18,18 +18,18 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSmoke(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckSmoke(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output);
             runner.RunAndCheck();
         }
 
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSmokeForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckSmokeForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");

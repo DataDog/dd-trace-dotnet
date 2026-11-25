@@ -384,12 +384,12 @@ internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualIns
     private static object RemapResult(string key, object value) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => value is Uri uri ? uri.ToString() : value,
-        TracerSettingKeyConstants.DisabledIntegrationNamesKey => value is HashSet<string> set ? string.Join(";", set) : value,
+        TracerSettingKeyConstants.DisabledIntegrationNamesKey => value is HashSet<string> set ? string.Join(';', set) : value,
         TracerSettingKeyConstants.HttpServerErrorCodesKey => value is List<int> list
-                                                                 ? string.Join(",", list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
+                                                                 ? string.Join(',', list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
                                                                  : value,
         TracerSettingKeyConstants.HttpClientErrorCodesKey => value is List<int> list
-                                                                 ? string.Join(",", list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
+                                                                 ? string.Join(',', list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
                                                                  : value,
         _ => value,
     };

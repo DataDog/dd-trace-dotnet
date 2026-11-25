@@ -21,20 +21,16 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net48" })]
-        public void CheckNoCrashWhenThreadGetsReassignToAnotherAppDomain(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
+        public void CheckNoCrashWhenThreadGetsReassignToAnotherAppDomain(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, commandLine: "--scenario 30 --param 5", output: _output);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 30 --param 5");
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            SamplesHelper.GetSamples(runner.Environment.PprofDir)
-                .Where(x => x.Labels.Any(y => y.Name == "exception type" && y.Value == "CatException"))
-                .All(x => x.Labels.Any(y => y.Name == "appdomain name" && y.Value == "Test-1"))
+            run.Profiles.WithLabel("exception type", "CatException")
+                .All(sample => sample.Labels.GetValues("appdomain name").Contains("Test-1"))
                 .Should().BeTrue();
         }
     }
