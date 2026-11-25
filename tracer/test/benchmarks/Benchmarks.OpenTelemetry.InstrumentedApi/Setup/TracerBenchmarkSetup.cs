@@ -14,6 +14,9 @@ internal class TracerBenchmarkSetup
 
     internal void GlobalCleanup()
     {
+        // Stop the activity listener and its reconciliation timer so the 10s sweep
+        // loop started by Initialize() does not keep running for the rest of the process.
+        Datadog.Trace.Activity.ActivityListener.StopListeners();
         TracerHelper.CleanupGlobalTracer();
     }
 }
