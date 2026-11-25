@@ -11,6 +11,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     TypeName = "RabbitMQ.Client.Impl.Channel",
     MethodName = "BasicPublishAsync",
     ReturnTypeName = "System.Threading.Tasks.ValueTask",
-    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, "!!0", "System.ReadOnlyMemory`1[System.Byte]", ClrNames.CancellationToken],
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, "!!0", ClrNames.ReadOnlyMemoryOfByteTypeName, ClrNames.CancellationToken],
     MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = RabbitMQConstants.IntegrationName)]
@@ -33,6 +34,14 @@ public sealed class BasicPublishAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string? exchange, string? routingKey, bool mandatory, TBasicProperties basicProperties, TBody body, in CancellationToken cancellationToken)
         where TBasicProperties : IReadOnlyBasicProperties, IDuckType
         where TBody : IBody, IDuckType
+        where TTarget : IModelBase
+        => CreatePublishScope(instance, exchange, routingKey, basicProperties, body.GetLength());
+
+    /// <summary>
+    /// Shared by all the RabbitMQ.Client 7.x Channel.BasicPublishAsync overloads
+    /// </summary>
+    internal static CallTargetState CreatePublishScope<TTarget, TBasicProperties>(TTarget instance, string? exchange, string? routingKey, TBasicProperties basicProperties, int bodyLength)
+        where TBasicProperties : IReadOnlyBasicProperties, IDuckType
         where TTarget : IModelBase
     {
         var tracer = Tracer.Instance;
@@ -47,7 +56,9 @@ public sealed class BasicPublishAsyncIntegration
             var routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey!.StartsWithOrdinal("amq.gen-") ? "<generated>" : routingKey;
             scope.Span.ResourceName = $"{BasicPublishIntegration.Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-            tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
+            // Not using InvariantStringCache as unlikely to be repeated values that are worth caching
+            // other than v.small values (which are already cached by the runtime)
+            tags.MessageSize = bodyLength.ToStringInvariant();
             if (basicProperties.Instance is not null)
             {
                 if (basicProperties.IsDeliveryModePresent())
