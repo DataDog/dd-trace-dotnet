@@ -46,7 +46,8 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
+        /// Synchronously writes enriched spans (with tags and metrics) into the CI test-cycle
+        /// payload and flushes it, mirroring the CIVisibilityProtocolWriter flush loop.
         /// </summary>
         [Benchmark]
         public int WriteAndFlushEnrichedTraces()
