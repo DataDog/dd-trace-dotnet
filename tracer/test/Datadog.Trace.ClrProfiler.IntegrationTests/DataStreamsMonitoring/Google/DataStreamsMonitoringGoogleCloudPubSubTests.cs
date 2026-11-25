@@ -62,7 +62,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Google
 
             processResult.StandardOutput.Should().Contain("baggage: dsm-pubsub-baggage-value");
 
-            var points = GetPoints(agent.DataStreams).ToList();
+            var payloads = await agent.WaitForDataStreamsAsync(
+                20_000,
+                stats => GetPoints(stats).Any(p => p.EdgeTags.Contains("direction:out")) &&
+                         GetPoints(stats).Any(p => p.EdgeTags.Contains("direction:in")));
+            var points = GetPoints(payloads).ToList();
             points.Should().NotBeEmpty();
 
             var producePoints = points.Where(p => p.EdgeTags.Contains("direction:out")).ToList();
