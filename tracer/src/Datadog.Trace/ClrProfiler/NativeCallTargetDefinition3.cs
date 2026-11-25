@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler
     // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct NativeCallTargetDefinition3
+    internal readonly struct NativeCallTargetDefinition3
     {
         public readonly IntPtr TargetAssembly;
 

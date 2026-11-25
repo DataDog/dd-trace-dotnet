@@ -20,7 +20,7 @@ internal struct VoidResult
 
     public Error Error;
 
-    public bool IsOk => Tag == ResultTag.Ok;
+    public readonly bool IsOk => Tag == ResultTag.Ok;
 
     /// <summary>
     /// Releases the error, if any, and throws it as <see cref="LibDatadogException"/>.

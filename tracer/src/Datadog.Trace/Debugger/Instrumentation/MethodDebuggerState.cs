@@ -65,7 +65,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets an index that is used as a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
-        internal int MethodMetadataIndex
+        internal readonly int MethodMetadataIndex
         {
             get
             {
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         internal EvaluateAt MethodPhase { get; set; }
 
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
+        internal readonly ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
 
         internal ProbeData ProbeData { get; }
 
@@ -87,12 +87,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the Dynamic Instrumentation BeginMethod scope
         /// </summary>
-        internal Scope Scope => _scope;
+        internal readonly Scope Scope => _scope;
 
         /// <summary>
         /// Gets the Id of the probe
         /// </summary>
-        internal string ProbeId => _probeId;
+        internal readonly string ProbeId => _probeId;
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// ToString override
         /// </summary>
         /// <returns>String value</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{typeof(MethodDebuggerState).FullName}({_scope})";
         }

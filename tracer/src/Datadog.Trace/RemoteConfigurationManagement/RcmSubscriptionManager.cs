@@ -288,8 +288,8 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         {
             _log.Debug(
                 "Received remote configurations. Updated: {Updated}. Removed: {Removed}.",
-                string.Join(",", changes.Updated.Select(c => c.Path.Path)),
-                string.Join(",", changes.Removed.Select(p => p.Path)));
+                string.Join(',', changes.Updated.Select(c => c.Path.Path)),
+                string.Join(',', changes.Removed.Select(p => p.Path)));
         }
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;

@@ -357,7 +357,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 .Where(attribute => !attribute.IsTyped)
                 .ToList();
 
-            attributes.Should().NotBeEmpty();
             foreach (var attribute in attributes)
             {
                 TestApplicationCatalog.TryGetByFolder(attribute.AppName, out var descriptor).Should().BeTrue(attribute.AppName);

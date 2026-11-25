@@ -394,13 +394,13 @@ namespace Datadog.Trace.DuckTyping
 #else
                 assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
 #endif
-                assembly = assembly.Replace(".", "_").Replace("+", "__");
+                assembly = assembly.Replace('.', '_').Replace("+", "__");
             }
 
             // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
             // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
             var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
-            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace('.', '_').Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace('.', '_').Replace("+", "__")}";
 
             // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
             var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
@@ -734,13 +734,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
                 // Ignore the properties marked with `DuckIgnore` attribute
-                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
 
                 // Check if proxy is a reverse method (shouldn't be called from here)
-                if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     return DuckTypeIncorrectReversePropertyUsageException.Create(proxyProperty);
                 }
@@ -941,7 +941,7 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo implementationProperty in delegationTypeProperties)
             {
                 // Ignore methods without a `DuckReverse` attribute
-                if (implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (!implementationProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     continue;
                 }
@@ -1076,7 +1076,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyFieldInfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
@@ -1273,7 +1273,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (finfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
