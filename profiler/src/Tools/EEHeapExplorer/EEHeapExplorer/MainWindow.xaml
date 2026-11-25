@@ -1,0 +1,327 @@
+<Window x:Class="EEHeapExplorer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:EEHeapExplorer.Converters"
+        xmlns:local="clr-namespace:EEHeapExplorer"
+        xmlns:vm="clr-namespace:EEHeapExplorer.ViewModels"
+        Title="EEHeap Explorer"
+        Icon="eeheapCat.ico"
+        Width="719" Height="650"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadCommand}" />
+    </Window.InputBindings>
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <converters:ByteSizeConverter x:Key="ByteSizeConverter" />
+        <converters:GroupHeaderConverter x:Key="GroupHeaderConverter" />
+        <converters:GroupSumConverter x:Key="GroupSumConverter" />
+        <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter" />
+
+        <!-- Carries the live column widths into the group-header template namescope. -->
+        <local:BindingProxy x:Key="WidthsProxy" Data="{Binding ColumnWidths}" />
+
+        <Style x:Key="RightCellStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+        <Style x:Key="RightHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Menu bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Load..." Command="{Binding LoadCommand}" InputGestureText="Ctrl+O" />
+                <Separator />
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_About" Click="About_Click" />
+        </Menu>
+
+        <!-- Status bar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Main content: top kind summary, bottom detail -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*" MinHeight="120" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="3*" MinHeight="120" />
+            </Grid.RowDefinitions>
+
+            <!-- Top: kind summary -->
+            <DockPanel Grid.Row="0">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,6,8,2"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Text="Heap kinds" />
+                <DataGrid x:Name="KindGrid"
+                          ItemsSource="{Binding KindSummariesView}"
+                          SelectedItem="{Binding SelectedKind}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          CanUserSortColumns="True"
+                          GridLinesVisibility="None"
+                          HeadersVisibility="Column"
+                          AlternatingRowBackground="#F8F8F8"
+                          Margin="4">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn x:Name="KindColumn" Header="Kind" Width="200" Binding="{Binding Kind}" />
+                        <DataGridTextColumn x:Name="CountColumn" Header="Count" Width="80"
+                                            Binding="{Binding Count, StringFormat={}{0:N0}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Count" />
+                        <DataGridTemplateColumn x:Name="ReservedColumn" Header="Reserved" Width="140"
+                                                HeaderStyle="{StaticResource RightHeaderStyle}"
+                                                SortMemberPath="ReservedTotal">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <ProgressBar Minimum="0" Maximum="1"
+                                                     Value="{Binding ReservedFraction}"
+                                                     Foreground="#55D98E04"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Stretch" />
+                                        <TextBlock Text="{Binding ReservedTotal, Converter={StaticResource ByteSizeConverter}}"
+                                                   TextAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="CommittedColumn" Header="Committed" Width="140"
+                                                HeaderStyle="{StaticResource RightHeaderStyle}"
+                                                SortMemberPath="CommittedTotal">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <ProgressBar Minimum="0" Maximum="1"
+                                                     Value="{Binding CommittedFraction}"
+                                                     Foreground="#554F9DD9"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Stretch" />
+                                        <TextBlock Text="{Binding CommittedTotal, Converter={StaticResource ByteSizeConverter}}"
+                                                   TextAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                    <DataGrid.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.ContainerStyle>
+                                <Style TargetType="{x:Type GroupItem}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                <StackPanel Margin="0,2,0,0">
+                                                    <!-- Header is a single full-width toggle whose cell widths track the live
+                                                         column widths (via WidthsProxy), so it stays aligned with the data rows
+                                                         and follows column resizing. -->
+                                                    <ToggleButton x:Name="HeaderToggle"
+                                                                  IsChecked="True"
+                                                                  Focusable="False"
+                                                                  OverridesDefaultStyle="True"
+                                                                  HorizontalContentAlignment="Stretch">
+                                                        <ToggleButton.Template>
+                                                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                                                <Border Background="#EEF2F7"
+                                                                        BorderBrush="#D5DCE5"
+                                                                        BorderThickness="0,0,0,1">
+                                                                    <!-- Mirrors the data grid's column model: Kind is a star column (so it
+                                                                         flexes identically to the data Kind column and never forces the row
+                                                                         width), while the numeric columns track the live widths. -->
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="{Binding Data.Kind, Source={StaticResource WidthsProxy}, Converter={StaticResource DoubleToGridLengthConverter}}" />
+                                                                            <ColumnDefinition Width="{Binding Data.Count, Source={StaticResource WidthsProxy}, Converter={StaticResource DoubleToGridLengthConverter}}" />
+                                                                            <ColumnDefinition Width="{Binding Data.Reserved, Source={StaticResource WidthsProxy}, Converter={StaticResource DoubleToGridLengthConverter}}" />
+                                                                            <ColumnDefinition Width="{Binding Data.Committed, Source={StaticResource WidthsProxy}, Converter={StaticResource DoubleToGridLengthConverter}}" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <!-- Kind: chevron + group name -->
+                                                                        <StackPanel Grid.Column="0"
+                                                                                    Orientation="Horizontal"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="6,3">
+                                                                            <Path x:Name="Arrow"
+                                                                                  Width="9" Height="9"
+                                                                                  Stretch="Uniform"
+                                                                                  Fill="#5A6B7B"
+                                                                                  Data="M 0 0 L 8 0 L 4 5 Z"
+                                                                                  VerticalAlignment="Center"
+                                                                                  Margin="0,0,6,0"
+                                                                                  RenderTransformOrigin="0.5,0.5" />
+                                                                            <TextBlock Text="{Binding Converter={StaticResource GroupHeaderConverter}}"
+                                                                                       VerticalAlignment="Center"
+                                                                                       FontWeight="SemiBold" />
+                                                                        </StackPanel>
+                                                                        <!-- Count (aligned to the Count column) -->
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Text="{Binding Converter={StaticResource GroupSumConverter}, ConverterParameter=Count}"
+                                                                                   TextAlignment="Right"
+                                                                                   VerticalAlignment="Center"
+                                                                                   FontWeight="SemiBold"
+                                                                                   Margin="0,0,6,0" />
+                                                                        <!-- Reserved (aligned to the Reserved column) -->
+                                                                        <Grid Grid.Column="2">
+                                                                            <ProgressBar Minimum="0" Maximum="1"
+                                                                                         Value="{Binding Converter={StaticResource GroupSumConverter}, ConverterParameter=ReservedFraction, Mode=OneWay}"
+                                                                                         Foreground="#55D98E04"
+                                                                                         Background="Transparent"
+                                                                                         BorderThickness="0"
+                                                                                         HorizontalAlignment="Stretch"
+                                                                                         VerticalAlignment="Stretch" />
+                                                                            <TextBlock Text="{Binding Converter={StaticResource GroupSumConverter}, ConverterParameter=ReservedBytes}"
+                                                                                       TextAlignment="Right"
+                                                                                       VerticalAlignment="Center"
+                                                                                       FontWeight="SemiBold"
+                                                                                       Margin="0,0,6,0" />
+                                                                        </Grid>
+                                                                        <!-- Committed (aligned to the Committed column) -->
+                                                                        <Grid Grid.Column="3">
+                                                                            <ProgressBar Minimum="0" Maximum="1"
+                                                                                         Value="{Binding Converter={StaticResource GroupSumConverter}, ConverterParameter=CommittedFraction, Mode=OneWay}"
+                                                                                         Foreground="#554F9DD9"
+                                                                                         Background="Transparent"
+                                                                                         BorderThickness="0"
+                                                                                         HorizontalAlignment="Stretch"
+                                                                                         VerticalAlignment="Stretch" />
+                                                                            <TextBlock Text="{Binding Converter={StaticResource GroupSumConverter}, ConverterParameter=CommittedBytes}"
+                                                                                       TextAlignment="Right"
+                                                                                       VerticalAlignment="Center"
+                                                                                       FontWeight="SemiBold"
+                                                                                       Margin="0,0,6,0" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsChecked" Value="False">
+                                                                        <Setter TargetName="Arrow" Property="RenderTransform">
+                                                                            <Setter.Value>
+                                                                                <RotateTransform Angle="-90" />
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </ToggleButton.Template>
+                                                    </ToggleButton>
+                                                    <ItemsPresenter x:Name="Items" />
+                                                </StackPanel>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger SourceName="HeaderToggle" Property="IsChecked" Value="False">
+                                                        <Setter TargetName="Items" Property="Visibility" Value="Collapsed" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </GroupStyle.ContainerStyle>
+                        </GroupStyle>
+                    </DataGrid.GroupStyle>
+                </DataGrid>
+            </DockPanel>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Row="1"
+                          HorizontalAlignment="Stretch"
+                          Background="#CCCCCC"
+                          ShowsPreview="True" />
+
+            <!-- Bottom: detail for the selected kind -->
+            <DockPanel Grid.Row="2">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,6,8,2"
+                           FontSize="13"
+                           FontWeight="SemiBold">
+                    <Run Text="Detail for: " />
+                    <Run Text="{Binding SelectedKind.Kind, Mode=OneWay, FallbackValue='(select a kind)'}" />
+                </TextBlock>
+                <DataGrid x:Name="DetailGrid"
+                          ItemsSource="{Binding DetailRows}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          CanUserSortColumns="True"
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="#F8F8F8"
+                          Margin="4">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Region / Group" Width="180" Binding="{Binding Label}" />
+                        <DataGridTextColumn Header="State" Width="120" Binding="{Binding State}" />
+                        <DataGridTextColumn Header="Count" Width="80"
+                                            Binding="{Binding Count, StringFormat={}{0:N0}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Count" />
+                        <DataGridTemplateColumn Header="Reserved" Width="140"
+                                                HeaderStyle="{StaticResource RightHeaderStyle}"
+                                                SortMemberPath="Reserved">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <ProgressBar Minimum="0" Maximum="1"
+                                                     Value="{Binding ReservedFraction}"
+                                                     Foreground="#55D98E04"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Stretch" />
+                                        <TextBlock Text="{Binding Reserved, Converter={StaticResource ByteSizeConverter}}"
+                                                   TextAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Committed" Width="140"
+                                                HeaderStyle="{StaticResource RightHeaderStyle}"
+                                                SortMemberPath="Committed">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <ProgressBar Minimum="0" Maximum="1"
+                                                     Value="{Binding CommittedFraction}"
+                                                     Foreground="#554F9DD9"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Stretch" />
+                                        <TextBlock Text="{Binding Committed, Converter={StaticResource ByteSizeConverter}}"
+                                                   TextAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

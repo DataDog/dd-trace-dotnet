@@ -222,7 +222,7 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     ddog_prof_Slice_SampleType sample_types = {samplesTypes.data(), samplesTypes.size()};
 
     ddog_prof_SampleType periodSampleType;
-    if (!TryCreateSampleType(periodType, periodUnit, periodSampleType))
+    if (!TryCreateSampleType(periodType, periodUnit, periodSampleType) || IsCustomSampleType(periodSampleType))
     {
         Log::Error("Unsupported libdatadog period type: ", periodType, "/", periodUnit);
         return nullptr;
@@ -243,7 +243,31 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
                    ", period=", periodType, "/", periodUnit, ")");
         return nullptr;
     }
-    return std::make_unique<ProfileImpl>(res.ok);
+
+    auto profile = std::make_unique<ProfileImpl>(res.ok);
+    for (std::size_t i = 0; i < samplesTypes.size(); i++)
+    {
+        auto sampleType = samplesTypes[i];
+        if (!IsCustomSampleType(sampleType))
+        {
+            continue;
+        }
+
+        auto const& valueType = valueTypes[i];
+        auto setResult = ddog_prof_Profile_set_custom_sample_type(
+            *profile,
+            sampleType,
+            to_char_slice(valueType.Name),
+            to_char_slice(valueType.Unit));
+        if (setResult.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+        {
+            auto error = make_error(setResult.err);
+            Log::Error("ddog_prof_Profile_set_custom_sample_type failed for ", valueType.Name, "/", valueType.Unit, ": ", error.message());
+            return nullptr;
+        }
+    }
+
+    return profile;
 }
 
 std::string const& Profile::GetApplicationName() const
