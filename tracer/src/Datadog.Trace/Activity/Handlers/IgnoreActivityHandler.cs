@@ -99,7 +99,7 @@ namespace Datadog.Trace.Activity.Handlers
             IgnoreActivity(activity, (Span?)Tracer.Instance.ActiveScope?.Span);
         }
 
-        public void ActivityStopped<T>(string sourceName, T activity)
+        public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
             // Do nothing

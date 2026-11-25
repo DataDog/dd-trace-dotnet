@@ -57,7 +57,8 @@ namespace Datadog.Trace.Activity
                 true);
 
             var activityProxyType = GetActivityProxyType(shape);
-            var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnActivityStopped), BindingFlags.Static | BindingFlags.Public)!;
+            var onActivityStoppedMethodName = shape == ActivityShape.Activity6 ? nameof(ActivityListenerHandler.OnActivityStoppedWithStatus) : nameof(ActivityListenerHandler.OnActivityStopped);
+            var onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod(onActivityStoppedMethodName, BindingFlags.Static | BindingFlags.Public)!;
 
             var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
             var proxyType = proxyResult.ProxyType;

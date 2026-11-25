@@ -94,7 +94,7 @@ public class IntegrationActivityHandlerTests
 
         var stopHandler = ActivityListenerHandler.ResolveHandler(sourceName, duckActivity.OperationName, registeredHandler);
         stopHandler.Should().BeOfType<QuartzActivityHandler>();
-        stopHandler.ActivityStopped(sourceName, duckActivity);
+        stopHandler.ActivityStopped(sourceName, duckActivity, default);
 
         activity.Stop();
 
@@ -133,7 +133,7 @@ public class IntegrationActivityHandlerTests
         }
 
         activity.Stop();
-        handler.ActivityStopped("Azure.Messaging.ServiceBus", duckActivity);
+        handler.ActivityStopped("Azure.Messaging.ServiceBus", duckActivity, default);
 
         AssertGeneratedSpanTelemetry(telemetry, IntegrationId.AzureServiceBus, enabled);
     }

@@ -86,7 +86,7 @@ public class ActivityTagsTests
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
 
-        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
         switch (expectedTagKind)
         {
@@ -115,7 +115,7 @@ public class ActivityTagsTests
         // UpdateSpanFromActivity implicitly accesses Tracer.Instance if there's no associated Tracer in the span
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
-        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
         foreach (var keyValue in expectedTagValues)
         {
@@ -154,7 +154,7 @@ public class ActivityTagsTests
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
 
-        OtlpHelpers.UpdateSpanFromActivity(activity.Object, span);
+        OtlpHelpers.UpdateSpanFromActivity(activity.Object, span, default, openTelemetrySemanticsEnabled: false);
 
         var spanLinkContext = span.SpanLinks.Should().ContainSingle().Which.Context;
         spanLinkContext.AdditionalW3CTraceState.Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666668");
@@ -176,7 +176,7 @@ public class ActivityTagsTests
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
 
-        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
         span.Context.TraceContext!.Environment.Should().Be(tagValue);
     }
@@ -198,7 +198,7 @@ public class ActivityTagsTests
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
 
-        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
         span.Context.TraceContext!.Environment.Should().Be("stable_env");
     }

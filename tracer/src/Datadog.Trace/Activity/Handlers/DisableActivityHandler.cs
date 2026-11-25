@@ -23,7 +23,7 @@ namespace Datadog.Trace.Activity.Handlers
             // do nothing; this should not be called
         }
 
-        public void ActivityStopped<T>(string sourceName, T activity)
+        public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
             // do nothing; this should not be called

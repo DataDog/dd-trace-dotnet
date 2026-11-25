@@ -238,7 +238,7 @@ namespace Datadog.Trace.Activity.Handlers
             }
         }
 
-        public static void ActivityStopped<T>(string sourceName, T activity)
+        public static void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
             try
@@ -275,7 +275,7 @@ namespace Datadog.Trace.Activity.Handlers
                         Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
                     }
 
-                    CloseActivityScope(activity, someValue.Scope);
+                    CloseActivityScope(activity, someValue.Scope, in status);
                     return;
                 }
 
@@ -430,7 +430,7 @@ namespace Datadog.Trace.Activity.Handlers
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(activity6, scope);
+                        CloseActivityScope(activity6, scope, ActivityStatus.From(activity6));
                         missedStop++;
                     }
                 }
@@ -441,7 +441,7 @@ namespace Datadog.Trace.Activity.Handlers
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(activity5, scope);
+                        CloseActivityScope(activity5, scope, default);
                         missedStop++;
                     }
                 }
@@ -452,7 +452,7 @@ namespace Datadog.Trace.Activity.Handlers
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(legacyActivity, scope);
+                        CloseActivityScope(legacyActivity, scope, default);
                         missedStop++;
                     }
                 }
@@ -461,11 +461,11 @@ namespace Datadog.Trace.Activity.Handlers
             return new ReconciliationSweepResult(gcCollected, missedStop, iterated);
         }
 
-        private static void CloseActivityScope<TInner>(TInner activity, Scope scope)
+        private static void CloseActivityScope<TInner>(TInner activity, Scope scope, in ActivityStatus status)
             where TInner : IActivity
         {
             var span = scope.Span;
-            OtlpHelpers.UpdateSpanFromActivity(activity, span, openTelemetrySemanticsEnabled: span.OpenTelemetrySemanticsEnabled);
+            OtlpHelpers.UpdateSpanFromActivity(activity, span, in status, openTelemetrySemanticsEnabled: span.OpenTelemetrySemanticsEnabled);
 
             // OpenTelemtry SDK / OTLP Fixups
             // TODO

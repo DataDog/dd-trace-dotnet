@@ -28,7 +28,14 @@ namespace Datadog.Trace.Activity
         public static void OnActivityStopped<T>(T activity)
             where T : IActivity5
         {
-            OnActivityWithSourceStopped(activity.Source.Name, activity);
+            OnActivityWithSourceStopped(activity.Source.Name, activity, default);
+        }
+
+        // Not an overload of OnActivityStopped: the delegate builder looks handlers up by name
+        public static void OnActivityStoppedWithStatus<T>(T activity)
+            where T : IActivity6
+        {
+            OnActivityWithSourceStopped(activity.Source.Name, activity, ActivityStatus.From(activity));
         }
 
         public static ActivitySamplingResult OnSample()
@@ -99,14 +106,14 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        public static void OnActivityWithSourceStopped<T>(string sourceName, T activity)
+        public static void OnActivityWithSourceStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
                 handler = ResolveHandler(sourceName, activity.OperationName, handler);
-                handler.ActivityStopped(sName, activity);
+                handler.ActivityStopped(sName, activity, in status);
             }
             else
             {

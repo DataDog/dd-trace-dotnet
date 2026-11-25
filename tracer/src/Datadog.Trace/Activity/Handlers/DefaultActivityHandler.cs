@@ -25,8 +25,8 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
             => ActivityHandlerCommon.ActivityStarted(IntegrationId.OpenTelemetry, sourceName, activity, tags: null, out _);
 
-        public void ActivityStopped<T>(string sourceName, T activity)
+        public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
-            => ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+            => ActivityHandlerCommon.ActivityStopped(sourceName, activity, in status);
     }
 }

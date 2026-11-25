@@ -16,7 +16,7 @@ namespace Datadog.Trace.Activity.Handlers
         void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity;
 
-        void ActivityStopped<T>(string sourceName, T activity)
+        void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity;
     }
 }

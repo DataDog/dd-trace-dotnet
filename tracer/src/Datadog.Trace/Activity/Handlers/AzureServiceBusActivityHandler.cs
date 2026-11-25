@@ -32,10 +32,10 @@ namespace Datadog.Trace.Activity.Handlers
             ActivityHandlerCommon.ActivityStarted(IntegrationId.AzureServiceBus, sourceName, activity, tags: tags, out _);
         }
 
-        public void ActivityStopped<T>(string sourceName, T activity)
+        public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
-            ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+            ActivityHandlerCommon.ActivityStopped(sourceName, activity, in status);
         }
     }
 }

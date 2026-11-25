@@ -51,12 +51,12 @@ namespace Datadog.Trace.Activity.Handlers
             ActivityHandlerCommon.ActivityStarted(IntegrationId.Quartz, sourceName, activity, tags: new OpenTelemetryTags(), out _);
         }
 
-        public void ActivityStopped<T>(string sourceName, T activity)
+        public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
             where T : IActivity
         {
             if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
             {
-                DefaultHandler.ActivityStopped(sourceName, activity);
+                DefaultHandler.ActivityStopped(sourceName, activity, in status);
                 return;
             }
 
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Activity.Handlers
                 // Finish the span manually
                 EnhanceActivityMetadata(activity);
 
-                OtlpHelpers.UpdateSpanFromActivity(activity, span, span.OpenTelemetrySemanticsEnabled);
+                OtlpHelpers.UpdateSpanFromActivity(activity, span, in status, span.OpenTelemetrySemanticsEnabled);
 
                 span.Finish((DateTimeOffset)activity.StartTimeUtc.Add(activity.Duration));
                 activityMapping.Scope.Close();
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
                 // Fallback to common handler if we couldn't find the span
-                ActivityHandlerCommon.ActivityStopped(sourceName, activity);
+                ActivityHandlerCommon.ActivityStopped(sourceName, activity, in status);
             }
         }
     }

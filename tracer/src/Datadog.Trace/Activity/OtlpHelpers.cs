@@ -32,14 +32,14 @@ namespace Datadog.Trace.Activity
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
-        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled = false)
+        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, in ActivityStatus status, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
         {
-            AgentConvertSpan(activity, span, openTelemetrySemanticsEnabled);
+            AgentConvertSpan(activity, span, in status, openTelemetrySemanticsEnabled);
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
-        private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span, in ActivityStatus status, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
         {
             // This code path _should_ only be called from places where the span being closed was created with OTel tags
@@ -52,7 +52,6 @@ namespace Datadog.Trace.Activity
 
             // Perform activity casts first and check for null when their members need to be accessed
             var activity5 = activity as IActivity5;
-            var activity6 = activity as IActivity6;
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
             span.OperationName = null; // Reset the operation name, it will be repopulated
 
@@ -157,9 +156,9 @@ namespace Datadog.Trace.Activity
             // Set OTEL status code
             // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
             // (we don't remap these values when when OTel Semantics are enabled)
-            if (tags.OtelStatusCode is null && activity6 is not null)
+            if (tags.OtelStatusCode is null)
             {
-                tags.OtelStatusCode = activity6.Status switch
+                tags.OtelStatusCode = status.Code switch
                 {
                     ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
                     ActivityStatusCode.Ok => "STATUS_CODE_OK",
@@ -182,16 +181,16 @@ namespace Datadog.Trace.Activity
             // Set OTEL status description
             // Map the OTEL status to error tags
             // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-            if (activity6?.Status == ActivityStatusCode.Error)
+            if (status.Code == ActivityStatusCode.Error)
             {
                 if (openTelemetrySemanticsEnabled)
                 {
                     span.Error = true;
-                    span.SetTag(Tags.ErrorMsg, activity6?.StatusDescription);
+                    span.SetTag(Tags.ErrorMsg, status.Description);
                 }
-                else
+                else if (activity5 is not null)
                 {
-                    AgentStatus2ErrorActivity6(activity6, span, tags);
+                    AgentStatus2ErrorFromStatus(activity5, span, status.Description);
                 }
             }
             else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
@@ -552,8 +551,8 @@ namespace Datadog.Trace.Activity
         }
 
         // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-        private static void AgentStatus2ErrorActivity6<TInner>(TInner activity, Span span, OpenTelemetryTags tags)
-            where TInner : IActivity6
+        private static void AgentStatus2ErrorFromStatus<TInner>(TInner activity, Span span, string? statusDescription)
+            where TInner : IActivity5
         {
             span.Error = true;
 
@@ -562,7 +561,7 @@ namespace Datadog.Trace.Activity
 
             if (span.GetTag(Tags.ErrorMsg) is null)
             {
-                span.SetTag(Tags.ErrorMsg, activity.StatusDescription);
+                span.SetTag(Tags.ErrorMsg, statusDescription);
             }
         }
 
