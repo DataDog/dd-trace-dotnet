@@ -273,7 +273,7 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
 
-        // Purges are triggered by the number of put operations (PurgeCount = 64), not by key hashes.
+        // Purges are triggered by the number of put operations (PurgeCount), not by key hashes.
         for (int i = 0; i < 63; i++)
         {
             var testString = new StringForTest(Guid.NewGuid().ToString());
