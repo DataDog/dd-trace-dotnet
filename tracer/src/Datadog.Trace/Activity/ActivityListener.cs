@@ -77,7 +77,8 @@ namespace Datadog.Trace.Activity
             };
         }
 
-        public static void SetActivityKind(IActivity5 activity, ActivityKind activityKind)
+        public static void SetActivityKind<T>(T activity, ActivityKind activityKind)
+            where T : IActivity5
         {
             if (activity.Instance is null)
             {

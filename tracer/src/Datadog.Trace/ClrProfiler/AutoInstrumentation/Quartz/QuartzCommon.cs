@@ -28,7 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             };
         }
 
-        internal static ActivityKind GetActivityKind(IActivity5 activity)
+        internal static ActivityKind GetActivityKind<T>(T activity)
+            where T : IActivity5
         {
             return activity.OperationName switch
             {
@@ -38,12 +39,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             };
         }
 
-        internal static void SetActivityKind(IActivity5 activity)
+        internal static void SetActivityKind<T>(T activity)
+            where T : IActivity5
         {
             ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
         }
 
-        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        internal static void EnhanceActivityMetadata<T>(T activity)
+            where T : IActivity5
         {
             activity.AddTag("operation.name", activity.DisplayName);
             activity.AddTag(Tags.InstrumentationName, ComponentName);
@@ -67,14 +70,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.DisplayName = CreateResourceName(activity.DisplayName, jobName!);
         }
 
-        internal static void EnhanceActivityMetadata(IActivity activity)
+        internal static void EnhanceLegacyActivityMetadata<T>(T activity)
+            where T : IActivity
         {
-            if (activity is IActivity5 activity5)
-            {
-                EnhanceActivityMetadata(activity5);
-                return;
-            }
-
             if (activity.OperationName is null)
             {
                 return;
@@ -102,7 +100,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag("resource.name", CreateResourceName(activity.OperationName, jobName!));
         }
 
-        internal static void AddException(object exceptionArg, IActivity activity)
+        internal static void AddException<T>(object exceptionArg, T activity)
+            where T : IActivity
         {
             if (exceptionArg is not Exception exception)
             {

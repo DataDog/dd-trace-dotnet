@@ -89,7 +89,7 @@ namespace Datadog.Trace.Activity.Handlers
             if (TryTakeQuartzScope(activity, out var scope))
             {
                 // Finish the span manually
-                EnhanceActivityMetadata(activity);
+                EnhanceLegacyActivityMetadata(activity);
 
                 OtlpHelpers.UpdateSpanFromLegacyActivity(activity, scope.Span, scope.Span.OpenTelemetrySemanticsEnabled);
                 ActivityHandlerCommon.FinishActivityScope(activity, scope);

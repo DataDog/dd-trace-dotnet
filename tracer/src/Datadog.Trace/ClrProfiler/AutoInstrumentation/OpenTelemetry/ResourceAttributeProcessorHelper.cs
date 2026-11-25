@@ -31,15 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
-            ActivityKey key;
-            if (activity.TraceId is { } traceId && activity.SpanId is { } spanId)
-            {
-                key = new(traceId, spanId);
-            }
-            else
-            {
-                key = new(activity.Id);
-            }
+            var key = ActivityKey.From(activity);
 
             if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
             {
