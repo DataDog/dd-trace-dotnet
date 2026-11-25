@@ -43,18 +43,20 @@ internal sealed class TestOptimizationTestManagementFeature : ITestOptimizationT
 
         static async Task<TestOptimizationClient.TestManagementResponse> InternalGetTestManagementTestsAsync(ITestOptimizationClient testOptimizationClient)
         {
+            Log.Debug("TestOptimizationTestManagementFeature: Getting test management data...");
+            TestOptimizationClient.TestManagementResponse response;
             try
             {
-                Log.Debug("TestOptimizationTestManagementFeature: Getting test management data...");
-                var response = await testOptimizationClient.GetTestManagementTests().ConfigureAwait(false);
-                Log.Debug("TestOptimizationTestManagementFeature: Test management data received.");
-                return response;
+                response = await testOptimizationClient.GetTestManagementTests().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "TestOptimizationTestManagementFeature: Error getting test management data. Test management is being disabled for this run.");
                 return new TestOptimizationClient.TestManagementResponse();
             }
+
+            Log.Debug("TestOptimizationTestManagementFeature: Test management data received.");
+            return response;
         }
     }
 

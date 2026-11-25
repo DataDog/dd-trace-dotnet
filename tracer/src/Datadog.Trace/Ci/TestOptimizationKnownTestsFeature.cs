@@ -42,18 +42,20 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
 
         static async Task<TestOptimizationClient.KnownTestsResponse> InternalGetKnownTestsAsync(ITestOptimizationClient testOptimizationClient)
         {
+            Log.Debug("TestOptimizationKnownTestsFeature: Getting early flake detection data...");
+            TestOptimizationClient.KnownTestsResponse response;
             try
             {
-                Log.Debug("TestOptimizationKnownTestsFeature: Getting early flake detection data...");
-                var response = await testOptimizationClient.GetKnownTestsAsync().ConfigureAwait(false);
-                Log.Debug("TestOptimizationKnownTestsFeature: Early flake detection data received.");
-                return response;
+                response = await testOptimizationClient.GetKnownTestsAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "TestOptimizationKnownTestsFeature: Error getting early flake detection data. Known tests and early flake detection are being disabled for this run.");
                 return default;
             }
+
+            Log.Debug("TestOptimizationKnownTestsFeature: Early flake detection data received.");
+            return response;
         }
     }
 
