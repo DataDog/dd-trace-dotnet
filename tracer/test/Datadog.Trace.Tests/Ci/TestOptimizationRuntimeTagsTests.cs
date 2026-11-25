@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -48,6 +49,19 @@ public class TestOptimizationRuntimeTagsTests : SettingsTestsBase
         tags.RuntimeVersion.Should().Be("8.0.0");
         tags.OSPlatform.Should().Be(framework.OSPlatform);
         tags.RuntimeName.Should().Be(framework.Name);
+    }
+
+    [Fact]
+    public void SetOverridesReplacesTagsSetBeforeOnTheSpan()
+    {
+        var testOptimization = CreateTestOptimization("{\"os.version\":\"6.12.0\"}");
+        var tags = new TestModuleSpanTags { OSVersion = "from-dd-tags", RuntimeVersion = "detected" };
+        using var scope = Tracer.Instance.StartActiveInternal("runtime-tags", tags: tags);
+
+        TestOptimizationRuntimeTags.SetOverrides(testOptimization.Object, scope.Span);
+
+        tags.OSVersion.Should().Be("6.12.0");
+        tags.RuntimeVersion.Should().Be("detected");
     }
 
     [Fact]

@@ -41,6 +41,7 @@ public sealed class TestSuite
             string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{StringUtil.ToLowerInvariant(module.Framework)}.test_suite",
             tags: tags,
             startTime: startDate);
+        TestOptimizationRuntimeTags.SetOverrides(_testOptimization, span);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestSuite;

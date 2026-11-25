@@ -40,6 +40,23 @@ internal sealed class TestOptimizationRuntimeTags
 
     public static TestOptimizationRuntimeTags Create(ITestOptimization testOptimization) => new(testOptimization);
 
+    /// <summary>
+    /// Sets the overrides on a span again once it has started, because the tracer applies DD_TAGS to every new span.
+    /// </summary>
+    public static void SetOverrides(ITestOptimization testOptimization, Span span)
+    {
+        var overrides = testOptimization.Settings.RuntimeTags;
+        if (overrides.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var tag in overrides)
+        {
+            span.SetTag(tag.Key, tag.Value);
+        }
+    }
+
     private static string Get(IReadOnlyDictionary<string, string> overrides, string tag, string detected)
         => overrides.TryGetValue(tag, out var value) ? value : detected;
 }

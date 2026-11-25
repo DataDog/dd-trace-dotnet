@@ -189,6 +189,7 @@ public sealed class TestModule
             string.IsNullOrEmpty(framework) ? "test_module" : $"{StringUtil.ToLowerInvariant(framework)}.test_module",
             tags: tags,
             startTime: startDate);
+        TestOptimizationRuntimeTags.SetOverrides(_testOptimization, span);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestModule;
