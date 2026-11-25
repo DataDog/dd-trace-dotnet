@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Coverage.Collector
 {
@@ -23,8 +23,7 @@ namespace Datadog.Trace.Coverage.Collector
         static CoverageAssemblyPathLock()
         {
             DefaultTimeout = TimeSpan.FromSeconds(5);
-            var pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-            Locks = new(pathComparer);
+            Locks = new(FilePathComparison.Comparer);
         }
 
         /// <summary>

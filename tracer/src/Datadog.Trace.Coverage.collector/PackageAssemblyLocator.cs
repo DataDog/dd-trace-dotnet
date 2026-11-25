@@ -26,17 +26,17 @@ namespace Datadog.Trace.Coverage.Collector;
 /// </remarks>
 internal static class PackageAssemblyLocator
 {
-    private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly Lazy<string[]> HostRuntimeIdentifiers = new(() => GetHostRuntimeIdentifiers().Distinct(StringComparer.Ordinal).ToArray());
-    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string[]>>> CachedAssetPaths = new(PathComparer);
+    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string[]>>> CachedAssetPaths = new(FilePathComparison.Comparer);
 
     /// <summary>
     /// Gets the existing package files that can provide an assembly to the binaries of an output directory.
     /// </summary>
     /// <param name="outputDirectory">The directory with the target assembly and its dependency manifests.</param>
     /// <param name="assemblyName">The simple name of the requested assembly.</param>
-    /// <returns>The candidate paths, in probing order.</returns>
-    internal static string[] GetCandidatePaths(string outputDirectory, string assemblyName)
+    /// <param name="logger">Logs a failure to discover the package assemblies of the directory.</param>
+    /// <returns>The candidate paths, in probing order. The array is cached and shared, so callers must not modify it.</returns>
+    internal static string[] GetCandidatePaths(string outputDirectory, string assemblyName, ICollectorLogger logger)
     {
         if (StringUtil.IsNullOrEmpty(outputDirectory) || StringUtil.IsNullOrEmpty(assemblyName))
         {
@@ -47,14 +47,31 @@ internal static class PackageAssemblyLocator
         var assetPaths = CachedAssetPaths.GetOrAdd(
                                              outputDirectory,
                                              directory => new Lazy<Dictionary<string, string[]>>(
-                                                 () => DiscoverAssetPaths(directory, GetPackageRoots(directory, Environment.GetEnvironmentVariable, GetUserProfileDirectory())),
+                                                 () => DiscoverAssetPathsOrEmpty(directory, logger),
                                                  LazyThreadSafetyMode.ExecutionAndPublication))
                                          .Value;
-        return assetPaths.TryGetValue(assemblyName, out var paths) ? paths.Where(File.Exists).ToArray() : [];
+        return assetPaths.TryGetValue(assemblyName, out var paths) ? paths : [];
     }
 
     /// <summary>
-    /// Maps each package assembly declared by the output directory's dependency manifests to its possible package paths.
+    /// Discovers the package assemblies of a directory without throwing. The result is cached for the process lifetime, and
+    /// a cached exception would break every later resolution from the directory, including the fallbacks after package probing.
+    /// </summary>
+    private static Dictionary<string, string[]> DiscoverAssetPathsOrEmpty(string outputDirectory, ICollectorLogger logger)
+    {
+        try
+        {
+            return DiscoverAssetPaths(outputDirectory, GetPackageRoots(outputDirectory, Environment.GetEnvironmentVariable, GetUserProfileDirectory()));
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, $"Failed to discover the package assemblies declared by the dependency manifests in '{outputDirectory}'. Package folders won't be probed for this directory.");
+            return new Dictionary<string, string[]>();
+        }
+    }
+
+    /// <summary>
+    /// Maps each package assembly declared by the output directory's dependency manifests to its existing package files.
     /// </summary>
     private static Dictionary<string, string[]> DiscoverAssetPaths(string outputDirectory, IReadOnlyList<string> packageRoots)
     {
@@ -64,16 +81,22 @@ internal static class PackageAssemblyLocator
             foreach (var assetPath in ReadPackageRuntimeAssets(depsJsonPath))
             {
                 var assemblyName = Path.GetFileNameWithoutExtension(assetPath);
-                if (!candidates.TryGetValue(assemblyName, out var paths))
-                {
-                    paths = [];
-                    candidates[assemblyName] = paths;
-                }
-
                 foreach (var packageRoot in packageRoots)
                 {
+                    // File.Exists also skips a directory that has the asset's name.
                     var path = Path.Combine(packageRoot, assetPath);
-                    if (!paths.Contains(path, PathComparer))
+                    if (!File.Exists(path))
+                    {
+                        continue;
+                    }
+
+                    if (!candidates.TryGetValue(assemblyName, out var paths))
+                    {
+                        paths = [];
+                        candidates[assemblyName] = paths;
+                    }
+
+                    if (!paths.Contains(path, FilePathComparison.Comparer))
                     {
                         paths.Add(path);
                     }
@@ -138,7 +161,7 @@ internal static class PackageAssemblyLocator
             return;
         }
 
-        if (Directory.Exists(packageRoot) && !roots.Contains(packageRoot, PathComparer))
+        if (Directory.Exists(packageRoot) && !roots.Contains(packageRoot, FilePathComparison.Comparer))
         {
             roots.Add(packageRoot);
         }
@@ -294,7 +317,7 @@ internal static class PackageAssemblyLocator
             return targets[runtimeTargetName] as JObject;
         }
 
-        return targets.Properties().Select(target => target.Value).OfType<JObject>().FirstOrDefault();
+        return targets.Properties().FirstOrDefault(static target => target.Value is JObject)?.Value as JObject;
     }
 
     private static string? GetString(JToken? token)
@@ -317,12 +340,12 @@ internal static class PackageAssemblyLocator
         }
     }
 
-    private static IEnumerable<string> EnumerateFiles(string directory, string searchPattern)
+    private static List<string> EnumerateFiles(string directory, string searchPattern)
     {
         try
         {
             return Directory.EnumerateFiles(directory, searchPattern, SearchOption.TopDirectoryOnly)
-                            .OrderBy(path => path, PathComparer)
+                            .OrderBy(path => path, FilePathComparison.Comparer)
                             .ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

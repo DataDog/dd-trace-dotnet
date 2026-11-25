@@ -26,6 +26,8 @@ public class CoverageResolverTests
     private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ExpectedContentionTimeout = TimeSpan.FromMilliseconds(200);
 
+    private static AssemblyNameReference ProbedAssemblyName => new("Probed.Assembly", new Version(1, 0, 0, 0));
+
     /// <summary>
     /// Verifies that sibling assembly resolution still finds assemblies in the target output directory.
     /// </summary>
@@ -393,6 +395,77 @@ public class CoverageResolverTests
 
         assembly.MainModule.FileName.Should().Be(Path.Combine(directory.Path, "rid.assembly", "1.0", expectedGroup, Name + ".dll"));
     }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("directory")]
+    public void ResolvePackageAssemblySkipsCandidateThatIsNotAFile(string firstCandidate)
+    {
+        using var directory = TemporaryDirectory.Create();
+        string[] roots = [Path.Combine(directory.Path, "first"), Path.Combine(directory.Path, "second")];
+        var firstPath = CreateProbedPackageAssembly(roots[0]);
+        var secondPath = CreateProbedPackageAssembly(roots[1]);
+        File.Delete(firstPath);
+        if (firstCandidate == "directory")
+        {
+            Directory.CreateDirectory(firstPath);
+        }
+
+        WriteProbedPackageManifests(directory.Path, roots);
+        using var resolver = CreateResolver(directory.Path);
+
+        var assembly = resolver.Resolve(ProbedAssemblyName);
+
+        assembly.MainModule.FileName.Should().Be(secondPath);
+    }
+
+#if NET7_0_OR_GREATER
+    [SkippableFact]
+    [UnsupportedOSPlatform("windows")]
+    public void ResolvePackageAssemblySkipsUnreadableCandidate()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        using var directory = TemporaryDirectory.Create();
+        string[] roots = [Path.Combine(directory.Path, "first"), Path.Combine(directory.Path, "second")];
+        var firstPath = CreateProbedPackageAssembly(roots[0]);
+        var secondPath = CreateProbedPackageAssembly(roots[1]);
+        File.SetUnixFileMode(firstPath, UnixFileMode.None);
+        Skip.If(CanOpenForRead(firstPath), "The current user can read files without read permission, for example as root.");
+        WriteProbedPackageManifests(directory.Path, roots);
+        using var resolver = CreateResolver(directory.Path);
+
+        var assembly = resolver.Resolve(ProbedAssemblyName);
+
+        assembly.MainModule.FileName.Should().Be(secondPath);
+    }
+#endif
+
+#if NET6_0_OR_GREATER
+    [SkippableFact]
+    public void ResolvePackageAssemblyFollowsSymbolicLinkToPackageRoot()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var packageRoot = Path.Combine(directory.Path, "packages");
+        var linkedRoot = Path.Combine(directory.Path, "linked-packages");
+        CreateProbedPackageAssembly(packageRoot);
+        try
+        {
+            Directory.CreateSymbolicLink(linkedRoot, packageRoot);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new SkipException($"The current user can't create symbolic links: {ex.Message}");
+        }
+
+        WriteProbedPackageManifests(directory.Path, linkedRoot);
+        using var resolver = CreateResolver(directory.Path);
+
+        var assembly = resolver.Resolve(ProbedAssemblyName);
+
+        assembly.MainModule.FileName.Should().Be(Path.Combine(linkedRoot, "probed.assembly", "1.0.0", "lib", "net8.0", "Probed.Assembly.dll"));
+    }
+#endif
 
     /// <summary>
     /// Verifies that package folders follow the host's runtimeconfig probing paths, then the NuGet global packages folder.
@@ -783,6 +856,37 @@ public class CoverageResolverTests
                    }
                  }
                  """;
+    }
+
+    /// <summary>
+    /// Creates the Probed.Assembly 1.0.0 package assembly under a package folder and returns its path.
+    /// </summary>
+    private static string CreateProbedPackageAssembly(string packageRoot)
+    {
+        var assemblyDirectory = Directory.CreateDirectory(Path.Combine(packageRoot, "probed.assembly", "1.0.0", "lib", "net8.0"));
+        return CreateAssembly(assemblyDirectory.FullName, ProbedAssemblyName.Name, ProbedAssemblyName.Version);
+    }
+
+    /// <summary>
+    /// Declares the Probed.Assembly package in a deps.json and the package folders as runtimeconfig probing paths.
+    /// </summary>
+    private static void WriteProbedPackageManifests(string outputDirectory, params string[] probingRoots)
+    {
+        File.WriteAllText(Path.Combine(outputDirectory, "Tests.deps.json"), CreateDepsJson(ProbedAssemblyName.Name, "1.0.0", "lib/net8.0/Probed.Assembly.dll"));
+        File.WriteAllText(Path.Combine(outputDirectory, "Tests.runtimeconfig.dev.json"), CreateRuntimeConfigWithProbingPaths(probingRoots));
+    }
+
+    private static bool CanOpenForRead(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private static string CreateRuntimeConfigWithProbingPaths(params string[] probingPaths)

@@ -848,13 +848,13 @@ namespace Datadog.Trace.Coverage.Collector
         /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
         /// <param name="writePortablePdb">Whether a Windows PDB is replaced by a portable PDB instead of being rewritten as a Windows PDB.</param>
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, static (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
 
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, Action<string, string, string?> replaceFile)
             => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, replaceFile, logger: null);
 
         private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, ICollectorLogger logger)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, (source, destination, backup) => File.Replace(source, destination, backup), logger);
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, static (source, destination, backup) => File.Replace(source, destination, backup), logger);
 
         private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
         {
