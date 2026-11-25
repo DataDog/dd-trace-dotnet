@@ -15,8 +15,10 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 
 public class DefaultTaintedMapConcurrencyTests
 {
-    // Odd, so Put() never triggers an implicit Purge() ((hash & PurgeMask) != 0).
-    private const int NonPurgingHash = 1;
+    // Forces every entry into the same bucket. Purges are triggered by put count, not key
+    // hashes, so implicit purges do run during these tests; the inserted entries stay alive,
+    // so a purge must not remove them.
+    private const int SameBucketHash = 1;
 
     [Fact]
     public void GivenATaintedObjectMap_WhenConcurrentPutsCollideOnTheSameBucket_NoEntryIsLost()
@@ -32,7 +34,7 @@ public class DefaultTaintedMapConcurrencyTests
             entries[t] = new TestTaintedObject[perThread];
             for (var i = 0; i < perThread; i++)
             {
-                entries[t][i] = new TestTaintedObject(new HashedValue(NonPurgingHash));
+                entries[t][i] = new TestTaintedObject(new HashedValue(SameBucketHash));
             }
         }
 

@@ -269,23 +269,22 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
-    public void GivenATaintedObjectMap_WhenHasCausesPurge_IsPurged()
+    public void GivenATaintedObjectMap_WhenPutCountReachesPurgeCount_IsPurged()
     {
         DefaultTaintedMap map = new();
 
-        for (int i = 0; i < 10; i++)
+        // Purges are triggered by the number of put operations (PurgeCount = 64), not by key hashes.
+        for (int i = 0; i < 63; i++)
         {
             var testString = new StringForTest(Guid.NewGuid().ToString());
-            testString.Hash = 1;
             var tainted = new TaintedForTest(testString, null);
             map.Put(tainted);
             tainted.Invalidate();
             map.Get(testString).Should().NotBeNull();
         }
 
-        map.GetListValues().Should().HaveCount(10);
+        map.GetListValues().Should().HaveCount(63);
         var testStringNew = new StringForTest(Guid.NewGuid().ToString());
-        testStringNew.Hash = 0;
         var taintedObject = new TaintedForTest(testStringNew, null);
         map.Put(taintedObject);
         map.GetListValues().Should().HaveCount(1);

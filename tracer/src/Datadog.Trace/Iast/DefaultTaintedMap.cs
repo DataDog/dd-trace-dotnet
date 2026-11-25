@@ -36,6 +36,8 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
+    // Number of put operations. Drives the purge cadence.
+    private int _putCount;
     /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
@@ -140,7 +142,11 @@ internal sealed class DefaultTaintedMap : ITaintedMap
             Interlocked.Increment(ref _entriesCount);
         }
 
-        if ((entry.PositiveHashCode & PurgeMask) == 0)
+        // Purge every PurgeCount puts. The cadence must not depend on key hashes:
+        // string.GetHashCode() is seeded randomly per process on .NET Core, which made the
+        // number of purges differ between otherwise identical runs, and any hash-based
+        // trigger is predictable to a caller who can craft tainted inputs.
+        if ((Interlocked.Increment(ref _putCount) & PurgeMask) == 0)
         {
             Purge();
         }
@@ -247,6 +253,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     {
         IsFlat = false;
         Interlocked.Exchange(ref _entriesCount, 0);
+        Interlocked.Exchange(ref _putCount, 0);
         _map.Clear();
     }
 

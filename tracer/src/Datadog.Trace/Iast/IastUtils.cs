@@ -75,14 +75,6 @@ internal static class IastUtils
 
         try
         {
-            // Strings are matched by content in the tainted map, so use the content-based hash.
-            // string.GetHashCode() is seeded randomly per process on .NET Core, which makes
-            // hash-dependent behavior (bucket distribution, purge cadence) differ between runs.
-            if (item is string s)
-            {
-                return s.GetStaticHashCode();
-            }
-
             return item.GetHashCode();
         }
         catch
