@@ -8,6 +8,7 @@
 #if NET10_0_OR_GREATER
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
@@ -35,6 +36,13 @@ namespace Datadog.Trace.Tests.CallTarget;
 /// </remarks>
 public class RuntimeAsyncEndMethodHandlerTests
 {
+    public enum TokenKind
+    {
+        Default,
+        NotCanceled,
+        Canceled,
+    }
+
     [Fact]
     public void OnAsyncMethodEnd_OnSuccess_IsInvokedWithNoReturnValue()
     {
@@ -88,21 +96,44 @@ public class RuntimeAsyncEndMethodHandlerTests
         MethodEndIntegration.ReturnValue.Should().BeSameAs(Task.CompletedTask);
     }
 
-    [Fact]
-    public void OnMethodEnd_OnException_ReceivesNoTask()
+    [Theory]
+    [CombinatorialData]
+    public void OnMethodEnd_OnException_ReceivesAFaultedTask(bool useValueTask)
     {
         MethodEndIntegration.Reset();
         var exception = new InvalidOperationException("boom");
-        var state = CallTargetState.GetDefault();
-
-        CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, Task>(new TestTarget(), exception, in state);
+        var task = InvokeFailingMethodEnd(useValueTask, exception);
 
         MethodEndIntegration.Calls.Should().Be(1);
-        MethodEndIntegration.Exception.Should().BeSameAs(exception);
+        MethodEndIntegration.Exception.Should().BeNull();
+        task.Should().NotBeNull();
+        task.IsFaulted.Should().BeTrue();
+        task.Exception.InnerException.Should().BeSameAs(exception);
+    }
 
-        // Not a faulted task: the exception is carried by the exception argument, matching what a
-        // state-machine target hands over when it throws before its first suspension.
-        MethodEndIntegration.ReturnValue.Should().BeNull();
+    [Theory]
+    [CombinatorialData]
+    public void OnMethodEnd_OnCancellation_PreservesTheExceptionAndToken(bool useValueTask, TokenKind tokenKind)
+    {
+        MethodEndIntegration.Reset();
+        using var source = new CancellationTokenSource();
+        if (tokenKind == TokenKind.Canceled)
+        {
+            source.Cancel();
+        }
+
+        var token = tokenKind == TokenKind.Default ? default : source.Token;
+        var exception = new ContinuationGeneratorTestHelpers.CustomCancellationException(token);
+        var task = InvokeFailingMethodEnd(useValueTask, exception);
+
+        MethodEndIntegration.Calls.Should().Be(1);
+        MethodEndIntegration.Exception.Should().BeNull();
+        task.Should().NotBeNull();
+        task.IsCanceled.Should().BeTrue();
+        Action act = () => task.GetAwaiter().GetResult();
+        var thrown = act.Should().Throw<OperationCanceledException>().Which;
+        thrown.Should().BeSameAs(exception);
+        thrown.CancellationToken.Should().Be(token);
     }
 
     [Fact]
@@ -136,6 +167,49 @@ public class RuntimeAsyncEndMethodHandlerTests
         // OnMethodEnd is handed a completed Task, not null, which is what lets a TraceAnnotations
         // style `returnValue is Task` guard correctly leave disposal to OnAsyncMethodEnd.
         BothCallbacksIntegration.SyncReturnValue.Should().BeSameAs(Task.CompletedTask);
+    }
+
+    [Fact]
+    public void WhenBothCallbacksAreDeclared_OnFailure_OnlyAsyncCallbackReceivesTheException()
+    {
+        BothCallbacksIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+        var exception = new InvalidOperationException("boom");
+
+        CallTargetInvoker.EndMethodRuntimeAsync<BothCallbacksIntegration, TestTarget, Task>(new TestTarget(), exception, in state);
+
+        BothCallbacksIntegration.AsyncCalls.Should().Be(1);
+        BothCallbacksIntegration.SyncCalls.Should().Be(1);
+        BothCallbacksIntegration.AsyncException.Should().BeSameAs(exception);
+        BothCallbacksIntegration.SyncException.Should().BeNull();
+        var task = BothCallbacksIntegration.SyncReturnValue.Should().BeAssignableTo<Task>().Subject;
+        task.IsFaulted.Should().BeTrue();
+        task.Exception.InnerException.Should().BeSameAs(exception);
+    }
+
+    [Fact]
+    public void WhenOnAsyncMethodEndThrows_OnMethodEndStillRuns()
+    {
+        ThrowingAsyncEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        CallTargetInvoker.EndMethodRuntimeAsync<ThrowingAsyncEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        ThrowingAsyncEndIntegration.SyncCalls.Should().Be(1);
+        IntegrationOptions<ThrowingAsyncEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void WhenOnAsyncMethodEndBubblesUp_TheExceptionReachesTheCaller()
+    {
+        BubblingUpAsyncEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        Action act = () => CallTargetInvoker.EndMethodRuntimeAsync<BubblingUpAsyncEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        // AppSec blocks this way, so it must reach the application rather than be logged
+        act.Should().Throw<InvalidOperationException>().WithInnerException<BubbleUpException>();
+        BubblingUpAsyncEndIntegration.SyncCalls.Should().Be(0);
     }
 
     [Fact]
@@ -207,6 +281,19 @@ public class RuntimeAsyncEndMethodHandlerTests
         };
 
         act.Should().NotThrow();
+    }
+
+    private static Task InvokeFailingMethodEnd(bool useValueTask, Exception exception)
+    {
+        var state = CallTargetState.GetDefault();
+        if (useValueTask)
+        {
+            CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, ValueTask>(new TestTarget(), exception, in state);
+            return ((ValueTask)MethodEndIntegration.ReturnValue).AsTask();
+        }
+
+        CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, Task>(new TestTarget(), exception, in state);
+        return (Task)MethodEndIntegration.ReturnValue;
     }
 
     internal class TestTarget
@@ -292,16 +379,23 @@ public class RuntimeAsyncEndMethodHandlerTests
 
         public static object SyncReturnValue { get; private set; }
 
+        public static Exception AsyncException { get; private set; }
+
+        public static Exception SyncException { get; private set; }
+
         public static void Reset()
         {
             AsyncCalls = 0;
             SyncCalls = 0;
             SyncReturnValue = null;
+            AsyncException = null;
+            SyncException = null;
         }
 
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             AsyncCalls++;
+            AsyncException = exception;
             return returnValue;
         }
 
@@ -309,8 +403,51 @@ public class RuntimeAsyncEndMethodHandlerTests
         {
             SyncCalls++;
             SyncReturnValue = returnValue;
+            SyncException = exception;
             return new CallTargetReturn<TReturn>(returnValue);
         }
+    }
+
+    internal class ThrowingAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Integration Exception");
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubblingUpAsyncEndIntegration
+    {
+        public static int SyncCalls { get; private set; }
+
+        public static void Reset()
+        {
+            SyncCalls = 0;
+        }
+
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            => throw new InvalidOperationException("Blocked", new BubbleUpException());
+
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            SyncCalls++;
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+    }
+
+    internal class BubbleUpException : CallTargetBubbleUpException
+    {
     }
 
     internal class AsyncCallbackIntegration

@@ -3,12 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Profiler.SmokeTests;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,28 +27,28 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
         //       the ETW support is disabled in the tests for .NET Framework.
 
-        [Flaky("Named pipes seem to be flaky in CI")]
-        [TestAppFact("Samples.Computer01")]
-        public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
+        [Flaky("Named pipes seem to be flaky in CI", RetryCount)]
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckProfilesSentThroughNamedPipe(TestAppContext app)
         {
             string[] errorExceptions =
             {
                 "ddog_prof_Exporter_send_blocking failed: Failed to send HTTP request: error sending request for url (http://localhost/profiling/v1/input): operation timed out",
                 "ddog_prof_Exporter_send_blocking failed: operation was canceled"
             };
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
-            runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
+            runner.RunAndCheck(errorExceptions);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckExporterDoesUsePipeNameEvenIfItDoesNotExist(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckExporterDoesUsePipeNameEvenIfItDoesNotExist(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable(EnvironmentVariables.NamedPipeName, "ForSureThisPipeDoesNotExist__I_Hope");
@@ -59,14 +57,10 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
 
             runner.Run(agent);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            var lines = File.ReadAllLines(logFile);
-
-            lines.Should().ContainMatch("*Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope*");
-            lines.Should().ContainMatch("*ddog_prof_Exporter_send_blocking failed*");
-            lines.Should().ContainMatch("*The system cannot find the file specified*");
+            ProfilerLogSet.Read(runner.Environment.LogDir).NativeProfiler.Should()
+                .ContainLine("Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope")
+                .And.ContainLine("ddog_prof_Exporter_send_blocking failed")
+                .And.ContainLine("The system cannot find the file specified");
         }
     }
 }

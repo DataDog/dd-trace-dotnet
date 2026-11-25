@@ -40,9 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return true;
             }
 
-            ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
-
-            var isDifferentVersion = methodMetadataInfo.InstrumentationVersion != instrumentationVersion;
+            var isDifferentVersion = MethodMetadataCollection.Instance.Get(methodMetadataIndex).Probes.InstrumentationVersion != instrumentationVersion;
 
             if (IsReEnter(ref state) && isDifferentVersion)
             {
@@ -157,7 +155,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 Log.Warning(nameof(BeginMethod) + ": hoisted 'this' has not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
             }
 
-            ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+            var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
                 // In .NET Framework, we have en issue with multiple AppDomains. We can't easily share probe metadata
@@ -178,7 +176,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData, snapshotCreator)
+            var asyncState = new AsyncMethodDebuggerState(probeId, probeData, snapshotCreator)
             {
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,

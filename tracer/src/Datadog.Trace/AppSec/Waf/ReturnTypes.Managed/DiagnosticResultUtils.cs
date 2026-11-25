@@ -17,6 +17,76 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal static class DiagnosticResultUtils
 {
+    /// <summary>
+    /// Counts the errors the WAF reported while loading a single configuration: one per top-level or
+    /// per-section "error", plus one per distinct message in each section's "errors" map.
+    /// </summary>
+    internal static unsafe int CountConfigErrors(in DdwafObjectStruct diagObject)
+    {
+        // walks the native map rather than decoding it, as the diagnostics also list every loaded id
+        if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP || diagObject.Pointer == IntPtr.Zero)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        try
+        {
+            var entries = (DdwafObjectKvStruct*)diagObject.Pointer;
+            for (var i = 0; i < diagObject.Size; i++)
+            {
+                if (entries[i].Key.DecodeString() == "error")
+                {
+                    count += IsNonEmptyString(entries[i].Value) ? 1 : 0;
+                }
+                else if (entries[i].Value.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+                {
+                    count += CountSectionErrors(entries[i].Value);
+                }
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "AppSec could not count the Waf configuration errors");
+        }
+
+        return count;
+    }
+
+    private static unsafe int CountSectionErrors(in DdwafObjectStruct section)
+    {
+        if (section.Pointer == IntPtr.Zero)
+        {
+            return 0;
+        }
+
+        var errorMessages = 0;
+        var entries = (DdwafObjectKvStruct*)section.Pointer;
+        for (var i = 0; i < section.Size; i++)
+        {
+            var key = entries[i].Key.DecodeString();
+            if (key == "error" && IsNonEmptyString(entries[i].Value))
+            {
+                // the whole section failed to load, its other entries don't matter
+                return 1;
+            }
+
+            if (key == "errors" && entries[i].Value.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+            {
+                errorMessages = entries[i].Value.Size;
+            }
+        }
+
+        return errorMessages;
+    }
+
+    private static bool IsNonEmptyString(in DdwafObjectStruct value) => value.Type switch
+    {
+        DDWAF_OBJ_TYPE.DDWAF_OBJ_SMALL_STRING => value.SmallStringSize > 0,
+        DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING or DDWAF_OBJ_TYPE.DDWAF_OBJ_LITERAL_STRING => value.Pointer != IntPtr.Zero && value.StringLength > 0,
+        _ => false
+    };
+
     internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
         WafStats rules = new(); // Rules only stats
@@ -126,7 +196,7 @@ internal struct ReportedDiagnostics
         Rules.Errors = errors;
     }
 
-    public bool HasErrors => Rules.HasErrors || Rest.HasErrors;
+    public readonly bool HasErrors => Rules.HasErrors || Rest.HasErrors;
 }
 
 internal struct WafStats
@@ -142,9 +212,9 @@ internal struct WafStats
     {
     }
 
-    public int Total => (Failed + Loaded + Skipped);
+    public readonly int Total => (Failed + Loaded + Skipped);
 
-    public bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
+    public readonly bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

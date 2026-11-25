@@ -88,17 +88,19 @@
 
   <ItemGroup>
     <!-- OTLP .proto files vendored from open-telemetry/opentelemetry-proto@v1.10.0. The matching
-         C# bindings under OpenTelemetry\Traces\Generated\ are pre-generated and committed so the
-         OTLP serializer tests can decode wire bytes via Google.Protobuf parsers without invoking
+         C# bindings under OpenTelemetry\Traces\Generated\ and OpenTelemetry\Metrics\Generated\ are
+         pre-generated and committed so the OTLP serializer tests can decode wire bytes via Google.Protobuf parsers without invoking
          protoc at build time (Grpc.Tools does not ship a musl/Alpine binary, and NuGet does not
-         preserve the executable bit on Unix). See OpenTelemetry\Traces\Generated\README.md for
-         the regeneration command. -->
+         preserve the executable bit on Unix). See the README.md in each Generated
+         folder for the regeneration command. -->
     <None Include="OpenTelemetry\Traces\proto\**\*.proto" />
+    <None Include="OpenTelemetry\Metrics\proto\**\*.proto" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\ufc-config.json" />
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\evaluation-cases\*.json" />
+    <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\flag-selection\selection-vectors.json" />
     <None Remove="Telemetry\telemetry_*.json" />
     <EmbeddedResource Include="Telemetry\telemetry_*.json" />
     <None Remove="Telemetry\Metrics\*.json" />

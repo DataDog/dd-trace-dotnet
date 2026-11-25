@@ -215,6 +215,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.ArtifactTests", "tracer\test\Datadog.Trace.Tools.Runner.ArtifactTests\Datadog.Trace.Tools.Runner.ArtifactTests.csproj", "{8D4DA889-124E-4164-AD90-F9480E43F685}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Bundle.ArtifactTests", "tracer\test\Datadog.Trace.Bundle.ArtifactTests\Datadog.Trace.Bundle.ArtifactTests.csproj", "{6CAF0AE0-025F-4384-A96D-9E77B38BE124}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tests", "tracer\test\Datadog.Trace.Tools.Runner.Tests\Datadog.Trace.Tools.Runner.Tests.csproj", "{595BB494-CD26-4A51-8E5B-009219E3F2AE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Coverage.collector", "tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj", "{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5}"
@@ -272,10 +274,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FleetInstaller.IntegrationTests", "tracer\test\Datadog.FleetInstaller.IntegrationTests\Datadog.FleetInstaller.IntegrationTests.csproj", "{64258238-DE63-4A0F-A618-DF51735BA22A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature", "tracer\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj", "{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation.Generator.Core", "tracer\src\Datadog.AutoInstrumentation.Generator.Core\Datadog.AutoInstrumentation.Generator.Core.csproj", "{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation.Generator.Cli", "tracer\src\Datadog.AutoInstrumentation.Generator.Cli\Datadog.AutoInstrumentation.Generator.Cli.csproj", "{8D722514-8BAD-4069-84D0-15797026E0ED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature.Tests", "tracer\test\Datadog.FeatureFlags.OpenFeature.Tests\Datadog.FeatureFlags.OpenFeature.Tests.csproj", "{C237266E-70F4-4A5A-85BC-CB71726A28F6}"
 EndProject
@@ -457,6 +455,10 @@ Global
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CAF0AE0-025F-4384-A96D-9E77B38BE124}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CAF0AE0-025F-4384-A96D-9E77B38BE124}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CAF0AE0-025F-4384-A96D-9E77B38BE124}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CAF0AE0-025F-4384-A96D-9E77B38BE124}.Release|Any CPU.Build.0 = Release|Any CPU
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -573,14 +575,6 @@ Global
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8D722514-8BAD-4069-84D0-15797026E0ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8D722514-8BAD-4069-84D0-15797026E0ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C237266E-70F4-4A5A-85BC-CB71726A28F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C237266E-70F4-4A5A-85BC-CB71726A28F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C237266E-70F4-4A5A-85BC-CB71726A28F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -652,6 +646,7 @@ Global
 		{D917DD3B-EF86-4DF9-AC32-D50330A4DEDA} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C7EC2FF7-C495-4A35-80DF-1F57B61214AC} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{8D4DA889-124E-4164-AD90-F9480E43F685} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{6CAF0AE0-025F-4384-A96D-9E77B38BE124} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{B02AA609-811D-478B-94CE-D614CCAA687E} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
@@ -681,8 +676,6 @@ Global
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{64258238-DE63-4A0F-A618-DF51735BA22A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{8D722514-8BAD-4069-84D0-15797026E0ED} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C237266E-70F4-4A5A-85BC-CB71726A28F6} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{14E32033-EB3F-B2BB-45AE-A8EBA0863324} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection

@@ -17,17 +17,17 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public int MaxFieldCount { get; set; }
 
-        public bool Equals(Capture other)
+        public readonly bool Equals(Capture other)
         {
             return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldCount == other.MaxFieldCount;
         }
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is Capture other && Equals(other);
         }
 
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldCount);
         }

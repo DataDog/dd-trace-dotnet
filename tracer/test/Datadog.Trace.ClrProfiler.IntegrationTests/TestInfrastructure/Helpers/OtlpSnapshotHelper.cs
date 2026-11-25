@@ -152,6 +152,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                     span[parentSpanIdKey] = "normalized-parent-span-id";
                 }
 
+                // The http/json exporter writes "flags" after "parentSpanId", but the http/protobuf payload
+                // carries it as field 16, so the test agent renders it last. Move it to the end so both
+                // protocols produce the same snapshot.
+                if (((JObject)span).Property("flags") is { } flags)
+                {
+                    flags.Remove();
+                    ((JObject)span).Add(flags);
+                }
+
                 // Our JSON and Protobuf OTLP exporters differ in serialization behavior when there are no attributes.
                 // Standardize them here by removing an empty array
                 if (span["attributes"] is JArray attributes && attributes.Count == 0)

@@ -39,6 +39,8 @@ public class ProbesTests : TestHelper
     private const string TestMaxEvaluationTimeInMilliseconds = "1000";
     private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
     private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
+    private const string DynamicInstrumentationDisabledRemotelyLogEntry = "Dynamic Instrumentation is disabled by remote enablement.";
+    private const string SpanProbeOperationName = "dd.dynamic.span";
 
     private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
     {
@@ -234,6 +236,60 @@ public class ProbesTests : TestHelper
             // baseline should be the app name (Samples.Probes)
             beforeService.Should().Be("samples.probes");
             afterService.Should().Be(ChangeServiceNameInCodeTest.UpdatedServiceName);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    // A span probe creates spans whenever its instrumentation runs, even while Dynamic Instrumentation is off,
+    // so it shows whether the probe was really removed when DI was disabled remotely.
+    [SkippableTheory]
+    [CombinatorialData]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task SpanProbeIsRemovedWhenDynamicInstrumentationIsDisabledRemotely(bool enabledByEnvironment)
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SpanOnMethodWithArgsTest));
+        var spanProbe = DebuggerTestHelper.GetAllMethodProbes(testDescription.TestType, EnvironmentHelper.GetTargetFramework(), unlisted: false, new DeterministicGuidGenerator())
+                                          .Single(p => DebuggerTestHelper.IsSpanProbe(p.ProbeTestData))
+                                          .Probe;
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+        if (enabledByEnvironment)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
+        }
+
+        // Without the environment variable, DI is enabled remotely
+        SetDynamicInstrumentationRemoteConfiguration(agent, spanProbe, dynamicInstrumentationEnabled: enabledByEnvironment ? null : true);
+
+        using var logEntryWatcher = CreateLogEntryWatcher($"_env_{enabledByEnvironment}");
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+            await sample.RunCodeSample();
+            await agent.WaitForSpansAsync(1, operationName: SpanProbeOperationName);
+
+            // The probe configuration stays: only DI is turned off
+            SetDynamicInstrumentationRemoteConfiguration(agent, spanProbe, dynamicInstrumentationEnabled: false);
+            await logEntryWatcher.WaitForLogEntry(DynamicInstrumentationDisabledRemotelyLogEntry);
+            await sample.RunCodeSample();
+
+            SetDynamicInstrumentationRemoteConfiguration(agent, spanProbe, dynamicInstrumentationEnabled: true);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+            await sample.RunCodeSample();
+
+            // Each run calls the probed method once, so only the first and the last runs should create a span.
+            // Once two spans arrived, wait a few seconds for a third one, which would come from the run while DI was disabled.
+            await agent.WaitForSpansAsync(2, operationName: SpanProbeOperationName);
+            var spans = await agent.WaitForSpansAsync(3, timeoutInMilliseconds: 5_000, operationName: SpanProbeOperationName, failOnTimeout: false);
+            spans.Count(s => s.Name == SpanProbeOperationName).Should().Be(2);
         }
         finally
         {
@@ -881,15 +937,13 @@ public class ProbesTests : TestHelper
 
         if (spanProbes.Any())
         {
-            const string spanProbeOperationName = "dd.dynamic.span";
-
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
             settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
 
-            var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: spanProbeOperationName);
+            var spans = await agent.WaitForSpansAsync(spanProbes.Length, operationName: SpanProbeOperationName);
             SanitizeCodeOriginExitFrames(spans);
 
             // Assert.Equal(spanProbes.Length, spans.Count);
@@ -897,7 +951,7 @@ public class ProbesTests : TestHelper
             {
                 var result = Result.FromSpan(span)
                                    .Properties(s => s
-                                                  .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                                  .Matches(_ => (nameof(span.Name), span.Name), SpanProbeOperationName))
                                    .Tags(s => s
                                              .Matches("component", "trace")
                                              .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
@@ -1184,6 +1238,21 @@ public class ProbesTests : TestHelper
                                  return (snapshotProbe, RcmProducts.LiveDebugging, $"{path}{snapshotProbe.Id}");
                              })
             .Select(dummy => ((object Config, string ProductName, string Id))dummy);
+
+        agent.SetupRcm(Output, configurations);
+    }
+
+    private void SetDynamicInstrumentationRemoteConfiguration(MockTracerAgent agent, ProbeDefinition spanProbe, bool? dynamicInstrumentationEnabled)
+    {
+        var configurations = new List<(object Config, string ProductName, string Id)>
+        {
+            (spanProbe, RcmProducts.LiveDebugging, $"{DefinitionPaths.SpanProbe}{spanProbe.Id}")
+        };
+
+        if (dynamicInstrumentationEnabled is { } enabled)
+        {
+            configurations.Add((new { lib_config = new { dynamic_instrumentation_enabled = enabled } }, "APM_TRACING", "apm-tracing-config"));
+        }
 
         agent.SetupRcm(Output, configurations);
     }

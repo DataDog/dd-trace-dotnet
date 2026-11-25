@@ -34,7 +34,7 @@ public class TelemetryHelperTests
             "service",
             "env",
             "1.2.3",
-            TracerConstants.AssemblyVersion,
+            TracerConstants.SemanticVersion,
             "dotnet",
             FrameworkDescription.Instance.ProductVersion,
             runtimeName: "dotnet",

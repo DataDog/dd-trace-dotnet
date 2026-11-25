@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -41,10 +42,15 @@ namespace Datadog.Trace.Agent
 
         private readonly ManualResetEventSlim _serializationMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
 
+        // Set with _processExit: ends the batch interval wait of the serialization thread (waiting on it doesn't allocate,
+        // unlike waiting on _processExit.Task)
+        private readonly ManualResetEventSlim _processExitSignal = new ManualResetEventSlim(initialState: false, spinCount: 0);
+
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
         private readonly IStatsAggregator _statsAggregator;
+        private readonly NormalizerTraceProcessor _normalizerProcessor = new();
 
         private readonly bool _apmTracingEnabled;
 
@@ -139,10 +145,10 @@ namespace Datadog.Trace.Agent
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
             _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private enum TraceDropReason
@@ -220,6 +226,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Wake up the serialization thread so that it observes _processExit, drains the queue, and exits
+            _processExitSignal.Set();
             _serializationMutex.Set();
 
             // One deadline for the whole shutdown, rather than one per stage
@@ -537,6 +544,19 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        private SpanCollection NormalizeTrace(in SpanCollection trace)
+        {
+            try
+            {
+                return _normalizerProcessor.Process(in trace);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
+                return trace;
+            }
+        }
+
         /// <summary>
         /// Serializes a trace chunk into the active buffer. Not thread safe: it mutates
         /// <see cref="_temporaryBuffer"/> and swaps <see cref="_activeBuffer"/>, so it must only
@@ -568,6 +588,7 @@ namespace Datadog.Trace.Agent
             var chunk = spans;
             if (CanComputeStats)
             {
+                chunk = NormalizeTrace(in chunk);
                 var keepState = _statsAggregator.ProcessTrace(ref chunk);
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
@@ -791,7 +812,8 @@ namespace Datadog.Trace.Agent
 
                 if (hasDequeuedTraces && _batchInterval > 0)
                 {
-                    Thread.Sleep(_batchInterval);
+                    // Like a Thread.Sleep, but FlushAndCloseAsync doesn't wait for the end of the batch interval
+                    _processExitSignal.Wait(_batchInterval);
                 }
                 else
                 {

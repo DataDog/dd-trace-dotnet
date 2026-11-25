@@ -1,0 +1,13 @@
+_v: 1
+name: MsTestV2
+display_name: MSTest V2
+description: Instruments MSTest V2 test discovery and execution, reporting test lifecycle results and enabling configured
+  test skipping, quarantine, and retries.
+packages:
+- name: MSTest.TestAdapter
+- name: MSTest.TestFramework
+- name: Microsoft.VisualStudio.TestPlatform
+category:
+- test.execution
+systems: []
+creation_date: '2021-02-02'

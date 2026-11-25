@@ -305,6 +305,147 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorConnectsToProducerTrace(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            // Reproduces a ServiceBusProcessor consumer with the Azure activity source
+            // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
+            // The producer's send and the consumer's ServiceBusProcessor.ProcessMessage should end up
+            // on the same distributed trace. The receive integration must not overwrite the message
+            // context used by the SDK-created ProcessMessage activity.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                // Wait until the consumer-side process span has been emitted, but return every span.
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
+
+                // The core assertion: producer and consumer must share the same distributed trace.
+                const string because = "the ServiceBusProcessor.ProcessMessage span must be part of the producer's trace, otherwise producer and consumer show up as two disconnected traces";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            // Azure Functions detection is process-wide, so this covers a processor consumer running
+            // inside an in-process Functions-hosted app rather than a Functions Service Bus trigger handoff.
+            // Disable Continuous Profiler activation because this console sample only starts the tracer.
+            SetEnvironmentVariable("DD_PROFILING_ENABLED", "0");
+            SetEnvironmentVariable("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
+            SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate in Azure App Service
+            SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment));
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"[AzureFunctionsEnvironment] TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
+
+                const string because = "processor receives must preserve the producer context even when the process is detected as Azure Functions";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
+        [SkippableTheory]
+        [InlineData("continue")]
+        [InlineData("restart")]
+        [InlineData("ignore")]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorExtractionBehavior(string extractionBehavior)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", "v1");
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT", extractionBehavior);
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_INJECT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_EXTRACT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+            foreach (var span in spans)
+            {
+                Output.WriteLine($"Behavior={extractionBehavior}, Name={span.Name}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                foreach (var link in span.SpanLinks ?? [])
+                {
+                    Output.WriteLine($"  Link: TraceIdHigh={link.TraceIdHigh}, TraceIdLow={link.TraceIdLow}, SpanId={link.SpanId}");
+                }
+            }
+
+            var sendSpan = spans.Single(span => span.Name == "azure_servicebus.send");
+            var processSpan = spans.Single(span => span.Name == "servicebus.process");
+            var receiveSpan = spans.Single(span => span.Name == "azure_servicebus.receive");
+
+            using var assertions = new AssertionScope();
+            if (extractionBehavior == "continue")
+            {
+                processSpan.TraceId.Should().Be(sendSpan.TraceId);
+                processSpan.ParentId.Should().Be(sendSpan.SpanId);
+            }
+            else
+            {
+                processSpan.TraceId.Should().NotBe(sendSpan.TraceId, $"{extractionBehavior} must not continue the producer trace");
+                processSpan.TraceId.Should().Be(receiveSpan.TraceId);
+                processSpan.ParentId.Should().Be(receiveSpan.SpanId, "restart and ignore retain the existing receive context reinjection");
+                // Restart's missing producer link predates this fix and is a separate issue.
+                if (extractionBehavior == "ignore")
+                {
+                    spans.Where(span => span.TraceId == processSpan.TraceId)
+                         .SelectMany(span => span.SpanLinks ?? [])
+                         .Should().NotContain(link => link.TraceIdLow == sendSpan.TraceId, "ignore should discard the producer context");
+                }
+            }
+        }
+
         private static void ValidateSpanLinks(
             IList<MockSpan> sendSpans,
             IList<MockSpan> receiveSpans,

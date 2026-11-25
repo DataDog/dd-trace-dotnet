@@ -259,7 +259,8 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "probes"
+    "service": "probes",
+    "timestamp": "ScrubbedValue"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -418,6 +419,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "probes"
+    "service": "probes",
+    "timestamp": "ScrubbedValue"
   }
 ]

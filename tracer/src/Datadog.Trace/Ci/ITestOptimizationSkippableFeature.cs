@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-using System.Collections.Generic;
 using Datadog.Trace.Ci.Coverage.Backfill;
 
 namespace Datadog.Trace.Ci;
@@ -13,7 +12,7 @@ internal interface ITestOptimizationSkippableFeature : ITestOptimizationFeature
 {
     void WaitForSkippableTaskToFinish();
 
-    IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null);
+    SkippableTestCollection GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null);
 
     bool HasSkippableTests();
 

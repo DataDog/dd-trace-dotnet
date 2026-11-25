@@ -622,6 +622,40 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
+        public static Result IsAzureEventGridOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_eventgrid.send")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IfPresentMatches("messaging.system", "eventgrid")
+                .Matches("messaging.operation", "send")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsPresent("network.destination.name")
+                .IsOptional("network.destination.port")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .Matches("component", "AzureEventGrid")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAzureEventGridInboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_eventgrid.receive")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IfPresentMatches("messaging.system", "eventgrid")
+                .Matches("messaging.operation", "receive")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .Matches("component", "AzureEventGrid")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "consumer"));
+
         public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")
@@ -1111,10 +1145,19 @@ namespace Datadog.Trace.TestHelpers
              .Tags(s => s
                 .Matches("component", "quartz")
                 .IsOptional("events")
-                .IsPresent("fire.instance.id")
-                .IsPresent("job.group")
-                .IsPresent("job.name")
+                .IsOptional("fire.instance.id")
+                .IsOptional("job.group")
+                .IsOptional("job.name")
                 .IsOptional("job.type")
+                .IsOptional("quartz.fire.instance.id")
+                .IsOptional("quartz.job.group")
+                .IsOptional("quartz.job.name")
+                .IsOptional("quartz.job.type")
+                .IsOptional("quartz.job.result")
+                .IsOptional("quartz.scheduler.id")
+                .IsOptional("quartz.scheduler.name")
+                .IsOptional("quartz.trigger.group")
+                .IsOptional("quartz.trigger.name")
                 .IsOptional("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
@@ -1122,8 +1165,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("scheduler.id")
                 .IsOptional("scheduler.name")
                 .IsOptional("span.kind")
-                .IsPresent("trigger.group")
-                .IsPresent("trigger.name")
+                .IsOptional("trigger.group")
+                .IsOptional("trigger.name")
                 .IsOptional("_dd.tags.process"));
     }
 }

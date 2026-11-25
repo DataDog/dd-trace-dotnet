@@ -44,4 +44,18 @@ const std::string& RuntimeIdStore::Get(AppDomainID app_domain)
 
     return rid;
 }
+
+void RuntimeIdStore::OnAppDomainCreationStarted(AppDomainID app_domain)
+{
+    if (!m_isIis) return;
+
+    std::lock_guard<std::mutex> l(m_mutex);
+    auto node = m_appDomainToRuntimeId.extract(app_domain);
+    if (!node.empty())
+    {
+        // The CLR can reuse the AppDomainID of an unloaded AppDomain. Keep the old runtime id alive because
+        // callers (e.g. the Continuous Profiler) hold pointers to it.
+        m_retiredRuntimeIds.push_back(std::move(node));
+    }
+}
 } // namespace datadog::shared::nativeloader

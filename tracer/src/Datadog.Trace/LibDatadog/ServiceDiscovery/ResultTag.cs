@@ -7,7 +7,7 @@ namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 /// <summary>
 /// Do not change the values of this enum unless you really need to update the interop mapping.
-/// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/60583218a8de6768f67d04fcd5bc6443f67f516b/ddcommon-ffi/src/result.rs#L44
+/// Libdatadog interop mapping of https://github.com/DataDog/libdatadog/blob/ef6371243c020319e74e8531035f0a5a2fcb8858/libdd-common-ffi/src/result.rs#L47
 /// Cf type ddog_Result_TracerMemfdHandle_Tag in common.h headers.
 /// typedef enum ddog_Result_TracerMemfdHandle_Tag {
 ///      DDOG_RESULT_TRACER_MEMFD_HANDLE_OK_TRACER_MEMFD_HANDLE,

@@ -100,6 +100,26 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData("3,2,1,1,20", new[] { 3, 2, 1, 1, 20 })]
+        [InlineData(" 3, 2,1,1 ,20 ", new[] { 3, 2, 1, 1, 20 })]
+        [InlineData("3,2,1,1", null)]
+        [InlineData("3,2,1,1,1,1", null)]
+        [InlineData("3,2,1,1,", null)]
+        [InlineData("3,2,,1,1", null)]
+        [InlineData("3,2,a,1,1", null)]
+        [InlineData("3,2,0,1,1", null)]
+        [InlineData("3,2,21,1,1", null)]
+        public void DynamicFlakyRetryCounts(string value, int[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, value));
+            var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.DynamicFlakyRetryCounts.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void IntelligentTestRunnerEnabled(string value, bool expected)
         {

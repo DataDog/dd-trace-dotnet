@@ -55,7 +55,8 @@ public class OtlpExporterTests
                 [ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs] = "100",
             });
         var handler = new MockHttpMessageHandler();
-        var exporter = new OtlpExporter(new TracerSettings(source), new HttpClient(handler));
+        var settings = new TracerSettings(source);
+        var exporter = new OtlpExporter(settings, settings.Manager.InitialExporterSettings, new HttpClient(handler));
         var logs = new List<LogPoint>
         {
             new() { Message = new string('x', MaxBufferSize), LogLevel = 2, CategoryName = "Test" },

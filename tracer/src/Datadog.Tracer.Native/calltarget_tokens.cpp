@@ -4,10 +4,13 @@
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "module_metadata.h"
+#include "runtime_async.h"
 #include "signature_builder.h"
 
 namespace trace
 {
+// Only for signatures made of fixed bytes and compressed tokens.
+// Anything built from a type's GetSignature() is unbounded: use SignatureBuilder.
 const int signatureBufferSize = 500;
 
 /**
@@ -337,17 +340,13 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(const TypeSig
     ULONG methodArgumentSignatureSize;
     methodArgumentSignatureSize = methodArgument->GetSignature(methodArgumentSignature);
 
-    auto signatureLength = 2 + methodArgumentSignatureSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x01;
+    SignatureBuilder signature;
+    signature.Append(IMAGE_CEE_CS_CALLCONV_GENERICINST);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(methodArgumentSignature, methodArgumentSignatureSize);
 
-    memcpy(&signature[offset], methodArgumentSignature, methodArgumentSignatureSize);
-    offset += methodArgumentSignatureSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(getDefaultMemberRef, signature, signatureLength,
-                                                          &getDefaultMethodSpec);
+    hr = module_metadata->metadata_emit->DefineMethodSpec(getDefaultMemberRef, signature.GetSignature(),
+                                                          static_cast<ULONG>(signature.Size()), &getDefaultMethodSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating getDefaultMethodSpec.");
@@ -402,10 +401,14 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
 
     // For instrumenting static methods in value types, see if we can get the TypeRef for the type.
     // If so, include add a local variable with the value type in the signature.
+    // A runtime-async instance method in a value type needs the same local, to hold a copy of `this`:
+    // `this` is a byref there, and a byref is not preserved across a suspension, so the epilog cannot
+    // reload it with ldarg.0 after the body has awaited.
     bool isValueType = caller->type.valueType;
     bool isStaticValueType = isValueType && !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) && GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
+    const bool hasValueTypeLocal = isStaticValueType || IsRuntimeAsyncValueTypeInstanceMethod(caller);
 
-    ULONG newLocalsCount = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
+    ULONG newLocalsCount = variableNumber + additionalLocalsCount + (hasValueTypeLocal ? 1 : 0);
 
     // Gets the static value type buffer and size
     unsigned staticValueTypeTypeRefBuffer;
@@ -507,8 +510,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignature.Append(&callTargetReturnBuffer, callTargetReturnSize);
     }
 
-    // Static method in a ValueType
-    if (isStaticValueType)
+    // Static method in a ValueType, or a copy of `this` for a runtime-async instance method in one
+    if (hasValueTypeLocal)
     {
         newSignature.Append(ELEMENT_TYPE_VALUETYPE);
         newSignature.Append(&staticValueTypeTypeRefBuffer, staticValueTypeTypeRefSize);
@@ -536,7 +539,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetReturnToken = callTargetReturn;
 
     const auto sizeOfOtherIndexes = additionalLocalIndices.size();
-    auto indexStart = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
+    auto indexStart = variableNumber + additionalLocalsCount + (hasValueTypeLocal ? 1 : 0);
 
     if (returnSignatureType != nullptr)
     {
@@ -550,7 +553,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionIndex = newLocalsCount - indexStart--;
     *callTargetReturnIndex = newLocalsCount - indexStart--;
 
-    if (isStaticValueType)
+    if (hasValueTypeLocal)
     {
         *staticValueTypeIndex = newLocalsCount - indexStart--;
     }
@@ -758,19 +761,15 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(TypeSignature* returnAr
     unsigned callTargetReturnTypeRefBuffer;
     auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
 
-    auto signatureLength = 3 + callTargetReturnTypeRefSize + returnSignatureLength;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
+    SignatureBuilder signature;
+    signature.Append(ELEMENT_TYPE_GENERICINST);
+    signature.Append(ELEMENT_TYPE_VALUETYPE);
+    signature.Append(&callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(returnSignatureBuffer, returnSignatureLength);
 
-    signature[offset++] = ELEMENT_TYPE_GENERICINST;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
-    offset += callTargetReturnTypeRefSize;
-    signature[offset++] = 0x01;
-    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
-    offset += returnSignatureLength;
-
-    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
+    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature.GetSignature(),
+                                                              static_cast<ULONG>(signature.Size()), &returnValueTypeSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating return value type spec");
@@ -845,6 +844,14 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
 
     isValueType = cType->valueType;
     return cType->id;
+}
+
+bool CallTargetTokens::IsRuntimeAsyncValueTypeInstanceMethod(FunctionInfo* caller)
+{
+    bool isValueType = caller->type.valueType;
+    return isValueType && !caller->type.isGeneric && IsMiAsync(caller->method_impl_flags) &&
+           (caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) &&
+           GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
 }
 
 

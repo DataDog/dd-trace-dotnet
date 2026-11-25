@@ -589,7 +589,7 @@ internal static class StringModuleImpl
         return result;
     }
 
-    public ref struct StringConcatParams
+    public readonly ref struct StringConcatParams
     {
         public readonly string? P0;
         public readonly string? P1;

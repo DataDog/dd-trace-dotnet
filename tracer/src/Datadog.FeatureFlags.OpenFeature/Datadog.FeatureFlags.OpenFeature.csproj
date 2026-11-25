@@ -18,7 +18,7 @@
     <!-- OpenFeature v2.3.0  = Datadog.FeatureFlags.OpenFeature 2.3.1 (patch release)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.100 (Open Feature patch)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.101 (Open Feature patch + dd patch)-->    
-    <Version>2.3.2</Version>
+    <Version>2.3.3</Version>
     <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
@@ -29,14 +29,32 @@
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="Sdk\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\ExposureCommitResult.cs" Link="Sdk\ExposureCommitResult.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureFlagMetadataKeys.cs" Link="Sdk\FeatureFlagMetadataKeys.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\FlagEvaluation\ContextOmissionReason.cs" Link="Sdk\ContextOmissionReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\FlagEvaluation\FlagEvaluationBridge.cs" Link="Sdk\FlagEvaluationBridge.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="Sdk\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="Sdk\ValueType.cs" />
+    <Compile Include="..\Datadog.Trace\Util\TestingAndPrivateOnlyAttribute.cs" Link="Sdk\TestingAndPrivateOnlyAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\Util\TestingOnlyAttribute.cs" Link="Sdk\TestingOnlyAttribute.cs" />
   </ItemGroup>
 
   <ItemGroup>
      <!-- If you update this version, be sure to update the TargetFrameworks element above-->
     <PackageReference Include="OpenFeature" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != '' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <!-- Keep our direct dependencies at the versions we compile against, even when a newer OpenFeature package uses older versions. -->
+    <!-- Also covers older sample TFMs passed through by the package-version matrix during restore. -->
+    <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
+    <PackageReference Include="System.Threading.Channels" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <!-- The metrics hook compiles against 9.0 through OpenFeature 2.3.0; newer OpenFeature versions may only require 8.0. -->
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

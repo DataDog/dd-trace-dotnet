@@ -37,6 +37,31 @@ public class UfcConfigurationParserTests
         configuration.Should().NotBeNull();
         configuration!.Environment!.Name.Should().Be("production");
         configuration.Flags.Should().BeEmpty();
+        configuration.ObserveFullEvaluationData.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData("null", false)]
+    [InlineData("1", false)]
+    [InlineData("1.0", false)]
+    [InlineData("\"true\"", false)]
+    [InlineData("\"TRUE\"", false)]
+    [InlineData("{}", false)]
+    [InlineData("[]", false)]
+    [InlineData("{\"nested\":[true]}", false)]
+    [InlineData("[true,{\"nested\":true}]", false)]
+    public void ConsentDoesNotRejectUsableConfiguration(string token, bool expected)
+    {
+        var body = ValidEnvelope.Replace("\"format\": \"SERVER\"", "\"observeFullEvaluationData\": " + token + ", \"format\": \"SERVER\"");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.ObserveFullEvaluationData.Should().Be(expected);
+        configuration!.Format.Should().Be("SERVER");
+        configuration!.Environment!.Name.Should().Be("production");
     }
 
     [Theory]
@@ -121,6 +146,104 @@ public class UfcConfigurationParserTests
 
         error.Should().BeNull();
         configuration!.Environment!.Name.Should().Be("123");
+    }
+
+    [Fact]
+    public void ParsesSplitFeaturesFromEnvelope()
+    {
+        var body = """
+            {
+              "data": {
+                "type": "universal-flag-configuration",
+                "attributes": {
+                  "format": "SERVER",
+                  "createdAt": "2025-01-01T00:00:00Z",
+                  "environment": {
+                    "name": "production"
+                  },
+                  "flags": {
+                    "test-flag": {
+                      "key": "test-flag",
+                      "enabled": true,
+                      "variationType": "STRING",
+                      "allocations": [
+                        {
+                          "key": "alloc",
+                          "splits": [
+                            {
+                              "variationKey": "on",
+                              "shards": [],
+                              "features": [
+                                {
+                                  "key": "holdout.key",
+                                  "value": "06ad",
+                                  "destinations": [
+                                    "HOOK"
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+        Parse(body, out var configuration, out _).Should().BeTrue();
+
+        var split = configuration!.Flags!["test-flag"].Allocations![0].Splits![0];
+        split.Features.Should().ContainSingle();
+        split.Features![0].Key.Should().Be("holdout.key");
+        split.Features[0].Value.Should().Be("06ad");
+        split.Features[0].Destinations.Should().Equal("HOOK");
+    }
+
+    [Fact]
+    public void AMalformedFeaturesFieldDoesNotRejectTheEnvelope()
+    {
+        var body = """
+            {
+              "data": {
+                "type": "universal-flag-configuration",
+                "attributes": {
+                  "format": "SERVER",
+                  "createdAt": "2025-01-01T00:00:00Z",
+                  "environment": {
+                    "name": "production"
+                  },
+                  "flags": {
+                    "test-flag": {
+                      "key": "test-flag",
+                      "enabled": true,
+                      "variationType": "STRING",
+                      "allocations": [
+                        {
+                          "key": "alloc",
+                          "splits": [
+                            {
+                              "variationKey": "on",
+                              "shards": [],
+                              "features": "garbage"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+        Parse(body, out var configuration, out _).Should().BeTrue();
+
+        var split = configuration!.Flags!["test-flag"].Allocations![0].Splits![0];
+        split.Features.Should().BeNull();
+        split.VariationKey.Should().Be("on");
     }
 
     // The parser reads the response stream directly, so a body under test is handed to it as a reader.

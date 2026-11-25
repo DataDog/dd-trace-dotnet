@@ -127,7 +127,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.OSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
-                _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
                 TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
 
@@ -156,7 +156,7 @@ namespace Datadog.Trace.MSBuild
                 }
 
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
-                _buildSpan.Finish(e.Timestamp);
+                _buildSpan.Finish((DateTimeOffset)e.Timestamp);
             }
             catch (Exception ex)
             {
@@ -168,7 +168,10 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                if (e.TargetNames.StartsWith("_"))
+                // Not the char overload: the runner loads the netstandard2.0 build of this assembly on .NET Core too,
+                // where StartsWith(char) would bind to Datadog.Trace's StringUtil polyfill, which doesn't exist in the
+                // .NET Core builds of Datadog.Trace
+                if (e.TargetNames.StartsWithOrdinal("_"))
                 {
                     // Ignoring internal targetNames
                     return;
@@ -239,7 +242,7 @@ namespace Datadog.Trace.MSBuild
                     }
 
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
-                    projectSpan.Finish(e.Timestamp);
+                    projectSpan.Finish((DateTimeOffset)e.Timestamp);
                 }
             }
             catch (Exception ex)
@@ -287,7 +290,9 @@ namespace Datadog.Trace.MSBuild
 
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            // Not StringUtil.Invariant: the runner loads the netstandard2.0 build of this assembly on .NET Core too,
+                            // where the handler's int overload doesn't exist in the .NET Core builds of Datadog.Trace
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber.ToString(CultureInfo.InvariantCulture)}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }
@@ -299,12 +304,12 @@ namespace Datadog.Trace.MSBuild
 
                     if (endLineNumber.HasValue && endLineNumber != 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.Value.ToStringInvariant());
                     }
 
                     if (endColumnNumber.HasValue && endColumnNumber != 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.Value.ToStringInvariant());
                     }
 
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Error, e.Message, projectSpan));

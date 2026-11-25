@@ -13,6 +13,59 @@ namespace Datadog.Trace.Telemetry.Metrics;
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 internal static class MetricTags
 {
+    internal enum FlagEvaluationDropReason
+    {
+        [Description("reason:pre_queue_overflow")] PreQueueOverflow,
+        [Description("reason:queue_overflow")] QueueOverflow,
+        [Description("reason:closed")] Closed,
+        [Description("reason:degraded_cap")] DegradedCap,
+        [Description("reason:payload_limit")] PayloadLimit,
+        [Description("reason:serialization_error")] SerializationError,
+    }
+
+    internal enum FlagEvaluationDegradeReason
+    {
+        [Description("reason:cardinality_cap")] CardinalityCap,
+        [Description("reason:payload_limit")] PayloadLimit,
+    }
+
+    // Ordinals correspond to the bit positions in ContextOmissionReason.
+    internal enum FlagEvaluationContextReason
+    {
+        [Description("reason:max_context_fields")] MaxContextFields,
+        [Description("reason:max_key_length")] MaxKeyLength,
+        [Description("reason:max_value_length")] MaxValueLength,
+        [Description("reason:max_list_elements")] MaxListElements,
+        [Description("reason:max_structure_properties")] MaxStructureProperties,
+        [Description("reason:max_snapshot_depth")] MaxSnapshotDepth,
+        [Description("reason:max_visited_nodes")] MaxVisitedNodes,
+        [Description("reason:unsupported_value")] UnsupportedValue,
+        [Description("reason:snapshot_error")] SnapshotError,
+    }
+
+    internal enum FlagEvaluationTargetingReason
+    {
+        [Description("reason:invalid")] Invalid,
+    }
+
+    internal enum FlagSelectionDroppedReason
+    {
+        [Description("reason:malformed_selection")] MalformedSelection,
+        [Description("reason:too_many_values")] TooManyValues,
+        [Description("reason:invalid_key_pattern")] InvalidKeyPattern,
+        [Description("reason:invalid_tag")] InvalidTag,
+    }
+
+    internal enum FlagSelectionIgnoredReason
+    {
+        [Description("reason:malformed_selection")] MalformedSelection,
+        [Description("reason:too_many_values")] TooManyValues,
+        [Description("reason:invalid_key_pattern")] InvalidKeyPattern,
+        [Description("reason:invalid_tag")] InvalidTag,
+        [Description("reason:tag_load_failed")] TagLoadFailed,
+        [Description("reason:unknown")] Unknown,
+    }
+
     internal enum LogLevel
     {
         [Description("level:debug")] Debug,
@@ -366,6 +419,7 @@ internal static class MetricTags
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:azureeventhubs")]AzureEventHubs,
+        [Description("integration_name:azureeventgrid")] AzureEventGrid,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,
@@ -400,21 +454,77 @@ internal static class MetricTags
 
     public enum WafAnalysis
     {
+        // One value per request. The value is (int)outcome * 16 + flags, where the outcome is the first
+        // block of 16 (Normal, RuleTriggered, Blocked, BlockFailure) and the flags are the bits
+        // WafTimeout = 1, RateLimited = 2, InputTruncated = 4 and WafError = 8, so don't reorder them.
         // The generator splits on ; to add multiple tags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]Normal,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggered,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]WafTimeout,
-        // Input truncated
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] NormalTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredAndBlockedTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] WafTimeoutTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] WafError,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] WafErrorTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] NormalWafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] NormalRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] NormalWafTimeoutRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] NormalInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] NormalWafTimeoutInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] NormalRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] NormalWafTimeoutRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] NormalWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] NormalWafTimeoutWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] NormalRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] NormalWafTimeoutRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] NormalInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] NormalWafTimeoutInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] NormalRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] NormalWafTimeoutRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] RuleTriggeredWafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] RuleTriggeredRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] RuleTriggeredWafTimeoutRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredWafTimeoutInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] RuleTriggeredRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] RuleTriggeredWafTimeoutRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] RuleTriggeredWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] RuleTriggeredWafTimeoutWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] RuleTriggeredRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] RuleTriggeredWafTimeoutRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] RuleTriggeredInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] RuleTriggeredWafTimeoutInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] RuleTriggeredRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] RuleTriggeredWafTimeoutRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] Blocked,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")] BlockedWafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] BlockedRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:false")] BlockedWafTimeoutRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] BlockedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] BlockedWafTimeoutInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] BlockedRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:false")] BlockedWafTimeoutRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] BlockedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] BlockedWafTimeoutWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] BlockedRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:false;waf_error:true")] BlockedWafTimeoutRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] BlockedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] BlockedWafTimeoutInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] BlockedRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:true;block_failure:false;rate_limited:true;input_truncated:true;waf_error:true")] BlockedWafTimeoutRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:false;input_truncated:false;waf_error:false")] BlockFailure,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:false;input_truncated:false;waf_error:false")] BlockFailureWafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:true;input_truncated:false;waf_error:false")] BlockFailureRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:true;input_truncated:false;waf_error:false")] BlockFailureWafTimeoutRateLimited,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:false;input_truncated:true;waf_error:false")] BlockFailureInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:false;input_truncated:true;waf_error:false")] BlockFailureWafTimeoutInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:true;input_truncated:true;waf_error:false")] BlockFailureRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:true;input_truncated:true;waf_error:false")] BlockFailureWafTimeoutRateLimitedInputTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:false;input_truncated:false;waf_error:true")] BlockFailureWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:false;input_truncated:false;waf_error:true")] BlockFailureWafTimeoutWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:true;input_truncated:false;waf_error:true")] BlockFailureRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:true;input_truncated:false;waf_error:true")] BlockFailureWafTimeoutRateLimitedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:false;input_truncated:true;waf_error:true")] BlockFailureInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:false;input_truncated:true;waf_error:true")] BlockFailureWafTimeoutInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:true;rate_limited:true;input_truncated:true;waf_error:true")] BlockFailureRateLimitedInputTruncatedWafError,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:true;block_failure:true;rate_limited:true;input_truncated:true;waf_error:true")] BlockFailureWafTimeoutRateLimitedInputTruncatedWafError,
     }
 
     public enum WafError
@@ -430,6 +540,19 @@ internal static class MetricTags
     {
         [Description("waf_version;event_rules_version;success:true")] Success,
         [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
+    public enum ApiSecFramework
+    {
+        [Description("framework:aspnet_core")] AspNetCore,
+        [Description("framework:aspnet")] AspNet,
+        [Description("framework:unknown")] Unknown,
+    }
+
+    public enum WafConfigAction
+    {
+        [Description("waf_version;event_rules_version;action:init")] Init,
+        [Description("waf_version;event_rules_version;action:update")] Update
     }
 
     public enum UserEventSdk
@@ -517,9 +640,15 @@ internal static class MetricTags
 
     public enum TruncationReason
     {
-        [Description("truncation_reason:string_too_long")]StringTooLong = 1,
-        [Description("truncation_reason:list_or_map_too_large")]ListOrMapTooLarge = 2,
-        [Description("truncation_reason:object_too_deep")]ObjectTooDeep = 4,
+        // The tag is the bitfield of the telemetry RFC: 1 string too long, 2 list or map too large, 4 object too deep.
+        // The values are the flags minus one, as the generator indexes the tags by value.
+        [Description("truncation_reason:1")] StringTooLong = 0,
+        [Description("truncation_reason:2")] ListOrMapTooLarge = 1,
+        [Description("truncation_reason:3")] StringTooLongAndListOrMapTooLarge = 2,
+        [Description("truncation_reason:4")] ObjectTooDeep = 3,
+        [Description("truncation_reason:5")] StringTooLongAndObjectTooDeep = 4,
+        [Description("truncation_reason:6")] ListOrMapTooLargeAndObjectTooDeep = 5,
+        [Description("truncation_reason:7")] StringTooLongAndListOrMapTooLargeAndObjectTooDeep = 6,
     }
 
     [EnumExtensions]
@@ -808,6 +937,12 @@ internal static class MetricTags
     {
         [Description("test_management_enabled:true")] Enabled,
         [Description("test_management_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilityDynamicFlakyRetryBuckets
+    {
+        [Description("")] Default,
+        [Description("has_custom_buckets:true")] Custom,
     }
 
     public enum CIVisibilityRequestCompressed

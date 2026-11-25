@@ -1,0 +1,13 @@
+_v: 1
+name: Oracle
+display_name: Oracle
+description: Instruments ADO.NET commands executed by Oracle provider implementations, with optional Database Monitoring SQL-comment
+  propagation, Application Security SQL-injection detection and protection, and IAST tracking of query results.
+packages:
+- name: Oracle.ManagedDataAccess
+- name: Oracle.ManagedDataAccess.Core
+category:
+- db.client
+systems:
+- oracle.db
+creation_date: '2021-02-17'

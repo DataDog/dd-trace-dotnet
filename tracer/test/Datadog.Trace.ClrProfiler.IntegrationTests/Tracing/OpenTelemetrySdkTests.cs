@@ -398,6 +398,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var metricsData = await _otlpSession.WaitForMetricsAsync();
                 metricsData.Should().NotBeNullOrEmpty();
 
+                // OTel SDK 1.19.0 adds a resource schema URL. Normalize it only when present.
+                foreach (var schemaUrl in metricsData.SelectTokens("$..resource_metrics[*].schema_url"))
+                {
+                    schemaUrl.Replace("normalized-schema-url");
+                }
+
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
                     attribute["value"]!["string_value"] = "sdk-version";
@@ -425,7 +431,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = metricsData.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var suffix = GetSuffix(packageVersion);
+                var suffix = otelMetricsEnabled.Equals("true") && parsedVersion >= new Version("1.19.0")
+                                 ? "_1_19_0"
+                                 : GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
 
                 await Verifier.Verify(formattedJson, settings)
@@ -521,8 +529,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
 
+            // OpenTelemetry.Exporter.OpenTelemetryProtocol 1.21.0 dropped its net8.0 target, so .NET 8 now gets the
+            // netstandard build of the exporter, which (like on .NET 6/7) can't send insecure gRPC.
             _ = runtimeMajor switch
             {
+                8 when parsedVersion >= new Version("1.21.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry v{parsedVersion} in .NET {runtimeMajor}."),
                 >= 8 when parsedVersion >= new Version("1.9.0") => string.Empty,
                 6 or 7 when parsedVersion >= new Version("1.9.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry in .NET {runtimeMajor}."),
                 6 or 7 when parsedVersion >= new Version("1.9.0") => string.Empty,
@@ -578,6 +589,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     timeUnixNano.Should().Be(observedTimeUnixNano);
                     timeUnixNano.Should().BeInRange(startTimeNanoseconds, endTimeNanoseconds);
                 });
+
+                // OTel SDK 1.19.0 adds a resource schema URL. Normalize it only when present.
+                foreach (var schemaUrl in logsData.SelectTokens("$..resource_logs[*].schema_url"))
+                {
+                    schemaUrl.Replace("normalized-schema-url");
+                }
 
                 foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
@@ -665,7 +682,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = logsData.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var suffix = GetSuffix(packageVersion);
+                var suffix = otelLogsEnabled.Equals("true") && parsedVersion >= new Version("1.19.0")
+                                 ? "_1_19_0_OTEL"
+                                 : GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpLogs{suffix}";
 
                 await Verifier.Verify(formattedJson, settings)

@@ -40,7 +40,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.event_rules.version": "1.15.0",
+        "_dd.appsec.event_rules.version": "1.19.0",
         "_dd.appsec.waf.version": "2.0.1",
         "_dd.runtime_family": "dotnet",
         "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
@@ -75,7 +75,7 @@
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 167.0,
+        "_dd.appsec.event_rules.loaded": 222.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,

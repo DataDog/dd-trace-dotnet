@@ -70,7 +70,7 @@ internal sealed class FixedSizeArrayPool<T>
 
         if (value.Length != _arrayItems)
         {
-            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(value), $"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems}.");
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(value), StringUtil.Invariant($"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems}."));
         }
 
 #if NETCOREAPP3_0_OR_GREATER
@@ -107,7 +107,7 @@ internal sealed class FixedSizeArrayPool<T>
             _owner = owner;
         }
 
-        public T[] Array
+        public readonly T[] Array
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get

@@ -21,10 +21,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckThatProfilerDoesNotCrashWhileUnwinding2SignalFrames(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckThatProfilerDoesNotCrashWhileUnwinding2SignalFrames(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, Scenario, _output)
+            var runner = new SmokeTestRunner(app, Scenario, _output)
             {
                 // this can be flaky time to time
                 // We just want to make sure that at least one pprof file was written to disk

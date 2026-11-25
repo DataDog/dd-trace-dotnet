@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "TypeReferenceTree.h"
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "TypeReferenceTreeBinarySerializer.h"
@@ -102,260 +102,188 @@ private:
 };
 
 // ============================================================================
-// VisitedObjectSet Tests
+// VisitedAddressBitmap Tests
 // ============================================================================
 
-TEST(VisitedObjectSetTest, InitialStateIsEmpty)
+TEST(VisitedAddressBitmapTest, MarksFirstAndDuplicateVisits)
 {
-    VisitedObjectSet visited;
-    ASSERT_EQ(visited.Size(), 0);
-    ASSERT_FALSE(visited.IsVisited(0x1000));
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = 0x1000;
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
+    ASSERT_EQ(visited.Size(), 1u);
 }
 
-TEST(VisitedObjectSetTest, MarkAndCheckVisited)
+TEST(VisitedAddressBitmapTest, TracksAddressesInSameAndDifferentPages)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 4;
+    constexpr uintptr_t samePage = firstPage + sizeof(void*);
+    constexpr uintptr_t differentPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkVisited(0x1000);
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_FALSE(visited.IsVisited(0x2000));
-    ASSERT_EQ(visited.Size(), 1);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(samePage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(differentPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.Size(), 3u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, MarkMultipleAddresses)
+TEST(VisitedAddressBitmapTest, ClearForRootStartsNewEpoch)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = VisitedAddressBitmap::HeapBytesPerPage * 8;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x2000);
-    visited.MarkVisited(0x3000);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_TRUE(visited.IsVisited(0x2000));
-    ASSERT_TRUE(visited.IsVisited(0x3000));
-    ASSERT_FALSE(visited.IsVisited(0x4000));
-    ASSERT_EQ(visited.Size(), 3);
+    // ClearForRoot is an O(1) logical clear: old-epoch bits are ignored.
+    visited.ClearForRoot();
+
+    ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
 }
 
-TEST(VisitedObjectSetTest, DuplicateMarkDoesNotIncreaseSize)
+TEST(VisitedAddressBitmapTest, ReusesAllocatedPagesAcrossRoots)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 10;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x1000);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
 
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 1);
+    visited.ClearForRoot();
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, ClearRemovesAll)
+TEST(VisitedAddressBitmapTest, RetainsPeakEntryCountAcrossRoots)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t page = VisitedAddressBitmap::HeapBytesPerPage * 12;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x2000);
-    ASSERT_EQ(visited.Size(), 2);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page + (2 * sizeof(void*))),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPeakEntryCount(), 3u);
 
-    visited.Clear();
-    ASSERT_EQ(visited.Size(), 0);
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-    ASSERT_FALSE(visited.IsVisited(0x2000));
+    visited.ClearForRoot();
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+
+    ASSERT_EQ(visited.Size(), 1u);
+    ASSERT_EQ(visited.GetPeakEntryCount(), 3u);
 }
 
-TEST(VisitedObjectSetTest, StoreClassIDAndGetClassIDRoundTrip)
+TEST(VisitedAddressBitmapTest, MarkPossiblyInconsistentForcesFullReset)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 14;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkIfAbsent(0x1000);
-    visited.StoreClassID(0x1000, 42);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 42);
+    visited.MarkPossiblyInconsistent();
+    visited.ClearForRoot();
+
+    ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, GetClassIDReturnsDefaultBeforeStore)
+TEST(VisitedAddressBitmapTest, OnePageBudgetReportsCapacityExceeded)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 16;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkIfAbsent(0x1000);
-
-    ClassID classID = 99;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 0);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::CapacityExceeded);
+    ASSERT_EQ(visited.Size(), 2u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 1u);
+    ASSERT_EQ(visited.GetCapacityExceededCount(), 1u);
 }
 
-TEST(VisitedObjectSetTest, GetClassIDReturnsFalseForUnknownAddress)
+TEST(VisitedAddressBitmapTest, BenchmarkStatsDistinguishLastPageHitsFromIndexProbes)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2, true);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 18;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    ClassID classID = 99;
-    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
+    visited.TryMarkFirstVisit(firstPage);
+    visited.TryMarkFirstVisit(firstPage + sizeof(void*));
+    visited.TryMarkFirstVisit(secondPage);
+    visited.TryMarkFirstVisit(firstPage);
+
+    ASSERT_EQ(visited.GetLastPageHitCount(), 1u);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), 3u);
+    ASSERT_GE(visited.GetPageIndexProbeCount(), visited.GetPageIndexLookupCount());
 }
 
-TEST(VisitedObjectSetTest, StoreClassIDOnUnknownAddressIsNoOp)
+TEST(VisitedAddressBitmapTest, BenchmarkStatsAreDisabledByDefault)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t page = VisitedAddressBitmap::HeapBytesPerPage * 20;
 
-    visited.StoreClassID(0x1000, 42);
+    visited.TryMarkFirstVisit(page);
+    visited.TryMarkFirstVisit(page + sizeof(void*));
 
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 0);
-
-    ClassID classID = 0;
-    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
-}
-
-TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndClassID)
-{
-    VisitedObjectSet visited(16);
-
-    const size_t count = 1000;
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        visited.MarkIfAbsent(addr);
-        visited.StoreClassID(addr, static_cast<ClassID>(i));
-    }
-
-    ASSERT_EQ(visited.Size(), count);
-
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        ASSERT_TRUE(visited.IsVisited(addr));
-
-        ClassID classID = 0;
-        ASSERT_TRUE(visited.GetClassID(addr, classID));
-        ASSERT_EQ(classID, static_cast<ClassID>(i));
-    }
-}
-
-TEST(VisitedObjectSetTest, ClearResetsStoredClassID)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkIfAbsent(0x1000);
-    visited.StoreClassID(0x1000, 42);
-
-    visited.Clear();
-
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-
-    visited.MarkIfAbsent(0x1000);
-
-    ClassID classID = 99;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 0);
-}
-
-TEST(VisitedObjectSetTest, StoreClassIDAfterMarkVisited)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisited(0x1000);
-    visited.StoreClassID(0x1000, 77);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 77);
-}
-
-TEST(VisitedObjectSetTest, TryInsertNewAddress)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    auto result = visited.TryInsert(0x1000, slot);
-
-    ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
-    ASSERT_NE(slot, nullptr);
-    ASSERT_EQ(slot->classID, 0);
-    ASSERT_EQ(visited.Size(), 1);
-}
-
-TEST(VisitedObjectSetTest, TryInsertExistingAddress)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot1 = nullptr;
-    visited.TryInsert(0x1000, slot1);
-    slot1->classID = 42;
-
-    VisitedObjectSet::VisitedEntry* slot2 = nullptr;
-    auto result = visited.TryInsert(0x1000, slot2);
-
-    ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
-    ASSERT_EQ(slot1, slot2);
-    ASSERT_EQ(slot2->classID, 42);
-    ASSERT_EQ(visited.Size(), 1);
-}
-
-TEST(VisitedObjectSetTest, TryInsertWriteSlotThenRevisit)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    visited.TryInsert(0x2000, slot);
-    slot->classID = 99;
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x2000, classID));
-    ASSERT_EQ(classID, 99);
-}
-
-TEST(VisitedObjectSetTest, MarkVisitedAndStoreNewAddress)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisitedAndStore(0x1000, 42);
-
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 1);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 42);
-}
-
-TEST(VisitedObjectSetTest, MarkVisitedAndStoreOverwritesExisting)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisitedAndStore(0x1000, 10);
-    visited.MarkVisitedAndStore(0x1000, 20);
-
-    ASSERT_EQ(visited.Size(), 1);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 20);
-}
-
-TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
-{
-    VisitedObjectSet visited(16);
-
-    const size_t count = 200;
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        auto result = visited.TryInsert(addr, slot);
-        ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
-        slot->classID = static_cast<ClassID>(i);
-    }
-
-    ASSERT_EQ(visited.Size(), count);
-
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        auto result = visited.TryInsert(addr, slot);
-        ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
-        ASSERT_EQ(slot->classID, static_cast<ClassID>(i));
-    }
+    ASSERT_EQ(visited.GetLastPageHitCount(), 0u);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), 0u);
+    ASSERT_EQ(visited.GetPageIndexProbeCount(), 0u);
 }
 
 // ============================================================================
@@ -368,17 +296,17 @@ TEST(TypeTreeNodeTest, InitialState)
     ASSERT_EQ(node.typeID, 100);
     ASSERT_EQ(node.instanceCount, 0);
     ASSERT_EQ(node.totalSize, 0);
-    ASSERT_TRUE(node.children.empty());
+    ASSERT_FALSE(node.HasChildren());
 }
 
 TEST(TypeTreeNodeTest, AddInstance)
 {
     TypeTreeNode node(100);
-    node.AddInstance(64);
-    node.AddInstance(128);
+    node.AddInstance();
+    node.AddInstance();
 
     ASSERT_EQ(node.instanceCount, 2);
-    ASSERT_EQ(node.totalSize, 192);
+    ASSERT_EQ(node.totalSize, 0);
 }
 
 TEST(TypeTreeNodeTest, GetOrCreateChildCreatesNew)
@@ -389,20 +317,20 @@ TEST(TypeTreeNodeTest, GetOrCreateChildCreatesNew)
     ASSERT_NE(child, nullptr);
     ASSERT_EQ(child->typeID, 200);
     ASSERT_EQ(child->instanceCount, 0);
-    ASSERT_EQ(node.children.size(), 1);
+    ASSERT_EQ(node.GetChildCount(), 1);
 }
 
 TEST(TypeTreeNodeTest, GetOrCreateChildReturnsExisting)
 {
     TypeTreeNode node(100);
     TypeTreeNode* child1 = node.GetOrCreateChild(200);
-    child1->AddInstance(64);
+    child1->AddInstance();
 
     TypeTreeNode* child2 = node.GetOrCreateChild(200);
 
     ASSERT_EQ(child1, child2); // Same pointer
     ASSERT_EQ(child2->instanceCount, 1); // Still has the instance we added
-    ASSERT_EQ(node.children.size(), 1); // Still only one child
+    ASSERT_EQ(node.GetChildCount(), 1); // Still only one child
 }
 
 TEST(TypeTreeNodeTest, MultipleChildrenCreated)
@@ -414,13 +342,30 @@ TEST(TypeTreeNodeTest, MultipleChildrenCreated)
     ASSERT_NE(childA, childB);
     ASSERT_EQ(childA->typeID, 200);
     ASSERT_EQ(childB->typeID, 300);
-    ASSERT_EQ(node.children.size(), 2);
+    ASSERT_EQ(node.GetChildCount(), 2);
+}
+
+TEST(TypeTreeNodeTest, OverflowChildrenPreserveInlineChildPointers)
+{
+    TypeTreeNode node(100);
+    TypeTreeNode* firstChild = node.GetOrCreateChild(200);
+
+    node.GetOrCreateChild(201);
+    node.GetOrCreateChild(202);
+    node.GetOrCreateChild(203);
+    TypeTreeNode* firstOverflowChild = node.GetOrCreateChild(204);
+    TypeTreeNode* secondOverflowChild = node.GetOrCreateChild(205);
+
+    ASSERT_EQ(node.GetChildCount(), 6);
+    ASSERT_EQ(node.GetOrCreateChild(200), firstChild);
+    ASSERT_EQ(node.GetOrCreateChild(204), firstOverflowChild);
+    ASSERT_EQ(node.GetOrCreateChild(205), secondOverflowChild);
 }
 
 TEST(TypeTreeNodeTest, GetChildReturnsExisting)
 {
     TypeTreeNode node(100);
-    node.GetOrCreateChild(200)->AddInstance(64);
+    node.GetOrCreateChild(200)->AddInstance();
 
     const TypeTreeNode* child = node.GetChild(200);
     ASSERT_NE(child, nullptr);
@@ -433,6 +378,31 @@ TEST(TypeTreeNodeTest, GetChildReturnsNullForMissing)
     TypeTreeNode node(100);
     const TypeTreeNode* child = node.GetChild(999);
     ASSERT_EQ(child, nullptr);
+}
+
+TEST(TypeReferenceTreeTest, StatisticsGroupNodesByChildFanout)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* root = tree.AddRoot(100, RootCategory::Stack);
+
+    TypeTreeNode* oneChild = root->GetOrCreateChild(200);
+    oneChild->GetOrCreateChild(201);
+
+    TypeTreeNode* fiveChildren = root->GetOrCreateChild(300);
+    for (ClassID classID = 301; classID <= 305; classID++)
+    {
+        fiveChildren->GetOrCreateChild(classID);
+    }
+
+    auto statistics = tree.GetStatistics();
+
+    ASSERT_EQ(statistics.nodeCount, 9u);
+    ASSERT_EQ(statistics.leafCount, 6u);
+    ASSERT_EQ(statistics.children1To4, 2u);
+    ASSERT_EQ(statistics.children5To8, 1u);
+    ASSERT_EQ(statistics.children9To16, 0u);
+    ASSERT_EQ(statistics.children17OrMore, 0u);
+    ASSERT_EQ(statistics.maxChildren, 5u);
 }
 
 // ============================================================================
@@ -450,23 +420,23 @@ TEST(TypeRootNodeTest, InitialState)
 TEST(TypeRootNodeTest, AddInstanceUpdatesCounts)
 {
     TypeRootNode root(100, RootCategory::Stack);
-    root.AddInstance(64);
+    root.AddInstance();
 
     ASSERT_EQ(root.node.instanceCount, 1);
-    ASSERT_EQ(root.node.totalSize, 64);
+    ASSERT_EQ(root.node.totalSize, 0);
 }
 
 TEST(TypeRootNodeTest, SameTypeDifferentCategoriesCreateSeparateNodes)
 {
     TypeRootNode rootStack(100, RootCategory::Stack);
     TypeRootNode rootHandle(100, RootCategory::Handle);
-    rootStack.AddInstance(100);
-    rootHandle.AddInstance(200);
+    rootStack.AddInstance();
+    rootHandle.AddInstance();
 
     ASSERT_EQ(rootStack.node.instanceCount, 1);
-    ASSERT_EQ(rootStack.node.totalSize, 100);
+    ASSERT_EQ(rootStack.node.totalSize, 0);
     ASSERT_EQ(rootHandle.node.instanceCount, 1);
-    ASSERT_EQ(rootHandle.node.totalSize, 200);
+    ASSERT_EQ(rootHandle.node.totalSize, 0);
 }
 
 // ============================================================================
@@ -482,48 +452,48 @@ TEST(TypeReferenceTreeTest, InitialStateIsEmpty)
 TEST(TypeReferenceTreeTest, AddRootMakesNonEmpty)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* node = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* node = tree.AddRoot(100, RootCategory::Stack);
 
     ASSERT_FALSE(tree.IsEmpty());
     ASSERT_NE(node, nullptr);
     ASSERT_EQ(node->typeID, 100);
     ASSERT_EQ(node->instanceCount, 1);
-    ASSERT_EQ(node->totalSize, 64);
+    ASSERT_EQ(node->totalSize, 0);
 }
 
 TEST(TypeReferenceTreeTest, AddRootSameTypeDifferentCategoriesCreatesSeparateRoots)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack, 64);
-    TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Handle, 128);
+    TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack);
+    TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Handle);
 
     // Different categories => separate root entries
     ASSERT_NE(node1, node2);
     ASSERT_EQ(node1->instanceCount, 1);
-    ASSERT_EQ(node1->totalSize, 64);
+    ASSERT_EQ(node1->totalSize, 0);
     ASSERT_EQ(node2->instanceCount, 1);
-    ASSERT_EQ(node2->totalSize, 128);
+    ASSERT_EQ(node2->totalSize, 0);
     ASSERT_EQ(tree._roots.size(), 2);
 }
 
 TEST(TypeReferenceTreeTest, AddRootSameTypeSameCategoryMerges)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack, 64);
-    TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Stack, 128);
+    TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack);
+    TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Stack);
 
     // Same (type, category) => merged
     ASSERT_EQ(node1, node2);
     ASSERT_EQ(node1->instanceCount, 2);
-    ASSERT_EQ(node1->totalSize, 192);
+    ASSERT_EQ(node1->totalSize, 0);
     ASSERT_EQ(tree._roots.size(), 1);
 }
 
 TEST(TypeReferenceTreeTest, AddRootDifferentTypesCreatesSeparateRoots)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* nodeA = tree.AddRoot(100, RootCategory::Stack, 64);
-    TypeTreeNode* nodeB = tree.AddRoot(200, RootCategory::Handle, 128);
+    TypeTreeNode* nodeA = tree.AddRoot(100, RootCategory::Stack);
+    TypeTreeNode* nodeB = tree.AddRoot(200, RootCategory::Handle);
 
     ASSERT_NE(nodeA, nodeB);
     ASSERT_EQ(tree._roots.size(), 2);
@@ -532,8 +502,8 @@ TEST(TypeReferenceTreeTest, AddRootDifferentTypesCreatesSeparateRoots)
 TEST(TypeReferenceTreeTest, ClearRemovesAll)
 {
     TypeReferenceTree tree;
-    tree.AddRoot(100, RootCategory::Stack, 64);
-    tree.AddRoot(200, RootCategory::Handle, 128);
+    tree.AddRoot(100, RootCategory::Stack);
+    tree.AddRoot(200, RootCategory::Handle);
 
     tree.Clear();
     ASSERT_TRUE(tree.IsEmpty());
@@ -544,37 +514,37 @@ TEST(TypeReferenceTreeTest, TreeStructurePreservesPath)
 {
     // Simulate: TypeA (root) -> TypeB -> TypeA -> TypeC
     TypeReferenceTree tree;
-    TypeTreeNode* rootA = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA = tree.AddRoot(100, RootCategory::Stack);
 
     // Root TypeA -> TypeB
     TypeTreeNode* childB = rootA->GetOrCreateChild(200);
-    childB->AddInstance(48);
+    childB->AddInstance();
 
     // TypeB -> TypeA (different position in tree!)
     TypeTreeNode* childA2 = childB->GetOrCreateChild(100);
-    childA2->AddInstance(64);
+    childA2->AddInstance();
 
     // TypeA (child of B) -> TypeC
     TypeTreeNode* childC = childA2->GetOrCreateChild(300);
-    childC->AddInstance(32);
+    childC->AddInstance();
 
     // Verify the tree structure
-    ASSERT_EQ(rootA->children.size(), 1);
+    ASSERT_EQ(rootA->GetChildCount(), 1);
 
     const TypeTreeNode* b = rootA->GetChild(200);
     ASSERT_NE(b, nullptr);
     ASSERT_EQ(b->instanceCount, 1);
-    ASSERT_EQ(b->children.size(), 1);
+    ASSERT_EQ(b->GetChildCount(), 1);
 
     const TypeTreeNode* a2 = b->GetChild(100);
     ASSERT_NE(a2, nullptr);
     ASSERT_EQ(a2->instanceCount, 1);
-    ASSERT_EQ(a2->children.size(), 1);
+    ASSERT_EQ(a2->GetChildCount(), 1);
 
     const TypeTreeNode* c = a2->GetChild(300);
     ASSERT_NE(c, nullptr);
     ASSERT_EQ(c->instanceCount, 1);
-    ASSERT_TRUE(c->children.empty());
+    ASSERT_FALSE(c->HasChildren());
 }
 
 // ============================================================================
@@ -619,7 +589,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, SingleRootSerializes)
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "System.String");
 
-    tree.AddRoot(typeA, RootCategory::Stack, 256);
+    tree.AddRoot(typeA, RootCategory::Stack);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -635,8 +605,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, SingleRootSerializes)
     // Check instance count
     ASSERT_NE(json.find("\"ic\":1"), std::string::npos);
 
-    // Check total size
-    ASSERT_NE(json.find("\"ts\":256"), std::string::npos);
+    // Check the reserved total-size field remains present and zero
+    ASSERT_NE(json.find("\"ts\":0"), std::string::npos);
 }
 
 TEST(TypeReferenceTreeJsonSerializerTest, RootWithChildrenSerializes)
@@ -650,11 +620,11 @@ TEST(TypeReferenceTreeJsonSerializerTest, RootWithChildrenSerializes)
     frameStore.RegisterType(typeB, "MyApp.Customer");
 
     // Root: typeA (Order)
-    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 128);
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable);
 
     // Add child: Order -> Customer
     TypeTreeNode* childNode = rootNode->GetOrCreateChild(typeB);
-    childNode->AddInstance(64);
+    childNode->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -679,8 +649,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, MultipleRootsSerialize)
     frameStore.RegisterType(typeA, "TypeA");
     frameStore.RegisterType(typeB, "TypeB");
 
-    tree.AddRoot(typeA, RootCategory::Stack, 64);
-    tree.AddRoot(typeB, RootCategory::Handle, 128);
+    tree.AddRoot(typeA, RootCategory::Stack);
+    tree.AddRoot(typeB, RootCategory::Handle);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -706,7 +676,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, JsonEscapingWorks)
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "Namespace.Type<System.String>");
 
-    tree.AddRoot(typeA, RootCategory::Stack, 64);
+    tree.AddRoot(typeA, RootCategory::Stack);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -743,7 +713,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllRootCategoriesProduceValidCodes)
         ClassID typeId = typeBase + static_cast<ClassID>(i);
         std::string typeName = "Type" + std::to_string(i);
         frameStore.RegisterType(typeId, typeName);
-        tree.AddRoot(typeId, categories[i], 64);
+        tree.AddRoot(typeId, categories[i]);
     }
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
@@ -772,16 +742,16 @@ TEST(TypeReferenceTreeJsonSerializerTest, DeepHierarchySerializes)
     frameStore.RegisterType(typeL2, "Level2");
 
     // Build tree: Root -> Level0 -> Level1 -> Level2
-    TypeTreeNode* rootNode = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    TypeTreeNode* rootNode = tree.AddRoot(typeRoot, RootCategory::Stack);
 
     TypeTreeNode* l0 = rootNode->GetOrCreateChild(typeL0);
-    l0->AddInstance(48);
+    l0->AddInstance();
 
     TypeTreeNode* l1 = l0->GetOrCreateChild(typeL1);
-    l1->AddInstance(32);
+    l1->AddInstance();
 
     TypeTreeNode* l2 = l1->GetOrCreateChild(typeL2);
-    l2->AddInstance(16);
+    l2->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -812,9 +782,9 @@ TEST(TypeReferenceTreeJsonSerializerTest, ValidJsonStructure)
     frameStore.RegisterType(typeA, "TypeA");
     frameStore.RegisterType(typeB, "TypeB");
 
-    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::Stack, 100);
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::Stack);
     TypeTreeNode* childNode = rootNode->GetOrCreateChild(typeB);
-    childNode->AddInstance(50);
+    childNode->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -854,16 +824,16 @@ TEST(TypeReferenceTreeJsonSerializerTest, SameTypeAtDifferentPositions)
     frameStore.RegisterType(typeC, "TypeC");
 
     // Build tree: TypeA (root) -> TypeB -> TypeA -> TypeC
-    TypeTreeNode* rootA = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* rootA = tree.AddRoot(typeA, RootCategory::Stack);
 
     TypeTreeNode* childB = rootA->GetOrCreateChild(typeB);
-    childB->AddInstance(48);
+    childB->AddInstance();
 
     TypeTreeNode* childA2 = childB->GetOrCreateChild(typeA);
-    childA2->AddInstance(64);
+    childA2->AddInstance();
 
     TypeTreeNode* childC = childA2->GetOrCreateChild(typeC);
-    childC->AddInstance(32);
+    childC->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -910,12 +880,12 @@ TEST(TypeReferenceTreeJsonSerializerTest, TreeHasNoInfiniteRecursion)
     frameStore.RegisterType(typeB, "TypeB");
 
     // Build a tree: A (root) -> A -> B (simulates A1 -> A2 -> B,
-    // where A2 was stopped by VisitedObjectSet before cycling back)
-    TypeTreeNode* rootA = tree.AddRoot(typeA, RootCategory::Handle, 128);
+    // where A2 was stopped by VisitedAddressBitmap before cycling back)
+    TypeTreeNode* rootA = tree.AddRoot(typeA, RootCategory::Handle);
     TypeTreeNode* childA = rootA->GetOrCreateChild(typeA);
-    childA->AddInstance(128);
+    childA->AddInstance();
     TypeTreeNode* childB = childA->GetOrCreateChild(typeB);
-    childB->AddInstance(64);
+    childB->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -946,25 +916,25 @@ TEST(TypeReferenceTreeTest, MergedRootsShareChildren)
     TypeReferenceTree tree;
 
     // First root instance of TypeA
-    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack);
     TypeTreeNode* childB1 = rootA1->GetOrCreateChild(200);
-    childB1->AddInstance(32);
+    childB1->AddInstance();
 
     // Second root instance of TypeA (merges into same root node)
-    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack);
     ASSERT_EQ(rootA1, rootA2); // Same root node pointer
 
     // Adding TypeB child again returns the existing child
     TypeTreeNode* childB2 = rootA2->GetOrCreateChild(200);
     ASSERT_EQ(childB1, childB2); // Same child node
-    childB2->AddInstance(48);
+    childB2->AddInstance();
 
     // Verify merged counts
     ASSERT_EQ(rootA1->instanceCount, 2);
-    ASSERT_EQ(rootA1->totalSize, 128);
+    ASSERT_EQ(rootA1->totalSize, 0);
     ASSERT_EQ(childB1->instanceCount, 2);
-    ASSERT_EQ(childB1->totalSize, 80);
-    ASSERT_EQ(rootA1->children.size(), 1);
+    ASSERT_EQ(childB1->totalSize, 0);
+    ASSERT_EQ(rootA1->GetChildCount(), 1);
 }
 
 // When two root instances of TypeA each add different child types,
@@ -973,15 +943,15 @@ TEST(TypeReferenceTreeTest, MergedRootsHaveDifferentChildren)
 {
     TypeReferenceTree tree;
 
-    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack);
     TypeTreeNode* childB = rootA1->GetOrCreateChild(200);
-    childB->AddInstance(32);
+    childB->AddInstance();
 
-    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack);
     TypeTreeNode* childC = rootA2->GetOrCreateChild(300);
-    childC->AddInstance(48);
+    childC->AddInstance();
 
-    ASSERT_EQ(rootA1->children.size(), 2);
+    ASSERT_EQ(rootA1->GetChildCount(), 2);
     ASSERT_NE(rootA1->GetChild(200), nullptr);
     ASSERT_NE(rootA1->GetChild(300), nullptr);
 }
@@ -995,29 +965,29 @@ TEST(TypeReferenceTreeTest, MergedRootsHaveDifferentChildren)
 TEST(TypeReferenceTreeTest, DiamondPattern)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* root = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(100, RootCategory::Stack);
 
     TypeTreeNode* childB = root->GetOrCreateChild(200);
-    childB->AddInstance(32);
+    childB->AddInstance();
 
     TypeTreeNode* childC = root->GetOrCreateChild(300);
-    childC->AddInstance(32);
+    childC->AddInstance();
 
     // Both B and C have a TypeD child
     TypeTreeNode* dUnderB = childB->GetOrCreateChild(400);
-    dUnderB->AddInstance(16);
+    dUnderB->AddInstance();
 
     TypeTreeNode* dUnderC = childC->GetOrCreateChild(400);
-    dUnderC->AddInstance(24);
+    dUnderC->AddInstance();
 
     // TypeD appears as SEPARATE nodes under B and C
     ASSERT_NE(dUnderB, dUnderC);
     ASSERT_EQ(dUnderB->typeID, 400);
     ASSERT_EQ(dUnderC->typeID, 400);
     ASSERT_EQ(dUnderB->instanceCount, 1);
-    ASSERT_EQ(dUnderB->totalSize, 16);
+    ASSERT_EQ(dUnderB->totalSize, 0);
     ASSERT_EQ(dUnderC->instanceCount, 1);
-    ASSERT_EQ(dUnderC->totalSize, 24);
+    ASSERT_EQ(dUnderC->totalSize, 0);
 }
 
 // ============================================================================
@@ -1029,8 +999,8 @@ TEST(TypeReferenceTreeTest, DiamondPattern)
 // Root -> List<SharedPayload> -> SharedPayload[] -> SharedPayload  (first visit)
 //
 // Because SharedPayload is visited first via _sharedPayloads, it's already in the
-// visited set when reached via SharedHolder. The traverser still records the
-// type-level edge SharedHolder -> SharedPayload using cached ClassID/size.
+// visited bitmap when reached via SharedHolder. The traverser still records the
+// type-level edge SharedHolder -> SharedPayload using the object's MethodTable ClassID.
 TEST(TypeReferenceTreeTest, SharedObjectEdgeRecordedFromMultipleParents)
 {
     TypeReferenceTree tree;
@@ -1043,28 +1013,28 @@ TEST(TypeReferenceTreeTest, SharedObjectEdgeRecordedFromMultipleParents)
     ClassID typeHolderArray = 6;
     ClassID typeHolder = 7;
 
-    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack, 128);
+    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack);
 
     // Path 1 (visited first): Root -> List<Payload> -> Payload[] -> Payload
     TypeTreeNode* listPayload = root->GetOrCreateChild(typeListPayload);
-    listPayload->AddInstance(64);
+    listPayload->AddInstance();
     TypeTreeNode* payloadArr = listPayload->GetOrCreateChild(typePayloadArray);
-    payloadArr->AddInstance(256);
+    payloadArr->AddInstance();
     TypeTreeNode* payloadUnderArr = payloadArr->GetOrCreateChild(typePayload);
-    payloadUnderArr->AddInstance(48);
+    payloadUnderArr->AddInstance();
 
     // Path 2: Root -> List<Holder> -> Holder[] -> Holder -> Payload (revisit)
     TypeTreeNode* listHolder = root->GetOrCreateChild(typeListHolder);
-    listHolder->AddInstance(64);
+    listHolder->AddInstance();
     TypeTreeNode* holderArr = listHolder->GetOrCreateChild(typeHolderArray);
-    holderArr->AddInstance(512);
+    holderArr->AddInstance();
     TypeTreeNode* holder = holderArr->GetOrCreateChild(typeHolder);
-    holder->AddInstance(32);
+    holder->AddInstance();
 
     // The traverser records the type edge even though the Payload object was
     // already visited. Simulate that by adding a Payload child under Holder.
     TypeTreeNode* payloadUnderHolder = holder->GetOrCreateChild(typePayload);
-    payloadUnderHolder->AddInstance(48);
+    payloadUnderHolder->AddInstance();
 
     // Payload appears as a SEPARATE tree node under both parents
     ASSERT_NE(payloadUnderArr, payloadUnderHolder);
@@ -1089,13 +1059,13 @@ TEST(TypeReferenceTreeTest, SharedObjectEdgeRecordedFromMultipleParents)
 TEST(TypeReferenceTreeTest, SelfReferencingTypeChain)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* rootA = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* rootA = tree.AddRoot(100, RootCategory::Stack);
 
     TypeTreeNode* a2 = rootA->GetOrCreateChild(100);
-    a2->AddInstance(64);
+    a2->AddInstance();
 
     TypeTreeNode* a3 = a2->GetOrCreateChild(100);
-    a3->AddInstance(64);
+    a3->AddInstance();
 
     // All three are distinct nodes despite having the same typeID
     ASSERT_NE(rootA, a2);
@@ -1103,9 +1073,9 @@ TEST(TypeReferenceTreeTest, SelfReferencingTypeChain)
     ASSERT_NE(rootA, a3);
 
     // Each has the correct structure
-    ASSERT_EQ(rootA->children.size(), 1);
-    ASSERT_EQ(a2->children.size(), 1);
-    ASSERT_TRUE(a3->children.empty());
+    ASSERT_EQ(rootA->GetChildCount(), 1);
+    ASSERT_EQ(a2->GetChildCount(), 1);
+    ASSERT_FALSE(a3->HasChildren());
 
     ASSERT_EQ(rootA->typeID, 100);
     ASSERT_EQ(a2->typeID, 100);
@@ -1121,18 +1091,18 @@ TEST(TypeReferenceTreeTest, DeepChainBeyondMaxTreeDepth)
     // The tree structure itself has no depth limit (only the traverser does).
     // Verify we can build a chain deeper than MaxTreeDepth.
     TypeReferenceTree tree;
-    TypeTreeNode* current = tree.AddRoot(1, RootCategory::Stack, 64);
+    TypeTreeNode* current = tree.AddRoot(1, RootCategory::Stack);
 
     for (uint32_t depth = 1; depth <= MaxTreeDepth + 10; depth++)
     {
         ClassID childType = static_cast<ClassID>(depth + 1);
         TypeTreeNode* child = current->GetOrCreateChild(childType);
-        child->AddInstance(16);
+        child->AddInstance();
         current = child;
     }
 
     // The tree should be fully built (no limit in the tree structure)
-    ASSERT_TRUE(current->children.empty());
+    ASSERT_FALSE(current->HasChildren());
     ASSERT_EQ(current->instanceCount, 1);
 }
 
@@ -1143,17 +1113,17 @@ TEST(TypeReferenceTreeTest, DeepChainBeyondMaxTreeDepth)
 TEST(TypeReferenceTreeTest, WideTreeWithManyChildren)
 {
     TypeReferenceTree tree;
-    TypeTreeNode* root = tree.AddRoot(1, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(1, RootCategory::Stack);
 
     const int childCount = 50;
     for (int i = 0; i < childCount; i++)
     {
         ClassID childType = static_cast<ClassID>(100 + i);
         TypeTreeNode* child = root->GetOrCreateChild(childType);
-        child->AddInstance(32);
+        child->AddInstance();
     }
 
-    ASSERT_EQ(root->children.size(), childCount);
+    ASSERT_EQ(root->GetChildCount(), childCount);
 
     for (int i = 0; i < childCount; i++)
     {
@@ -1175,7 +1145,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, LeafRootOmitsChildrenArray)
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "LeafType");
 
-    tree.AddRoot(typeA, RootCategory::Stack, 256);
+    tree.AddRoot(typeA, RootCategory::Stack);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1201,9 +1171,9 @@ TEST(TypeReferenceTreeJsonSerializerTest, UnresolvableTypeIsNamedQuestionMark)
     frameStore.RegisterType(typeA, "KnownType");
     // typeUnknown is NOT registered in frameStore
 
-    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack);
     TypeTreeNode* child = root->GetOrCreateChild(typeUnknown);
-    child->AddInstance(32);
+    child->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1234,20 +1204,20 @@ TEST(TypeReferenceTreeJsonSerializerTest, NodeTypeIndexMatchesTypeTablePosition)
     frameStore.RegisterType(middleType, "MyApp.Middle");
     frameStore.RegisterType(leafType, "MyApp.Leaf");
 
-    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack);
     TypeTreeNode* middle = root->GetOrCreateChild(middleType);
-    middle->AddInstance(32);
+    middle->AddInstance();
     TypeTreeNode* leaf = middle->GetOrCreateChild(leafType);
-    leaf->AddInstance(16);
+    leaf->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
     ASSERT_EQ(
         json,
         "{\"v\":1,\"tt\":[\"MyApp.Root\",\"MyApp.Middle\",\"MyApp.Leaf\"],"
-        "\"r\":[{\"t\":0,\"c\":\"K\",\"ic\":1,\"ts\":64,"
-        "\"ch\":[{\"t\":1,\"ic\":1,\"ts\":32,"
-        "\"ch\":[{\"t\":2,\"ic\":1,\"ts\":16}]}]}]}")
+        "\"r\":[{\"t\":0,\"c\":\"K\",\"ic\":1,\"ts\":0,"
+        "\"ch\":[{\"t\":1,\"ic\":1,"
+        "\"ch\":[{\"t\":2,\"ic\":1}]}]}]}")
         << json;
 }
 
@@ -1266,7 +1236,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, WideTreeWithManyChildrenSerializes)
     ClassID rootType = 1;
     frameStore.RegisterType(rootType, "Root");
 
-    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Handle, 64);
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Handle);
 
     const int childCount = 20;
     for (int i = 0; i < childCount; i++)
@@ -1276,7 +1246,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, WideTreeWithManyChildrenSerializes)
         frameStore.RegisterType(childType, name);
 
         TypeTreeNode* child = root->GetOrCreateChild(childType);
-        child->AddInstance(32 + i);
+        child->AddInstance();
     }
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
@@ -1323,20 +1293,20 @@ TEST(TypeReferenceTreeJsonSerializerTest, DiamondPatternSerializes)
     frameStore.RegisterType(typeC, "TypeC");
     frameStore.RegisterType(typeD, "TypeD");
 
-    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack);
 
     TypeTreeNode* b = root->GetOrCreateChild(typeB);
-    b->AddInstance(32);
+    b->AddInstance();
     TypeTreeNode* c = root->GetOrCreateChild(typeC);
-    c->AddInstance(32);
+    c->AddInstance();
 
     // D under B
     TypeTreeNode* dB = b->GetOrCreateChild(typeD);
-    dB->AddInstance(16);
+    dB->AddInstance();
 
     // D under C (separate node, same type)
     TypeTreeNode* dC = c->GetOrCreateChild(typeD);
-    dC->AddInstance(24);
+    dC->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1386,21 +1356,21 @@ TEST(TypeReferenceTreeJsonSerializerTest, LargeInstanceCountsSerialize)
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "HeavyType");
 
-    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack);
 
     // Add many more instances to simulate large counts
     for (uint64_t i = 1; i < 1000; i++)
     {
-        tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+        tree.AddRoot(typeA, RootCategory::Stack);
     }
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
-    // Verify large numbers are present
+    // Verify the large instance count and reserved total-size field
     ASSERT_NE(json.find("\"ic\":1000"), std::string::npos)
         << "Expected ic:1000 in JSON: " << json;
-    ASSERT_NE(json.find("\"ts\":1000000000"), std::string::npos)
-        << "Expected ts:1000000000 in JSON: " << json;
+    ASSERT_NE(json.find("\"ts\":0"), std::string::npos)
+        << "Expected ts:0 in JSON: " << json;
 }
 
 // ============================================================================
@@ -1416,8 +1386,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, RootWithMultipleCategoriesShowsFirst)
     frameStore.RegisterType(typeA, "MultiCatType");
 
     // Add root via Handle first, then Stack
-    tree.AddRoot(typeA, RootCategory::Handle, 64);
-    tree.AddRoot(typeA, RootCategory::Stack, 64);
+    tree.AddRoot(typeA, RootCategory::Handle);
+    tree.AddRoot(typeA, RootCategory::Stack);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1441,7 +1411,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, ZeroInstanceCountOmittedFromJson)
     frameStore.RegisterType(typeA, "ParentType");
     frameStore.RegisterType(typeB, "EmptyChild");
 
-    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack);
 
     // Create a child but never call AddInstance (ic=0, ts=0)
     root->GetOrCreateChild(typeB);
@@ -1481,13 +1451,13 @@ TEST(TypeReferenceTreeJsonSerializerTest, SelfReferencingChainSerializes)
 
     // Simulate a linked list: Node1 -> Node2 -> Node3
     // At the type level: LinkedNode (root) -> LinkedNode -> LinkedNode
-    TypeTreeNode* root = tree.AddRoot(typeNode, RootCategory::Stack, 48);
+    TypeTreeNode* root = tree.AddRoot(typeNode, RootCategory::Stack);
 
     TypeTreeNode* level2 = root->GetOrCreateChild(typeNode);
-    level2->AddInstance(48);
+    level2->AddInstance();
 
     TypeTreeNode* level3 = level2->GetOrCreateChild(typeNode);
-    level3->AddInstance(48);
+    level3->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1530,22 +1500,22 @@ TEST(TypeReferenceTreeJsonSerializerTest, MergedChildrenCountsSerialize)
     frameStore.RegisterType(typeRoot, "RootType");
     frameStore.RegisterType(typeChild, "ChildType");
 
-    // First root traversal: Root -> Child (count=1, size=32)
-    TypeTreeNode* root1 = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    // First root traversal: Root -> Child (count=1)
+    TypeTreeNode* root1 = tree.AddRoot(typeRoot, RootCategory::Stack);
     TypeTreeNode* child1 = root1->GetOrCreateChild(typeChild);
-    child1->AddInstance(32);
+    child1->AddInstance();
 
-    // Second root traversal of same type: Root -> Child (count=1, size=48)
-    TypeTreeNode* root2 = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    // Second root traversal of same type: Root -> Child (count=1)
+    TypeTreeNode* root2 = tree.AddRoot(typeRoot, RootCategory::Stack);
     TypeTreeNode* child2 = root2->GetOrCreateChild(typeChild);
-    child2->AddInstance(48);
+    child2->AddInstance();
 
     // child1 and child2 are the same node (merged)
     ASSERT_EQ(child1, child2);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
-    // Root: ic=2, ts=128; Child: ic=2, ts=80
+    // Root and child each serialize ic=2; the root's reserved ts field remains zero.
     ASSERT_NE(json.find("\"ic\":2"), std::string::npos);
 
     int braces = 0, brackets = 0;
@@ -1570,8 +1540,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesStillProduceRoots)
     MockFrameStore frameStore;
     // No types registered in frameStore
 
-    tree.AddRoot(100, RootCategory::Stack, 64);
-    tree.AddRoot(200, RootCategory::Handle, 128);
+    tree.AddRoot(100, RootCategory::Stack);
+    tree.AddRoot(200, RootCategory::Handle);
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
@@ -1673,7 +1643,7 @@ TEST(TypeReferenceTreeBinarySerializerTest, SingleRootRoundTrip)
 
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "System.String");
-    tree.AddRoot(typeA, RootCategory::Stack, 256);
+    tree.AddRoot(typeA, RootCategory::Stack);
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -1691,10 +1661,10 @@ TEST(TypeReferenceTreeBinarySerializerTest, SingleRootRoundTrip)
 
     ASSERT_EQ(reader.ReadVarint(), 0u);  // type_index
     ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::Stack));
-    ASSERT_EQ(reader.ReadVarint(), 1u);   // ic
-    ASSERT_EQ(reader.ReadVarint(), 256u); // ts
-    ASSERT_EQ(reader.ReadVarint(), 0u);   // field_len
-    ASSERT_EQ(reader.ReadVarint(), 0u);   // child_count
+    ASSERT_EQ(reader.ReadVarint(), 1u); // ic
+    ASSERT_EQ(reader.ReadVarint(), 0u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u); // field_len
+    ASSERT_EQ(reader.ReadVarint(), 0u); // child_count
 
     ASSERT_TRUE(reader.AtEnd());
 }
@@ -1708,9 +1678,9 @@ TEST(TypeReferenceTreeBinarySerializerTest, RootWithChildrenRoundTrip)
     frameStore.RegisterType(typeA, "MyApp.Order");
     frameStore.RegisterType(typeB, "MyApp.Customer");
 
-    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 128);
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable);
     TypeTreeNode* childNode = rootNode->GetOrCreateChild(typeB);
-    childNode->AddInstance(64);
+    childNode->AddInstance();
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -1727,15 +1697,15 @@ TEST(TypeReferenceTreeBinarySerializerTest, RootWithChildrenRoundTrip)
     // Root
     ASSERT_EQ(reader.ReadVarint(), 0u); // type_index
     ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::StaticVariable));
-    ASSERT_EQ(reader.ReadVarint(), 1u);   // ic
-    ASSERT_EQ(reader.ReadVarint(), 128u); // ts
-    ASSERT_EQ(reader.ReadVarint(), 0u);   // field_len
-    ASSERT_EQ(reader.ReadVarint(), 1u);   // child_count
+    ASSERT_EQ(reader.ReadVarint(), 1u); // ic
+    ASSERT_EQ(reader.ReadVarint(), 0u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u); // field_len
+    ASSERT_EQ(reader.ReadVarint(), 1u); // child_count
 
     // Child (inline DFS)
     ASSERT_EQ(reader.ReadVarint(), 1u);  // type_index
     ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
-    ASSERT_EQ(reader.ReadVarint(), 64u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // ts
     ASSERT_EQ(reader.ReadVarint(), 0u);  // child_count
 
     ASSERT_TRUE(reader.AtEnd());
@@ -1751,9 +1721,9 @@ TEST(TypeReferenceTreeBinarySerializerTest, UnresolvableTypeIsNamedQuestionMark)
     frameStore.RegisterType(typeA, "KnownType");
     // typeUnknown is NOT registered in frameStore
 
-    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack);
     TypeTreeNode* child = root->GetOrCreateChild(typeUnknown);
-    child->AddInstance(32);
+    child->AddInstance();
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -1770,13 +1740,13 @@ TEST(TypeReferenceTreeBinarySerializerTest, UnresolvableTypeIsNamedQuestionMark)
     ASSERT_EQ(reader.ReadVarint(), 0u); // root type_index
     ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::Stack));
     ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
-    ASSERT_EQ(reader.ReadVarint(), 64u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // ts
     ASSERT_EQ(reader.ReadVarint(), 0u);  // field_len
     ASSERT_EQ(reader.ReadVarint(), 1u);  // child_count
 
     ASSERT_EQ(reader.ReadVarint(), 1u);  // child type_index -> "?"
     ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
-    ASSERT_EQ(reader.ReadVarint(), 32u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // ts
     ASSERT_EQ(reader.ReadVarint(), 0u);  // child_count
 
     ASSERT_TRUE(reader.AtEnd());
@@ -1794,11 +1764,11 @@ TEST(TypeReferenceTreeBinarySerializerTest, NodeTypeIndexMatchesStringTablePosit
     frameStore.RegisterType(middleType, "MyApp.Middle");
     frameStore.RegisterType(leafType, "MyApp.Leaf");
 
-    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack, 64);
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack);
     TypeTreeNode* middle = root->GetOrCreateChild(middleType);
-    middle->AddInstance(32);
+    middle->AddInstance();
     TypeTreeNode* leaf = middle->GetOrCreateChild(leafType);
-    leaf->AddInstance(16);
+    leaf->AddInstance();
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -1852,7 +1822,7 @@ TEST(TypeReferenceTreeBinarySerializerTest, AllRootCategoriesRoundTrip)
     {
         ClassID typeId = static_cast<ClassID>(100 + i);
         frameStore.RegisterType(typeId, "Type" + std::to_string(i));
-        tree.AddRoot(typeId, categories[i], 64);
+        tree.AddRoot(typeId, categories[i]);
     }
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
@@ -1899,11 +1869,11 @@ TEST(TypeReferenceTreeBinarySerializerTest, DeepHierarchyRoundTrip)
         frameStore.RegisterType(static_cast<ClassID>(100 + i), "Level" + std::to_string(i));
     }
 
-    TypeTreeNode* current = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* current = tree.AddRoot(100, RootCategory::Stack);
     for (int i = 1; i <= depth; i++)
     {
         TypeTreeNode* child = current->GetOrCreateChild(static_cast<ClassID>(100 + i));
-        child->AddInstance(32);
+        child->AddInstance();
         current = child;
     }
 
@@ -1940,7 +1910,7 @@ TEST(TypeReferenceTreeBinarySerializerTest, DeepHierarchyRoundTrip)
     ASSERT_TRUE(reader.AtEnd());
 }
 
-TEST(TypeReferenceTreeBinarySerializerTest, LargeValuesEncodeCorrectly)
+TEST(TypeReferenceTreeBinarySerializerTest, LargeInstanceCountEncodesCorrectly)
 {
     TypeReferenceTree tree;
     MockFrameStore frameStore;
@@ -1949,7 +1919,7 @@ TEST(TypeReferenceTreeBinarySerializerTest, LargeValuesEncodeCorrectly)
     frameStore.RegisterType(typeA, "HeavyType");
 
     for (uint64_t i = 0; i < 1000; i++)
-        tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+        tree.AddRoot(typeA, RootCategory::Stack);
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -1963,8 +1933,8 @@ TEST(TypeReferenceTreeBinarySerializerTest, LargeValuesEncodeCorrectly)
 
     reader.ReadVarint(); // typeIndex
     reader.ReadByte();   // category
-    ASSERT_EQ(reader.ReadVarint(), 1000u);       // ic
-    ASSERT_EQ(reader.ReadVarint(), 1000000000u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 1000u); // ic
+    ASSERT_EQ(reader.ReadVarint(), 0u);    // ts
 }
 
 TEST(TypeReferenceTreeBinarySerializerTest, BinarySmallerThanJson)
@@ -1976,14 +1946,14 @@ TEST(TypeReferenceTreeBinarySerializerTest, BinarySmallerThanJson)
     {
         ClassID typeId = static_cast<ClassID>(100 + i);
         frameStore.RegisterType(typeId, "Namespace.Type" + std::to_string(i));
-        TypeTreeNode* root = tree.AddRoot(typeId, RootCategory::Stack, 64 + i);
+        TypeTreeNode* root = tree.AddRoot(typeId, RootCategory::Stack);
 
         for (int j = 0; j < 3; j++)
         {
             ClassID childType = static_cast<ClassID>(1000 + i * 10 + j);
             frameStore.RegisterType(childType, "Child" + std::to_string(i) + "_" + std::to_string(j));
             TypeTreeNode* child = root->GetOrCreateChild(childType);
-            child->AddInstance(32 + j);
+            child->AddInstance();
         }
     }
 
@@ -2002,7 +1972,7 @@ TEST(TypeReferenceTreeBinarySerializerTest, StaticFieldNameRoundTrip)
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "System.Collections.Generic.List`1");
     auto fieldName = shared::ToWSTRING("_staticOrders");
-    tree.AddRoot(typeA, RootCategory::StaticVariable, 256, fieldName.c_str());
+    tree.AddRoot(typeA, RootCategory::StaticVariable, fieldName.c_str());
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -2034,8 +2004,8 @@ TEST(TypeReferenceTreeBinarySerializerTest, TypeNamesAreNamespaceQualified)
     frameStore.RegisterType(typeA, "System.Collections.Generic.Dictionary<System.String,MyApp.Order>");
     frameStore.RegisterType(typeB, "MyApp.Nested.Customer");
 
-    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 256);
-    rootNode->GetOrCreateChild(typeB)->AddInstance(64);
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable);
+    rootNode->GetOrCreateChild(typeB)->AddInstance();
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
@@ -2060,8 +2030,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, TypeNamesAreNamespaceQualified)
     frameStore.RegisterType(typeA, "System.Collections.Generic.Dictionary<System.String,MyApp.Order>");
     frameStore.RegisterType(typeB, "MyApp.Nested.Customer");
 
-    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 256);
-    rootNode->GetOrCreateChild(typeB)->AddInstance(64);
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable);
+    rootNode->GetOrCreateChild(typeB)->AddInstance();
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 

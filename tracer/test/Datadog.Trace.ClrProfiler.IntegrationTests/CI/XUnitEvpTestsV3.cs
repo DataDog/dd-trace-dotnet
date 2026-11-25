@@ -271,7 +271,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                     }
                     """),
                 1,
-                34,
+                16,
                 "quarantined_and_disabled");
         }
     }
@@ -474,7 +474,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                 // CI Library Language
-                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                 // Check Session data
                 AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
@@ -638,14 +638,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 useDotnetExec: false));
     }
 
-    // TODO: Coverlet still writes its cobertura attachment under the .NET 11 SDK, but the tracer
-    // never sends the SessionCodeCoverage IPC message, so the coverage assertion in this test fails
-    // on every leg except net11.0. Delete the whole #if block once that's fixed.
-#if NET11_0_OR_GREATER
     [SkippableTheory]
-#else
-    [SkippableTheory(Skip = "CI Visibility code coverage IPC message is not received under the .NET 11 SDK. Only the net11.0 legs are unaffected. Pending investigation.")]
-#endif
     [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]

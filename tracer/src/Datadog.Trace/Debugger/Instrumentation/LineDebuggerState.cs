@@ -45,7 +45,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
         /// <param name="snapshotCreator">The snapshot creator associated with the executing probe configuration</param>
-        internal LineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
+        internal LineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
         {
             _probeId = probeId;
             _scope = scope;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets an index that is used as a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
-        internal int MethodMetadataIndex
+        internal readonly int MethodMetadataIndex
         {
             get
             {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
         }
 
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
+        internal readonly ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
 
         internal ProbeData ProbeData { get; }
 
@@ -82,22 +82,22 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the LiveDebugger BeginMethod scope
         /// </summary>
-        internal Scope Scope => _scope;
+        internal readonly Scope Scope => _scope;
 
         /// <summary>
         /// Gets the Id of the probe
         /// </summary>
-        internal string ProbeId => _probeId;
+        internal readonly string ProbeId => _probeId;
 
         /// <summary>
         /// Gets the location of the probe
         /// </summary>
-        internal string ProbeFilePath => _probeFilePath;
+        internal readonly string ProbeFilePath => _probeFilePath;
 
         /// <summary>
         /// Gets the Line Number
         /// </summary>
-        internal int LineNumber => _lineNumber;
+        internal readonly int LineNumber => _lineNumber;
 
         internal object InvocationTarget { get; }
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// ToString override
         /// </summary>
         /// <returns>String value</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{typeof(LineDebuggerState).FullName}({_scope})";
         }

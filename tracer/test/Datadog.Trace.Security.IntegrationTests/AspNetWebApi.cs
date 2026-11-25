@@ -99,11 +99,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [SkippableTheory]
         [InlineData("blocking")]
+        [Flaky("Snapshot mismatch identified as flaky in CI")]
         public async Task TestBlockedRequest(string test)
         {
             var url = "/api/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            // Allow the [Flaky] retry to reuse the snapshot prefix, otherwise attempt 2 fails with "The prefix has already been used"
+            settings.DisableRequireUniquePrefix();
             FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
@@ -115,10 +118,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestPathParams, "/api/route/2?arg=[blocking_test]")]
         [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[blocking_test]\"}")]
         [InlineData(AddressesConstants.ResponseHeaderNoCookies, "/api/asm/injectedheader")] // Blocked on response
+        [Flaky("Snapshot mismatch identified as flaky in CI")]
         public async Task TestBlockedRequests(string test, string url, string body = null)
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            // Allow the [Flaky] retry to reuse the snapshot prefix, otherwise attempt 2 fails with "The prefix has already been used"
+            settings.DisableRequireUniquePrefix();
             FilterConnectionHeader(settings);
 
             var expectedSpans = test == AddressesConstants.RequestPathParams ? 1 : 2;

@@ -41,7 +41,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [PackageVersionData(nameof(PackageVersions.CosmosDb))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
-            var expectedSpanCount = 14;
+            // CRUD instrumentation starts at 3.12.0; the default sample uses 3.18.0.
+            var supportsCrud = string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version(3, 12, 0);
+            var expectedSpanCount = supportsCrud ? 26 : 14;
+            var snapshotSuffix = supportsCrud ? string.Empty : ".Pre_3_12_0";
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
@@ -57,8 +60,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}")
                                   .DisableRequireUniquePrefix();
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);

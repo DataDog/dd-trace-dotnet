@@ -113,6 +113,7 @@ internal static class MsTestIntegration
 
         var test = startDate is null ? suite.CreateTest(testName) : suite.CreateTest(testName, startDate.Value);
         var testTags = test.GetTags();
+        TestAutomationExclusions.From(testMethod).ApplyTo(testTags);
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -292,7 +293,7 @@ internal static class MsTestIntegration
             includeMetadataTestNameInFingerprint: false,
             useParameterIndexForUnnamedParameters: true);
         traits ??= GetTraits(testMethod);
-        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isUnskippable = traits?.ContainsKey(IntelligentTestRunnerTags.UnskippableTraitName) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;
         var shouldSkip = itrShouldSkip && !isUnskippable;
         skippableTest = shouldSkip ? matchedSkippableTest : null;
@@ -356,7 +357,7 @@ internal static class MsTestIntegration
         var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
         var testClass = testMethodInfo.TestClassName ?? string.Empty;
         var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
-        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
+        return TestAutomationExclusions.From(testMethodInfo.MethodInfo).ApplyTo(testManagementFeature.GetTestProperties(testModule, testClass, testMethod));
     }
 
     internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)

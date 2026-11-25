@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         internal static string GetRawCommand(byte[][] cmdWithBinaryArgs)
         {
             return string.Join(
-                " ",
+                ' ',
                 cmdWithBinaryArgs.Select(
                     bs =>
                     {

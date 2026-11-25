@@ -394,13 +394,13 @@ namespace Datadog.Trace.DuckTyping
 #else
                 assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
 #endif
-                assembly = assembly.Replace(".", "_").Replace("+", "__");
+                assembly = assembly.Replace('.', '_').Replace("+", "__");
             }
 
             // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
             // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
             var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
-            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace('.', '_').Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace('.', '_').Replace("+", "__")}";
 
             // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
             var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (parentType == typeToDeriveFrom)
             {
-                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.Where(pCtor => pCtor.GetParameters().Length == 0).FirstOrDefault();
+                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.FirstOrDefault(pCtor => pCtor.GetParameters().Length == 0);
                 if (proxyCtor != null)
                 {
                     ctorIL.Emit(OpCodes.Ldarg_0);
@@ -515,37 +515,103 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldflda, instanceField);
             il.Emit(OpCodes.Ret);
 
-            var toStringTargetType = targetType.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes);
-            if (toStringTargetType is not null)
+            var toStringTargetMethod = GetToStringTargetMethod(targetType);
+
+            MethodAttributes toStringMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
+            if (proxyTypeBuilder.BaseType?.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes)?.IsFinal == true)
             {
-                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(nameof(IDuckType.ToString), toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
-                il = toStringMethod.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
-                if (instanceType.IsValueType)
-                {
-                    il.Emit(OpCodes.Ldflda, instanceField);
-                    il.Emit(OpCodes.Constrained, targetType);
-                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
-                }
-                else
-                {
-                    il.Emit(OpCodes.Ldfld, instanceField);
-                    il.Emit(OpCodes.Dup);
-                    var lblTrue = il.DefineLabel();
-                    il.Emit(OpCodes.Brtrue_S, lblTrue);
-
-                    il.Emit(OpCodes.Pop);
-                    il.Emit(OpCodes.Ldnull);
-                    il.Emit(OpCodes.Ret);
-
-                    il.MarkLabel(lblTrue);
-                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
-                }
-
-                il.Emit(OpCodes.Ret);
+                // A sealed ToString on the proxy base cannot be overridden. A new virtual slot keeps the
+                // generated type loadable while preserving the base method for direct virtual dispatch.
+                toStringMethodAttributes |= MethodAttributes.NewSlot;
             }
 
+            MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(
+                nameof(IDuckType.ToString),
+                toStringMethodAttributes,
+                typeof(string),
+                Type.EmptyTypes);
+            il = toStringMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            if (instanceType.IsValueType)
+            {
+                il.Emit(OpCodes.Ldflda, instanceField);
+                il.Emit(OpCodes.Constrained, targetType);
+                il.EmitCall(OpCodes.Callvirt, toStringTargetMethod, null);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(OpCodes.Dup);
+                var lblTrue = il.DefineLabel();
+                il.Emit(OpCodes.Brtrue_S, lblTrue);
+
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Ldnull);
+                il.Emit(OpCodes.Ret);
+
+                il.MarkLabel(lblTrue);
+                il.EmitCall(OpCodes.Callvirt, toStringTargetMethod, null);
+            }
+
+            il.Emit(OpCodes.Ret);
+
             return instanceField;
+        }
+
+        private static MethodInfo GetToStringTargetMethod(Type targetType)
+        {
+            // Type.GetMethod cannot express both a zero generic arity and an empty parameter list on every
+            // target framework supported by the tracer. Without the generic arity check it can select an open
+            // ToString<T>() method, or throw AmbiguousMatchException when generic and non-generic overloads
+            // coexist. Emitting a call to the open method produces invalid IL.
+            //
+            // GetMember limits the allocation and subsequent checks to methods named ToString. Select the
+            // parameterless, closed candidate declared by the most-derived type. If that candidate does not
+            // return string, use Object.ToString instead; virtual dispatch will still reach a valid override.
+            MethodInfo? toStringTargetMethod = null;
+            var toStringMembers = targetType.GetMember(
+                nameof(IDuckType.ToString),
+                MemberTypes.Method,
+                BindingFlags.Public | BindingFlags.Instance);
+
+            for (var i = 0; i < toStringMembers.Length; i++)
+            {
+                var candidate = (MethodInfo)toStringMembers[i];
+                if (candidate.ContainsGenericParameters || candidate.GetParameters().Length != 0)
+                {
+                    continue;
+                }
+
+                if (toStringTargetMethod is null)
+                {
+                    toStringTargetMethod = candidate;
+                    continue;
+                }
+
+                var selectedDeclaringType = toStringTargetMethod.DeclaringType;
+                var candidateDeclaringType = candidate.DeclaringType;
+
+                // Multiple methods with the same name, generic arity, and parameters can only differ by return
+                // type in metadata. Such a signature cannot be selected unambiguously from C#, so use the
+                // standard virtual ToString slot instead of relying on reflection enumeration order.
+                if (selectedDeclaringType == candidateDeclaringType)
+                {
+                    return _objectToStringMethodInfo;
+                }
+
+                if (selectedDeclaringType?.IsAssignableFrom(candidateDeclaringType) == true)
+                {
+                    toStringTargetMethod = candidate;
+                }
+                else if (candidateDeclaringType?.IsAssignableFrom(selectedDeclaringType) != true)
+                {
+                    return _objectToStringMethodInfo;
+                }
+            }
+
+            return toStringTargetMethod?.ReturnType == typeof(string)
+                       ? toStringTargetMethod
+                       : _objectToStringMethodInfo;
         }
 
         private static DuckTypeCustomAttributeHasNamedArgumentsException? AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
@@ -607,7 +673,7 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.All(i => i.Name != p.Name));
+                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.TrueForAll(i => i.Name != p.Name));
                 selectedProperties.AddRange(newProps);
             }
         }
@@ -668,13 +734,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
                 // Ignore the properties marked with `DuckIgnore` attribute
-                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
 
                 // Check if proxy is a reverse method (shouldn't be called from here)
-                if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     return DuckTypeIncorrectReversePropertyUsageException.Create(proxyProperty);
                 }
@@ -875,7 +941,7 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo implementationProperty in delegationTypeProperties)
             {
                 // Ignore methods without a `DuckReverse` attribute
-                if (implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (!implementationProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     continue;
                 }
@@ -1010,7 +1076,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyFieldInfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
@@ -1207,7 +1273,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (finfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }

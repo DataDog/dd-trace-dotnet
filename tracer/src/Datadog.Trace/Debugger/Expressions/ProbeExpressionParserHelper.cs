@@ -31,12 +31,12 @@ internal static class ProbeExpressionParserHelper
             if (methodIdentifier.GenericArguments != null)
             {
                 method = methodIdentifier.Type.GetMethods(bindingFlags).
-                                          Where(m =>
+                                          SingleOrDefault(m =>
                                                     m.Name == methodIdentifier.MethodName &&
                                                     m.GetParameters().Length == methodIdentifier.Parameters.Length &&
                                                     m.ContainsGenericParameters &&
-                                                    m.GetGenericArguments().Length == methodIdentifier.GenericArguments.Length).
-                                          SingleOrDefault(m => ParameterTypesMatch(m, methodIdentifier.Parameters, methodIdentifier.GenericArguments));
+                                                    m.GetGenericArguments().Length == methodIdentifier.GenericArguments.Length &&
+                                                    ParameterTypesMatch(m, methodIdentifier.Parameters, methodIdentifier.GenericArguments));
 
                 method = method?.MakeGenericMethod(methodIdentifier.GenericArguments);
             }

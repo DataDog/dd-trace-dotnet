@@ -23,7 +23,7 @@ partial class Build
                 TracerDirectory,
                 ArtifactsDirectory,
                 BuildDataDirectory,
-                Version,
+                FullVersion,
                 GetDotnetSdkImageTag(RootDirectory));
         });
 

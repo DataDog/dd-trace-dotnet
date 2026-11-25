@@ -83,11 +83,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Finalizes an instance of the <see cref="Tracer"/> class.
         /// </summary>
+#pragma warning disable MA0055 // Do not use finalizer - keeps the live-tracer count reported by the heartbeat gauge accurate
         ~Tracer()
         {
             // update the count of Tracer instances
             Interlocked.Decrement(ref _liveTracerCount);
         }
+#pragma warning restore MA0055
 
         /// <summary>
         /// Gets the global <see cref="Tracer"/> instance.
@@ -267,11 +269,17 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Forces the tracer to immediately flush pending traces and send them to the agent.
+        /// Forces the tracer to immediately flush pending traces and feature-flag evaluation events to the agent.
+        /// The feature-flag flush waits up to ten seconds; delivery continues in the background if it times out.
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        public Task FlushAsync() => TracerManager.AgentWriter.FlushTracesAsync();
+        public Task FlushAsync()
+        {
+            var manager = TracerManager;
+            var traces = manager.AgentWriter.FlushTracesAsync();
+            return manager.FeatureFlags is { } flags ? Task.WhenAll(traces, flags.FlushAsync()) : traces;
+        }
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.

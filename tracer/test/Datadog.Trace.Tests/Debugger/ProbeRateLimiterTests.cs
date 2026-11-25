@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -22,17 +24,43 @@ public class ProbeRateLimiterTests
         try
         {
             var initial = new AdaptiveSampler(Timeout.InfiniteTimeSpan, samplesPerWindow: 1, averageLookback: 180, budgetLookback: 16, rollWindowCallback: null);
-            Assert.True(limiter.TryAddSampler(probeId, initial));
+            limiter.TryAddSampler(probeId, initial).Should().BeTrue();
 
             // SetRate must mutate in place; replacing would wipe running EMAs.
-            limiter.SetRate(probeId, samplesPerSecond: 100);
+            limiter.SetRate(probeId, snapshotsPerSecond: 100);
             var afterUpdate = limiter.GerOrAddSampler(probeId);
 
-            Assert.Same(initial, afterUpdate);
+            afterUpdate.Should().BeSameAs(initial);
 
             // Budget = samplesPerWindow + (budgetLookback * samplesPerWindow); budgetLookback = 16.
             var state = ((AdaptiveSampler)afterUpdate).GetInternalState();
-            Assert.Equal(expected: 100 + (16 * 100), state.Budget);
+            state.Budget.Should().Be(100 + (16 * 100));
+        }
+        finally
+        {
+            limiter.ResetRate(probeId);
+        }
+    }
+
+    [Fact]
+    public void SetRate_RateBelowOnePerSecond_UpdatesExistingSamplerInPlace()
+    {
+        var limiter = new ProbeRateLimiter(AdaptiveSamplerLifetime.Create);
+        const string probeId = "below-one-per-second";
+
+        try
+        {
+            limiter.SetRate(probeId, 1.0 / 3600);
+            var sampler = (AdaptiveSampler)limiter.GerOrAddSampler(probeId);
+            sampler.GetInternalState().SampleInterval.Should().Be(Stopwatch.Frequency * 3600);
+
+            limiter.SetRate(probeId, 1.0 / 300);
+
+            // ProbeData caches the sampler, so the new rate must apply to the same instance.
+            limiter.GerOrAddSampler(probeId).Should().BeSameAs(sampler);
+            sampler.GetInternalState().SampleInterval.Should().Be(Stopwatch.Frequency * 300);
+            sampler.Sample().Should().BeTrue();
+            sampler.Sample().Should().BeFalse();
         }
         finally
         {
@@ -109,7 +137,7 @@ public class ProbeRateLimiterTests
     {
         public List<TestAdaptiveSampler> Samplers { get; } = [];
 
-        public IAdaptiveSampler Create(int samplesPerSecond)
+        public IAdaptiveSampler Create(double snapshotsPerSecond)
         {
             var sampler = new TestAdaptiveSampler();
             Samplers.Add(sampler);

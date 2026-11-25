@@ -35,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string EtwReplayEndpoint = "DD_INTERNAL_ETW_REPLAY_ENDPOINT";
         public const string SsiTelemetryEnabled = "DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED";
         public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
-        public const string HttpProfilingEnabled = "DD_INTERNAL_PROFILING_HTTP_ENABLED";
+        public const string HttpProfilingEnabled = "DD_PROFILING_HTTP_ENABLED";
         public const string HttpRequestDurationThreshold = "DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD";
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
         public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
@@ -48,5 +48,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string UseManagedCodeCache = "DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE";
         public const string MemoryFootprintEnabled = "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED";
         public const string LibrariesInfoCacheStartTimeout = "DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT";
+        public const string WatcherStartTimeout = "DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT";
     }
 }

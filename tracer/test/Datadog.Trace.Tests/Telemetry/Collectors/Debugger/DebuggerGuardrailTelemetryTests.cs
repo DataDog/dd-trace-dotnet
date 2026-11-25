@@ -66,7 +66,7 @@ public class DebuggerGuardrailTelemetryTests
         {
             metrics.Should().HaveCount(32);
             metrics.Should().OnlyContain(
-                metric => metric.Namespace == MetricNamespaceConstants.LiveDebugger
+                metric => metric.Namespace == MetricNamespaceConstants.Debugger
                        && metric.Common
                        && metric.Type == TelemetryMetricType.Count
                        && metric.Points.Count == 1

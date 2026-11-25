@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
@@ -117,7 +118,9 @@ namespace Datadog.Trace.Debugger
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled || IsDisposed)
+            var enabled = _settings.DynamicInstrumentationCanBeEnabled
+                       && (_settings.DynamicSettings.DynamicInstrumentationEnabled ?? _settings.DynamicInstrumentationEnabled);
+            if (!enabled || IsDisposed)
             {
                 return;
             }
@@ -317,8 +320,8 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             SetRateLimit(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
                                             // Unbound line probes remain retryable on future assembly loads. Some retryable
@@ -356,8 +359,8 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                         SetRateLimit(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                     }
 
                                     break;
@@ -394,12 +397,17 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Registers the probe's sampler. Call it before the processor is registered: a probe added again with the id of a removed one
+        /// can be hit as soon as its processor exists, by a method still running the removed probe's instrumentation, and that hit
+        /// would otherwise cache a default-rate sampler (see <see cref="ProbeDataCollection.TryCreateProbeDataIfNotExists"/>).
+        /// </summary>
         private static void SetRateLimit(ProbeDefinition probe)
         {
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, sampling.SnapshotsPerSecond);
                     break;
                 case LogProbe logProbe:
                     ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
@@ -495,9 +503,6 @@ namespace Datadog.Trace.Debugger
                         _unboundProbes.RemoveAll(pd => pd.Id == id);
                         _lastReportedUnboundProbeErrors.Remove(id);
 
-                        ProbeRateLimiter.Instance.ResetRate(id);
-                        ProbeExpressionsProcessor.Instance.Remove(id);
-
                         if (boundedProbes.Contains(id))
                         {
                             probesToRemoveFromNative.Add(id);
@@ -509,16 +514,66 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (probesToRemoveFromNative.Count != 0)
+                try
                 {
-                    var revertProbes = probesToRemoveFromNative
-                       .Select(probeId => new NativeRemoveProbeRequest(probeId));
+                    if (probesToRemoveFromNative.Count != 0)
+                    {
+                        var revertProbes = probesToRemoveFromNative
+                           .Select(probeId => new NativeRemoveProbeRequest(probeId));
 
-                    _instrumentProbes([], [], [], revertProbes.ToArray());
+                        _instrumentProbes([], [], [], revertProbes.ToArray());
+                    }
+                }
+                finally
+                {
+                    RemoveManagedProbeState(removedProbesIds);
                 }
 
                 // This log entry is being checked in integration test
                 Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
+            }
+        }
+
+        /// <summary>
+        /// Removes the processors, cached probe data and samplers of these probes. Methods that were already running when their
+        /// instrumentation was reverted keep calling it, so the order matters:
+        /// 1. Remove the processors, so these calls can't cache a new entry for a removed probe.
+        /// 2. Clear the cached entries (see <see cref="ProbeDataCollection.RemoveProbes"/>).
+        /// 3. Dispose the samplers, once no new entry can pick them up.
+        /// </summary>
+        private static void RemoveManagedProbeState(string[] probeIds)
+        {
+            foreach (var id in probeIds)
+            {
+                try
+                {
+                    ProbeExpressionsProcessor.Instance.Remove(id);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing the processor of probe {ID}", id);
+                }
+            }
+
+            try
+            {
+                ProbeDataCollection.Instance.RemoveProbes(probeIds);
+            }
+            catch (Exception e)
+            {
+                Log.Error<int>(e, "Error clearing the cached probe data of {Count} removed probes", probeIds.Length);
+            }
+
+            foreach (var id in probeIds)
+            {
+                try
+                {
+                    ProbeRateLimiter.Instance.ResetRate(id);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing the sampler of probe {ID}", id);
+                }
             }
         }
 
@@ -697,8 +752,8 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                         SetRateLimit(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                     }
 
                     _instrumentProbes([], lineProbes.ToArray(), [], []);
@@ -749,7 +804,7 @@ namespace Datadog.Trace.Debugger
                 {
                     switch (namedRawFile.Path.Id)
                     {
-                        case { } id when id.StartsWith(DefinitionPaths.LogProbe):
+                        case { } id when id.StartsWithOrdinal(DefinitionPaths.LogProbe):
                             var logProbes = namedRawFile.Deserialize<LogProbe>().TypedFile;
                             if (logProbes != null)
                             {
@@ -757,7 +812,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.MetricProbe):
+                        case { } id when id.StartsWithOrdinal(DefinitionPaths.MetricProbe):
                             var metricProbes = namedRawFile.Deserialize<MetricProbe>().TypedFile;
                             if (metricProbes != null)
                             {
@@ -765,7 +820,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.SpanDecorationProbe):
+                        case { } id when id.StartsWithOrdinal(DefinitionPaths.SpanDecorationProbe):
                             var spanDecorationProbes = namedRawFile.Deserialize<SpanDecorationProbe>().TypedFile;
                             if (spanDecorationProbes != null)
                             {
@@ -773,7 +828,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
+                        case { } id when id.StartsWithOrdinal(DefinitionPaths.SpanProbe):
                             var spanProbes = namedRawFile.Deserialize<SpanProbe>().TypedFile;
                             if (spanProbes != null)
                             {
@@ -781,7 +836,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
+                        case { } id when id.StartsWithOrdinal(DefinitionPaths.ServiceConfiguration):
                             serviceConfig = namedRawFile.Deserialize<ServiceConfiguration>().TypedFile;
                             break;
                         default:
@@ -820,7 +875,7 @@ namespace Datadog.Trace.Debugger
 
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
+                    var config = configs.Find(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
                     if (config != null)
                     {
                         result.Add(
@@ -987,6 +1042,32 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Removes the instrumentation of every probe this instance installed, then disposes it.
+        /// Used when Dynamic Instrumentation is turned off at runtime, otherwise the instrumented methods keep running
+        /// probe code (for example, span probes keep creating spans) while it is off.
+        /// Process shutdown only calls <see cref="Dispose"/>, as reverting there would only add ReJIT work.
+        /// </summary>
+        internal void RemoveProbesAndDispose()
+        {
+            // Holding the lock until the instance is disposed keeps a concurrent probe update from instrumenting a method after the removal.
+            lock (_instanceLock)
+            {
+                try
+                {
+                    UpdateRemovedProbeInstrumentations(_probeStatusPoller.GetBoundedProbes());
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing probes while disabling Dynamic Instrumentation");
+                }
+                finally
+                {
+                    SafeDisposal.TryDispose(this);
+                }
+            }
+        }
+
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
@@ -1012,7 +1093,7 @@ namespace Datadog.Trace.Debugger
                             .DisposeAll();
             }
 
-            _dogStats?.DisposeAsync().ContinueWith(
+            _ = _dogStats?.DisposeAsync().ContinueWith(
                 t => Log.Error(t.Exception, "Error waiting for StatsD disposal"),
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted,

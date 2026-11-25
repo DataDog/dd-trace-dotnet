@@ -7,11 +7,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.SourceGenerators;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -24,7 +26,25 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    private static readonly ConditionalWeakTable<ImmutableMetadata, ResultState> Results = new();
+    private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
+    private static readonly object BoxedTrue = true;
+    private static readonly object BoxedFalse = false;
+
+    // Set by the first ExposureHook. Until then, skip work that only ExposureHook needs.
+    private static volatile bool _exposureHookCreated;
+
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
+
+    internal static bool ExposureHookCreated => _exposureHookCreated;
+
+    // Lets tests reset the process-wide flag.
+    [TestingOnly]
+    internal static bool ExposureHookCreatedForTests
+    {
+        get => _exposureHookCreated;
+        set => _exposureHookCreated = value;
+    }
 
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
@@ -35,6 +55,32 @@ internal static class FeatureFlagsSdk
     /// <returns> True when the span-enrichment gate is on </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static bool IsSpanEnrichmentEnabled() => false;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool IsEvaluationEventsEnabled() => false;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanEnqueueEVP() => false;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanEnqueueEVPWithFeatures() => false;
+
+    // Called only when the split has EVALUATION features: the ninth argument takes CallTarget's
+    // allocating slow path, which every other evaluation avoids by calling EnqueueEVP.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVPWithFeatures(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, IReadOnlyDictionary<string, object?>? features, int flags)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void RecordEVPHookError()
+    {
+    }
 
     /// <summary>
     /// Gets a value indicating whether flag configuration is currently held, so the provider can
@@ -61,6 +107,41 @@ internal static class FeatureFlagsSdk
     {
     }
 
+    /// <summary> Hands a provider's flag selection to the tracer, which claims it for the process </summary>
+    /// <param name="tags"> The selected tags, or <c>null</c> when none are set </param>
+    /// <param name="keyPatterns"> The selected key patterns, or <c>null</c> when none are set </param>
+    /// <returns> False with a tracer that predates flag selection, which then loads every flag </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool SetFlagSelection(string?[]? tags, string?[]? keyPatterns) => false;
+
+    /// <summary> Releases the claim <see cref="SetFlagSelection"/> made, once the provider is shut down or disposed </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void ReleaseFlagSelection()
+    {
+    }
+
+    /// <summary>Gets a value indicating whether the tracer supports <see cref="EvaluateDeferred"/> and <see cref="CommitExposure"/>.</summary>
+    /// <returns> True when the tracer intercepts both </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanDeferExposures() => false;
+
+    // Like Evaluate, but the tracer keeps the exposure pending instead of recording and sending it.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static IEvaluation? EvaluateDeferred(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+    {
+        if (flagKey is null)
+        {
+            throw new ArgumentNullException(nameof(flagKey));
+        }
+
+        return null;
+    }
+
+    // Takes the metadata dictionary instance that EvaluateDeferred returned: the tracer finds the
+    // pending exposure by that reference, so a copy would commit nothing.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static int CommitExposure(IDictionary<string, string> evaluationMetadata) => ExposureCommitResult.NothingPending;
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static IEvaluation? Evaluate(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
     {
@@ -84,13 +165,32 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate, FlagEvalEVPHook? evaluationEventsHook, bool deferredExposure)
     {
+        long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
-        return GetResolutionDetails(flagKey, defaultValue, evaluation);
+        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
+        evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
+        // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
+        // Only ExposureHook reads it, and only for exposures.
+        if (_exposureHookCreated && context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
+        {
+            Results.GetValue(metadata, static _ => new ResultState(null, null, null)).EvaluatedContext = context;
+        }
+
+        return resolution;
+    }
+
+    internal static void OnExposureHookCreated()
+    {
+        // Write once: every Resolve reads this flag.
+        if (!_exposureHookCreated)
+        {
+            _exposureHookCreated = true;
+        }
     }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
@@ -112,7 +212,47 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    /// <summary>
+    /// The selected split's HOOK-destination features associated with a result's metadata, for
+    /// <see cref="ExposureHook"/>. OpenFeature metadata has no enumeration API, so the provider
+    /// records the typed map beside the result it built; the entry dies with the result.
+    /// </summary>
+    [TestingOnly]
+    internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
+        => GetResult(metadata)?.HookFeatures;
+
+    /// <summary>The selected split's EVALUATION-destination features, for evaluation counts.</summary>
+    internal static IReadOnlyDictionary<string, object?>? GetEvaluationFeatures(ImmutableMetadata? metadata)
+        => GetResult(metadata)?.EvaluationFeatures;
+
+    /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
+    [TestingOnly]
+    internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
+        => GetResult(metadata)?.EvaluatedContext;
+
+    /// <summary>
+    /// The state recorded beside a result, or null. One lookup serves all <see cref="ExposureHook"/> reads
+    /// (each lookup locks on .NET Framework).
+    /// </summary>
+    internal static ResultState? GetResult(ImmutableMetadata? metadata)
+        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state : null;
+
+    /// <summary>
+    /// Commits the exposure that a deferred evaluation left pending, at most once per result, and keeps
+    /// the verdict for <see cref="ResultState.TryGetCommittedVerdict"/>.
+    /// </summary>
+    internal static void CommitPendingExposure(ImmutableMetadata? metadata, Func<IDictionary<string, string>, int> commit)
+    {
+        if (metadata is null || !Results.TryGetValue(metadata, out var state)
+            || Interlocked.Exchange(ref state.PendingExposure, null) is not { } evaluationMetadata)
+        {
+            return;
+        }
+
+        state.ExposureVerdict = commit(evaluationMetadata);
+    }
+
+    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure)
     {
         // OpenFeature substitutes the caller's default only when a provider throws. This provider
         // reports errors as details instead, so every error must carry the default itself.
@@ -125,7 +265,7 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        null);
+                        ToMetadata(null, evalTimeMs, false));
         }
 
         var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
@@ -139,7 +279,7 @@ internal static class FeatureFlagsSdk
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata));
+            ToMetadata(evaluation.FlagMetadata, evalTimeMs, deferredExposure));
         return res;
     }
 
@@ -174,10 +314,150 @@ internal static class FeatureFlagsSdk
         _ => "unknown"
     };
 
-    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
+    private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs, bool deferredExposure)
     {
-        var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
-        return new ImmutableMetadata(dic);
+        if (metadata is null && evalTimeMs is null)
+        {
+            return null;
+        }
+
+        var dic = new Dictionary<string, object>();
+        Dictionary<string, object>? hookFeatures = null;
+        Dictionary<string, object?>? evaluationFeatures = null;
+        if (metadata is not null)
+        {
+            var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
+            foreach (var pair in metadata)
+            {
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                {
+                    continue;
+                }
+
+                if (FeaturePrefixOf(pair.Key) is not { } prefix)
+                {
+                    dic[pair.Key] = ConvertMetadataValue(pair.Key, pair.Value);
+                    continue;
+                }
+
+                var featureKey = pair.Key.Substring(prefix.Length);
+                var converted = ConvertFeatureValue(pair.Value, featureTypes is not null && featureTypes.TryGetValue(featureKey, out var type) ? type : '\0');
+                dic[pair.Key] = converted;
+                if (prefix == FeatureFlagMetadataKeys.FeaturePrefix)
+                {
+                    hookFeatures ??= new Dictionary<string, object>();
+                    hookFeatures[featureKey] = converted;
+                }
+                else if (prefix == FeatureFlagMetadataKeys.EvaluationFeaturePrefix)
+                {
+                    evaluationFeatures ??= new Dictionary<string, object?>();
+                    evaluationFeatures[featureKey] = converted;
+                }
+            }
+        }
+
+        if (evalTimeMs is { } time)
+        {
+            dic[FeatureFlagMetadataKeys.ObserveFullEvaluationData] =
+                metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var consent) && consent == "true";
+            // OpenFeature exposes numeric metadata as int or double. Epoch milliseconds are exact as a double.
+            dic[FeatureFlagMetadataKeys.EvaluationTimestampMs] = (double)time;
+        }
+        else
+        {
+            // The evaluator still captures consent, but no EVP hook consumes these private fields.
+            dic.Remove(FeatureFlagMetadataKeys.ObserveFullEvaluationData);
+            dic.Remove(FeatureFlagMetadataKeys.EvaluationTimestampMs);
+        }
+
+        var immutable = new ImmutableMetadata(dic);
+        // Keeps the tracer's own dictionary instance, not a copy, for CommitExposure.
+        var pendingExposure = deferredExposure && metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"
+                                  ? metadata
+                                  : null;
+        if (hookFeatures is not null || evaluationFeatures is not null || pendingExposure is not null)
+        {
+            Results.Add(immutable, new ResultState(hookFeatures, evaluationFeatures, pendingExposure));
+        }
+
+        return immutable;
+    }
+
+    /// <summary>The selected split's serial id, or null when the metadata has none.</summary>
+    internal static long? GetSplitSerialId(ImmutableMetadata? metadata)
+        // The int holds the uint32 bits.
+        => metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } serialBits ? unchecked((uint)serialBits) : null;
+
+    // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
+    // typed values, so the known non-feature keys are converted here. Features go through ConvertFeatureValue.
+    private static object ConvertMetadataValue(string key, string value)
+    {
+        if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
+        {
+            return value == "true" ? BoxedTrue : BoxedFalse;
+        }
+
+        if (key == FeatureFlagMetadataKeys.SplitSerialId
+            && long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var serialId))
+        {
+            // The serial id comes from a uint32 configuration value; the int form preserves its bits.
+            return unchecked((int)serialId);
+        }
+
+        return value;
+    }
+
+    private static string? FeaturePrefixOf(string metadataKey)
+    {
+        foreach (var prefix in FeaturePrefixes)
+        {
+            if (metadataKey.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return prefix;
+            }
+        }
+
+        return null;
+    }
+
+    // A value is a boolean or a number only when the tracer listed it as one, so a string feature
+    // whose value looks like a boolean or a number stays a string.
+    private static object ConvertFeatureValue(string value, char type) => type switch
+    {
+        'b' when value == "true" => true,
+        'b' when value == "false" => false,
+        'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
+        _ => value,
+    };
+
+    // Reads FeatureFlagMetadataKeys.FeatureTypes. A malformed item never fails the evaluation: an
+    // unknown type letter skips that item, and a broken length prefix ends parsing, so the remaining
+    // values stay strings.
+    private static Dictionary<string, char>? ParseFeatureTypes(string encoded)
+    {
+        Dictionary<string, char>? types = null;
+        var position = 0;
+        while (position < encoded.Length)
+        {
+            var colon = encoded.IndexOf(':', position);
+            if (colon <= position
+                || !int.TryParse(encoded.Substring(position, colon - position), NumberStyles.None, CultureInfo.InvariantCulture, out var length)
+                || length > encoded.Length - colon - 2)
+            {
+                break;
+            }
+
+            var key = encoded.Substring(colon + 1, length);
+            var type = encoded[colon + 1 + length];
+            position = colon + 2 + length;
+            if (type is 'b' or 'n')
+            {
+                types ??= new Dictionary<string, char>(StringComparer.Ordinal);
+                types[key] = type;
+            }
+        }
+
+        return types;
     }
 
     public static Value JsonToValue(object? obj)
@@ -219,5 +499,43 @@ internal static class FeatureFlagsSdk
     private static Value ConvertArray(object?[] array)
     {
         return new Value(array.Select(ConvertObject).ToList());
+    }
+
+    internal sealed class ResultState(IReadOnlyDictionary<string, object>? hookFeatures, IReadOnlyDictionary<string, object?>? evaluationFeatures, IDictionary<string, string>? pendingExposure)
+    {
+#pragma warning disable SA1401 // Fields should be private: exchanged atomically, so a commit runs at most once
+        internal IDictionary<string, string>? PendingExposure = pendingExposure;
+        internal volatile int ExposureVerdict = ExposureCommitResult.NothingPending;
+#pragma warning restore SA1401
+
+        internal IReadOnlyDictionary<string, object>? HookFeatures { get; } = hookFeatures;
+
+        internal IReadOnlyDictionary<string, object?>? EvaluationFeatures { get; } = evaluationFeatures;
+
+        // True when the commit decides this result's verdict.
+        internal bool OwesCommit { get; } = pendingExposure is not null;
+
+        internal EvaluationContext? EvaluatedContext { get; set; }
+
+        /// <summary>
+        /// Gets the committed verdict: false for new, true for repeat, null when not recorded. Returns false
+        /// when the result owed no commit; the caller then uses the stamp.
+        /// </summary>
+        internal bool TryGetCommittedVerdict(out bool? verdict)
+        {
+            if (!OwesCommit)
+            {
+                verdict = null;
+                return false;
+            }
+
+            verdict = ExposureVerdict switch
+            {
+                ExposureCommitResult.New => false,
+                ExposureCommitResult.Repeat => true,
+                _ => null,
+            };
+            return true;
+        }
     }
 }

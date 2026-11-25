@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
+                    (parent.ResourceName == commandText || commandText.StartsWithOrdinal(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 var dbmPropagationMode = tracer.Settings.DbmPropagationMode;
                 if (dbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
-                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                    var alreadyInjected = commandText.StartsWithOrdinal(DatabaseMonitoringPropagator.DbmPrefix) ||
                                           // if we appended the comment, we need to look for a potential DBM comment in the whole string.
                                           (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
                     if (alreadyInjected)
@@ -100,6 +100,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                                 command.CommandType,
                                 spanContext.RawSpanId,
                                 spanContext.RawTraceId);
+                        }
+                    }
+                    else if (integrationId == IntegrationId.Oracle && dbmPropagationMode == DbmPropagationLevel.Service && baseHash != null)
+                    {
+                        // With the service hash enabled, Oracle uses the session ACTION instead of a comment (no CommandText change).
+                        // The backend resolves the service from the span carrying the same hash, so only tag the span on success.
+                        if (DatabaseMonitoringPropagator.PropagateServiceHashViaOracleAction(command, baseHash))
+                        {
+                            tags.BaseHash = baseHash;
                         }
                     }
                     else
@@ -180,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
+                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf('.') + 1);
                     if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
@@ -189,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
 
                     const string commandSuffix = "Command";
-                    int lastIndex = commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal);
+                    int lastIndex = commandTypeFullName.LastIndexOf('.');
                     string namespaceName = lastIndex > 0 ? commandTypeFullName.Substring(0, lastIndex) : string.Empty;
                     integrationId = IntegrationId.AdoNet;
                     dbType = commandTypeName switch
@@ -201,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                             StringUtil.ToLowerInvariant(namespaceName.Substring(namespaceName.LastIndexOf('.') + 1)),
                         _ when commandTypeName == commandSuffix =>
                             StringUtil.ToLowerInvariant(namespaceName),
-                        _ when commandTypeName.EndsWith(commandSuffix) =>
+                        _ when commandTypeName.EndsWithOrdinal(commandSuffix) =>
                             StringUtil.ToLowerInvariant(commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length)),
                         _ => StringUtil.ToLowerInvariant(commandTypeName)
                     };

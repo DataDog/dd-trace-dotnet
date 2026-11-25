@@ -15,4 +15,5 @@ public:
 
     virtual void Register(ISamplesProvider* sampleProvider) = 0;
     virtual void RegisterBatchedProvider(IBatchedSamplesProvider* sampleProvider) = 0;
+    virtual void DrainSamples() = 0;
 };

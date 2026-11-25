@@ -125,10 +125,10 @@ namespace Datadog.Trace.Util.Http
             if (queryStringManager != null)
             {
                 queryString = queryStringManager.TruncateAndObfuscate(queryString);
-                return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}{queryString}";
+                return StringUtil.Invariant($"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? ":" : string.Empty)}{port}{pathBase}{path}{queryString}");
             }
 
-            return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}";
+            return StringUtil.Invariant($"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? ":" : string.Empty)}{port}{pathBase}{path}");
         }
 
         internal static string GetNormalizedHost(string? host) => StringUtil.IsNullOrEmpty(host) ? NoHostSpecified : host;

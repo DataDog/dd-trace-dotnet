@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -163,7 +164,7 @@ namespace Datadog.Trace.AppSec
             var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             if (!bodyType.GetTypeInfo().IsAnonymous())
             {
-                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
+                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWithOrdinal("__BackingField")).ToArray();
             }
 
             var fieldExtractors = new MemberExtractor[fields.Length];
@@ -187,7 +188,7 @@ namespace Datadog.Trace.AppSec
 #if NETFRAMEWORK
         private static MemberExtractor?[] CreateDataContractAwareExtractors(Type bodyType)
         {
-            return bodyType.GetCustomAttribute<DataContractAttribute>() is not null
+            return bodyType.HasCustomAttribute<DataContractAttribute>()
                 ? CreateDataContractExtractors(bodyType)
                 : CreateDataContractDefaultExtractors(bodyType);
         }
@@ -201,7 +202,7 @@ namespace Datadog.Trace.AppSec
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 if (property.GetIndexParameters().Length > 0
-                    || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                    || property.HasCustomAttribute<IgnoreDataMemberAttribute>()
                     || property.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember
                     || property.GetGetMethod(nonPublic: true) is not { } getter)
                 {
@@ -214,7 +215,7 @@ namespace Datadog.Trace.AppSec
 
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                if (field.HasCustomAttribute<IgnoreDataMemberAttribute>()
                     || field.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                 {
                     continue;
@@ -228,7 +229,7 @@ namespace Datadog.Trace.AppSec
             // Those are invisible to the non-DeclaredOnly queries above, so walk the hierarchy explicitly.
             for (var type = bodyType.BaseType; type is not null && type != typeof(object); type = type.BaseType)
             {
-                if (type.GetCustomAttribute<DataContractAttribute>() is null)
+                if (!type.HasCustomAttribute<DataContractAttribute>())
                 {
                     break;
                 }
@@ -238,7 +239,7 @@ namespace Datadog.Trace.AppSec
                     var getter = property.GetGetMethod(nonPublic: true);
                     if (getter?.IsPrivate is not true
                         || property.GetIndexParameters().Length > 0
-                        || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || property.HasCustomAttribute<IgnoreDataMemberAttribute>()
                         || property.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                     {
                         continue;
@@ -251,7 +252,7 @@ namespace Datadog.Trace.AppSec
                 foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
                     if (!field.IsPrivate
-                        || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || field.HasCustomAttribute<IgnoreDataMemberAttribute>()
                         || field.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                     {
                         continue;
@@ -292,7 +293,7 @@ namespace Datadog.Trace.AppSec
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
                 if (property.GetIndexParameters().Length > 0
-                    || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                    || property.HasCustomAttribute<IgnoreDataMemberAttribute>()
                     || property.GetGetMethod() is not { } getter
                     || (property.GetSetMethod() is null && !IsCollectionType(property.PropertyType)))
                 {
@@ -308,7 +309,7 @@ namespace Datadog.Trace.AppSec
             // but NOT public readonly (IsInitOnly) fields.
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public))
             {
-                if (field.IsInitOnly || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
+                if (field.IsInitOnly || field.HasCustomAttribute<IgnoreDataMemberAttribute>())
                 {
                     continue;
                 }
@@ -522,8 +523,8 @@ namespace Datadog.Trace.AppSec
                 // would be silently dropped (encoded as an empty string) by the modern WAF encoder.
                 var underlying = Enum.GetUnderlyingType(itemType);
                 return underlying == typeof(byte) || underlying == typeof(ushort) || underlying == typeof(uint) || underlying == typeof(ulong)
-                    ? (object)Convert.ToUInt64(value)
-                    : (object)Convert.ToInt64(value);
+                    ? (object)Convert.ToUInt64(value, CultureInfo.InvariantCulture)
+                    : (object)Convert.ToInt64(value, CultureInfo.InvariantCulture);
             }
 
 #if NETFRAMEWORK

@@ -39,6 +39,9 @@ namespace Datadog.Trace
 
         internal Scope Root => Parent?.Root ?? this;
 
+        public override string ToString()
+            => StringUtil.Invariant($"Scope(TraceId={Span.TraceId128}, SpanId={Span.SpanId})");
+
         /// <summary>
         /// Closes the current scope and makes its parent scope active
         /// </summary>

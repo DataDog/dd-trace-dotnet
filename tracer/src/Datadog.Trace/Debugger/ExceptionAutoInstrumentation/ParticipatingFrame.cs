@@ -29,7 +29,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         public ParticipatingFrame(StackFrame stackFrame, ParticipatingFrameState state)
-            : this(stackFrame.GetMethod() ?? throw new ArgumentNullException(nameof(stackFrame.GetMethod)), state, stackFrame.GetILOffset())
+            : this(stackFrame.GetMethod() ?? throw new ArgumentException("The stack frame has no method.", nameof(stackFrame)), state, stackFrame.GetILOffset())
         {
         }
 

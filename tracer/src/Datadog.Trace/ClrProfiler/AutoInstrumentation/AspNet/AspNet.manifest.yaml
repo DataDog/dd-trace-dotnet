@@ -1,0 +1,9 @@
+_v: 1
+name: AspNet
+display_name: ASP.NET
+description: Instruments inbound ASP.NET HTTP requests and optional application-security analysis.
+packages: []
+category:
+- http.server
+systems: []
+creation_date: '2019-03-07'

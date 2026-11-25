@@ -370,16 +370,15 @@ public class DynamicConfigurationManagerTests
     }
 
     [Fact]
-    public void CombineApmTracingConfiguration_WhenNewConfigIsProvided_ReplacesExistingConfigRegardlessOfRemovedConfig()
+    public void CombineApmTracingConfiguration_WhenNewConfigIsProvided_KeepsUnchangedConfigs()
     {
-        const string pathToRemove = "datadog/1/a/some-random-id/c";
-        const string expectedPath = "employee/1/other-ID/3";
-        var configToRemove = CreateConfig(pathToRemove);
-        var previous = CreateConfig(expectedPath);
-        var updated = CreateConfig(expectedPath); // different config for same id
+        const string updatedPath = "employee/1/other-ID/3";
+        var unchanged = CreateConfig("datadog/1/a/some-random-id/c");
+        var previous = CreateConfig(updatedPath);
+        var updated = CreateConfig(updatedPath); // different config for same id
         Dictionary<string, RemoteConfiguration> activeConfigs = new()
         {
-            { configToRemove.Path.Id, CreateConfig(pathToRemove) },
+            { unchanged.Path.Id, unchanged },
             { previous.Path.Id, previous },
         };
         Dictionary<string, List<RemoteConfiguration>> configByProduct = new()
@@ -388,7 +387,6 @@ public class DynamicConfigurationManagerTests
         };
         Dictionary<string, List<RemoteConfigurationPath>> removedConfigByProduct = new()
         {
-            // Note that we're _not_ explicitly removing the pathToRemove config, but as it's not in the "config by product", it gets removed
             { ProductName, [RemoteConfigurationPath.FromPath("datadog/2/dont/remove/me")] },
         };
 
@@ -399,22 +397,19 @@ public class DynamicConfigurationManagerTests
             removedConfigByProduct,
             applyDetails);
 
-        results.Should().BeEquivalentTo([updated]);
+        results.Should().BeEquivalentTo([unchanged, updated]);
         AssertApplyDetails(applyDetails, activeConfigs, configByProduct, removedConfigByProduct);
     }
 
     [Fact]
     public void CombineApmTracingConfiguration_WhenNewConfigIsProvided_OverwritesNewAndExistingConfig()
     {
-        const string pathToRemove = "datadog/1/a/some-random-id/c";
         const string expectedPath = "employee/1/other-ID/3";
-        var configToRemove = CreateConfig(pathToRemove);
         var previous = CreateConfig(expectedPath);
         var updated1 = CreateConfig(expectedPath); // different configs for same id
         var updated2 = CreateConfig(expectedPath); // different configs for same id
         Dictionary<string, RemoteConfiguration> activeConfigs = new()
         {
-            { configToRemove.Path.Id, CreateConfig(pathToRemove) },
             { previous.Path.Id, previous },
         };
         Dictionary<string, List<RemoteConfiguration>> configByProduct = new()
@@ -423,7 +418,6 @@ public class DynamicConfigurationManagerTests
         };
         Dictionary<string, List<RemoteConfigurationPath>> removedConfigByProduct = new()
         {
-            // Note that we're _not_ explicitly removing the pathToRemove config, but as it's not in the "config by product", it gets removed
             { ProductName, [RemoteConfigurationPath.FromPath("datadog/2/dont/remove/me")] },
         };
 

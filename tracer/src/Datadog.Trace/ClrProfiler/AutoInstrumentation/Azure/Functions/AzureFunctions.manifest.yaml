@@ -1,0 +1,16 @@
+_v: 1
+name: AzureFunctions
+display_name: Azure Functions
+description: Instruments Azure Functions invocations in the in-process and isolated worker models across HTTP, timer, queue,
+  Service Bus, Event Hubs, Blob, Cosmos DB, and Event Grid triggers, including Durable Functions orchestrations, activities,
+  and entities.
+packages:
+- name: Microsoft.Azure.Functions.Worker.Core
+- name: Microsoft.Azure.Functions.Worker.Extensions.DurableTask
+- name: Microsoft.Azure.WebJobs
+category:
+- faas
+- workflow.durable_execution
+systems:
+- azure.functions
+creation_date: '2021-09-22'

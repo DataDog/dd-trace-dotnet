@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Headers;
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Propagators
                     Log.Warning(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                     _firstWarning = false;
                 }
                 else
@@ -57,7 +58,7 @@ namespace Datadog.Trace.Propagators
                     Log.Debug(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                 }
             }
 
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Propagators
                 // Checking string[] allows to avoid the enumerator allocation.
                 foreach (string? headerValue in stringValues)
                 {
-                    if (int.TryParse(headerValue, out var result))
+                    if (int.TryParseInvariant(headerValue, out var result))
                     {
                         // note this int value may not be defined in the enum,
                         // but we should pass it along without validation
@@ -121,7 +122,7 @@ namespace Datadog.Trace.Propagators
                     Log.Warning(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                     _firstWarning = false;
                 }
                 else
@@ -129,7 +130,7 @@ namespace Datadog.Trace.Propagators
                     Log.Debug(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                 }
             }
 
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Propagators
 
                 foreach (string? headerValue in headerValues)
                 {
-                    if (int.TryParse(headerValue, out result))
+                    if (int.TryParseInvariant(headerValue, out result))
                     {
                         // note this int value may not be defined in the enum,
                         // but we should pass it along without validation

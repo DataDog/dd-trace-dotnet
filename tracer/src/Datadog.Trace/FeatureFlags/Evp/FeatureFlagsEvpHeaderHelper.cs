@@ -30,13 +30,13 @@ internal sealed class FeatureFlagsEvpHeaderHelper : HttpHeaderHelperBase
             .. AgentHttpHeaderNames.MinimalHeaders,
             new(EvpSubdomainHeader, EvpSubdomain),
             new(EvpOriginHeader, EvpOrigin),
-            new(EvpOriginVersionHeader, TracerConstants.ThreePartVersion),
+            new(EvpOriginVersionHeader, TracerConstants.SemanticVersion),
         ];
         HttpSerializedDefaultHeaders =
             $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}" +
             $"{EvpSubdomainHeader}: {EvpSubdomain}{DatadogHttpValues.CrLf}" +
             $"{EvpOriginHeader}: {EvpOrigin}{DatadogHttpValues.CrLf}" +
-            $"{EvpOriginVersionHeader}: {TracerConstants.ThreePartVersion}{DatadogHttpValues.CrLf}";
+            $"{EvpOriginVersionHeader}: {TracerConstants.SemanticVersion}{DatadogHttpValues.CrLf}";
     }
 
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }

@@ -50,12 +50,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IMessage msg, ITransportHeaders headers, Stream inputStream)
         {
-            if (Tracer.Instance.InternalActiveScope is var scope)
+            if (Tracer.Instance.InternalActiveScope is { } scope)
             {
                 return new CallTargetState(scope);
             }
 
-            return CallTargetState.GetDefault();
+            return new CallTargetState(Tracer.Instance.InternalActiveScope);
         }
 
         /// <summary>

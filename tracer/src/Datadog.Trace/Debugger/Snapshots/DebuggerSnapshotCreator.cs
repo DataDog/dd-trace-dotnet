@@ -45,6 +45,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string? _message;
         private List<EvaluationError>? _errors;
         private string? _snapshotId;
+        private long _timestampMs;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
         private bool _omitCaptureData;
         private uint _incompleteReasons;
@@ -364,7 +365,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteStartObject();
             _linesOpen = true;
 
-            JsonWriter.WritePropertyName(lineNumber.ToString());
+            JsonWriter.WritePropertyName(lineNumber.ToStringInvariant());
             JsonWriter.WriteStartObject();
             _lineNumberOpen = true;
         }
@@ -478,7 +479,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteValue(SnapshotId);
 
             JsonWriter.WritePropertyName("timestamp");
-            JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            JsonWriter.WriteValue(GetTimestampMs());
 
             JsonWriter.WritePropertyName("duration");
             JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
@@ -493,6 +494,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return this;
+        }
+
+        // The snapshot and root timestamps must have the same value, so read the clock only once per snapshot.
+        private long GetTimestampMs()
+        {
+            if (_timestampMs == 0)
+            {
+                _timestampMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
+
+            return _timestampMs;
         }
 
         private void CloseLocalsOrArgsIfOpen()
@@ -662,7 +674,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     ExitAsyncMethodStart(ref info);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -724,7 +736,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
         {
             _errors = evaluationResult.Errors;
-            _message = _errors?.FirstOrDefault(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
+            _message = _errors?.Find(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
             if (evaluationResult.HasConditionError)
             {
                 _omitCaptureData = true;
@@ -790,7 +802,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     EndAsyncLine(ref info);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -832,7 +844,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         CaptureBeginLine(ref captureInfo);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
+                        throw new InvalidOperationException($"Unexpected method state: {captureInfo.MethodState}");
                 }
 
                 CaptureScopeMembers(MethodScopeMembers?.Members);
@@ -1059,7 +1071,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
-                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWith("Datadog") == true).ToArray();
+                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWithOrdinal("Datadog") == true).ToArray();
 
             JsonWriter.WritePropertyName("stack");
             JsonWriter.WriteStartArray();
@@ -1142,6 +1154,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             JsonWriter.WritePropertyName("debugger.product");
             JsonWriter.WriteValue(DebuggerProduct);
+
+            // The logs intake takes the event date from the root timestamp.
+            JsonWriter.WritePropertyName("timestamp");
+            JsonWriter.WriteValue(GetTimestampMs());
 
             return this;
         }

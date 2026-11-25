@@ -20,17 +20,29 @@ namespace Datadog.Trace.Tagging
         // InstrumentationNameBytes = MessagePack.Serialize("component");
         private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
 
-        // ShortNameBytes = MessagePack.Serialize("aas.function.name");
-        private static ReadOnlySpan<byte> ShortNameBytes => [177, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101];
+        // AasShortNameBytes = MessagePack.Serialize("aas.function.name");
+        private static ReadOnlySpan<byte> AasShortNameBytes => [177, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101];
 
-        // FullNameBytes = MessagePack.Serialize("aas.function.method");
-        private static ReadOnlySpan<byte> FullNameBytes => [179, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100];
+        // AasFullNameBytes = MessagePack.Serialize("aas.function.method");
+        private static ReadOnlySpan<byte> AasFullNameBytes => [179, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100];
 
-        // BindingSourceBytes = MessagePack.Serialize("aas.function.binding");
-        private static ReadOnlySpan<byte> BindingSourceBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103];
+        // AasBindingSourceBytes = MessagePack.Serialize("aas.function.binding");
+        private static ReadOnlySpan<byte> AasBindingSourceBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103];
 
-        // TriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
-        private static ReadOnlySpan<byte> TriggerTypeBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114];
+        // AasTriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
+        private static ReadOnlySpan<byte> AasTriggerTypeBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114];
+
+        // AcaShortNameBytes = MessagePack.Serialize("aca.function.name");
+        private static ReadOnlySpan<byte> AcaShortNameBytes => [177, 97, 99, 97, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101];
+
+        // AcaFullNameBytes = MessagePack.Serialize("aca.function.method");
+        private static ReadOnlySpan<byte> AcaFullNameBytes => [179, 97, 99, 97, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100];
+
+        // AcaBindingSourceBytes = MessagePack.Serialize("aca.function.binding");
+        private static ReadOnlySpan<byte> AcaBindingSourceBytes => [180, 97, 99, 97, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103];
+
+        // AcaTriggerTypeBytes = MessagePack.Serialize("aca.function.trigger");
+        private static ReadOnlySpan<byte> AcaTriggerTypeBytes => [180, 97, 99, 97, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114];
 
         public override string? GetTag(string key)
         {
@@ -38,10 +50,14 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "aas.function.name" => ShortName,
-                "aas.function.method" => FullName,
-                "aas.function.binding" => BindingSource,
-                "aas.function.trigger" => TriggerType,
+                "aas.function.name" => AasShortName,
+                "aas.function.method" => AasFullName,
+                "aas.function.binding" => AasBindingSource,
+                "aas.function.trigger" => AasTriggerType,
+                "aca.function.name" => AcaShortName,
+                "aca.function.method" => AcaFullName,
+                "aca.function.binding" => AcaBindingSource,
+                "aca.function.trigger" => AcaTriggerType,
                 _ => base.GetTag(key),
             };
         }
@@ -51,16 +67,28 @@ namespace Datadog.Trace.Tagging
             switch(key)
             {
                 case "aas.function.name": 
-                    ShortName = value;
+                    AasShortName = value;
                     break;
                 case "aas.function.method": 
-                    FullName = value;
+                    AasFullName = value;
                     break;
                 case "aas.function.binding": 
-                    BindingSource = value;
+                    AasBindingSource = value;
                     break;
                 case "aas.function.trigger": 
-                    TriggerType = value;
+                    AasTriggerType = value;
+                    break;
+                case "aca.function.name": 
+                    AcaShortName = value;
+                    break;
+                case "aca.function.method": 
+                    AcaFullName = value;
+                    break;
+                case "aca.function.binding": 
+                    AcaBindingSource = value;
+                    break;
+                case "aca.function.trigger": 
+                    AcaTriggerType = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -84,24 +112,44 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (ShortName is not null)
+            if (AasShortName is not null)
             {
-                processor.Process(new TagItem<string>("aas.function.name", ShortName, ShortNameBytes));
+                processor.Process(new TagItem<string>("aas.function.name", AasShortName, AasShortNameBytes));
             }
 
-            if (FullName is not null)
+            if (AasFullName is not null)
             {
-                processor.Process(new TagItem<string>("aas.function.method", FullName, FullNameBytes));
+                processor.Process(new TagItem<string>("aas.function.method", AasFullName, AasFullNameBytes));
             }
 
-            if (BindingSource is not null)
+            if (AasBindingSource is not null)
             {
-                processor.Process(new TagItem<string>("aas.function.binding", BindingSource, BindingSourceBytes));
+                processor.Process(new TagItem<string>("aas.function.binding", AasBindingSource, AasBindingSourceBytes));
             }
 
-            if (TriggerType is not null)
+            if (AasTriggerType is not null)
             {
-                processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
+                processor.Process(new TagItem<string>("aas.function.trigger", AasTriggerType, AasTriggerTypeBytes));
+            }
+
+            if (AcaShortName is not null)
+            {
+                processor.Process(new TagItem<string>("aca.function.name", AcaShortName, AcaShortNameBytes));
+            }
+
+            if (AcaFullName is not null)
+            {
+                processor.Process(new TagItem<string>("aca.function.method", AcaFullName, AcaFullNameBytes));
+            }
+
+            if (AcaBindingSource is not null)
+            {
+                processor.Process(new TagItem<string>("aca.function.binding", AcaBindingSource, AcaBindingSourceBytes));
+            }
+
+            if (AcaTriggerType is not null)
+            {
+                processor.Process(new TagItem<string>("aca.function.trigger", AcaTriggerType, AcaTriggerTypeBytes));
             }
 
             base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
@@ -123,31 +171,59 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (ShortName is not null)
+            if (AasShortName is not null)
             {
                 sb.Append("aas.function.name (tag):")
-                  .Append(ShortName)
+                  .Append(AasShortName)
                   .Append(',');
             }
 
-            if (FullName is not null)
+            if (AasFullName is not null)
             {
                 sb.Append("aas.function.method (tag):")
-                  .Append(FullName)
+                  .Append(AasFullName)
                   .Append(',');
             }
 
-            if (BindingSource is not null)
+            if (AasBindingSource is not null)
             {
                 sb.Append("aas.function.binding (tag):")
-                  .Append(BindingSource)
+                  .Append(AasBindingSource)
                   .Append(',');
             }
 
-            if (TriggerType is not null)
+            if (AasTriggerType is not null)
             {
                 sb.Append("aas.function.trigger (tag):")
-                  .Append(TriggerType)
+                  .Append(AasTriggerType)
+                  .Append(',');
+            }
+
+            if (AcaShortName is not null)
+            {
+                sb.Append("aca.function.name (tag):")
+                  .Append(AcaShortName)
+                  .Append(',');
+            }
+
+            if (AcaFullName is not null)
+            {
+                sb.Append("aca.function.method (tag):")
+                  .Append(AcaFullName)
+                  .Append(',');
+            }
+
+            if (AcaBindingSource is not null)
+            {
+                sb.Append("aca.function.binding (tag):")
+                  .Append(AcaBindingSource)
+                  .Append(',');
+            }
+
+            if (AcaTriggerType is not null)
+            {
+                sb.Append("aca.function.trigger (tag):")
+                  .Append(AcaTriggerType)
                   .Append(',');
             }
 

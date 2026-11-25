@@ -1,0 +1,43 @@
+# Clones a branch of a git repository, retrying to ride out transient network failures (e.g. DNS).
+# git's own http.maxRetries only retries HTTP 429 responses, so connection failures need this loop.
+parameters:
+  - name: repository
+    type: string
+
+  - name: branch
+    type: string
+
+  - name: directory
+    type: string
+
+  - name: cloneArgs
+    type: string
+    default: '--depth 1'
+
+  - name: displayName
+    type: string
+    default: 'Clone repository'
+
+steps:
+- bash: |
+    for attempt in $(seq 1 $MAX_ATTEMPTS)
+    do
+      rm -rf "$CLONE_DIRECTORY"
+      echo "Attempt $attempt/$MAX_ATTEMPTS: Cloning $CLONE_REPOSITORY ($CLONE_BRANCH) into $CLONE_DIRECTORY"
+      git $(GIT_RETRY_CONFIG) clone ${{ parameters.cloneArgs }} --branch "$CLONE_BRANCH" "$CLONE_REPOSITORY" "$CLONE_DIRECTORY" && exit 0
+
+      if [ $attempt -lt $MAX_ATTEMPTS ]; then
+        echo "Clone failed, retrying in $RETRY_INTERVAL seconds"
+        sleep $RETRY_INTERVAL
+      fi
+    done
+
+    echo "All attempts to clone failed"
+    exit 1
+  displayName: ${{ parameters.displayName }}
+  env:
+    CLONE_REPOSITORY: ${{ parameters.repository }}
+    CLONE_BRANCH: ${{ parameters.branch }}
+    CLONE_DIRECTORY: ${{ parameters.directory }}
+    MAX_ATTEMPTS: $(GIT_RETRY_MAX_ATTEMPTS)
+    RETRY_INTERVAL: $(GIT_RETRY_INTERVAL_SEC)

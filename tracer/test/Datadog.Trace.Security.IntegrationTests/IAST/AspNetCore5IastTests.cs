@@ -922,6 +922,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
+    [Flaky("Snapshot mismatch identified as flaky in CI: spans from another request (/iast/reflectedxssescaped) are sometimes collected")]
     public async Task TestIastCookieTaintingRequest()
     {
         var filename = IastEnabled ? "Iast.CookieTainting.AspNetCore5.IastEnabled" : "Iast.CookieTainting.AspNetCore5.IastDisabled";

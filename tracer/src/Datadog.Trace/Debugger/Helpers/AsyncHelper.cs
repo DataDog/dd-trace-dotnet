@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Helpers
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncHelper));
 
         private const string StateMachineNamePrefix = "<";
-        private const string StateMachineNameSuffix = ">";
+        private const char StateMachineNameSuffix = '>';
         private const string StateMachineFieldsNamePrefix = "<>";
         private const string ThisName = "__this";
         private const string StateMachineThisFieldName = StateMachineFieldsNamePrefix + "4" + ThisName;
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
                 if (foundInArguments == false)
                 {
-                    var indexOfStateMachineSuffix = field.Name.IndexOf(StateMachineNameSuffix, StringComparison.Ordinal);
+                    var indexOfStateMachineSuffix = field.Name.IndexOf(StateMachineNameSuffix);
                     if (indexOfStateMachineSuffix > 0)
                     {
                         foundFields.Add(new FieldInfoNameSanitized(field, SanitizeAsyncHoistedLocalName(field.Name, indexOfStateMachineSuffix)));
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
         private static bool IsStateMachineField(FieldInfo field)
         {
-            if (field.Name.StartsWith(StateMachineFieldsNamePrefix))
+            if (field.Name.StartsWithOrdinal(StateMachineFieldsNamePrefix))
             {
                 Log.Debug("Ignoring local (state machine field): {FieldType} {DeclaringType} {FieldName}", field.FieldType.Name, field.DeclaringType?.Name, field.Name);
                 return true;
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             // awaiter etc. (e.g. <>u__1)
-            if (field.Name.StartsWith(StateMachineFieldsNamePrefix))
+            if (field.Name.StartsWithOrdinal(StateMachineFieldsNamePrefix))
             {
                 if (field.FieldType.Name is "TaskAwaiter" or "TaskAwaiter`1" or "ValueTaskAwaiter" or "ValueTaskAwaiter`1")
                 {
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 for (int i = 0; i < allFields.Length; i++)
                 {
                     var field = allFields[i];
-                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName))
+                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWithOrdinal(StateMachineFieldsNamePrefix) && field.Name.EndsWithOrdinal(ThisName))
                     {
                         thisField = field;
                         break;

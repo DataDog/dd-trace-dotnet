@@ -46,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
             using var extensionWithContext = new MockLambdaExtension(shouldSendContext: true, port: 9004, Output);
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
+            using var extensionDisabled = new MockLambdaExtension(shouldSendContext: false, port: 9006, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
             agent.Output = Output;
             using (await RunSampleAndWaitForExit(agent))
@@ -59,12 +60,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                                   + 8 // Generic types
                                   + 1; // Toplevel Statement
 
-                var expectedSpans = requests * 3; // HTTP, Lambda invocation, and manual instrumentation spans
+                var expectedSpans = (requests * 3) // HTTP, Lambda invocation, and manual instrumentation spans
+                                  + 2; // Lambda integration disabled: HTTP and manual spans only (tracing disabled: none)
 
-                var spans = (await agent.WaitForSpansAsync(expectedSpans, 15_000)).ToArray();
+                var allAgentSpans = (await agent.WaitForSpansAsync(expectedSpans, 15_000)).ToArray();
+
+                using var s = new AssertionScope();
+
+                // The disabled handlers must not call the extension, and only the Lambda placeholder span is skipped
+                const string disabledService = "Samples.AWS.Lambda.Disabled";
+                extensionDisabled.StartInvocations.Should().BeEmpty();
+                extensionDisabled.EndInvocations.Should().BeEmpty();
+                var disabledSpans = allAgentSpans.Where(x => x.Service.StartsWith(disabledService, StringComparison.Ordinal)).ToList();
+                disabledSpans.Select(x => x.Name).Should().BeEquivalentTo("manual.HandlerNoParamSync", "http.request");
+                var spans = allAgentSpans.Except(disabledSpans).ToArray();
 
                 // Verify all the "with context" end invocations have a corresponding start context
-                using var s = new AssertionScope();
                 var startWithContext = extensionWithContext.StartInvocations.ToList();
                 var endWithContext = extensionWithContext.EndInvocations.ToList();
                 startWithContext.Should().OnlyContain(x => x.TraceId.HasValue);

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -97,7 +96,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         console.Output.Should().Contain(VersionConflict);
 
-        console.Output.Should().Contain(MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }));
+        console.Output.Should().Contain(MultipleTracers(["1.29.0.0", ProjectInfo.AssemblyVersion]));
     }
 
     [SkippableFact]
@@ -208,12 +207,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         result.Should().BeTrue();
 
         console.Output.Should().Contain(
-            TracerVersion(TracerConstants.AssemblyVersion),
+            TracerVersion(ProjectInfo.AssemblyVersion),
             ContinuousProfilerNotSet);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(ProfilerVersion(ProjectInfo.AssemblyVersion));
         }
 
         console.Output.Should().NotContainAny(
@@ -266,7 +265,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         result.Should().BeTrue();
 
         console.Output.Should().ContainAll(
-            TracerVersion(TracerConstants.AssemblyVersion),
+            TracerVersion(ProjectInfo.AssemblyVersion),
             ContinuousProfilerEnabled,
             CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
             CorrectlySetupEnvironment(CorEnableKey, "1"),
@@ -374,14 +373,6 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             (null, { } ssi) => [("DD_INJECTION_ENABLED", ssi)],
             ({ } prof, { } ssi) => [("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
         };
-
-#if NET11_0
-        // TODO: Remove this after .NET 11 is officially released
-        if (!string.IsNullOrEmpty(ssiInjection))
-        {
-            envVars = envVars.Append(("DD_INJECT_FORCE", "1")).ToArray();
-        }
-#endif
 
         using var helper = await StartConsole(enableProfiler: true, envVars);
 

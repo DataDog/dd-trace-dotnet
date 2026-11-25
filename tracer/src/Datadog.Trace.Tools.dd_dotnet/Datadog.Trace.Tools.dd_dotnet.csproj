@@ -54,11 +54,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\OtlpProtocol.cs" Link="OtlpProtocol.cs" />
+    <Compile Include="..\Datadog.Trace\Util\InvariantInterpolatedStringHandler.cs" Link="InvariantInterpolatedStringHandler.cs" />
+    <Compile Include="..\Datadog.Trace\Util\Meziantou.Analyzer.Annotations.cs" Link="Meziantou.Analyzer.Annotations.cs" />
+    <Compile Include="..\Datadog.Trace\Util\StringUtil.Culture.cs" Link="StringUtil.Culture.cs" />
     <!-- Link to generated ConfigurationKeys from Datadog.Trace project -->
     <Compile Include="..\Datadog.Trace\Generated\netstandard2.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\ConfigurationKeys*.g.cs" LinkBase="Configuration" />
   </ItemGroup>
@@ -77,6 +79,8 @@
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="PublishAotCompressed" Version="1.0.3" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <!-- Generates the ProjectInfo class. Analyzer-only. -->
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta4" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

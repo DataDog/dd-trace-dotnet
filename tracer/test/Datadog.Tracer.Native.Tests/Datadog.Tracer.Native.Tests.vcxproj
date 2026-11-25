@@ -110,6 +110,7 @@
     <ClCompile Include="test_link_stubs.cpp" />
     <ClCompile Include="util_test.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
+    <ClCompile Include="dd_version_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

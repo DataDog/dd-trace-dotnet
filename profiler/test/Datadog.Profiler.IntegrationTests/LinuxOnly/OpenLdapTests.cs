@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Profiler.SmokeTests;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,16 +21,15 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", Frameworks = new[] { "net6.0", "net7.0" })]
-        public void CheckOpenLdapCrash(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7)]
+        public void CheckOpenLdapCrash(TestAppContext app)
         {
             if (EnvironmentHelper.IsAlpine)
             {
-                // FIXME: .NET 10 skipping on .NET 10 for now as it crashes with '[Error] An error occured while trying to connect to the LDAP server `openldap-server:389`. Message: The type initializer for 'Ldap' threw an exception.'
-                return;
+                throw new SkipTestException("Alpine is not supported: connecting to openldap-server:389 crashes in the LDAP type initializer.");
             }
 
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 21", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 21", output: _output);
             runner.RunAndCheck();
         }
     }
