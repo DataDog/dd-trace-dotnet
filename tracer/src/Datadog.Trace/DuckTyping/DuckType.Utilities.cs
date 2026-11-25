@@ -27,12 +27,12 @@ namespace Datadog.Trace.DuckTyping
         {
             if (proxyType is null)
             {
-                DuckTypeProxyTypeDefinitionIsNull.Throw();
+                DuckTypeProxyTypeDefinitionIsNullException.Throw();
             }
 
             if (instance is null)
             {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
+                DuckTypeTargetObjectInstanceIsNullException.Throw();
             }
         }
 

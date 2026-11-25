@@ -18,7 +18,7 @@ internal abstract class CIVisibilityProtocolPayload : EventPlatformPayload
     private readonly EventsBuffer<IEvent> _events;
     private readonly IFormatterResolver _formatterResolver;
 
-    public CIVisibilityProtocolPayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver)
+    protected CIVisibilityProtocolPayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver)
         : base(settings)
     {
         _formatterResolver = formatterResolver;
