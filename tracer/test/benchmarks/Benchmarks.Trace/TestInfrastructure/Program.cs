@@ -65,7 +65,7 @@ namespace Benchmarks.Trace
 
             config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed)
-                           .AddMinRuntimeFilter();
+                           .AddFilter(new SimpleFilter(HasRealBody));
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
@@ -123,6 +123,40 @@ namespace Benchmarks.Trace
             initMethod?.Invoke(instance, null);
             method.Invoke(instance, args.Length > 0 ? args : null);
             cleanupMethod?.Invoke(instance, null);
+        }
+
+        /// <summary>
+        /// Skips a benchmark class when <see cref="MinRuntimeAttribute"/> marks
+        /// the job's runtime as older than its real body. Classes without the
+        /// attribute always run.
+        /// </summary>
+        private static bool HasRealBody(BenchmarkCase benchmarkCase)
+        {
+            var minimum = benchmarkCase.Descriptor.Type.GetCustomAttribute<MinRuntimeAttribute>(inherit: false);
+
+            if (minimum is null)
+            {
+                return true;
+            }
+
+            // BenchmarkDotNet 0.15.8 keeps RuntimeInformation.GetCurrentRuntime()
+            // internal; EnvironmentResolver is the public path to the same value
+            // for jobs that do not pin a runtime.
+            var runtime = benchmarkCase.Job.Environment.Runtime
+                ?? benchmarkCase.Job.Environment.ResolveValue(EnvironmentMode.RuntimeCharacteristic, EnvironmentResolver.Instance);
+
+            var moniker = runtime.RuntimeMoniker;
+
+            // NotRecognized means BenchmarkDotNet predates the job's TFM (e.g.
+            // .NET 11 on 0.15.8) and sorts below Net461, so the ordinal check
+            // would skip real benchmarks; run them instead. The enum is ordered
+            // for version comparison by BenchmarkDotNet itself.
+            if (moniker == RuntimeMoniker.NotRecognized)
+            {
+                return true;
+            }
+
+            return moniker >= minimum.Minimum;
         }
     }
 }
