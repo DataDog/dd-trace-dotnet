@@ -20,7 +20,6 @@ using Datadog.Trace.Configuration.Telemetry;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[GcForce(true)]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class AppSecWafBenchmark

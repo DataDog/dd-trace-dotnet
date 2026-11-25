@@ -20,7 +20,6 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
-[GcForce(true)]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 [IterationTime(500)]

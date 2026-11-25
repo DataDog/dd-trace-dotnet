@@ -106,7 +106,6 @@ public void Setup()
 
 **Do this instead:**
 - One-time setup goes in `[GlobalSetup]`, including for unmanaged memory benchmarks (WAF, profiler, `Marshal.AllocHGlobal`).
-- Add `[GcForce(true)]` explicitly to the class. It is the default, but the artifacts do not record GC settings, so an explicit attribute is the only way to verify the intent later.
 - Let the pilot size iterations. That is what it is for.
 
 ### 4. Pre-allocate Test Data in GlobalSetup
@@ -149,7 +148,6 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 ### DO:
 - ✅ Use `[GlobalSetup]` for **all** initialization
 - ✅ Use **instance fields** for all benchmark state
-- ✅ Use `[GcForce(true)]` explicitly on every benchmark class
 - ✅ Check `Operations > 1` and per-launch agreement after adding or changing a benchmark (see "Validating a new benchmark" below)
 - ✅ Use `static readonly` with static constructor ONLY for pure reflection metadata (MethodHandle, TypeHandle)
 - ✅ Trust BenchmarkDotNet's warmup algorithm (it handles JIT compilation automatically)
@@ -163,7 +161,7 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 
 1. **Static constructor/initializer timing** → Use `[GlobalSetup]` with instance fields for everything
 2. **Shared state between benchmark methods** → Use instance fields, not static
-3. **Unpredictable GC** → Nothing to do: `GcForce` (the default) already forces a full GC between iterations
+3. **Unpredictable GC** → Nothing to do: BenchmarkDotNet already forces a full GC between iterations
 4. **Manual warmup interference** → Trust BenchmarkDotNet's automatic warmup (don't add manual calls)
 5. **Async timing variance** → Ensure fake implementations complete synchronously; never let a fake run background threads (flush, heartbeat), they add uncontrolled timing noise
 

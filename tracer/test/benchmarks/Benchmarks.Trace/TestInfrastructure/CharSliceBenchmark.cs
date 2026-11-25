@@ -11,7 +11,6 @@ using Datadog.Trace.Util;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[GcForce(true)]
 [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IterationTime(500)]
 public class CharSliceBenchmark
