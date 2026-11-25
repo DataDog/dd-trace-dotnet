@@ -394,13 +394,13 @@ namespace Datadog.Trace.DuckTyping
 #else
                 assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
 #endif
-                assembly = assembly.Replace(".", "_").Replace("+", "__");
+                assembly = assembly.Replace('.', '_').Replace("+", "__");
             }
 
             // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
             // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
             var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
-            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace('.', '_').Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace('.', '_').Replace("+", "__")}";
 
             // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
             var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (parentType == typeToDeriveFrom)
             {
-                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.Where(pCtor => pCtor.GetParameters().Length == 0).FirstOrDefault();
+                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.FirstOrDefault(pCtor => pCtor.GetParameters().Length == 0);
                 if (proxyCtor != null)
                 {
                     ctorIL.Emit(OpCodes.Ldarg_0);
@@ -673,7 +673,7 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.All(i => i.Name != p.Name));
+                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.TrueForAll(i => i.Name != p.Name));
                 selectedProperties.AddRange(newProps);
             }
         }
@@ -734,13 +734,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
                 // Ignore the properties marked with `DuckIgnore` attribute
-                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
 
                 // Check if proxy is a reverse method (shouldn't be called from here)
-                if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (proxyProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     return DuckTypeIncorrectReversePropertyUsageException.Create(proxyProperty);
                 }
@@ -941,7 +941,7 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo implementationProperty in delegationTypeProperties)
             {
                 // Ignore methods without a `DuckReverse` attribute
-                if (implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (!implementationProperty.HasCustomAttribute<DuckReverseMethodAttribute>())
                 {
                     continue;
                 }
@@ -1076,7 +1076,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (proxyFieldInfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
@@ -1189,7 +1189,7 @@ namespace Datadog.Trace.DuckTyping
             // populated. Checked here so that it fails on the dry run too
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
-                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
+                return DuckTypeDuckCopyStructDoesNotContainsAnyFieldException.Create(proxyDefinitionType);
             }
 
             return null;
@@ -1231,7 +1231,7 @@ namespace Datadog.Trace.DuckTyping
             return createProxyMethod.CreateDelegate(delegateType);
         }
 
-        private static DuckTypeDuckCopyStructDoesNotContainsAnyField? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
+        private static DuckTypeDuckCopyStructDoesNotContainsAnyFieldException? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
         {
             activator = null;
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
@@ -1273,7 +1273,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (finfo.HasCustomAttribute<DuckIgnoreAttribute>())
                 {
                     continue;
                 }
@@ -1296,7 +1296,7 @@ namespace Datadog.Trace.DuckTyping
             // only runs after that succeeded. Kept as a defensive guard.
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
-                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
+                return DuckTypeDuckCopyStructDoesNotContainsAnyFieldException.Create(proxyDefinitionType);
             }
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);

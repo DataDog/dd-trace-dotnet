@@ -22,11 +22,11 @@ namespace Datadog.Profiler.SmokeTests
         //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
         //       the ETW support is disabled in the tests for .NET Framework.
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void CheckSmoke(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckSmoke(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
-            if (framework == "net48")
+            var runner = new SmokeTestRunner(app, _output);
+            if (app.IsNetFramework)
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }

@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
@@ -17,8 +19,12 @@ namespace Datadog.Profiler.IntegrationTests.Signature
     {
         // On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame instead of the
         // full managed stack. When that happens, retry the whole run to get a complete stack.
-        private const string UnknownFrameType =
-            "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
+        private static readonly StackFrame UnknownFrameType =
+            StackFrame.Build()
+                .Module("Unknown-Assembly")
+                .Type("Unknown-Type")
+                .Function("Unknown-Frame-Type")
+                .Signature("(?)");
 
         private readonly ITestOutputHelper _output;
 
@@ -28,17 +34,17 @@ namespace Datadog.Profiler.IntegrationTests.Signature
         }
 
         [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
-        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void ValidateSignatures(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ValidateSignatures(TestAppContext app)
         {
-            CheckExceptionsInProfiles(framework, GetExceptionSamples(appName, framework, appAssembly));
+            CheckExceptionsInProfiles(app, GetExceptionSamples(app));
         }
 
         [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
-        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void ValidateAsyncStateMachineSignatures(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ValidateAsyncStateMachineSignatures(TestAppContext app)
         {
-            CheckAsyncStateMachineFrames(GetExceptionSamples(appName, framework, appAssembly));
+            CheckAsyncStateMachineFrames(GetExceptionSamples(app));
         }
 
         // On Linux/ARM64, the unwinder can degrade to a single "Unknown-Frame-Type" placeholder frame.
@@ -48,10 +54,10 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             return Environment.OSVersion.Platform == PlatformID.Unix
                 && EnvironmentHelper.GetPlatform() == "ARM64"
                 && actualStack.FramesCount == 1
-                && actualStack[0].ToString() == UnknownFrameType;
+                && actualStack[0].Equals(UnknownFrameType);
         }
 
-        private static void CheckAsyncStateMachineFrames((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckAsyncStateMachineFrames(IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptionSamples)
         {
             if (exceptionSamples.Any(sample => IsArm64DegradedStack(sample.Stacktrace)))
             {
@@ -97,7 +103,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             frames.Should().OnlyContain(frame => !frame.FunctionAdornment.StartsWith("<."));
         }
 
-        private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        private static void CheckExceptionsInProfiles(TestAppContext app, IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptionSamples)
         {
             // .NET 9 has different stack trace for 64-bit
             // e.g. first frame is:
@@ -105,56 +111,294 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
             var os = Environment.OSVersion.Platform;
             StackTrace stack;
-            if (os == PlatformID.Unix && framework != "net8.0")
+            if (os == PlatformID.Unix && app.Framework != TestFramework.Net8)
             {
                 // BUG on Linux: invalid TKey instead of TValue
                 stack = new StackTrace(
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TValue value, TKey key2)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowOneGeneric |fg: |sg:(TValue value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TValue value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<GlobalStruct> |sg:(GlobalStruct element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<Samples.Computer01.MyStruct> |sg:(Samples.Computer01.MyStruct element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<System.Boolean> |sg:(System.Boolean element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowWithRefs |fg: |sg:(Samples.Computer01.MyClass& mc, Samples.Computer01.MyStruct& ms)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowClass |fg: |sg:(Samples.Computer01.MyClass mc)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowStruct |fg: |sg:(Samples.Computer01.MyStruct ms)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowArrays |fg: |sg:(string[] a1, int[,,] matrix2, byte[][] jaggedArray)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowNative |fg: |sg:(nint ptr, nuint uptr)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowStringAndChar |fg: |sg:(string v, char c)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowNumbers |fg: |sg:(byte b, sbyte sb, short i16, ushort ui16, int i32, uint ui32, long i64, ulong ui64, float s, double d)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowBool |fg: |sg:(bool bValue)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowObject |fg: |sg:(object val)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowVoid |fg: |sg:()"));
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowFromGeneric")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element, TKey key1, TValue value, TKey key2)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowGenericFromGeneric")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowOneGeneric")
+                        .Signature("(TValue value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClassForValueTypeTest")
+                        .TypeParameters("<System.Int32, System.Boolean>")
+                        .Function("ThrowOneGenericFromMethod")
+                        .FunctionParameters("<System.Boolean>")
+                        .Signature("(System.Boolean value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClassForValueTypeTest")
+                        .TypeParameters("<System.Int32, System.Boolean>")
+                        .Function("ThrowOneGenericFromType")
+                        .Signature("(TValue value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod2")
+                        .FunctionParameters("<T0, System.Int32, T2, T3>")
+                        .Signature("(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<GlobalStruct>")
+                        .Signature("(GlobalStruct element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<Samples.Computer01.MyStruct>")
+                        .Signature("(Samples.Computer01.MyStruct element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<System.Boolean>")
+                        .Signature("(System.Boolean element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowWithRefs")
+                        .Signature("(Samples.Computer01.MyClass& mc, Samples.Computer01.MyStruct& ms)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowClass")
+                        .Signature("(Samples.Computer01.MyClass mc)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowStruct")
+                        .Signature("(Samples.Computer01.MyStruct ms)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowArrays")
+                        .Signature("(string[] a1, int[,,] matrix2, byte[][] jaggedArray)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowNative")
+                        .Signature("(nint ptr, nuint uptr)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowStringAndChar")
+                        .Signature("(string v, char c)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowNumbers")
+                        .Signature("(byte b, sbyte sb, short i16, ushort ui16, int i32, uint ui32, long i64, ulong ui64, float s, double d)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowBool")
+                        .Signature("(bool bValue)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowObject")
+                        .Signature("(object val)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowVoid")
+                        .Signature("()"));
             }
             else
             {
                 stack = new StackTrace(
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TValue value, TKey key2)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowOneGeneric |fg: |sg:(TValue value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TValue value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<GlobalStruct> |sg:(GlobalStruct element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<Samples.Computer01.MyStruct> |sg:(Samples.Computer01.MyStruct element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<System.Boolean> |sg:(System.Boolean element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowWithRefs |fg: |sg:(Samples.Computer01.MyClass& mc, Samples.Computer01.MyStruct& ms)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowClass |fg: |sg:(Samples.Computer01.MyClass mc)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowStruct |fg: |sg:(Samples.Computer01.MyStruct ms)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowArrays |fg: |sg:(string[] a1, int[,,] matrix2, byte[][] jaggedArray)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowNative |fg: |sg:(nint ptr, nuint uptr)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowStringAndChar |fg: |sg:(string v, char c)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowNumbers |fg: |sg:(byte b, sbyte sb, short i16, ushort ui16, int i32, uint ui32, long i64, ulong ui64, float s, double d)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowBool |fg: |sg:(bool bValue)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowObject |fg: |sg:(object val)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowVoid |fg: |sg:()"));
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowFromGeneric")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element, TKey key1, TValue value, TKey key2)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowGenericFromGeneric")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClass")
+                        .TypeParameters("<TKey, TValue>")
+                        .Function("ThrowOneGeneric")
+                        .Signature("(TValue value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClassForValueTypeTest")
+                        .TypeParameters("<System.Int32, System.Boolean>")
+                        .Function("ThrowOneGenericFromMethod")
+                        .FunctionParameters("<System.Boolean>")
+                        .Signature("(System.Boolean value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("GenericClassForValueTypeTest")
+                        .TypeParameters("<System.Int32, System.Boolean>")
+                        .Function("ThrowOneGenericFromType")
+                        .Signature("(TValue value)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod2")
+                        .FunctionParameters("<T0, System.Int32, T2, T3>")
+                        .Signature("(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<GlobalStruct>")
+                        .Signature("(GlobalStruct element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<Samples.Computer01.MyStruct>")
+                        .Signature("(Samples.Computer01.MyStruct element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<T0>")
+                        .Signature("(T0 element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowGenericMethod1")
+                        .FunctionParameters("<System.Boolean>")
+                        .Signature("(System.Boolean element)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowWithRefs")
+                        .Signature("(Samples.Computer01.MyClass& mc, Samples.Computer01.MyStruct& ms)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowClass")
+                        .Signature("(Samples.Computer01.MyClass mc)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowStruct")
+                        .Signature("(Samples.Computer01.MyStruct ms)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowArrays")
+                        .Signature("(string[] a1, int[,,] matrix2, byte[][] jaggedArray)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowNative")
+                        .Signature("(nint ptr, nuint uptr)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowStringAndChar")
+                        .Signature("(string v, char c)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowNumbers")
+                        .Signature("(byte b, sbyte sb, short i16, ushort ui16, int i32, uint ui32, long i64, ulong ui64, float s, double d)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowBool")
+                        .Signature("(bool bValue)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowObject")
+                        .Signature("(object val)"),
+                    StackFrame.Build()
+                        .Module("Samples.Computer01")
+                        .Namespace("Samples.Computer01")
+                        .Type("MethodsSignature")
+                        .Function("ThrowVoid")
+                        .Signature("()"));
             }
 
             foreach (var sample in exceptionSamples)
@@ -168,22 +412,28 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                     Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
                 }
 
-                Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
+                Assert.True(sample.Stacktrace.StartsWith(stack, out var stackStartsWithMessage), stackStartsWithMessage);
             }
         }
 
-        private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
+        private IReadOnlyList<(string Type, string Message, long Count, StackTrace Stacktrace)> GetExceptionSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 20");
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            using var run = runner.Run();
+            Assert.True(run.UploadCount > 0);
 
-            return SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            // Exact sample types before ExceptionSamples() drops other rows.
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
+
+            var exceptionSamples = run.Profiles.ExceptionSamples();
+
+            // The signature checks loop over the samples: without any, they would pass without checking a stack.
+            exceptionSamples.Should().NotBeEmpty();
+
+            return exceptionSamples;
         }
     }
 }

@@ -570,7 +570,6 @@ partial class Build : NukeBuild
             (Projects.BenchmarksTrace, s => s),
             (Projects.BenchmarksOpenTelemetryInstrumentedApi,
                 s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
-                      .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                       .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
                       .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
         };
@@ -666,6 +665,7 @@ partial class Build : NukeBuild
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
                         .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                        .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                         .ConfigureDotNetRunSettings(configureDotNetRunSettings)
 
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))

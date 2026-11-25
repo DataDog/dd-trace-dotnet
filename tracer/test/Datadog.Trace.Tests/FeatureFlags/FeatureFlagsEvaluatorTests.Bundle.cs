@@ -172,7 +172,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         foreach (var file in ResourceHelper.EnumFiles<FeatureFlagsEvaluatorTests>("ffe_system_test_data.evaluation_cases").OrderBy(static file => file.Key))
         {
-            var testCases = JsonConvert.DeserializeObject<List<TestCase>>(file.Value);
+            var testCases = JsonConvert.DeserializeObject<List<TestCase>>(file.Value, new JsonSerializerSettings { DateParseHandling = DateParseHandling.None });
             foreach (var testCase in testCases!)
             {
                 testData.Add([file.Key, testCase]);

@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tools.dd_dotnet;
 [NativeObject]
 internal unsafe interface ICrashReport : IUnknown
 {
-    public static Guid Guid = new("3B3BA8A9-F807-43BF-A3A9-55E369C0C532");
+    public static Guid Guid = new Guid(0x3B3BA8A9u, 0xF807, 0x43BF, 0xA3, 0xA9, 0x55, 0xE3, 0x69, 0xC0, 0xC5, 0x32); // 3B3BA8A9-F807-43BF-A3A9-55E369C0C532
 
     int Initialize();
 

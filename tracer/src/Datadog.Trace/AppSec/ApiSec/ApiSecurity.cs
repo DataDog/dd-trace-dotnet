@@ -54,9 +54,9 @@ internal sealed class ApiSecurity
 
     [TestingOnly]
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
-        => GetSamplingDecision(lastWafCall, localRootSpan, args, statusCode, routeValues) == SamplingDecision.Sample;
+        => GetSamplingDecision(lastWafCall, localRootSpan, args, statusCode, routeValues, blockRequested: false) == SamplingDecision.Sample;
 
-    internal SamplingDecision GetSamplingDecision(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
+    internal SamplingDecision GetSamplingDecision(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues, bool blockRequested)
     {
         try
         {
@@ -77,8 +77,11 @@ internal sealed class ApiSecurity
                 {
                     Log.Debug("No route for api security, {Method}, {Status}", httpMethod, statusCode);
 
-                    // a request that wasn't found or that was blocked has no route to miss
-                    return statusCode != 404 && localRootSpan.GetTag(Tags.AppSecBlocked) != "true" ? SamplingDecision.MissingRoute : SamplingDecision.Skip;
+                    // a request that wasn't found or that was blocked has no route to miss. Writing the blocking
+                    // response runs the response WAF scan before the blocked tag is set, so an earlier WAF run that
+                    // asked to block the request counts too.
+                    var blocked = blockRequested || localRootSpan.GetTag(Tags.AppSecBlocked) == "true";
+                    return statusCode != 404 && !blocked ? SamplingDecision.MissingRoute : SamplingDecision.Skip;
                 }
 
                 if (routeValues != null)

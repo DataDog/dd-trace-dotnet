@@ -21,8 +21,18 @@ public:
     template <class TLoggerPolicy>
     static Logger* Get()
     {
+#ifdef _WIN32
         static Logger instance = Logger::Create<TLoggerPolicy>();
         return &instance;
+#else
+        // Intentionally never destroyed. On Linux/macOS, exit() runs static destructors while other
+        // native threads (JIT callbacks, ReJIT worker, profiler timers) may still be logging, so
+        // destroying the logger races with them (pure virtual call / invalid free in spdlog teardown).
+        // The OS reclaims the memory, Info+ messages are flushed on write (flush_on(info)), and libc
+        // flushes any remaining FILE buffers at exit.
+        static Logger* instance = new Logger(Logger::Create<TLoggerPolicy>());
+        return instance;
+#endif
     }
 };
 }

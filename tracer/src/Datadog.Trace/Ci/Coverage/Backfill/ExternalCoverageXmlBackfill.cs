@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Xml;
@@ -1181,7 +1182,7 @@ internal static class ExternalCoverageXmlBackfill
         if (TryGetDoubleAttribute(coverageNode, "line-rate", out var lineRate))
         {
             result = new ExternalCoverageXmlResult(
-                Math.Round(lineRate * 100, 2).ToValidPercentage(),
+                Math.Round(lineRate * 100, 2, MidpointRounding.ToEven).ToValidPercentage(),
                 executableLines: null,
                 coveredLines: null,
                 backfilled: false,
@@ -2169,7 +2170,7 @@ internal static class ExternalCoverageXmlBackfill
             return true;
         }
 
-        if (path.StartsWith("\\", StringComparison.Ordinal) ||
+        if (path.StartsWith('\\') ||
             path.StartsWith("//", StringComparison.Ordinal))
         {
             return true;
@@ -2607,7 +2608,7 @@ internal static class ExternalCoverageXmlBackfill
 
     private static double CalculatePercentage(double covered, double total)
     {
-        return total <= 0 ? 0 : Math.Round((covered / total) * 100, 2).ToValidPercentage();
+        return total <= 0 ? 0 : Math.Round((covered / total) * 100, 2, MidpointRounding.ToEven).ToValidPercentage();
     }
 
     private static void SetAttribute(XmlNode node, string attributeName, string value)
@@ -3192,7 +3193,7 @@ internal static class ExternalCoverageXmlBackfill
                StartLine == other.StartLine &&
                EndLine == other.EndLine;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is CoverageLineKey other && Equals(other);
 
         public override int GetHashCode()
@@ -3227,7 +3228,7 @@ internal static class ExternalCoverageXmlBackfill
             => ResolvedPathComparer.Equals(SourcePath, other.SourcePath) &&
                Line == other.Line;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is MicrosoftSourceLineKey other && Equals(other);
 
         public override int GetHashCode()

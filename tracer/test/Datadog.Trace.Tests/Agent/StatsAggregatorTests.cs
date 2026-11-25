@@ -15,12 +15,15 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
+using MessagePack;
 using Moq;
 using Xunit;
 
@@ -637,6 +640,46 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(clientChild));
         }
 
+        [Theory]
+        [CombinatorialData]
+        public async Task WriteTrace_NormalizesOperationNameOnlyWhenComputingStats(bool statsEnabled, bool apmTracingEnabled)
+        {
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.StatsComputationEnabled, statsEnabled },
+                { ConfigurationKeys.StatsComputationInterval, 3600 },
+            });
+            var api = new Mock<IApi>();
+            api.SetupGet(x => x.TracesEncoding).Returns(TracesEncoding.DatadogV0_4);
+            byte[] payload = [];
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+               .Callback((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) => payload = traces.ToArray())
+               .ReturnsAsync(true);
+            var aggregator = StatsAggregator.Create(api.Object, settings, new StubDiscoveryService(), TestStatsdManager.NoOp, isOtlp: false);
+            var writer = new AgentWriter(api.Object, aggregator, TestStatsdManager.NoOp, automaticFlush: false, apmTracingEnabled: apmTracingEnabled);
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "bad-name";
+            span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual, rate: null, limiterRate: null);
+            span.SetDuration(TimeSpan.FromMilliseconds(10));
+
+            try
+            {
+                writer.WriteTrace(new SpanCollection([span]));
+                await writer.FlushTracesAsync();
+
+                var expectedName = statsEnabled && apmTracingEnabled ? "bad_name" : "bad-name";
+                MessagePackSerializer.Deserialize<MockSpan[][]>(payload).Should().ContainSingle().Which.Should().ContainSingle().Which.Name.Should().Be(expectedName);
+                if (aggregator is StatsAggregator stats)
+                {
+                    stats.CurrentBuffer.Buckets.Keys.Select(key => key.OperationName).Should().Equal(apmTracingEnabled ? ["bad_name"] : []);
+                }
+            }
+            finally
+            {
+                await writer.FlushAndCloseAsync();
+            }
+        }
+
         [Fact]
         public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
         {
@@ -651,16 +694,13 @@ namespace Datadog.Trace.Tests.Agent
             span.ResourceName = "SELECT * FROM users WHERE id = 123";
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
-            span.SetService(string.Empty, "manual");
             span.Finish();
 
-            span.ServiceName.Should().BeEmpty();
             var traceChunk = new SpanCollection([span]);
+            traceChunk = new NormalizerTraceProcessor().Process(in traceChunk);
             var result = aggregator.ProcessTrace(ref traceChunk);
             result.Should().Be(TraceKeepState.AggregateAndExport);
             traceChunk.Count.Should().Be(1);
-            // normalized
-            span.ServiceName.Should().NotBeEmpty();
             // obfuscated
             traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
         }

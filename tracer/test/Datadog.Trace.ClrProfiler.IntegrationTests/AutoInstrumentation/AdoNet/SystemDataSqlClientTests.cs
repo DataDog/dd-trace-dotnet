@@ -85,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // Testing that spans yield the expected output when using DBM
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            // Scrub the table name and its derived primary key constraint name, including stored-procedure tables.
             settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
             settings.AddScrubber(builder =>
             {

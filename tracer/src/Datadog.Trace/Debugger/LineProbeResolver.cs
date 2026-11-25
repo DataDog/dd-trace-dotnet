@@ -291,7 +291,7 @@ namespace Datadog.Trace.Debugger
                     var invalidLineDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                      ? new LineProbeResolutionDiagnostics(
                                                          ProbeFile: sourceFile,
-                                                         RawLines: string.Join(",", probe.Where?.Lines ?? Array.Empty<string>()),
+                                                         RawLines: string.Join(',', probe.Where?.Lines ?? Array.Empty<string>()),
                                                          ProbeId: probe.Id)
                                                      : new LineProbeResolutionDiagnostics(ProbeFile: sourceFile, ProbeId: probe.Id);
 
@@ -396,11 +396,11 @@ namespace Datadog.Trace.Debugger
             private int _bestMatchingTrailingSegments;
             private int _qualifiedMatchCount;
 
-            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
+            public readonly BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
 
             public bool HasAmbiguousBestMatch { get; private set; }
 
-            public int QualifiedMatchCount => _qualifiedMatchCount;
+            public readonly int QualifiedMatchCount => _qualifiedMatchCount;
 
             public void Track(Assembly assembly, in ClosestPathBySuffixResult result)
             {

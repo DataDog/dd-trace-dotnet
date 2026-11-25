@@ -27,9 +27,9 @@ internal struct AssemblyInfo
         _currentAssemblyPath = new('\0', _cchBuf);
     }
 
-    public AssemblyInfoFlags AssemblyFlags => _assemblyFlags;
+    public readonly AssemblyInfoFlags AssemblyFlags => _assemblyFlags;
 
-    public long AssemblySizeInKb => _assemblySizeInKB;
+    public readonly long AssemblySizeInKb => _assemblySizeInKB;
 
-    public string CurrentAssemblyPath => _currentAssemblyPath;
+    public readonly string CurrentAssemblyPath => _currentAssemblyPath;
 }

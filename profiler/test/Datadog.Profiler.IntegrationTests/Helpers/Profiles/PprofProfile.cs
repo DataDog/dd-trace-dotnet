@@ -15,10 +15,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
 {
     internal sealed class PprofProfile
     {
-        private PprofProfile(string path, DateTime timestampUtc, IReadOnlyList<ProfileValue> sampleTypes, IReadOnlyList<ProfileSample> samples)
+        private PprofProfile(string path, DateTime timestampUtc, long timeNanos, long durationNanos, IReadOnlyList<ProfileValue> sampleTypes, IReadOnlyList<ProfileSample> samples)
         {
             Path = path;
             TimestampUtc = timestampUtc;
+            TimeNanos = timeNanos;
+            DurationNanos = durationNanos;
             SampleTypes = sampleTypes;
             Samples = samples;
         }
@@ -26,6 +28,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         public string Path { get; }
 
         public DateTime TimestampUtc { get; }
+
+        public long TimeNanos { get; }
+
+        public long DurationNanos { get; }
 
         public IReadOnlyList<ProfileValue> SampleTypes { get; }
 
@@ -44,7 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 samples[i] = ReadSample(profile, profile.Sample[i], origin, sampleTypes, locations, functions, path);
             }
 
-            return new PprofProfile(path, timestampUtc, sampleTypes, Array.AsReadOnly(samples));
+            return new PprofProfile(path, timestampUtc, profile.TimeNanos, profile.DurationNanos, sampleTypes, Array.AsReadOnly(samples));
         }
 
         private static ProfileValue[] ReadSampleTypes(Profile profile, string path)
@@ -107,7 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         {
             var name = StringAt(profile, label.Key, path, "label");
 
-            // Numeric when num or num_unit is set, including a numeric zero. Same rule as PprofHelper.Labels.
+            // Numeric when num or num_unit is set, including a numeric zero.
             if (label.Num != 0 || label.NumUnit != 0)
             {
                 var unit = label.NumUnit == 0 ? string.Empty : StringAt(profile, label.NumUnit, path, "label unit");
@@ -134,7 +140,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 throw new InvalidDataException("Profile '" + path + "' location " + locationId + " has no line.");
             }
 
-            // Inlined frames are extra lines on one location. The legacy reader keeps the first line only.
+            // Inlined frames are extra lines on one location. Only the first line is kept.
             var line = location.Line[0];
             if (!functions.TryGetValue(line.FunctionId, out var function))
             {

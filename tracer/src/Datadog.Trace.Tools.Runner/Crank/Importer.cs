@@ -200,7 +200,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                                     if (resultItem.Value is string valueString)
                                     {
-                                        span.SetTag("test.results." + resultItem.Key.Replace("/", ".").Replace("-", "_"), valueString);
+                                        span.SetTag("test.results." + resultItem.Key.Replace('/', '.').Replace('-', '_'), valueString);
                                     }
                                     else
                                     {
@@ -211,7 +211,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                         {
                                             if (converter.CanConvert(resultItem.Key))
                                             {
-                                                converter.SetToSpan(span, "test.results." + resultItem.Key.Replace("/", ".").Replace("-", "_"), resultItem.Value);
+                                                converter.SetToSpan(span, "test.results." + resultItem.Key.Replace('/', '.').Replace('-', '_'), resultItem.Value);
                                                 converted = true;
                                                 break;
                                             }
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                                         if (!converted)
                                         {
-                                            numberConverter.SetToSpan(span, "test.results." + resultItem.Key.Replace("/", ".").Replace("-", "_"), resultItem.Value);
+                                            numberConverter.SetToSpan(span, "test.results." + resultItem.Key.Replace('/', '.').Replace('-', '_'), resultItem.Value);
                                         }
                                     }
                                 }

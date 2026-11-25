@@ -170,7 +170,7 @@ namespace DatadogDebugger.Util
                 case State.Escape:
                     return ParseEscape(pruner, c);
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException($"Unexpected state: {_state}");
             }
         }
 

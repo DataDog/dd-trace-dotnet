@@ -249,6 +249,10 @@ namespace Datadog.Trace
 
                     Volatile.Read(ref _appSecRequestContext)?.CloseWebSpan(span);
                 }
+                else
+                {
+                    Volatile.Read(ref _appSecRequestContext)?.CloseNonWebRootSpan(span);
+                }
             }
 
             if (span.ServiceName is not null &&

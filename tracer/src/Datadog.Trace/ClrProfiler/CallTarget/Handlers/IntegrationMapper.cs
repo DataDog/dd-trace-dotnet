@@ -52,27 +52,27 @@ internal static class IntegrationMapper
 
         if (onMethodBeginMethodInfo.ReturnType != typeof(CallTargetState))
         {
-            ThrowHelper.ThrowArgumentException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
+            ThrowHelper.ThrowInvalidOperationException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
         }
 
         var genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
         if (genericArgumentsTypes.Length < 1)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
         }
 
         var onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
         if (onMethodBeginParameters.Length < argumentsTypes.Length)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
         }
         else if (onMethodBeginParameters.Length > argumentsTypes.Length + 1)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
         }
         else if (onMethodBeginParameters.Length != argumentsTypes.Length && onMethodBeginParameters[0].ParameterType != genericArgumentsTypes[0])
         {
-            ThrowHelper.ThrowArgumentException($"The first generic argument for method: {BeginMethodName} in type: {integrationType.FullName} must be the same as the first parameter for the instance value.");
+            ThrowHelper.ThrowInvalidOperationException($"The first generic argument for method: {BeginMethodName} in type: {integrationType.FullName} must be the same as the first parameter for the instance value.");
         }
 
         var callGenericTypes = new List<Type>();
@@ -86,7 +86,7 @@ internal static class IntegrationMapper
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
-                ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                ThrowHelper.ThrowInvalidOperationException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
             }
 
             callGenericTypes.Add(instanceProxyType);
@@ -142,7 +142,7 @@ internal static class IntegrationMapper
                     parameterProxyType = result.ProxyType;
                     if (parameterProxyType is null)
                     {
-                        ThrowHelper.ThrowArgumentException($"The parameter proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                        ThrowHelper.ThrowInvalidOperationException($"The parameter proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
                     }
 
                     callGenericTypes.Add(parameterProxyType);
@@ -233,13 +233,13 @@ internal static class IntegrationMapper
 
         if (onMethodBeginMethodInfo.ReturnType != typeof(CallTargetState))
         {
-            ThrowHelper.ThrowArgumentException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
+            ThrowHelper.ThrowInvalidOperationException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
         }
 
         var genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
         if (genericArgumentsTypes.Length < 1)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
         }
 
         var onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
@@ -256,7 +256,7 @@ internal static class IntegrationMapper
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
-                ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                ThrowHelper.ThrowInvalidOperationException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
             }
 
             callGenericTypes.Add(instanceProxyType);
@@ -351,28 +351,28 @@ internal static class IntegrationMapper
 
         if (onMethodEndMethodInfo.ReturnType != typeof(CallTargetReturn))
         {
-            ThrowHelper.ThrowArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+            ThrowHelper.ThrowInvalidOperationException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
         }
 
         var genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
         if (genericArgumentsTypes.Length != 1)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
         }
 
         var onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
         if (onMethodEndParameters.Length < 2)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
         }
         else if (onMethodEndParameters.Length > 3)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
         }
 
         if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
         {
-            ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            ThrowHelper.ThrowInvalidOperationException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
         }
 
         var stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
@@ -380,7 +380,7 @@ internal static class IntegrationMapper
         {
             if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
             {
-                ThrowHelper.ThrowArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                ThrowHelper.ThrowInvalidOperationException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
         }
 
@@ -396,7 +396,7 @@ internal static class IntegrationMapper
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
-                ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                ThrowHelper.ThrowInvalidOperationException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
             }
 
             callGenericTypes.Add(instanceProxyType);
@@ -469,28 +469,28 @@ internal static class IntegrationMapper
 
         if (onMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() != typeof(CallTargetReturn<>))
         {
-            ThrowHelper.ThrowArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+            ThrowHelper.ThrowInvalidOperationException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
         }
 
         var genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
         if (genericArgumentsTypes.Length < 1 || genericArgumentsTypes.Length > 2)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
         }
 
         var onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
         if (onMethodEndParameters.Length < 3)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
         }
         else if (onMethodEndParameters.Length > 4)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
         }
 
         if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
         {
-            ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            ThrowHelper.ThrowInvalidOperationException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
         }
 
         var stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
@@ -498,7 +498,7 @@ internal static class IntegrationMapper
         {
             if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
             {
-                ThrowHelper.ThrowArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                ThrowHelper.ThrowInvalidOperationException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
         }
 
@@ -514,7 +514,7 @@ internal static class IntegrationMapper
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
-                ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                ThrowHelper.ThrowInvalidOperationException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
             }
 
             callGenericTypes.Add(instanceProxyType);
@@ -537,7 +537,7 @@ internal static class IntegrationMapper
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
-                    ThrowHelper.ThrowArgumentException($"The return value proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                    ThrowHelper.ThrowInvalidOperationException($"The return value proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
                 }
 
                 callGenericTypes.Add(returnValueProxyType);
@@ -549,7 +549,7 @@ internal static class IntegrationMapper
         }
         else if (onMethodEndParameters[returnParameterIndex].ParameterType != returnType)
         {
-            ThrowHelper.ThrowArgumentException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
+            ThrowHelper.ThrowInvalidOperationException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
         }
 
         var callMethod = new DynamicMethod(
@@ -647,29 +647,29 @@ internal static class IntegrationMapper
             }
             else
             {
-                ThrowHelper.ThrowArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
+                ThrowHelper.ThrowInvalidOperationException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
             }
         }
 
         var genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
         if (genericArgumentsTypes.Length < 1 || genericArgumentsTypes.Length > 2)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndAsyncMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndAsyncMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
         }
 
         var onAsyncMethodEndParameters = onAsyncMethodEndMethodInfo.GetParameters();
         if (onAsyncMethodEndParameters.Length < 3)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
         }
         else if (onAsyncMethodEndParameters.Length > 4)
         {
-            ThrowHelper.ThrowArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
+            ThrowHelper.ThrowInvalidOperationException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
         }
 
         if (onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
         {
-            ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+            ThrowHelper.ThrowInvalidOperationException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
         }
 
         var stateParameterType = onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType;
@@ -677,11 +677,11 @@ internal static class IntegrationMapper
         {
             if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
             {
-                ThrowHelper.ThrowArgumentException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+                ThrowHelper.ThrowInvalidOperationException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
             }
         }
 
-        var preserveContext = onAsyncMethodEndMethodInfo.GetCustomAttribute<PreserveContextAttribute>() != null;
+        var preserveContext = onAsyncMethodEndMethodInfo.HasCustomAttribute<PreserveContextAttribute>();
 
         var callGenericTypes = new List<Type>();
 
@@ -695,7 +695,7 @@ internal static class IntegrationMapper
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
-                ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
+                ThrowHelper.ThrowInvalidOperationException($"The instance proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
             }
 
             callGenericTypes.Add(instanceProxyType);
@@ -718,7 +718,7 @@ internal static class IntegrationMapper
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
-                    ThrowHelper.ThrowArgumentException($"The return value proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
+                    ThrowHelper.ThrowInvalidOperationException($"The return value proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
                 }
 
                 callGenericTypes.Add(returnValueProxyType);
@@ -730,7 +730,7 @@ internal static class IntegrationMapper
         }
         else if (onAsyncMethodEndParameters[returnParameterIndex].ParameterType != returnType)
         {
-            ThrowHelper.ThrowArgumentException($"The ReturnValue type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is invalid. [{onAsyncMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
+            ThrowHelper.ThrowInvalidOperationException($"The ReturnValue type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is invalid. [{onAsyncMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
         }
 
         var callMethod = new DynamicMethod(

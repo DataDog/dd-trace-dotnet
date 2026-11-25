@@ -14,7 +14,9 @@ namespace Datadog.Trace.DuckTyping
     /// Duck attribute
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Field, AllowMultiple = false)]
+#pragma warning disable MA0057 // Class name should end with 'Attribute' - abstract base that is never applied directly, so the suffix would only make the name awkward
     internal abstract class DuckAttributeBase : Attribute
+#pragma warning restore MA0057
     {
         /// <summary>
         /// Gets or sets the underlying type member name

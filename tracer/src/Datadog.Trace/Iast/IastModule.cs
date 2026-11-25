@@ -338,7 +338,7 @@ internal static partial class IastModule
 
         if ((argumentList is not null) && (argumentList.Count > 0))
         {
-            var joinList = StringModuleImpl.OnStringJoin(string.Join(" ", argumentList), argumentList);
+            var joinList = StringModuleImpl.OnStringJoin(string.Join(' ', argumentList), argumentList);
             var fileWithSpace = file + " ";
             _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace);
             return StringModuleImpl.OnStringConcat(fileWithSpace, joinList, string.Concat(fileWithSpace, joinList));

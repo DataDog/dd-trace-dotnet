@@ -67,7 +67,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bionic", "bionic", true),
@@ -81,7 +80,6 @@ public static class SmokeTestScenarios
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", true),
                     (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-stretch-slim", "stretch", true),
@@ -95,6 +93,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-ubuntu", "26.10-11.0", "stonking", true),
+                    // Image currently contains .NET 10.0.0-rc.2 instead of GA, so disabled until it's rebuilt
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-ubuntu", "25.10-10.0", "questing", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-ubuntu", "25.04-9.0", "plucky", true),
                 });
@@ -107,8 +107,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // Image currently contains .NET 10.0.0 instead of .NET 11, so disabled until it's rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-debian", "trixie-9.0", "trixie", true),
                     (TargetFramework.NET8_0, "andrewlock/dotnet-debian", "trixie-8.0", "trixie", true),
                 });
 
@@ -120,6 +121,10 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // Fedora 45 ships RPM 6, which rejects unsigned packages by default, so installing our RPM fails with "does not verify: no signature".
+                    // Re-enable once we either add --nosignature to the rpm install command, or start signing the RPMs
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-fedora", "45-11.0", "45", true),
+                    // Image currently contains .NET 10.0.0-rc.1 instead of GA, so disabled until it's rebuilt
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora", "42-10.0", "42", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora", "40-9.0", "40", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-fedora", "35-7.0", "35", true),
@@ -147,6 +152,7 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
@@ -181,8 +187,11 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10", true),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9", true),
+                    // Image currently contains .NET 11.0.0-rc.3 instead of GA, so disabled until it's rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-rhel", "10-11.0", "10", true),
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10", true),
+                    // andrewlock/dotnet-rhel:9-9.0 currently has the same digest as 8-9.0, so add it back once it's republished
+                    // (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "8-9.0", "8", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-rhel", "8-7.0", "8", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-rhel", "8-6.0", "8", true),
@@ -198,6 +207,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // Image currently contains .NET 11.0.0-rc.2 instead of GA, so disabled until it's rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-centos-stream", "10-11.0", "10", true),
+                    // Image currently contains .NET 10.0.0-rc.1 instead of GA, so disabled until it's rebuilt
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-centos-stream", "10-10.0", "10", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-centos-stream", "9-9.0", "9", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-centos-stream", "9-6.0", "9", true),
@@ -214,6 +226,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-opensuse", "16.1-11.0", "16.1", true),
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "16.0-10.0", "16.0", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-opensuse", "15-9.0", "15", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-opensuse", "15-7.0", "15", true),
@@ -237,6 +251,7 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
@@ -263,9 +278,7 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // https://github.com/dotnet/runtime/issues/66707
                     // Arm64 .NET 5 buster-slim images are currently flaky
@@ -281,7 +294,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-ubuntu", "26.10-11.0", "stonking", true),
+                    // Image currently contains .NET 10.0.0-rc.2 instead of GA, so disabled until it's rebuilt
+                    // (TargetFramework.NET10_0, "andrewlock/dotnet-ubuntu", "25.10-10.0", "questing", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-ubuntu", "25.04-9.0", "plucky", true),
                 });
 
@@ -293,6 +308,8 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // arm64 trixie images currently contain .NET 10.0.0-preview.7 instead of GA, so disabled until they're rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-debian", "trixie-9.0", "trixie", true),
                     (TargetFramework.NET8_0, "andrewlock/dotnet-debian", "trixie-8.0", "trixie", true),
@@ -305,7 +322,10 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora-arm64", "42-10.0", "42", true),
+                    // Fedora 45 ships RPM 6, which rejects unsigned packages by default, so installing our RPM fails with "does not verify: no signature".
+                    // Re-enable once we either add --nosignature to the rpm install command, or start signing the RPMs
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-fedora-arm64", "45-11.0", "45", true),
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-fedora-arm64", "42-10.0", "42", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora-arm64", "40-9.0", "40", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-fedora-arm64", "35-7.0", "35", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-fedora-arm64", "34-6.0", "34", true),
@@ -325,10 +345,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -394,7 +412,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bullseye-slim", "bullseye", true),
@@ -407,7 +424,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora", "42-10.0", "42", true),
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-fedora", "45-11.0", "45", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora", "40-9.0", "40", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-fedora", "35-7.0", "35", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-fedora", "34-6.0", "34", true),
@@ -427,6 +444,7 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
@@ -457,6 +475,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-opensuse", "16.1-11.0", "16.1", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-opensuse", "15-9.0", "15", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-opensuse", "15-7.0", "15", true),
@@ -478,11 +497,9 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-resolute", "resolute", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-resolute", "resolute", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // Arm64 .NET 5 buster-slim images are currently flaky
                     // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
@@ -496,6 +513,8 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // arm64 trixie images currently contain .NET 10.0.0-preview.7 instead of GA, so disabled until they're rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
                 });
 
@@ -509,11 +528,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -570,7 +586,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bullseye-slim", "bullseye", true),
@@ -593,7 +608,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora", "42-10.0", "42", true),
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-fedora", "45-11.0", "45", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-fedora", "40-9.0", "40", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-fedora", "35-7.0", "35", true),
                     (TargetFramework.NET6_0, "andrewlock/dotnet-fedora", "34-6.0", "34", true),
@@ -621,6 +636,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-opensuse", "16.1-11.0", "16.1", true),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15", true),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-opensuse", "15-9.0", "15", true),
                     (TargetFramework.NET7_0, "andrewlock/dotnet-opensuse", "15-7.0", "15", true),
@@ -645,7 +661,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // Arm64 .NET 5 buster-slim images are currently flaky
                     // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
@@ -659,6 +674,8 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-arm64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
+                    // arm64 trixie images currently contain .NET 10.0.0-preview.7 instead of GA, so disabled until they're rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-debian", "trixie-11.0", "trixie", true),
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
                 });
 
@@ -681,6 +698,7 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
@@ -705,11 +723,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19", "3.19", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.19-composite", "3.19", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.18", "3.18", true),
                 });
         }
@@ -733,7 +748,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-bookworm-slim", "bookworm", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-noble", "noble", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-jammy", "jammy", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-bullseye", "bullseye", true),
                 });
@@ -747,9 +761,9 @@ public static class SmokeTestScenarios
                     // TODO: Crash test is flaky in .NET 11, investigate ASAP
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
+                    // Keep .NET 9 on alpine 3.24 so the crash test still runs there, until the .NET 11 crash test is re-enabled
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.24", "3.24", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-alpine3.16", "3.16", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-alpine3.15", "3.15", true),
                 });
@@ -797,8 +811,11 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
-                    // (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10"),
-                    (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9"),
+                    // Image currently contains .NET 11.0.0-rc.3 instead of GA, so disabled until it's rebuilt
+                    // (TargetFramework.NET11_0, "andrewlock/dotnet-rhel", "10-11.0", "10"),
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10"),
+                    // andrewlock/dotnet-rhel:9-9.0 currently has the same digest as 8-9.0, so add it back once it's republished
+                    // (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "9-9.0", "9"),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-rhel", "8-9.0", "8"),
                 });
 
@@ -810,6 +827,7 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
+                    (TargetFramework.NET11_0, "andrewlock/dotnet-opensuse", "16.1-11.0", "16.1"),
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15"),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-opensuse", "15-9.0", "15"),
                 });
@@ -828,8 +846,6 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22"),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24", "3.24"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.24-composite", "3.24"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });

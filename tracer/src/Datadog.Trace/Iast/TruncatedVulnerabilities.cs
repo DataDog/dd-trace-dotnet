@@ -18,11 +18,11 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Source"/> struct
 /// </summary>
-internal struct TruncatedVulnerabilities
+internal readonly struct TruncatedVulnerabilities
 {
     public const string MaxSizeExceeded = "MAX SIZE EXCEEDED";
 
-    private List<Vulnerability> vulnerabilities;
+    private readonly List<Vulnerability> vulnerabilities;
 
     public TruncatedVulnerabilities(List<Vulnerability> vulnerabilities)
     {
@@ -41,7 +41,7 @@ internal struct TruncatedVulnerabilities
 
         public override Vulnerability? ReadJson(JsonReader reader, Type objectType, Vulnerability? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void WriteJson(JsonWriter writer, Vulnerability? value, JsonSerializer serializer)
@@ -73,7 +73,7 @@ internal struct TruncatedVulnerabilities
 
         public override Evidence? ReadJson(JsonReader reader, Type objectType, Evidence? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void WriteJson(JsonWriter writer, Evidence? value, JsonSerializer serializer)
