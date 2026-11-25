@@ -1081,5 +1081,18 @@
         "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
       }
     ]
+  },
+  {
+    "IntegrationName": "AzureStorageQueues",
+    "SampleProjectName": "Samples.DataStreams.AzureStorageQueues",
+    "NugetPackageSearchName": "Azure.Storage.Queues",
+    "MinVersion": "12.5.0",
+    "MaxVersionExclusive": "13.0.0",
+    "SpecificVersions": [
+      "12.5.*",
+      "12.11.*",
+      "12.17.*",
+      "12.*.*"
+    ]
   }
 ]

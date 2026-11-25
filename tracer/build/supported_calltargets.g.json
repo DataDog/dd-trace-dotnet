@@ -4370,6 +4370,88 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureStorageQueues",
+    "AssemblyName": "Azure.Storage.Queues",
+    "TargetTypeName": "Azure.Storage.Queues.QueueClient",
+    "TargetMethodName": "ReceiveMessagesInternal",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response`1[Azure.Storage.Queues.Models.QueueMessage[]]]",
+    "TargetParameterTypes": [
+      "System.Nullable`1[System.Int32]",
+      "System.Nullable`1[System.TimeSpan]",
+      "System.String",
+      "System.Boolean",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 12,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 12,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.ReceiveMessagesInternalIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureStorageQueues",
+    "AssemblyName": "Azure.Storage.Queues",
+    "TargetTypeName": "Azure.Storage.Queues.QueueClient",
+    "TargetMethodName": "SendMessageInternal",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response`1[Azure.Storage.Queues.Models.SendReceipt]]",
+    "TargetParameterTypes": [
+      "System.BinaryData",
+      "System.Nullable`1[System.TimeSpan]",
+      "System.Nullable`1[System.TimeSpan]",
+      "System.Boolean",
+      "System.Threading.CancellationToken",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 12,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 12,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.SendMessageInternalIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureStorageQueues",
+    "AssemblyName": "Azure.Storage.Queues",
+    "TargetTypeName": "Azure.Storage.Queues.QueueMessageCodec",
+    "TargetMethodName": "EncodeMessageBody",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.BinaryData",
+      "Azure.Storage.Queues.QueueMessageEncoding"
+    ],
+    "MinimumVersion": {
+      "Item1": 12,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 12,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.EncodeMessageBodyIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "CosmosDb",
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",

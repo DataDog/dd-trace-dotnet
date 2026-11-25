@@ -224,6 +224,10 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ServiceBusSenderSendMessageBatchAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ServiceBusSenderSendMessagesAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.ReceiveMessagesInternalIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.SendMessageInternalIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.StorageQueues.EncodeMessageBodyIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AzureStorageQueues,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations"

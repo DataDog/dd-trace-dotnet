@@ -109,6 +109,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Diagnostics", new[] { "Microsoft.AspNetCore.Diagnostics" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
+            NugetPackages.Add("Azure.Storage.Queues", new string[] { "Azure.Storage.Queues" });
             NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
             NugetPackages.Add("Azure.Messaging.EventGrid", new string[] { "Azure.Messaging.EventGrid" });
             NugetPackages.Add("Azure.Messaging.EventGrid.Namespaces", new string[] { "Azure.Messaging.EventGrid.Namespaces" });

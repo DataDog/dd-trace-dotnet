@@ -1,0 +1,14 @@
+_v: 1
+name: AzureStorageQueues
+display_name: Azure Storage Queues
+description: Instruments Azure Storage Queues message send and receive operations through the Azure SDK, creating
+  producer and consumer spans and optional Data Streams Monitoring checkpoints with pathway-context propagation
+  through JSON message payloads.
+packages:
+- name: Azure.Storage.Queues
+category:
+- messaging.consumer
+- messaging.producer
+systems:
+- azure.storage.queues
+creation_date: '2026-11-20'

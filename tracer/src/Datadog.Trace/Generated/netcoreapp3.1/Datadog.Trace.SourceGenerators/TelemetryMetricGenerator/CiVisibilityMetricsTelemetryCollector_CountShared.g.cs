@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountSharedLength = 348;
+    private const int CountSharedLength = 352;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -280,6 +280,10 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:azureeventgrid", "error_type:invoker" }),
             new(new[] { "integration_name:azureeventgrid", "error_type:execution" }),
             new(new[] { "integration_name:azureeventgrid", "error_type:missing_member" }),
+            new(new[] { "integration_name:azurestoragequeues", "error_type:duck_typing" }),
+            new(new[] { "integration_name:azurestoragequeues", "error_type:invoker" }),
+            new(new[] { "integration_name:azurestoragequeues", "error_type:execution" }),
+            new(new[] { "integration_name:azurestoragequeues", "error_type:missing_member" }),
             new(new[] { "integration_name:systemrandom", "error_type:duck_typing" }),
             new(new[] { "integration_name:systemrandom", "error_type:invoker" }),
             new(new[] { "integration_name:systemrandom", "error_type:execution" }),
@@ -376,7 +380,7 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 348, };
+        = new int[]{ 352, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

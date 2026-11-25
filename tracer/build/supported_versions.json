@@ -542,6 +542,23 @@
     ]
   },
   {
+    "integrationName": "AzureStorageQueues",
+    "assemblyName": "Azure.Storage.Queues",
+    "minAssemblyVersionInclusive": "12.5.0",
+    "maxAssemblyVersionInclusive": "12.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Storage.Queues",
+        "minVersionAvailableInclusive": "12.0.0",
+        "minVersionSupportedInclusive": "12.5.0",
+        "minVersionTestedInclusive": "12.5.0",
+        "maxVersionSupportedInclusive": "12.28.1",
+        "maxVersionAvailableInclusive": "12.28.1",
+        "maxVersionTestedInclusive": "12.28.1"
+      }
+    ]
+  },
+  {
     "integrationName": "CosmosDb",
     "assemblyName": "Microsoft.Azure.Cosmos.Client",
     "minAssemblyVersionInclusive": "3.6.0",
