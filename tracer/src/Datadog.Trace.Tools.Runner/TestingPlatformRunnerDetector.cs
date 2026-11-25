@@ -6,10 +6,8 @@
 #nullable enable
 
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -85,44 +83,22 @@ internal static class TestingPlatformRunnerDetector
     {
         try
         {
-            var startInfo = new ProcessStartInfo(program, "--version")
+            var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command(program, "--version", workingDirectory, timeout: timeout));
+            if (output is null || output.TimedOut)
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            if (workingDirectory is not null)
-            {
-                startInfo.WorkingDirectory = workingDirectory;
-            }
-
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                Log.Warning("RunCiCommand: Unable to start '{Program} --version' to read the .NET SDK version.", program);
-                return null;
-            }
-
-            // Both streams are drained asynchronously, so the timeout holds even when the process stops writing without exiting.
-            var outputTask = process.StandardOutput.ReadToEndAsync();
-            var errorTask = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit((int)timeout.TotalMilliseconds) || !Task.WaitAll([outputTask, errorTask], timeout))
-            {
-                TryKill(process);
                 Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, timeout);
                 return null;
             }
 
             // The version is the last line, after any first-run message of the SDK.
-            var lines = outputTask.Result.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-            if (process.ExitCode == 0 && lines.Length > 0 &&
+            var lines = output.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+            if (output.ExitCode == 0 && lines.Length > 0 &&
                 int.TryParse(lines[lines.Length - 1].Trim().Split('.')[0], NumberStyles.None, CultureInfo.InvariantCulture, out var majorVersion))
             {
                 return majorVersion;
             }
 
-            Log.Warning<string, int, string>("RunCiCommand: Unable to read the .NET SDK version from '{Program} --version' (exit code {ExitCode}): {Output}", program, process.ExitCode, outputTask.Result + errorTask.Result);
+            Log.Warning<string, int, string>("RunCiCommand: Unable to read the .NET SDK version from '{Program} --version' (exit code {ExitCode}): {Output}", program, output.ExitCode, output.Output + output.Error);
         }
         catch (Exception ex)
         {
@@ -130,18 +106,6 @@ internal static class TestingPlatformRunnerDetector
         }
 
         return null;
-    }
-
-    private static void TryKill(Process process)
-    {
-        try
-        {
-            process.Kill();
-        }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "RunCiCommand: Unable to stop the '--version' process.");
-        }
     }
 
     private static string? GetGlobalJsonTestRunner(string? workingDirectory)

@@ -141,10 +141,14 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
-            var startTime = DateTime.UtcNow;
-            bool HasTimedOut() => command.Timeout.HasValue && DateTime.UtcNow - startTime > command.Timeout;
+            var stopwatch = Stopwatch.StartNew();
             using var disposableProcessInfo = processInfo;
 
+            // Drain both streams asynchronously before writing the input: reading them one after the other could deadlock when the
+            // process fills the other pipe, and a blocking read would only return once the process closes its output, which the
+            // timeout couldn't interrupt.
+            var outputTask = processStartInfo.UseShellExecute ? null : processInfo.StandardOutput.ReadToEndAsync();
+            var errorTask = processStartInfo.UseShellExecute ? null : processInfo.StandardError.ReadToEndAsync();
             if (input is not null)
             {
                 processInfo.StandardInput.Write(input);
@@ -152,34 +156,58 @@ namespace Datadog.Trace.Util
                 processInfo.StandardInput.Close();
             }
 
-            var outputStringBuilder = new StringBuilder();
-            var errorStringBuilder = new StringBuilder();
-            while (!processInfo.HasExited)
+            if (!WaitForExit(processInfo, command.Timeout, stopwatch) ||
+                (outputTask is not null && errorTask is not null && !WaitForOutput(outputTask, errorTask, command.Timeout, stopwatch)))
             {
-                if (HasTimedOut())
-                {
-                    Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
-                    processInfo.Kill();
-                    return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
-                }
-
-                if (!processStartInfo.UseShellExecute)
-                {
-                    outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                    errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
-                }
-
-                Thread.Sleep(15);
-            }
-
-            if (!processStartInfo.UseShellExecute)
-            {
-                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
+                TryKill(processInfo);
+                return new CommandOutput(GetCompletedOutput(outputTask), GetCompletedOutput(errorTask), exitCode: -1, timedOut: true);
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
-            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode, timedOut: false);
+            return new CommandOutput(GetCompletedOutput(outputTask), GetCompletedOutput(errorTask), processInfo.ExitCode, timedOut: false);
+        }
+
+        private static bool WaitForExit(Process process, TimeSpan? timeout, Stopwatch stopwatch)
+        {
+            if (timeout is null)
+            {
+                process.WaitForExit();
+                return true;
+            }
+
+            return process.WaitForExit((int)Math.Min(GetRemainingTime(timeout.Value, stopwatch).TotalMilliseconds, int.MaxValue));
+        }
+
+        private static bool WaitForOutput(Task<string> outputTask, Task<string> errorTask, TimeSpan? timeout, Stopwatch stopwatch)
+        {
+            // The streams end when the process exits, unless a child process it started keeps them open.
+            if (timeout is null)
+            {
+                Task.WaitAll(outputTask, errorTask);
+                return true;
+            }
+
+            return Task.WaitAll([outputTask, errorTask], GetRemainingTime(timeout.Value, stopwatch));
+        }
+
+        private static TimeSpan GetRemainingTime(TimeSpan timeout, Stopwatch stopwatch)
+            => timeout > stopwatch.Elapsed ? timeout - stopwatch.Elapsed : TimeSpan.Zero;
+
+        private static string GetCompletedOutput(Task<string>? task)
+            => task is { Status: TaskStatus.RanToCompletion } ? task.Result : string.Empty;
+
+        private static void TryKill(Process process)
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex)
+            {
+                // The process can exit on its own between the timeout and the kill.
+                Log.Debug(ex, "Error killing the process after the timeout.");
+            }
         }
 
         internal static IEnumerable<string> ParseWhereisOutput(string output)

@@ -169,14 +169,17 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
         File.WriteAllText(program, "#!/bin/sh\nexec sleep 60\n");
         using (var chmod = Process.Start(new ProcessStartInfo("chmod", $"+x \"{program}\"") { UseShellExecute = false }))
         {
-            chmod!.WaitForExit();
+            chmod.Should().NotBeNull();
+            chmod.WaitForExit();
+            chmod.ExitCode.Should().Be(0);
         }
 
         var stopwatch = Stopwatch.StartNew();
 
         TestingPlatformRunnerDetector.GetSdkMajorVersion(program, _workingDirectory, TimeSpan.FromSeconds(1)).Should().BeNull();
 
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(30));
+        // It waited for the timeout (so the script did start) and didn't wait for the script to finish.
+        stopwatch.Elapsed.Should().BeGreaterOrEqualTo(TimeSpan.FromMilliseconds(900)).And.BeLessThan(TimeSpan.FromSeconds(30));
     }
 
     private static bool Detect(string workingDirectory, string testRunnerEnvironmentValue)
