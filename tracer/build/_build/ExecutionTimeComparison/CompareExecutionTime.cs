@@ -13,8 +13,8 @@ using Logger = Serilog.Log;
 
 public class CompareExecutionTime
 {
-    private static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.05);
-    private static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Milliseconds, 5);
+    internal static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.05);
+    internal static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Milliseconds, 5);
 
     public static string GetMarkdown(List<ExecutionTimeResultSource> sources)
     {
@@ -71,7 +71,7 @@ public class CompareExecutionTime
         return GetCommentMarkdown(sources, charts, comparisonTable, sampleNames);
     }
  
-    static EquivalenceTestConclusion CalculateSignificance(double[] masterValues, double[] currentValues)
+    internal static EquivalenceTestConclusion CalculateSignificance(double[] masterValues, double[] currentValues)
     {
         if (!IsValidForStatisticalTest(masterValues)|| !IsValidForStatisticalTest(currentValues))
         {
