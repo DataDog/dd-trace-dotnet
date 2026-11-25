@@ -30,6 +30,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private string _appListenerPort;
 
         public TestApplicationRunner(
+            TestAppContext context,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableTracer = false,
+            bool enableProfiler = true)
+            : this(
+                context.Application.FolderName,
+                TestFrameworkInfo.ToMoniker(context.Framework),
+                context.Application.AssemblyName,
+                output,
+                commandLine,
+                enableTracer,
+                enableProfiler)
+        {
+        }
+
+        private TestApplicationRunner(
             string appName,
             string framework,
             string appAssembly,
@@ -49,23 +66,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output = new XUnitFileLogger(output, Path.Combine(logPath, "xunit.txt"));
             _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
-        }
-
-        public TestApplicationRunner(
-            TestAppContext context,
-            ITestOutputHelper output,
-            string commandLine = null,
-            bool enableTracer = false,
-            bool enableProfiler = true)
-            : this(
-                context.Application.FolderName,
-                TestFrameworkInfo.ToMoniker(context.Framework),
-                context.Application.AssemblyName,
-                output,
-                commandLine,
-                enableTracer,
-                enableProfiler)
-        {
         }
 
         public string TestOutputDir => _testBaseOutputDir;

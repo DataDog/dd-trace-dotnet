@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.CodeOwnership;
@@ -82,7 +83,7 @@ internal sealed class CodeOwnersResolver
         public bool Equals(SourcePathCacheKey other)
             => UseOSSeparator == other.UseOSSeparator && string.Equals(SourceFilePath, other.SourceFilePath, StringComparison.Ordinal);
 
-        public override bool Equals(object? obj) => obj is SourcePathCacheKey other && Equals(other);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is SourcePathCacheKey other && Equals(other);
 
         public override int GetHashCode()
             => (StringComparer.Ordinal.GetHashCode(SourceFilePath) * 397) ^ UseOSSeparator.GetHashCode();

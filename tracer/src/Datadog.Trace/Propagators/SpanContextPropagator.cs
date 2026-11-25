@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -424,7 +425,7 @@ namespace Datadog.Trace.Propagators
             /// </summary>
             /// <param name="obj">Object to compare</param>
             /// <returns>True if both are equals; otherwise, false.</returns>
-            public override bool Equals(object? obj)
+            public override bool Equals([NotNullWhen(true)] object? obj)
             {
                 return obj is Key key &&
                        HeaderName == key.HeaderName &&

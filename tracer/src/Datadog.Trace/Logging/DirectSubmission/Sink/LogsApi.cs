@@ -128,7 +128,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 if (!shouldRetry || isFinalTry)
                 {
                     // stop retrying
-                    Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
+                    Log.ErrorSkipTelemetry<int, string>(exception, "An error occurred while sending {Count} logs to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
                     return false;
                 }
 

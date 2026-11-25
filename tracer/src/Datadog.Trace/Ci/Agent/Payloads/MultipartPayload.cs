@@ -22,7 +22,7 @@ internal abstract class MultipartPayload : EventPlatformPayload
     private readonly List<MultipartFormItem> _items;
     private readonly int _maxItemsPerPayload;
 
-    public MultipartPayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload)
+    protected MultipartPayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload)
         : base(settings)
     {
         if (maxBytesPerPayload < HeaderSize)

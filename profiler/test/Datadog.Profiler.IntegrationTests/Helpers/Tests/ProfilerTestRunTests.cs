@@ -59,7 +59,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
         [Fact]
         public void From_MissingProfileDirectory_FailsWithProcessOutput()
         {
-            var runner = new TestApplicationRunner("Samples.Computer01", "net8.0", "Samples.Computer01", _output);
+            var runner = CreateRunner();
             const string processOutput = "demo-process-output";
             runner.ProcessOutput = processOutput;
             var profileDirectory = runner.Environment.PprofDir;
@@ -82,7 +82,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
         [Fact]
         public void From_EmptyProfileDirectory_ReturnsNoProfiles()
         {
-            var runner = new TestApplicationRunner("Samples.Computer01", "net8.0", "Samples.Computer01", _output);
+            var runner = CreateRunner();
             var profileDirectory = runner.Environment.PprofDir;
             Directory.CreateDirectory(profileDirectory);
 
@@ -90,6 +90,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Tests
             using var run = ProfilerTestRun.From(runner, agent);
 
             run.Profiles.Profiles.Should().BeEmpty();
+        }
+
+        private TestApplicationRunner CreateRunner()
+        {
+            return new TestAppContext(TestApplicationCatalog.Get(TestApplication.Computer01), TestFramework.Net8).CreateRunner(_output);
         }
     }
 }

@@ -393,7 +393,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         return httpErrorCodesArray;
     }
 
-    public bool Equals(MutableSettings? other)
+    public bool Equals([NotNullWhen(true)] MutableSettings? other)
     {
         if (other is null)
         {
@@ -488,7 +488,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
     }
 
-    public override bool Equals(object? obj)
+    public override bool Equals([NotNullWhen(true)] object? obj)
     {
         return ReferenceEquals(this, obj) || (obj is MutableSettings other && Equals(other));
     }

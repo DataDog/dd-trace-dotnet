@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -92,7 +93,7 @@ namespace Datadog.Trace.Configuration
         public double AnalyticsSampleRate { get; }
 
         /// <inheritdoc/>
-        public bool Equals(IntegrationSettings? other)
+        public bool Equals([NotNullWhen(true)] IntegrationSettings? other)
         {
             if (other is null)
             {
@@ -111,7 +112,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (obj is null)
             {

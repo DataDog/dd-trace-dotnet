@@ -46,7 +46,8 @@ namespace Datadog.Trace
         /// <summary>
         /// Deprecated.
         /// </summary>
-        [Obsolete]
+        // Use PropagatedTags instead
+        [Obsolete("This header is used internally by the tracer and should not be referenced.")]
         public const string DatadogTags = PropagatedTags;
 
         /// <summary>
