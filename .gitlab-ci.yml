@@ -238,20 +238,15 @@ build:
       }
 
       # Enable MSVC /MP, capped at the runner's logical processor count.
-      docker run --name $containerName --rm -m 20480M `
-        -v "$(Get-Location):c:\mnt" `
-        -e CI_JOB_ID=${CI_JOB_ID} `
-        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
-        -e CL_MPCount=16 `
-        -e WINDOWS_BUILDER=true `
-        -e AWS_NETWORKING=true `
-        -e SIGN_WINDOWS=true `
-        -e NUGET_CERT_REVOCATION_MODE=offline `
-        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
-        -e CI_PROJECT_NAME `
-        -e CI_JOB_NAME_SLUG `
-        $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PublishOpenTelemetryStartupHook PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+      & .gitlab/run-windows-container.ps1 -Image $env:WINDOWS_BUILD_IMAGE `
+        -ContainerName $containerName -MemoryLimitBytes $containerMemoryLimit -Environment @(
+          'ENABLE_MULTIPROCESSOR_COMPILATION=true', 'CL_MPCount=16',
+          'SIGN_WINDOWS=true', 'CI_IDENTITIES_GITLAB_ID_TOKEN'
+        ) -Command @(
+          'Info', 'Clean', 'BuildTracerHome', 'BuildProfilerHome', 'BuildNativeLoader', 'BuildDdDotnet',
+          'PublishFleetInstaller', 'PublishOpenTelemetryStartupHook', 'PackageTracerHome', 'ZipSymbols',
+          'SignDlls', 'SignMsi', 'DownloadWinSsiTelemetryForwarder'
+        )
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
@@ -397,18 +392,9 @@ sign-nuget-packages:
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null
       Copy-Item packages-to-sign\*.nupkg "build-out\$env:CI_JOB_ID\packages-to-sign\" -Force
     - |
-      docker run --rm `
-        -v "$(Get-Location):c:\mnt" `
-        -e CI_JOB_ID=$env:CI_JOB_ID `
-        -e WINDOWS_BUILDER=true `
-        -e AWS_NETWORKING=true `
-        -e SIGN_WINDOWS=true `
-        -e NUGET_CERT_REVOCATION_MODE=offline `
-        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
-        -e CI_PROJECT_NAME `
-        -e CI_JOB_NAME_SLUG `
-        $env:WINDOWS_BUILD_IMAGE `
-        SignNuGetPackageContents
+      & .gitlab/run-windows-container.ps1 -Image $env:WINDOWS_BUILD_IMAGE -MemoryLimitBytes 0 `
+        -Environment @('SIGN_WINDOWS=true', 'CI_IDENTITIES_GITLAB_ID_TOKEN') `
+        -Command @('SignNuGetPackageContents')
       if ($LASTEXITCODE -ne 0) {
         throw "Docker sign-nuget-packages container exited with code $LASTEXITCODE"
       }

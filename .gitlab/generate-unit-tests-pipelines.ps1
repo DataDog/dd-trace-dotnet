@@ -1,20 +1,10 @@
 $ErrorActionPreference = 'Stop'
 
-$image = & "$PSScriptRoot/get-windows-build-image.ps1"
-$dockerArguments = @(
-    'run', '--rm', '-m', '20480M',
-    '-v', "$(Get-Location):c:\mnt",
-    '-e', 'CI=true',
-    '-e', 'GITLAB_CI',
-    '-e', 'CI_JOB_ID',
-    '-e', 'CI_COMMIT_BRANCH',
-    '-e', 'CI_MERGE_REQUEST_SOURCE_BRANCH_NAME',
-    '-e', 'CI_PROJECT_NAME',
-    '-e', 'CI_JOB_NAME_SLUG',
-    '-e', 'AWS_NETWORKING=true',
-    '-e', 'WINDOWS_BUILDER=true',
-    '-e', 'NUGET_CERT_REVOCATION_MODE=offline',
-    $image
+$containerEnvironment = @(
+    'CI=true',
+    'GITLAB_CI',
+    'CI_COMMIT_BRANCH',
+    'CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
 )
 $branchArguments = @()
 if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
@@ -23,7 +13,8 @@ if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
 
 # NUKE owns the version-to-release-branch mapping; Git stays on the runner because
 # its checkout may use alternates that are inaccessible inside the container.
-& docker @dockerArguments WriteGitlabUnitTestsBaseBranch @branchArguments
+& "$PSScriptRoot/run-windows-container.ps1" -Environment $containerEnvironment `
+    -Command (@('WriteGitlabUnitTestsBaseBranch') + $branchArguments)
 if ($LASTEXITCODE -ne 0) { throw "Comparison branch resolution failed ($LASTEXITCODE)" }
 $baseBranch = (Get-Content .gitlab/generated/base-branch.txt -Raw).Trim()
 if (-not $baseBranch.StartsWith('origin/')) { throw 'Expected an origin comparison branch from NUKE' }
@@ -39,9 +30,8 @@ $changedFilesPath = Join-Path (Get-Location) '.gitlab/generated/changed-files.js
 [IO.File]::WriteAllText($changedFilesPath, (ConvertTo-Json -InputObject $changedFiles), (New-Object Text.UTF8Encoding $false))
 $includeAll = $env:SHADOW_ALL_TEST_FRAMEWORKS -eq 'true'
 
-& docker @dockerArguments `
-    GenerateGitlabUnitTestsPipelines `
-    --GitlabChangedFiles c:\mnt\.gitlab\generated\changed-files.json `
-    @branchArguments `
-    --IncludeAllTestFrameworks $includeAll
+& "$PSScriptRoot/run-windows-container.ps1" -Environment $containerEnvironment -Command (
+    @('GenerateGitlabUnitTestsPipelines', '--GitlabChangedFiles', 'c:\mnt\.gitlab\generated\changed-files.json') +
+    $branchArguments + @('--IncludeAllTestFrameworks', $includeAll.ToString())
+)
 if ($LASTEXITCODE -ne 0) { throw "Unit-test matrix generation failed ($LASTEXITCODE)" }
