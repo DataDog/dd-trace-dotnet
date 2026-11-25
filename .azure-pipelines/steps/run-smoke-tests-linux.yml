@@ -12,7 +12,7 @@ jobs:
     jobs: [test]
 
 - job: test
-  timeoutInMinutes: 20
+  timeoutInMinutes: 60
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]

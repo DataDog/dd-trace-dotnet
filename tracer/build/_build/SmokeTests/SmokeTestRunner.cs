@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using System.Linq;
@@ -151,16 +152,46 @@ public static partial class SmokeTestRunner
             // 10. Run crash test
             if (scenario.RunCrashTest)
             {
-                // Capture the container id via callback (not the return value) so that if the
-                // crash test throws (e.g. the wait times out), the finally block can still dump
-                // its logs and clean it up. Otherwise the container leaks and keeps the network
-                // alive, masking the real failure behind a "network has active endpoints" warning.
-                await RunCrashTestAsync(
-                    imageTag, networkName,
-                    environment.ToHostPath(logsDir),
-                    environment.ToHostPath(dumpsDir),
-                    scenario.GetEnvironment(isCrashTest: true),
-                    id => crashTestContainerId = id);
+                // Investigation only: repeat the crash test on the x64 Alpine .NET 9/10/11 rows
+                var iterations = IsRepeatedCrashTestScenario(scenario) ? CrashTestRepeatCount : 1;
+                var failures = 0;
+                for (var i = 1; i <= iterations; i++)
+                {
+                    try
+                    {
+                        // Capture the container id via callback (not the return value) so that if the
+                        // crash test throws (e.g. the wait times out), the finally block can still dump
+                        // its logs and clean it up. Otherwise the container leaks and keeps the network
+                        // alive, masking the real failure behind a "network has active endpoints" warning.
+                        await RunCrashTestAsync(
+                            imageTag, networkName,
+                            environment.ToHostPath(logsDir),
+                            environment.ToHostPath(dumpsDir),
+                            scenario.GetEnvironment(isCrashTest: true),
+                            id => crashTestContainerId = id);
+                    }
+                    catch (Exception ex) when (iterations > 1 && ex is InvalidOperationException or OperationCanceledException)
+                    {
+                        failures++;
+                        Logger.Error(ex, "Crash test iteration {Iteration}/{Count} failed", i, iterations);
+                        await DumpContainerLogsAsync("crash-test", crashTestContainerId);
+                    }
+
+                    if (i < iterations)
+                    {
+                        await DockerService.RemoveContainerAsync(crashTestContainerId);
+                        crashTestContainerId = null;
+                    }
+                }
+
+                if (iterations > 1)
+                {
+                    Logger.Information("Crash test repeated {Count} times: {Failures} failures", iterations, failures);
+                    if (failures > 0)
+                    {
+                        throw new InvalidOperationException($"Crash test failed {failures} times out of {iterations}");
+                    }
+                }
             }
         }
         finally
@@ -475,6 +506,7 @@ public static partial class SmokeTestRunner
             dumpsDir: dumpsDir,
             isWindowsScenario: false, // We don't yet support windows crash-tests
             environmentVariables);
+        var stopwatch = Stopwatch.StartNew();
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
             "crash-test", containerParams, ct);
 
@@ -483,9 +515,23 @@ public static partial class SmokeTestRunner
         onContainerStarted(containerId);
 
         // Wait for the container to exit (non-zero exit is expected)
-        var statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
+        long statusCode;
+        try
+        {
+            statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.Error("Crash test failed (mode D): timed out after {Duration}", stopwatch.Elapsed);
+            await DockerService.LogContainerStateAsync("Crash test", containerId);
+            throw;
+        }
+
+        Logger.Information("Crash test container ran for {Duration}", stopwatch.Elapsed);
+        await DockerService.LogContainerStateAsync("Crash test", containerId);
         if (statusCode == 0)
         {
+            Logger.Error("Crash test failed (mode D): container exited with code 0");
             throw new InvalidOperationException($"Crash test container unexpectedly exited with code {statusCode}");
         }
 
@@ -499,10 +545,41 @@ public static partial class SmokeTestRunner
         }
         else
         {
-            Logger.Error("Crash test failed: did not find expected message in logs:\n{Logs}", logs);
+            Logger.Error("Crash test failed (mode {Mode}): did not find expected message in logs:\n{Logs}", GetCrashTestFailureMode(logs), logs);
             throw new InvalidOperationException(
                 $"Crash test failed: did not find '{expectedMessage}' in container logs");
         }
+    }
+
+    const int CrashTestRepeatCount = 100;
+
+    static bool IsRepeatedCrashTestScenario(SmokeTestScenario scenario)
+        => RuntimeInformation.OSArchitecture == Architecture.X64
+           && (scenario.RuntimeTag.StartsWith("11.0-alpine3.24")
+               || scenario.RuntimeTag.StartsWith("10.0-alpine3.22")
+               || scenario.RuntimeTag.StartsWith("9.0-alpine3.24"));
+
+    // A: dd-dotnet did not run, B: dd-dotnet stopped with an error,
+    // C: the crash was not found suspicious, E: anything else (D, timeout or exit code 0, is handled by the caller)
+    static string GetCrashTestFailureMode(string logs)
+    {
+        if (logs.Contains("The crash is not suspicious"))
+        {
+            return "C";
+        }
+
+        if (logs.Contains("Datadog - Some errors occurred"))
+        {
+            return "B";
+        }
+
+        var ddDotnetStarted = logs.Contains("dd-dotnet invoked with command-line");
+        if (!ddDotnetStarted && !logs.Contains("Datadog -"))
+        {
+            return "A";
+        }
+
+        return ddDotnetStarted && !logs.Contains("dd-dotnet exited normally") ? "B" : "E";
     }
 
 
