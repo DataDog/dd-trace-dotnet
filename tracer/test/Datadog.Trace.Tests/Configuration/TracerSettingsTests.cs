@@ -899,12 +899,15 @@ namespace Datadog.Trace.Tests.Configuration
             settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
         }
 
-        [Fact]
-        public void SdkMode_OtelSdkDisabledTakesPrecedence()
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("true", true)] // A misconfiguration, which logs a warning: DD_TRACE_ENABLED=true still turns tracing back on
+        public void SdkMode_OtelSdkDisabledTakesPrecedence(string traceEnabled, bool expectedTraceEnabled)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.SdkMode, "otel"),
-                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"));
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.TraceEnabled, traceEnabled));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
 
@@ -913,7 +916,7 @@ namespace Datadog.Trace.Tests.Configuration
             settings.IsActivityListenerEnabled.Should().BeFalse();
             settings.OpenTelemetryMetricsEnabled.Should().BeFalse();
             settings.OpenTelemetryLogsEnabled.Should().BeFalse();
-            settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedTraceEnabled);
 
             // DD_SDK_MODE=otel doesn't enable the signals that OTEL_SDK_DISABLED=true turns off
             string[] signalKeys =
