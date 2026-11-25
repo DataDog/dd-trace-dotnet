@@ -32,6 +32,8 @@ finally {
     $response = $null
 }
 
+# Keep failure, skip, retry and hang diagnostics without routine per-test progress.
+$env:DD_TEST_LOG_ROUTINE_EVENTS = 'false'
 & C:\entrypoint.bat RunManagedUnitTests --framework $env:FRAMEWORK `
     --RunManagedUnitTestsFromArtifacts true --NugetPackageDirectory C:\mnt\packages
 exit $LASTEXITCODE

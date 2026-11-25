@@ -31,6 +31,8 @@ if [ -z "$(printf '%s' "${DD_LOGGER_DD_API_KEY:-}" | tr -d '[:space:]')" ]; then
 fi
 
 unset DD_STS_OIDC_TOKEN
+# Keep failure, skip, retry and hang diagnostics without routine per-test progress.
+export DD_TEST_LOG_ROUTINE_EVENTS=false
 exec sh .gitlab/run-nuke-linux-container.sh \
     RunManagedUnitTests \
     --framework "$FRAMEWORK" \

@@ -1585,7 +1585,7 @@ partial class Build
 
                     try
                     {
-                        var testSettings = new DotNetTestSettings()
+                        DotNetTest(s => s
                             .When(!RunManagedUnitTestsFromArtifacts, settings => settings
                                 .EnableNoRestore()
                                 .EnableNoBuild()
@@ -1613,14 +1613,7 @@ partial class Build
                                     }
 
                                     return settings.SetProjectFile(assembly).SetTestAdapterPath(directory);
-                                }));
-
-                        // NUKE 6.3's batch executor clones settings and cannot serialize logger delegates.
-                        // Attach the logger after configuration and execute each settings object directly.
-                        foreach (var settings in testSettings)
-                        {
-                            DotNetTest(settings.When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger))));
-                        }
+                                })));
                     }
                     catch (Exception ex)
                     {

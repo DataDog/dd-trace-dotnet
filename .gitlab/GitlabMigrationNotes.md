@@ -67,6 +67,6 @@ Windows shadow producers and matrix generation retain CI Identity tokens on the 
 
 Results, logs, and dumps are retained on failure. Native XML is published as GitLab JUnit reports. Linux profiler producers must collect both `profiler/build_data/tests` and `artifacts/build_data/tests`: native-loader results are written to the latter. Managed TRX files remain downloadable artifacts, not native GitLab test reports; managed test telemetry is sent to CI Visibility.
 
-Console filtering removes only identified STARTED/SUCCESS event headers. Unprefixed continuations and stderr remain visible because parallel tests can interleave failure details with multiline arguments.
+Managed-test setup sets `DD_TEST_LOG_ROUTINE_EVENTS=false` so the custom test framework omits STARTED/SUCCESS diagnostics at their source. Failure, skip, retry and hang diagnostics remain enabled; no console-output filter is applied. Azure and local runs keep routine logging by default.
 
 A green ordinary run validates only its selected matrix. Before treating coverage as equivalent to Azure, check generated job lists, full-framework executions, actual test counts, retained results, and CI Visibility attribution. Local syntax checks do not validate runner access, image publication, nested artifact downloads, or credential exchange.
