@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/src/Confluent.Kafka/Partition.cs#L217-L224
         /// </summary>
         /// <returns>A string that represents the Partition object</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return IsSpecial ? "[Any]" : $"[{Value.ToString()}]";
         }

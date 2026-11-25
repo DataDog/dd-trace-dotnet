@@ -95,6 +95,20 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
             return new ProfileSampleSet(matches);
         }
 
+        public IReadOnlyCollection<string> DistinctLabelValues(string name)
+        {
+            var values = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var sample in _samples)
+            {
+                foreach (var value in sample.Labels.GetValues(name))
+                {
+                    values.Add(value);
+                }
+            }
+
+            return values;
+        }
+
         public long Sum(ProfileValue value)
         {
             long sum = 0;

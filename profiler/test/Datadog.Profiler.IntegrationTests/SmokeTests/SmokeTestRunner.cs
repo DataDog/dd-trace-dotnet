@@ -23,29 +23,6 @@ namespace Datadog.Profiler.SmokeTests
         private readonly TestApplicationRunner _testApplicationRunner;
 
         public SmokeTestRunner(
-            string appName,
-            string framework,
-            string appAssembly,
-            ITestOutputHelper output,
-            TransportType transportType = TransportType.Http)
-            : this(appName, framework, appAssembly, commandLine: null, output: output, transportType: transportType)
-        {
-        }
-
-        public SmokeTestRunner(
-            string appName,
-            string framework,
-            string appAssembly,
-            string commandLine,
-            ITestOutputHelper output,
-            TransportType transportType = TransportType.Http)
-        {
-            _transportType = transportType;
-            _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
-            _output = _testApplicationRunner.XUnitLogger;
-        }
-
-        public SmokeTestRunner(
             TestAppContext context,
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
@@ -58,14 +35,10 @@ namespace Datadog.Profiler.SmokeTests
             string commandLine,
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
-            : this(
-                context.Application.FolderName,
-                TestFrameworkInfo.ToMoniker(context.Framework),
-                context.Application.AssemblyName,
-                commandLine,
-                output,
-                transportType)
         {
+            _transportType = transportType;
+            _testApplicationRunner = new TestApplicationRunner(context, output, commandLine);
+            _output = _testApplicationRunner.XUnitLogger;
         }
 
         public int MinimumExpectedNbPprofFiles { get; set; } = 2;

@@ -128,7 +128,7 @@ internal struct Variant
         return false;
     }
 
-    public unsafe void CopyFromIndirect(object value)
+    public readonly unsafe void CopyFromIndirect(object value)
     {
         VarEnum vt = (VarEnum)(((int)this.VariantType) & ~((int)VarEnum.VT_BYREF));
 
@@ -288,13 +288,13 @@ internal struct Variant
 
     public VarEnum VariantType
     {
-        get => (VarEnum)_typeUnion._vt;
+        readonly get => (VarEnum)_typeUnion._vt;
         set => _typeUnion._vt = (ushort)value;
     }
 
-    public bool IsEmpty => _typeUnion._vt == ((ushort)VarEnum.VT_EMPTY);
+    public readonly bool IsEmpty => _typeUnion._vt == ((ushort)VarEnum.VT_EMPTY);
 
-    public bool IsByRef => (_typeUnion._vt & ((ushort)VarEnum.VT_BYREF)) != 0;
+    public readonly bool IsByRef => (_typeUnion._vt & ((ushort)VarEnum.VT_BYREF)) != 0;
 
     public void SetAsNULL()
     {
@@ -306,7 +306,7 @@ internal struct Variant
 
     public sbyte AsI1
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_I1);
             return _typeUnion._unionTypes._i1;
@@ -324,7 +324,7 @@ internal struct Variant
 
     public short AsI2
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_I2);
             return _typeUnion._unionTypes._i2;
@@ -342,7 +342,7 @@ internal struct Variant
 
     public int AsI4
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_I4);
             return _typeUnion._unionTypes._i4;
@@ -360,7 +360,7 @@ internal struct Variant
 
     public long AsI8
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_I8);
             return _typeUnion._unionTypes._i8;
@@ -378,7 +378,7 @@ internal struct Variant
 
     public byte AsUi1
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UI1);
             return _typeUnion._unionTypes._ui1;
@@ -396,7 +396,7 @@ internal struct Variant
 
     public ushort AsUi2
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UI2);
             return _typeUnion._unionTypes._ui2;
@@ -414,7 +414,7 @@ internal struct Variant
 
     public uint AsUi4
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UI4);
             return _typeUnion._unionTypes._ui4;
@@ -432,7 +432,7 @@ internal struct Variant
 
     public ulong AsUi8
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UI8);
             return _typeUnion._unionTypes._ui8;
@@ -450,7 +450,7 @@ internal struct Variant
 
     public int AsInt
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_INT);
             return _typeUnion._unionTypes._int;
@@ -468,7 +468,7 @@ internal struct Variant
 
     public uint AsUint
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UINT);
             return _typeUnion._unionTypes._uint;
@@ -486,7 +486,7 @@ internal struct Variant
 
     public bool AsBool
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_BOOL);
             return _typeUnion._unionTypes._bool != 0;
@@ -506,7 +506,7 @@ internal struct Variant
 
     public int AsError
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_ERROR);
             return _typeUnion._unionTypes._error;
@@ -524,7 +524,7 @@ internal struct Variant
 
     public float AsR4
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_R4);
             return _typeUnion._unionTypes._r4;
@@ -542,7 +542,7 @@ internal struct Variant
 
     public double AsR8
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_R8);
             return _typeUnion._unionTypes._r8;
@@ -560,7 +560,7 @@ internal struct Variant
 
     public decimal AsDecimal
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_DECIMAL);
             // The first byte of Decimal is unused, but usually set to 0
@@ -583,7 +583,7 @@ internal struct Variant
 
     public decimal AsCy
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_CY);
             return decimal.FromOACurrency(_typeUnion._unionTypes._cy);
@@ -601,7 +601,7 @@ internal struct Variant
 
     public DateTime AsDate
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_DATE);
             return DateTime.FromOADate(_typeUnion._unionTypes._date);
@@ -619,7 +619,7 @@ internal struct Variant
 
     public string? AsBstr
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_BSTR);
             if (_typeUnion._unionTypes._bstr == IntPtr.Zero)
@@ -642,7 +642,7 @@ internal struct Variant
 
     public object? AsUnknown
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_UNKNOWN);
 
@@ -674,7 +674,7 @@ internal struct Variant
 
     public object? AsDispatch
     {
-        get
+        readonly get
         {
             Debug.Assert(VariantType == VarEnum.VT_DISPATCH);
 
@@ -701,7 +701,7 @@ internal struct Variant
         }
     }
 
-    public IntPtr AsByRefVariant
+    public readonly IntPtr AsByRefVariant
     {
         get
         {

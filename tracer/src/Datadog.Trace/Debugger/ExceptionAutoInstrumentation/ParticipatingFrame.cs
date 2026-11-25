@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 #nullable enable
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         Blacklist
     }
 
-    internal readonly struct ParticipatingFrame
+    internal readonly struct ParticipatingFrame : IEquatable<ParticipatingFrame>
     {
         private const int UndefinedIlOffset = -1;
 
@@ -51,14 +52,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return MethodIdentifier.Equals(other.MethodIdentifier);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ParticipatingFrame other && Equals(other);
         }
 
         public override string ToString()
         {
-            var methodName = Method?.DeclaringType?.FullName + "." + Method?.Name ?? "Unknown Method";
+            var methodName = Method is null ? "Unknown Method" : $"{Method.DeclaringType?.FullName}.{Method.Name}";
             var blacklistStatus = State == ParticipatingFrameState.Blacklist ? "Blacklisted" : "Not Blacklisted";
             var ilOffsetInfo = ILOffset != UndefinedIlOffset ? $"IL Offset: {ILOffset}" : "IL Offset: Undefined";
             return $"ParticipatingFrame: Method={methodName}, State={State}, {ilOffsetInfo}, {blacklistStatus}";

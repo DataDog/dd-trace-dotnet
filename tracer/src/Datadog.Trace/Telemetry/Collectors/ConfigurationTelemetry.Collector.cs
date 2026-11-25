@@ -228,9 +228,9 @@ namespace Datadog.Trace.Configuration.Telemetry
                     _current = default;
                 }
 
-                public ConfigurationKeyValue Current => _current;
+                public readonly ConfigurationKeyValue Current => _current;
 
-                object IEnumerator.Current => _current;
+                readonly object IEnumerator.Current => _current;
 
                 public bool MoveNext()
                 {
@@ -259,7 +259,7 @@ namespace Datadog.Trace.Configuration.Telemetry
                     _current = default;
                 }
 
-                public void Dispose()
+                public readonly void Dispose()
                 {
                     // nothing to dispose
                 }

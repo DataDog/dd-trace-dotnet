@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -35,5 +36,5 @@ internal readonly struct ProbeExpressionsBucketKey : IEquatable<ProbeExpressions
         ReturnType == other.ReturnType &&
         MemberCount == other.MemberCount;
 
-    public override bool Equals(object? obj) => obj is ProbeExpressionsBucketKey other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ProbeExpressionsBucketKey other && Equals(other);
 }

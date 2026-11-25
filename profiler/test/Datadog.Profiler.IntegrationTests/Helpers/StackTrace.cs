@@ -29,13 +29,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackFrame this[int offset] => _stackFrames[offset];
 
         /// <summary>
-        /// Compares the leading frames of this stack to <paramref name="other"/> (prefix / "starts with" in list order).
+        /// Compares the leading frames of this stack to <paramref name="other"/> (prefix check).
         /// </summary>
-        public bool EndWith(StackTrace other) => EndWith(other, out _);
+        public bool StartsWith(StackTrace other) => StartsWith(other, out _);
 
-        /// <inheritdoc cref="EndWith(StackTrace)"/>
+        /// <inheritdoc cref="StartsWith(StackTrace)"/>
         /// <param name="failureMessage">When the method returns <see langword="false"/>, describes the first mismatch or too-short stack.</param>
-        public bool EndWith(StackTrace other, out string failureMessage)
+        public bool StartsWith(StackTrace other, out string failureMessage)
         {
             failureMessage = string.Empty;
 
@@ -51,9 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             for (int i = 0; i < other._stackFrames.Count; i++)
             {
-                var actualText = _stackFrames[i].ToString();
-                var expectedText = other._stackFrames[i].ToString();
-                if (actualText != expectedText)
+                if (!_stackFrames[i].Equals(other._stackFrames[i]))
                 {
                     failureMessage =
                         $"First mismatch at compared frame index {i}.\n\n" +
@@ -87,46 +85,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public override int GetHashCode() => _stackFrames.Count;
 
         public override string ToString() => string.Join(Environment.NewLine, _stackFrames);
-
-        public bool Contains(StackTrace other)
-        {
-            if (_stackFrames.Count < other._stackFrames.Count)
-            {
-                return false;
-            }
-
-            int i = 0;
-            while (i < _stackFrames.Count && !_stackFrames[i].Equals(other._stackFrames[0]))
-            {
-                i++;
-            }
-
-            if (_stackFrames.Count - i + 1 < other._stackFrames.Count)
-            {
-                return false;
-            }
-
-            int j = 0;
-
-            for (; j < other._stackFrames.Count; i++, j++)
-            {
-                if (!_stackFrames[i].Equals(other._stackFrames[j]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Compares the leading frames of this stack to <paramref name="other"/> (prefix check).
-        /// Same rule as <see cref="EndWith(StackTrace)"/>.
-        /// </summary>
-        public bool StartsWith(StackTrace other) => StartsWith(other, out _);
-
-        /// <inheritdoc cref="StartsWith(StackTrace)"/>
-        public bool StartsWith(StackTrace other, out string failureMessage) => EndWith(other, out failureMessage);
 
         /// <summary>
         /// Returns whether <paramref name="other"/> appears as a contiguous sequence of frames.

@@ -21,10 +21,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckApplicationDoesNotEndUpInDeadlock(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01)]
+        public void CheckApplicationDoesNotEndUpInDeadlock(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, ScenarioLinuxMallocDeadlock, _output);
+            var runner = new SmokeTestRunner(app, ScenarioLinuxMallocDeadlock, _output);
             runner.RunAndCheck();
         }
     }

@@ -9,20 +9,20 @@ using System.Runtime.InteropServices;
 namespace Datadog.Trace.Debugger.PInvoke
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct NativeMethodProbeDefinition : IDisposable
+    internal readonly struct NativeMethodProbeDefinition : IDisposable
     {
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string ProbeId;
+        public readonly string ProbeId;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetType;
+        public readonly string TargetType;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetMethod;
+        public readonly string TargetMethod;
 
-        public IntPtr TargetParameterTypes;
+        public readonly IntPtr TargetParameterTypes;
 
-        public ushort TargetSignatureTypesLength;
+        public readonly ushort TargetSignatureTypesLength;
 
         public NativeMethodProbeDefinition(
                 string probeId,

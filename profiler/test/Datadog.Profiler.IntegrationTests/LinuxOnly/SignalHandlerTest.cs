@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
@@ -24,36 +22,31 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", frameworks: new[] { "net6.0" })]
-        public void CheckApplicationWithItsOwnSignalHandler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6)]
+        public void CheckApplicationWithItsOwnSignalHandler(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, ScenarioLinuxHandler, _output);
+            var runner = new SmokeTestRunner(app, ScenarioLinuxHandler, _output);
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void CheckSignalHandlerIsInstalledOnce(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator)]
+        public void CheckSignalHandlerIsInstalledOnce(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, ScenarioLinuxHandler);
+            var runner = app.CreateRunner(_output, ScenarioLinuxHandler);
 
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            Assert.True(run.UploadCount > 0);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            run.Logs.NativeProfiler
+                .LinesContaining("Successfully setup signal handler for User defined signal 1 signal")
+                .Should().HaveCount(1);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            File.ReadLines(logFile)
-                .Count(l => l.Contains("Successfully setup signal handler for User defined signal 1 signal"))
-                .Should().Be(1);
-
-            File.ReadLines(logFile)
-                .Count(l => l.Contains("Successfully setup signal handler for Profiling timer expired signal"))
-                .Should().Be(1);
+            run.Logs.NativeProfiler
+                .LinesContaining("Successfully setup signal handler for Profiling timer expired signal")
+                .Should().HaveCount(1);
         }
     }
 }
