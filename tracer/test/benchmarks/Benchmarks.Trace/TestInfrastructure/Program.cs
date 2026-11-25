@@ -126,11 +126,9 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Skips benchmark classes marked with <see cref="MinRuntimeAttribute"/>
-        /// when their body compiles to a stub on the target runtime. A stub
-        /// (see AutoInstrumentation/AspNetCoreBenchmark.cs) measures the
-        /// BenchmarkDotNet loop overhead instead of a scenario, so it is not
-        /// worth running. Benchmark classes without the attribute always run.
+        /// Skips a benchmark class when <see cref="MinRuntimeAttribute"/> marks
+        /// the job's runtime as older than its real body. Classes without the
+        /// attribute always run.
         /// </summary>
         private static bool HasRealBody(BenchmarkCase benchmarkCase)
         {
@@ -142,19 +140,17 @@ namespace Benchmarks.Trace
             }
 
             // BenchmarkDotNet 0.15.8 keeps RuntimeInformation.GetCurrentRuntime()
-            // internal; EnvironmentResolver is the public resolver that
-            // registers it, so resolving through it yields the host's current
-            // runtime for jobs that do not pin one explicitly.
+            // internal; EnvironmentResolver is the public path to the same value
+            // for jobs that do not pin a runtime.
             var runtime = benchmarkCase.Job.Environment.Runtime
                 ?? benchmarkCase.Job.Environment.ResolveValue(EnvironmentMode.RuntimeCharacteristic, EnvironmentResolver.Instance);
 
             var moniker = runtime.RuntimeMoniker;
 
-            // NotRecognized means this BenchmarkDotNet predates the job's TFM
-            // (e.g. .NET 11 with BenchmarkDotNet 0.15.8). NotRecognized sorts
-            // below Net461, so the ordinal comparison alone would silently
-            // skip real benchmarks on newer TFMs; run them instead. The enum is
-            // documented by BenchmarkDotNet as ordered for version comparison.
+            // NotRecognized means BenchmarkDotNet predates the job's TFM (e.g.
+            // .NET 11 on 0.15.8) and sorts below Net461, so the ordinal check
+            // would skip real benchmarks; run them instead. The enum is ordered
+            // for version comparison by BenchmarkDotNet itself.
             if (moniker == RuntimeMoniker.NotRecognized)
             {
                 return true;
