@@ -13,7 +13,6 @@ using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
@@ -127,7 +126,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             run.UploadCount.Should().BeGreaterThan(0);
 
             var parser = TelemetryMetricsFileParser.LoadFromDirectory(run.ProfileDirectory);
-            Assert.True(parser == null, "Metrics files should not be generated");
+            parser.Should().BeNull("Metrics files should not be generated");
         }
 
         [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]

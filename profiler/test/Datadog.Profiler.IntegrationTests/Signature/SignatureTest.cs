@@ -10,7 +10,7 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
-using Xunit;
+using FluentAssertions.Execution;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Signature
@@ -62,7 +62,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             if (exceptionSamples.Any(sample => IsArm64DegradedStack(sample.Stacktrace)))
             {
                 // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
-                Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+                Execute.Assertion.FailWith("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
             }
 
             // A state machine is a type nested in the type declaring the async method: the generic
@@ -409,10 +409,10 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                 if (IsArm64DegradedStack(sample.Stacktrace))
                 {
                     // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
-                    Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+                    Execute.Assertion.FailWith("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
                 }
 
-                Assert.True(sample.Stacktrace.StartsWith(stack, out var stackStartsWithMessage), stackStartsWithMessage);
+                sample.Stacktrace.StartsWith(stack, out var stackStartsWithMessage).Should().BeTrue("{0}", stackStartsWithMessage);
             }
         }
 
@@ -423,7 +423,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             // Exact sample types before ExceptionSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);

@@ -6,7 +6,7 @@
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Threads
@@ -33,8 +33,9 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             using var run = runner.Run();
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
-            Assert.True(run.UploadCount > 0);
-            Assert.True(run.Profiles.AllSamplesMatch(IsThreadLifetimeSample));
+            run.UploadCount.Should().BeGreaterThan(0);
+            run.Profiles.Profiles.Should().NotBeEmpty().And.OnlyContain(profile => profile.Samples.Count > 0);
+            run.Profiles.Samples.Should().OnlyContain(sample => IsThreadLifetimeSample(sample));
         }
 
         [TestAppFact(TestApplication.Computer01, /*TestFramework.Net48,*/ TestFramework.Net6, TestFramework.Net7)]
@@ -45,8 +46,8 @@ namespace Datadog.Profiler.IntegrationTests.Threads
 
             using var run = runner.Run();
 
-            Assert.False(run.UploadCount > 0);
-            Assert.False(run.Profiles.AllSamplesMatch(IsThreadLifetimeSample));
+            run.UploadCount.Should().Be(0);
+            run.Profiles.Samples.Should().NotContain(sample => IsThreadLifetimeSample(sample));
         }
 
         private static bool IsThreadLifetimeSample(ProfileSample sample)

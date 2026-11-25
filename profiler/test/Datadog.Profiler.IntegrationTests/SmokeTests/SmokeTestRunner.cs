@@ -10,7 +10,6 @@ using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
@@ -107,12 +106,12 @@ namespace Datadog.Profiler.SmokeTests
         private void CheckPprofFiles()
         {
             var pprofFiles = Directory.EnumerateFiles(EnvironmentHelper.PprofDir, "*.pprof", SearchOption.AllDirectories).ToList();
-            Assert.True(pprofFiles.Count >= MinimumExpectedNbPprofFiles, $"The number of pprof files was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {pprofFiles.Count}");
+            pprofFiles.Count.Should().BeGreaterThanOrEqualTo(MinimumExpectedNbPprofFiles, $"The number of pprof files was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {pprofFiles.Count}");
         }
 
         private void CheckAgent(MockDatadogAgent agent)
         {
-            Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThanOrEqualTo(MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
         }
     }
 }

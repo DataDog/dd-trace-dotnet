@@ -41,7 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
 
             labels.GetValues("thread name").Should().Equal("main", "worker");
             labels.GetRequired("span id").Should().Be("42");
-            var duplicate = Assert.Throws<InvalidOperationException>(() => labels.GetRequired("thread name"));
+            var duplicate = FluentActions.Invoking(() => labels.GetRequired("thread name")).Should().ThrowExactly<InvalidOperationException>().Which;
             duplicate.Message.Should().Contain(path);
             duplicate.Message.Should().Contain("main");
             duplicate.Message.Should().Contain("worker");

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -43,11 +43,11 @@ namespace Datadog.Profiler.IntegrationTests
             // uncomment to debug multipart http request
             // Thread.Sleep(10000000);
 
-            Assert.True(hasHeapSnapshot);
+            hasHeapSnapshot.Should().BeTrue();
 
             // check the heap snapshots content is correct
             var heapSnapshotFiles = System.IO.Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
-            Assert.True(heapSnapshotFiles.Length > 0);
+            heapSnapshotFiles.Length.Should().BeGreaterThan(0);
             foreach (var heapSnapshotFile in heapSnapshotFiles)
             {
                 var containsString = false;
@@ -91,11 +91,11 @@ namespace Datadog.Profiler.IntegrationTests
                     return true;
                 });
 
-                Assert.True(containsString, $"Heap snapshot file {heapSnapshotFile} does not contain System.String type");
-                Assert.True(containsRuntimeTypes, $"Heap snapshot file {heapSnapshotFile} does not contain System.Runtime type");
-                Assert.True(containsStackOverflowException, $"Heap snapshot file {heapSnapshotFile} does not contain System.StackOverflowException type");
-                Assert.True(containsOutofMemoryException, $"Heap snapshot file {heapSnapshotFile} does not contain System.OutOfMemoryException type");
-                Assert.True(containsComputer01Scenario, $"Heap snapshot file {heapSnapshotFile} does not contain Samples.Computer01.Scenario type");
+                containsString.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.String type");
+                containsRuntimeTypes.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.Runtime type");
+                containsStackOverflowException.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.StackOverflowException type");
+                containsOutofMemoryException.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.OutOfMemoryException type");
+                containsComputer01Scenario.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain Samples.Computer01.Scenario type");
             }
         }
     }

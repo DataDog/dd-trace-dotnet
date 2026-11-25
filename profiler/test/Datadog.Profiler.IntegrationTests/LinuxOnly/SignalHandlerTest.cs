@@ -38,7 +38,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             run.Logs.NativeProfiler
                 .LinesContaining("Successfully setup signal handler for User defined signal 1 signal")

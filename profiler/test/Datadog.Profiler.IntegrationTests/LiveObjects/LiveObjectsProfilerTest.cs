@@ -5,7 +5,7 @@
 
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.LiveObjects
@@ -29,8 +29,9 @@ namespace Datadog.Profiler.IntegrationTests.LiveObjects
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
-            Assert.True(run.Profiles.AllSamplesMatch(sample => sample.Labels.Has(ProfileLabelNames.ObjectLifetime)));
+            run.UploadCount.Should().BeGreaterThan(0);
+            run.Profiles.Profiles.Should().NotBeEmpty().And.OnlyContain(profile => profile.Samples.Count > 0);
+            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has(ProfileLabelNames.ObjectLifetime));
         }
     }
 }

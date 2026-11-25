@@ -6,7 +6,7 @@
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Xunit;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Timeline
@@ -41,9 +41,9 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
             // only the GC CPU sample does not have a timestamp label
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")));
+            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample"));
         }
     }
 }

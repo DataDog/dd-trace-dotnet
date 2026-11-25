@@ -57,27 +57,27 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            Assert.Single(profilerRuntimeIds.Distinct());
-            Assert.Single(tracerRuntimeIds.Distinct());
+            profilerRuntimeIds.Distinct().Should().ContainSingle();
+            tracerRuntimeIds.Distinct().Should().ContainSingle();
 
             var profilerRuntimeId = profilerRuntimeIds.First();
-            Assert.NotNull(profilerRuntimeId);
-            Assert.NotEmpty(profilerRuntimeId);
+            profilerRuntimeId.Should().NotBeNull();
+            profilerRuntimeId.Should().NotBeEmpty();
 
             var tracerRuntimeId = tracerRuntimeIds.First();
-            Assert.NotNull(tracerRuntimeId);
-            Assert.NotEmpty(tracerRuntimeId);
+            tracerRuntimeId.Should().NotBeNull();
+            tracerRuntimeId.Should().NotBeEmpty();
 
-            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+            profilerRuntimeId.Should().Be(tracerRuntimeId);
 
             // We cannot enumerate and check for each pprof files if it contains trace context.
             // The profiler is configured to export/write pprof file every 3s, but
             // depending on the machine or if it's release or debug, the first pprof file
             // may not contains any trace context.
             var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
-            Assert.NotEmpty(tracingContexts);
+            tracingContexts.Should().NotBeEmpty();
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -105,27 +105,27 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            Assert.Single(profilerRuntimeIds.Distinct());
-            Assert.Single(tracerRuntimeIds.Distinct());
+            profilerRuntimeIds.Distinct().Should().ContainSingle();
+            tracerRuntimeIds.Distinct().Should().ContainSingle();
 
             var profilerRuntimeId = profilerRuntimeIds.First();
-            Assert.NotNull(profilerRuntimeId);
-            Assert.NotEmpty(profilerRuntimeId);
+            profilerRuntimeId.Should().NotBeNull();
+            profilerRuntimeId.Should().NotBeEmpty();
 
             var tracerRuntimeId = tracerRuntimeIds.First();
-            Assert.NotNull(tracerRuntimeId);
-            Assert.NotEmpty(tracerRuntimeId);
+            tracerRuntimeId.Should().NotBeNull();
+            tracerRuntimeId.Should().NotBeEmpty();
 
-            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+            profilerRuntimeId.Should().Be(tracerRuntimeId);
 
             // We cannot enumerate and check for each pprof files if it contains trace context.
             // The profiler is configured to export/write pprof file every 3s, but
             // depending on the machine or if it's release or debug, the first pprof file
             // may not contains any trace context.
             var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
-            Assert.NotEmpty(tracingContexts);
+            tracingContexts.Should().NotBeEmpty();
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -153,23 +153,23 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            Assert.Single(profilerRuntimeIds.Distinct());
-            Assert.Single(tracerRuntimeIds.Distinct());
+            profilerRuntimeIds.Distinct().Should().ContainSingle();
+            tracerRuntimeIds.Distinct().Should().ContainSingle();
 
             var profilerRuntimeId = profilerRuntimeIds.First();
-            Assert.NotNull(profilerRuntimeId);
-            Assert.NotEmpty(profilerRuntimeId);
+            profilerRuntimeId.Should().NotBeNull();
+            profilerRuntimeId.Should().NotBeEmpty();
 
             var tracerRuntimeId = tracerRuntimeIds.First();
-            Assert.NotNull(tracerRuntimeId);
-            Assert.NotEmpty(tracerRuntimeId);
+            tracerRuntimeId.Should().NotBeNull();
+            tracerRuntimeId.Should().NotBeEmpty();
 
-            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+            profilerRuntimeId.Should().Be(tracerRuntimeId);
 
             var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
-            Assert.NotEmpty(tracingContexts);
+            tracingContexts.Should().NotBeEmpty();
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
@@ -203,23 +203,23 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            Assert.Single(profilerRuntimeIds.Distinct());
-            Assert.Single(tracerRuntimeIds.Distinct());
+            profilerRuntimeIds.Distinct().Should().ContainSingle();
+            tracerRuntimeIds.Distinct().Should().ContainSingle();
 
             var profilerRuntimeId = profilerRuntimeIds.First();
-            Assert.NotNull(profilerRuntimeId);
-            Assert.NotEmpty(profilerRuntimeId);
+            profilerRuntimeId.Should().NotBeNull();
+            profilerRuntimeId.Should().NotBeEmpty();
 
             var tracerRuntimeId = tracerRuntimeIds.First();
-            Assert.NotNull(tracerRuntimeId);
-            Assert.NotEmpty(tracerRuntimeId);
+            tracerRuntimeId.Should().NotBeNull();
+            tracerRuntimeId.Should().NotBeEmpty();
 
-            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+            profilerRuntimeId.Should().Be(tracerRuntimeId);
 
             var tracingContexts = GetTracingContexts(ProfileReader.Read(runner.Environment.PprofDir));
-            Assert.NotEmpty(tracingContexts);
+            tracingContexts.Should().NotBeEmpty();
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
@@ -233,10 +233,10 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             var tracingContexts = GetTracingContexts(run.Profiles);
-            Assert.Empty(tracingContexts);
+            tracingContexts.Should().BeEmpty();
         }
 
         [ProfilerXunit.Flaky("Endpoint association can race with the profiler's shutdown export on slow/32-bit runtimes")]
@@ -259,7 +259,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEquivalentTo("GET /products/endpointprofiling");
         }
@@ -273,7 +273,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEmpty();
         }

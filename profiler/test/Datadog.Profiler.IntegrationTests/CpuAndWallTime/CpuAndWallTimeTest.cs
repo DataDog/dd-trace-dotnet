@@ -6,7 +6,6 @@
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.CpuProfiler
@@ -52,7 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             using var run = runner.Run();
 
             // no profiler enabled so should not see any sample
-            Assert.Empty(run.Profiles.Samples);
+            run.Profiles.Samples.Should().BeEmpty();
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
@@ -79,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
             // --> could be flacky otherwise
             var totalDuration = run.Duration.TotalMilliseconds * 1000000L;
-            Assert.True(cpuDuration <= totalDuration);
+            ((double)cpuDuration).Should().BeLessThanOrEqualTo(totalDuration);
 
             var cpuSamples = run.Profiles.Sum(ProfileValue.CpuSampleCount);
             cpuSamples.Should().BeGreaterThan(0);
@@ -101,7 +100,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
             // --> could be flacky otherwise
             var totalDuration = run.Duration.TotalMilliseconds * 1000000L;
-            Assert.True(cpuDuration <= totalDuration);
+            ((double)cpuDuration).Should().BeLessThanOrEqualTo(totalDuration);
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
@@ -117,7 +116,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             var walltimeDuration = run.Profiles.Sum(ProfileValue.WallTime);
             var managedThreadsCount = run.Profiles.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Count;
             var totalDuration = (run.Duration.TotalMilliseconds * 1000000L) * managedThreadsCount;
-            Assert.True(walltimeDuration <= totalDuration);
+            ((double)walltimeDuration).Should().BeLessThanOrEqualTo(totalDuration);
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]

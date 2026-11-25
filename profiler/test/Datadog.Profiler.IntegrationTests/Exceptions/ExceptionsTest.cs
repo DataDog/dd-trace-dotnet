@@ -226,7 +226,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
@@ -238,7 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
                 var (matched, message) = AssertExpectedStack(sample.Stacktrace, expectedStack);
-                Assert.True(matched, message);
+                matched.Should().BeTrue("{0}", message);
             }
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
@@ -452,7 +452,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
@@ -464,7 +464,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
                 var (matched, message) = AssertExpectedStack(sample.Stacktrace, expectedStack);
-                Assert.True(matched, message);
+                matched.Should().BeTrue("{0}", message);
             }
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
@@ -557,7 +557,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(run.LogDirectory);
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             var exceptionSamples = run.Profiles.WithNonZeroValue(ProfileValue.ExceptionCount);
 
@@ -568,7 +568,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Labels.GetValues("exception type").Should().ContainSingle(value => value == "System.Exception");
                 sample.Labels.GetValues("exception message").Should().ContainSingle(value => string.IsNullOrWhiteSpace(value));
                 var (matched, message) = AssertExpectedStack(sample.CallStack, expectedStack);
-                Assert.True(matched, message);
+                matched.Should().BeTrue("{0}", message);
             }
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, _output);
@@ -652,7 +652,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(run.UploadCount > 0);
+                run.UploadCount.Should().BeGreaterThan(0);
             }
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
@@ -670,7 +670,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(run.UploadCount > 0);
+                run.UploadCount.Should().BeGreaterThan(0);
             }
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
@@ -684,7 +684,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
             exceptionSamples.Should().NotBeEmpty();
@@ -1256,7 +1256,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     .Function("Main")
                     .Signature("(string[] args)"));
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BeGreaterThan(0);
 
             // Exact sample types before ExceptionSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);

@@ -5,6 +5,7 @@
 
 using System.ComponentModel;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -35,36 +36,36 @@ namespace Datadog.Profiler.IntegrationTests
         public void CheckNullMetricString()
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString(null);
-            Assert.True(metrics == null);
+            metrics.Should().BeNull();
         }
 
         [Fact]
         public void CheckInvalidMetrics()
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("not the expected format");
-            Assert.True(metrics != null);
-            Assert.True(metrics.RuntimeIds.Count == 0);
-            Assert.True(metrics.Profiles.Count == 0);
+            metrics.Should().NotBeNull();
+            metrics.RuntimeIds.Count.Should().Be(0);
+            metrics.Profiles.Count.Should().Be(0);
         }
 
         [Fact]
         public void CheckNoMetricsJson()
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("{\"api_version\":\"v2\",\"tracer_time\":1718896062,\"runtime_id\":\"9492c079-e4a9-4fd2-a172-bce240beb290\",\"seq_id\":1,\"application\":{\"service_name\":\"dd-buggybits-allocs\",\"service_version\":\"BuggyBitsVersion\",\"env\":\"apm-profiling-local\",\"language_name\":\"dotnet\",\"language_version\":\"core-6.0\",\"tracer_version\":\"2.54.0\"},\"host\":{\"hostname\":\"DESKTOP-TNGHRCP\",\"os\":\"windows\",\"os_version\":\"6.2.9200\"},\"request_type\":\"app-started\",\"payload\":{\"configuration\":[]}}");
-            Assert.True(metrics != null);
-            Assert.True(metrics.RuntimeIds.Count == 0);
-            Assert.True(metrics.Profiles.Count == 0);
+            metrics.Should().NotBeNull();
+            metrics.RuntimeIds.Count.Should().Be(0);
+            metrics.Profiles.Count.Should().Be(0);
         }
 
         [Fact]
         public void CheckOneMetricsJson()
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("{\"api_version\":\"v2\",\"tracer_time\":1718886695,\"runtime_id\":\"54b48743-fc8c-4a20-af6b-796bc9816e40\",\"seq_id\":3,\"application\":{\"service_name\":\"dd-dotnet-all\",\"service_version\":\"Unspecified-Version\",\"env\":\"apm-profiling-local\",\"language_name\":\"dotnet\",\"language_version\":\"core-8.0\",\"tracer_version\":\"2.54.0\"},\"host\":{\"hostname\":\"DESKTOP-TNGHRCP\",\"os\":\"windows\",\"os_version\":\"6.2.9200\"},\"request_type\":\"message-batch\",\"payload\":[{\"request_type\":\"generate-metrics\",\"payload\":{\"series\":[{\"namespace\":\"profilers\",\"metric\":\"ssi_heuristic.number_of_profiles\",\"points\":[[1718886695,2.0]],\"tags\":[\"has_sent_profiles:false\",\"heuristic_hypothetical_decision:no_span_short_lived\",\"installation:ssi\",\"enablement_choice:ssi_enabled\"],\"common\":true,\"type\":\"count\",\"interval\":10},{\"namespace\":\"profilers\",\"metric\":\"ssi_heuristic.number_of_runtime_id\",\"points\":[[1718886695,1.0]],\"tags\":[\"has_sent_profiles:false\",\"heuristic_hypothetical_decision:no_span_short_lived\",\"installation:ssi\",\"enablement_choice:ssi_enabled\"],\"common\":true,\"type\":\"count\",\"interval\":10}]}}]}");
-            Assert.True(metrics != null);
-            Assert.True(metrics.RuntimeIds.Count == 1);
-            Assert.True(metrics.Profiles.Count == 1);
+            metrics.Should().NotBeNull();
+            metrics.RuntimeIds.Count.Should().Be(1);
+            metrics.Profiles.Count.Should().Be(1);
 
-            Assert.False(metrics.HasSentProfile());
+            metrics.HasSentProfile().Should().BeFalse();
 
             var expectedTags = new[]
             {
@@ -75,33 +76,33 @@ namespace Datadog.Profiler.IntegrationTests
             metrics.ShouldContainTags(expectedTags);
 
             var numberOfProfilesMetric = metrics.Profiles[0];
-            Assert.NotNull(numberOfProfilesMetric);
+            numberOfProfilesMetric.Should().NotBeNull();
             numberOfProfilesMetric.AssertTagsContains("installation", "ssi");
             numberOfProfilesMetric.AssertTagsContains("enablement_choice", "ssi_enabled");
             numberOfProfilesMetric.AssertTagsContains("has_sent_profiles", "false");
             numberOfProfilesMetric.AssertTagsContains("heuristic_hypothetical_decision", "no_span_short_lived");
             string error = string.Empty;
-            Assert.True(numberOfProfilesMetric.ContainsTags(expectedTags, false, ref error));
-            Assert.False(numberOfProfilesMetric.ContainsTags(expectedTags, true, ref error)); // missing has_sent_profiles:true
+            numberOfProfilesMetric.ContainsTags(expectedTags, false, ref error).Should().BeTrue();
+            numberOfProfilesMetric.ContainsTags(expectedTags, true, ref error).Should().BeFalse(); // missing has_sent_profiles:true
 
             var numberOfRuntimeIdMetric = metrics.RuntimeIds[0];
-            Assert.NotNull(numberOfRuntimeIdMetric);
+            numberOfRuntimeIdMetric.Should().NotBeNull();
             numberOfRuntimeIdMetric.AssertTagsContains("installation", "ssi");
             numberOfRuntimeIdMetric.AssertTagsContains("enablement_choice", "ssi_enabled");
             numberOfRuntimeIdMetric.AssertTagsContains("has_sent_profiles", "false");
             numberOfRuntimeIdMetric.AssertTagsContains("heuristic_hypothetical_decision", "no_span_short_lived");
-            Assert.True(numberOfRuntimeIdMetric.ContainsTags(expectedTags, false, ref error));
-            Assert.False(numberOfRuntimeIdMetric.ContainsTags(expectedTags, true, ref error)); // missing has_sent_profiles:true
+            numberOfRuntimeIdMetric.ContainsTags(expectedTags, false, ref error).Should().BeTrue();
+            numberOfRuntimeIdMetric.ContainsTags(expectedTags, true, ref error).Should().BeFalse(); // missing has_sent_profiles:true
         }
 
         [Fact]
         public void CheckMultiMetricsJson()
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString(_multiplines);
-            Assert.True(metrics != null);
-            Assert.True(metrics.RuntimeIds.Count == 1);
-            Assert.True(metrics.Profiles.Count == 10);
-            Assert.True(metrics.HasSentProfile());
+            metrics.Should().NotBeNull();
+            metrics.RuntimeIds.Count.Should().Be(1);
+            metrics.Profiles.Count.Should().Be(10);
+            metrics.HasSentProfile().Should().BeTrue();
         }
     }
 }

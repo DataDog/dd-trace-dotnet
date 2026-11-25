@@ -11,8 +11,8 @@ using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using MessagePack;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.DebugInfo
@@ -40,9 +40,9 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.NotEmpty(profilerGitMetadata);
-            Assert.NotEmpty(tracerGitMetadata);
-            Assert.Equal(profilerGitMetadata, tracerGitMetadata);
+            profilerGitMetadata.Should().NotBeEmpty();
+            tracerGitMetadata.Should().NotBeEmpty();
+            profilerGitMetadata.Should().BeEquivalentTo(tracerGitMetadata);
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -57,9 +57,9 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.NotEmpty(profilerGitMetadata);
-            Assert.NotEmpty(tracerGitMetadata);
-            Assert.Equal(profilerGitMetadata, tracerGitMetadata);
+            profilerGitMetadata.Should().NotBeEmpty();
+            tracerGitMetadata.Should().NotBeEmpty();
+            profilerGitMetadata.Should().BeEquivalentTo(tracerGitMetadata);
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -70,9 +70,9 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.NotEmpty(profilerGitMetadata);
-            Assert.NotEmpty(tracerGitMetadata);
-            Assert.Equal(profilerGitMetadata, tracerGitMetadata);
+            profilerGitMetadata.Should().NotBeEmpty();
+            tracerGitMetadata.Should().NotBeEmpty();
+            profilerGitMetadata.Should().BeEquivalentTo(tracerGitMetadata);
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -85,10 +85,10 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.Empty(tracerGitMetadata);
-            Assert.Single(profilerGitMetadata);
+            tracerGitMetadata.Should().BeEmpty();
+            profilerGitMetadata.Should().ContainSingle();
 
-            Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
+            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -103,10 +103,10 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.Empty(tracerGitMetadata);
-            Assert.Single(profilerGitMetadata);
+            tracerGitMetadata.Should().BeEmpty();
+            profilerGitMetadata.Should().ContainSingle();
 
-            Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
+            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -118,10 +118,10 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
-            Assert.Empty(tracerGitMetadata);
-            Assert.Single(profilerGitMetadata);
+            tracerGitMetadata.Should().BeEmpty();
+            profilerGitMetadata.Should().ContainSingle();
 
-            Assert.Equal(new GitMetadata("https://Myrepository", "42"), profilerGitMetadata.First());
+            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -131,7 +131,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
             var (profilerGitMetadata, _) = RunTest(runner);
 
-            Assert.Empty(profilerGitMetadata);
+            profilerGitMetadata.Should().BeEmpty();
         }
 
         private static void CollectProfilerGitMetadata(HttpListenerRequest request, HashSet<GitMetadata> profilerGitMetadata)

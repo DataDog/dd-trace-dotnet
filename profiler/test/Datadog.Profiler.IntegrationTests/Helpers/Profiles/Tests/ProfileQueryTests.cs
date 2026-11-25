@@ -76,19 +76,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             output.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Should().BeEquivalentTo("1", "2");
             output.Samples[0].Labels.Has(ProfileLabelNames.ThreadId).Should().BeTrue();
             output.Samples[0].Labels.Has(ProfileLabelNames.ThreadName).Should().BeFalse();
-
-            output.AllSamplesMatch(sample => sample.Labels.Has(ProfileLabelNames.ThreadId)).Should().BeTrue();
-            output.AllSamplesMatch(sample => sample.Labels.GetRequired(ProfileLabelNames.ThreadId) == "1").Should().BeFalse();
-        }
-
-        [Fact]
-        public void AllSamplesMatch_IsFalseWithoutProfilesOrWithAnEmptyProfile()
-        {
-            using var directory = new TempPprofDirectory();
-            ProfileReader.Read(directory.DirectoryPath).AllSamplesMatch(_ => true).Should().BeFalse();
-
-            new SyntheticProfile().SampleType("wall", "nanoseconds").WriteRaw(directory.DirectoryPath, "empty.pprof");
-            ProfileReader.Read(directory.DirectoryPath).AllSamplesMatch(_ => true).Should().BeFalse();
         }
     }
 }

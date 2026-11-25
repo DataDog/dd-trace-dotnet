@@ -6,7 +6,7 @@
 using System.IO;
 using System.Net;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Network
@@ -40,14 +40,14 @@ namespace Datadog.Profiler.IntegrationTests.Network
             // uncomment to debug multipart http request
             // Thread.Sleep(10000000);
 
-            Assert.True(hasMetrics);
+            hasMetrics.Should().BeTrue();
             ValidateAllMetrics(runner.Environment.PprofDir);
         }
 
         private static void ValidateAllMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
-            Assert.True(metricsFiles.Length > 0);
+            metricsFiles.Length.Should().BeGreaterThan(0);
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file
@@ -148,41 +148,41 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 }
 
                 // these checks could be flacky so just check that the values are not negative (i.e. the events have been received but with a 0 duration)
-                Assert.True(handshakeDurationSum >= 0);
-                Assert.True(handshakeDurationMean >= 0);
-                Assert.True(handshakeDurationMax >= 0);
-                Assert.True(handshakeDurationMean <= handshakeDurationMax);
-                Assert.True(handshakeDurationMax <= handshakeDurationSum);
+                handshakeDurationSum.Should().BeGreaterThanOrEqualTo(0);
+                handshakeDurationMean.Should().BeGreaterThanOrEqualTo(0);
+                handshakeDurationMax.Should().BeGreaterThanOrEqualTo(0);
+                handshakeDurationMean.Should().BeLessThanOrEqualTo(handshakeDurationMax);
+                handshakeDurationMax.Should().BeLessThanOrEqualTo(handshakeDurationSum);
 
-                Assert.True(dnsDurationSum >= 0);
-                Assert.True(dnsDurationMean >= 0);
-                Assert.True(dnsDurationMax >= 0);
-                Assert.True(dnsDurationMean <= dnsDurationMax);
-                Assert.True(dnsDurationMax <= dnsDurationSum);
+                dnsDurationSum.Should().BeGreaterThanOrEqualTo(0);
+                dnsDurationMean.Should().BeGreaterThanOrEqualTo(0);
+                dnsDurationMax.Should().BeGreaterThanOrEqualTo(0);
+                dnsDurationMean.Should().BeLessThanOrEqualTo(dnsDurationMax);
+                dnsDurationMax.Should().BeLessThanOrEqualTo(dnsDurationSum);
 
-                Assert.True(requestDurationSum >= 0);
-                Assert.True(requestDurationMean >= 0);
-                Assert.True(requestDurationMax >= 0);
-                Assert.True(requestDurationMean <= requestDurationMax);
-                Assert.True(requestDurationMax <= requestDurationSum);
+                requestDurationSum.Should().BeGreaterThanOrEqualTo(0);
+                requestDurationMean.Should().BeGreaterThanOrEqualTo(0);
+                requestDurationMax.Should().BeGreaterThanOrEqualTo(0);
+                requestDurationMean.Should().BeLessThanOrEqualTo(requestDurationMax);
+                requestDurationMax.Should().BeLessThanOrEqualTo(requestDurationSum);
 
-                Assert.True(waitDurationSum >= 0);
-                Assert.True(waitDurationMean >= 0);
-                Assert.True(waitDurationMax >= 0);
-                Assert.True(waitDurationMean <= waitDurationMax);
-                Assert.True(waitDurationMax <= waitDurationSum);
+                waitDurationSum.Should().BeGreaterThanOrEqualTo(0);
+                waitDurationMean.Should().BeGreaterThanOrEqualTo(0);
+                waitDurationMax.Should().BeGreaterThanOrEqualTo(0);
+                waitDurationMean.Should().BeLessThanOrEqualTo(waitDurationMax);
+                waitDurationMax.Should().BeLessThanOrEqualTo(waitDurationSum);
 
-                Assert.True(responseDurationSum >= 0);
-                Assert.True(responseDurationMean >= 0);
-                Assert.True(responseDurationMax >= 0);
-                Assert.True(responseDurationMean <= responseDurationMax);
-                Assert.True(responseDurationMax <= responseDurationSum);
+                responseDurationSum.Should().BeGreaterThanOrEqualTo(0);
+                responseDurationMean.Should().BeGreaterThanOrEqualTo(0);
+                responseDurationMax.Should().BeGreaterThanOrEqualTo(0);
+                responseDurationMean.Should().BeLessThanOrEqualTo(responseDurationMax);
+                responseDurationMax.Should().BeLessThanOrEqualTo(responseDurationSum);
 
-                Assert.True(requestAllCount >= 0);
-                Assert.True(requestFailedCount >= 0);
-                Assert.True(requestRedirectCount >= 0);
-                Assert.True(requestFailedCount <= requestAllCount);
-                Assert.True(requestRedirectCount <= requestAllCount);
+                requestAllCount.Should().BeGreaterThanOrEqualTo(0);
+                requestFailedCount.Should().BeGreaterThanOrEqualTo(0);
+                requestRedirectCount.Should().BeGreaterThanOrEqualTo(0);
+                requestFailedCount.Should().BeLessThanOrEqualTo(requestAllCount);
+                requestRedirectCount.Should().BeLessThanOrEqualTo(requestAllCount);
             }
         }
     }
