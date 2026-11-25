@@ -9,6 +9,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -48,6 +49,7 @@ internal static class TestingPlatformRunnerDetector
     public static bool IsDotnetTestUsingTestingPlatform(string program, string? workingDirectory, string? testRunnerEnvironmentValue)
         => IsDotnetTestUsingTestingPlatform(workingDirectory, testRunnerEnvironmentValue, () => GetSdkMajorVersion(program, workingDirectory));
 
+    [TestingAndPrivateOnly]
     internal static bool IsDotnetTestUsingTestingPlatform(string? workingDirectory, string? testRunnerEnvironmentValue, Func<int?> getSdkMajorVersion)
     {
         // Unrecognized values are ignored by the SDK, which then falls back to global.json.
@@ -72,6 +74,7 @@ internal static class TestingPlatformRunnerDetector
         return sdkMajorVersion >= 10 && globalJsonSelectsTestingPlatform;
     }
 
+    [TestingAndPrivateOnly]
     internal static int? GetSdkMajorVersion(string program, string? workingDirectory)
     {
         try
