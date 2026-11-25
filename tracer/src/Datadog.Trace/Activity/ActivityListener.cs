@@ -28,7 +28,6 @@ namespace Datadog.Trace.Activity
 
         private static object? _activityListenerInstance;
         private static Func<object>? _getCurrentActivity;
-        private static Action<object, int>? _setKindProperty;
 
         private static int _initialized;
         private static int _stopped;
@@ -75,24 +74,6 @@ namespace Datadog.Trace.Activity
                 ActivityShape.Legacy => activity.DuckAs<IActivity>(),
                 _ => null,
             };
-        }
-
-        public static void SetActivityKind<T>(T activity, ActivityKind activityKind)
-            where T : IActivity5
-        {
-            if (activity.Instance is null)
-            {
-                return;
-            }
-
-            try
-            {
-                _setKindProperty?.Invoke(activity.Instance, (int)activityKind);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error calling Activity.SetKindProperty");
-            }
         }
 
         public static void Initialize() => Initialize(CancellationToken.None);
@@ -163,11 +144,6 @@ namespace Datadog.Trace.Activity
                 {
                     // if Version >= 5 loaded (Uses ActivityListener implementation)
                     CreateActivityListenerInstance(activityType, shape);
-                    var activityKindType = Type.GetType("System.Diagnostics.ActivityKind, System.Diagnostics.DiagnosticSource", throwOnError: false);
-                    if (activityKindType is not null)
-                    {
-                        CreateActivityKindSetter(activityType);
-                    }
                 }
                 else
                 {
@@ -328,38 +304,6 @@ namespace Datadog.Trace.Activity
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();
-        }
-
-        private static void CreateActivityKindSetter(Type activityType)
-        {
-            var activityKindProperty = activityType.GetProperty("Kind");
-            if (activityKindProperty is null)
-            {
-                Log.Warning("Activity Kind property was not found.");
-                return;
-            }
-
-            if (activityKindProperty?.SetMethod == null)
-            {
-                Log.Warning("ActivityKind did not have a setter.");
-                return;
-            }
-
-            // Create dynamic method: (object activity, int kind) => activity.Kind = kind
-            var dynMethod = new DynamicMethod(
-                "ActivityKindSetter",
-                null,
-                [typeof(object), typeof(int)],
-                typeof(DuckType).Module,
-                skipVisibility: true);
-
-            var il = dynMethod.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);                  // Load activity object
-            il.Emit(OpCodes.Castclass, activityType);  // Cast to Activity type
-            il.Emit(OpCodes.Ldarg_1);                  // Load kind int
-            il.Emit(OpCodes.Call, activityKindProperty.SetMethod); // Call Kind property setter
-            il.Emit(OpCodes.Ret);
-            _setKindProperty = (Action<object, int>)dynMethod.CreateDelegate(typeof(Action<object, int>));
         }
     }
 }

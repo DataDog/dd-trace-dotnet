@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
         internal static void SetActivityKind<T>(T activity)
             where T : IActivity5
         {
-            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
+            activity.Kind = GetActivityKind(activity);
         }
 
         internal static void EnhanceActivityMetadata<T>(T activity)
