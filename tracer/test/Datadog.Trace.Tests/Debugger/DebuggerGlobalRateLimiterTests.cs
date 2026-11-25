@@ -164,7 +164,7 @@ public class DebuggerGlobalRateLimiterTests
     [Fact]
     public void CountSnapshot_TakesTheOnlyTokenSoTheNextSnapshotWaitsForTheRefillOrANewRate()
     {
-        // The default limiter. At one snapshot a minute, the counted snapshot takes the only token for a minute.
+        // The default limiter. Below one per second, the counted snapshot takes the only token until the refill.
         using var limiter = new DebuggerGlobalRateLimiter();
         limiter.SetRate(1.0 / 60);
 

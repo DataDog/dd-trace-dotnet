@@ -242,7 +242,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
             }
         }
 
-        // One snapshot per parent plus one from B for each of the three traces, and all six count toward the global limit.
+        // One snapshot per parent plus one from B in each trace, and all of them count toward the global limit.
         snapshots.Should().Be(6);
         parentSamplers.Select(static sampler => sampler.SampleCalls).Should().AllBeEquivalentTo(1);
         childSampler.SampleCalls.Should().Be(0);
@@ -257,7 +257,11 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         Tracer.UnsafeSetTracerInstance(tracer);
         using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
 
-        var globalLimiter = new GlobalRateLimiterMock(true, budget: 2);
+        long now = 0;
+        using var globalLimiter = new DebuggerGlobalRateLimiter(
+            rate => new ClockedBucket(new BorrowingTokenBucket(rate), () => now),
+            new NullLogRateLimiter());
+        globalLimiter.SetRate(2);
         var sampler = new CountingSampler(true);
         var parent = CreateProcessor(CreateLogProbe("parent", captureSnapshot: true), globalLimiter);
         string[] childIds = ["child-1", "child-2"];
@@ -268,11 +272,12 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         var snapshotsPerTrace = new int[3];
         for (var i = 0; i < snapshotsPerTrace.Length; i++)
         {
-            if (i == 2)
+            now = i switch
             {
-                globalLimiter.MakeUp(2);
-            }
-
+                0 => 0,
+                1 => Stopwatch.Frequency * 3 / 4,
+                _ => 2 * Stopwatch.Frequency,
+            };
             using (tracer.StartActive($"request-{i}"))
             {
                 snapshotsPerTrace[i] += TryBeginAndDispose(parent, sampler) ? 1 : 0;
@@ -283,22 +288,20 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
             }
         }
 
-        // The first trace takes 3 snapshots against a budget of 2. Its children aren't refused, but the excess makes the
-        // limiter refuse the second trace. Once it's made up, the third trace is admitted and completes too.
+        // The first trace's children overdraw the bucket without being refused, so the debt refuses the second trace
+        // even after a token's refill. Once the debt is paid back, the third trace is admitted and completes too.
         snapshotsPerTrace.Should().Equal(3, 0, 3);
-        globalLimiter.ShouldSampleCallCount.Should().Be(3);
-        globalLimiter.CountSnapshotCallCount.Should().Be(4);
         sampler.SampleCalls.Should().Be(2);
 
-        // Only the refused trace records global skips: its parent and the two children that followed its decision.
+        // Only the refused trace records global skips: its parent and the children that followed its decision.
         collector.AssertHasCount("events.skipped", "reason:rateLimitGlobal", "event_type:snapshot", expected: 3);
     }
 
     [Fact]
     public async Task GlobalLimitHoldsOverTimeWhenLaterSnapshotsWouldExceedIt()
     {
-        // Five entry points at 2 snapshots/s each, and every request hits three later probes: 40 snapshots/s if only
-        // parents counted, against a global limit of 10/s. The clock is simulated: 100 requests a second for a minute.
+        // If only parents counted, the entry points and their later probes would run well past the global limit.
+        // The clock is simulated.
         const int globalRate = 10;
         const int entryPoints = 5;
         const int entryPointRate = 2;
@@ -356,7 +359,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         var total = snapshotsPerSecond.Sum();
         output.WriteLine($"{total} snapshots in {seconds} s, at most {snapshotsPerSecond.Max()} in one second");
 
-        // A full bucket of 10, then 10/s, and the later snapshots of the last admitted trace.
+        // A full bucket, then the rate, and the later snapshots of the last admitted trace.
         total.Should().BeInRange(globalRate * seconds * 95 / 100, globalRate + (globalRate * seconds) + laterProbes);
         incompleteTraces.Should().Be(0);
         laterSampler.SampleCalls.Should().Be(0);
@@ -428,16 +431,18 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         bool Sample()
         {
             Interlocked.Increment(ref calls);
-            Assert.Equal(DebuggerSamplingDecision.DropProbe, coordinator.TrySample("nested", new DelegateProvider(Sample, Count)));
+            coordinator.TrySample("nested", new DelegateProvider(Sample, Count)).Should().Be(DebuggerSamplingDecision.DropProbe);
             return true;
         }
 
         void Count() => counted++;
 
-        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("outer", new DelegateProvider(Sample, Count)));
+        coordinator.TrySample("outer", new DelegateProvider(Sample, Count)).Should().Be(DebuggerSamplingDecision.Keep);
         Assert.Equal(1, calls);
-        counted.Should().Be(0, "neither the first probe nor the dropped nested hit is a later snapshot");
-        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("nested", new DelegateProvider(Sample, Count)));
+
+        // Neither the first probe nor the dropped nested hit is a later snapshot.
+        counted.Should().Be(0);
+        coordinator.TrySample("nested", new DelegateProvider(Sample, Count)).Should().Be(DebuggerSamplingDecision.Keep);
         Assert.Equal(1, calls);
         counted.Should().Be(1);
     }
@@ -932,13 +937,10 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         }
     }
 
-    // Refuses every snapshot if result is false. Otherwise admits while fewer than budget snapshots are counted.
-    // CountSnapshot counts past the budget, and MakeUp takes counted snapshots off, as time passing would.
-    private sealed class GlobalRateLimiterMock(bool result, int budget = int.MaxValue) : IDebuggerGlobalRateLimiter
+    private sealed class GlobalRateLimiterMock(bool result) : IDebuggerGlobalRateLimiter
     {
         private int _shouldSampleCallCount;
         private int _countSnapshotCallCount;
-        private int _counted;
 
         public int ShouldSampleCallCount => Volatile.Read(ref _shouldSampleCallCount);
 
@@ -947,22 +949,10 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         public bool ShouldSampleSnapshot(string probeId)
         {
             Interlocked.Increment(ref _shouldSampleCallCount);
-            if (!result || Volatile.Read(ref _counted) >= budget)
-            {
-                return false;
-            }
-
-            Interlocked.Increment(ref _counted);
-            return true;
+            return result;
         }
 
-        public void CountSnapshot()
-        {
-            Interlocked.Increment(ref _countSnapshotCallCount);
-            Interlocked.Increment(ref _counted);
-        }
-
-        public void MakeUp(int snapshots) => _counted = Math.Max(_counted - snapshots, 0);
+        public void CountSnapshot() => Interlocked.Increment(ref _countSnapshotCallCount);
 
         public void Initialize()
         {

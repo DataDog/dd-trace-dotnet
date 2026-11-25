@@ -53,18 +53,20 @@ public class BorrowingTokenBucketTests
     [Fact]
     public void Take_PastTheTokens_RefusesUntilTheRefillPaysTheDebtBack()
     {
-        var bucket = new BorrowingTokenBucket(2);
-        bucket.TryTake(Start).Should().BeTrue();
-        bucket.TryTake(Start).Should().BeTrue();
+        const int rate = 2;
+        const int borrowed = 6;
+        var bucket = new BorrowingTokenBucket(rate);
+        Enumerable.Range(0, rate).Count(_ => bucket.TryTake(Start)).Should().Be(rate);
 
-        for (var i = 0; i < 6; i++)
+        for (var i = 0; i < borrowed; i++)
         {
             bucket.Take(Start);
         }
 
-        // 8 tokens at 2 per second from a full bucket of 2: the next one is due 7 intervals, 3.5 seconds, later.
-        bucket.TryTake(Start + (7 * Interval(2)) - 1).Should().BeFalse();
-        bucket.TryTake(Start + (7 * Interval(2))).Should().BeTrue();
+        // The empty bucket's next token was one interval away, and each borrowed token pushes it back one more.
+        var paidBack = Start + ((borrowed + 1) * Interval(rate));
+        bucket.TryTake(paidBack - 1).Should().BeFalse();
+        bucket.TryTake(paidBack).Should().BeTrue();
     }
 
     [Theory]
@@ -73,7 +75,7 @@ public class BorrowingTokenBucketTests
     [InlineData(1500)]
     public void TotalStaysWithinTheRateWhenKeptTokensArriveLater(int keepDelayMilliseconds)
     {
-        // A parent is tried every millisecond for 100 seconds, and each one admitted is followed by 3 kept tokens.
+        // A parent is tried every millisecond, and each one admitted is followed by kept tokens after the delay.
         const int rate = 10;
         const int seconds = 100;
         const int keptPerSample = 3;
@@ -101,7 +103,7 @@ public class BorrowingTokenBucketTests
             }
         }
 
-        // A full bucket at the start, then the rate: 1010 tokens. Kept tokens that land late leave some debt at the end.
+        // A full bucket at the start, then the rate. Kept tokens that land late leave some debt at the end.
         const double expected = rate + (rate * seconds);
         total.Should().BeInRange((int)(expected * 0.98), (int)(expected * 1.02));
     }
@@ -132,29 +134,20 @@ public class BorrowingTokenBucketTests
             admitted += bucket.TryTake(Start + (Second * millisecond / 1000)) ? 1 : 0;
         }
 
-        // A full bucket of 2.5 tokens, then 2.5 per second for 10 seconds.
+        // A full bucket, then the rate, with the fraction kept rather than truncated.
         admitted.Should().BeInRange(26, 27);
     }
 
     [Theory]
-    [InlineData(0d)]
-    [InlineData(-1d)]
-    [InlineData(double.NaN)]
-    public void TryTake_RateNotAboveZero_AdmitsNothing(double rate)
+    [InlineData(0d, false)]
+    [InlineData(-1d, false)]
+    [InlineData(double.NaN, false)]
+    [InlineData(double.Epsilon, true)] // Its interval overflows a long, so it saturates instead.
+    public void TryTake_RateThatNeverRefills_AdmitsAtMostTheFirstToken(double rate, bool admitsFirst)
     {
         var bucket = new BorrowingTokenBucket(rate);
 
-        bucket.TryTake(Start).Should().BeFalse();
-        bucket.Take(Start);
-        bucket.TryTake(Start + (365L * 24 * 3600 * Second)).Should().BeFalse();
-    }
-
-    [Fact]
-    public void TryTake_RateTooSmallForTheInterval_AdmitsOneAndSaturatesInsteadOfOverflowing()
-    {
-        var bucket = new BorrowingTokenBucket(double.Epsilon);
-
-        bucket.TryTake(Start).Should().BeTrue();
+        bucket.TryTake(Start).Should().Be(admitsFirst);
         bucket.Take(Start);
         bucket.TryTake(Start + (365L * 24 * 3600 * Second)).Should().BeFalse();
     }
@@ -162,7 +155,7 @@ public class BorrowingTokenBucketTests
     [Theory]
     [InlineData(double.MaxValue)]
     [InlineData(double.PositiveInfinity)]
-    public void TryTake_RateTooLargeForTheClock_IsCappedAtOneTokenPerTick(double rate)
+    public void TryTake_RateTooLargeForTheClock_AdmitsWithoutOverflowing(double rate)
     {
         var bucket = new BorrowingTokenBucket(rate);
 
@@ -172,7 +165,7 @@ public class BorrowingTokenBucketTests
     [Fact]
     public void TryTake_ConcurrentCallers_AdmitOnlyTheTokensInTheBucket()
     {
-        // A full bucket of a million tokens, all due at one timestamp, raced for by twice as many calls.
+        // A full bucket, all due at one timestamp, raced for by twice as many calls as it holds.
         const int threadCount = 8;
         const int rate = 1_000_000;
         var bucket = new BorrowingTokenBucket(rate);

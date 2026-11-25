@@ -41,8 +41,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             // Faster than one token per tick is unlimited in practice, so cap it to keep the interval at least one tick.
             var rate = Math.Min(tokensPerSecond, Stopwatch.Frequency);
-            var interval = Math.Round(Stopwatch.Frequency / rate, MidpointRounding.ToEven);
-            _tokenIntervalTicks = interval >= long.MaxValue ? long.MaxValue : (long)interval;
+            _tokenIntervalTicks = AdaptiveSampler.GetSampleInterval(rate);
 
             // From the rounded interval, so a full bucket holds exactly its capacity.
             _burstTicks = (long)((Math.Max(rate, 1) - 1) * _tokenIntervalTicks);
