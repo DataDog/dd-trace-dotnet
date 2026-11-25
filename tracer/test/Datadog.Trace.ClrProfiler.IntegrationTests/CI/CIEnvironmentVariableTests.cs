@@ -82,6 +82,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
+        [InlineData("ABCDEF1234567890abcdef1234567890abcdef12", "abcdef1234567890abcdef1234567890abcdef12")]
+        [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+        [InlineData("ABCDEF", "ABCDEF")]
+        [InlineData("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")]
+        [InlineData(null, null)]
+        public void NormalizeGitObjectIds(string value, string expected)
+        {
+            CIEnvironmentValues.NormalizeGitSha(value).Should().Be(expected);
+        }
+
+        [SkippableTheory]
+        [InlineData("APPVEYOR_PULL_REQUEST_NUMBER", "not-a-number")]
+        [InlineData("APPVEYOR_PULL_REQUEST_NUMBER", "")]
+        [InlineData("APPVEYOR_PULL_REQUEST_HEAD_COMMIT", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
+        [InlineData("APPVEYOR_PULL_REQUEST_HEAD_COMMIT", "invalid")]
+        [InlineData("APPVEYOR_REPO_COMMIT", "invalid")]
+        [InlineData("APPVEYOR_REPO_PROVIDER", "bitbucket")]
+        public void AppveyorRequiresMergeEvidence(string key, string value)
+        {
+            var data = new Dictionary<string, string>
+            {
+                ["APPVEYOR"] = "true",
+                ["APPVEYOR_REPO_PROVIDER"] = "github",
+                ["APPVEYOR_REPO_COMMIT"] = new string('a', 40),
+                ["APPVEYOR_PULL_REQUEST_NUMBER"] = "42",
+                ["APPVEYOR_PULL_REQUEST_HEAD_COMMIT"] = new string('b', 40),
+            };
+            data[key] = value;
+            CIEnvironmentValues.Create(data).MergeCommit.Should().BeNull();
+        }
+
+        [SkippableTheory]
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
@@ -96,6 +128,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 var span = new Span(context, time);
                 CIEnvironmentValues.Create(envData).DecorateSpan(span);
+                spanData.TryGetValue(CommonTags.GitMergeCommit, out var expectedMerge);
+                span.Tags.GetTag(CommonTags.GitMergeCommit).Should().Be(expectedMerge);
 
                 foreach (var spanDataItem in spanData)
                 {

@@ -50,6 +50,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
         Repository = !string.IsNullOrWhiteSpace(prRepo) ? prRepo : ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildRepositoryUri);
 
         var prCommit = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestSourceCommitId);
+        HeadCommit = prCommit;
         Commit = !string.IsNullOrWhiteSpace(prCommit) ? prCommit : ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceVersion);
 
         var prBranch = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch);

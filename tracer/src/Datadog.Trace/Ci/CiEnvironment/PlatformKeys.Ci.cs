@@ -42,6 +42,7 @@ internal static partial class PlatformKeys
             public const string JobWebUrl = "TRAVIS_JOB_WEB_URL";
             public const string CommitMessage = "TRAVIS_COMMIT_MESSAGE";
             public const string PullRequestSha = "TRAVIS_PULL_REQUEST_SHA";
+            public const string EventType = "TRAVIS_EVENT_TYPE";
             public const string PullRequestNumber = "TRAVIS_PULL_REQUEST";
         }
 
@@ -116,6 +117,7 @@ internal static partial class PlatformKeys
             public const string MergeRequestDiffBaseSha = "CI_MERGE_REQUEST_DIFF_BASE_SHA";
             public const string MergeRequestTargetBranchName = "CI_MERGE_REQUEST_TARGET_BRANCH_NAME";
             public const string MergeRequestId = "CI_MERGE_REQUEST_IID";
+            public const string MergeRequestEventType = "CI_MERGE_REQUEST_EVENT_TYPE";
         }
 
         /// <summary>
@@ -161,6 +163,7 @@ internal static partial class PlatformKeys
             public const string BuildRepositoryUri = "BUILD_REPOSITORY_URI";
             public const string SystemPullRequestSourceCommitId = "SYSTEM_PULLREQUEST_SOURCECOMMITID";
             public const string BuildSourceVersion = "BUILD_SOURCEVERSION";
+            public const string BuildReason = "BUILD_REASON";
             public const string SystemPullRequestSourceBranch = "SYSTEM_PULLREQUEST_SOURCEBRANCH";
             public const string BuildSourceBranch = "BUILD_SOURCEBRANCH";
             public const string BuildSourceBranchName = "BUILD_SOURCEBRANCHNAME";

@@ -1143,6 +1143,13 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit message.
+  DD_GIT_COMMIT_HEAD_SHA:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: CI Visibility environment variable for the pull request head SHA.
   DD_GIT_COMMIT_SHA:
   - implementation: A
     scope: managed, native

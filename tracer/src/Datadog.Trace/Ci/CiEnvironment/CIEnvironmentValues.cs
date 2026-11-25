@@ -14,6 +14,7 @@ using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -103,6 +104,8 @@ internal abstract class CIEnvironmentValues
 
     public string? HeadCommit { get; protected set; }
 
+    public string? MergeCommit { get; protected set; }
+
     public string? HeadAuthorName { get; protected set; }
 
     public string? HeadAuthorEmail { get; protected set; }
@@ -179,6 +182,12 @@ internal abstract class CIEnvironmentValues
             span.SetTag(key, value);
         }
     }
+
+    internal static string? NormalizeGitSha(string? value)
+        => IsFullGitSha(value) ? StringUtil.ToLowerInvariant(value!) : value;
+
+    protected static bool IsFullGitSha(string? value)
+        => value is { Length: 40 or 64 } && IsHex(value);
 
     protected static bool IsHex(IEnumerable<char> chars)
     {
@@ -260,6 +269,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.CIProvider, Provider);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitRepository, Repository);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitCommit, Commit);
+        SetTagIfNotNullOrEmpty(span, CommonTags.GitMergeCommit, MergeCommit);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitBranch, Branch);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitTag, Tag);
         SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitAuthorName, AuthorName);

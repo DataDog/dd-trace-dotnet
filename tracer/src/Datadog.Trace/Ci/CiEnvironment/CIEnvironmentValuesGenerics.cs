@@ -141,6 +141,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
 
         OnInitialize(gitInfo);
+        SetProviderMergeCommit();
+        HeadCommit = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitHeadSha, HeadCommit);
 
         // **********
         // Add Author, Committer and Message from git
@@ -350,6 +352,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 return false;
             });
 
+        Commit = NormalizeGitSha(Commit);
+        HeadCommit = NormalizeGitSha(HeadCommit);
+        PrBaseCommit = NormalizeGitSha(PrBaseCommit);
+        PrBaseHeadCommit = NormalizeGitSha(PrBaseHeadCommit);
         Message = Message?.Trim();
     }
 
@@ -460,6 +466,50 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
     }
 
     protected abstract void OnInitialize(IGitInfo gitInfo);
+
+    private static bool IsMergeRef(string? value)
+        => value is not null && Regex.IsMatch(value, @"\Arefs/pull/[0-9]+/merge\z");
+
+    private static bool IsNumber(string? value)
+    {
+        if (StringUtil.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            if (c is < '0' or > '9')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void SetProviderMergeCommit()
+    {
+        var candidate = Provider switch
+        {
+            "github" when IsMergeRef(ValueProvider.GetValue(PlatformKeys.Ci.GitHub.Ref))
+                => ValueProvider.GetValue(PlatformKeys.Ci.GitHub.Sha),
+            "gitlab" when !StringUtil.IsNullOrEmpty(PrNumber) &&
+                          ValueProvider.GetValue(PlatformKeys.Ci.GitLab.MergeRequestEventType) is "merged_result" or "merge_train"
+                => ValueProvider.GetValue(PlatformKeys.Ci.GitLab.CommitSha),
+            "azurepipelines" when ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildReason) == "PullRequest" &&
+                                  IsMergeRef(ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceBranch))
+                => ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceVersion),
+            "travisci" when ValueProvider.GetValue(PlatformKeys.Ci.Travis.EventType) == "pull_request" && IsNumber(PrNumber)
+                => ValueProvider.GetValue(PlatformKeys.Ci.Travis.Commit),
+            "appveyor" when ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoProvider) == "github" &&
+                            IsNumber(PrNumber) && IsFullGitSha(HeadCommit) &&
+                            !string.Equals(Commit, HeadCommit, StringComparison.OrdinalIgnoreCase)
+                => ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoCommit),
+            _ => null,
+        };
+        MergeCommit = IsFullGitSha(candidate) ? NormalizeGitSha(candidate) : null;
+    }
 }
 
 #pragma warning restore SA1649

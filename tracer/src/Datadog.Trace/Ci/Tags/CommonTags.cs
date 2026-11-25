@@ -22,6 +22,11 @@ internal static class CommonTags
     public const string GitCommit = "git.commit.sha";
 
     /// <summary>
+    /// The CI merge commit SHA.
+    /// </summary>
+    public const string GitMergeCommit = "ci.git.merge_commit_sha";
+
+    /// <summary>
     /// GIT Branch name
     /// </summary>
     public const string GitBranch = "git.branch";

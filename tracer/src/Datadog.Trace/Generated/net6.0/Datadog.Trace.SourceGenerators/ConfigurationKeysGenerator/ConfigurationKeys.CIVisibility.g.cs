@@ -221,6 +221,11 @@ internal static partial class ConfigurationKeys
         public const string GitCommitCommitterName = "DD_GIT_COMMIT_COMMITTER_NAME";
 
         /// <summary>
+        /// CI Visibility environment variable for the pull request head SHA.
+        /// </summary>
+        public const string GitCommitHeadSha = "DD_GIT_COMMIT_HEAD_SHA";
+
+        /// <summary>
         /// CI Visibility environment variable for git commit message.
         /// </summary>
         public const string GitCommitMessage = "DD_GIT_COMMIT_MESSAGE";
