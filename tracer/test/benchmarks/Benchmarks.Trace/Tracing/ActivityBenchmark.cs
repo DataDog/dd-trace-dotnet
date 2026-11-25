@@ -37,9 +37,9 @@ public class ActivityBenchmark
         ActivitySource.AddActivityListener(_activityListener);
 
         // Register the source against the handler chain (resolves to DefaultActivityHandler), the
-        // same way ActivityListenerHandler.OnShouldListenTo would be called from the emitted
-        // ShouldListenTo delegate during real initialization.
-        ActivityListenerHandler.OnShouldListenTo(_source.DuckCast<IActivitySource>());
+        // same way ActivityListenerHandler.OnActivitySourceShouldListenTo would be called from the
+        // emitted ShouldListenTo delegate during real initialization.
+        ActivityListenerHandler.OnActivitySourceShouldListenTo(_source.DuckCast<IActivitySource>());
 
         // Benchmarks.Trace references DiagnosticSource 6.0+, which Initialize() maps to the Activity6 shape
         _onStarted = (Action<Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(typeof(Activity), ActivityShape.Activity6);

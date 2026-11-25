@@ -38,7 +38,7 @@ public class ActivityStatusWiringTests
             Sample = (ref SD.ActivityCreationOptions<SD.ActivityContext> _) => SD.ActivitySamplingResult.AllData,
         };
         SD.ActivitySource.AddActivityListener(listener);
-        ActivityListenerHandler.OnShouldListenTo(source.DuckCast<IActivitySource>());
+        ActivityListenerHandler.OnActivitySourceShouldListenTo(source.DuckCast<IActivitySource>());
 
         // The same delegates ActivityListener.Initialize() emits for the Activity6 shape
         var onStarted = (Action<SD.Activity>)ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(typeof(SD.Activity), ActivityShape.Activity6);

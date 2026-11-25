@@ -48,30 +48,22 @@ namespace Datadog.Trace.Activity
             return ActivitySamplingResult.AllData;
         }
 
-        public static bool OnShouldListenTo<T>(T source)
+        // ActivityListener path (DiagnosticSource 5.0+). Separate methods rather than overloads,
+        // because the callers look them up by name.
+        public static bool OnActivitySourceShouldListenTo<T>(T source)
+            where T : IActivitySource
+            => ShouldListenTo(source.Name ?? "(null)", source.Version);
+
+        // DiagnosticListener path (DiagnosticSource [4.0.4, 5.0)), where sources have no version
+        public static bool OnSourceShouldListenTo<T>(T source)
             where T : ISource
+            => ShouldListenTo(source.Name ?? "(null)", version: null);
+
+        private static bool ShouldListenTo(string sName, string? version)
         {
-            var sName = source.Name ?? "(null)";
             foreach (var handler in ActivityHandlersRegister.Handlers)
             {
-                if (source is IActivitySource activitySource)
-                {
-                    if (handler.ShouldListenTo(sName, activitySource.Version))
-                    {
-                        if (handler is DisableActivityHandler)
-                        {
-                            Log.Information("ActivityListenerHandler: The .NET Tracer will not listen to {SourceName}.", sName);
-                            return false;
-                        }
-
-                        if (HandlerBySource.TryAdd(sName, handler))
-                        {
-                            Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                            return true;
-                        }
-                    }
-                }
-                else if (handler.ShouldListenTo(sName, null))
+                if (handler.ShouldListenTo(sName, version))
                 {
                     if (handler is DisableActivityHandler)
                     {

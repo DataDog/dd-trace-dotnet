@@ -38,10 +38,10 @@ namespace Datadog.Trace.Activity
                     ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {diagnosticListenerType} is null");
                 }
 
-                var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnShouldListenTo), BindingFlags.Static | BindingFlags.Public);
+                var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnSourceShouldListenTo), BindingFlags.Static | BindingFlags.Public);
                 if (onShouldListenToMethodInfo is null)
                 {
-                    ThrowHelper.ThrowNullReferenceException("ActivityListenerHandler.OnShouldListenTo cannot be found.");
+                    ThrowHelper.ThrowNullReferenceException("ActivityListenerHandler.OnSourceShouldListenTo cannot be found.");
                 }
 
                 var onShouldListenToMethod = onShouldListenToMethodInfo.MakeGenericMethod(sourceProxyResultProxyType);
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Activity
 
                 var onShouldListenToResultMethod = onShouldListenToResultMethodInfo.MakeGenericMethod(sourceProxyResultProxyType);
 
-                // Create delegate for OnShouldListenTo<T> where T is Source
+                // Create delegate for OnSourceShouldListenTo<T> where T is Source
                 var onShouldListenToDyn = new DynamicMethod("OnShouldListenToDyn", typeof(void), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
 
                 var sourceProxyResultProxyTypeCtor = sourceProxyResultProxyType.GetConstructors()[0];

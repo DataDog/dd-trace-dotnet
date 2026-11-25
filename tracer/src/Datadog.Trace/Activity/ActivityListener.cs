@@ -235,9 +235,9 @@ namespace Datadog.Trace.Activity
             var activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
             var sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource", throwOnError: true)!;
 
-            var onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public)!;
-            var onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public)!;
-            var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public)!;
+            var onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnSample), BindingFlags.Static | BindingFlags.Public)!;
+            var onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnSampleUsingParentId), BindingFlags.Static | BindingFlags.Public)!;
+            var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnActivitySourceShouldListenTo), BindingFlags.Static | BindingFlags.Public)!;
 
             Log.Information("Activity listener: {ActivityListenerType}", activityListenerType!.AssemblyQualifiedName ?? "(null)");
 
