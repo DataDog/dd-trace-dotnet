@@ -24,6 +24,15 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             i.Should().Be(result);
         }
 
+        [Theory]
+        [InlineData("abc", 1247340381)]
+        public void IdentityHashCode_String_UsesContentHash(string input, int result)
+        {
+            // string.GetHashCode() is randomized per process on .NET Core; the tainted map
+            // needs the deterministic content-based hash instead.
+            IastUtils.IdentityHashCode(input).Should().Be(result);
+        }
+
         [Fact]
         public void GetStaticHashCode_Vulnerability_GetHashCode_IsDeterministic()
         {
