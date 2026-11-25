@@ -27,8 +27,8 @@ public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    private List<string> _initTaintedContextTrue;
-    private List<string> _initTaintedContextFalse;
+    private string[] _initTaintedContextTrue;
+    private string[] _initTaintedContextFalse;
 
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
@@ -65,43 +65,29 @@ public class StringAspectsBenchmark
         return res;
     }
 
-    const int Iterations = 100;
-
     [GlobalSetup]
     public void GlobalSetup()
     {
         TracerHelper.SetGlobalTracer();
 
-        _initTaintedContextFalse = InitTaintedContext(10, false);
-        _initTaintedContextTrue = InitTaintedContext(10, true);
+        _initTaintedContextFalse = InitTaintedContext(10, false).ToArray();
+        _initTaintedContextTrue = InitTaintedContext(10, true).ToArray();
     }
 
     [Benchmark]
-    public void StringConcatBenchmark()
+    public string StringConcatBenchmark()
     {
         var parameters = _initTaintedContextFalse;
-        var list = new List<string>(parameters.Count);
-        var arr = parameters.ToArray();
-        for (int x = 0; x < Iterations; x++)
-        {
-            var txt = string.Concat(arr);
-            list.Add(string.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
-        }
-        System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
+        var txt = string.Concat(parameters);
+        return string.Concat("42", "Select * from users where name in (", txt, ")");
     }
 
     [Benchmark]
-    public void StringConcatAspectBenchmark()
+    public string StringConcatAspectBenchmark()
     {
         var parameters = _initTaintedContextTrue;
-        var list = new List<string>(parameters.Count);
-        var arr = parameters.ToArray();
-        for (int x = 0; x < Iterations; x++)
-        {
-            var txt = StringAspects.Concat(arr);
-            list.Add(StringAspects.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
-        }
-        System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
+        var txt = StringAspects.Concat(parameters);
+        return StringAspects.Concat("42", "Select * from users where name in (", txt, ")");
     }
 
     [GlobalCleanup]
