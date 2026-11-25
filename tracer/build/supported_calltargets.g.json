@@ -7214,6 +7214,36 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.SpanContextExtractor",
+    "TargetMethodName": "ExtractIncludingDsmWithOptions",
+    "TargetReturnType": "Datadog.Trace.ISpanContext",
+    "TargetParameterTypes": [
+      "!!0",
+      "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.Int64",
+      "System.Boolean"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators.SpanContextExtractorExtractIncludingDsmWithOptionsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.SpanContextInjector",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -7283,6 +7313,37 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators.SpanContextInjectorInjectIncludingDsmIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.SpanContextInjector",
+    "TargetMethodName": "InjectIncludingDsmWithOptions",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "!!0",
+      "System.Action`3[!!0,System.String,System.String]",
+      "Datadog.Trace.ISpanContext",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.Int64",
+      "System.Boolean"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators.SpanContextInjectorInjectIncludingDsmWithOptionsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

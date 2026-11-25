@@ -33,7 +33,7 @@ internal sealed class DataStreamsManager
     internal const int MaxTagCacheSize = 1000;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
-    private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
+    private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing, and on manual checkpoints with options
     private readonly object _nodeHashUpdateLock = new();
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDiscoveryService _discoveryService;
@@ -305,54 +305,17 @@ internal sealed class DataStreamsManager
             // by relying on the message timestamp.
             // ReSharper disable once ArrangeRedundantParentheses
             var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
-            var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
-            // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
-            var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
-
-            // Cached on the EdgeTags instance, recomputed when the base changes (settings updates).
-            var nodeHash = edgeTags.GetNodeHash(nodeHashBase);
-
-            var parentHash = previousContext?.Hash ?? default;
-            var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
-
-            // Prevent negative value latencies from a future-dated upstream timestamp
-            // (clock skew or a buggy/malicious peer)
-            var pathwayLatencyNs = Math.Max(0, nowNs - pathwayStartNs);
-            var edgeLatencyNs = Math.Max(0, nowNs - (previousContext?.EdgeStart ?? edgeStartNs));
-
-            var writer = Volatile.Read(ref _writer);
-            writer?.Add(
-                new StatsPoint(
-                    edgeTags: edgeTags.Tags,
-                    hash: pathwayHash,
-                    parentHash: parentHash,
-                    timestampNs: nowNs,
-                    pathwayLatencyNs: pathwayLatencyNs,
-                    edgeLatencyNs: edgeLatencyNs,
-                    payloadSizeBytes));
-
-            var pathway = new PathwayContext(
-                hash: pathwayHash,
-                pathwayStartNs: pathwayStartNs,
-                edgeStartNs: edgeStartNs);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug(
-                    "SetCheckpoint with {PathwayHash}, {PathwayStart}, {EdgeStart}",
-                    pathway.Hash,
-                    pathway.PathwayStart,
-                    pathway.EdgeStart);
-            }
-
-            // overwrite the previous checkpoint, so it can be used in the future if needed
-            if (checkpointKind == CheckpointKind.Consume)
-            {
-                LastConsumePathway.Value = pathway;
-            }
-
-            return pathway;
+            return RecordCheckpoint(
+                previousContext,
+                checkpointKind,
+                edgeTags,
+                payloadSizeBytes,
+                checkpointTimeNs: nowNs,
+                edgeStartNs: edgeStartNs,
+                statsTimestampNs: nowNs,
+                nextEdgeStartNs: edgeStartNs,
+                rememberForNextCheckpoint: checkpointKind == CheckpointKind.Consume);
         }
         catch (Exception ex)
         {
@@ -363,6 +326,124 @@ internal sealed class DataStreamsManager
             Volatile.Write(ref _isEnabled, false);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Sets a checkpoint from a manual API call that carries <see cref="DataStreamsCheckpointOptions"/>,
+    /// for sources with no instrumented producer, such as a database read through CDC or polling.
+    /// NOTE: <paramref name="edgeTags"/> must be in correct sort order
+    /// </summary>
+    /// <param name="parentPathway">The pathway read from the carrier, if any. Takes priority over <paramref name="chainFromPrevious"/>.</param>
+    /// <param name="checkpointKind">Is this a Produce or Consume operation?</param>
+    /// <param name="edgeTags">Edge tags to set for the new pathway. MUST be sorted in alphabetical order</param>
+    /// <param name="checkpointTimeNs">When the checkpoint happened, in unix nanoseconds, or <c>null</c> for now.</param>
+    /// <param name="sourceTimeNs">When the data entered the source, in unix nanoseconds. Only used when the checkpoint starts a pathway.</param>
+    /// <param name="chainFromPrevious">Whether to link to the previous checkpoint in this async flow when there is no <paramref name="parentPathway"/>.</param>
+    /// <returns>If disabled, returns <c>null</c>. Otherwise returns a new <see cref="PathwayContext"/></returns>
+    public PathwayContext? SetManualCheckpoint(
+        in PathwayContext? parentPathway,
+        CheckpointKind checkpointKind,
+        EdgeTags edgeTags,
+        long? checkpointTimeNs,
+        long? sourceTimeNs,
+        bool chainFromPrevious)
+    {
+        if (!IsEnabled)
+        {
+            return null;
+        }
+
+        try
+        {
+            // Unlike SetCheckpoint, a produce without a parent starts a new pathway unless the caller asks
+            // to chain: a loop that records an origin per database row must not link row 2 to row 1.
+            var previousContext = parentPathway ?? (chainFromPrevious ? LastConsumePathway.Value : null);
+
+            var wallClockNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var nowNs = checkpointTimeNs ?? wallClockNs;
+            var edgeStartNs = previousContext == null && sourceTimeNs is { } sourceNs ? Math.Min(sourceNs, nowNs) : nowNs;
+
+            return RecordCheckpoint(
+                previousContext,
+                checkpointKind,
+                edgeTags,
+                payloadSizeBytes: 0,
+                checkpointTimeNs: nowNs,
+                edgeStartNs: edgeStartNs,
+                // A backdated checkpoint still goes in the current bucket, so it can't land in one already flushed.
+                statsTimestampNs: wallClockNs,
+                // The next hop is measured from this checkpoint, so the source time isn't counted twice.
+                nextEdgeStartNs: nowNs,
+                // Produce or consume, the next manual or auto-instrumented checkpoint in this flow can link to it.
+                rememberForNextCheckpoint: true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error setting a data streams checkpoint. Disabling data streams monitoring");
+            Volatile.Write(ref _isEnabled, false);
+            return null;
+        }
+    }
+
+    private PathwayContext RecordCheckpoint(
+        in PathwayContext? previousContext,
+        CheckpointKind checkpointKind,
+        EdgeTags edgeTags,
+        long payloadSizeBytes,
+        long checkpointTimeNs,
+        long edgeStartNs,
+        long statsTimestampNs,
+        long nextEdgeStartNs,
+        bool rememberForNextCheckpoint)
+    {
+        var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
+
+        // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
+        var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
+
+        // Cached on the EdgeTags instance, recomputed when the base changes (settings updates).
+        var nodeHash = edgeTags.GetNodeHash(nodeHashBase);
+
+        var parentHash = previousContext?.Hash ?? default;
+        var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
+
+        // Prevent negative value latencies from a future-dated upstream timestamp
+        // (clock skew or a buggy/malicious peer)
+        var pathwayLatencyNs = Math.Max(0, checkpointTimeNs - pathwayStartNs);
+        var edgeLatencyNs = Math.Max(0, checkpointTimeNs - (previousContext?.EdgeStart ?? edgeStartNs));
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.Add(
+            new StatsPoint(
+                edgeTags: edgeTags.Tags,
+                hash: pathwayHash,
+                parentHash: parentHash,
+                timestampNs: statsTimestampNs,
+                pathwayLatencyNs: pathwayLatencyNs,
+                edgeLatencyNs: edgeLatencyNs,
+                payloadSizeBytes));
+
+        var pathway = new PathwayContext(
+            hash: pathwayHash,
+            pathwayStartNs: pathwayStartNs,
+            edgeStartNs: nextEdgeStartNs);
+
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug(
+                "SetCheckpoint with {PathwayHash}, {PathwayStart}, {EdgeStart}",
+                pathway.Hash,
+                pathway.PathwayStart,
+                pathway.EdgeStart);
+        }
+
+        // overwrite the previous checkpoint, so it can be used in the future if needed
+        if (rememberForNextCheckpoint)
+        {
+            LastConsumePathway.Value = pathway;
+        }
+
+        return pathway;
     }
 
     /// <summary>

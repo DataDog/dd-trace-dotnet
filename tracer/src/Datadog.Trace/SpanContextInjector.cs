@@ -18,6 +18,45 @@ namespace Datadog.Trace
     /// </summary>
     public static class SpanContextInjector
     {
+        /// <summary>
+        /// Injects the span context and sets a manual DSM produce checkpoint with checkpoint options.
+        /// Without <paramref name="chainFromPrevious"/>, the checkpoint starts a new pathway.
+        /// Timestamps are unix milliseconds, and 0 means "not set".
+        /// </summary>
+        internal static void InjectWithCheckpointOptions<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string messageType, string target, long timestampMs, long sourceTimestampMs, bool chainFromPrevious)
+        {
+            if (messageType == null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
+
+            if (context is not SpanContext spanContext)
+            {
+                return;
+            }
+
+            tracer.TracerManager.SpanContextPropagator.Inject(
+                new PropagationContext(spanContext, baggage: null),
+                carrier,
+                setter);
+
+            if (tracer.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
+            {
+                var edgeTags = new EdgeTags(["direction:out", $"topic:{target}", $"type:{messageType}"], cacheNodeHash: false);
+                spanContext.ManuallySetPathwayContextToPairMessages(
+                    dsm.SetManualCheckpoint(
+                        parentPathway: null,
+                        CheckpointKind.Produce,
+                        edgeTags,
+                        checkpointTimeNs: SpanContextExtractor.UnixMsToNs(timestampMs),
+                        sourceTimeNs: SpanContextExtractor.UnixMsToNs(sourceTimestampMs),
+                        chainFromPrevious));
+
+                if (carrier != null)
+                {
+                    dsm.InjectPathwayContextAsBase64String(spanContext.PathwayContext, new CarrierWithDelegate<TCarrier>(carrier, setter: setter));
+                }
+            }
+        }
+
         internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
