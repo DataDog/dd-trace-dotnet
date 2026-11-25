@@ -72,8 +72,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
-            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has(ProfileLabelNames.RequestUrl));
-            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has(ProfileLabelNames.ResponseStatusCode));
+            run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.RequestUrl)).Should().BeTrue();
+            run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.ResponseStatusCode)).Should().BeTrue();
         }
 
         [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]

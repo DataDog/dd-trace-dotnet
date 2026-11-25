@@ -65,7 +65,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
-            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has("raw duration"));
+            run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")).Should().BeTrue();
 
             if (app.Framework == TestFramework.Net8)
             {
