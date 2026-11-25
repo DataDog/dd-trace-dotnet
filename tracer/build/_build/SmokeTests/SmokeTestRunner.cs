@@ -152,16 +152,46 @@ public static partial class SmokeTestRunner
             // 10. Run crash test
             if (scenario.RunCrashTest)
             {
-                // Capture the container id via callback (not the return value) so that if the
-                // crash test throws (e.g. the wait times out), the finally block can still dump
-                // its logs and clean it up. Otherwise the container leaks and keeps the network
-                // alive, masking the real failure behind a "network has active endpoints" warning.
-                await RunCrashTestAsync(
-                    imageTag, networkName,
-                    environment.ToHostPath(logsDir),
-                    environment.ToHostPath(dumpsDir),
-                    scenario.GetEnvironment(isCrashTest: true),
-                    id => crashTestContainerId = id);
+                // Investigation only: repeat the crash test on the x64 Alpine .NET 9/10/11 rows
+                var iterations = IsRepeatedCrashTestScenario(scenario) ? CrashTestRepeatCount : 1;
+                var failures = 0;
+                for (var i = 1; i <= iterations; i++)
+                {
+                    try
+                    {
+                        // Capture the container id via callback (not the return value) so that if the
+                        // crash test throws (e.g. the wait times out), the finally block can still dump
+                        // its logs and clean it up. Otherwise the container leaks and keeps the network
+                        // alive, masking the real failure behind a "network has active endpoints" warning.
+                        await RunCrashTestAsync(
+                            imageTag, networkName,
+                            environment.ToHostPath(logsDir),
+                            environment.ToHostPath(dumpsDir),
+                            scenario.GetEnvironment(isCrashTest: true),
+                            id => crashTestContainerId = id);
+                    }
+                    catch (Exception ex) when (iterations > 1 && ex is InvalidOperationException or OperationCanceledException)
+                    {
+                        failures++;
+                        Logger.Error(ex, "Crash test iteration {Iteration}/{Count} failed", i, iterations);
+                        await DumpContainerLogsAsync("crash-test", crashTestContainerId);
+                    }
+
+                    if (i < iterations)
+                    {
+                        await DockerService.RemoveContainerAsync(crashTestContainerId);
+                        crashTestContainerId = null;
+                    }
+                }
+
+                if (iterations > 1)
+                {
+                    Logger.Information("Crash test repeated {Count} times: {Failures} failures", iterations, failures);
+                    if (failures > 0)
+                    {
+                        throw new InvalidOperationException($"Crash test failed {failures} times out of {iterations}");
+                    }
+                }
             }
         }
         finally
@@ -520,6 +550,14 @@ public static partial class SmokeTestRunner
                 $"Crash test failed: did not find '{expectedMessage}' in container logs");
         }
     }
+
+    const int CrashTestRepeatCount = 100;
+
+    static bool IsRepeatedCrashTestScenario(SmokeTestScenario scenario)
+        => RuntimeInformation.OSArchitecture == Architecture.X64
+           && (scenario.RuntimeTag.StartsWith("11.0-alpine3.24")
+               || scenario.RuntimeTag.StartsWith("10.0-alpine3.22")
+               || scenario.RuntimeTag.StartsWith("9.0-alpine3.24"));
 
     // A: dd-dotnet did not run, B: dd-dotnet stopped with an error,
     // C: the crash was not found suspicious, E: anything else (D, timeout or exit code 0, is handled by the caller)
