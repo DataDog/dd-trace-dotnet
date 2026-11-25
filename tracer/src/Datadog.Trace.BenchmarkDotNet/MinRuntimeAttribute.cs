@@ -18,10 +18,14 @@ namespace Datadog.Trace.BenchmarkDotNet;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class MinRuntimeAttribute : Attribute
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MinRuntimeAttribute"/> class.
+    /// </summary>
+    /// <param name="minimum">The oldest runtime on which the benchmark body is real.</param>
     public MinRuntimeAttribute(RuntimeMoniker minimum) => Minimum = minimum;
 
     /// <summary>
-    /// The oldest runtime on which the benchmark body is real.
+    /// Gets the oldest runtime on which the benchmark body is real.
     /// </summary>
     public RuntimeMoniker Minimum { get; }
 }
