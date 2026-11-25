@@ -34,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             leafStack[0].Line.Should().Be(8);
             leafStack[0].Filename.Should().Be("Leaf.cs");
             leafStack[1].Function.Should().Be("Caller");
+            leafStack[1].Line.Should().Be(2);
             leafStack[1].Filename.Should().Be("Caller.cs");
 
             var inlineStack = read.Samples[1].CallStack;

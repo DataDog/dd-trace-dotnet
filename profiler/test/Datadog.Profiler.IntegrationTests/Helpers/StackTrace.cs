@@ -51,9 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             for (int i = 0; i < other._stackFrames.Count; i++)
             {
-                var actualText = _stackFrames[i].ToString();
-                var expectedText = other._stackFrames[i].ToString();
-                if (actualText != expectedText)
+                if (!_stackFrames[i].Equals(other._stackFrames[i]))
                 {
                     failureMessage =
                         $"First mismatch at compared frame index {i}.\n\n" +

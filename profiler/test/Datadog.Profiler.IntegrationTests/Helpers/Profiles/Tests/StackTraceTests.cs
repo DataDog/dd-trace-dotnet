@@ -53,6 +53,24 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
         }
 
         [Fact]
+        public void StartsWith_AndContainsSequence_CompareFramesTheSameWay()
+        {
+            var actual = new StackTrace(
+                StackFrame.Build().Module("Samples").Namespace("Ns").Type("Type").Function("Leaf").Signature("()"),
+                StackFrame.Build().Module("Samples").Namespace("Ns").Type("Type").Function("Caller").Signature("()"));
+            var same = new StackTrace(
+                StackFrame.Build().Module("Samples").Namespace("Ns").Type("Type").Function("Leaf").Signature("()"),
+                StackFrame.Build().Module("Samples").Namespace("Ns").Type("Type").Function("Caller").Signature("()"));
+            var otherAdornment = new StackTrace(
+                StackFrame.Build().Module("Samples").Namespace("Ns").Type("Type").TypeParameters("<T>").Function("Leaf").Signature("()"));
+
+            actual.StartsWith(same).Should().BeTrue();
+            actual.ContainsSequence(same).Should().BeTrue();
+            actual.StartsWith(otherAdornment).Should().BeFalse();
+            actual.ContainsSequence(otherAdornment).Should().BeFalse();
+        }
+
+        [Fact]
         public void StackTrace_EnumeratesFramesInOrder()
         {
             var stack = TestStack.Trace("A", "B");
