@@ -6,16 +6,17 @@
 using System;
 using BenchmarkDotNet.Jobs;
 
-namespace Benchmarks.Trace;
+namespace Datadog.Trace.BenchmarkDotNet;
 
 /// <summary>
 /// Marks a benchmark class whose body is real only on the given runtime and
 /// newer. Below it, the body compiles to a stub (see
 /// AutoInstrumentation/AspNetCoreBenchmark.cs) that measures harness overhead
-/// instead of a scenario, so the filter in Program.cs skips it.
+/// instead of a scenario, so the <see cref="DatadogExtensions.AddMinRuntimeFilter"/>
+/// extension skips it.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-internal sealed class MinRuntimeAttribute : Attribute
+public sealed class MinRuntimeAttribute : Attribute
 {
     public MinRuntimeAttribute(RuntimeMoniker minimum) => Minimum = minimum;
 

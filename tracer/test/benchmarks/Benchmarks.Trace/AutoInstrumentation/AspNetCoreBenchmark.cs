@@ -11,6 +11,7 @@ using BenchmarkDotNet.Jobs;
 using Datadog.Trace;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
