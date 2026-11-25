@@ -111,6 +111,34 @@ public class ReconciliationSweepTests
     }
 
     [Fact]
+    public async Task MissedStopActivity_SetsOtelTraceId()
+    {
+        // On DiagnosticSource < 5.0 (net4x, netcoreapp2.x/3.x) this exercises the legacy
+        // fallback rung of the sweep; newer runtimes are handled by the IActivity5/6 rungs.
+        await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
+
+        var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
+
+        var activity = new SD.Activity("missed-stop");
+        activity.SetIdFormat(SD.ActivityIdFormat.W3C);
+        activity.Start();
+        try
+        {
+            var (_, span) = AddMapping(mappings, tracer, activity);
+            activity.Stop();
+
+            ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
+
+            span.IsFinished.Should().BeTrue();
+            ((OpenTelemetryTags)span.Tags).OtelTraceId.Should().Be(activity.TraceId.ToHexString());
+        }
+        finally
+        {
+            GC.KeepAlive(activity);
+        }
+    }
+
+    [Fact]
     public async Task RecentlyStoppedActivity_IsSkippedDuringGracePeriod()
     {
         // The sweep races the OS Stop() listener callback. Stop() sets Duration before our

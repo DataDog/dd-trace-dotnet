@@ -465,14 +465,14 @@ namespace Datadog.Trace.Activity.Handlers
                         missedStop++;
                     }
                 }
-                else if (activityObject.TryDuckCast<IActivity>(out var activity4))
+                else if (activityObject.TryDuckCast<IW3CActivity>(out var w3cActivity))
                 {
-                    if (activity4.Duration != TimeSpan.Zero
-                     && activity4.StartTimeUtc.Add(activity4.Duration) < missedStopCutoff
+                    if (w3cActivity.Duration != TimeSpan.Zero
+                     && w3cActivity.StartTimeUtc.Add(w3cActivity.Duration) < missedStopCutoff
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(activity4, scope);
+                        CloseActivityScope(w3cActivity, scope);
                         missedStop++;
                     }
                 }
