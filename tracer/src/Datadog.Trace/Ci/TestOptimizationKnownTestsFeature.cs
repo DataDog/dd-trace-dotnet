@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
@@ -41,10 +42,18 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
 
         static async Task<TestOptimizationClient.KnownTestsResponse> InternalGetKnownTestsAsync(ITestOptimizationClient testOptimizationClient)
         {
-            Log.Debug("TestOptimizationKnownTestsFeature: Getting early flake detection data...");
-            var response = await testOptimizationClient.GetKnownTestsAsync().ConfigureAwait(false);
-            Log.Debug("TestOptimizationKnownTestsFeature: Early flake detection data received.");
-            return response;
+            try
+            {
+                Log.Debug("TestOptimizationKnownTestsFeature: Getting early flake detection data...");
+                var response = await testOptimizationClient.GetKnownTestsAsync().ConfigureAwait(false);
+                Log.Debug("TestOptimizationKnownTestsFeature: Early flake detection data received.");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "TestOptimizationKnownTestsFeature: Error getting early flake detection data. Known tests and early flake detection are being disabled for this run.");
+                return default;
+            }
         }
     }
 
