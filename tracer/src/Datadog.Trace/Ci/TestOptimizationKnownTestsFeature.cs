@@ -50,7 +50,7 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "TestOptimizationKnownTestsFeature: Error getting early flake detection data. Known tests and early flake detection are being disabled for this run.");
+                Log.ErrorSkipTelemetry(ex, "TestOptimizationKnownTestsFeature: Error getting early flake detection data. Known tests and early flake detection are being disabled for this run.");
                 return default;
             }
 

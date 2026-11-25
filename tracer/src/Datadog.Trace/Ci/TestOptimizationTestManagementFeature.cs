@@ -51,7 +51,7 @@ internal sealed class TestOptimizationTestManagementFeature : ITestOptimizationT
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "TestOptimizationTestManagementFeature: Error getting test management data. Test management is being disabled for this run.");
+                Log.ErrorSkipTelemetry(ex, "TestOptimizationTestManagementFeature: Error getting test management data. Test management is being disabled for this run.");
                 return new TestOptimizationClient.TestManagementResponse();
             }
 
