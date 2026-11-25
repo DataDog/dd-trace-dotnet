@@ -95,7 +95,7 @@ partial class Build
 
             if (IsAlpine)
             {
-                // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
+                // On Alpine, we do not have permission to access the file libunwind-<short sha>/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
                 Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
@@ -117,7 +117,7 @@ partial class Build
 
             if (IsAlpine)
             {
-                // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
+                // On Alpine, we do not have permission to access the file libunwind-<short sha>/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
                 Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
