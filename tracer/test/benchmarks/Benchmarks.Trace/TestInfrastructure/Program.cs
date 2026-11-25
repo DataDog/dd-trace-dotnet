@@ -8,8 +8,8 @@ using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
 using BenchmarkDotNet.Jobs;
 using Benchmarks.Trace.Jetbrains;
-using System.Reflection.Metadata;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Environments;
 using System.Reflection;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 using System.Collections;
@@ -65,7 +65,7 @@ namespace Benchmarks.Trace
 
             config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed)
-                           .AddFilter(new SimpleFilter(IsRealAspNetCoreBenchmark));
+                           .AddFilter(new SimpleFilter(HasRealBody));
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
@@ -125,75 +125,42 @@ namespace Benchmarks.Trace
             cleanupMethod?.Invoke(instance, null);
         }
 
-#if NETCOREAPP3_0_OR_GREATER
-        // The real AspNetCoreBenchmark body (a TestServer round trip) is
-        // compiled into this assembly on .NET Core 3.0 and later.
-        private const bool AspNetCoreBenchmarkIsReal = true;
-#else
-        private const bool AspNetCoreBenchmarkIsReal = false;
-#endif
-
-#if NET6_0_OR_GREATER
-        // The real SingleSpanAspNetCoreBenchmark body is compiled into this
-        // assembly on .NET 6.0 and later.
-        private const bool SingleSpanAspNetCoreBenchmarkIsReal = true;
-#else
-        private const bool SingleSpanAspNetCoreBenchmarkIsReal = false;
-#endif
-
         /// <summary>
-        /// Skips the ASP.NET Core benchmarks on target runtimes where their
-        /// bodies compile to a "return null;" stub because ASP.NET Core is
-        /// unsupported there (see AutoInstrumentation/AspNetCoreBenchmark.cs).
-        /// Those stubs measure the BenchmarkDotNet loop overhead instead of a
-        /// scenario. Only the null bodies are filtered out: the real bodies, a
-        /// TestServer round trip through the tracer, run on ASP.NET Core 3.0
-        /// and later for SendRequest, and on .NET 6.0 and later for
-        /// SingleSpanAspNetCore.
+        /// Skips benchmark classes marked with <see cref="MinRuntimeAttribute"/>
+        /// when their body compiles to a stub on the target runtime. A stub
+        /// (see AutoInstrumentation/AspNetCoreBenchmark.cs) measures the
+        /// BenchmarkDotNet loop overhead instead of a scenario, so it is not
+        /// worth running. Benchmark classes without the attribute always run.
         /// </summary>
-        private static bool IsRealAspNetCoreBenchmark(BenchmarkCase benchmarkCase)
+        private static bool HasRealBody(BenchmarkCase benchmarkCase)
         {
-            var type = benchmarkCase.Descriptor.Type;
+            var minimum = benchmarkCase.Descriptor.Type.GetCustomAttribute<MinRuntimeAttribute>(inherit: false);
 
-            if (type != typeof(AspNetCoreBenchmark) &&
-                type != typeof(SingleSpanAspNetCoreBenchmark))
+            if (minimum is null)
             {
                 return true;
             }
 
-            var runtime = benchmarkCase.Job.Environment.Runtime;
+            // BenchmarkDotNet 0.15.8 keeps RuntimeInformation.GetCurrentRuntime()
+            // internal; EnvironmentResolver is the public resolver that
+            // registers it, so resolving through it yields the host's current
+            // runtime for jobs that do not pin one explicitly.
+            var runtime = benchmarkCase.Job.Environment.Runtime
+                ?? benchmarkCase.Job.Environment.ResolveValue(EnvironmentMode.RuntimeCharacteristic, EnvironmentResolver.Instance);
 
-            if (runtime is null)
+            var moniker = runtime.RuntimeMoniker;
+
+            // NotRecognized means this BenchmarkDotNet predates the job's TFM
+            // (e.g. .NET 11 with BenchmarkDotNet 0.15.8). NotRecognized sorts
+            // below Net461, so the ordinal comparison alone would silently
+            // skip real benchmarks on newer TFMs; run them instead. The enum is
+            // documented by BenchmarkDotNet as ordered for version comparison.
+            if (moniker == RuntimeMoniker.NotRecognized)
             {
-                // Without an explicit target runtime the benchmark runs on the
-                // host framework, so the body compiled into this assembly runs.
-                return type == typeof(AspNetCoreBenchmark)
-                    ? AspNetCoreBenchmarkIsReal
-                    : SingleSpanAspNetCoreBenchmarkIsReal;
+                return true;
             }
 
-            switch (runtime.RuntimeMoniker)
-            {
-                case RuntimeMoniker.Net472:
-                case RuntimeMoniker.Net48:
-                case RuntimeMoniker.Net481:
-                case RuntimeMoniker.NetCoreApp20:
-                case RuntimeMoniker.NetCoreApp21:
-                case RuntimeMoniker.NetCoreApp22:
-                    // ASP.NET Core is unsupported: both bodies are stubs.
-                    return false;
-
-                case RuntimeMoniker.NetCoreApp30:
-                case RuntimeMoniker.NetCoreApp31:
-                case RuntimeMoniker.Net50:
-                    // SendRequest is real on ASP.NET Core 3.0 and later, but
-                    // SingleSpanAspNetCore needs .NET 6.0 and is still a stub.
-                    return type != typeof(SingleSpanAspNetCoreBenchmark);
-
-                default:
-                    // .NET 6.0 and later: both bodies are real.
-                    return true;
-            }
+            return moniker >= minimum.Minimum;
         }
     }
 }
