@@ -837,28 +837,18 @@ namespace Datadog.Trace.Tests.Configuration
             settings.SdkMode.Should().Be(expectedOtelMode ? SdkModeValues.Otel : SdkModeValues.Datadog);
             settings.IsActivityListenerEnabled.Should().Be(expectedOtelMode);
             settings.OtelSemanticsEnabled.Should().Be(expectedOtelMode);
+            settings.OpenTelemetryMetricsEnabled.Should().Be(expectedOtelMode);
+            settings.OpenTelemetryLogsEnabled.Should().Be(expectedOtelMode);
             settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().Be(expectedOtelMode);
 
             // Telemetry reports the defaults derived from DD_SDK_MODE=otel with the calculated origin
-            List<string> derivedKeys =
+            string[] derivedKeys =
             [
                 ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
                 ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
             ];
-
-            // DD_SDK_MODE=otel only enables OTLP metrics and logs where they're available
-#if NET6_0_OR_GREATER
-            settings.OpenTelemetryMetricsEnabled.Should().Be(expectedOtelMode);
-            derivedKeys.Add(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled);
-#else
-            settings.OpenTelemetryMetricsEnabled.Should().BeFalse();
-#endif
-#if NETCOREAPP3_1_OR_GREATER
-            settings.OpenTelemetryLogsEnabled.Should().Be(expectedOtelMode);
-            derivedKeys.Add(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled);
-#else
-            settings.OpenTelemetryLogsEnabled.Should().BeFalse();
-#endif
 
             var entries = telemetry.GetQueueForTesting().ToList();
             foreach (var key in derivedKeys)

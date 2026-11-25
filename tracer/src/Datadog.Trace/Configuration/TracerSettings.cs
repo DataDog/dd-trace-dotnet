@@ -315,15 +315,9 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogsExporter);
             }
 
-#if NETCOREAPP3_1_OR_GREATER
-            var otelSdkModeLogsDefault = otelSdkModeSignalDefaults;
-#else
-            // OTLP logs export needs .NET Core 3.1 or later, so DD_SDK_MODE=otel doesn't enable it where it isn't available
-            var otelSdkModeLogsDefault = false;
-#endif
             OpenTelemetryLogsEnabled = WithSdkModeDefault(
                 config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled).AsBoolResult(),
-                otelSdkModeLogsDefault);
+                otelSdkModeSignalDefaults);
 
             OpenTelemetryLogsEnabled = DisableIfOtelSdkDisabled(OpenTelemetryLogsEnabled, ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled) && OtelLogsExporterEnabled;
 
@@ -771,14 +765,8 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-#if NET6_0_OR_GREATER
-            var otelSdkModeMetricsDefault = otelSdkModeSignalDefaults;
-#else
-            // The OTLP metrics pipeline needs .NET 6 or later, so DD_SDK_MODE=otel doesn't enable it where it isn't available
-            var otelSdkModeMetricsDefault = false;
-#endif
             OpenTelemetryMetricsEnabled = DisableIfOtelSdkDisabled(
-                WithSdkModeDefault(config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled).AsBoolResult(), otelSdkModeMetricsDefault),
+                WithSdkModeDefault(config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled).AsBoolResult(), otelSdkModeSignalDefaults),
                 ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled);
 
             var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();

@@ -269,7 +269,7 @@ internal static partial class ConfigurationKeys
     /// "datadog" (the default) keeps the Datadog semantic conventions and the Datadog protocol.
     /// "otel" makes <c>true</c> the default of <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled"/>,
     /// <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>, <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
-    /// (.NET 6+) and <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/> (.NET Core 3.1+), and "otlp" the default of
+    /// and <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>, and "otlp" the default of
     /// <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>. Explicitly configured values of these settings take precedence,
     /// and <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> still turns off the OpenTelemetry tracing API, metrics and logs.
     /// Other values are invalid and keep "datadog".
