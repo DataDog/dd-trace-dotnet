@@ -116,14 +116,6 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
-# Disable tiered compilation for every BenchmarkDotNet child process.
-# BDN's pilot iteration runs before warmup, on cold tier-0 code, and tiered
-# JIT recompiles during the benchmark perturb it. No amount of warmup can
-# fix the pilot; only disabling tiered compilation does.
-# DOTNET_ covers net6.0+, COMPlus_ covers netcoreapp3.1. net472 ignores both.
-$env:DOTNET_TieredCompilation = "0"
-$env:COMPlus_TieredCompilation = "0"
-
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
