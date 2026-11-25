@@ -864,6 +864,11 @@ partial class Build
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
 
+                    if (Framework is not null)
+                    {
+                        frameworks = frameworks.Where(x => x == Framework).ToList();
+                    }
+
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
                     if (IsWin)
