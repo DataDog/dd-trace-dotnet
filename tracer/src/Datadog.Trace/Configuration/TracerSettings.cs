@@ -126,18 +126,6 @@ namespace Datadog.Trace.Configuration
             // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode for every signal, so DD_SDK_MODE=otel doesn't enable them either
             var otelSdkModeSignalDefaults = otelSdkMode && !otelSdkDisabled;
 
-            // DD_TRACE_ENABLED=true still turns tracing back on (see MutableSettings), but this combination is a misconfiguration
-            if (otelSdkMode
-             && otelSdkDisabled
-             && config.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult().ConfigurationResult is { IsValid: true, Result: true })
-            {
-                Log.Warning(
-                    "Misconfiguration: {SdkModeKey}=otel, {OtelSdkDisabledKey}=true and {TraceEnabledKey}=true are set together. Tracing is enabled, but the OpenTelemetry tracing API, metrics and logs are disabled.",
-                    ConfigurationKeys.SdkMode,
-                    ConfigurationKeys.OpenTelemetry.SdkDisabled,
-                    ConfigurationKeys.TraceEnabled);
-            }
-
             // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent.
             // Otherwise it's unset or invalid, so OverrideWith only uses it to report a hidden or invalid value.
             var activityListenerEnabled = config
@@ -909,6 +897,23 @@ namespace Datadog.Trace.Configuration
 
                 OtelTracesSpanMetricsEnabled = false;
                 telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
+
+            // DD_TRACE_ENABLED=true still turns tracing back on (see MutableSettings), but this combination is a misconfiguration.
+            // The mode still sets the defaults of the trace exporter and semantics.
+            if (otelSdkMode
+             && otelSdkDisabled
+             && config.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult().ConfigurationResult is { IsValid: true, Result: true })
+            {
+                Log.Warning(
+                    "Misconfiguration: {SdkModeKey}=otel, {OtelSdkDisabledKey}=true and {TraceEnabledKey}=true are set together. Tracing is enabled, but the OpenTelemetry tracing API, metrics and logs are disabled. Traces are exported {TraceExport}, with {Semantics} semantics.",
+                    [
+                        ConfigurationKeys.SdkMode,
+                        ConfigurationKeys.OpenTelemetry.SdkDisabled,
+                        ConfigurationKeys.TraceEnabled,
+                        Manager.InitialExporterSettings.IsOtlpTraceExport ? "over OTLP" : "with the Datadog protocol",
+                        OtelSemanticsEnabled ? "OpenTelemetry" : "Datadog",
+                    ]);
             }
 
             // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode for every signal,
