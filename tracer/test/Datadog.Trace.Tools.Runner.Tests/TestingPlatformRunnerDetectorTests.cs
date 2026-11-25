@@ -53,7 +53,7 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_workingDirectory, "global.json"), globalJson);
 
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, testRunnerEnvironmentValue: null).Should().Be(expected);
+        Detect(_workingDirectory, testRunnerEnvironmentValue: null).Should().Be(expected);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_root, "repo", "global.json"), MtpGlobalJson);
 
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeTrue();
+        Detect(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeTrue();
     }
 
     [Fact]
@@ -70,14 +70,14 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
         File.WriteAllText(Path.Combine(_root, "repo", "global.json"), MtpGlobalJson);
         File.WriteAllText(Path.Combine(_workingDirectory, "global.json"), """{ "sdk": { "version": "10.0.100" } }""");
 
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeFalse();
+        Detect(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeFalse();
     }
 
     [Fact]
     public void NoGlobalJsonMeansVsTest()
     {
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeFalse();
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(workingDirectory: null, testRunnerEnvironmentValue: null).Should().BeFalse();
+        Detect(_workingDirectory, testRunnerEnvironmentValue: null).Should().BeFalse();
+        Detect(workingDirectory: null, testRunnerEnvironmentValue: null).Should().BeFalse();
     }
 
     [Theory]
@@ -97,6 +97,68 @@ public sealed class TestingPlatformRunnerDetectorTests : IDisposable
             File.WriteAllText(Path.Combine(_workingDirectory, "global.json"), globalJson);
         }
 
-        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, environmentValue).Should().Be(expected);
+        Detect(_workingDirectory, environmentValue).Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData(MtpGlobalJson, null, 8, false)]
+    [InlineData(MtpGlobalJson, null, 9, false)]
+    [InlineData(MtpGlobalJson, null, 10, true)]
+    [InlineData(MtpGlobalJson, null, 11, true)]
+    [InlineData(MtpGlobalJson, null, null, false)]
+    [InlineData(null, "Microsoft.Testing.Platform", 9, false)]
+    [InlineData(null, "Microsoft.Testing.Platform", 10, false)]
+    [InlineData(null, "Microsoft.Testing.Platform", 11, true)]
+    [InlineData(MtpGlobalJson, "VSTest", 10, true)]
+    [InlineData(MtpGlobalJson, "VSTest", 11, false)]
+    [InlineData(VsTestGlobalJson, "Microsoft.Testing.Platform", 10, false)]
+    [InlineData(VsTestGlobalJson, "Microsoft.Testing.Platform", 11, true)]
+    public void OnlyTheSdkVersionsThatReadTheSettingSelectTestingPlatform(string globalJson, string environmentValue, int? sdkMajorVersion, bool expected)
+    {
+        if (globalJson is not null)
+        {
+            File.WriteAllText(Path.Combine(_workingDirectory, "global.json"), globalJson);
+        }
+
+        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, environmentValue, () => sdkMajorVersion).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(VsTestGlobalJson, null)]
+    [InlineData(VsTestGlobalJson, "VSTest")]
+    [InlineData(null, "Bogus")]
+    public void DoesNotReadTheSdkVersionWhenNothingSelectsTestingPlatform(string globalJson, string environmentValue)
+    {
+        if (globalJson is not null)
+        {
+            File.WriteAllText(Path.Combine(_workingDirectory, "global.json"), globalJson);
+        }
+
+        var sdkVersionRead = false;
+        int? ReadSdkVersion()
+        {
+            sdkVersionRead = true;
+            return 11;
+        }
+
+        TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(_workingDirectory, environmentValue, ReadSdkVersion).Should().BeFalse();
+
+        sdkVersionRead.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ReadsTheMajorVersionOfTheSdk()
+    {
+        TestingPlatformRunnerDetector.GetSdkMajorVersion("dotnet", _workingDirectory).Should().BeGreaterOrEqualTo(8);
+    }
+
+    [Fact]
+    public void AnSdkThatCannotRunHasNoVersion()
+    {
+        TestingPlatformRunnerDetector.GetSdkMajorVersion(Path.Combine(_root, "missing-dotnet"), _workingDirectory).Should().BeNull();
+    }
+
+    private static bool Detect(string workingDirectory, string testRunnerEnvironmentValue)
+        => TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(workingDirectory, testRunnerEnvironmentValue, () => 11);
 }

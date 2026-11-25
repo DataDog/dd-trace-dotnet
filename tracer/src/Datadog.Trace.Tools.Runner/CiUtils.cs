@@ -390,7 +390,7 @@ internal static class CiUtils
                 // The Microsoft.Testing.Platform `dotnet test` command rejects the VSTest-only --test-adapter-path and --collect options.
                 var usesTestingPlatformRunner = isDotnetTestCommand &&
                                                 !usesTestingPlatformCoverage &&
-                                                TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(Environment.CurrentDirectory, EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner));
+                                                TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(program, Environment.CurrentDirectory, EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner));
                 var addDotnetTestCollector = isDotnetTestCommand && !usesTestingPlatformCoverage && !usesTestingPlatformRunner;
 
                 var hasExpandedResponseFileArguments = !ReferenceEquals(expandedArguments, lstArguments);
