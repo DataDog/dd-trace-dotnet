@@ -40,6 +40,32 @@ public class SettingsInstrumentationTests
     }
 
     [Fact]
+    public void ManualOnly_DefaultsMatchAutomaticDefaults()
+    {
+        // Without the automatic tracer, the manual settings use their own hard-coded fallbacks
+        var automatic = new TracerSettings(NullConfigurationSource.Instance);
+        var manual = new ManualSettings(new Dictionary<string, object>(), isFromDefaultSources: false);
+
+        AssertEquivalent(manual, automatic);
+    }
+
+    [Fact]
+    public void ManualOnly_ImmutableDefaultsMatchAutomaticDefaults()
+    {
+        var automatic = new TracerSettings(NullConfigurationSource.Instance);
+        var manual = new ImmutableManualSettings(new Dictionary<string, object>());
+
+        manual.AnalyticsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.AnalyticsEnabled);
+        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.Manager.InitialMutableSettings.KafkaCreateConsumerScopeEnabled);
+        manual.LogsInjectionEnabled.Should().Be(automatic.Manager.InitialMutableSettings.LogsInjectionEnabled);
+        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond);
+        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled);
+        manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
+        manual.TraceEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TraceEnabled);
+        manual.TracerMetricsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TracerMetricsEnabled);
+    }
+
+    [Fact]
     public void AutomaticToManual_IncludesAllExpectedKeys()
     {
         var automatic = new TracerSettings();

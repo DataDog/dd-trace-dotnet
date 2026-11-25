@@ -30,7 +30,7 @@ public sealed class ImmutableTracerSettings
         GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
         HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
         KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, true);
         MaxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
         ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
         ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
@@ -142,7 +142,7 @@ public sealed class ImmutableTracerSettings
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
     /// automatically injected into the logging context.
-    /// Default is <c>false</c>.
+    /// Default is <c>true</c>.
     /// </summary>
     public bool LogsInjectionEnabled
     {

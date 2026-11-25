@@ -88,19 +88,19 @@ public sealed class TracerSettings
         _analyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
         _customSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
         _disabledIntegrationNames = GetAsHashSet(initialValues, TracerSettingKeyConstants.DisabledIntegrationNamesKey);
-        _diagnosticSourceEnabled = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, false).Value;
+        _diagnosticSourceEnabled = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, true).Value;
         _environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
         _globalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
         _globalTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GlobalTagsKey);
         _grpcTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GrpcTags);
         _headerTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.HeaderTags);
         _kafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, true);
         _maxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
         _serviceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
         _serviceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
         _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, true);
+        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
         _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
         _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
         _isFromDefaultSources = isFromDefaultSources;
@@ -284,7 +284,7 @@ public sealed class TracerSettings
     /// <summary>
     /// Gets or sets a value indicating whether correlation identifiers are
     /// automatically injected into the logging context.
-    /// Default is <c>false</c>, unless Direct Log Submission is enabled.
+    /// Default is <c>true</c>.
     /// </summary>
     public bool LogsInjectionEnabled
     {
