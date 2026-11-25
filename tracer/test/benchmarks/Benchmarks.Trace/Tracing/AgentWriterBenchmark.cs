@@ -77,7 +77,8 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Write realistic traces, but don't flush, to isolate overhead from serialization only
+        /// Write realistic traces, but don't send them to the API: measures serialization
+        /// plus the detach half of a flush (the only way to reset the buffer)
         /// </summary>
         [Benchmark]
         public void WriteEnrichedTraces()
@@ -109,8 +110,12 @@ namespace Benchmarks.Trace
             }
         }
 
-        // Mirrors AgentWriter.FlushBuffer: size the replacement array before detaching so the
-        // buffer is immediately writable again, then recycle the detached array for the next call
+        // Mirrors the sizing half of AgentWriter.FlushBuffer: size the replacement array before
+        // detaching so the buffer is immediately writable again, then recycle the detached array
+        // for the next call. Unlike FlushBuffer, the recycled array aliases the payload until the
+        // returned send task completes; safe here only because BenchmarkDotNet awaits each
+        // invocation before starting the next one, so never call this concurrently with an
+        // in-flight send.
         private SpanBuffer.Payload DetachPayload()
         {
             if (_spareBuffer is null || _spareBuffer.Length < _buffer.CurrentLength)
