@@ -190,7 +190,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         foreach (var path in paths)
         {
             _logger.Debug($"Looking for: {path}");
-            if (!File.Exists(path))
+            if (!CoverageAssemblyPathLock.FileExists(path))
             {
                 continue;
             }

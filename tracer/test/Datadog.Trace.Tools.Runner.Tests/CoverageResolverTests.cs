@@ -588,6 +588,22 @@ public class CoverageResolverTests
         exception.Should().BeOfType<IOException>();
     }
 
+    [Fact]
+    public void ResolverWaitsForRewriteWhenDependencyIsBrieflyMissing()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var dependencyPath = CopyCoverageFixture(directory.Path);
+        using var resolver = CreateResolver(directory.Path);
+        var assemblyName = AssemblyNameReference.Parse(AssemblyName.GetAssemblyName(dependencyPath).FullName);
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(dependencyPath, LockAcquisitionTimeout);
+
+        // On Windows, File.Replace briefly removes the target name while the rewrite holds the path lock.
+        File.Delete(dependencyPath);
+        var exception = CaptureExceptionFromThread(() => resolver.Resolve(assemblyName));
+
+        exception.Should().BeOfType<IOException>();
+    }
+
     /// <summary>
     /// Verifies that target reads load the assembly into memory and release the path lock before processing continues.
     /// </summary>
