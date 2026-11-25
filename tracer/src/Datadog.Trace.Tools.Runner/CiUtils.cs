@@ -36,7 +36,7 @@ internal static class CiUtils
     private static readonly string[] DotnetSdkGlobalFlagOptions = ["-d", "--diagnostics", "--info", "--version"];
 
     private static readonly char[] CommandLineQuoteCharacters = [' ', '\t', '\r', '\n', '"'];
-    private static readonly StringComparer PathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparer PathComparer = FilePathComparison.Comparer;
 
     private static readonly string[] RunScopedPropagationEnvironmentVariables =
     [

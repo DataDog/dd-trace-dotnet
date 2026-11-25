@@ -155,8 +155,8 @@ internal readonly struct CoverageBackfillCommandLine
         "xunit.console.x64"
     ];
 
-    private static readonly StringComparison PathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-    private static readonly StringComparer PathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparison PathComparison = FilePathComparison.Comparison;
+    private static readonly StringComparer PathComparer = FilePathComparison.Comparer;
 
     private readonly List<string> _arguments;
     private readonly string? _responseFileBaseDirectory;

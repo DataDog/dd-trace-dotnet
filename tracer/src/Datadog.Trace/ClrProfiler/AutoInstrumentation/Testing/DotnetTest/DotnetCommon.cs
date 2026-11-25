@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         private static readonly TimeSpan CoverletCollectorXmlReportTimestampTolerance = TimeSpan.FromSeconds(1);
         private static readonly object CoverletCollectorXmlReportBaselineLock = new();
-        private static readonly StringComparer CoverageReportPathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        private static readonly StringComparer CoverageReportPathComparer = FilePathComparison.Comparer;
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
         private static CoverletCollectorXmlReportBaseline? _coverletCollectorXmlReportBaseline;
