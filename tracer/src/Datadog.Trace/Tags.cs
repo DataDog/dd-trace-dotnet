@@ -534,11 +534,6 @@ namespace Datadog.Trace
         internal const string AwsTopicArn = "aws.topic.arn";
 
         /// <summary>
-        /// The topic ARN associated with the AWS SDK SNS span.
-        /// </summary>
-        internal const string AwsSnsTopicArn = "aws.sns.topic_arn";
-
-        /// <summary>
         /// The queue URL associated with the AWS SDK span.
         /// </summary>
         internal const string AwsQueueUrl = "aws.queue.url";

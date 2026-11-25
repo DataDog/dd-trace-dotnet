@@ -28,8 +28,9 @@ namespace Samples.AWS.Kinesis
 #if KINESIS_3_7_0
                 if (Common.UseStreamArn)
                 {
-                    PutRecordByStreamArn(kinesisClient);
-                    PutRecordsByStreamArn(kinesisClient);
+                    var streamArn = GetStreamArn(kinesisClient);
+                    PutRecordByStreamArn(kinesisClient, streamArn);
+                    PutRecordsByStreamArn(kinesisClient, streamArn);
                 }
 #endif
 
@@ -99,11 +100,18 @@ namespace Samples.AWS.Kinesis
 
 #if KINESIS_3_7_0
         // A stream can be named by its ARN, which the span tags as aws.stream.arn
-        public static void PutRecordByStreamArn(AmazonKinesisClient kinesisClient)
+        public static string GetStreamArn(AmazonKinesisClient kinesisClient)
+        {
+            var request = new DescribeStreamSummaryRequest { StreamName = StreamName };
+            var response = kinesisClient.DescribeStreamSummary(request);
+            return response.StreamDescriptionSummary.StreamARN;
+        }
+
+        public static void PutRecordByStreamArn(AmazonKinesisClient kinesisClient, string streamArn)
         {
             var putRecordRequest = new PutRecordRequest
             {
-                StreamARN = Common.StreamArn,
+                StreamARN = streamArn,
                 PartitionKey = Guid.NewGuid().ToString(),
                 Data = Common.DictionaryToMemoryStream(new Dictionary<string, object> { { "name", "Jordan" } }),
             };
@@ -112,11 +120,11 @@ namespace Samples.AWS.Kinesis
             Console.WriteLine($"PutRecord(PutRecordRequest) by stream ARN HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static void PutRecordsByStreamArn(AmazonKinesisClient kinesisClient)
+        public static void PutRecordsByStreamArn(AmazonKinesisClient kinesisClient, string streamArn)
         {
             var putRecordsRequest = new PutRecordsRequest
             {
-                StreamARN = Common.StreamArn,
+                StreamARN = streamArn,
                 Records = new List<PutRecordsRequestEntry>
                 {
                     new PutRecordsRequestEntry

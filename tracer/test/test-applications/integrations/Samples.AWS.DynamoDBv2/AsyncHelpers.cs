@@ -11,8 +11,6 @@ namespace Samples.AWS.DynamoDBv2
     {
 
         private const string TableName = "MyTableName";
-        // The table's ARN with LocalStack's default region and account
-        private const string TableArn = "arn:aws:dynamodb:us-east-1:000000000000:table/" + TableName;
 
         public static async Task StartDynamoDBTasks(AmazonDynamoDBClient dynamoDBClient)
         {
@@ -134,9 +132,10 @@ namespace Samples.AWS.DynamoDBv2
         // A table can be named by its ARN, which the span tags as aws.table.arn
         public static async Task GetItemByTableArnAsync(AmazonDynamoDBClient dynamoDBClient)
         {
+            var describeResponse = await dynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = TableName });
             var getItemRequest = new GetItemRequest
             {
-                TableName = TableArn,
+                TableName = describeResponse.Table.TableArn,
                 Key = new Dictionary<string, AttributeValue>
                 {
                     ["id"] = new() { S = "1" },
@@ -144,15 +143,8 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            try
-            {
-                var response = await dynamoDBClient.GetItemAsync(getItemRequest);
-                Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN HTTP status code: {response.HttpStatusCode}");
-            }
-            catch (AmazonDynamoDBException e)
-            {
-                Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN failed: {e.Message}");
-            }
+            var response = await dynamoDBClient.GetItemAsync(getItemRequest);
+            Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN HTTP status code: {response.HttpStatusCode}");
         }
 
         public static async Task GetItemAsync(AmazonDynamoDBClient dynamoDBClient)

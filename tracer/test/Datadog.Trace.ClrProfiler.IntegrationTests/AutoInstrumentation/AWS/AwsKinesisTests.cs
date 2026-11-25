@@ -56,11 +56,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                // Two more spans by stream ARN, sync and async
-                var expectedCount = hasStreamArn ? 16 : 12;
+                // The stream ARN lookup and two puts by stream ARN, sync and async
+                var expectedCount = hasStreamArn ? 18 : 12;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = hasStreamArn ? 9 : 7;
+                var expectedCount = hasStreamArn ? 10 : 7;
                 var frameworkName = "NetCore";
 #endif
                 var spans = await agent.WaitForSpansAsync(expectedCount);

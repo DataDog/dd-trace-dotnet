@@ -30,8 +30,9 @@ namespace Samples.AWS.Kinesis
 #if KINESIS_3_7_0
                 if (Common.UseStreamArn)
                 {
-                    await PutRecordByStreamArnAsync(kinesisClient);
-                    await PutRecordsByStreamArnAsync(kinesisClient);
+                    var streamArn = await GetStreamArnAsync(kinesisClient);
+                    await PutRecordByStreamArnAsync(kinesisClient, streamArn);
+                    await PutRecordsByStreamArnAsync(kinesisClient, streamArn);
                 }
 #endif
 
@@ -101,11 +102,18 @@ namespace Samples.AWS.Kinesis
 
 #if KINESIS_3_7_0
         // A stream can be named by its ARN, which the span tags as aws.stream.arn
-        public static async Task PutRecordByStreamArnAsync(AmazonKinesisClient kinesisClient)
+        public static async Task<string> GetStreamArnAsync(AmazonKinesisClient kinesisClient)
+        {
+            var request = new DescribeStreamSummaryRequest { StreamName = StreamName };
+            var response = await kinesisClient.DescribeStreamSummaryAsync(request);
+            return response.StreamDescriptionSummary.StreamARN;
+        }
+
+        public static async Task PutRecordByStreamArnAsync(AmazonKinesisClient kinesisClient, string streamArn)
         {
             var putRecordRequest = new PutRecordRequest
             {
-                StreamARN = Common.StreamArn,
+                StreamARN = streamArn,
                 PartitionKey = Guid.NewGuid().ToString(),
                 Data = Common.DictionaryToMemoryStream(new Dictionary<string, object> { { "name", "Jordan" } }),
             };
@@ -114,11 +122,11 @@ namespace Samples.AWS.Kinesis
             Console.WriteLine($"PutRecordAsync(PutRecordRequest) by stream ARN HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task PutRecordsByStreamArnAsync(AmazonKinesisClient kinesisClient)
+        public static async Task PutRecordsByStreamArnAsync(AmazonKinesisClient kinesisClient, string streamArn)
         {
             var putRecordsRequest = new PutRecordsRequest
             {
-                StreamARN = Common.StreamArn,
+                StreamARN = streamArn,
                 Records = new List<PutRecordsRequestEntry>
                 {
                     new PutRecordsRequestEntry

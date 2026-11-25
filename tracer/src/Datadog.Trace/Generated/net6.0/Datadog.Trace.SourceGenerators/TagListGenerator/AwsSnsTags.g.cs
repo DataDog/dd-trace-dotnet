@@ -23,9 +23,6 @@ namespace Datadog.Trace.Tagging
         // TopicArnBytes = MessagePack.Serialize("aws.topic.arn");
         private static ReadOnlySpan<byte> TopicArnBytes => [173, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 97, 114, 110];
 
-        // SnsTopicArnBytes = MessagePack.Serialize("aws.sns.topic_arn");
-        private static ReadOnlySpan<byte> SnsTopicArnBytes => [177, 97, 119, 115, 46, 115, 110, 115, 46, 116, 111, 112, 105, 99, 95, 97, 114, 110];
-
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
@@ -36,7 +33,6 @@ namespace Datadog.Trace.Tagging
                 "aws.topic.name" => AwsTopicName,
                 "topicname" => TopicName,
                 "aws.topic.arn" => TopicArn,
-                "aws.sns.topic_arn" => SnsTopicArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -53,7 +49,6 @@ namespace Datadog.Trace.Tagging
                     TopicArn = value;
                     break;
                 case "aws.topic.name": 
-                case "aws.sns.topic_arn": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSnsTags));
                     break;
@@ -78,11 +73,6 @@ namespace Datadog.Trace.Tagging
             if (TopicArn is not null)
             {
                 processor.Process(new TagItem<string>("aws.topic.arn", TopicArn, TopicArnBytes));
-            }
-
-            if (SnsTopicArn is not null)
-            {
-                processor.Process(new TagItem<string>("aws.sns.topic_arn", SnsTopicArn, SnsTopicArnBytes));
             }
 
             if (SpanKind is not null)
@@ -113,13 +103,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aws.topic.arn (tag):")
                   .Append(TopicArn)
-                  .Append(',');
-            }
-
-            if (SnsTopicArn is not null)
-            {
-                sb.Append("aws.sns.topic_arn (tag):")
-                  .Append(SnsTopicArn)
                   .Append(',');
             }
 
