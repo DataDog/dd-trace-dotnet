@@ -1,12 +1,14 @@
 include:
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
-  # so the group path cannot be parameterized here. Update both `project:`
-  # lines by hand at org-split cutover.
+  # so the group path cannot be parameterized here. Update every `project:`
+  # line by hand at org-split cutover.
   - project: 'DataDog/benchmarking-platform-tools'
     file: 'images/templates/gitlab/check-slo-breaches.template.yml'
   - project: 'DataDog/benchmarking-platform-tools'
     file: 'images/templates/gitlab/notify-slo-breaches.template.yml'
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/build-ci-images.template.yml'
 
 .dd-octo-sts-setup:
   before_script:
@@ -37,6 +39,13 @@ workflow:
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-10
+  # Consumed by the included build-ci-images template to build and push
+  # registry.ddbuild.io/ci/benchmarking-platform:$BASE_CI_IMAGE_SUFFIX from
+  # container/. After the first build, repin MACROBENCHMARKS_CI_IMAGE to the
+  # produced tag.
+  BASE_CI_IMAGE_SUFFIX: dd-trace-dotnet-macrobenchmarks-${CI_PIPELINE_ID}
+  BASE_CI_IMAGE_CONTAINER_DIR: .gitlab/benchmarks/macrobenchmarks/container
+
   # See https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/7223313012/Flaky+Benchmarks+Monitoring for more details.
   FLAKY_BENCHMARKS_REGEX: "^normal_operation--.*-arm64$"
 
@@ -118,6 +127,12 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+
+# Builds the benchmark image in-repo from container/. The template's default
+# ci-image stage does not exist in this child pipeline; benchmarks keeps the
+# manual build next to the jobs that consume the image.
+build-benchmark-ci-images:
+  stage: benchmarks
 
 .benchmarks-linux:
   stage: benchmarks
