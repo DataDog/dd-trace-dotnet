@@ -39,6 +39,7 @@
     <Compile Include="..\Datadog.Trace\SamplingPriority.cs" />
     <Compile Include="..\Datadog.Trace\SamplingPriorityValues.cs" />
     <Compile Include="..\Datadog.Trace\SpanCreationSettings.cs" />
+    <Compile Include="..\Datadog.Trace\DataStreamsCheckpointOptions.cs" />
     <Compile Include="..\Datadog.Trace\SpanKinds.cs" />
     <Compile Include="..\Datadog.Trace\SpanTypes.cs" />
     <Compile Include="..\Datadog.Trace\UserDetails.cs" />

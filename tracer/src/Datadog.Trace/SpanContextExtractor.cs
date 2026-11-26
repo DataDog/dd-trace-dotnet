@@ -54,6 +54,41 @@ namespace Datadog.Trace
             return context.SpanContext;
         }
 
+        /// <summary>
+        /// Extracts the span context and sets a manual DSM consume checkpoint with checkpoint options.
+        /// The checkpoint is set even when the carrier has no trace headers (e.g. a row read from a database).
+        /// Timestamps are unix milliseconds, and 0 means "not set".
+        /// </summary>
+        internal static SpanContext? ExtractWithCheckpointOptions<TCarrier>(Tracer tracer, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source, long timestampMs, long sourceTimestampMs, bool chainFromPrevious)
+        {
+            if (messageType == null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
+
+            var context = tracer.TracerManager.SpanContextPropagator.Extract(carrier, getter);
+
+            if (tracer.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
+            {
+                var parentPathwayContext = dsm.ExtractPathwayContextAsBase64String(new CarrierWithDelegate<TCarrier>(carrier, getter));
+                var edgeTags = new EdgeTags(["direction:in", $"topic:{source}", $"type:{messageType}"], cacheNodeHash: false);
+                var pathway = dsm.SetManualCheckpoint(
+                    parentPathwayContext,
+                    CheckpointKind.Consume,
+                    edgeTags,
+                    checkpointTimeNs: UnixMsToNs(timestampMs),
+                    sourceTimeNs: UnixMsToNs(sourceTimestampMs),
+                    chainFromPrevious);
+
+                if (context.SpanContext is { } spanContext)
+                {
+                    spanContext.ManuallySetPathwayContextToPairMessages(pathway);
+                }
+            }
+
+            return context.SpanContext;
+        }
+
+        internal static long? UnixMsToNs(long unixMs) => unixMs > 0 ? unixMs * 1_000_000 : null;
+
         private static PathwayContext? TryGetPathwayContext(string? base64PathwayContext)
         {
             if (string.IsNullOrEmpty(base64PathwayContext))

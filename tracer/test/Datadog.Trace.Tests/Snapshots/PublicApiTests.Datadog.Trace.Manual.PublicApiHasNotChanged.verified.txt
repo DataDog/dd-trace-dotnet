@@ -37,6 +37,12 @@ namespace Datadog.Trace
     {
         public static void TrackTransaction(string transactionId, string checkpointName) { }
     }
+    public struct DataStreamsCheckpointOptions
+    {
+        public bool ChainFromPrevious { get; set; }
+        public System.DateTimeOffset? SourceTimestamp { get; set; }
+        public System.DateTimeOffset? Timestamp { get; set; }
+    }
     public static class HttpHeaderNames
     {
         [System.Obsolete("This header is used internally by the tracer and should not be referenced.")]
@@ -104,12 +110,14 @@ namespace Datadog.Trace
         public SpanContextExtractor() { }
         public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
         public Datadog.Trace.ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter, string messageType, string source) { }
+        public Datadog.Trace.ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter, string messageType, string source, Datadog.Trace.DataStreamsCheckpointOptions options) { }
     }
     public sealed class SpanContextInjector
     {
         public SpanContextInjector() { }
         public void Inject<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context) { }
         public void InjectIncludingDsm<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context, string messageType, string target) { }
+        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context, string messageType, string target, Datadog.Trace.DataStreamsCheckpointOptions options) { }
     }
     public struct SpanCreationSettings
     {

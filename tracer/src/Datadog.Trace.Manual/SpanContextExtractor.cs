@@ -42,7 +42,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Given a SpanContext carrier and a function to access the values, this method will extract the SpanContext
         /// and the PathwayContext, and will set a DataStreams Monitoring checkpoint if enabled.
-        /// You should only call <see cref="ExtractIncludingDsm{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
+        /// You should only call <see cref="ExtractIncludingDsm{TCarrier}(TCarrier, Func{TCarrier, string, IEnumerable{string}}, string, string)"/> once on the message <paramref name="carrier"/>. Calling
         /// multiple times may lead to incorrect stats when using Data Streams Monitoring.
         /// </summary>
         /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
@@ -54,6 +54,30 @@ namespace Datadog.Trace
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
+            => null;
+
+        /// <summary>
+        /// Given a SpanContext carrier and a function to access the values, this method will extract the SpanContext
+        /// and the PathwayContext, and will set a DataStreams Monitoring checkpoint if enabled, using <paramref name="options"/>.
+        /// Unlike <see cref="ExtractIncludingDsm{TCarrier}(TCarrier, Func{TCarrier, string, IEnumerable{string}}, string, string)"/>,
+        /// the checkpoint is set even when the carrier has no trace headers, for example for a row read from a database.
+        /// </summary>
+        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...), or an empty collection.</param>
+        /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty collection if the requested key is not present.</param>
+        /// <param name="messageType">For Data Streams Monitoring: The type of system the data comes from (for example "sqlserver").</param>
+        /// <param name="source">For Data Streams Monitoring: The queue, topic or table the data comes from.</param>
+        /// <param name="options">When the checkpoint happened, when the data entered the source, and whether to chain to the previous checkpoint.</param>
+        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
+        /// <returns>A potentially null Datadog SpanContext</returns>
+        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source, DataStreamsCheckpointOptions options)
+            => ExtractIncludingDsmWithOptions(carrier, getter, messageType, source, ToUnixMilliseconds(options.Timestamp), ToUnixMilliseconds(options.SourceTimestamp), options.ChainFromPrevious);
+
+        // 0 means "not set": the instrumented method takes primitives so it can be intercepted across versions.
+        private static long ToUnixMilliseconds(DateTimeOffset? time) => time?.ToUnixTimeMilliseconds() ?? 0;
+
+        [Instrumented]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private ISpanContext? ExtractIncludingDsmWithOptions<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source, long timestampMs, long sourceTimestampMs, bool chainFromPrevious)
             => null;
     }
 }
