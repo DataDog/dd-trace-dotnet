@@ -3,7 +3,6 @@ extern alias DatadogTraceManual;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
@@ -11,7 +10,6 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Telemetry;
 using BindingFlags = System.Reflection.BindingFlags;
 using Tracer = Datadog.Trace.Tracer;
 using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
@@ -41,7 +39,7 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.Telemetry.Enabled, false },
             });
 
-            _tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null, telemetry: NullTelemetryController.Instance, NullDiscoveryService.Instance);
+            _tracer = TracerHelper.CreateTracer(settings);
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();

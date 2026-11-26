@@ -30,7 +30,18 @@ public static class TracerHelper
                 new OverrideErrorLog()));
 
     public static Tracer CreateTracer(TracerSettings settings)
-        => new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+    {
+        // Using NullTelemetryController alone leaves the static metrics collector (and its
+        // 10s aggregation loop) running, which adds per-process noise to benchmarks.
+        // Install the null metrics collector and stop the previous collector's loop.
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(NullMetricsTelemetryCollector.Instance);
+        if (previousMetrics is MetricsTelemetryCollectorBase metricsCollector)
+        {
+            metricsCollector.DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        return new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+    }
 
     public static void SetGlobalTracer(Dictionary<string, object> config = null)
     {
