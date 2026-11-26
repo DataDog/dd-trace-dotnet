@@ -40,7 +40,7 @@ public sealed class ManagedVanguardStopIntegration
 {
     private const int CoverageXmlRestoreMaxAttempts = 3;
     private const int CoverageXmlRestoreRetryDelayMilliseconds = 50;
-    private static readonly StringComparer CoverageReportPathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparer CoverageReportPathComparer = FilePathComparison.Comparer;
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IManagedVanguardProxy

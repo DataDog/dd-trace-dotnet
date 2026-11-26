@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -15,7 +16,7 @@ namespace Datadog.Trace.Ci.Coverage;
 /// </summary>
 internal sealed class CodeCoverageBackfillValidation
 {
-    private static readonly StringComparer LocalCandidateComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparer LocalCandidateComparer = FilePathComparison.Comparer;
 
     /// <summary>
     /// Gets or sets the number of backend files that contain skipped-test covered lines.
