@@ -1,0 +1,37 @@
+global_setup:
+  - name: Hardware and software info
+    run: collect_hardware_software_info
+  - name: dotnet-throughput
+    run: service
+    cpus: "1,0x3"
+    path: .\steps\start-sut.ps1
+    healthcheck:
+      debug: true
+      period_secs: 1
+      duration_secs: 60
+      url: http://localhost:8080/hello
+
+experiments:
+  - name: warmup
+    setup: &benchmark_setup
+      - name: datadog-agent
+        run: datadog_agent
+        cpus: "0,0xF"
+        config_sh: .\steps\update-dd-agent-config.ps1
+        healthcheck:
+          period_secs: 1
+          duration_secs: 60
+          url: http://localhost:8126/info
+    steps: &benchmark_steps
+      - name: k6
+        cpus: "0,0xFFFFC0"
+        run: shell
+        script: .\steps\start-k6.ps1
+
+  - name: normal_operation
+    setup: *benchmark_setup
+    steps: *benchmark_steps
+
+  - name: high_load
+    setup: *benchmark_setup
+    steps: *benchmark_steps

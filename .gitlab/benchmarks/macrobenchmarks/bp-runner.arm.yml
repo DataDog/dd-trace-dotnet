@@ -1,0 +1,62 @@
+global_setup:
+  - name: Hardware and software info
+    run: collect_hardware_software_info
+
+  - name: dotnet-server
+    run: service
+    cpus: 22-23
+    path: ./steps/start-sut.sh
+    healthcheck:
+      period_secs: 1
+      duration_secs: 60
+      url: http://localhost:8080/hello
+
+experiments:
+  - name: warmup
+    setup: &benchmark_setup
+      - name: datadog-agent
+        run: datadog_agent
+        cpus: 20-21
+        config_sh: ./steps/update-dd-agent-config.sh
+        healthcheck:
+          period_secs: 1
+          duration_secs: 60
+          url: http://localhost:8126/info
+
+    steps: &benchmark_steps
+      - name: k6
+        cpus: 4-20
+        run: shell
+        script: ./steps/start-k6.sh
+
+  - name: normal_operation
+    setup: *benchmark_setup
+    steps: *benchmark_steps
+
+  - name: high_load
+    setup: *benchmark_setup
+    steps: *benchmark_steps
+
+global_teardown:
+  - name: S3 uploading
+    run: upload_to_s3
+    # If BP_EXTERNAL_S3_URL is empty, bp-runner uses its default S3 destination.
+    url: $BP_EXTERNAL_S3_URL
+
+  - name: BP API uploading
+    run: upload_to_bp_api
+    retries_on_failure: 2
+    project: dd-trace-dotnet
+
+docker_config_for_local_runs:
+  image_name: dotnet-throughput
+  volumes:
+    - k6/:/app/k6/:ro
+    - logs/agent/:/var/log/datadog/:rw
+    - src:/app/src:rw
+    - steps/:/app/steps/:ro
+    - bp-runner.yml:/app/bp-runner.yml:ro
+  env:
+    DD_TRACE_DEBUG: "false"
+    DD_RUNTIME_METRICS_ENABLED: "true"
+  command: bp-runner bp-runner.yml --debug

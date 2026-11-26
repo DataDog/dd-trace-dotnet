@@ -1,0 +1,105 @@
+name: &provision_name "dd-trace-dotnet-macrobenchmark-ephemeral-instance"
+
+init_environment:
+  # Legacy variable name: the directory now holds the dd-trace-dotnet checkout
+  # that contains the in-repo benchmark suite the instance runs.
+  BENCHMARKING_PLATFORM_DIR: "C:\\dd-trace-dotnet\\.gitlab\\benchmarks\\macrobenchmarks"
+
+  BP_REPO_FETCHER_KEY_SSM_PARAMETER: "/windows-benchmarking/bp-repo-fetcher-key"
+  BP_REPO_FETCHER_CLIENT_ID: "Iv23liYOxTI8nIatGymV"
+
+  ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+  DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
+  
+  ARTIFACTS_DIR: "C:\\BenchmarkArtifacts"
+
+source_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-macrobenchmarks-ami-id"
+
+target_cpu: "8259CL"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - clone_bp
+  - run_benchmarks
+  - upload_artifacts_to_s3
+
+clone_bp:
+  populate_env: true
+  remote_command: |
+    # Clone the benchmark suite (dd-trace-dotnet) at the branch being benchmarked.
+    $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
+    if ($env:GITHUB_TOKEN) {
+        git clone -b $branch --single-branch "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/dd-trace-dotnet.git" "C:\dd-trace-dotnet"
+    } else {
+        git clone -b $branch --single-branch "https://github.com/DataDog/dd-trace-dotnet.git" "C:\dd-trace-dotnet"
+    }
+
+run_benchmarks:
+  remote_command: |
+    Set-Location $env:BENCHMARKING_PLATFORM_DIR
+    ./run-benchmarks.ps1
+
+# Future improvements: Save this to a script in benchmarking-platform-tools,
+# considering that repos using ephemeral infra will run the same steps.
+upload_artifacts_to_s3:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    New-Item -ItemType Directory -Path $env:ARTIFACTS_DIR -Force | Out-Null
+
+    # Copy DD Agent logs
+    $ddAgentLogs = "C:\ProgramData\Datadog\logs"
+    if (Test-Path $ddAgentLogs) {
+        Copy-Item -Path $ddAgentLogs -Destination "$env:ARTIFACTS_DIR\datadog-agent" -Recurse -Force
+    }
+
+    # Copy .NET Tracer logs
+    $dotnetTracerLogs = "C:\ProgramData\Datadog .NET Tracer\logs"
+    if (Test-Path $dotnetTracerLogs) {
+        Copy-Item -Path $dotnetTracerLogs -Destination "$env:ARTIFACTS_DIR\dotnet-tracer" -Recurse -Force
+    }
+
+    # Copy EC2Launch artifacts
+    $EC2LaunchArtifactsDir = "$env:ARTIFACTS_DIR\ec2-launch"
+    New-Item -ItemType Directory -Path $EC2LaunchArtifactsDir -Force | Out-Null
+    $EC2LaunchTempDir = (Get-Content "C:\ProgramData\Amazon\EC2Launch\log\agent.log" | Select-String "Output file is created at: (.+output\.tmp)" | ForEach-Object { $_.Matches.Groups[1].Value } | Select-Object -Last 1) -replace "\\output\.tmp$"
+    $EC2LaunchTempFiles = @("$EC2LaunchTempDir\UserScript.ps1", "$EC2LaunchTempDir\err.tmp", "$EC2LaunchTempDir\output.tmp")
+    foreach ($file in $EC2LaunchTempFiles) {
+        if (Test-Path $file) {
+            Copy-Item $file $EC2LaunchArtifactsDir
+        }
+    }
+
+    # k6 logs already in $env:ARTIFACTS_DIR from start-k6.ps1
+
+    # Create zip
+    $zipPath = "C:\benchmark-artifacts.zip"
+    Compress-Archive -Path "$env:ARTIFACTS_DIR\*" -DestinationPath $zipPath -Force
+
+    # Build S3 prefix
+    $s3Prefix =
+    if ($env:CI_PROJECT_NAME -and
+        $env:CI_COMMIT_REF_NAME -and
+        $env:CI_JOB_ID) {
+        "$env:CI_PROJECT_NAME/$env:CI_COMMIT_REF_NAME/$env:CI_JOB_ID"
+    }
+    else {
+        # See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+        $instanceId = try {
+            $instanceMetadataLinkLocalAddress = "http://169.254.169.254/latest/meta-data"
+            Invoke-RestMethod -Uri "$instanceMetadataLinkLocalAddress/instance-id" -ErrorAction Stop
+        } catch {
+            "unknown-instance"
+        }
+        "manual/ephemeral-instance/$instanceId"
+    }
+
+    # Upload to S3 (single zip file because of k6 output file size)
+    $s3Key = "$s3Prefix/benchmark-artifacts.zip"
+    Write-S3Object -BucketName $env:ARTIFACTS_BUCKET_NAME `
+        -Key $s3Key -File $zipPath `
+        -CannedACLName "bucket-owner-full-control"
+
+    Write-Output "Successfully uploaded artifacts to s3://$($env:ARTIFACTS_BUCKET_NAME)/$s3Key!"

@@ -1,0 +1,101 @@
+# Builds a "base" instance and creates an AMI with it for running the dd-trace-dotnet macrobenchmark.
+
+name: &provision_name "dd-trace-dotnet-macrobenchmark-base-instance"
+
+init_environment:
+  # Specific build version used to install .NET Core.
+  # See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
+  ASP_NET_CORE_RUNTIME_VERSION: "9.0.0"
+  NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION: "9.0.0"
+  NET_CORE_SDK_VERSION: "9.0.203"
+  # Datadog Agent MSI URL. Set to upgrade the agent beyond the base AMI version.
+  # See https://s3.amazonaws.com/ddagent-windows-stable/ for available versions.
+  DD_AGENT_MSI_URL: "https://s3.amazonaws.com/ddagent-windows-stable/ddagent-cli-7.78.3.msi"
+
+source_ami:
+  # Instance with tweaks for benchmarking repeatability, base dependencies,
+  # and benchmarking tooling.
+  # See https://github.com/DataDog/benchmarking-platform-tools/blob/main/bp-infra/src/provisions/windows/user_data/apm-windows-tweaked-metal.ps1
+  ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id"
+
+target_cpu: "8259CL"
+
+create_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-macrobenchmarks-ami-id"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - upgrade_dd_agent
+  - install_dotnet
+
+upgrade_dd_agent:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $ProgressPreference = "SilentlyContinue"
+
+    $msiUrl = $env:DD_AGENT_MSI_URL
+    if (-not $msiUrl) {
+      Write-Output "DD_AGENT_MSI_URL not set, skipping agent upgrade."
+      exit 0
+    }
+
+    $agentExe = "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe"
+    $installedVersion = ""
+    if (Test-Path $agentExe) {
+      $versionOutput = & $agentExe version
+      if ($versionOutput -match "Agent (\d+\.\d+\.\d+)") {
+        $installedVersion = $Matches[1]
+      }
+    }
+
+    $desiredVersion = ""
+    if ($msiUrl -match "ddagent-cli-(\d+\.\d+\.\d+)\.msi") {
+      $desiredVersion = $Matches[1]
+    }
+
+    Write-Output "Installed DD agent version: $installedVersion"
+    Write-Output "Desired DD agent version: $(if ($desiredVersion) { $desiredVersion } else { '(not extractable from URL, will always install)' })"
+
+    if ($desiredVersion -and $installedVersion -eq $desiredVersion) {
+      Write-Output "DD agent is already at version $desiredVersion, skipping upgrade."
+      exit 0
+    }
+
+    Write-Output "Downloading DD agent MSI from $msiUrl..."
+    $downloadPath = "C:\datadog-agent-upgrade.msi"
+    Invoke-WebRequest -Uri $msiUrl -OutFile $downloadPath
+
+    Write-Output "Installing DD agent..."
+    $installLogPath = "C:\datadog-agent-upgrade-install.log"
+    $proc = Start-Process -Wait -PassThru msiexec -ArgumentList "/qn /i `"$downloadPath`" /L*V `"$installLogPath`""
+    if ($proc.ExitCode -ne 0) {
+      Write-Error "DD agent MSI installation failed with exit code $($proc.ExitCode). See $installLogPath for details."
+      exit 1
+    }
+
+    $newVersion = & $agentExe version
+    Write-Output "DD agent upgraded to: $newVersion"
+
+install_dotnet:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $ProgressPreference = "SilentlyContinue" # Makes Invoke-WebRequest faster
+
+    $timeoutSec = 120
+    Write-Output "Installing ASP.NET Core Runtime $env:ASP_NET_CORE_RUNTIME_VERSION, .NET Core Windows Desktop Runtime $env:NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION, and .NET Core SDK $env:NET_CORE_SDK_VERSION"
+    try {
+      powershell -NoProfile -ExecutionPolicy unrestricted -Command `
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Runtime aspnetcore -Version "$env:ASP_NET_CORE_RUNTIME_VERSION" -InstallDir C:\dotnet; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Runtime windowsdesktop -Version "$env:NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION" -InstallDir C:\dotnet; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Channel 9.0 -Version "$env:NET_CORE_SDK_VERSION" -InstallDir C:\dotnet
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Version "10.0.100" -InstallDir C:\dotnet
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Version "11.0.100" -InstallDir C:\dotnet
+    } catch {
+      Write-Error "Failed installation: $_"
+    }
+    [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+    # $newPath = "$env:Path;C:\dotnet"
+    # [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::Machine)

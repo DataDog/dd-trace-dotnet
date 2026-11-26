@@ -23,6 +23,7 @@ include:
       set -e
 
 stages:
+  - test
   - build-win
   - check-azure-pipeline
   - benchmarks
@@ -39,6 +40,21 @@ variables:
   # See https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/7223313012/Flaky+Benchmarks+Monitoring for more details.
   FLAKY_BENCHMARKS_REGEX: "^normal_operation--.*-arm64$"
 
+# Runs the offline regression suite for the setup/retry scripts on every
+# pipeline; it only needs the image and a plain Linux shell.
+test-scripts:
+  stage: test
+  tags: ["arch:amd64"]
+  image: $MACROBENCHMARKS_CI_IMAGE
+  needs: []
+  timeout: 1h
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
+  script:
+    - python3 -m unittest discover -s .gitlab/benchmarks/macrobenchmarks/tests -v
+
 check-azure-pipeline:
   stage: check-azure-pipeline
   tags: ["arch:amd64"]
@@ -52,7 +68,6 @@ check-azure-pipeline:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
   variables:
@@ -65,8 +80,7 @@ check-azure-pipeline:
         echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
         exit 0
       fi
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+    - .gitlab/benchmarks/shared/wait-for-pipeline.sh
 
 
 build-dd-trace-dotnet-macrobenchmarks-ami:
@@ -90,11 +104,10 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
     # based on an instance that is created in this job
     CLEANUP: "true"
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
-        --provision ./platform/ephemeral-infra/ami.yaml \
+        --provision .gitlab/benchmarks/macrobenchmarks/infrastructure/ami.yaml \
         --bypass-stack-destroy \
         $CLEANUP_ARG
   after_script:
@@ -103,7 +116,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --region "${AWS_REGION}" --os "windows" \
-          --provision ./platform/ephemeral-infra/ami.yaml \
+          --provision .gitlab/benchmarks/macrobenchmarks/infrastructure/ami.yaml \
           --bypass-stack-destroy
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
@@ -130,16 +143,16 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - cd .gitlab/benchmarks/macrobenchmarks
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   after_script:
-    - mv /var/log/datadog/dotnet/* platform/artifacts
+    - mv /var/log/datadog/dotnet/* .gitlab/benchmarks/macrobenchmarks/artifacts
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
+      - .gitlab/benchmarks/macrobenchmarks/artifacts/
     expire_in: 3 months
   variables:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
@@ -338,16 +351,16 @@ profiler_cpu_timer_create-x86:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - cd .gitlab/benchmarks/macrobenchmarks
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
   after_script:
-    - mv /var/log/datadog/dotnet/* platform/artifacts
+    - mv /var/log/datadog/dotnet/* .gitlab/benchmarks/macrobenchmarks/artifacts
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
+      - .gitlab/benchmarks/macrobenchmarks/artifacts/
     expire_in: 3 months
   variables:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
@@ -572,8 +585,9 @@ profiler_cpu_timer_create-arm64:
 
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
-    # Allows ephemeral instances to read content from benchmarking-platform.
-    DDOCTOSTS_SCOPE: "${GITHUB_ORG_INTERNAL}/benchmarking-platform"
+    # Allows ephemeral instances to read content from dd-trace-dotnet (the
+    # benchmark suite checkout cloned by the provision).
+    DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
@@ -616,19 +630,18 @@ profiler_cpu_timer_create-arm64:
     - source build-id.txt
     - echo "Running Windows benchmarks for build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
-    - ./platform/steps/run-windows-benchmarks.sh
+    - .gitlab/benchmarks/macrobenchmarks/steps/run-windows-benchmarks.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
-        bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
+        bp-infra cleanup --provision .gitlab/benchmarks/macrobenchmarks/infrastructure/instance.yaml \
           --region "${AWS_REGION}" \
           --bypass-stack-destroy
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
-    - ./platform/steps/fetch-windows-results.sh
-    - ./platform/steps/upload-windows-results-to-bp-ui.sh
+    - .gitlab/benchmarks/macrobenchmarks/steps/fetch-windows-results.sh
+    - .gitlab/benchmarks/macrobenchmarks/steps/upload-windows-results-to-bp-ui.sh
 
 baseline-win:
   extends: .benchmarks-win
