@@ -66,15 +66,17 @@ namespace Datadog.Trace.Tools.Runner
                 Console.WriteLine("Running: {0}", command);
             }
 
-            if (initResults.TestSkippingEnabled || Program.CallbackForTests is not null)
-            {
-                // Awaiting git repository task before running the command if ITR test skipping is enabled.
-                // Test skipping requires the git upload metadata information before hand
-                await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
-            }
-
             try
             {
+                if (initResults.TestSkippingEnabled || Program.CallbackForTests is not null)
+                {
+                    // Awaiting git repository task before running the command if ITR test skipping is enabled.
+                    // Test skipping requires the git upload metadata information before hand
+                    await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
+                }
+
+                initResults.StartCoverageRewrite();
+
                 if (Program.CallbackForTests is { } callbackForTests)
                 {
                     callbackForTests(program, arguments, initResults.ProfilerEnvironmentVariables);
@@ -105,6 +107,7 @@ namespace Datadog.Trace.Tools.Runner
             finally
             {
                 initResults.CleanupTemporaryArgumentFiles();
+                initResults.EndCoverageRewrite();
             }
         }
     }
