@@ -1,6 +1,21 @@
+# The dsm-throughput CI image is built in-repo from dsm-throughput/container/ via
+# the shared benchmarking-platform-tools template (manual build-benchmark-ci-images
+# job, moved to the benchmarks stage below).
+# @see https://github.com/DataDog/benchmarking-platform-tools/blob/main/images/templates/gitlab/build-ci-images.template.yml
+include:
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/build-ci-images.template.yml'
+
 variables:
   DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-10
+
+  # Image build, consumed by the included build-ci-images template. The per-pipeline
+  # suffix pins each build to a unique tag so a rebuild can't shift what older
+  # pipelines pulled. Repin DSM_THROUGHPUT_CI_IMAGE above to the tag this build pushes
+  # (keep the old ECR pin until the first in-repo build succeeds).
+  BASE_CI_IMAGE_SUFFIX: dd-trace-dotnet-dsm-throughput-${CI_PIPELINE_ID}
+  BASE_CI_IMAGE_CONTAINER_DIR: .gitlab/benchmarks/dsm-throughput/container
 
 stages:
   - check-azure-pipeline
@@ -9,6 +24,12 @@ stages:
 workflow:
   auto_cancel:
     on_new_commit: interruptible
+
+# The template defines the build job in a ci-image stage; run it in the
+# benchmarks stage instead so it sits next to the jobs that consume the image
+# (no new stage needed, per the microbenchmarks migration playbook).
+build-benchmark-ci-images:
+  stage: benchmarks
 
 check_azure_pipeline:
   stage: check-azure-pipeline
