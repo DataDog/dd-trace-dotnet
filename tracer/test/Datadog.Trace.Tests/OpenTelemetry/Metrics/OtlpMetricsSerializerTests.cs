@@ -103,14 +103,17 @@ public class OtlpMetricsSerializerTests
         try
         {
             // A custom object's ToString() isn't made culture-independent by the invariant format provider. Under
-            // fr-FR it prints "1,5", like the string "1,5", so both meters are the same stream.
+            // fr-FR it prints "1,5" (or "1.5" where culture data is unavailable); a meter tagged with that string is
+            // the same stream.
             CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
-            using var objectMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", new CultureDependentValue(1.5))]);
-            using var stringMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", "1,5")]);
+            var objectValue = new CultureDependentValue(1.5);
+            var registrationText = objectValue.ToString();
+            using var objectMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", objectValue)]);
+            using var stringMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", registrationText)]);
             objectMeter.CreateCounter<long>(name).Add(5);
             stringMeter.CreateCounter<long>(name).Add(3);
 
-            // Exported under en-US, where the object would print "1.5": the stream keeps the registration text.
+            // Exported under en-US, where the object prints "1.5": the stream keeps the registration text.
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
             await pipeline.ForceCollectAndExportAsync();
 
@@ -118,7 +121,7 @@ public class OtlpMetricsSerializerTests
                                    .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
                                    .Single(s => s.Scope.Name == "TestMeter.CultureObject");
 
-            scope.Scope.Attributes.Single(a => a.Key == "ratio").Value.StringValue.Should().Be("1,5");
+            scope.Scope.Attributes.Single(a => a.Key == "ratio").Value.StringValue.Should().Be(registrationText);
             scope.Metrics.Single().Sum.DataPoints.Single().AsInt.Should().Be(8);
         }
         finally
