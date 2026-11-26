@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
@@ -22,8 +23,13 @@ namespace Benchmarks.Trace
     {
         private const int SpanCount = 1000;
 
-        private IAgentWriter _agentWriter;
-        private IAgentWriter _agentWriterNoOpFlush;
+        // Same default buffer size as the AgentWriter
+        private const int MaxBufferSize = 1024 * 1024 * 10;
+
+        private Api _api;
+        private SpanBuffer _buffer;
+        private byte[] _temporaryBuffer;
+        private byte[] _spareBuffer;
         private SpanCollection _enrichedSpans;
 
         [GlobalSetup]
@@ -52,7 +58,7 @@ namespace Benchmarks.Trace
             config.Add(ConfigurationKeys.TraceEnabled, false);
             var settings = TracerSettings.Create(config);
 
-            var api = new Api(
+            _api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
                 new StatsdManager(settings, (_, _) => null!),
                 ContainerMetadata.Instance,
@@ -61,31 +67,26 @@ namespace Benchmarks.Trace
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
-            var noopApi = new NullApi();
-            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false, batchInterval: 0);
-            _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false, batchInterval: 0);
-
-            // Warmup to reduce noise
-            WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
-        }
-
-        [GlobalCleanup]
-        public void GlobalCleanup()
-        {
-            _agentWriter.FlushAndCloseAsync().GetAwaiter().GetResult();
-            _agentWriterNoOpFlush.FlushAndCloseAsync().GetAwaiter().GetResult();
+            // Drive the same SpanBuffer and serializer the AgentWriter writes into, but
+            // synchronously: an AgentWriter always starts its serialization and flush loops,
+            // and awaiting FlushTracesAsync() would time that background work (thread
+            // scheduling, watermark processing, flush-loop wakeups) instead of the
+            // synchronous write/flush path these benchmarks are about.
+            _buffer = new SpanBuffer(MaxBufferSize, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
+            _temporaryBuffer = new byte[1024];
         }
 
         /// <summary>
-        /// Write realistic traces, but don't flush, to isolate overhead from serialization only
+        /// Write realistic traces, but don't send them to the API: measures serialization
+        /// plus the detach half of a flush (the only way to reset the buffer)
         /// </summary>
         [Benchmark]
-        public Task WriteEnrichedTraces()
+        public void WriteEnrichedTraces()
         {
-            _agentWriterNoOpFlush.WriteTrace(_enrichedSpans);
-            // Flush os that we clear the buffer
-            return _agentWriterNoOpFlush.FlushTracesAsync();
+            WriteEnrichedTracesToBuffer();
+
+            // Reset the buffer for the next invocation (the detach half of a flush, minus the API call)
+            DetachPayload();
         }
 
         /// <summary>
@@ -95,8 +96,36 @@ namespace Benchmarks.Trace
         [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
         public Task WriteAndFlushEnrichedTraces()
         {
-            _agentWriter.WriteTrace(_enrichedSpans);
-            return _agentWriter.FlushTracesAsync();
+            WriteEnrichedTracesToBuffer();
+
+            var payload = DetachPayload();
+            return _api.SendTracesAsync(payload.Data, payload.TraceCount, statsComputationEnabled: false, numberOfDroppedP0Traces: 0, numberOfDroppedP0Spans: 0);
+        }
+
+        private void WriteEnrichedTracesToBuffer()
+        {
+            if (_buffer.TryWrite(in _enrichedSpans, ref _temporaryBuffer) is not SpanBuffer.WriteStatus.Success)
+            {
+                throw new InvalidOperationException("The trace chunk did not fit in the buffer");
+            }
+        }
+
+        // Mirrors the sizing half of AgentWriter.FlushBuffer: size the replacement array before
+        // detaching so the buffer is immediately writable again, then recycle the detached array
+        // for the next call. Unlike FlushBuffer, the recycled array aliases the payload until the
+        // returned send task completes; safe here only because BenchmarkDotNet awaits each
+        // invocation before starting the next one, so never call this concurrently with an
+        // in-flight send.
+        private SpanBuffer.Payload DetachPayload()
+        {
+            if (_spareBuffer is null || _spareBuffer.Length < _buffer.CurrentLength)
+            {
+                _spareBuffer = new byte[_buffer.CurrentLength];
+            }
+
+            var payload = _buffer.Detach(_spareBuffer);
+            _spareBuffer = payload.Array ?? _spareBuffer;
+            return payload;
         }
 
         /// <summary>
@@ -217,25 +246,5 @@ namespace Benchmarks.Trace
             {
             }
         }
-
-            private class NullApi : IApi
-            {
-                public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
-
-                public Task<bool> Ping()
-                {
-                    return Task.FromResult(true);
-                }
-
-                public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
-                {
-                    return Task.FromResult(true);
-                }
-
-                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
-                {
-                    return Task.FromResult(true);
-                }
-            }
     }
 }
