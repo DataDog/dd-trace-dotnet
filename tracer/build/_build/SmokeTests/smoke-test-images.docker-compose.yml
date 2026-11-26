@@ -74,7 +74,7 @@ services:
   aspnet-10_0-alpine3_22-composite:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-alpine3.22-composite@sha256:5987d7805c4a8f19fc4f51f13a85f236da081016bc6c391eb201625e25552885
   aspnet-10_0-noble:
-    image: mcr.microsoft.com/dotnet/aspnet:10.0-noble@sha256:bfd912c83295ce66d4b706ebb8541b9f14259b0e76fbb88b2751f58ce2399d2e
+    image: mcr.microsoft.com/dotnet/aspnet:10.0-noble@sha256:aac50ceef10391e78a899e3d2ccd00bbafa2dcb56ccf4586cbccf00edb84fc21
   aspnet-10_0-resolute:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute@sha256:b5e72aa3bc183d98a0fc5739c583201a4b97bdbaadcb9dcd1b69d428a8bd172b
   aspnet-10_0-resolute-chiseled:
@@ -82,7 +82,7 @@ services:
   aspnet-10_0-resolute-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled-composite@sha256:aeb16063a3409a54d8329209287433a0c3c69e652908e4970cb9444633c5222d
   aspnet-10_0-windowsservercore-ltsc2025:
-    image: mcr.microsoft.com/dotnet/aspnet:10.0-windowsservercore-ltsc2025@sha256:6ef5bb3793a3343b7aee6f5fe15e94b84a4895a096098e40e4e26ec1f817ed8c
+    image: mcr.microsoft.com/dotnet/aspnet:10.0-windowsservercore-ltsc2025@sha256:ae89786bf933d6c642a0185f7bd40fe46e52a83f580d03caea511413a93f1ea8
   aspnet-11_0-alpine3_24:
     image: mcr.microsoft.com/dotnet/aspnet:11.0-alpine3.24@sha256:d39b72ad1534fa0faf52b488bffb0762df7ba269d120f0338713d4dda2a41bf5
   aspnet-11_0-alpine3_24-composite:
@@ -94,7 +94,7 @@ services:
   aspnet-11_0-resolute-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled-composite@sha256:9104bc0731fd9cdc08872aeffc34af07439339312235759ff704fd4509ca08f5
   aspnet-11_0-windowsservercore-ltsc2025:
-    image: mcr.microsoft.com/dotnet/aspnet:11.0-windowsservercore-ltsc2025@sha256:c8e9a5f412a9247f21972f91c11001b6ac2ce2b670c4e4bf864ec76e035c014c
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-windowsservercore-ltsc2025@sha256:a453393f8cf9f0f38568169eb544b62cbc523f3fa18f64f39b337cfca90f84cd
 
   # mcr.microsoft.com/dotnet/framework/aspnet
   framework-aspnet-4_8_1-windowsservercore-ltsc2025:
