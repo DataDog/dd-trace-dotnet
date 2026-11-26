@@ -38,7 +38,6 @@ resolve_linux_ci_images() {
     # publishing environments. Its restore inputs are included to warm packages.
     inputs='global.json
 .gitlab/linux-ci-images.sh
-.gitlab/build-linux-image.sh
 .gitlab/get-dotnet-sdk-version.sh
 .gitlab/linux-ci-environment.dockerfile
 .gitlab/linux-unit-tests.dockerfile
@@ -148,7 +147,12 @@ publish_linux_ci_images() {
         publish_target=build-environment
         [ "$publish_role" != tester ] || publish_target=test-environment
         environment_image="dd-trace-dotnet/$publish_base-$publish_role-environment:$LINUX_CI_IMAGE_HASH-$publish_arch"
-        sh .gitlab/build-linux-image.sh "$publish_base" "$publish_sdk" "$environment_image" "$publish_target" || return 1
+        docker build \
+            --build-arg "DOTNETSDK_VERSION=$publish_sdk" \
+            --tag "$environment_image" \
+            --target "$publish_target" \
+            --file "tracer/build/_build/docker/$publish_base.dockerfile" \
+            tracer/build/_build || return 1
         if [ "$publish_role" = tester ]; then
             docker build --build-arg "TESTER_IMAGE=$environment_image" \
                 --file .gitlab/linux-unit-tests.dockerfile --tag "$environment_image-ca" .gitlab || return 1
