@@ -14,8 +14,7 @@ check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+    - .gitlab/benchmarks/shared/wait-for-pipeline.sh
   artifacts:
     name: "artifacts"
     when: always
@@ -52,7 +51,7 @@ dsm_throughput:
     # - GITHUB_ORG_INTERNAL: GitHub org for internal repos
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/DataDog/"
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/${GITHUB_ORG_INTERNAL}/"
-    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - cd .gitlab/benchmarks/dsm-throughput
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   artifacts:
