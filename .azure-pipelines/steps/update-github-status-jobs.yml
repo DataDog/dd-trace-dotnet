@@ -7,6 +7,10 @@ parameters:
     type: boolean
     default: false
 
+  - name: successDescription
+    type: string
+    default: 'Run succeeded'
+
 jobs:
   - job: set_pending
     timeoutInMinutes: 60 #default value
@@ -42,7 +46,7 @@ jobs:
       parameters:
         checkName: $(System.StageName)
         status: 'success'
-        description: 'Run succeeded'
+        description: ${{ parameters.successDescription }}
 
   - job: set_failed
     timeoutInMinutes: 60 #default value
