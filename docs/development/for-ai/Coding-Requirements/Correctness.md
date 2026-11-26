@@ -84,10 +84,15 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `OnMethodEnd` resets thread-local state while `OnAsyncMethodEnd` calls `securityCoordinator.BlockAndReport(...)`.
 - ✅ Block from an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`.
 
+### COR-5.5: Check for an existing separator or suffix before appending a path part
+- Flag: code that always prepends `/` or appends a path segment such as `v1/<signal>` to a configured or header value. If the value already has it, the result is `//path` or `/v1/logs/v1/logs`.
+- ❌ `path = "/" + headerValue;`
+- ✅ `path = headerValue.StartsWith("/") ? headerValue : "/" + headerValue;`
+
 ## 6. Tests
 
 ### COR-6.1: Create a fresh instance per test instead of using a static `.Instance` or the global tracer
-- Flag: unit tests using a `SomeType.Instance` singleton, `[TracerRestorer]`/`SetTracer`, or `Tracer.Instance` where a locally constructed instance would do, or a `Reset()`/`Clear()` added to production state only so tests can reuse it.
+- Flag: unit tests using a `SomeType.Instance` singleton, `[TracerRestorer]`/`SetTracer`, or `Tracer.Instance` where a locally constructed instance would do, or a `Reset()`/`Clear()` added to production state only so tests can reuse it. If a test changes process-wide static state such as `Tracer.Instance` or `Baggage.Current`, its class must be in a non-parallel test collection. A restorer attribute alone does not stop the race.
 - ❌ `var store = CoreHttpContextStore.Instance;`
 - ✅ `var store = new CoreHttpContextStore();`
 
