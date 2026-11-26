@@ -57,7 +57,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             profilerRuntimeIds.Distinct().Should().ContainSingle();
             tracerRuntimeIds.Distinct().Should().ContainSingle();
@@ -105,7 +105,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             profilerRuntimeIds.Distinct().Should().ContainSingle();
             tracerRuntimeIds.Distinct().Should().ContainSingle();
@@ -153,7 +153,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             profilerRuntimeIds.Distinct().Should().ContainSingle();
             tracerRuntimeIds.Distinct().Should().ContainSingle();
@@ -203,7 +203,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             profilerRuntimeIds.Distinct().Should().ContainSingle();
             tracerRuntimeIds.Distinct().Should().ContainSingle();
@@ -233,7 +233,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var tracingContexts = GetTracingContexts(run.Profiles);
             tracingContexts.Should().BeEmpty();
@@ -259,7 +259,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEquivalentTo("GET /products/endpointprofiling");
         }
@@ -273,7 +273,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.DistinctLabelValues("trace endpoint").Should().BeEmpty();
         }

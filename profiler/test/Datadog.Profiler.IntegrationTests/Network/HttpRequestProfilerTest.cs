@@ -72,8 +72,8 @@ namespace Datadog.Profiler.IntegrationTests.Network
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.RequestTime);
-            run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.RequestUrl)).Should().BeTrue();
-            run.Profiles.Samples.All(sample => sample.Labels.Has(ProfileLabelNames.ResponseStatusCode)).Should().BeTrue();
+            run.Profiles.Samples.Should().NotContain(sample => !sample.Labels.Has(ProfileLabelNames.RequestUrl));
+            run.Profiles.Samples.Should().NotContain(sample => !sample.Labels.Has(ProfileLabelNames.ResponseStatusCode));
         }
 
         [TestAppFact(TestApplication.ParallelCountSites, MinimumFramework = TestFramework.Net7)]
@@ -91,7 +91,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
 
             foreach (var sample in samples)
             {
-                sample.CallStack.FramesCount.Should().BeGreaterThan(0);
+                sample.CallStack.FramesCount.Should().BePositive();
 
                 var url = sample.Labels.GetRequired(ProfileLabelNames.RequestUrl);
                 url.Should().NotBeNullOrWhiteSpace();
@@ -137,7 +137,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             samples.Should().NotBeEmpty();
             foreach (var sample in samples)
             {
-                sample.CallStack.FramesCount.Should().BeGreaterThan(0);
+                sample.CallStack.FramesCount.Should().BePositive();
 
                 var url = sample.Labels.GetRequired(ProfileLabelNames.RequestUrl);
                 url.Should().NotBeNullOrWhiteSpace();
@@ -171,7 +171,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             int checkedSamples = 0;
             foreach (var sample in samples)
             {
-                sample.CallStack.FramesCount.Should().BeGreaterThan(0);
+                sample.CallStack.FramesCount.Should().BePositive();
 
                 var labels = sample.Labels;
                 var url = labels.GetRequired(ProfileLabelNames.RequestUrl);
@@ -214,7 +214,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 labels.GetRequired(ProfileLabelNames.ResponseStatusCode).Should().Be("200");
             }
 
-            checkedSamples.Should().BeGreaterThan(0);
+            checkedSamples.Should().BePositive();
         }
 
         [Flaky("Test flaked in CI")]
@@ -238,7 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             // should get 3x (2 redirections + 3 x 1000ms as request duration + 2000ms as response duration)
             foreach (var sample in samples)
             {
-                sample.CallStack.FramesCount.Should().BeGreaterThan(0);
+                sample.CallStack.FramesCount.Should().BePositive();
 
                 var labels = sample.Labels;
                 var url = labels.GetRequired(ProfileLabelNames.RequestUrl);
@@ -256,7 +256,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 // in .NET 7, the redirect is detected but no redirected url is available
                 if (app.Framework != TestFramework.Net7)
                 {
-                    redirectUrl.Split('|').Length.Should().Be(2);
+                    redirectUrl.Split('|').Should().HaveCount(2);
                 }
 
                 var requestDurationLabel = labels.GetRequired(ProfileLabelNames.RequestDuration);
@@ -268,7 +268,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 responseDuration.Should().BeGreaterOrEqualTo(1500L * 1000000);  // avoid flaky test but should be larger than 2000ms
             }
 
-            checkedSamples.Should().BeGreaterThan(0);
+            checkedSamples.Should().BePositive();
         }
     }
 }

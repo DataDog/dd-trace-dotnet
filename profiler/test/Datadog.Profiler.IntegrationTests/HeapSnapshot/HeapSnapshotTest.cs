@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests
 
             // check the heap snapshots content is correct
             var heapSnapshotFiles = System.IO.Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
-            heapSnapshotFiles.Length.Should().BeGreaterThan(0);
+            heapSnapshotFiles.Length.Should().BePositive();
             foreach (var heapSnapshotFile in heapSnapshotFiles)
             {
                 var containsString = false;

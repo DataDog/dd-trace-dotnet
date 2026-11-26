@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var run = runner.Run();
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
             CheckSamplesAreGC(run.Profiles);
         }
 
@@ -45,7 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var run = runner.Run();
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
             CheckSamplesAreGC(run.Profiles);
         }
 
@@ -76,8 +76,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
-            eventsCount.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
+            eventsCount.Should().BePositive();
             CheckSamplesAreGC(ProfileReader.Read(runner.Environment.PprofDir));
             // TODO: it should be possible to ensure that 3 GCs per generations are seen in the .pprof files
         }

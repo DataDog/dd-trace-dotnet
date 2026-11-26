@@ -65,7 +65,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
-            run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")).Should().BeTrue();
+            run.Profiles.Samples.Should().NotContain(sample => !sample.Labels.Has("raw duration"));
 
             if (app.Framework == TestFramework.Net8)
             {
@@ -129,9 +129,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             ProfileReader.Read(runner.Environment.PprofDir).WithNonZeroValue(ProfileValue.LockCount).Should().NotBeEmpty();
-            eventsCount.Should().BeGreaterThan(0);
+            eventsCount.Should().BePositive();
         }
 
         private static void AssertBlockingThreadLabel(ProfileOutput profiles)
@@ -174,7 +174,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             foreach (var sample in waitSamples.WithLabel("Duration bucket", "+500 ms"))
             {
                 var stackTrace = sample.CallStack;
-                stackTrace.FramesCount.Should().BeGreaterThan(0);
+                stackTrace.FramesCount.Should().BePositive();
 
                 for (int currentFrame = 0; currentFrame < stackTrace.FramesCount; currentFrame++)
                 {

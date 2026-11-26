@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
         private static void ValidateAllMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
-            metricsFiles.Length.Should().BeGreaterThan(0);
+            metricsFiles.Length.Should().BePositive();
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file

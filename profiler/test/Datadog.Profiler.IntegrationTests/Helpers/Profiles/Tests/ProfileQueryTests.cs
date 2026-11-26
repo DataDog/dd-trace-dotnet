@@ -49,9 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             var path = output.Profiles[0].Path;
             Action wrongTypes = () => output.Profiles[0].Should().HaveSampleTypes(ProfileValue.WallTime);
             wrongTypes.Should().Throw<Exception>()
-                .Which.Message.Should().Contain("wall (nanoseconds)")
-                .And.Contain("cpu (nanoseconds)")
-                .And.Contain(path);
+                .Which.Message.Should().ContainAll("wall (nanoseconds)", "cpu (nanoseconds)", path);
         }
 
         [Fact]

@@ -56,7 +56,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             // Verify reference tree JSON files were created locally
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -88,7 +88,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated");
 
             // Group the emitted files by the export (snapshot) they belong to. Each
             // snapshot that ran the traversal and found a root emits exactly one tree.
@@ -106,7 +106,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // Every emitted tree must be structurally valid and contain the scenario chain,
             // proving traversal kept working snapshot after snapshot.
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
-            trees.Count.Should().Be(referenceTreeFiles.Length);
+            trees.Should().HaveCount(referenceTreeFiles.Length);
 
             trees.Should().Contain(
                 tree =>
@@ -139,7 +139,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             hasReferenceTree.Should().BeTrue("No binary reference tree was sent to the agent");
 
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree binary files were generated");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree binary files were generated");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -184,8 +184,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             var jsonFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             var binFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
-            jsonFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated in both-formats mode");
-            binFiles.Length.Should().BeGreaterThan(0, "No reference tree binary files were generated in both-formats mode");
+            jsonFiles.Length.Should().BePositive("No reference tree JSON files were generated in both-formats mode");
+            binFiles.Length.Should().BePositive("No reference tree binary files were generated in both-formats mode");
 
             // Pair JSON and binary files from the same export cycle by matching the
             // filename stem (everything before the extension). Both formats share the
@@ -194,7 +194,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
             var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
 
-            commonStems.Count.Should().BeGreaterThan(0, "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
+            commonStems.Count.Should().BePositive("No matching JSON/binary file pairs found (expected same filename stem for both formats)");
 
             foreach (var stem in commonStems)
             {
@@ -274,7 +274,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             // Verify reference tree JSON files were created (cycle detection should prevent crashes)
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for cycle scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for cycle scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -300,7 +300,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for deep hierarchy scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for deep hierarchy scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -326,7 +326,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for multiple roots scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for multiple roots scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -353,7 +353,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for wide tree scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for wide tree scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -375,7 +375,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for mixed structures scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for mixed structures scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -402,7 +402,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for shared references scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for shared references scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -428,7 +428,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for linked list scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for linked list scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -454,27 +454,14 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for null fields scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for null fields scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chain with correct null field behavior
-            trees.Any(tree =>
-                {
-                    if (!HasAncestorDescendantChain(tree, "SparseObject", "Customer"))
-                    {
-                        return false;
-                    }
-
-                    var sparseNodes = FindNodesOfType(tree, "SparseObject");
-                    return sparseNodes.All(sparseNode =>
-                    {
-                        var directChildTypeNames = sparseNode.Children
-                            .Select(c => tree.GetShortTypeName(c.TypeIndex))
-                            .ToHashSet();
-                        return !directChildTypeNames.Contains("Product") && !directChildTypeNames.Contains("Order");
-                    });
-                }).Should().BeTrue("Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
+            trees.Should().Contain(
+                tree => HasSparseObjectCustomerChainWithoutProductOrOrder(tree),
+                "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
@@ -493,7 +480,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for struct with references scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for struct with references scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -523,7 +510,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for static root scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for static root scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -552,7 +539,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for event handler leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for event handler leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -577,7 +564,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for closure leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for closure leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -598,7 +585,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for timer leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for timer leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -623,7 +610,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for GCHandle leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for GCHandle leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -648,7 +635,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for weak GCHandle scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for weak GCHandle scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -670,7 +657,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for pinned leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for pinned leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -691,7 +678,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for async leak scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for async leak scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -718,7 +705,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for nested value type scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for nested value type scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -750,7 +737,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for inheritance multi-series scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for inheritance multi-series scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -779,7 +766,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for VT array scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for VT array scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -805,7 +792,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for inline VT non-generic scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for inline VT non-generic scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -833,7 +820,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             using var run = runner.Run();
 
             var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, "No reference tree JSON files were generated for inline VT generic with primitives scenario");
+            referenceTreeFiles.Length.Should().BePositive("No reference tree JSON files were generated for inline VT generic with primitives scenario");
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
@@ -951,7 +938,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         /// </summary>
         private static void ValidateReferenceTreeJsonStructure(string jsonContent)
         {
-            string.IsNullOrEmpty(jsonContent).Should().BeFalse("Reference tree JSON is empty");
+            jsonContent.Should().NotBeNullOrEmpty("Reference tree JSON is empty");
             jsonContent.Should().NotBe("{}");
 
             using var doc = JsonDocument.Parse(jsonContent, new JsonDocumentOptions { MaxDepth = 256 });
@@ -961,10 +948,10 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             version.GetInt32().Should().Be(1);
 
             doc.RootElement.TryGetProperty("tt", out var typeTable).Should().BeTrue("Missing 'tt' (type table) field");
-            typeTable.GetArrayLength().Should().BeGreaterThan(0, "Type table is empty");
+            typeTable.GetArrayLength().Should().BePositive("Type table is empty");
 
             doc.RootElement.TryGetProperty("r", out var roots).Should().BeTrue("Missing 'r' (roots) field");
-            roots.GetArrayLength().Should().BeGreaterThan(0, "Roots array is empty");
+            roots.GetArrayLength().Should().BePositive("Roots array is empty");
 
             // Validate each root has required fields
             foreach (var root in roots.EnumerateArray())
@@ -979,7 +966,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             foreach (var type in typeTable.EnumerateArray())
             {
                 type.ValueKind.Should().Be(JsonValueKind.String);
-                string.IsNullOrEmpty(type.GetString()).Should().BeFalse("Type table entry is empty");
+                type.GetString().Should().NotBeNullOrEmpty("Type table entry is empty");
             }
 
             // Validate all instance counts and sizes are non-negative
@@ -1057,6 +1044,26 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         private static bool HasRootOfCategory(ReferenceTree tree, string categoryCode)
         {
             return tree.Roots.Any(r => r.CategoryCode == categoryCode);
+        }
+
+        /// <summary>
+        /// Check if the tree contains the SparseObject->Customer chain and no SparseObject has Product or Order as a direct child.
+        /// </summary>
+        private static bool HasSparseObjectCustomerChainWithoutProductOrOrder(ReferenceTree tree)
+        {
+            if (!HasAncestorDescendantChain(tree, "SparseObject", "Customer"))
+            {
+                return false;
+            }
+
+            var sparseNodes = FindNodesOfType(tree, "SparseObject");
+            return sparseNodes.All(sparseNode =>
+            {
+                var directChildTypeNames = sparseNode.Children
+                    .Select(c => tree.GetShortTypeName(c.TypeIndex))
+                    .ToHashSet();
+                return !directChildTypeNames.Contains("Product") && !directChildTypeNames.Contains("Order");
+            });
         }
 
         /// <summary>
@@ -1290,8 +1297,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             var histogramFiles = Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, $"reference_tree_*.{treeExtension}");
-            histogramFiles.Length.Should().BeGreaterThan(0, "No class histogram files were generated");
-            referenceTreeFiles.Length.Should().BeGreaterThan(0, $"No reference tree .{treeExtension} files were generated");
+            histogramFiles.Length.Should().BePositive("No class histogram files were generated");
+            referenceTreeFiles.Length.Should().BePositive($"No reference tree .{treeExtension} files were generated");
 
             // Pair the files coming from the same export: they share the generated
             // <service>_<pid>_<uid> suffix built from the id of the profile they belong to.
@@ -1301,7 +1308,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // A histogram without a reference tree is expected: no tree file is emitted when
             // the traversal did not find any root.
             var snapshotIds = histogramsById.Keys.Intersect(treesById.Keys).ToList();
-            snapshotIds.Count.Should().BeGreaterThan(0, "No histogram/reference tree pair from the same export was found");
+            snapshotIds.Count.Should().BePositive("No histogram/reference tree pair from the same export was found");
 
             var typesPerSnapshot = new List<(HashSet<string> HistogramTypes, HashSet<string> TreeTypes)>();
 

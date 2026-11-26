@@ -51,7 +51,7 @@ namespace Datadog.Profiler.IntegrationTests
         private static void ValidateMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
-            metricsFiles.Length.Should().BeGreaterThan(0);
+            metricsFiles.Length.Should().BePositive();
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file
@@ -76,9 +76,9 @@ namespace Datadog.Profiler.IntegrationTests
                     }
                 }
 
-                threadCount.Should().BeGreaterThan(0);
-                threadCountLow.Should().BeGreaterThan(0);
-                threadCountHigh.Should().BeGreaterThan(0);
+                threadCount.Should().BePositive();
+                threadCountLow.Should().BePositive();
+                threadCountHigh.Should().BePositive();
 
                 threadCountLow.Should().BeLessThanOrEqualTo(threadCount);
                 threadCount.Should().BeLessThanOrEqualTo(threadCountHigh);

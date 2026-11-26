@@ -44,8 +44,8 @@ namespace Datadog.Profiler.IntegrationTests
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("not the expected format");
             metrics.Should().NotBeNull();
-            metrics.RuntimeIds.Count.Should().Be(0);
-            metrics.Profiles.Count.Should().Be(0);
+            metrics.RuntimeIds.Should().BeEmpty();
+            metrics.Profiles.Should().BeEmpty();
         }
 
         [Fact]
@@ -53,8 +53,8 @@ namespace Datadog.Profiler.IntegrationTests
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("{\"api_version\":\"v2\",\"tracer_time\":1718896062,\"runtime_id\":\"9492c079-e4a9-4fd2-a172-bce240beb290\",\"seq_id\":1,\"application\":{\"service_name\":\"dd-buggybits-allocs\",\"service_version\":\"BuggyBitsVersion\",\"env\":\"apm-profiling-local\",\"language_name\":\"dotnet\",\"language_version\":\"core-6.0\",\"tracer_version\":\"2.54.0\"},\"host\":{\"hostname\":\"DESKTOP-TNGHRCP\",\"os\":\"windows\",\"os_version\":\"6.2.9200\"},\"request_type\":\"app-started\",\"payload\":{\"configuration\":[]}}");
             metrics.Should().NotBeNull();
-            metrics.RuntimeIds.Count.Should().Be(0);
-            metrics.Profiles.Count.Should().Be(0);
+            metrics.RuntimeIds.Should().BeEmpty();
+            metrics.Profiles.Should().BeEmpty();
         }
 
         [Fact]
@@ -62,8 +62,8 @@ namespace Datadog.Profiler.IntegrationTests
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString("{\"api_version\":\"v2\",\"tracer_time\":1718886695,\"runtime_id\":\"54b48743-fc8c-4a20-af6b-796bc9816e40\",\"seq_id\":3,\"application\":{\"service_name\":\"dd-dotnet-all\",\"service_version\":\"Unspecified-Version\",\"env\":\"apm-profiling-local\",\"language_name\":\"dotnet\",\"language_version\":\"core-8.0\",\"tracer_version\":\"2.54.0\"},\"host\":{\"hostname\":\"DESKTOP-TNGHRCP\",\"os\":\"windows\",\"os_version\":\"6.2.9200\"},\"request_type\":\"message-batch\",\"payload\":[{\"request_type\":\"generate-metrics\",\"payload\":{\"series\":[{\"namespace\":\"profilers\",\"metric\":\"ssi_heuristic.number_of_profiles\",\"points\":[[1718886695,2.0]],\"tags\":[\"has_sent_profiles:false\",\"heuristic_hypothetical_decision:no_span_short_lived\",\"installation:ssi\",\"enablement_choice:ssi_enabled\"],\"common\":true,\"type\":\"count\",\"interval\":10},{\"namespace\":\"profilers\",\"metric\":\"ssi_heuristic.number_of_runtime_id\",\"points\":[[1718886695,1.0]],\"tags\":[\"has_sent_profiles:false\",\"heuristic_hypothetical_decision:no_span_short_lived\",\"installation:ssi\",\"enablement_choice:ssi_enabled\"],\"common\":true,\"type\":\"count\",\"interval\":10}]}}]}");
             metrics.Should().NotBeNull();
-            metrics.RuntimeIds.Count.Should().Be(1);
-            metrics.Profiles.Count.Should().Be(1);
+            metrics.RuntimeIds.Should().ContainSingle();
+            metrics.Profiles.Should().ContainSingle();
 
             metrics.HasSentProfile().Should().BeFalse();
 
@@ -100,8 +100,8 @@ namespace Datadog.Profiler.IntegrationTests
         {
             var metrics = TelemetryMetricsFileParser.LoadFromString(_multiplines);
             metrics.Should().NotBeNull();
-            metrics.RuntimeIds.Count.Should().Be(1);
-            metrics.Profiles.Count.Should().Be(10);
+            metrics.RuntimeIds.Should().ContainSingle();
+            metrics.Profiles.Should().HaveCount(10);
             metrics.HasSentProfile().Should().BeTrue();
         }
     }

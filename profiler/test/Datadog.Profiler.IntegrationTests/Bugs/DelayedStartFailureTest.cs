@@ -36,7 +36,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
 
             run.Logs.NativeProfiler.Files.Should().ContainSingle();
             run.Logs.NativeProfiler.Should().NotContainLine(DelayedStartFailureLog);
-            run.UploadCount.Should().BeGreaterThan(0, "the delayed start must succeed when the trigger is not applied");
+            run.UploadCount.Should().BePositive("the delayed start must succeed when the trigger is not applied");
 
             // Do not assert on PendingSamplesMetric here
             // In success run, the metrics are dumped in the log *before* flushing the SamplesCollector, which means that

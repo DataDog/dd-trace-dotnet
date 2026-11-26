@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             using var run = runner.Run();
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
             run.Profiles.Profiles.Should().NotBeEmpty().And.OnlyContain(profile => profile.Samples.Count > 0);
             run.Profiles.Samples.Should().OnlyContain(sample => IsThreadLifetimeSample(sample));
         }

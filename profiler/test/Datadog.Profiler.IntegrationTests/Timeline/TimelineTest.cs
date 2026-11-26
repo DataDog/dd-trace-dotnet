@@ -41,9 +41,9 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
             // only the GC CPU sample does not have a timestamp label
-            run.Profiles.Samples.All(sample => sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")).Should().BeTrue();
+            run.Profiles.Samples.Should().NotContain(sample => !(sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")));
         }
     }
 }

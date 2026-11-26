@@ -40,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.SmokeTests
             else
             {
                 runner.XUnitLogger.WriteLine("CPU limit set to >=1 CPU or not set, expecting profiler to be enabled");
-                agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+                agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             }
         }
     }

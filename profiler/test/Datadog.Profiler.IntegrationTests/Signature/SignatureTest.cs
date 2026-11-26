@@ -423,7 +423,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
 
             using var run = runner.Run();
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             // Exact sample types before ExceptionSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);

@@ -226,7 +226,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
@@ -243,7 +243,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
 
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -452,7 +452,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
@@ -469,7 +469,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
 
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -557,7 +557,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(run.LogDirectory);
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var exceptionSamples = run.Profiles.WithNonZeroValue(ProfileValue.ExceptionCount);
 
@@ -573,7 +573,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, _output);
 
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -596,7 +596,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
 
@@ -652,7 +652,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                run.UploadCount.Should().BeGreaterThan(0);
+                run.UploadCount.Should().BePositive();
             }
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
@@ -670,7 +670,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                run.UploadCount.Should().BeGreaterThan(0);
+                run.UploadCount.Should().BePositive();
             }
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
@@ -684,7 +684,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var exceptionSamples = run.Profiles.ExceptionSamples();
             exceptionSamples.Should().NotBeEmpty();
@@ -1256,7 +1256,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     .Function("Main")
                     .Signature("(string[] args)"));
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             // Exact sample types before ExceptionSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);

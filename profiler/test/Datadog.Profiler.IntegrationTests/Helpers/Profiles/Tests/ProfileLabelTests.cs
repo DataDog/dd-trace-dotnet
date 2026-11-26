@@ -49,9 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             labels.Should().HaveLabel("thread name", "worker");
             Action missing = () => labels.Should().HaveLabel("thread name", "other");
             missing.Should().Throw<Exception>()
-                .Which.Message.Should().Contain("other")
-                .And.Contain("main")
-                .And.Contain("worker");
+                .Which.Message.Should().ContainAll("other", "main", "worker");
         }
     }
 }

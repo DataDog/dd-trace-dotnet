@@ -107,7 +107,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             EnvironmentHelper.ForceInjectionIfRequired(runner, app.Framework);
 
             using var run = runner.Run();
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
         }
 
         [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
@@ -123,7 +123,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var run = runner.Run();
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var parser = TelemetryMetricsFileParser.LoadFromDirectory(run.ProfileDirectory);
             parser.Should().BeNull("Metrics files should not be generated");

@@ -76,7 +76,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             using var run = runner.Run();
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             var allocationSamples = run.Profiles.AllocationSamples();
             allocationSamples.Should().NotBeEmpty();
@@ -148,7 +148,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             var profiles = ProfileReader.Read(runner.Environment.PprofDir);
 
@@ -334,7 +334,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
         private static void CheckAllocationProfiles(ProfilerTestRun run)
         {
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
             // Exact sample types before AllocationSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.AllocationCount, ProfileValue.AllocationSize);

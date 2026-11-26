@@ -43,7 +43,7 @@ namespace Datadog.Profiler.IntegrationTests
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             cpuArchValues.Should().NotBeEmpty();
             cpuArchValues.Should().AllBe(expectedCpuArch);
         }

@@ -81,7 +81,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             ((double)cpuDuration).Should().BeLessThanOrEqualTo(totalDuration);
 
             var cpuSamples = run.Profiles.Sum(ProfileValue.CpuSampleCount);
-            cpuSamples.Should().BeGreaterThan(0);
+            cpuSamples.Should().BePositive();
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
