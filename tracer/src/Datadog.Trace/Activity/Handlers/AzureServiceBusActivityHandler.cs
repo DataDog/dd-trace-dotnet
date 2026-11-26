@@ -33,9 +33,15 @@ namespace Datadog.Trace.Activity.Handlers
         }
 
         public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
-            where T : IActivity
+            where T : IActivity5
         {
             ActivityHandlerCommon.ActivityStopped(sourceName, activity, in status);
+        }
+
+        public void LegacyActivityStopped<T>(string sourceName, T activity)
+            where T : IActivity
+        {
+            ActivityHandlerCommon.LegacyActivityStopped(sourceName, activity);
         }
     }
 }

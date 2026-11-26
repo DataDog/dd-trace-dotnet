@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Activity.DuckTypes;
 
 namespace Datadog.Trace.Activity.Handlers;
 
@@ -28,6 +29,13 @@ internal readonly struct ActivityKey : IEquatable<ActivityKey>
         _spanId = id;
         _traceId = string.Empty;
     }
+
+    // W3C activities are keyed by trace and span ID; hierarchical ones (null IDs) by Activity.Id
+    public static ActivityKey From<T>(T activity)
+        where T : IActivity
+        => activity.TraceId is { } traceId && activity.SpanId is { } spanId
+               ? new(traceId, spanId)
+               : new(activity.Id);
 
     public bool IsValid() => _traceId is not null && _spanId is not null;
 

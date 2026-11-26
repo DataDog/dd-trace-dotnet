@@ -13,10 +13,16 @@ namespace Datadog.Trace.Activity.Handlers
     {
         bool ShouldListenTo(string sourceName, string? version);
 
+        // All shapes (start handling only needs the base IActivity members)
         void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity;
 
+        // ActivityListener path (DiagnosticSource 5.0+)
         void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
+            where T : IActivity5;
+
+        // DiagnosticListener path (DiagnosticSource [4.0.4, 5.0))
+        void LegacyActivityStopped<T>(string sourceName, T activity)
             where T : IActivity;
     }
 }

@@ -33,27 +33,29 @@ namespace Datadog.Trace.Activity
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, in ActivityStatus status, bool openTelemetrySemanticsEnabled)
-            where TInner : IActivity
+            where TInner : IActivity5
         {
             AgentConvertSpan(activity, span, in status, openTelemetrySemanticsEnabled);
         }
 
-        // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
-        private static void AgentConvertSpan<TInner>(TInner activity, Span span, in ActivityStatus status, bool openTelemetrySemanticsEnabled)
+        /// <summary>
+        /// Legacy counterpart of <see cref="UpdateSpanFromActivity{TInner}"/> for DiagnosticSource [4.0.4, 5.0),
+        /// whose Activity has no Kind, Source, DisplayName, TagObjects, Events, Links or Status.
+        /// </summary>
+        internal static void UpdateSpanFromLegacyActivity<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
         {
-            // This code path _should_ only be called from places where the span being closed was created with OTel tags
-            // By predicating on that, we can make some performance optimizations and assumptions
-            if (span.Tags is not OpenTelemetryTags tags)
+            AgentConvertLegacySpan(activity, span, openTelemetrySemanticsEnabled);
+        }
+
+        // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span, in ActivityStatus status, bool openTelemetrySemanticsEnabled)
+            where TInner : IActivity5
+        {
+            if (BeginConversion(activity, span, openTelemetrySemanticsEnabled) is not { } tags)
             {
-                Log.Error("Span closed in OtlpHelpers.AgentConvertSpan was unexpectedly of type {TagsType} instead of OpenTelemetryTags. Span tagging may be incorrect.", span.Tags.GetType());
                 return;
             }
-
-            // Perform activity casts first and check for null when their members need to be accessed
-            var activity5 = activity as IActivity5;
-            span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
-            span.OperationName = null; // Reset the operation name, it will be repopulated
 
             // TODO: Add resources to spans
             // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
@@ -64,28 +66,120 @@ namespace Datadog.Trace.Activity
             // - service.namespace
             // - service.version
 
+            // Copy over tags from Activity to the Datadog Span
+            // Activity can hold tags whose value have type object? starting with .NET 5, which maps to IActivity5
+            // We use the ActivityTagsHelper instead of enumerating the collections directly to avoid allocating
+            if (activity.HasTagObjects())
+            {
+                var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
+                ActivityEnumerationHelper.EnumerateTagObjects(activity, ref state, static (ref s, kvp) =>
+                {
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
+                    return true;
+                });
+            }
+
+            ApplyServiceVersionFixup(span);
+
+            // Additional Datadog policy: Set tag "span.kind"
+            // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
+            // even though the tag is not present on normal OTLP spans
+            // Note that the "span.kind" is used to help craft an OperationName for the span (if present)
+            tags.SpanKind = GetSpanKind(activity.Kind);
+
+            ApplyOperationNameFallback(span, tags);
+
+            // TODO: Add container tags from attributes if the tag isn't already in the span
+
+            ApplyEnvironmentFixup(span);
+
+            // TODO: The .NET OTLP exporter doesn't currently add tracestate, but the DD agent will set it as tag "w3c.tracestate" if detected
+            // For now, we can keep this unimplemented so the resulting span matches the .NET OTLP exporter
+            // span.SetTag("w3c.tracestate", activity.TraceStateString);
+
+            // Add the library name and library version
             if (!openTelemetrySemanticsEnabled)
             {
-                tags.OtelTraceId = activity.TraceId;
+                // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
+                // and not when an Activity object is created manually and having .Start() called on it
+                // Read Source once, as each read copies the underlying ActivitySource again
+                var source = activity.Source;
+                if (!StringUtil.IsNullOrEmpty(source.Name))
+                {
+                    tags.OtelLibraryName = source.Name;
+                }
+
+                if (!StringUtil.IsNullOrEmpty(source.Version))
+                {
+                    tags.OtelLibraryVersion = source.Version;
+                }
+            }
+
+            ApplyOtelStatusCode(tags, in status);
+
+            // Set OTEL status description
+            // Map the OTEL status to error tags
+            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+            if (status.Code == ActivityStatusCode.Error)
+            {
+                if (openTelemetrySemanticsEnabled)
+                {
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, status.Description);
+                }
+                else
+                {
+                    AgentStatus2ErrorFromStatus(activity, span, status.Description);
+                }
+            }
+            else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            {
+                if (openTelemetrySemanticsEnabled)
+                {
+                    SetErrorFromStatusDescriptionTag(span);
+                }
+                else
+                {
+                    AgentStatus2ErrorActivity5(activity, span);
+                }
+            }
+
+            ApplyServiceNameFallback(span);
+
+            // Update Resource with a reasonable default
+            if (span.ResourceName is null)
+            {
+                // TODO: Implement resourceFromTags
+                // See: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L555
+
+                // Fallback: Use the information provided by Activity
+                span.ResourceName = activity.DisplayName;
+            }
+
+            // Update Type with a reasonable default
+            if (string.IsNullOrWhiteSpace(span.Type))
+            {
+                span.Type = AgentSpanKind2Type(activity.Kind, span);
+            }
+
+            // extract any ActivityLinks and ActivityEvents
+            ExtractActivityLinks(span, activity);
+            ExtractActivityEvents(span, activity);
+        }
+
+        // Legacy counterpart of AgentConvertSpan above, for DiagnosticSource [4.0.4, 5.0) - see UpdateSpanFromLegacyActivity.
+        private static void AgentConvertLegacySpan<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
+            where TInner : IActivity
+        {
+            if (BeginConversion(activity, span, openTelemetrySemanticsEnabled) is not { } tags)
+            {
+                return;
             }
 
             // Copy over tags from Activity to the Datadog Span
-            // Starting with .NET 5, Activity can hold tags whose value have type object?
             // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
             // We use the ActivityTagsHelper instead of enumerating the collections directly to avoid allocating
-            if (activity5 is not null)
-            {
-                if (activity5.HasTagObjects())
-                {
-                    var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
-                    ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
-                    {
-                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
-                        return true;
-                    });
-                }
-            }
-            else if (activity.HasTags())
+            if (activity.HasTags())
             {
                 var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                 ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
@@ -95,7 +189,82 @@ namespace Datadog.Trace.Activity
                 });
             }
 
-            // Fixup "version" tag
+            ApplyServiceVersionFixup(span);
+
+            // Note: no "span.kind" tag here - legacy activities have no ActivityKind concept, so
+            // tags.SpanKind is left unset and span.Type falls back to SpanTypes.Custom below.
+
+            ApplyOperationNameFallback(span, tags);
+
+            ApplyEnvironmentFixup(span);
+
+            ApplyOtelStatusCode(tags, default);
+
+            // Set OTEL status description
+            // Map the OTEL status to error tags. Legacy activities have no Status/StatusDescription,
+            // so only the short-form "otel.status_code" tag (set by the OTel API directly) can drive this.
+            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+            if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            {
+                if (openTelemetrySemanticsEnabled)
+                {
+                    SetErrorFromStatusDescriptionTag(span);
+                }
+                else
+                {
+                    AgentStatus2ErrorBasic(activity, span);
+                }
+            }
+
+            ApplyServiceNameFallback(span);
+
+            // Update Resource with a reasonable default
+            if (span.ResourceName is null)
+            {
+                // Fallback: Use the information provided by Activity
+                span.ResourceName = activity.OperationName;
+            }
+
+            // Update Type with a reasonable default
+            if (string.IsNullOrWhiteSpace(span.Type))
+            {
+                span.Type = SpanTypes.Custom;
+            }
+        }
+
+        // Shared start of both conversions. Returns null if the span was not created with OTel tags.
+        private static OpenTelemetryTags? BeginConversion<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
+            where TInner : IActivity
+        {
+            // This code path _should_ only be called from places where the span being closed was created with OTel tags
+            // By predicating on that, we can make some performance optimizations and assumptions
+            if (span.Tags is not OpenTelemetryTags tags)
+            {
+                Log.Error("Span converted in OtlpHelpers was unexpectedly of type {TagsType} instead of OpenTelemetryTags. Span tagging may be incorrect.", span.Tags.GetType());
+                return null;
+            }
+
+            span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
+            span.OperationName = null; // Reset the operation name, it will be repopulated
+
+            if (!openTelemetrySemanticsEnabled)
+            {
+                tags.OtelTraceId = activity.TraceId;
+            }
+
+            return tags;
+        }
+
+        // OTel semantics: error.msg comes straight from the otel.status_description tag
+        private static void SetErrorFromStatusDescriptionTag(Span span)
+        {
+            span.Error = true;
+            span.SetTag(Tags.ErrorMsg, span.GetTag("otel.status_description") as string);
+        }
+
+        // Fixup "version" tag
+        private static void ApplyServiceVersionFixup(Span span)
+        {
             var traceContext = span.Context.TraceContext;
             if (traceContext is not null
              && string.IsNullOrEmpty(traceContext.ServiceVersion)
@@ -103,59 +272,35 @@ namespace Datadog.Trace.Activity
             {
                 traceContext.ServiceVersion = otelServiceVersion;
             }
+        }
 
-            // Additional Datadog policy: Set tag "span.kind"
-            // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
-            // even though the tag is not present on normal OTLP spans
-            // Note that the "span.kind" is used to help craft an OperationName for the span (if present)
-            if (activity5 is not null)
-            {
-                tags.SpanKind = GetSpanKind(activity5.Kind);
-            }
-
-            // Later: Support config 'span_name_as_resource_name'
-            // Later: Support config 'span_name_remappings'
+        // Later: Support config 'span_name_as_resource_name'
+        // Later: Support config 'span_name_remappings'
+        private static void ApplyOperationNameFallback(Span span, OpenTelemetryTags tags)
+        {
             if (string.IsNullOrEmpty(span.OperationName))
             {
                 span.OperationName = OperationNameMapper.GetOperationName(tags);
             }
+        }
 
-            // TODO: Add container tags from attributes if the tag isn't already in the span
-
-            // Fixup "env" tag
+        // Fixup "env" tag
+        private static void ApplyEnvironmentFixup(Span span)
+        {
+            var traceContext = span.Context.TraceContext;
             if (traceContext is not null
              && traceContext.Environment is null
              && (span.GetTag("deployment.environment.name") ?? span.GetTag("deployment.environment")) is { Length: > 0 } otelServiceEnv)
             {
                 traceContext.Environment = otelServiceEnv;
             }
+        }
 
-            // TODO: The .NET OTLP exporter doesn't currently add tracestate, but the DD agent will set it as tag "w3c.tracestate" if detected
-            // For now, we can keep this unimplemented so the resulting span matches the .NET OTLP exporter
-            // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
-
-            // Add the library name and library version
-            if (!openTelemetrySemanticsEnabled)
-            {
-                if (activity5 is not null)
-                {
-                    // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
-                    // and not when an Activity object is created manually and having .Start() called on it
-                    if (!StringUtil.IsNullOrEmpty(activity5.Source.Name))
-                    {
-                        tags.OtelLibraryName = activity5.Source.Name;
-                    }
-
-                    if (!StringUtil.IsNullOrEmpty(activity5.Source.Version))
-                    {
-                        tags.OtelLibraryVersion = activity5.Source.Version;
-                    }
-                }
-            }
-
-            // Set OTEL status code
-            // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
-            // (we don't remap these values when when OTel Semantics are enabled)
+        // Set OTEL status code
+        // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
+        // (we don't remap these values when when OTel Semantics are enabled)
+        private static void ApplyOtelStatusCode(OpenTelemetryTags tags, in ActivityStatus status)
+        {
             if (tags.OtelStatusCode is null)
             {
                 tags.OtelStatusCode = status.Code switch
@@ -177,40 +322,11 @@ namespace Datadog.Trace.Activity
                     string s => s,
                 };
             }
+        }
 
-            // Set OTEL status description
-            // Map the OTEL status to error tags
-            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-            if (status.Code == ActivityStatusCode.Error)
-            {
-                if (openTelemetrySemanticsEnabled)
-                {
-                    span.Error = true;
-                    span.SetTag(Tags.ErrorMsg, status.Description);
-                }
-                else if (activity5 is not null)
-                {
-                    AgentStatus2ErrorFromStatus(activity5, span, status.Description);
-                }
-            }
-            else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
-            {
-                if (openTelemetrySemanticsEnabled)
-                {
-                    span.Error = true;
-                    span.SetTag(Tags.ErrorMsg, span.GetTag("otel.status_description") as string);
-                }
-                else if (activity5 is not null)
-                {
-                    AgentStatus2ErrorActivity5(activity5, span);
-                }
-                else
-                {
-                    AgentStatus2ErrorBasic(activity, span);
-                }
-            }
-
-            // Update Service with a reasonable default
+        // Update Service with a reasonable default
+        private static void ApplyServiceNameFallback(Span span)
+        {
             if (span.ServiceName is null)
             {
                 span.SetService(
@@ -220,36 +336,6 @@ namespace Datadog.Trace.Activity
                         _ => "OTLPResourceNoServiceName",
                     },
                     source: null);
-            }
-
-            // Update Resource with a reasonable default
-            if (span.ResourceName is null)
-            {
-                // TODO: Implement resourceFromTags
-                // See: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L555
-
-                // Fallback: Use the information provided by Activity
-                if (activity5 is not null)
-                {
-                    span.ResourceName = activity5.DisplayName;
-                }
-                else
-                {
-                    span.ResourceName = activity.OperationName;
-                }
-            }
-
-            // Update Type with a reasonable default
-            if (string.IsNullOrWhiteSpace(span.Type))
-            {
-                span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
-            }
-
-            // extract any ActivityLinks and ActivityEvents
-            if (activity5 is not null)
-            {
-                ExtractActivityLinks(span, activity5);
-                ExtractActivityEvents(span, activity5);
             }
         }
 

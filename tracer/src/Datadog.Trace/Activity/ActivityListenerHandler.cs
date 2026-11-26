@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Logging;
@@ -99,18 +100,35 @@ namespace Datadog.Trace.Activity
         }
 
         public static void OnActivityWithSourceStopped<T>(string sourceName, T activity, in ActivityStatus status)
-            where T : IActivity
+            where T : IActivity5
         {
-            var sName = sourceName ?? "(null)";
-            if (HandlerBySource.TryGetValue(sName, out var handler))
+            if (TryGetStopHandler(sourceName, activity.OperationName, out var sName, out var handler))
             {
-                handler = ResolveHandler(sourceName, activity.OperationName, handler);
                 handler.ActivityStopped(sName, activity, in status);
             }
-            else
+        }
+
+        // DiagnosticListener path: legacy activities have no Source, so the name is passed in
+        public static void OnLegacyActivityWithSourceStopped<T>(string sourceName, T activity)
+            where T : IActivity
+        {
+            if (TryGetStopHandler(sourceName, activity.OperationName, out var sName, out var handler))
             {
-                Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
+                handler.LegacyActivityStopped(sName, activity);
             }
+        }
+
+        private static bool TryGetStopHandler(string? sourceName, string? operationName, out string sName, [NotNullWhen(true)] out IActivityHandler? handler)
+        {
+            sName = sourceName ?? "(null)";
+            if (HandlerBySource.TryGetValue(sName, out handler))
+            {
+                handler = ResolveHandler(sourceName, operationName, handler);
+                return true;
+            }
+
+            Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
+            return false;
         }
 
         internal static IActivityHandler ResolveHandler(string? sourceName, string? operationName, IActivityHandler handler)

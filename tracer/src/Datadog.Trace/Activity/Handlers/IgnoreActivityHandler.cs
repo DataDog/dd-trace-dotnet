@@ -100,6 +100,12 @@ namespace Datadog.Trace.Activity.Handlers
         }
 
         public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
+            where T : IActivity5
+        {
+            // Do nothing
+        }
+
+        public void LegacyActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
             // Do nothing

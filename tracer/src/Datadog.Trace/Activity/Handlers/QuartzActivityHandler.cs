@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Serilog.Events;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz.QuartzCommon;
 
 namespace Datadog.Trace.Activity.Handlers
@@ -52,7 +54,7 @@ namespace Datadog.Trace.Activity.Handlers
         }
 
         public void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
-            where T : IActivity
+            where T : IActivity5
         {
             if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
             {
@@ -60,29 +62,69 @@ namespace Datadog.Trace.Activity.Handlers
                 return;
             }
 
-            // Find the span and update it before the common handler processes it
-            ActivityKey key = activity.TraceId is { } tid && activity.SpanId is { } sid
-                ? new(tid, sid)
-                : new(activity.Id);
-
-            if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
+            if (TryTakeQuartzScope(activity, out var scope))
             {
-                Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
-
                 // Finish the span manually
                 EnhanceActivityMetadata(activity);
 
-                OtlpHelpers.UpdateSpanFromActivity(activity, span, in status, span.OpenTelemetrySemanticsEnabled);
-
-                span.Finish((DateTimeOffset)activity.StartTimeUtc.Add(activity.Duration));
-                activityMapping.Scope.Close();
+                OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span, in status, scope.Span.OpenTelemetrySemanticsEnabled);
+                ActivityHandlerCommon.FinishActivityScope(activity, scope);
             }
             else
             {
-                Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
                 // Fallback to common handler if we couldn't find the span
                 ActivityHandlerCommon.ActivityStopped(sourceName, activity, in status);
             }
+        }
+
+        public void LegacyActivityStopped<T>(string sourceName, T activity)
+            where T : IActivity
+        {
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+            {
+                DefaultHandler.LegacyActivityStopped(sourceName, activity);
+                return;
+            }
+
+            if (TryTakeQuartzScope(activity, out var scope))
+            {
+                // Finish the span manually
+                EnhanceActivityMetadata(activity);
+
+                OtlpHelpers.UpdateSpanFromLegacyActivity(activity, scope.Span, scope.Span.OpenTelemetrySemanticsEnabled);
+                ActivityHandlerCommon.FinishActivityScope(activity, scope);
+            }
+            else
+            {
+                // Fallback to common handler if we couldn't find the span
+                ActivityHandlerCommon.LegacyActivityStopped(sourceName, activity);
+            }
+        }
+
+        // Find the scope and remove the mapping before the common handler processes it
+        private static bool TryTakeQuartzScope<T>(T activity, [NotNullWhen(true)] out Scope? scope)
+            where T : IActivity
+        {
+            var key = ActivityKey.From(activity);
+
+            if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope is { Span: not null } foundScope)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
+                }
+
+                scope = foundScope;
+                return true;
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Could not find span for activity '{ActivityId}' with key '{Key}'", activity.Id, key);
+            }
+
+            scope = null;
+            return false;
         }
     }
 }

@@ -96,7 +96,7 @@ namespace Datadog.Trace.Activity
                 }
                 else if (value.Key.Length == dotIndex + 4 + 1 && value.Key.LastIndexOf("Stop", StringComparison.Ordinal) == dotIndex + 1 && activity.Instance is not null)
                 {
-                    ActivityListenerHandler.OnActivityWithSourceStopped(sourceName, activity, default);
+                    ActivityListenerHandler.OnLegacyActivityWithSourceStopped(sourceName, activity);
                 }
             }
             catch (Exception ex)

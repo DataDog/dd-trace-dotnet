@@ -10,6 +10,7 @@ using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -17,6 +18,7 @@ using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using SD = System.Diagnostics;
 
 namespace Datadog.Trace.Tests
 {
@@ -52,8 +54,7 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
@@ -73,8 +74,7 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
@@ -94,8 +94,7 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
@@ -115,8 +114,7 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
@@ -137,8 +135,7 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: false);
 
@@ -155,8 +152,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(new Dictionary<string, object>());
             var status = new ActivityStatus((Datadog.Trace.Activity.DuckTypes.ActivityStatusCode)activityStatus, null);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, in status, openTelemetrySemanticsEnabled: true);
 
@@ -180,8 +176,7 @@ namespace Datadog.Trace.Tests
 
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: true);
 
@@ -197,12 +192,47 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
             var status = new ActivityStatus(Datadog.Trace.Activity.DuckTypes.ActivityStatusCode.Ok, null);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, in status, openTelemetrySemanticsEnabled: true);
 
             span.GetTag("otel.status_code").Should().Be("STATUS_CODE_ERROR");
+        }
+
+        [Fact]
+        public void LegacyActivity_FallsBackToOperationNameAndCustomType()
+        {
+            var activity = new SD.Activity("legacy-operation");
+            activity.SetIdFormat(SD.ActivityIdFormat.W3C);
+            activity.Start();
+            var span = CreateOtelSpan();
+
+            OtlpHelpers.UpdateSpanFromLegacyActivity(activity.DuckCast<IActivity>(), span, openTelemetrySemanticsEnabled: false);
+            activity.Stop();
+
+            var tags = (OpenTelemetryTags)span.Tags;
+            span.ResourceName.Should().Be("legacy-operation");
+            span.Type.Should().Be(SpanTypes.Custom);
+            tags.SpanKind.Should().BeNull();
+            tags.OtelTraceId.Should().Be(activity.TraceId.ToHexString());
+            tags.OtelStatusCode.Should().Be("STATUS_CODE_UNSET");
+        }
+
+        [Fact]
+        public void LegacyActivity_ShortFormErrorStatus_MarksSpanAsError()
+        {
+            var activity = new SD.Activity("legacy-operation");
+            activity.AddTag("otel.status_code", "ERROR");
+            activity.AddTag("otel.status_description", "something failed");
+            activity.Start();
+            var span = CreateOtelSpan();
+
+            OtlpHelpers.UpdateSpanFromLegacyActivity(activity.DuckCast<IActivity>(), span, openTelemetrySemanticsEnabled: false);
+            activity.Stop();
+
+            span.Error.Should().BeTrue();
+            span.GetTag(Tags.ErrorMsg).Should().Be("something failed");
+            ((OpenTelemetryTags)span.Tags).OtelStatusCode.Should().Be("STATUS_CODE_ERROR");
         }
 
         [Fact]
@@ -215,8 +245,7 @@ namespace Datadog.Trace.Tests
             var tagObjects = new Dictionary<string, object> { { key, statusCode } };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: true);
 
@@ -234,13 +263,18 @@ namespace Datadog.Trace.Tests
             var tagObjects = new Dictionary<string, object> { { key, statusCode } };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = CreateOtelSpan();
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, default, openTelemetrySemanticsEnabled: true);
 
             span.GetHttpStatusCode().Should().BeNull();
             span.GetMetric(key).Should().Be((double)statusCode);
+        }
+
+        private Span CreateOtelSpan()
+        {
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            return new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
         }
     }
 }

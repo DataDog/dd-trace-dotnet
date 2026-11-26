@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
@@ -238,58 +239,89 @@ namespace Datadog.Trace.Activity.Handlers
             }
         }
 
+        // ActivityListener path (DiagnosticSource 5.0+)
         public static void ActivityStopped<T>(string sourceName, T activity, in ActivityStatus status)
-            where T : IActivity
+            where T : IActivity5
         {
             try
             {
-                if (activity.Instance is null)
+                if (TryTakeStoppedActivityScope(sourceName, activity, out var scope))
                 {
-                    Log.Information("DefaultActivityHandler.ActivityStopped: [Missing Activity]");
-                    return;
-                }
-
-                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
-                {
-                    return;
-                }
-
-                // Activities using hierarchical IDs have null trace/span IDs
-                ActivityKey key = activity.TraceId is { } tid && activity.SpanId is { } sid
-                    ? new(tid, sid)
-                    : new(activity.Id);
-
-                if (!key.IsValid())
-                {
-                    // Adding this as a protective measure as Error Tracking identified
-                    // instances where StartActivity had an Activity with null Id, SpanId, TraceId
-                    // In that case we just skip the Activity, so doing the same thing here.
-                    return;
-                }
-
-                if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
-                {
-                    // We have the exact scope associated with the Activity
-                    if (Log.IsEnabled(LogEventLevel.Debug))
-                    {
-                        Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
-                    }
-
-                    CloseActivityScope(activity, someValue.Scope, in status);
-                    return;
-                }
-
-                // No matching entry — either Start was never observed, or the periodic
-                // reconciliation sweep already cleaned this one up. Nothing to do here.
-                if (Log.IsEnabled(LogEventLevel.Information))
-                {
-                    Log.Information("DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    CloseActivityScope(activity, scope, in status);
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
             }
+        }
+
+        // DiagnosticListener path (DiagnosticSource [4.0.4, 5.0))
+        public static void LegacyActivityStopped<T>(string sourceName, T activity)
+            where T : IActivity
+        {
+            try
+            {
+                if (TryTakeStoppedActivityScope(sourceName, activity, out var scope))
+                {
+                    CloseLegacyActivityScope(activity, scope);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
+            }
+        }
+
+        // Removes and returns the scope mapped to a stopped activity
+        private static bool TryTakeStoppedActivityScope<T>(string sourceName, T activity, [NotNullWhen(true)] out Scope? scope)
+            where T : IActivity
+        {
+            if (activity.Instance is null)
+            {
+                Log.Information("DefaultActivityHandler.ActivityStopped: [Missing Activity]");
+                scope = null;
+                return false;
+            }
+
+            if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
+            {
+                scope = null;
+                return false;
+            }
+
+            var key = ActivityKey.From(activity);
+
+            if (!key.IsValid())
+            {
+                // Adding this as a protective measure as Error Tracking identified
+                // instances where StartActivity had an Activity with null Id, SpanId, TraceId
+                // In that case we just skip the Activity, so doing the same thing here.
+                scope = null;
+                return false;
+            }
+
+            if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
+            {
+                // We have the exact scope associated with the Activity
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                }
+
+                scope = someValue.Scope;
+                return true;
+            }
+
+            // No matching entry — either Start was never observed, or the periodic
+            // reconciliation sweep already cleaned this one up. Nothing to do here.
+            if (Log.IsEnabled(LogEventLevel.Information))
+            {
+                Log.Information("DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+            }
+
+            scope = null;
+            return false;
         }
 
         internal static void StartReconciliationLoop()
@@ -425,8 +457,7 @@ namespace Datadog.Trace.Activity.Handlers
                 // scope. Past the grace window, close it using the real end time.
                 if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                 {
-                    if (activity6.Duration != TimeSpan.Zero
-                     && activity6.StartTimeUtc.Add(activity6.Duration) < missedStopCutoff
+                    if (IsMissedStop(activity6, missedStopCutoff)
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
@@ -436,8 +467,7 @@ namespace Datadog.Trace.Activity.Handlers
                 }
                 else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
                 {
-                    if (activity5.Duration != TimeSpan.Zero
-                     && activity5.StartTimeUtc.Add(activity5.Duration) < missedStopCutoff
+                    if (IsMissedStop(activity5, missedStopCutoff)
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
@@ -447,12 +477,11 @@ namespace Datadog.Trace.Activity.Handlers
                 }
                 else if (activityObject.TryDuckCast<IActivity>(out var legacyActivity))
                 {
-                    if (legacyActivity.Duration != TimeSpan.Zero
-                     && legacyActivity.StartTimeUtc.Add(legacyActivity.Duration) < missedStopCutoff
+                    if (IsMissedStop(legacyActivity, missedStopCutoff)
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(legacyActivity, scope, default);
+                        CloseLegacyActivityScope(legacyActivity, scope);
                         missedStop++;
                     }
                 }
@@ -461,12 +490,27 @@ namespace Datadog.Trace.Activity.Handlers
             return new ReconciliationSweepResult(gcCollected, missedStop, iterated);
         }
 
+        private static bool IsMissedStop<T>(T activity, DateTime missedStopCutoff)
+            where T : IActivity
+            => activity.Duration != TimeSpan.Zero && activity.StartTimeUtc.Add(activity.Duration) < missedStopCutoff;
+
         private static void CloseActivityScope<TInner>(TInner activity, Scope scope, in ActivityStatus status)
+            where TInner : IActivity5
+        {
+            OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span, in status, openTelemetrySemanticsEnabled: scope.Span.OpenTelemetrySemanticsEnabled);
+            FinishActivityScope(activity, scope);
+        }
+
+        private static void CloseLegacyActivityScope<TInner>(TInner activity, Scope scope)
             where TInner : IActivity
         {
-            var span = scope.Span;
-            OtlpHelpers.UpdateSpanFromActivity(activity, span, in status, openTelemetrySemanticsEnabled: span.OpenTelemetrySemanticsEnabled);
+            OtlpHelpers.UpdateSpanFromLegacyActivity(activity, scope.Span, openTelemetrySemanticsEnabled: scope.Span.OpenTelemetrySemanticsEnabled);
+            FinishActivityScope(activity, scope);
+        }
 
+        internal static void FinishActivityScope<TInner>(TInner activity, Scope scope)
+            where TInner : IActivity
+        {
             // OpenTelemtry SDK / OTLP Fixups
             // TODO
             // 3) Add resources to spans
@@ -477,7 +521,7 @@ namespace Datadog.Trace.Activity.Handlers
             // - service.name
             // - service.namespace
             // - service.version
-            span.Finish((DateTimeOffset)activity.StartTimeUtc.Add(activity.Duration));
+            scope.Span.Finish((DateTimeOffset)activity.StartTimeUtc.Add(activity.Duration));
 
             scope.Close();
         }
