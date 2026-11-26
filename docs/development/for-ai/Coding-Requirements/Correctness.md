@@ -84,6 +84,11 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `OnMethodEnd` resets thread-local state while `OnAsyncMethodEnd` calls `securityCoordinator.BlockAndReport(...)`.
 - ✅ Block from an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`.
 
+### COR-5.5: Add a path separator or suffix only when the value does not already have it
+- Flag: code that always prepends `/` to a path or appends `v1/<signal>` to an endpoint. If the input already has it, the result is `//api/foo` or `/v1/logs/v1/logs`.
+- ❌ `path = "/" + proxyPath;`
+- ✅ `path = proxyPath.StartsWith("/") ? proxyPath : "/" + proxyPath;`
+
 ## 6. Tests
 
 ### COR-6.1: Create a fresh instance per test instead of using a static `.Instance` or the global tracer
