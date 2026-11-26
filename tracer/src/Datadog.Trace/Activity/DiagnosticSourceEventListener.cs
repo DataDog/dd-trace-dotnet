@@ -36,15 +36,7 @@ namespace Datadog.Trace.Activity
                 // Create delegate for OnNext + Activity
                 var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
 
-                DuckType.CreateTypeResult onNextActivityProxyResult;
-                if (activityType!.GetField("_traceId", DuckAttribute.DefaultFlags) is not null)
-                {
-                    onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IW3CActivity), activityType);
-                }
-                else
-                {
-                    onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType);
-                }
+                var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType!);
 
                 var onNextActivityProxyResultProxyType = onNextActivityProxyResult.ProxyType;
                 if (onNextActivityProxyResultProxyType is null)

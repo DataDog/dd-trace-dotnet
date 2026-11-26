@@ -51,7 +51,7 @@ namespace Datadog.Trace.Activity
             }
 
             // Perform activity casts first and check for null when their members need to be accessed
-            var w3cActivity = activity as IW3CActivity;
+            var w3cActivity = activity as IActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic

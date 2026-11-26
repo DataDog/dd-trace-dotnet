@@ -63,7 +63,7 @@ namespace Datadog.Trace.Activity.Handlers
             // Find the span and update it before the common handler processes it
             ActivityKey key = activity switch
             {
-                IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
+                IActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
                 _ => new(activity.Id)
             };
 

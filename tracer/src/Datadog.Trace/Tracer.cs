@@ -364,7 +364,7 @@ namespace Datadog.Trace
                 traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == TraceId.Zero &&
-                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId } activity)
+                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IActivity { TraceId: { } activityTraceId } activity)
                 {
                     bool useActivityTraceId = true;
 

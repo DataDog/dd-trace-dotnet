@@ -68,11 +68,11 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
-            // for non-W3C activities using Hierarchical IDs (both IW3CActivity and IActivity) we use Activity.Id and string.Empty
-            // for W3C ID activities (always IW3CActivity) we'll use the Activity.TraceId + Activity.SpanId as the key
+            // for non-W3C activities using Hierarchical IDs we use Activity.Id and string.Empty
+            // for W3C ID activities we'll use the Activity.TraceId + Activity.SpanId as the key
             ActivityKey? activityKey = null;
 
-            if (activity is IW3CActivity activity3)
+            if (activity is IActivity activity3)
             {
                 var activityTraceId = activity3.TraceId;
                 var activitySpanId = activity3.SpanId;
@@ -172,7 +172,7 @@ namespace Datadog.Trace.Activity.Handlers
             }
             else
             {
-                // non-IW3CActivity, i.e. we're in .NET Core 2.x territory. Only have hierarchical IDs to worry about here
+                // non-W3C Activity type, i.e. we're in .NET Core 2.x territory. Only have hierarchical IDs to worry about here
                 var parentId = activity.ParentId;
                 if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
                 {
@@ -266,9 +266,9 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                // Non-w3c activities will have null trace/span IDs, even though they implement IW3CActivity
+                // Activities using hierarchical IDs have null trace/span IDs
                 ActivityKey key;
-                if (activity is IW3CActivity w3cActivity
+                if (activity is IActivity w3cActivity
                  && w3cActivity.TraceId != null!
                  && w3cActivity.SpanId != null!)
                 {
@@ -465,14 +465,14 @@ namespace Datadog.Trace.Activity.Handlers
                         missedStop++;
                     }
                 }
-                else if (activityObject.TryDuckCast<IW3CActivity>(out var w3cActivity))
+                else if (activityObject.TryDuckCast<IActivity>(out var legacyActivity))
                 {
-                    if (w3cActivity.Duration != TimeSpan.Zero
-                     && w3cActivity.StartTimeUtc.Add(w3cActivity.Duration) < missedStopCutoff
+                    if (legacyActivity.Duration != TimeSpan.Zero
+                     && legacyActivity.StartTimeUtc.Add(legacyActivity.Duration) < missedStopCutoff
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
-                        CloseActivityScope(w3cActivity, scope);
+                        CloseActivityScope(legacyActivity, scope);
                         missedStop++;
                     }
                 }

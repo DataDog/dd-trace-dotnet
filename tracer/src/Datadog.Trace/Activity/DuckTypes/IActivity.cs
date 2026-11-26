@@ -19,12 +19,11 @@ namespace Datadog.Trace.Activity.DuckTypes
         /// or ParentId; Activity has no Id until it started, but as we only see started IDs, this will always be non null.
         /// </summary>
         /// <remarks>NOTE: this property allocates when using W3C activities, and so should generally not be called
-        /// unless you know that you're not using W3C activities (because <see cref="IW3CActivity.SpanId"/> is null</remarks>
+        /// unless you know that you're not using W3C activities (because <see cref="SpanId"/> is null</remarks>
         string Id { get; }
 
         /// <summary>
-        /// Gets the ParentId, as a string calculated from <see cref="Parent"/> or, if an <see cref="IW3CActivity"/>,
-        /// from the <see cref="IW3CActivity.RawParentSpanId"/>.
+        /// Gets the ParentId, as a string calculated from <see cref="Parent"/> or from <see cref="RawParentSpanId"/>.
         /// </summary>
         /// <remarks>NOTE: this property allocates, and so should generally not be called unless the specific returned value is required</remarks>
         string? ParentId { get; }
@@ -46,6 +45,27 @@ namespace Datadog.Trace.Activity.DuckTypes
         IEnumerable<KeyValuePair<string, string?>> Baggage { get; }
 
         IEnumerable<KeyValuePair<string, string?>> Tags { get; }
+
+        // TraceId and SpanId are never null when using W3C IDs, but they can be null when using
+        // hierarchical IDs. An Activity can use either type of ID.
+        // FallbackToBaseTypes because these private fields are declared on Activity, not on any subclass.
+        [DuckField(Name = "_traceId", FallbackToBaseTypes = true)]
+        string? TraceId { get; set; }
+
+        [DuckField(Name = "_spanId", FallbackToBaseTypes = true)]
+        string? SpanId { get; set; }
+
+        [DuckField(Name = "_parentSpanId", FallbackToBaseTypes = true)]
+        string? RawParentSpanId { get; set; }
+
+        [DuckField(Name = "_id", FallbackToBaseTypes = true)]
+        string? RawId { get; set; }
+
+        [DuckField(Name = "_parentId", FallbackToBaseTypes = true)]
+        string? RawParentId { get; set; }
+
+        // [DuckField(Name = "_traceState")] // Access from property so it can look up the Activity hierarchy
+        string? TraceStateString { get; set; }
 
         object AddBaggage(string key, string value);
 

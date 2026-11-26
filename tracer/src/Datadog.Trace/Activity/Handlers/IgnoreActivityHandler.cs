@@ -50,7 +50,7 @@ namespace Datadog.Trace.Activity.Handlers
         public static void IgnoreActivity<T>(T activity, Span? span)
             where T : IActivity
         {
-            if (span is not null && activity is IW3CActivity w3cActivity)
+            if (span is not null && activity is IActivity w3cActivity)
             {
 #pragma warning disable DDDUCK001 // Checking IDuckType for null
                 if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
