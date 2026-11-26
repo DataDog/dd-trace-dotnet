@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using Datadog.Trace;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
@@ -33,8 +32,8 @@ using RoutePattern = Microsoft.AspNetCore.Routing.Patterns.RoutePattern;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    // Keep this value in sync with the #if that compiles the stub below.
-    [MinRuntime(RuntimeMoniker.NetCoreApp30)]
+    // Keep this list in sync with the #if that compiles the stub.
+    [StubOn("net472", "netcoreapp2.1")]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     [IterationTime(500)]
     public class AspNetCoreBenchmark
@@ -109,8 +108,8 @@ namespace Benchmarks.Trace
     }
 #if NET6_0_OR_GREATER
     [MemoryDiagnoser]
-    // Keep this value in sync with the #if that compiles the stub below.
-    [MinRuntime(RuntimeMoniker.Net60)]
+    // Keep this list in sync with the #if that compiles the stub.
+    [StubOn("net472", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1")]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     [IterationTime(500)]
     public class SingleSpanAspNetCoreBenchmark
@@ -185,8 +184,8 @@ namespace Benchmarks.Trace
     }
 #else
     [MemoryDiagnoser]
-    // Keep this value in sync with the #if that compiles the stub below.
-    [MinRuntime(RuntimeMoniker.Net60)]
+    // Keep this list in sync with the #if that compiles the stub.
+    [StubOn("net472", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1")]
     public class SingleSpanAspNetCoreBenchmark
     {
         [GlobalSetup]
@@ -230,13 +229,12 @@ namespace Benchmarks.Trace
 
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    // Keep this value in sync with the #if that compiles the stub below.
-    [MinRuntime(RuntimeMoniker.NetCoreApp30)]
+    // Keep this list in sync with the #if that compiles the stub.
+    [StubOn("net472", "netcoreapp2.1")]
     public class AspNetCoreBenchmark
     {
         [GlobalSetup]
@@ -258,8 +256,8 @@ namespace Benchmarks.Trace
 
 #if !NET6_0_OR_GREATER
     [MemoryDiagnoser]
-    // Keep this value in sync with the #if that compiles the stub below.
-    [MinRuntime(RuntimeMoniker.Net60)]
+    // Keep this list in sync with the #if that compiles the stub.
+    [StubOn("net472", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1")]
     public class SingleSpanAspNetCoreBenchmark
     {
         [GlobalSetup]

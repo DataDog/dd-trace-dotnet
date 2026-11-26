@@ -126,15 +126,14 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Skips a benchmark class when <see cref="MinRuntimeAttribute"/> marks
-        /// the job's runtime as older than its real body. Classes without the
-        /// attribute always run.
+        /// Skips a benchmark class when <see cref="StubOnAttribute"/> lists the
+        /// job's target framework. Classes without the attribute always run.
         /// </summary>
         private static bool HasRealBody(BenchmarkCase benchmarkCase)
         {
-            var minimum = benchmarkCase.Descriptor.Type.GetCustomAttribute<MinRuntimeAttribute>(inherit: false);
+            var stubOn = benchmarkCase.Descriptor.Type.GetCustomAttribute<StubOnAttribute>(inherit: false);
 
-            if (minimum is null)
+            if (stubOn is null)
             {
                 return true;
             }
@@ -145,18 +144,11 @@ namespace Benchmarks.Trace
             var runtime = benchmarkCase.Job.Environment.Runtime
                 ?? benchmarkCase.Job.Environment.ResolveValue(EnvironmentMode.RuntimeCharacteristic, EnvironmentResolver.Instance);
 
-            var moniker = runtime.RuntimeMoniker;
+            // BenchmarkDotNet reports the installed .NET Framework version (e.g.
+            // net48), but the project builds .NET Framework only as net472.
+            var targetFramework = runtime is ClrRuntime ? "net472" : runtime.MsBuildMoniker;
 
-            // NotRecognized means BenchmarkDotNet predates the job's TFM (e.g.
-            // .NET 11 on 0.15.8) and sorts below Net461, so the ordinal check
-            // would skip real benchmarks; run them instead. The enum is ordered
-            // for version comparison by BenchmarkDotNet itself.
-            if (moniker == RuntimeMoniker.NotRecognized)
-            {
-                return true;
-            }
-
-            return moniker >= minimum.Minimum;
+            return !stubOn.TargetFrameworks.Contains(targetFramework);
         }
     }
 }
