@@ -39,7 +39,7 @@ clone_sut() (
 )
 retry clone_sut
 cd dd-trace-dotnet
-git checkout $branchName
+git checkout "$branchName"
 
 #switching the target framework to latest supported variant
 sed -i 's/<TargetFramework>net5.0<\/TargetFramework>/<TargetFramework>net9.0<\/TargetFramework>/' ./tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj

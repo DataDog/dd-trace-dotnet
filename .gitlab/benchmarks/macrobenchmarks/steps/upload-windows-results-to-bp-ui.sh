@@ -15,7 +15,7 @@ shopt -u nullglob
 
 if [ ${#CONVERTED_RESULTS[@]} -eq 0 ]; then
   echo "ERROR: No converted results found in $ARTIFACTS_DIR"
-  echo "Make sure to run fetch-results.sh first."
+  echo "Make sure to run fetch-windows-results.sh first."
   exit 1
 fi
 
