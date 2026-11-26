@@ -244,7 +244,7 @@ internal class DatadogExporter : IExporter
             return ["Datadog Exporter error: " + exception];
         }
 
-        return [$"Datadog Exporter ran successfully."];
+        return ["Datadog Exporter ran successfully."];
     }
 
     internal async Task DisposeTestSessionAndModules()

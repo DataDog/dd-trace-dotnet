@@ -46,7 +46,7 @@ namespace Datadog.Trace.Logging
             var timestamp = ((DateTimeOffset)Clock.UtcNow).ToUnixTimeSeconds();
 
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
-            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");
+            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, "Time bucket should be greater than 0");
 
             var newLogInfo = _buckets.AddOrUpdate(
                 key,

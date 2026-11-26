@@ -119,7 +119,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
-            return Serialize(ref bytes, offset, traceChunk, formatterResolver);
+            return Serialize(ref bytes, offset, in traceChunk, formatterResolver);
         }
 
         // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter

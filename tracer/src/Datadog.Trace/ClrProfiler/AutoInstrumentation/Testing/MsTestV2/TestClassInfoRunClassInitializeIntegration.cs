@@ -86,7 +86,7 @@ public static class TestClassInfoRunClassInitializeIntegrationV3_9
         => TestClassInfoRunClassInitializeIntegration.OnMethodBegin(instance, testContext);
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
-        => TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, state);
+        => TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, in state);
 }
 
 /// <summary>
@@ -122,7 +122,7 @@ public static class TestClassInfoRunClassInitializeAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, state);
+        TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, in state);
         return returnValue;
     }
 }

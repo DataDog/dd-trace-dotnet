@@ -73,7 +73,7 @@ public static class TestMethodRunnerExecuteTestIntegration
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        TestMethodExecutorRestore.Restore(state);
+        TestMethodExecutorRestore.Restore(in state);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
@@ -151,7 +151,7 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
     {
         if (exception is not null)
         {
-            TestMethodExecutorRestore.Restore(state);
+            TestMethodExecutorRestore.Restore(in state);
         }
 
         return new CallTargetReturn<TReturn?>(returnValue);
@@ -159,7 +159,7 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        TestMethodExecutorRestore.Restore(state);
+        TestMethodExecutorRestore.Restore(in state);
         return returnValue;
     }
 }

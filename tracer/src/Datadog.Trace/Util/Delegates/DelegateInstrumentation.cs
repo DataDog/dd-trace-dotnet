@@ -211,7 +211,7 @@ internal static class DelegateInstrumentation
             {
                 var ctor = _wrapperType.GetConstructors()[0];
                 var createHeadersMethod = new DynamicMethod(
-                    $"TypeActivator" + _wrapperType.Name,
+                    "TypeActivator" + _wrapperType.Name,
                     typeof(Wrapper<TCallbacks>),
                     new[] { typeof(object), typeof(Delegate), typeof(TCallbacks) },
                     typeof(ActivatorHelper).Module,

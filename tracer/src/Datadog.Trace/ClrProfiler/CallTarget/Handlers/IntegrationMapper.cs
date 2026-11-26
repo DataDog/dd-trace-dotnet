@@ -127,7 +127,7 @@ internal static class IntegrationMapper
             {
                 if (sourceParameterTypeElementType is null)
                 {
-                    ThrowHelper.ThrowException($"The source parameter type element type is null.");
+                    ThrowHelper.ThrowException("The source parameter type element type is null.");
                 }
 
                 targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
@@ -157,7 +157,7 @@ internal static class IntegrationMapper
                 {
                     if (sourceParameterTypeElementType is null)
                     {
-                        ThrowHelper.ThrowException($"The source parameter type element type is null.");
+                        ThrowHelper.ThrowException("The source parameter type element type is null.");
                     }
 
                     callGenericTypes.Add(sourceParameterTypeElementType);
