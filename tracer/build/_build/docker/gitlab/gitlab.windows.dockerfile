@@ -72,12 +72,13 @@ RUN Invoke-WebRequest -UseBasicParsing -TimeoutSec 120 -Uri 'https://raw.githubu
     $dotnetRoot = Join-Path $env:ProgramFiles 'dotnet'; \
     foreach ($channel in $channels) { \
         powershell -NoProfile -ExecutionPolicy Bypass -File .\dotnet-install.ps1 -Runtime dotnet -Channel $channel -Architecture x64 -InstallDir $dotnetRoot -NoPath -SkipNonVersionedFiles -DownloadTimeout 120; \
-        if ($LASTEXITCODE -ne 0) { throw "Installing .NET $channel runtime failed ($LASTEXITCODE)" }; \
+        if ($LASTEXITCODE -ne 0) { throw ('Installing .NET {0} runtime failed ({1})' -f $channel, $LASTEXITCODE) }; \
     }; \
     $installedRuntimes = & (Join-Path $dotnetRoot 'dotnet.exe') --list-runtimes; \
     if ($LASTEXITCODE -ne 0) { throw 'Could not list installed .NET runtimes' }; \
     foreach ($channel in $channels) { \
-        if (-not ($installedRuntimes -match "^Microsoft\.NETCore\.App $([regex]::Escape($channel))\.")) { throw "Missing .NET $channel runtime" }; \
+        $runtimePattern = '^Microsoft\.NETCore\.App ' + [regex]::Escape($channel) + '\.'; \
+        if (-not ($installedRuntimes -match $runtimePattern)) { throw ('Missing .NET {0} runtime' -f $channel) }; \
     }; \
     $installedRuntimes; \
     Remove-Item -LiteralPath .\dotnet-install.ps1
