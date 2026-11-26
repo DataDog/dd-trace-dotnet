@@ -50,9 +50,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         /// <summary>
         /// Formats an attribute value the way it is exported: every attribute (meter tags and data point tags) is
-        /// serialized as a string, with the invariant culture so the text doesn't depend on the current thread's culture.
-        /// <see cref="MetricStreamIdentity"/> compares meter tag values with this same text, so that meters
-        /// exported as the same scope are the same stream.
+        /// serialized as a string. Formattable values (numbers, dates) use the invariant culture; other objects use
+        /// their own ToString(), which may still depend on the current culture.
+        /// <see cref="MetricStreamIdentity"/> replaces meter tag values with this text once, at registration, so
+        /// identity, scope grouping and export all use the same text.
         /// </summary>
         internal static string FormatAttributeValue(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
 

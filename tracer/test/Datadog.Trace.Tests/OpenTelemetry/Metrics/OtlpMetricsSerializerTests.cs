@@ -89,6 +89,45 @@ public class OtlpMetricsSerializerTests
     }
 #endif
 
+#if NET8_0_OR_GREATER
+    [Fact]
+    public async Task MeterTagsAreExportedWithTheTextComputedAtRegistration()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        const string name = "test.culture.object.counter";
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            // A custom object's ToString() isn't made culture-independent by the invariant format provider. Under
+            // fr-FR it prints "1,5", like the string "1,5", so both meters are the same stream.
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            using var objectMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", new CultureDependentValue(1.5))]);
+            using var stringMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", "1,5")]);
+            objectMeter.CreateCounter<long>(name).Add(5);
+            stringMeter.CreateCounter<long>(name).Add(3);
+
+            // Exported under en-US, where the object would print "1.5": the stream keeps the registration text.
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            await pipeline.ForceCollectAndExportAsync();
+
+            var scope = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                   .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                   .Single(s => s.Scope.Name == "TestMeter.CultureObject");
+
+            scope.Scope.Attributes.Single(a => a.Key == "ratio").Value.StringValue.Should().Be("1,5");
+            scope.Metrics.Single().Sum.DataPoints.Single().AsInt.Should().Be(8);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+#endif
+
     [Fact]
     public async Task DataPointTagValuesAreFormattedWithTheInvariantCulture()
     {
@@ -226,6 +265,12 @@ public class OtlpMetricsSerializerTests
             default:
                 return (null, double.NaN);
         }
+    }
+
+    // A meter tag value whose ToString() depends on the current culture, like a record holding a double.
+    private sealed class CultureDependentValue(double value)
+    {
+        public override string ToString() => value.ToString(CultureInfo.CurrentCulture);
     }
 }
 
