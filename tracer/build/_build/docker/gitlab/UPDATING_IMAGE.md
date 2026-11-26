@@ -46,9 +46,11 @@ If publication fails, inspect its logs, resolve the cause, and retry the manual 
 
 ### Windows unit-test runtimes and long paths
 
-The image enables `LongPathsEnabled` and installs the additional x64 .NET runtimes from `additional-dotnet-runtimes.json`. The .NET 11 SDK supplies its runtime; the base image supplies .NET Framework 4.8. The targeting packs selected in `install_vstudio.ps1` are separate build dependencies.
+The image enables `LongPathsEnabled` and uses Microsoft's `dotnet-install.ps1`, pinned to the revision in the Dockerfile, to install additional x64 runtimes into the existing dotnet directory. The .NET 11 SDK supplies its runtime; the base image supplies .NET Framework 4.8. The targeting packs selected in `install_vstudio.ps1` are separate build dependencies.
 
-Keep the pinned runtime inventory aligned with the full Windows matrix in `GetTestingFrameworks` in `Build.Steps.cs`, not just the reduced PR matrix. Obtain exact Windows x64 runtime installer URLs and SHA512 hashes from Microsoft's `https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/<channel>/releases.json`; do not resolve floating channels during image builds. Older runtimes remain intentionally available for compatibility tests. The installer verifies hashes, installation exit codes, and the resulting `dotnet --list-runtimes` inventory.
+Keep the channel list in the Dockerfile aligned with the full Windows matrix in `GetTestingFrameworks` in `Build.Steps.cs`, not just the reduced PR matrix. Matching the Linux image policy, channel patches resolve during manual publication and remain fixed in the published image; ordinary jobs do not install runtimes. `-Runtime dotnet` avoids installing historical SDKs, `-SkipNonVersionedFiles` preserves the current host, and `-DownloadTimeout 120` bounds installer requests using its built-in retries. Each installer exit code is checked, then `dotnet --list-runtimes` is checked for every requested channel and printed in the publication log.
+
+Runtime URLs and payload SHA512 values are no longer maintained separately. Downloads use the Microsoft installer's HTTPS feed resolution; this is not an independently pinned payload-checksum guarantee. Republishing an image recipe can resolve newer patches within those channels, as it does on Linux. Update the installer revision deliberately and inspect the resulting inventory when publishing.
 
 After publishing the new image, verify `LongPathsEnabled=1` inside a fresh container and run the full Windows managed-test matrix (including net48 and older .NET Core cells). Test jobs consume the prepared image without runtime downloads or registry edits. The runner-side Git long-path checkout hook is still required separately.
 
