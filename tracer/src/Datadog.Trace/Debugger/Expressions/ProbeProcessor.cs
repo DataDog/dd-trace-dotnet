@@ -175,8 +175,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 return SamplePayloadIndependently(state, sampler);
             }
 
-            // The first capturing probe is intentionally a trace-admission decision. Once the trace is kept,
-            // other capturing probes skip both samplers and are capped once per probe; the global limiter only counts them.
+            // The first capturing probe is intentionally a trace-admission decision. Once the trace is kept, other
+            // capturing probes skip the global and per-probe checks and are capped once per probe, but still count
+            // toward the global limit.
             var samplingDecisionProvider = new SamplingDecisionProvider(this, state, sampler);
             var samplingDecision = traceContext.GetOrCreateDebuggerSamplingCoordinator().TrySample(state.ProbeInfo.ProbeId, samplingDecisionProvider);
             return ApplySamplingDecision(state.ProbeInfo.ProbeType, samplingDecision);

@@ -31,7 +31,7 @@ public class BorrowingTokenBucketTests
     [InlineData(100)]
     public void TryTake_StartsFullWithOneSecondOfTokensThenRefillsAtTheRate(int rate)
     {
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
         var interval = Interval(rate);
 
         Enumerable.Range(0, rate + 1).Count(_ => bucket.TryTake(Start)).Should().Be(rate);
@@ -43,7 +43,7 @@ public class BorrowingTokenBucketTests
     [Fact]
     public void TryTake_AfterAnIdlePeriod_HoldsNoMoreThanOneSecondOfTokens()
     {
-        var bucket = new BorrowingTokenBucket(4);
+        var bucket = BorrowingTokenBucket.Create(4);
         bucket.TryTake(Start).Should().BeTrue();
 
         var later = Start + (60 * Second);
@@ -55,7 +55,7 @@ public class BorrowingTokenBucketTests
     {
         const int rate = 2;
         const int borrowed = 6;
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
         Enumerable.Range(0, rate).Count(_ => bucket.TryTake(Start)).Should().Be(rate);
 
         for (var i = 0; i < borrowed; i++)
@@ -79,7 +79,7 @@ public class BorrowingTokenBucketTests
         const int rate = 10;
         const int seconds = 100;
         const int keptPerSample = 3;
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
         var keepDelay = Second * keepDelayMilliseconds / 1000;
         var pendingKeeps = new Queue<long>();
         var total = 0;
@@ -109,9 +109,20 @@ public class BorrowingTokenBucketTests
     }
 
     [Fact]
+    public void Keep_OnAnEmptyBucket_BorrowsTheNextToken()
+    {
+        // On the real clock, at one token a minute so the refill can't land during the test.
+        var bucket = BorrowingTokenBucket.Create(1.0 / 60);
+        bucket.Sample().Should().BeTrue();
+        bucket.Keep().Should().BeTrue();
+
+        bucket.TryTake(Stopwatch.GetTimestamp() + Interval(1.0 / 60)).Should().BeFalse();
+    }
+
+    [Fact]
     public void TryTake_RateBelowOnePerSecond_AdmitsOnePerInterval()
     {
-        var bucket = new BorrowingTokenBucket(1.0 / 300);
+        var bucket = BorrowingTokenBucket.Create(1.0 / 300);
         var interval = Interval(1.0 / 300);
 
         bucket.TryTake(Start).Should().BeTrue();
@@ -127,7 +138,7 @@ public class BorrowingTokenBucketTests
     [Fact]
     public void TryTake_FractionalRate_RefillsAtThatRate()
     {
-        var bucket = new BorrowingTokenBucket(2.5);
+        var bucket = BorrowingTokenBucket.Create(2.5);
         var admitted = 0;
         for (var millisecond = 0; millisecond < 10_000; millisecond++)
         {
@@ -142,10 +153,10 @@ public class BorrowingTokenBucketTests
     [InlineData(0d, false)]
     [InlineData(-1d, false)]
     [InlineData(double.NaN, false)]
-    [InlineData(double.Epsilon, true)] // Its interval overflows a long, so it saturates instead.
+    [InlineData(double.Epsilon, true)] // Its interval overflows a long, so only the first token is ever due.
     public void TryTake_RateThatNeverRefills_AdmitsAtMostTheFirstToken(double rate, bool admitsFirst)
     {
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
 
         bucket.TryTake(Start).Should().Be(admitsFirst);
         bucket.Take(Start);
@@ -157,7 +168,7 @@ public class BorrowingTokenBucketTests
     [InlineData(double.PositiveInfinity)]
     public void TryTake_RateTooLargeForTheClock_AdmitsWithoutOverflowing(double rate)
     {
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
 
         Enumerable.Range(0, 1_000).Select(_ => bucket.TryTake(Start)).Should().AllBeEquivalentTo(true);
     }
@@ -168,11 +179,11 @@ public class BorrowingTokenBucketTests
         // A full bucket, all due at one timestamp, raced for by twice as many calls as it holds.
         const int threadCount = 8;
         const int rate = 1_000_000;
-        var bucket = new BorrowingTokenBucket(rate);
+        var bucket = BorrowingTokenBucket.Create(rate);
         var admitted = 0;
         RunConcurrently(
             threadCount,
-            () =>
+            _ =>
             {
                 for (var i = 0; i < 2 * rate / threadCount; i++)
                 {
@@ -187,37 +198,52 @@ public class BorrowingTokenBucketTests
     }
 
     [Fact]
-    public void Take_ConcurrentCallers_CountsEveryToken()
+    public void TryTakeAndTake_ConcurrentCallers_AdmitAtMostTheBucketAndCountEveryToken()
     {
+        // A bucket large enough that its tokens are still being raced for once every thread is running.
         const int threadCount = 8;
-        const int takesPerThread = 100_000;
-        var bucket = new BorrowingTokenBucket(1);
+        const int rate = 100_000;
+        const int callsPerThread = 50_000;
+        var bucket = BorrowingTokenBucket.Create(rate);
+        var admitted = 0;
+        var takes = 0;
         RunConcurrently(
             threadCount,
-            () =>
+            threadIndex =>
             {
-                for (var i = 0; i < takesPerThread; i++)
+                for (var i = 0; i < callsPerThread; i++)
                 {
-                    bucket.Take(Start);
+                    if (threadIndex % 2 == 0)
+                    {
+                        bucket.Take(Start);
+                        Interlocked.Increment(ref takes);
+                    }
+                    else if (bucket.TryTake(Start))
+                    {
+                        Interlocked.Increment(ref admitted);
+                    }
                 }
             });
 
-        var paidBack = Start + (threadCount * takesPerThread * Interval(1));
-        bucket.TryTake(paidBack - 1).Should().BeFalse();
-        bucket.TryTake(paidBack).Should().BeTrue();
+        admitted.Should().BeLessThanOrEqualTo(rate);
+
+        // Each token admitted or taken moved the due time on one interval from that of a full bucket.
+        var due = Start - ((rate - 1) * Interval(rate)) + ((long)(admitted + takes) * Interval(rate));
+        bucket.TryTake(due - 1).Should().BeFalse();
+        bucket.TryTake(due).Should().BeTrue();
     }
 
     // The bucket's interval in Stopwatch ticks, rounded the same way, so boundaries hold for any Stopwatch.Frequency.
     private static long Interval(double rate) => (long)Math.Round(Second / rate, MidpointRounding.ToEven);
 
-    private static void RunConcurrently(int threadCount, Action action)
+    private static void RunConcurrently(int threadCount, Action<int> action)
     {
         using var allStarted = new Barrier(threadCount);
         var threads = Enumerable.Range(0, threadCount)
-                                .Select(_ => new Thread(() =>
+                                .Select(index => new Thread(() =>
                                  {
                                      allStarted.SignalAndWait();
-                                     action();
+                                     action(index);
                                  }))
                                 .ToArray();
 

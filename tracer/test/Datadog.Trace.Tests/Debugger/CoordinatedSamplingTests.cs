@@ -21,14 +21,13 @@ using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace.Tests.Debugger;
 
 [Collection(nameof(TracerInstanceTestCollection))]
 [TracerRestorer]
-public class CoordinatedSamplingTests(ITestOutputHelper output)
+public class CoordinatedSamplingTests
 {
     private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
     private const string TrueConditionJson = @"{ ""eq"": [1, 1] }";
@@ -184,6 +183,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         Assert.Equal(1, firstSampler.SampleCalls);
         Assert.Equal(1, secondSampler.SampleCalls);
         Assert.Equal(0, globalLimiter.ShouldSampleCallCount);
+        globalLimiter.CountSnapshotCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -214,6 +214,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
 
         Assert.Equal(4, sampler.SampleCalls);
         Assert.Equal(4, globalLimiter.ShouldSampleCallCount);
+        globalLimiter.CountSnapshotCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -259,7 +260,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
 
         long now = 0;
         using var globalLimiter = new DebuggerGlobalRateLimiter(
-            rate => new ClockedBucket(new BorrowingTokenBucket(rate), () => now),
+            rate => new ClockedBucket(BorrowingTokenBucket.Create(rate), () => now),
             new NullLogRateLimiter());
         globalLimiter.SetRate(2);
         var sampler = new CountingSampler(true);
@@ -269,15 +270,11 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
                       .Select(id => CreateProcessor(CreateLogProbe(id, captureSnapshot: true), globalLimiter))
                       .ToArray();
 
-        var snapshotsPerTrace = new int[3];
-        for (var i = 0; i < snapshotsPerTrace.Length; i++)
+        long[] traceStarts = [0, Stopwatch.Frequency * 3 / 4, 2 * Stopwatch.Frequency];
+        var snapshotsPerTrace = new int[traceStarts.Length];
+        for (var i = 0; i < traceStarts.Length; i++)
         {
-            now = i switch
-            {
-                0 => 0,
-                1 => Stopwatch.Frequency * 3 / 4,
-                _ => 2 * Stopwatch.Frequency,
-            };
+            now = traceStarts[i];
             using (tracer.StartActive($"request-{i}"))
             {
                 snapshotsPerTrace[i] += TryBeginAndDispose(parent, sampler) ? 1 : 0;
@@ -300,8 +297,6 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
     [Fact]
     public async Task GlobalLimitHoldsOverTimeWhenLaterSnapshotsWouldExceedIt()
     {
-        // If only parents counted, the entry points and their later probes would run well past the global limit.
-        // The clock is simulated.
         const int globalRate = 10;
         const int entryPoints = 5;
         const int entryPointRate = 2;
@@ -314,7 +309,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
 
         long now = 0;
         using var globalLimiter = new DebuggerGlobalRateLimiter(
-            rate => new ClockedBucket(new BorrowingTokenBucket(rate), () => now),
+            rate => new ClockedBucket(BorrowingTokenBucket.Create(rate), () => now),
             new NullLogRateLimiter());
         globalLimiter.SetRate(globalRate);
 
@@ -329,8 +324,7 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
 
         // A seeded order, so token refills don't line up with one entry point.
         var random = new Random(42);
-        var snapshotsPerSecond = new int[seconds];
-        var incompleteTraces = 0;
+        var total = 0;
         for (var second = 0; second < seconds; second++)
         {
             foreach (var entrySampler in entrySamplers)
@@ -350,18 +344,14 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
                         snapshots += TryBeginAndDispose(probe, laterSampler) ? 1 : 0;
                     }
 
-                    incompleteTraces += snapshots is 0 or 1 + laterProbes ? 0 : 1;
-                    snapshotsPerSecond[second] += snapshots;
+                    snapshots.Should().BeOneOf(0, 1 + laterProbes);
+                    total += snapshots;
                 }
             }
         }
 
-        var total = snapshotsPerSecond.Sum();
-        output.WriteLine($"{total} snapshots in {seconds} s, at most {snapshotsPerSecond.Max()} in one second");
-
         // A full bucket, then the rate, and the later snapshots of the last admitted trace.
         total.Should().BeInRange(globalRate * seconds * 95 / 100, globalRate + (globalRate * seconds) + laterProbes);
-        incompleteTraces.Should().Be(0);
         laterSampler.SampleCalls.Should().Be(0);
     }
 
@@ -438,12 +428,12 @@ public class CoordinatedSamplingTests(ITestOutputHelper output)
         void Count() => counted++;
 
         coordinator.TrySample("outer", new DelegateProvider(Sample, Count)).Should().Be(DebuggerSamplingDecision.Keep);
-        Assert.Equal(1, calls);
+        calls.Should().Be(1);
 
         // Neither the first probe nor the dropped nested hit is a later snapshot.
         counted.Should().Be(0);
         coordinator.TrySample("nested", new DelegateProvider(Sample, Count)).Should().Be(DebuggerSamplingDecision.Keep);
-        Assert.Equal(1, calls);
+        calls.Should().Be(1);
         counted.Should().Be(1);
     }
 

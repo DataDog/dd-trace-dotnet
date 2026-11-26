@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private IAdaptiveSampler _snapshotSampler;
         private bool _disposed;
 
-        // Not the adaptive sampler per-probe rates use: its moving average forgives snapshots counted past the rate.
+        // CountSnapshot needs a sampler that carries snapshots counted past the rate forward as debt.
         internal DebuggerGlobalRateLimiter()
             : this(BorrowingTokenBucket.Create, new LogRateLimiter(LogCooldownSeconds))
         {
@@ -94,7 +94,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
-                // Unlike per-probe rates, a new service rate replaces the bucket, so it starts full and drops any debt.
                 ReplaceSampler(Math.Max(samplesPerSecond.Value, 0));
             }
         }
@@ -126,6 +125,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
+        // Unlike per-probe rates, every rate change replaces the bucket. It starts full and drops any debt, and later
+        // snapshots of traces kept before the change count against the new rate.
         private void ReplaceSampler(double snapshotSamplesPerSecond)
         {
             AdaptiveSamplerLifetime.Replace(ref _snapshotSampler, _samplerFactory(snapshotSamplesPerSecond));

@@ -210,7 +210,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         internal static long GetSampleInterval(double samplesPerSecond)
         {
-            // Rates so small that the interval overflows a long are capped, so at most one sample is ever admitted.
+            // Expects a positive rate. An interval that overflows a long is capped, so at most one sample is admitted.
             var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond, MidpointRounding.ToEven);
             return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
         }

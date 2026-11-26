@@ -14,22 +14,21 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.Debugger.RateLimiting
 {
     /// <summary>
-    /// A token bucket that refills at the rate and holds one second of tokens, at least one. <see cref="Sample"/> takes a
-    /// token if one is left. <see cref="Keep"/> takes one even if none is, so the bucket can go into debt, and
-    /// <see cref="Sample"/> refuses until the refill pays it back. It stores only the time the next token is due, so it
-    /// is lock-free and allocates nothing.
+    /// A token bucket that refills at the given rate and, for a positive rate, holds as many whole tokens as one second
+    /// refills, and at least one. <see cref="Sample"/> takes a token if one is left. <see cref="Keep"/> takes one even
+    /// if none is, so the bucket can go into debt, and <see cref="Sample"/> refuses until the refill pays it back. It
+    /// stores only the time the next token is due, so it is lock-free and allocates nothing.
     /// </summary>
     internal sealed class BorrowingTokenBucket : IAdaptiveSampler
     {
         private readonly long _tokenIntervalTicks;
 
-        // How far before now the next token can be due: the rest of a full bucket.
+        // How far before now the next token is taken as due: a second's refill less one token (none below 1/s).
         private readonly long _burstTicks;
 
         private long _nextTokenDue;
 
-        [TestingAndPrivateOnly]
-        internal BorrowingTokenBucket(double tokensPerSecond)
+        private BorrowingTokenBucket(double tokensPerSecond)
         {
             if (double.IsNaN(tokensPerSecond) || tokensPerSecond <= 0)
             {
@@ -48,7 +47,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             _nextTokenDue = long.MinValue;
         }
 
-        public static IAdaptiveSampler Create(double tokensPerSecond) => new BorrowingTokenBucket(tokensPerSecond);
+        public static BorrowingTokenBucket Create(double tokensPerSecond) => new(tokensPerSecond);
 
         public bool Sample() => TryTake(Stopwatch.GetTimestamp());
 
@@ -97,8 +96,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        // The due time after one more token is taken. A bucket idle for longer than it takes to fill holds no more than a
-        // full bucket, so the due time stays within the burst of now. It saturates rather than wrapping.
+        // The due time after one more token is taken. An idle bucket fills no further than full, so the due time is
+        // never taken as more than the burst before now. It saturates rather than wrapping.
         private long After(long nextTokenDue, long timestamp)
         {
             var from = Math.Max(nextTokenDue, timestamp - _burstTicks);
