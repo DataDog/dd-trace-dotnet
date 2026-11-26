@@ -154,7 +154,9 @@ partial class Build
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
             var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
+            var snapshotName = AsUniversal
+                                   ? $"native-wrapper-symbols-universal-{UnixArchitectureIdentifier}"
+                                   : $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
         });
