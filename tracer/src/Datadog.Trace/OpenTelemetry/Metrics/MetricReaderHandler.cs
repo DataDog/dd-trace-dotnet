@@ -212,7 +212,8 @@ internal sealed class MetricReaderHandler
             return false;
         }
 
-        if (!char.IsLetter(name[0]))
+        // OTel spec instrument name syntax (ASCII only): ALPHA 0*254("_" / "." / "-" / "/" / ALPHA / DIGIT).
+        if (!char.IsAsciiLetter(name[0]))
         {
             return false;
         }
@@ -220,7 +221,7 @@ internal sealed class MetricReaderHandler
         for (int i = 1; i < name.Length; i++)
         {
             char c = name[i];
-            if (!char.IsLetterOrDigit(c) && c != '_' && c != '.' && c != '/' && c != '-')
+            if (!char.IsAsciiLetterOrDigit(c) && c != '_' && c != '.' && c != '/' && c != '-')
             {
                 return false;
             }
