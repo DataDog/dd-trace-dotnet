@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
@@ -22,11 +23,14 @@ namespace Datadog.Trace.OpenTelemetry.Metrics;
 /// </summary>
 internal sealed class MetricReaderHandler
 {
+    // Compares stream names for the duplicate-stream warning; MetricStreamIdentity normalizes them.
+    [TestingAndPrivateOnly]
+    internal static readonly StringComparer StreamNameComparer = StringComparer.Ordinal;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReaderHandler));
     private readonly TracerSettings _settings;
     private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
     // Number of registered streams per stream name: different identities can share a name.
-    private readonly Dictionary<string, int> _streamNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int> _streamNames = new(StreamNameComparer);
     private readonly Queue<MetricState> _completedStreams = new();
     // Guards stream registration and removal, _streamNames, _completedStreams and the instrument count of each stream.
     private readonly object _registrationLock = new();
@@ -123,7 +127,7 @@ internal sealed class MetricReaderHandler
 
         if (duplicateName)
         {
-            Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", identity.MetricStreamName);
+            Log.Warning("Duplicate metric stream detected for instrument '{InstrumentName}': {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", instrument.Name, identity.MetricStreamName);
         }
 
         // Enabled after registration: enabling can complete the stream right away (disposed meter).

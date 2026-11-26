@@ -1046,6 +1046,29 @@ namespace Datadog.Trace.Tests
 
 #if NET8_0_OR_GREATER
         [Fact]
+        public void StreamNamesIgnoreCaseOnlyInTheInstrumentName()
+        {
+            // The duplicate-stream warning fires when two streams' names are equal under StreamNameComparer.
+            var comparer = MetricReaderHandler.StreamNameComparer;
+            using var prodMeter = new Meter("TestMeter.StreamName", null, [new KeyValuePair<string, object>("env", "Prod")]);
+            using var lowerProdMeter = new Meter("TestMeter.StreamName", null, [new KeyValuePair<string, object>("env", "prod")]);
+
+            // Meter tags that differ only in case: separate streams with separate names, so no warning.
+            var prod = new MetricStreamIdentity(prodMeter.CreateCounter<long>("requests"), InstrumentType.Counter);
+            var lowerProd = new MetricStreamIdentity(lowerProdMeter.CreateCounter<long>("requests"), InstrumentType.Counter);
+            prod.Should().NotBe(lowerProd);
+            comparer.Equals(prod.MetricStreamName, lowerProd.MetricStreamName).Should().BeFalse();
+
+            // Instrument names that differ only in case, in separate streams (integer and floating-point):
+            // the same stream name, so the warning still fires.
+            var doubleRequests = new MetricStreamIdentity(prodMeter.CreateCounter<double>("REQUESTS"), InstrumentType.Counter);
+            prod.Should().NotBe(doubleRequests);
+            comparer.Equals(prod.MetricStreamName, doubleRequests.MetricStreamName).Should().BeTrue();
+        }
+#endif
+
+#if NET8_0_OR_GREATER
+        [Fact]
         public async Task InstrumentsFromATaggedMeterWithTheSameIdentityShareOneStream()
         {
             var settings = TracerSettings.Create(new());
