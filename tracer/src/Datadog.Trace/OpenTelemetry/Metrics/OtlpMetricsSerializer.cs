@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -48,11 +49,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         }
 
         /// <summary>
-        /// Formats an attribute value the way it is exported: every attribute is serialized as a string.
+        /// Formats an attribute value the way it is exported: every attribute (meter tags and data point tags) is
+        /// serialized as a string, with the invariant culture so the text doesn't depend on the current thread's culture.
         /// <see cref="MetricStreamIdentity"/> compares meter tag values with this same text, so that meters
         /// exported as the same scope are the same stream.
         /// </summary>
-        internal static string FormatAttributeValue(object? value) => value?.ToString() ?? string.Empty;
+        internal static string FormatAttributeValue(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
 
         /// <summary>
         /// Creates a deterministic string key from meter tags, used for scope grouping and the metric stream name.
@@ -403,7 +405,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, FormatAttributeValue(tag.Value));
                 WriteTag(writer, FieldNumbers.NumberDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
@@ -436,7 +438,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, FormatAttributeValue(tag.Value));
                 WriteTag(writer, FieldNumbers.NumberDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
@@ -461,7 +463,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, FormatAttributeValue(tag.Value));
                 WriteTag(writer, FieldNumbers.HistogramDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
