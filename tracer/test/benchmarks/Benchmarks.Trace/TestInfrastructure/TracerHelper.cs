@@ -43,6 +43,16 @@ public static class TracerHelper
         return new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
     }
 
+    // Auto-instrumentation resolves Tracer.Instance; install the dummy tracer globally so
+    // the benchmark doesn't lazily create a real tracer (real AgentWriter, discovery
+    // service, remote config, heartbeat) that targets a non-existent agent
+    public static Tracer CreateAndSetGlobalTracer(TracerSettings settings)
+    {
+        var tracer = CreateTracer(settings);
+        Tracer.UnsafeSetTracerInstance(tracer);
+        return tracer;
+    }
+
     public static void SetGlobalTracer(Dictionary<string, object> config = null)
     {
         Tracer.UnsafeSetTracerInstance(CreateTracer(config));
