@@ -43,13 +43,13 @@ Tags& Tags::operator=(Tags&& tags) noexcept
 
 libdatadog::Success Tags::Add(std::string const& name, std::string const& value)
 {
-    auto ffiName = to_char_slice(name);
-    auto ffiValue = to_char_slice(value);
+    auto ffiName = to_poc_char_slice(name);
+    auto ffiValue = to_poc_char_slice(value);
 
-    auto pushResult = ddog_Vec_Tag_push(&_impl->_tags, ffiName, ffiValue);
-    if (pushResult.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    auto pushResult = ddog_vec_tag_push(&_impl->_tags, ffiName, ffiValue);
+    if (pushResult != DDOG_OK)
     {
-        return make_error(pushResult.err);
+        return make_error(pushResult);
     }
     return make_success();
 }

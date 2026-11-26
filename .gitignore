@@ -375,6 +375,11 @@ libdatadog-*/
 cmake-build-debug/
 .cmake/
 
+# shared/src/datadog-profiling-poc's standalone CMake build output - its own
+# top-level files (CMakeCache.txt etc. are already covered above, but
+# cmake_install.cmake/the built .so/the manual_smoke binary are not)
+shared/src/datadog-profiling-poc/build/
+
 #jetbrains cache folder
 .cache/jb
 

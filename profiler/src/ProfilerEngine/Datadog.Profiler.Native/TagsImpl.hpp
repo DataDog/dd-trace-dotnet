@@ -6,8 +6,8 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 namespace libdatadog {
@@ -18,18 +18,18 @@ public:
     TagsImpl(bool releaseOnClose = true) :
         _releaseOnClose{releaseOnClose}
     {
-        _tags = ddog_Vec_Tag_new();
+        ddog_vec_tag_new(&_tags);
     }
 
     ~TagsImpl()
     {
         if (_releaseOnClose)
         {
-            ddog_Vec_Tag_drop(_tags);
+            ddog_vec_tag_drop(&_tags);
         }
     }
 
-    explicit operator ddog_Vec_Tag*()
+    explicit operator ddog_vec_tag*()
     {
         return &_tags;
     }
@@ -37,7 +37,7 @@ public:
     TagsImpl(TagsImpl const&) = delete;
     TagsImpl& operator=(TagsImpl const&) = delete;
 
-    ddog_Vec_Tag _tags;
+    ddog_vec_tag _tags;
     bool _releaseOnClose;
 };
 } // namespace libdatadog

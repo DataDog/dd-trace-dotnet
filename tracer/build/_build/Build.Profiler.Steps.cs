@@ -262,7 +262,13 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
+            // libdatadog_profiling_poc.so is the C replacement for libdatadog's
+            // profile-upload path (see shared/src/datadog-profiling-poc/README.md).
+            // Datadog.Profiler.Native.so links it as a shared library (its glibc
+            // requirements prevent statically linking it into the profiler), so it
+            // must be shipped in the monitoring home next to the profiler, like
+            // libdatadog_profiling.so.
+            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so", "libdatadog_profiling_poc.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
@@ -897,7 +903,15 @@ partial class Build
             var filesAndVersion = new []
             {
                 (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
-                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
+                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}"),
+                // The C replacement for libdatadog's profiling-upload path
+                // (shared/src/datadog-profiling-poc). Its glibc requirement is 2.17 on both
+                // architectures (its only >= 2.16 symbol is clock_gettime@GLIBC_2.17; on arm64
+                // everything else maps to the aarch64 glibc 2.17 baseline). The vendored curl
+                // must NOT define _FILE_OFFSET_BITS (it would redirect fcntl to
+                // fcntl64@GLIBC_2.28) and must not link zlib/brotli/zstd - see the PoC's
+                // CMakeLists.txt, which forces those curl options off at the cache level.
+                ("libdatadog_profiling_poc", new Version(2, 17), null, $"native-libdatadog-poc-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
             var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);

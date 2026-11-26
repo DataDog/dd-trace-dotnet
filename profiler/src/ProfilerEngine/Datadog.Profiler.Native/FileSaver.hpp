@@ -16,8 +16,8 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 namespace libdatadog {
@@ -89,20 +89,20 @@ public:
     }
 
 private:
-    Success WriteProfileToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName, std::string const& uid)
+    Success WriteProfileToDisk(ddog_prof_encoded_profile* profile, std::string const& serviceName, std::string const& uid)
     {
         // no specific filename for the pprof file
         auto filepath = GenerateFilePath("", ".pprof", serviceName, uid);
-        auto resultBytes = ddog_prof_EncodedProfile_bytes(profile);
 
-        if (resultBytes.tag == DDOG_PROF_RESULT_BYTE_SLICE_ERR_BYTE_SLICE)
+        const uint8_t* bufferPtr = nullptr;
+        std::size_t bufferSize = 0;
+        auto rc = ddog_prof_encoded_profile_bytes(profile, &bufferPtr, &bufferSize);
+
+        if (rc != DDOG_OK)
         {
-            return make_error(resultBytes.err);
+            return make_error(rc);
         }
 
-        auto bufferPtr = resultBytes.ok.ptr;
-        auto bufferSize = static_cast<std::size_t>(resultBytes.ok.len);
-        
         return WriteFileToDisk(filepath, (char const*)bufferPtr, bufferSize);
     }
 
