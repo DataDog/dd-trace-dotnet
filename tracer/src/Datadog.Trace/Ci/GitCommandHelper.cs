@@ -134,12 +134,12 @@ internal static class GitCommandHelper
                 Log.Debug("GitCommandHelper: Git command {Command}", txt);
             }
 
-            // Write the git result to the cache. A timed-out command isn't cached, so the next call runs it again.
+            // Write the git result to the cache
             try
             {
                 if (useCache &&
                         !string.IsNullOrEmpty(cacheKey) &&
-                        gitOutput is { TimedOut: false } &&
+                        gitOutput is not null &&
                         JsonHelper.SerializeObject(gitOutput) is { } jsonValue)
                 {
                         File.WriteAllText(cacheKey, jsonValue);

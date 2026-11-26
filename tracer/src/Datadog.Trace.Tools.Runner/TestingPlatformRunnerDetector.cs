@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -79,28 +81,21 @@ internal static class TestingPlatformRunnerDetector
     {
         try
         {
-            var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command(program, "--version", workingDirectory, timeout: SdkVersionTimeout));
-            if (output is null)
-            {
-                Log.Warning("RunCiCommand: '{Program} --version' couldn't be started, so the .NET SDK version is unknown.", program);
-                return null;
-            }
-
-            if (output.TimedOut)
+            if (!TryRunWithTimeout(program, "--version", workingDirectory, SdkVersionTimeout, out var output, out var error, out var exitCode))
             {
                 Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, SdkVersionTimeout);
                 return null;
             }
 
             // The version is the last line, after any first-run message of the SDK.
-            var lines = output.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-            if (output.ExitCode == 0 && lines.Length > 0 &&
+            var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+            if (exitCode == 0 && lines.Length > 0 &&
                 int.TryParse(lines[lines.Length - 1].Trim().Split('.')[0], NumberStyles.None, CultureInfo.InvariantCulture, out var majorVersion))
             {
                 return majorVersion;
             }
 
-            Log.Warning<string, int, string>("RunCiCommand: Unable to read the .NET SDK version from '{Program} --version' (exit code {ExitCode}): {Output}", program, output.ExitCode, output.Output + output.Error);
+            Log.Warning<string, int, string>("RunCiCommand: Unable to read the .NET SDK version from '{Program} --version' (exit code {ExitCode}): {Output}", program, exitCode, output + error);
         }
         catch (Exception ex)
         {
@@ -108,6 +103,62 @@ internal static class TestingPlatformRunnerDetector
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Runs a process and returns its output, stopping it when it doesn't finish within the timeout.
+    /// </summary>
+    /// <remarks>
+    /// <c>ProcessHelpers.RunCommand</c> isn't used because it blocks reading the output before it checks its timeout. Both
+    /// streams are drained asynchronously instead, which is fine in the runner: it only runs on .NET Core, without AppDomains.
+    /// </remarks>
+    [TestingAndPrivateOnly]
+    internal static bool TryRunWithTimeout(string fileName, string arguments, string? workingDirectory, TimeSpan timeout, out string output, out string error, out int exitCode)
+    {
+        output = string.Empty;
+        error = string.Empty;
+        exitCode = -1;
+        var startInfo = new ProcessStartInfo(fileName, arguments)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        if (workingDirectory is not null)
+        {
+            startInfo.WorkingDirectory = workingDirectory;
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return false;
+        }
+
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit((int)timeout.TotalMilliseconds) ||
+            !Task.WaitAll([outputTask, errorTask], timeout > stopwatch.Elapsed ? timeout - stopwatch.Elapsed : TimeSpan.Zero))
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex)
+            {
+                // The process can exit on its own between the timeout and the kill.
+                Log.Debug(ex, "RunCiCommand: Unable to stop '{FileName}' after the timeout.", fileName);
+            }
+
+            return false;
+        }
+
+        output = outputTask.Result;
+        error = errorTask.Result;
+        exitCode = process.ExitCode;
+        return true;
     }
 
     private static string? GetGlobalJsonTestRunner(string? workingDirectory)
