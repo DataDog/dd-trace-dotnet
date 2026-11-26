@@ -59,16 +59,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
-            profilerRuntimeIds.Distinct().Should().ContainSingle();
-            tracerRuntimeIds.Distinct().Should().ContainSingle();
+            var profilerRuntimeId = profilerRuntimeIds.Distinct().Should().ContainSingle().Which;
+            var tracerRuntimeId = tracerRuntimeIds.Distinct().Should().ContainSingle().Which;
 
-            var profilerRuntimeId = profilerRuntimeIds.First();
-            profilerRuntimeId.Should().NotBeNull();
-            profilerRuntimeId.Should().NotBeEmpty();
-
-            var tracerRuntimeId = tracerRuntimeIds.First();
-            tracerRuntimeId.Should().NotBeNull();
-            tracerRuntimeId.Should().NotBeEmpty();
+            profilerRuntimeId.Should().NotBeNullOrEmpty();
+            tracerRuntimeId.Should().NotBeNullOrEmpty();
 
             profilerRuntimeId.Should().Be(tracerRuntimeId);
 
@@ -107,16 +102,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
-            profilerRuntimeIds.Distinct().Should().ContainSingle();
-            tracerRuntimeIds.Distinct().Should().ContainSingle();
+            var profilerRuntimeId = profilerRuntimeIds.Distinct().Should().ContainSingle().Which;
+            var tracerRuntimeId = tracerRuntimeIds.Distinct().Should().ContainSingle().Which;
 
-            var profilerRuntimeId = profilerRuntimeIds.First();
-            profilerRuntimeId.Should().NotBeNull();
-            profilerRuntimeId.Should().NotBeEmpty();
-
-            var tracerRuntimeId = tracerRuntimeIds.First();
-            tracerRuntimeId.Should().NotBeNull();
-            tracerRuntimeId.Should().NotBeEmpty();
+            profilerRuntimeId.Should().NotBeNullOrEmpty();
+            tracerRuntimeId.Should().NotBeNullOrEmpty();
 
             profilerRuntimeId.Should().Be(tracerRuntimeId);
 
@@ -155,16 +145,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
-            profilerRuntimeIds.Distinct().Should().ContainSingle();
-            tracerRuntimeIds.Distinct().Should().ContainSingle();
+            var profilerRuntimeId = profilerRuntimeIds.Distinct().Should().ContainSingle().Which;
+            var tracerRuntimeId = tracerRuntimeIds.Distinct().Should().ContainSingle().Which;
 
-            var profilerRuntimeId = profilerRuntimeIds.First();
-            profilerRuntimeId.Should().NotBeNull();
-            profilerRuntimeId.Should().NotBeEmpty();
-
-            var tracerRuntimeId = tracerRuntimeIds.First();
-            tracerRuntimeId.Should().NotBeNull();
-            tracerRuntimeId.Should().NotBeEmpty();
+            profilerRuntimeId.Should().NotBeNullOrEmpty();
+            tracerRuntimeId.Should().NotBeNullOrEmpty();
 
             profilerRuntimeId.Should().Be(tracerRuntimeId);
 
@@ -205,16 +190,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
-            profilerRuntimeIds.Distinct().Should().ContainSingle();
-            tracerRuntimeIds.Distinct().Should().ContainSingle();
+            var profilerRuntimeId = profilerRuntimeIds.Distinct().Should().ContainSingle().Which;
+            var tracerRuntimeId = tracerRuntimeIds.Distinct().Should().ContainSingle().Which;
 
-            var profilerRuntimeId = profilerRuntimeIds.First();
-            profilerRuntimeId.Should().NotBeNull();
-            profilerRuntimeId.Should().NotBeEmpty();
-
-            var tracerRuntimeId = tracerRuntimeIds.First();
-            tracerRuntimeId.Should().NotBeNull();
-            tracerRuntimeId.Should().NotBeEmpty();
+            profilerRuntimeId.Should().NotBeNullOrEmpty();
+            tracerRuntimeId.Should().NotBeNullOrEmpty();
 
             profilerRuntimeId.Should().Be(tracerRuntimeId);
 

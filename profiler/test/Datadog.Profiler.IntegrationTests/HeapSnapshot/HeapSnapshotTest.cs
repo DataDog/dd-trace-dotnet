@@ -91,11 +91,11 @@ namespace Datadog.Profiler.IntegrationTests
                     return true;
                 });
 
-                containsString.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.String type");
-                containsRuntimeTypes.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.Runtime type");
-                containsStackOverflowException.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.StackOverflowException type");
-                containsOutofMemoryException.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain System.OutOfMemoryException type");
-                containsComputer01Scenario.Should().BeTrue($"Heap snapshot file {heapSnapshotFile} does not contain Samples.Computer01.Scenario type");
+                containsString.Should().BeTrue("heap snapshot file {0} should contain System.String", heapSnapshotFile);
+                containsRuntimeTypes.Should().BeTrue("heap snapshot file {0} should contain System.Runtime", heapSnapshotFile);
+                containsStackOverflowException.Should().BeTrue("heap snapshot file {0} should contain System.StackOverflowException", heapSnapshotFile);
+                containsOutofMemoryException.Should().BeTrue("heap snapshot file {0} should contain System.OutOfMemoryException", heapSnapshotFile);
+                containsComputer01Scenario.Should().BeTrue("heap snapshot file {0} should contain Samples.Computer01.Scenario", heapSnapshotFile);
             }
         }
     }

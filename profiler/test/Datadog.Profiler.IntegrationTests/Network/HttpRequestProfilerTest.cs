@@ -262,10 +262,10 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 var requestDurationLabel = labels.GetRequired(ProfileLabelNames.RequestDuration);
                 requestDurationLabel.Should().NotBeNullOrWhiteSpace();
                 double.TryParse(requestDurationLabel, out double requestDuration).Should().BeTrue();
-                requestDuration.Should().BeGreaterOrEqualTo(3L * 900 * 1000000);  // avoid flaky test but should be larger than 3 x 1000ms
+                requestDuration.Should().BeGreaterThanOrEqualTo(3L * 900 * 1000000);  // avoid flaky test but should be larger than 3 x 1000ms
 
                 double.TryParse(labels.GetRequired(ProfileLabelNames.ResponseContentDuration), out double responseDuration).Should().BeTrue();
-                responseDuration.Should().BeGreaterOrEqualTo(1500L * 1000000);  // avoid flaky test but should be larger than 2000ms
+                responseDuration.Should().BeGreaterThanOrEqualTo(1500L * 1000000);  // avoid flaky test but should be larger than 2000ms
             }
 
             checkedSamples.Should().BePositive();

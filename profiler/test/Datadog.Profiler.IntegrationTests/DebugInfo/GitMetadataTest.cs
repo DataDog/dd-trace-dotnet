@@ -86,9 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
             tracerGitMetadata.Should().BeEmpty();
-            profilerGitMetadata.Should().ContainSingle();
-
-            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
+            profilerGitMetadata.Should().ContainSingle().Which.Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -104,9 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
             tracerGitMetadata.Should().BeEmpty();
-            profilerGitMetadata.Should().ContainSingle();
-
-            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
+            profilerGitMetadata.Should().ContainSingle().Which.Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -119,9 +115,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var (profilerGitMetadata, tracerGitMetadata) = RunTest(runner);
 
             tracerGitMetadata.Should().BeEmpty();
-            profilerGitMetadata.Should().ContainSingle();
-
-            profilerGitMetadata.First().Should().Be(new GitMetadata("https://Myrepository", "42"));
+            profilerGitMetadata.Should().ContainSingle().Which.Should().Be(new GitMetadata("https://Myrepository", "42"));
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
