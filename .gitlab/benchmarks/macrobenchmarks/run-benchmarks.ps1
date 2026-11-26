@@ -3,7 +3,15 @@ $ErrorActionPreference = "Stop"
 if (-not $env:BENCHMARKING_PLATFORM_DIR) {
     $env:BENCHMARKING_PLATFORM_DIR = "C:\benchmarking-platform"
 }
-$ddTraceDotNetDir = "$env:BENCHMARKING_PLATFORM_DIR\dd-trace-dotnet"
+# The ephemeral Windows instance clones dd-trace-dotnet once to run this
+# suite; when this script runs from that checkout, reuse it for the SUT
+# instead of cloning the repository a second time.
+$repoRoot = "$PSScriptRoot\..\..\.."
+if ((Test-Path "$repoRoot\.git") -and (Test-Path "$repoRoot\tracer")) {
+    $ddTraceDotNetDir = (Resolve-Path $repoRoot).Path
+} else {
+    $ddTraceDotNetDir = "$env:BENCHMARKING_PLATFORM_DIR\dd-trace-dotnet"
+}
 $buildArtifactsDir = "$ddTraceDotNetDir\build-artifacts"
 $tracerHomeWinDir = "$ddTraceDotNetDir\tracer\tracer-home-win"
 
@@ -15,9 +23,18 @@ function Clone-DotNetRepo {
       Write-Output "Not running from dd-trace-dotnet's CI. Setting cloned dd-trace-dotnet branch to '$branch'..."
     }
 
-    git clone https://github.com/DataDog/dd-trace-dotnet.git $ddTraceDotNetDir
-    Set-Location $ddTraceDotNetDir
-    git checkout $branch
+    if (Test-Path "$ddTraceDotNetDir\.git") {
+        # Reuse the existing dd-trace-dotnet checkout (the suite checkout on
+        # the ephemeral instance): fetch and check out the ref there instead of
+        # cloning the repository again.
+        Set-Location $ddTraceDotNetDir
+        git fetch origin
+        git checkout $branch
+    } else {
+        git clone https://github.com/DataDog/dd-trace-dotnet.git $ddTraceDotNetDir
+        Set-Location $ddTraceDotNetDir
+        git checkout $branch
+    }
 
     Write-Output "Preparing Samples.AspNetCoreSimpleController to use .NET 9..."
     (Get-Content './tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj' -Raw) -replace '<TargetFramework>net5.0</TargetFramework>', '<TargetFramework>net9.0</TargetFramework>' | Set-Content './tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj'

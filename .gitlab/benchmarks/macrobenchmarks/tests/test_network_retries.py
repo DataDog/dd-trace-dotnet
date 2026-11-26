@@ -282,7 +282,7 @@ time.sleep(10)
         records = [{"name": stage, "state": "completed", "result": "succeeded"}
                    for stage in stages]
         self.routes[timeline_path] = [(200, json.dumps({"records": records}).encode(), False)]
-        # The production script also writes ../build-id.txt.
+        # The production script writes build-id.txt in its working directory.
         (self.work / "pipeline").mkdir()
         return builds_path, timeline_path
 
