@@ -67,7 +67,6 @@ namespace Datadog.Trace.Activity
 
             return activity.DuckAs<IActivity6>() ??
                    activity.DuckAs<IActivity5>() ??
-                   activity.DuckAs<IActivity>() ??
                    activity.DuckAs<IActivity>();
         }
 

@@ -36,6 +36,8 @@ namespace Datadog.Trace.Activity
                 // Create delegate for OnNext + Activity
                 var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
 
+                // Initialize() only creates this listener for DiagnosticSource [4.0.4, 5.0), whose Activity
+                // type always has the W3C fields that IActivity binds to
                 var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType!);
 
                 var onNextActivityProxyResultProxyType = onNextActivityProxyResult.ProxyType;
