@@ -121,9 +121,6 @@ build:
   extends: .linux-docker
   stage: build
   timeout: 90m
-  needs:
-    - job: resolve-linux-ci-images
-      artifacts: true
   script:
     - |
       set -eu
@@ -197,9 +194,6 @@ build-linux-tracer-arm64-musl:
   extends: .linux-docker
   stage: build
   timeout: 90m
-  needs:
-    - job: resolve-linux-ci-images
-      artifacts: true
   script:
     - |
       set -eu
@@ -276,9 +270,6 @@ build-linux-profiler-arm64-musl:
   extends: .linux-docker
   stage: build
   timeout: 60m
-  needs:
-    - job: resolve-linux-ci-images
-      artifacts: true
   script:
     - |
       set -eu
