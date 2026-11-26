@@ -41,6 +41,19 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
                 return new[] { CreateError(testMethod, $"Unknown test application '{application}'.") };
             }
 
+            var skipReason = factAttribute.GetNamedArgument<string>(nameof(TestAppFact.Skip));
+            if (!string.IsNullOrEmpty(skipReason))
+            {
+                MessageSink.OnMessage(new DiagnosticMessage("Skipping test. Reason: {0}", skipReason));
+                return new[]
+                {
+                    new SkippableTestCase(
+                        skipReason,
+                        testMethod,
+                        new object[] { new TestAppContext(descriptor, TestFramework.None) })
+                };
+            }
+
             var appFolderPath = TestApplicationRunner.GetApplicationOutputFolderPath(descriptor.FolderName);
             MessageSink.OnMessage(new DiagnosticMessage("Discovering tests case in {0} for application {1}", appFolderPath, descriptor.FolderName));
 
