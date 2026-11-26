@@ -131,11 +131,7 @@ internal static class TestingPlatformRunnerDetector
         }
 
         var stopwatch = Stopwatch.StartNew();
-        using var process = Process.Start(startInfo);
-        if (process is null)
-        {
-            return false;
-        }
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"'{fileName}' couldn't be started.");
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
