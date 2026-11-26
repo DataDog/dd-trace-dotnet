@@ -24,6 +24,31 @@ include:
   - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
     file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
     ref: 'main'
+  # Manual, allowed-to-fail Speedlab macrobenchmarks measuring this pipeline's build.
+  - project: 'DataDog/apm-reliability/speedlab'
+    ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+    file: '.gitlab/ci-sdk-dotnet-aspnet-realworld.yml'
+    inputs:
+      stage: benchmarks
+      speedlab_ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+  - project: 'DataDog/apm-reliability/speedlab'
+    ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+    file: '.gitlab/ci-sdk-dotnet-aspnet-simplecontroller-tracer.yml'
+    inputs:
+      stage: benchmarks
+      speedlab_ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+  - project: 'DataDog/apm-reliability/speedlab'
+    ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+    file: '.gitlab/ci-sdk-dotnet-aspnet-simplecontroller-profiler.yml'
+    inputs:
+      stage: benchmarks
+      speedlab_ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+  - project: 'DataDog/apm-reliability/speedlab'
+    ref: 'fayssal/sdk-ci-dd-trace-dotnet'
+    file: '.gitlab/ci-sdk-dotnet-kafka-dsm.yml'
+    inputs:
+      stage: benchmarks
+      speedlab_ref: 'fayssal/sdk-ci-dd-trace-dotnet'
 
 variables:
   DOTNET_PACKAGE_VERSION:
