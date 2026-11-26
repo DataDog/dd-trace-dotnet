@@ -1068,6 +1068,38 @@ namespace Datadog.Trace.Tests
 #endif
 
 #if NET8_0_OR_GREATER
+        [Theory]
+        [InlineData(1, 1L, true)]     // int and long: not Equals, both exported as "1"
+        [InlineData(null, "", true)]  // both exported as an empty string
+        [InlineData(1, 2, false)]     // exported differently: separate streams
+        public async Task InstrumentsFromMetersWhoseTagValuesAreExportedAlikeShareOneStream(object firstValue, object secondValue, bool shareOneStream)
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string name = "test.sync.tag.value.text";
+            using var firstMeter = new Meter("TestMeter.TagValueText", null, [new KeyValuePair<string, object>("region", firstValue)]);
+            using var secondMeter = new Meter("TestMeter.TagValueText", null, [new KeyValuePair<string, object>("region", secondValue)]);
+            firstMeter.CreateCounter<long>(name).Add(5);
+            secondMeter.CreateCounter<long>(name).Add(3);
+
+            await pipeline.ForceCollectAndExportAsync();
+            var sums = testExporter.ExportedMetrics.Where(m => m.InstrumentName == name).Select(m => m.SnapshotSum);
+            if (shareOneStream)
+            {
+                sums.Should().Equal(8.0);
+            }
+            else
+            {
+                sums.Should().BeEquivalentTo([5.0, 3.0]);
+            }
+        }
+#endif
+
+#if NET8_0_OR_GREATER
         [Fact]
         public async Task InstrumentsFromATaggedMeterWithTheSameIdentityShareOneStream()
         {

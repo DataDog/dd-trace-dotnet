@@ -48,6 +48,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         }
 
         /// <summary>
+        /// Formats an attribute value the way it is exported: every attribute is serialized as a string.
+        /// <see cref="MetricStreamIdentity"/> compares meter tag values with this same text, so that meters
+        /// exported as the same scope are the same stream.
+        /// </summary>
+        internal static string FormatAttributeValue(object? value) => value?.ToString() ?? string.Empty;
+
+        /// <summary>
         /// Creates a deterministic string key from meter tags, used for scope grouping and the metric stream name.
         /// Sorts a copy to avoid mutating the original array.
         /// </summary>
@@ -70,11 +77,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     sb.Append(';');
                 }
 
-                sb.Append(copy[i].Key).Append('=');
-                if (copy[i].Value is not null)
-                {
-                    sb.Append(copy[i].Value);
-                }
+                sb.Append(copy[i].Key).Append('=').Append(FormatAttributeValue(copy[i].Value));
             }
 
             return sb.ToString();
@@ -270,7 +273,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             for (int i = 0; i < meterTags.Length; i++)
             {
                 var tag = meterTags[i];
-                var attributeData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attributeData = SerializeKeyValue(tag.Key, FormatAttributeValue(tag.Value));
                 WriteTag(writer, FieldNumbers.ScopeAttributes, LengthDelimited);
                 WriteVarInt(writer, attributeData.Length);
                 writer.Write(attributeData);

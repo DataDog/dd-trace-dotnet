@@ -42,8 +42,8 @@ internal sealed class MetricReaderHandler
 
     public void OnInstrumentPublished(Instrument instrument, MeterListener listener)
     {
-        // Runs synchronously in the application's Meter.CreateXxx call, and calls ToString, Equals and GetHashCode
-        // on the application's meter tag values: never let an exception escape into the application.
+        // Runs synchronously in the application's Meter.CreateXxx call, and calls ToString on the application's
+        // meter tag values: never let an exception escape into the application.
         try
         {
             RegisterInstrument(instrument, listener);

@@ -21,6 +21,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     /// </summary>
     internal readonly struct MetricStreamIdentity : IEquatable<MetricStreamIdentity>
     {
+        // MeterTags values as exported (OtlpMetricsSerializer.FormatAttributeValue), computed once in the constructor.
+        private readonly string[] _meterTagValues;
+
         public MetricStreamIdentity(Instrument instrument, InstrumentType instrumentType)
         {
             InstrumentName = instrument.Name;
@@ -30,6 +33,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             // Duck typing works at runtime - checks if Tags property exists (.NET 8+)
             var meterDuck = instrument.Meter.DuckAs<IMeterDuck>();
             MeterTags = meterDuck?.Tags?.ToArray() ?? [];
+            _meterTagValues = new string[MeterTags.Length];
+            for (var i = 0; i < MeterTags.Length; i++)
+            {
+                _meterTagValues[i] = OtlpMetricsSerializer.FormatAttributeValue(MeterTags[i].Value);
+            }
+
             MeterSchemaUrl = instrument.Meter.DuckAs<IMeterSchemaUrlDuck>()?.TelemetrySchemaUrl ?? string.Empty;
 
             Unit = instrument.Unit ?? string.Empty;
@@ -86,7 +95,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             if (!string.Equals(InstrumentName, other.InstrumentName, StringComparison.OrdinalIgnoreCase) ||
                 MeterName != other.MeterName ||
                 MeterVersion != other.MeterVersion ||
-                !TagsEqual(MeterTags, other.MeterTags) ||
+                !MeterTagsEqual(in other) ||
                 MeterSchemaUrl != other.MeterSchemaUrl ||
                 Unit != other.Unit ||
                 Description != other.Description ||
@@ -119,24 +128,28 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             for (int i = 0; i < MeterTags.Length; i++)
             {
                 hashCode.Add(MeterTags[i].Key);
-                hashCode.Add(MeterTags[i].Value);
+                hashCode.Add(_meterTagValues[i]);
             }
 
             return hashCode.ToHashCode();
         }
 
-        // Compared by value, as OTel .NET does (MetricStreamIdentity and Tags): meters are identical when all
-        // their parameters are equal (OTel metrics API spec, "Meter"), and each identity copies the tags into a new array.
-        private static bool TagsEqual(KeyValuePair<string, object?>[] left, KeyValuePair<string, object?>[] right)
+        // Meters are identical when all their parameters are equal (OTel metrics API spec, "Meter"). Tag values are
+        // compared by the text they are exported as (OtlpMetricsSerializer.FormatAttributeValue), not by the spec's
+        // typed equality: this exporter writes every attribute as a string, so meters exported as the same scope are
+        // made the same stream instead of two streams with overlapping points in one OTLP metric. This deliberately
+        // also merges values the spec types apart, such as 1 and "1", or null and "".
+        private bool MeterTagsEqual(in MetricStreamIdentity other)
         {
-            if (left.Length != right.Length)
+            if (MeterTags.Length != other.MeterTags.Length)
             {
                 return false;
             }
 
-            for (var i = 0; i < left.Length; i++)
+            for (var i = 0; i < MeterTags.Length; i++)
             {
-                if (!string.Equals(left[i].Key, right[i].Key, StringComparison.Ordinal) || !Equals(left[i].Value, right[i].Value))
+                if (!string.Equals(MeterTags[i].Key, other.MeterTags[i].Key, StringComparison.Ordinal)
+                    || !string.Equals(_meterTagValues[i], other._meterTagValues[i], StringComparison.Ordinal))
                 {
                     return false;
                 }
