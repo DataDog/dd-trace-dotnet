@@ -7,8 +7,8 @@ target_include_directories(spdlog-headers INTERFACE
 # We don't use spdlog's MDC (Mapped Diagnostic Context) feature, added in spdlog 1.13. Its
 # header instantiates a `thread_local std::map<std::string, std::string>` inside the
 # formatter, whose non-trivial destructor forces libc++abi's __cxa_thread_atexit_impl
-# machinery to be linked in. In the "universal" Linux build (build/cmake/Universal.cmake.*)
-# we statically link libc++abi, whose TLS variables (__cxxabiv1::dtors / dtors_alive) were
+# machinery to be linked in. The original universal Linux toolchain statically linked
+# libc++abi, whose TLS variables (__cxxabiv1::dtors / dtors_alive) were
 # compiled with the Local Exec model — incompatible with shared libraries. Result: link
 # error "R_X86_64_TPOFF32 / R_AARCH64_TLSLE_* against __cxxabiv1::dtors[_alive] cannot be
 # used with -shared".
