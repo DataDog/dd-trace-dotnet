@@ -1,6 +1,12 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+## Unreleased
+
+### Build / Test
+* Move dsm-throughput suite into this repo, stop cloning benchmarking-platform (#9827)
+
+
 
 
 

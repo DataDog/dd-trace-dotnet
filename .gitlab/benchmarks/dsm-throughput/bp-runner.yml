@@ -81,7 +81,7 @@ global_teardown:
     project: dd-trace-dotnet
 
 docker_config_for_local_runs:
-  image_name: bp_dotnet-java-dsm_kafka-worker
+  image_name: bp_dotnet-dsm_kafka-worker
   volumes:
     - logs/agent/:/var/log/datadog/:rw
     - steps/:/app/steps/:ro
