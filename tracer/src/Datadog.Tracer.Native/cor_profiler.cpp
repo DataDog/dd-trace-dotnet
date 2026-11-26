@@ -704,13 +704,13 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
+#ifndef MACOS
+// We don't ship libdatadog on macOS
 std::string GetLibDatadogFilePath()
 {
     auto libdatadog_filename =
 #ifdef LINUX
         "libdatadog_profiling.so";
-#elif MACOS
-        "libdatadog_profiling.dylib";
 #else
         "datadog_profiling_ffi.dll";
 #endif
@@ -720,6 +720,7 @@ std::string GetLibDatadogFilePath()
     auto libdatadog_file_path = module_file_path.parent_path() / libdatadog_filename;
     return libdatadog_file_path.string();
 }
+#endif
 
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules, bool& enqueue_rejit)
 {
@@ -896,6 +897,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, debugger_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, fault_tolerant_nativemethods_type);
 
+#ifndef MACOS
         auto libdatadog_library_path = GetLibDatadogFilePath();
         std::error_code ec;
         if (fs::exists(libdatadog_library_path, ec))
@@ -908,6 +910,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         {
             Logger::Info("Libdatadog library does not exist: ", libdatadog_library_path);
         }
+#endif
 
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);

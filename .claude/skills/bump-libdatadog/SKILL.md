@@ -23,7 +23,7 @@ There are **two version pins** to update, both from the same libdatadog-dotnet r
 
 | Platform | File | Hash type | Version format |
 |----------|------|-----------|----------------|
-| Linux/macOS | `build/cmake/FindLibdatadog.cmake` | SHA-256 | `v<MAJOR>.<MINOR>.<PATCH>` |
+| Linux | `build/cmake/FindLibdatadog.cmake` | SHA-256 | `v<MAJOR>.<MINOR>.<PATCH>` |
 | Windows | `build/vcpkg_local_ports/libdatadog/vcpkg.json` + `portfile.cmake` | SHA-512 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
 
 A libdatadog-dotnet release builds all 8 platform artifacts together, so the two pins should normally
@@ -31,20 +31,16 @@ move to the **same** version in lockstep. Confirm with the user if they intend o
 
 ## Files to Modify
 
-### 1. Linux/macOS — `build/cmake/FindLibdatadog.cmake`
+### 1. Linux — `build/cmake/FindLibdatadog.cmake`
 
 Update these values:
 - `LIBDATADOG_VERSION` — the version tag (e.g. `"v32.0.0"`)
-- `SHA256_LIBDATADOG_ARM64` — macOS arm64 hash
-- `SHA256_LIBDATADOG_X86_64` — macOS x86_64 hash
 - `SHA256_LIBDATADOG` (aarch64 gnu) — Linux aarch64 glibc hash
 - `SHA256_LIBDATADOG` (aarch64 musl) — Linux aarch64 Alpine hash
 - `SHA256_LIBDATADOG` (x86_64 musl) — Linux x86_64 Alpine hash
 - `SHA256_LIBDATADOG` (x86_64 gnu) — Linux x86_64 glibc hash
 
 Artifact filenames (from GitHub releases):
-- `libdatadog-aarch64-apple-darwin.tar.gz`
-- `libdatadog-x86_64-apple-darwin.tar.gz`
 - `libdatadog-aarch64-unknown-linux-gnu.tar.gz`
 - `libdatadog-aarch64-alpine-linux-musl.tar.gz`
 - `libdatadog-x86_64-alpine-linux-musl.tar.gz` (note: uses `${CMAKE_SYSTEM_PROCESSOR}` in filename)
@@ -101,7 +97,7 @@ bash .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh <VERSION>
 Where `<VERSION>` is without the `v` prefix (e.g. `1.3.5`).
 
 The release notes contain:
-- **SHA256 checksums** section → for `FindLibdatadog.cmake` (6 Linux/macOS artifacts)
+- **SHA256 checksums** section → for `FindLibdatadog.cmake` (4 Linux artifacts)
 - **SHA512 checksums** section → for `portfile.cmake` (2 Windows artifacts)
 
 ### Step 3: Update `build/cmake/FindLibdatadog.cmake`
@@ -131,7 +127,7 @@ On Windows, `.\tracer\build.cmd BuildMsi` is the authoritative check. A mismatch
 
 ### Step 7: Verify
 
-- Confirm all 8 hashes were updated (6 for CMake SHA-256, 2 for vcpkg SHA-512)
+- Confirm all 6 hashes were updated (4 for CMake SHA-256, 2 for vcpkg SHA-512). The release also contains macOS artifacts, which we deliberately do not use
 - Confirm version strings match in both files
 - Confirm `libdatadog` and `libdatadog.32` in `msi-x64.verified.yml` match `MsiGetFileVersion` for the new DLLs
 - Run the Nuke build targets to validate hashes:

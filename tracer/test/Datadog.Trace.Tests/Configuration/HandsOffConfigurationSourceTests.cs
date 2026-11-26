@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.IO;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -13,9 +14,11 @@ namespace Datadog.Trace.Tests.Configuration;
 
 public class HandsOffConfigurationSourceTests
 {
-    [Fact]
+    [SkippableFact]
     public void TestErrorHandsOffConfigFile()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file.yml");
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().BeNull();
@@ -23,9 +26,11 @@ public class HandsOffConfigurationSourceTests
         result.ErrorMessage.Should().Be("apm_configuration_default: invalid type: string \"DD_TRACE_DEBUG': true, DD_ENV: \", expected a string-to-string map at line 3 column 3");
     }
 
-    [Fact]
+    [SkippableFact]
     public void TestErrorHandsOffConfigFileWrongInitKey()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file2.yml");
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().BeNull();
@@ -33,9 +38,11 @@ public class HandsOffConfigurationSourceTests
         result.ErrorMessage.Should().Be("did not find expected key at line 3 column 28, while parsing a block mapping at line 3 column 3");
     }
 
-    [Fact]
+    [SkippableFact]
     public void TestErrorHandsOffConfigFileWrongTypes()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "corrupt_file3.yml");
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().NotBeNull();
@@ -44,9 +51,11 @@ public class HandsOffConfigurationSourceTests
         result.ErrorMessage.Should().BeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void TestHandsOffConfigFileDoesntExist()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         var handsOffErrorPath = Path.Combine("Configuration", "HandsOffConfigData", "noexistence.yml");
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().NotBeNull();
@@ -55,9 +64,11 @@ public class HandsOffConfigurationSourceTests
         result.ErrorMessage.Should().BeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void TestHandsOffConfigFileWrongPath()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         var handsOffErrorPath = "path_#/$#@$^%!!DSDS_\\reallywro/ng开儿 艾诶开伊 艾艾 西吉艾艾伊娜伊";
         var result = LibDatadog.HandsOffConfiguration.ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath: handsOffErrorPath, handsOffFleetConfigPath: handsOffErrorPath, isLibdatadogAvailable: true);
         result.ConfigurationSuccessResult.Should().NotBeNull();

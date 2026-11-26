@@ -11,6 +11,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Result = Datadog.Trace.LibDatadog.HandsOffConfiguration.Result;
@@ -19,9 +20,11 @@ namespace Datadog.Trace.Tests.Configuration;
 
 public class GlobalConfigurationSourceTests
 {
-    [Fact]
+    [SkippableFact]
     public void TestGlobalConfig()
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs); // we don't ship libdatadog on macOS
+
         // Precedence is as follows:
         // 1. fleet file
         // 2. env var
