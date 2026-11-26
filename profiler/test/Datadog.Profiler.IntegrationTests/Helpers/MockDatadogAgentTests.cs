@@ -71,10 +71,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             agent.HandlerExceptions.Should().HaveCount(2);
             agent.HandlerExceptions.Should().OnlyContain(x => x is InvalidOperationException);
 
-            var exception = Assert.Throws<AggregateException>(() => agent.ThrowIfHandlerFailed());
+            var exception = FluentActions.Invoking(() => agent.ThrowIfHandlerFailed()).Should().ThrowExactly<AggregateException>().Which;
             exception.InnerExceptions.Should().Equal(handlerException, handlerException);
             // Checking failures must not consume them and allow a later check to pass.
-            Assert.Throws<AggregateException>(() => agent.ThrowIfHandlerFailed());
+            FluentActions.Invoking(() => agent.ThrowIfHandlerFailed()).Should().ThrowExactly<AggregateException>();
         }
 
         [Fact]

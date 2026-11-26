@@ -45,7 +45,7 @@ namespace Datadog.Profiler.IntegrationTests
 
             foreach (var metric in footprintMetrics)
             {
-                metric.Item2.Should().BeGreaterOrEqualTo(0, $"metric {metric.Item1} should have a non-negative value");
+                metric.Item2.Should().BeGreaterThanOrEqualTo(0, $"metric {metric.Item1} should have a non-negative value");
             }
 
             // Check that the shutdown log contains memory breakdown

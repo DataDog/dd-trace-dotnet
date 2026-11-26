@@ -6,7 +6,7 @@
 using System.IO;
 using System.Net;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -44,14 +44,14 @@ namespace Datadog.Profiler.IntegrationTests
             // uncomment to debug multipart http request
             // Thread.Sleep(10000000);
 
-            Assert.True(hasMetrics);
+            hasMetrics.Should().BeTrue();
             ValidateMetrics(runner.Environment.PprofDir);
         }
 
         private static void ValidateMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
-            Assert.True(metricsFiles.Length > 0);
+            metricsFiles.Length.Should().BePositive();
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file
@@ -76,12 +76,12 @@ namespace Datadog.Profiler.IntegrationTests
                     }
                 }
 
-                Assert.True(threadCount > 0);
-                Assert.True(threadCountLow > 0);
-                Assert.True(threadCountHigh > 0);
+                threadCount.Should().BePositive();
+                threadCountLow.Should().BePositive();
+                threadCountHigh.Should().BePositive();
 
-                Assert.True(threadCountLow <= threadCount);
-                Assert.True(threadCount <= threadCountHigh);
+                threadCountLow.Should().BeLessThanOrEqualTo(threadCount);
+                threadCount.Should().BeLessThanOrEqualTo(threadCountHigh);
             }
         }
     }

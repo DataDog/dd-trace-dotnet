@@ -92,21 +92,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
 
             Action prefix = () => actual.Should().StartWith(expected);
             prefix.Should().Throw<Exception>()
-                .Which.Message.Should().Contain("First mismatch at compared frame index 1")
-                .And.Contain(expected[1].ToString())
-                .And.Contain(actual[1].ToString())
-                .And.Contain(actual.ToString())
-                .And.Contain(expected.ToString());
+                .Which.Message.Should().ContainAll(
+                    "First mismatch at compared frame index 1",
+                    expected[1].ToString(),
+                    actual[1].ToString(),
+                    actual.ToString(),
+                    expected.ToString());
 
             var sequenceActual = TestStack.Trace("A", "X", "C");
             var sequenceExpected = TestStack.Trace("A", "B");
             Action sequence = () => sequenceActual.Should().ContainSequence(sequenceExpected);
             sequence.Should().Throw<Exception>()
-                .Which.Message.Should().Contain("First mismatch at expected frame index 1")
-                .And.Contain(sequenceExpected[1].ToString())
-                .And.Contain(sequenceActual[1].ToString())
-                .And.Contain(sequenceActual.ToString())
-                .And.Contain(sequenceExpected.ToString());
+                .Which.Message.Should().ContainAll(
+                    "First mismatch at expected frame index 1",
+                    sequenceExpected[1].ToString(),
+                    sequenceActual[1].ToString(),
+                    sequenceActual.ToString(),
+                    sequenceExpected.ToString());
         }
     }
 }

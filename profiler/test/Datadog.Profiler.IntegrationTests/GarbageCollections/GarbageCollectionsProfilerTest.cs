@@ -6,7 +6,7 @@
 using System;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.GarbageCollections
@@ -32,8 +32,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
-            Assert.True(CheckSamplesAreGC(run.Profiles));
+            run.UploadCount.Should().BePositive();
+            CheckSamplesAreGC(run.Profiles);
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7)]
@@ -45,8 +45,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
-            Assert.True(CheckSamplesAreGC(run.Profiles));
+            run.UploadCount.Should().BePositive();
+            CheckSamplesAreGC(run.Profiles);
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net48)]
@@ -76,15 +76,16 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            Assert.True(eventsCount > 0);
-            Assert.True(CheckSamplesAreGC(ProfileReader.Read(runner.Environment.PprofDir)));
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
+            eventsCount.Should().BePositive();
+            CheckSamplesAreGC(ProfileReader.Read(runner.Environment.PprofDir));
             // TODO: it should be possible to ensure that 3 GCs per generations are seen in the .pprof files
         }
 
-        private static bool CheckSamplesAreGC(ProfileOutput profiles)
+        private static void CheckSamplesAreGC(ProfileOutput profiles)
         {
-            return profiles.AllSamplesMatch(sample => IsGcSample(sample, GcRootFrame));
+            profiles.Profiles.Should().NotBeEmpty().And.OnlyContain(profile => profile.Samples.Count > 0);
+            profiles.Samples.Should().OnlyContain(sample => IsGcSample(sample, GcRootFrame));
         }
 
         private static bool IsGcSample(ProfileSample sample, StackFrame rootFrame)

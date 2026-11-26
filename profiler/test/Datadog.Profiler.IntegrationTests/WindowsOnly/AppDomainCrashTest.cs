@@ -30,8 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             using var run = runner.Run();
 
             run.Profiles.WithLabel("exception type", "CatException")
-                .All(sample => sample.Labels.GetValues("appdomain name").Contains("Test-1"))
-                .Should().BeTrue();
+                .Should().NotContain(sample => !sample.Labels.GetValues("appdomain name").Contains("Test-1"));
         }
     }
 }

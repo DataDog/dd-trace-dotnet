@@ -12,8 +12,8 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using MessagePack;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.ProcessTags
@@ -38,9 +38,9 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.NotEmpty(profilerProcessTags);
-            Assert.NotEmpty(tracerProcessTags);
-            Assert.Equal(profilerProcessTags, tracerProcessTags);
+            profilerProcessTags.Should().NotBeEmpty();
+            tracerProcessTags.Should().NotBeEmpty();
+            profilerProcessTags.Should().BeEquivalentTo(tracerProcessTags);
         }
 
         [Flaky("Test flaked in CI")]
@@ -52,8 +52,8 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.Empty(profilerProcessTags);
-            Assert.Empty(tracerProcessTags);
+            profilerProcessTags.Should().BeEmpty();
+            tracerProcessTags.Should().BeEmpty();
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -65,8 +65,8 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.Empty(profilerProcessTags);
-            Assert.NotEmpty(tracerProcessTags);
+            profilerProcessTags.Should().BeEmpty();
+            tracerProcessTags.Should().NotBeEmpty();
         }
 
         [TestAppFact(TestApplication.BuggyBits)]
@@ -77,12 +77,12 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.NotEmpty(profilerProcessTags);
+            profilerProcessTags.Should().NotBeEmpty();
 
             foreach (var processTags in profilerProcessTags)
             {
                 // Should contain at least the basedir tag
-                Assert.Contains("entrypoint.basedir:", processTags);
+                processTags.Should().Contain("entrypoint.basedir:");
             }
         }
 
