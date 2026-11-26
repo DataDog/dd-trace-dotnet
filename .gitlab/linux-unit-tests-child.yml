@@ -27,6 +27,7 @@ workflow:
       sh .gitlab/run-linux-container.sh \
         --cap-add=SYS_PTRACE \
         --env FRAMEWORK \
+        --env DD_TEST_LOG_ROUTINE_EVENTS=false \
         --env DD_LOGGER_ENABLED=true \
         --env DD_LOGGER_DD_API_KEY \
         --env DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
@@ -57,7 +58,11 @@ workflow:
         --env CI_MERGE_REQUEST_IID \
         --env DD_STS_OIDC_TOKEN \
         "$tester_image" \
-        sh .gitlab/run-managed-unit-tests.sh
+        sh .gitlab/run-nuke-linux-container.sh \
+          ConfigureGitlabCiVisibility RunManagedUnitTests \
+          --framework "$FRAMEWORK" \
+          --RunManagedUnitTestsFromArtifacts true \
+          --NugetPackageDirectory /project/packages
   artifacts:
     when: always
     expire_in: 2 weeks

@@ -8,11 +8,3 @@ COPY --from=registry.ddbuild.io/images/datadog-ca-certs:standard@sha256:451a0209
 
 RUN chmod -R o-w /usr/local/share/ca-certificates \
     && update-ca-certificates
-
-# Parse the STS response in test-job setup, before starting NUKE.
-RUN if command -v apk >/dev/null 2>&1; then \
-        apk add --no-cache jq; \
-    else \
-        apt-get update && apt-get install -y --no-install-recommends jq \
-        && rm -rf /var/lib/apt/lists/*; \
-    fi
