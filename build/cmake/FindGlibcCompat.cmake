@@ -7,7 +7,7 @@ else()
 
     set_target_properties(glibc-compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
-    target_compile_options(glibc-compat PUBLIC
+    target_compile_options(glibc-compat PRIVATE
             -std=c11
     )
 endif()

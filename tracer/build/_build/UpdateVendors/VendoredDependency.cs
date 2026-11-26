@@ -425,9 +425,9 @@ namespace UpdateVendors
                     // We don't use spdlog's MDC (Mapped Diagnostic Context) feature, added in spdlog 1.13.
                     // Including its header instantiates `thread_local std::map<std::string, std::string>`,
                     // whose non-trivial destructor forces libc++abi's __cxa_thread_atexit_impl machinery
-                    // to be linked. In our "universal" Linux build (build/cmake/Universal.cmake.*) we
-                    // statically link libc++abi, whose TLS variables (__cxxabiv1::dtors / dtors_alive)
-                    // were compiled with the Local Exec model — incompatible with shared libraries
+                    // to be linked. The original universal Linux toolchain statically linked libc++abi,
+                    // whose TLS variables (__cxxabiv1::dtors / dtors_alive) were compiled with the
+                    // Local Exec model — incompatible with shared libraries
                     // (R_X86_64_TPOFF32 / R_AARCH64_TLSLE_* against ... cannot be used with -shared).
                     // SPDLOG_NO_TLS would fix it but also disables spdlog's TLS thread-id cache in
                     // os-inl.h, costing a gettid() syscall per log call. Instead, gate just the MDC

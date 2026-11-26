@@ -9,8 +9,8 @@ __stack_chk_guard
 __xstat
 _exit
 abort
+aligned_alloc
 bcmp
-calloc
 catclose
 catgets
 catopen
@@ -45,11 +45,7 @@ getpid
 gmtime_r
 isatty
 isdigit_l
-islower_l
 isprint
-isupper_l
-iswlower_l
-isxdigit
 isxdigit_l
 localtime_r
 malloc
@@ -68,7 +64,6 @@ nanosleep
 newlocale
 open
 pipe
-posix_memalign
 pthread_cond_broadcast
 pthread_cond_destroy
 pthread_cond_signal
@@ -76,7 +71,6 @@ pthread_cond_timedwait
 pthread_cond_wait
 pthread_create
 pthread_detach
-pthread_getspecific
 pthread_join
 pthread_key_create
 pthread_mutex_destroy
@@ -86,7 +80,6 @@ pthread_mutex_unlock
 pthread_mutexattr_destroy
 pthread_mutexattr_init
 pthread_mutexattr_settype
-pthread_once
 pthread_rwlock_rdlock
 pthread_rwlock_unlock
 pthread_rwlock_wrlock
@@ -96,6 +89,7 @@ readlink
 realloc
 remove
 rename
+setbuf
 setenv
 snprintf
 sscanf
@@ -106,17 +100,18 @@ strerror
 strftime
 strftime_l
 strlen
-strncmp
 strrchr
 strstr
 strtod_l
 strtof_l
+strtol
 strtold_l
 strtoll
 strtoull
 syscall
 tolower
 toupper
+unsetenv
 uselocale
 vasprintf
 vfprintf
@@ -126,4 +121,5 @@ waitpid
 wcrtomb
 wcslen
 wcsnrtombs
+wmemchr
 write

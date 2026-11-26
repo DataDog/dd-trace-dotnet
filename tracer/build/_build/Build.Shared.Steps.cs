@@ -99,7 +99,7 @@ partial class Build
 
             if (AsUniversal)
             {
-                additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
+                additionalArgs += " -DCMAKE_TOOLCHAIN_FILE=" + UniversalToolchainFile;
             }
 
             CMake.Value(
@@ -266,12 +266,6 @@ partial class Build
             source = nativeOut / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-            if (AsUniversal)
-            {
-                var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
-                PatchElf.Value.Invoke($"--remove-needed {libc} {dest / source.Name} --remove-rpath");
-            }
         });
 
     Target PublishNativeLoaderOsx => _ => _

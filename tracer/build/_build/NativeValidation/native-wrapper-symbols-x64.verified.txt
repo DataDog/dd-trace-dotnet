@@ -1,4 +1,5 @@
 __errno_location
+__stack_chk_fail
 __tls_get_addr
 access
 asprintf

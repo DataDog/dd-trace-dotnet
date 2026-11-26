@@ -124,7 +124,6 @@ partial class Build
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
     [LazyPathExecutable(name: "cppcheck")] readonly Lazy<Tool> CppCheck;
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
-    [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
     [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
