@@ -27,7 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         // ports and the test fails with 'The LDAP server is unavailable' (even without the profiler).
         // If that happens, throttle the scenario (see OpenLdapCrash.ConnectToLdapServer) or set
         // net.ipv4.tcp_tw_reuse=1 (sysctls) on the ProfilerIntegrationTests service in docker-compose.yml.
-        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net9, TestFramework.Net10)]
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net9, TestFramework.Net10, Skip = "Temporarily disabled on master: intermittent 'LDAP server is unavailable' failure, see PROF-16920. Re-enable when PROF-16920 has a fix or the skip is removed by a decision (PROF-16934).")]
         public void CheckOpenLdapCrash(TestAppContext app)
         {
             var runner = new SmokeTestRunner(app, commandLine: "--scenario 21", output: _output);
