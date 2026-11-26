@@ -34,15 +34,15 @@ if ! response=$(curl_with_retry - -u ":$personalAccessToken" "https://dev.azure.
 fi
 
 # Only keep runs from 'consolidated-pipeline'
-branchBuildId=$(echo $response | jq -r --arg branchName "refs/heads/$branchName" '.value[] | select(.definition.name == "consolidated-pipeline" and .sourceBranch == $branchName) | .id' | head -n 1)
+branchBuildId=$(echo "$response" | jq -r --arg branchName "refs/heads/$branchName" '.value[] | select(.definition.name == "consolidated-pipeline" and .sourceBranch == $branchName) | .id' | head -n 1)
 
-prBuildId=$(echo $response | jq -r --arg branchName "$branchName" '.value[] | select(.definition.name == "consolidated-pipeline" and .triggerInfo["pr.sourceBranch"] == $branchName) | .id' | head -n 1)
+prBuildId=$(echo "$response" | jq -r --arg branchName "$branchName" '.value[] | select(.definition.name == "consolidated-pipeline" and .triggerInfo["pr.sourceBranch"] == $branchName) | .id' | head -n 1)
 
 # Determine the latest build between branch and PR
 if [[ -n "$branchBuildId" && -n "$prBuildId" ]]; then
     # Compare timestamps of both build IDs
-    branchTime=$(echo $response | jq -r --arg buildId "$branchBuildId" '.value[] | select(.id == ($buildId | tonumber)) | .startTime')
-    prTime=$(echo $response | jq -r --arg buildId "$prBuildId" '.value[] | select(.id == ($buildId | tonumber)) | .startTime')
+    branchTime=$(echo "$response" | jq -r --arg buildId "$branchBuildId" '.value[] | select(.id == ($buildId | tonumber)) | .startTime')
+    prTime=$(echo "$response" | jq -r --arg buildId "$prBuildId" '.value[] | select(.id == ($buildId | tonumber)) | .startTime')
     
     if [[ "$branchTime" > "$prTime" ]]; then
         export buildId="$branchBuildId"
@@ -57,7 +57,7 @@ else
     export buildId=""
 fi
 
-echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$latestBuildId&view=results"
+echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
 
 if [ -z "$buildId" ]; then
     echo "This branch does not have a build related to it"
@@ -98,4 +98,3 @@ for stageName in "${stageNames[@]}"; do
 done
 
 echo "export buildId=$buildId" > build-id.txt
-echo "export buildId=$buildId" > ../build-id.txt

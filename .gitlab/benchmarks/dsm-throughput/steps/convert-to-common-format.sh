@@ -50,7 +50,7 @@ for f in *.json; do
 
   # The DSM-throughput benchmark uploads two experiments per run; the BP UI
   # diffs them as baseline vs candidate. `tracer-no-dsm` is the control
-  # (tracer on, DSM off) and `dsm-enabled` is the variant under test — same
+  # (tracer on, DSM off) and `dsm-enabled` is the variant under test, the same
   # axis `steps/compare-results.py` uses when computing overhead.
   #
   # Override the scenario name per-experiment so the two uploads show up as

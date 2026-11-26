@@ -83,8 +83,6 @@ global_teardown:
 docker_config_for_local_runs:
   image_name: bp_dotnet-java-dsm_kafka-worker
   volumes:
-    - src/:/app/src/
-    - k6/:/app/k6/:ro
     - logs/agent/:/var/log/datadog/:rw
     - steps/:/app/steps/:ro
     - bp-runner.yml:/app/bp-runner.yml:ro

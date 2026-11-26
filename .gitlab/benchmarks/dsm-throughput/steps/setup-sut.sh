@@ -9,7 +9,6 @@ personalAccessToken="test"
 mkdir -p /app/candidate /app/baseline
 
 artifactNames=("linux-monitoring-home-linux-x64" "Datadog.Trace.Manual.dll" "windows-tracer-home" "linux-monitoring-home-linux-arm64")
-export COR_PROFILER_PATH="${current_dir}/${NATIVE_PROFILER_PATH}"
 
 if [ -z "$CI_REPOSITORY_URL" ]; then
     branchName="master"
@@ -28,7 +27,7 @@ git clone https://github.com/DataDog/dd-trace-dotnet.git
 cd dd-trace-dotnet
 echo "Current directory for dd-trace-dotnet: $(pwd)"
 
-git checkout $branchName
+git checkout "$branchName"
 
 mkdir -p ./temp-artifacts
 echo "Using buildId: $buildId"

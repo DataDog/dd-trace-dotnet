@@ -149,7 +149,7 @@ def main():
             print(f"  Duration: {duration_overhead:.2f}% > {threshold}%")
         if not memory_ok:
             print(f"  Memory: {memory_overhead:.2f}% > {threshold}%")
-        print("Data Streams Monitoring overhead should be less than {threshold}% in this throughput scenario. Please investigate any regressions, or reach out to #data-streams-monitoring for help.")
+        print(f"Data Streams Monitoring overhead should be less than {threshold}% in this throughput scenario. Please investigate any regressions, or reach out to #data-streams-monitoring for help.")
         return 1
 
 
