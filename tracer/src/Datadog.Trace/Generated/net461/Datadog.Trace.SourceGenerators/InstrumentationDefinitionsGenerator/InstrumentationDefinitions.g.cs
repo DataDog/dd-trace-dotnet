@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("coverlet.core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("dotnet,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Elasticsearch.Net,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Google.Cloud.PubSub.V1,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Google.Protobuf,", StringComparison.Ordinal)
             || assemblyName.StartsWith("GraphQL,", StringComparison.Ordinal)
             || assemblyName.StartsWith("GraphQL.SystemReactive,", StringComparison.Ordinal)
@@ -369,6 +370,10 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.Transport_Request_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.Transport_RequestAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.ElasticsearchNet,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.PublisherClientPublishAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.SimpleSubscriptionHandlerHandleMessageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Google.CloudPubSub.SubscriberClientStartAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.GoogleCloudPubSub,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegrationV5AndV7"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"

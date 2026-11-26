@@ -659,6 +659,23 @@
     ]
   },
   {
+    "integrationName": "GoogleCloudPubSub",
+    "assemblyName": "Google.Cloud.PubSub.V1",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "Google.Cloud.PubSub.V1",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "3.0.0",
+        "minVersionTestedInclusive": "3.40.0",
+        "maxVersionSupportedInclusive": "3.40.0",
+        "maxVersionAvailableInclusive": "3.40.0",
+        "maxVersionTestedInclusive": "3.40.0"
+      }
+    ]
+  },
+  {
     "integrationName": "GraphQL",
     "assemblyName": "GraphQL",
     "minAssemblyVersionInclusive": "2.3.0",

@@ -69,6 +69,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.HardcodedSecret => MetricTags.IntegrationName.HardcodedSecret,
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
+            IntegrationId.GoogleCloudPubSub => MetricTags.IntegrationName.GoogleCloudPubSub,
             IntegrationId.AzureEventHubs => MetricTags.IntegrationName.AzureEventHubs,
             IntegrationId.AzureEventGrid => MetricTags.IntegrationName.AzureEventGrid,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,

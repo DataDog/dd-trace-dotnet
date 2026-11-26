@@ -509,6 +509,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V6/Elasticsearch
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V6/RequestPipeline_CallElasticsearchAsync_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V6/RequestPipeline_CallElasticsearch_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V7/ElasticsearchV7Constants.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Google/CloudPubSub/GooglePubSubConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegrationExtra.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/HotChocolateCommon.cs
