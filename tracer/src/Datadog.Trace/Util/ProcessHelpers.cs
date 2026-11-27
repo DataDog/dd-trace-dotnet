@@ -340,12 +340,8 @@ namespace Datadog.Trace.Util
             public StandardErrorReader(StreamReader reader)
             {
                 _reader = reader;
-                _thread = new Thread(static state => ((StandardErrorReader)state!).Read())
-                {
-                    IsBackground = true,
-                    Name = "DD ProcessHelpers standard error reader"
-                };
-                _thread.Start(this);
+                _thread = new Thread(Read) { IsBackground = true, Name = "DD ProcessHelpers standard error reader" };
+                _thread.Start();
             }
 
             public string WaitForText()
@@ -360,10 +356,15 @@ namespace Datadog.Trace.Util
                 {
                     _text = _reader.ReadToEnd();
                 }
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+                {
+                    // The process was disposed or its pipe broke while reading.
+                    Log.Debug(ex, "Error reading the standard error of the process.");
+                }
                 catch (Exception ex)
                 {
-                    // An exception on this thread would end the application.
-                    Log.Debug(ex, "Error reading the standard error of the process.");
+                    // Caught anyway: an exception on this thread would end the application.
+                    Log.Error(ex, "Unexpected error reading the standard error of the process.");
                 }
             }
         }
