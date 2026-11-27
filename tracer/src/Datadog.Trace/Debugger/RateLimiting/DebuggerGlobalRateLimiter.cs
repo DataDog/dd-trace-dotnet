@@ -28,8 +28,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private IAdaptiveSampler _snapshotSampler;
         private bool _disposed;
 
+        // CountSnapshot needs a sampler that carries snapshots counted past the rate forward as debt.
         internal DebuggerGlobalRateLimiter()
-            : this(AdaptiveSamplerLifetime.Create, new LogRateLimiter(LogCooldownSeconds))
+            : this(BorrowingTokenBucket.Create, new LogRateLimiter(LogCooldownSeconds))
         {
         }
 
@@ -64,6 +65,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
+        public void CountSnapshot()
+        {
+            Volatile.Read(ref _snapshotSampler).Keep();
+        }
+
         public void Initialize()
         {
             lock (_lifetimeLock)
@@ -88,8 +94,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
-                // Unlike per-probe rates, a new service rate replaces the sampler, so it starts fresh: a new window budget,
-                // or for rates below 1 a new gate that admits the next snapshot.
                 ReplaceSampler(Math.Max(samplesPerSecond.Value, 0));
             }
         }
@@ -121,6 +125,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
+        // Unlike per-probe rates, every rate change replaces the bucket. It starts full and drops any debt, and later
+        // snapshots of traces kept before the change count against the new rate.
         private void ReplaceSampler(double snapshotSamplesPerSecond)
         {
             AdaptiveSamplerLifetime.Replace(ref _snapshotSampler, _samplerFactory(snapshotSamplesPerSecond));

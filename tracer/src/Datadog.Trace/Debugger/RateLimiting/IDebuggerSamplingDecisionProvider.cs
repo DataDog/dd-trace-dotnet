@@ -18,5 +18,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
     internal interface IDebuggerSamplingDecisionProvider
     {
         DebuggerSamplingDecision Sample();
+
+        void CountLaterSnapshot();
     }
 }

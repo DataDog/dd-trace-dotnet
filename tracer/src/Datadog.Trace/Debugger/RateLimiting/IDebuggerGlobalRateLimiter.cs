@@ -13,6 +13,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
     {
         bool ShouldSampleSnapshot(string probeId);
 
+        /// <summary>
+        /// Counts a snapshot the limiter doesn't decide, such as one from a later probe in a kept trace. It can take the
+        /// limiter past its rate; <see cref="ShouldSampleSnapshot"/> then refuses until the excess is paid back.
+        /// </summary>
+        void CountSnapshot();
+
         void Initialize();
 
         void SetRate(double? samplesPerSecond);

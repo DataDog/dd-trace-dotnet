@@ -208,19 +208,19 @@ namespace Datadog.Trace.Debugger.RateLimiting
             _rollWindowCallback = null;
         }
 
+        internal static long GetSampleInterval(double samplesPerSecond)
+        {
+            // Expects a positive rate. An interval that overflows a long is capped, so at most one sample is admitted.
+            var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond, MidpointRounding.ToEven);
+            return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
+        }
+
         /// <summary>
         /// <see cref="Sample"/> at a given <see cref="Stopwatch"/> timestamp in interval sampling, so tests don't wait
         /// for real intervals. In window sampling it is <see cref="Sample"/>.
         /// </summary>
         [TestingOnly]
         internal bool SampleAt(long timestamp) => Volatile.Read(ref _intervalGate)?.TrySample(timestamp) ?? Sample();
-
-        private static long GetSampleInterval(double samplesPerSecond)
-        {
-            // Rates so small that the interval overflows a long are capped: the gate admits one sample, then no more.
-            var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond, MidpointRounding.ToEven);
-            return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
-        }
 
         // Casting NaN, infinite or out-of-range doubles to int gives int.MinValue on x86/x64 before .NET 9 and
         // saturates on ARM64 and from .NET 9, so clamp before converting to get the same result on every runtime.
