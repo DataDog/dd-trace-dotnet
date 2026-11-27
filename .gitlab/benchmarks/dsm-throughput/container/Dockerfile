@@ -1,4 +1,5 @@
-FROM apache/kafka:3.9.2 AS kafka-stage
+# Docker Hub is blocked in CI; 3.8.0 is the only apache/kafka tag in the internal mirror.
+FROM registry.ddbuild.io/images/mirror/apache/kafka:3.8.0 AS kafka-stage
 
 FROM registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
 
