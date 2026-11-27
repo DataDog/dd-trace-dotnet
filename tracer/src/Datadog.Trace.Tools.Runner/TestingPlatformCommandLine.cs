@@ -16,13 +16,12 @@ namespace Datadog.Trace.Tools.Runner;
 /// </summary>
 internal sealed class TestingPlatformCommandLine
 {
-    // Options of the Microsoft.Testing.Platform `dotnet test` command that take a value, so the value is not taken for a project path.
+    // Other options of the Microsoft.Testing.Platform `dotnet test` command that take a value, so the value is not taken for a
+    // project path. The options this class reads are handled before these lists are checked.
     private static readonly string[] OptionsWithValue =
     [
-        "--project", "--solution", "--test-modules", "--root-directory", "--results-directory", "--results-directory-layout",
-        "--config-file", "--diagnostic-output-directory", "--max-parallel-test-modules", "--minimum-expected-tests",
-        "--maximum-failed-tests", "--timeout", "-e", "--environment", "-v", "--verbosity", "--output",
-        "-c", "--configuration", "-f", "--framework", "-r", "--runtime", "--artifacts-path", "-p", "--property"
+        "--results-directory", "--results-directory-layout", "--config-file", "--diagnostic-output-directory", "--max-parallel-test-modules",
+        "--minimum-expected-tests", "--maximum-failed-tests", "--timeout", "-e", "--environment", "-v", "--verbosity", "--output"
     ];
 
     // Options that change the output folders in ways this class doesn't reproduce.
@@ -31,7 +30,7 @@ internal sealed class TestingPlatformCommandLine
     // Options of the command that don't take a value.
     private static readonly string[] FlagOptions =
     [
-        "--no-build", "--no-restore", "--no-dependencies", "--no-ansi", "--no-progress", "--no-launch-profile", "--no-launch-profile-arguments",
+        "--no-restore", "--no-dependencies", "--no-ansi", "--no-progress", "--no-launch-profile", "--no-launch-profile-arguments",
         "--list-tests", "--no-logo", "--nologo", "--no-banner", "-?", "-h", "--help"
     ];
 
@@ -247,8 +246,10 @@ internal sealed class TestingPlatformCommandLine
 
     private static bool IsOptionToken(string argument) => argument.Length > 1 && argument[0] == '-';
 
+    // Short options with the value attached, like -cRelease or -rlinux-x64 (-property is a long form of -p).
     private static bool IsAttachedShortOption(string argument)
-        => argument.Length > 2 && argument[0] == '-' && argument[1] != '-' && "cfa".IndexOf(argument[1]) >= 0 && argument[2] != ':' && argument[2] != '=';
+        => argument.Length > 2 && argument[0] == '-' && argument[1] != '-' && "cfarp".IndexOf(argument[1]) >= 0 && argument[2] != ':' && argument[2] != '=' &&
+           !argument.StartsWith("-property", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsProjectOrSolutionPath(string argument, string workingDirectory)
     {

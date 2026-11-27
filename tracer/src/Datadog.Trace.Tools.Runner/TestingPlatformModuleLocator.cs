@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Microsoft.Extensions.FileSystemGlobbing;
 
@@ -64,6 +65,7 @@ internal static class TestingPlatformModuleLocator
     /// <summary>
     /// Expands a <c>--test-modules</c> expression like <c>dotnet test</c> does: patterns separated by ';', with a leading '!' to exclude.
     /// </summary>
+    [TestingAndPrivateOnly]
     internal static List<string> GetMatchedModulePaths(string testModules, string rootDirectory, string workingDirectory)
     {
         var root = Path.GetFullPath(Path.Combine(workingDirectory, rootDirectory));
@@ -73,7 +75,7 @@ internal static class TestingPlatformModuleLocator
         }
 
         var matcher = new Matcher();
-        foreach (var rawPattern in testModules.Split([';'], StringSplitOptions.RemoveEmptyEntries))
+        foreach (var rawPattern in testModules.Split(Separators.SemiColon, StringSplitOptions.RemoveEmptyEntries))
         {
             var pattern = rawPattern.Trim();
             if (pattern.Length == 0)

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Coverage.Collector;
 using Datadog.Trace.Logging;
@@ -65,15 +66,32 @@ internal static class TestingPlatformCoverageRewriter
             return false;
         }
 
+        // A project or target framework that wasn't built for this configuration has no output folder; 'dotnet test' reports it.
+        var existingFolders = folders.Where(Directory.Exists).ToList();
+        if (existingFolders.Count == 0)
+        {
+            reason = "The output folders of the test projects don't exist. Build the test projects before running 'dotnet test --no-build'.";
+            return false;
+        }
+
         var coverageSettings = new CoverageSettings(configurationElement: null, tracerHome, settings);
         var logger = new RunnerCoverageLogger();
         var assemblies = 0;
-        foreach (var folder in folders)
+        try
         {
-            assemblies += CoverageFolderProcessor.ProcessFolder(folder, SearchOption.TopDirectoryOnly, coverageSettings, logger);
+            foreach (var folder in existingFolders)
+            {
+                assemblies += CoverageFolderProcessor.ProcessFolder(folder, SearchOption.TopDirectoryOnly, coverageSettings, logger);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestingPlatformCoverageRewriter: Error rewriting the test assemblies.");
+            reason = "Rewriting the test assemblies failed: " + ex.Message;
+            return false;
         }
 
-        Log.Information<int, int>("TestingPlatformCoverageRewriter: {Assemblies} assemblies processed in {Folders} folders.", assemblies, folders.Count);
+        Log.Information<int, int>("TestingPlatformCoverageRewriter: {Assemblies} assemblies processed in {Folders} folders.", assemblies, existingFolders.Count);
         if (assemblies == 0)
         {
             reason = "No test assembly with symbols (.pdb) was found in the output folders.";

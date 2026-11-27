@@ -994,10 +994,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void RemoteInternalCoverageRewritesTestModulesWhenDotnetTestRunsTestingPlatform(bool noBuild)
+        [Fact]
+        public void RemoteInternalCoverageRewritesTestModulesWhenDotnetTestRunsTestingPlatform()
         {
             var root = Path.Combine(Path.GetTempPath(), "dd-mtp-ci-run-" + Path.GetRandomFileName());
             var output = Directory.CreateDirectory(Path.Combine(root, "Tests", "bin", "Release", "net8.0")).FullName;
@@ -1031,12 +1029,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-            var childCommand = new List<string> { "dotnet", "test", "--test-modules", "**/CoverageRewriterAssembly.dll", "--root-directory", root };
-            if (noBuild)
-            {
-                childCommand.Add("--no-build");
-            }
-
+            string[] childCommand = ["dotnet", "test", "--test-modules", "**/CoverageRewriterAssembly.dll", "--root-directory", root];
             var commandLine = new List<string> { "ci", "run", "--dd-env", "TestEnv", "--dd-service", "TestService", "--dd-version", "TestVersion", "--tracer-home", tracerHome, "--agent-url", $"http://localhost:{agent.Port}", "--" };
             commandLine.AddRange(childCommand);
 

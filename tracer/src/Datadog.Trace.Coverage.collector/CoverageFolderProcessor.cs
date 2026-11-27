@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage.Exceptions;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Formatting = Datadog.Trace.Vendors.Newtonsoft.Json.Formatting;
@@ -18,8 +19,7 @@ using Formatting = Datadog.Trace.Vendors.Newtonsoft.Json.Formatting;
 namespace Datadog.Trace.Coverage.Collector;
 
 /// <summary>
-/// Rewrites the assemblies of a folder for per-test code coverage. Used by the VSTest data collector and by
-/// <c>dd-trace ci run</c> for the Microsoft.Testing.Platform <c>dotnet test</c> command, which doesn't load data collectors.
+/// Rewrites the assemblies of a folder for per-test code coverage.
 /// </summary>
 internal static class CoverageFolderProcessor
 {
@@ -193,6 +193,7 @@ internal static class CoverageFolderProcessor
         return numAssemblies;
     }
 
+    [TestingAndPrivateOnly]
     internal static bool HasAssemblyExtension(string filePath)
     {
         if (Path.GetDirectoryName(filePath) is { } directory &&

@@ -440,8 +440,9 @@ internal static class CiUtils
                     }
                     else
                     {
-                        Log.Warning("RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform, and the test assemblies couldn't be rewritten for per-test code coverage. {Reason}", reason);
-                        Utils.WriteWarning("RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform (selected by global.json or DOTNET_TEST_RUNNER), and the test assemblies couldn't be rewritten for per-test code coverage. Per-test code coverage will not be collected. " + reason);
+                        var message = "RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform (selected by global.json or DOTNET_TEST_RUNNER), and the test assemblies couldn't be rewritten for per-test code coverage. Per-test code coverage will not be collected. " + reason;
+                        Log.Warning("{Message}", message);
+                        Utils.WriteWarning(message);
                     }
                 }
                 else if (isDotnetTestCommand)

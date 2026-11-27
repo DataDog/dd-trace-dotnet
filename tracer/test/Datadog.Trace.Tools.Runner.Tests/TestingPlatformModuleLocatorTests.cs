@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -149,7 +150,7 @@ public class TestingPlatformModuleLocatorTests : IDisposable
     private static string CreateSolution(params string[] projects)
     {
         // MSBuild only builds the projects of a solution that have a project configuration entry.
-        var lines = new System.Collections.Generic.List<string> { "Microsoft Visual Studio Solution File, Format Version 12.00" };
+        var lines = new List<string> { "Microsoft Visual Studio Solution File, Format Version 12.00" };
         var guids = projects.Select((_, index) => $"{{{index + 1}0000000-0000-0000-0000-000000000000}}").ToArray();
         for (var i = 0; i < projects.Length; i++)
         {
@@ -177,7 +178,7 @@ public class TestingPlatformModuleLocatorTests : IDisposable
         return string.Join(Environment.NewLine, lines);
     }
 
-    private string[] Relative(System.Collections.Generic.IEnumerable<string> folders)
+    private string[] Relative(IEnumerable<string> folders)
         => folders.Select(folder => Path.GetRelativePath(_root, folder)).ToArray();
 
     private void WriteProject(string name, string content)

@@ -135,6 +135,8 @@ public class TestingPlatformCommandLineTests : IDisposable
     [InlineData("test -cRelease", "-cRelease")]
     [InlineData("test -fnet9.0", "-fnet9.0")]
     [InlineData("test -ax64", "-ax64")]
+    [InlineData("test -rlinux-x64", "-rlinux-x64")]
+    [InlineData("test -pFoo=Bar", "-pFoo=Bar")]
     public void DoesNotUnderstandShortOptionsWithTheValueAttached(string commandLine, string expected)
     {
         var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);

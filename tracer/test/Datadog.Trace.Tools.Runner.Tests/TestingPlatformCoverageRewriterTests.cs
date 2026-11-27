@@ -52,7 +52,6 @@ public sealed class TestingPlatformCoverageRewriterTests : IDisposable
 
     [Theory]
     [InlineData("test", "--test-modules", "Tests/**/Sample.Tests.dll")]
-    [InlineData("test", "--no-build", "--test-modules", "Tests/**/Sample.Tests.dll")]
     [InlineData("test", "--test-modules", "**/Sample.Tests.dll", "--root-directory", "Tests")]
     public void RewritesTheTestModules(params string[] arguments)
     {
@@ -82,7 +81,7 @@ public sealed class TestingPlatformCoverageRewriterTests : IDisposable
     [InlineData("--no-build", new[] { "test", "Tests/Tests.csproj" })]
     [InlineData("--no-build", new[] { "test", "--project", "Tests", "-c", "Release" })]
     [InlineData("'-a'", new[] { "test", "--no-build", "-a", "x64", "--project", "Tests" })]
-    [InlineData("--test-modules", new[] { "test", "--test-modules", "Tests/**/Missing.dll" })]
+    [InlineData("output folders", new[] { "test", "--test-modules", "Tests/**/Missing.dll" })]
     public void DoesNotRewriteWhenTheAssembliesCannotBeFound(string expectedReason, string[] arguments)
     {
         var assemblyPath = CompileTestAssembly();
@@ -90,16 +89,31 @@ public sealed class TestingPlatformCoverageRewriterTests : IDisposable
 
         TestingPlatformCoverageRewriter.TryRewrite("dotnet", arguments, _root, _tracerHome, _settings, out var reason).Should().BeFalse();
 
-        if (expectedReason != "--test-modules")
-        {
-            reason.Should().Contain(expectedReason);
-        }
-        else
-        {
-            reason.Should().Contain("output folders");
-        }
+        reason.Should().Contain(expectedReason);
 
         File.ReadAllBytes(assemblyPath).Should().Equal(original);
+    }
+
+    [Fact]
+    public void DoesNotFailWhenTheTestProjectWasNotBuilt()
+    {
+        WriteTestingPlatformProject("Unbuilt", "net8.0");
+
+        TestingPlatformCoverageRewriter.TryRewrite("dotnet", ["test", "--no-build", "--project", "Unbuilt"], _root, _tracerHome, _settings, out var reason).Should().BeFalse();
+
+        reason.Should().Contain("don't exist");
+    }
+
+    [Fact]
+    public void RewritesTheTargetFrameworksThatWereBuilt()
+    {
+        WriteTestingPlatformProject("Tests", "net8.0;net10.0");
+        var assemblyPath = CompileTestAssembly();
+
+        // Only net10.0 was built (with -c Release), net8.0 has no output folder.
+        TestingPlatformCoverageRewriter.TryRewrite("dotnet", ["test", "--no-build", "--project", "Tests", "-c", "Release"], _root, _tracerHome, _settings, out var reason).Should().BeTrue(reason);
+
+        IsRewritten(assemblyPath).Should().BeTrue();
     }
 
     [Theory]
@@ -133,6 +147,22 @@ public sealed class TestingPlatformCoverageRewriterTests : IDisposable
     {
         using var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { InMemory = true });
         return assembly.CustomAttributes.Any(attribute => attribute.AttributeType.FullName == CoveredAssemblyAttributeName);
+    }
+
+    private void WriteTestingPlatformProject(string name, string targetFrameworks)
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_root, name)).FullName;
+        var project = $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFrameworks>{targetFrameworks}</TargetFrameworks>
+                 <OutputType>Exe</OutputType>
+                 <AssemblyName>Sample.Tests</AssemblyName>
+                 <IsTestingPlatformApplication>true</IsTestingPlatformApplication>
+               </PropertyGroup>
+             </Project>
+             """;
+        File.WriteAllText(Path.Combine(folder, name + ".csproj"), project);
     }
 
     private string CompileTestAssembly()
