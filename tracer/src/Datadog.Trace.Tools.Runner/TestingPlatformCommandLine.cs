@@ -41,9 +41,7 @@ internal sealed class TestingPlatformCommandLine
         "--no-launch-profile-arguments", "--list-tests", "--list-devices", "--no-logo", "-nologo", "--nologo", "--no-banner", "-?", "-h", "--help"
     ];
 
-    private static readonly string[] MsBuildPropertyPrefixes = ["-p:", "/p:", "--p:", "-property:", "/property:", "--property:"];
-
-    // The same option with the property in the next argument.
+    // The forms of the MSBuild property option, followed by ':' and the property, or by the property in the next argument.
     private static readonly string[] MsBuildPropertyOptions = ["-p", "/p", "--p", "-property", "/property", "--property"];
 
     private static readonly string[] ProjectFileExtensions = [".sln", ".slnx", ".slnf"];
@@ -256,11 +254,11 @@ internal sealed class TestingPlatformCommandLine
 
     private static bool IsMsBuildProperty(string argument, out string property)
     {
-        foreach (var prefix in MsBuildPropertyPrefixes)
+        foreach (var option in MsBuildPropertyOptions)
         {
-            if (argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            if (argument.Length > option.Length && argument[option.Length] == ':' && argument.StartsWith(option, StringComparison.OrdinalIgnoreCase))
             {
-                property = argument.Substring(prefix.Length);
+                property = argument.Substring(option.Length + 1);
                 return true;
             }
         }
