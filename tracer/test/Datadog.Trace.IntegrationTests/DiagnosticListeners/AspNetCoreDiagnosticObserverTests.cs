@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -560,7 +561,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private class AgentWriterStub : IAgentWriter
         {
-            public List<SpanCollection> Traces { get; } = new();
+            // WriteTrace is called on a background thread while the test polls, so this must be thread-safe
+            public ConcurrentQueue<SpanCollection> Traces { get; } = new();
 
             public Task FlushAndCloseAsync() => Task.CompletedTask;
 
@@ -568,7 +570,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             public Task<bool> Ping() => Task.FromResult(true);
 
-            public void WriteTrace(in SpanCollection trace) => Traces.Add(trace);
+            public void WriteTrace(in SpanCollection trace) => Traces.Enqueue(trace);
         }
     }
 }
