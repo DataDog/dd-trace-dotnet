@@ -46,6 +46,8 @@ internal sealed class TestingPlatformCommandLine
 
     private static readonly string[] ProjectFileExtensions = [".sln", ".slnx", ".slnf"];
 
+    private static readonly char[] QuoteCharacters = ['"', '\''];
+
     private TestingPlatformCommandLine(bool noBuild, string? testModules, string? testModulesRootDirectory, string? projectOrSolution, List<string> msBuildArguments, string? unsupportedOption)
     {
         NoBuild = noBuild;
@@ -79,7 +81,7 @@ internal sealed class TestingPlatformCommandLine
     /// <summary>
     /// Gets the MSBuild arguments equivalent to the options that select the configuration, framework, runtime and properties.
     /// </summary>
-    public IReadOnlyList<string> MsBuildArguments { get; }
+    public List<string> MsBuildArguments { get; }
 
     /// <summary>
     /// Gets the first option that can't be reproduced, or null.
@@ -144,36 +146,36 @@ internal sealed class TestingPlatformCommandLine
             {
                 noBuild = bool.TryParse(argument.Substring("--no-build:".Length), out var attachedValue) && attachedValue;
             }
-            else if (TryGetValue(arguments, ref index, argument, ["--test-modules"], out var value))
+            else if (TryGetValue(arguments, ref index, argument, "--test-modules", out var value))
             {
                 testModules = value;
             }
-            else if (TryGetValue(arguments, ref index, argument, ["--root-directory"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "--root-directory", out value))
             {
                 rootDirectory = value;
             }
-            else if (TryGetValue(arguments, ref index, argument, ["--project"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "--project", out value))
             {
                 project = value;
             }
-            else if (TryGetValue(arguments, ref index, argument, ["--solution"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "--solution", out value))
             {
                 solution = value;
             }
-            else if (TryGetValue(arguments, ref index, argument, ["-c", "--configuration"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "-c", "--configuration", out value))
             {
                 optionMsBuildArguments.Add("-p:Configuration=" + value);
             }
-            else if (TryGetValue(arguments, ref index, argument, ["-f", "--framework"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "-f", "--framework", out value))
             {
                 optionMsBuildArguments.Add("-p:TargetFramework=" + value);
             }
-            else if (TryGetValue(arguments, ref index, argument, ["-r", "--runtime"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "-r", "--runtime", out value))
             {
                 optionMsBuildArguments.Add("-p:RuntimeIdentifier=" + value);
                 optionMsBuildArguments.Add("-p:_CommandLineDefinedRuntimeIdentifier=true");
             }
-            else if (TryGetValue(arguments, ref index, argument, ["--artifacts-path"], out value))
+            else if (TryGetValue(arguments, ref index, argument, "--artifacts-path", out value))
             {
                 optionMsBuildArguments.Add("-p:ArtifactsPath=" + Path.GetFullPath(Path.Combine(workingDirectory, value)));
             }
@@ -220,7 +222,7 @@ internal sealed class TestingPlatformCommandLine
         return new TestingPlatformCommandLine(noBuild, testModules, rootDirectory, solution ?? project ?? positional, msBuildArguments, unsupportedOption);
     }
 
-    private static string Unquote(string argument) => argument.Trim('"');
+    private static string Unquote(string argument) => argument.Trim(QuoteCharacters);
 
     private static string GetOptionName(string argument)
     {
@@ -230,22 +232,37 @@ internal sealed class TestingPlatformCommandLine
 
     private static bool IsOption(string argument, string[] names) => Array.IndexOf(names, GetOptionName(argument)) >= 0;
 
+    // Overloads for one and two names, so the option names don't allocate an array for every argument.
+    private static bool TryGetValue(IReadOnlyList<string> arguments, ref int index, string argument, string name, string alias, out string value)
+        => TryGetValue(arguments, ref index, argument, name, out value) || TryGetValue(arguments, ref index, argument, alias, out value);
+
     private static bool TryGetValue(IReadOnlyList<string> arguments, ref int index, string argument, string[] names, out string value)
     {
         foreach (var name in names)
         {
-            if (argument == name)
+            if (TryGetValue(arguments, ref index, argument, name, out value))
             {
-                value = index + 1 < arguments.Count ? Unquote(arguments[index + 1]) : string.Empty;
-                index++;
                 return true;
             }
+        }
 
-            if (argument.Length > name.Length && argument.StartsWith(name, StringComparison.Ordinal) && (argument[name.Length] == ':' || argument[name.Length] == '='))
-            {
-                value = argument.Substring(name.Length + 1);
-                return true;
-            }
+        value = string.Empty;
+        return false;
+    }
+
+    private static bool TryGetValue(IReadOnlyList<string> arguments, ref int index, string argument, string name, out string value)
+    {
+        if (argument == name)
+        {
+            value = index + 1 < arguments.Count ? Unquote(arguments[index + 1]) : string.Empty;
+            index++;
+            return true;
+        }
+
+        if (argument.Length > name.Length && argument.StartsWith(name, StringComparison.Ordinal) && (argument[name.Length] == ':' || argument[name.Length] == '='))
+        {
+            value = argument.Substring(name.Length + 1);
+            return true;
         }
 
         value = string.Empty;

@@ -46,27 +46,50 @@ internal static class TimedProcess
         var stopwatch = Stopwatch.StartNew();
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"'{fileName}' couldn't be started.");
 
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit((int)timeout.TotalMilliseconds) ||
-            !Task.WaitAll([outputTask, errorTask], timeout > stopwatch.Elapsed ? timeout - stopwatch.Elapsed : TimeSpan.Zero))
+        var finished = false;
+        try
         {
-            try
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(GetRemainingMilliseconds(timeout, stopwatch)) ||
+                !Task.WaitAll([outputTask, errorTask], GetRemainingMilliseconds(timeout, stopwatch)))
             {
-                process.Kill();
-            }
-            catch (Exception ex)
-            {
-                // The process can exit on its own between the timeout and the kill.
-                Log.Debug(ex, "TimedProcess: Unable to stop '{FileName}' after the timeout.", fileName);
+                return false;
             }
 
-            return false;
+            output = outputTask.Result;
+            error = errorTask.Result;
+            exitCode = process.ExitCode;
+            finished = true;
+            return true;
         }
+        finally
+        {
+            if (!finished)
+            {
+                Kill(process, fileName);
+            }
+        }
+    }
 
-        output = outputTask.Result;
-        error = errorTask.Result;
-        exitCode = process.ExitCode;
-        return true;
+    private static int GetRemainingMilliseconds(TimeSpan timeout, Stopwatch stopwatch)
+        => timeout > stopwatch.Elapsed ? (int)(timeout - stopwatch.Elapsed).TotalMilliseconds : 0;
+
+    private static void Kill(Process process, string fileName)
+    {
+        try
+        {
+#if NETCOREAPP3_0_OR_GREATER
+            // dotnet msbuild starts child processes (build nodes) that would keep running.
+            process.Kill(entireProcessTree: true);
+#else
+            process.Kill();
+#endif
+        }
+        catch (Exception ex)
+        {
+            // The process can exit on its own between the timeout and the kill.
+            Log.Debug(ex, "TimedProcess: Unable to stop '{FileName}' after the timeout.", fileName);
+        }
     }
 }

@@ -6,6 +6,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -179,10 +180,13 @@ public class TestingPlatformCommandLineTests : IDisposable
         parsed.UnsupportedOption.Should().BeNull();
     }
 
-    [Fact]
-    public void ToleratesQuotedArguments()
+    [Theory]
+    [InlineData('"')]
+    [InlineData('\'')]
+    public void ToleratesQuotedArguments(char quote)
     {
-        var parsed = TestingPlatformCommandLine.Parse(["\"test\"", "\"--no-build\"", "\"-c\"", "\"Release\"", "\"Sample.slnx\""], _workingDirectory);
+        string[] arguments = ["test", "--no-build", "-c", "Release", "Sample.slnx"];
+        var parsed = TestingPlatformCommandLine.Parse(arguments.Select(argument => quote + argument + quote).ToArray(), _workingDirectory);
 
         parsed.NoBuild.Should().BeTrue();
         parsed.ProjectOrSolution.Should().Be("Sample.slnx");

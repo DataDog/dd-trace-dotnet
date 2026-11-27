@@ -23,19 +23,24 @@ internal static class TestingPlatformModuleLocator
 {
     private const string ListTargetName = "DatadogListTestModules";
 
+    private const string ModulesDirectoryProperty = "_DatadogMtpCoverageModulesDirectory";
+
     // Evaluation only: the target writes the path of every Microsoft.Testing.Platform test assembly, one file per project and
     // target framework, and doesn't build anything. It is imported through the hooks MSBuild offers for the single-targeting
     // and the multi-targeting evaluation of a project, so it works for projects, solutions and solution filters.
-    private const string TargetsFileContent =
-        "<Project>\n" +
-        "  <Target Name=\"" + ListTargetName + "\">\n" +
-        "    <ItemGroup Condition=\"'$(TargetFramework)' == '' and '$(TargetFrameworks)' != ''\">\n" +
-        "      <_DatadogTargetFramework Include=\"$(TargetFrameworks)\" />\n" +
-        "    </ItemGroup>\n" +
-        "    <MSBuild Projects=\"$(MSBuildProjectFullPath)\" Targets=\"" + ListTargetName + "\" Properties=\"TargetFramework=%(_DatadogTargetFramework.Identity)\" Condition=\"'@(_DatadogTargetFramework)' != ''\" />\n" +
-        "    <WriteLinesToFile Condition=\"'$(TargetFramework)' != '' and '$(IsTestingPlatformApplication)' == 'true'\" File=\"$(DatadogModulesDirectory)/$([System.Guid]::NewGuid()).txt\" Lines=\"$(TargetPath)\" />\n" +
-        "  </Target>\n" +
-        "</Project>\n";
+#pragma warning disable MA0136 // The line endings of the targets file don't matter to MSBuild
+    private const string TargetsFileContent = $$"""
+        <Project>
+          <Target Name="{{ListTargetName}}">
+            <ItemGroup Condition="'$(TargetFramework)' == '' and '$(TargetFrameworks)' != ''">
+              <_DatadogMtpCoverageTargetFramework Include="$(TargetFrameworks)" />
+            </ItemGroup>
+            <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="{{ListTargetName}}" Properties="TargetFramework=%(_DatadogMtpCoverageTargetFramework.Identity)" Condition="'@(_DatadogMtpCoverageTargetFramework)' != ''" />
+            <WriteLinesToFile Condition="'$(TargetFramework)' != '' and '$(IsTestingPlatformApplication)' == 'true'" File="$({{ModulesDirectoryProperty}})/$([System.IO.Path]::GetRandomFileName()).txt" Lines="$(TargetPath)" />
+          </Target>
+        </Project>
+        """;
+#pragma warning restore MA0136
 
     private static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(5);
 
@@ -49,18 +54,22 @@ internal static class TestingPlatformModuleLocator
     /// <param name="workingDirectory">The directory the command runs in.</param>
     /// <param name="folders">The distinct folders that contain the test assemblies.</param>
     /// <returns>False when the assemblies couldn't be determined, or when there are none.</returns>
-    public static bool TryGetOutputFolders(string program, TestingPlatformCommandLine commandLine, string workingDirectory, out IReadOnlyList<string> folders)
+    public static bool TryGetOutputFolders(string program, TestingPlatformCommandLine commandLine, string workingDirectory, out List<string> folders)
     {
         var assemblyPaths = commandLine.TestModules is { } testModules
                                 ? GetMatchedModulePaths(testModules, commandLine.TestModulesRootDirectory ?? workingDirectory, workingDirectory)
                                 : EvaluateProjects(program, commandLine, workingDirectory);
 
-        var comparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        folders = assemblyPaths?.Select(Path.GetDirectoryName)
-                                .Where(folder => !StringUtil.IsNullOrEmpty(folder))
-                                .Select(folder => folder!)
-                                .Distinct(comparer)
-                                .ToList() ?? [];
+        if (assemblyPaths is null)
+        {
+            folders = [];
+            return false;
+        }
+
+        folders = assemblyPaths.Select(Path.GetDirectoryName)
+                               .Where(folder => !StringUtil.IsNullOrEmpty(folder))
+                               .Distinct(FilePathComparison.Comparer)
+                               .ToList()!;
         return folders.Count > 0;
     }
 
@@ -77,25 +86,28 @@ internal static class TestingPlatformModuleLocator
         }
 
         var matcher = new Matcher();
-        foreach (var rawPattern in testModules.Split(Separators.SemiColon, StringSplitOptions.RemoveEmptyEntries))
+        var remaining = testModules.AsSpan();
+        while (!remaining.IsEmpty)
         {
-            var pattern = rawPattern.Trim();
-            if (pattern.Length == 0)
+            var separator = remaining.IndexOf(';');
+            var pattern = (separator < 0 ? remaining : remaining.Slice(0, separator)).Trim();
+            remaining = separator < 0 ? default : remaining.Slice(separator + 1);
+            if (pattern.IsEmpty)
             {
                 continue;
             }
 
             if (pattern[0] == '!')
             {
-                var exclude = pattern.Substring(1).TrimStart();
-                if (exclude.Length != 0)
+                var exclude = pattern.Slice(1).TrimStart();
+                if (!exclude.IsEmpty)
                 {
-                    matcher.AddExclude(exclude);
+                    matcher.AddExclude(exclude.ToString());
                 }
             }
             else
             {
-                matcher.AddInclude(pattern);
+                matcher.AddInclude(pattern.ToString());
             }
         }
 
@@ -113,20 +125,19 @@ internal static class TestingPlatformModuleLocator
             Directory.CreateDirectory(modulesDirectory);
             File.WriteAllText(targetsFile, TargetsFileContent);
 
-            var arguments = new List<string> { "msbuild" };
-            if (commandLine.ProjectOrSolution is { } projectOrSolution)
-            {
-                arguments.Add(projectOrSolution);
-            }
-
-            arguments.Add("-nologo");
-            arguments.Add("-verbosity:quiet");
-            arguments.Add("-nodeReuse:false");
-            arguments.Add("-target:" + ListTargetName);
-            arguments.AddRange(commandLine.MsBuildArguments);
-            arguments.Add("-p:CustomAfterMicrosoftCommonTargets=" + targetsFile);
-            arguments.Add("-p:CustomAfterMicrosoftCommonCrossTargetingTargets=" + targetsFile);
-            arguments.Add("-p:DatadogModulesDirectory=" + modulesDirectory);
+            List<string> arguments =
+            [
+                "msbuild",
+                .. commandLine.ProjectOrSolution is { } projectOrSolution ? [projectOrSolution] : Array.Empty<string>(),
+                "-nologo",
+                "-verbosity:quiet",
+                "-nodeReuse:false",
+                "-target:" + ListTargetName,
+                .. commandLine.MsBuildArguments,
+                "-p:CustomAfterMicrosoftCommonTargets=" + targetsFile,
+                "-p:CustomAfterMicrosoftCommonCrossTargetingTargets=" + targetsFile,
+                "-p:" + ModulesDirectoryProperty + "=" + modulesDirectory,
+            ];
 
             if (!TimedProcess.TryRun(program, Utils.GetArgumentsAsString(arguments), workingDirectory, EvaluationTimeout, out var output, out var error, out var exitCode))
             {
@@ -138,9 +149,9 @@ internal static class TestingPlatformModuleLocator
             {
                 // A solution can contain projects that don't import the common targets (docker-compose, database projects...);
                 // they can't be test applications, and the SDK skips them too, so only their missing target is tolerated.
-                if (!OnlyProjectsWithoutTheTargetFailed(output + error))
+                if (!OnlyProjectsWithoutTheTargetFailed(output, error))
                 {
-                    Log.Warning<int, string>("TestingPlatformModuleLocator: Evaluating the test projects failed (exit code {ExitCode}): {Output}", exitCode, Truncate(output + error));
+                    Log.Warning<int, string>("TestingPlatformModuleLocator: Evaluating the test projects failed (exit code {ExitCode}): {Output}", exitCode, Truncate(output, error));
                     return null;
                 }
 
@@ -149,8 +160,8 @@ internal static class TestingPlatformModuleLocator
 
             return Directory.EnumerateFiles(modulesDirectory, "*.txt")
                             .SelectMany(File.ReadAllLines)
+                            .Where(line => !StringUtil.IsNullOrWhiteSpace(line))
                             .Select(line => line.Trim())
-                            .Where(line => line.Length > 0)
                             .ToList();
         }
         catch (Exception ex)
@@ -173,17 +184,27 @@ internal static class TestingPlatformModuleLocator
 
     // MSBuild reports a project without the target as "<project> : error MSB4057: The target "DatadogListTestModules" does not exist...".
     // The error code and the target name aren't localized.
-    private static bool OnlyProjectsWithoutTheTargetFailed(string output)
+    private static bool OnlyProjectsWithoutTheTargetFailed(string output, string error)
     {
         var errors = 0;
-        foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        return OnlyMissingTargetErrors(output, ref errors) && OnlyMissingTargetErrors(error, ref errors) && errors > 0;
+    }
+
+    // Counts the missing target errors of the text, and returns false when the text reports another error.
+    private static bool OnlyMissingTargetErrors(string text, ref int errors)
+    {
+        var remaining = text.AsSpan();
+        while (!remaining.IsEmpty)
         {
-            if (line.IndexOf(": error ", StringComparison.Ordinal) < 0)
+            var lineEnd = remaining.IndexOfAny('\r', '\n');
+            var line = lineEnd < 0 ? remaining : remaining.Slice(0, lineEnd);
+            remaining = lineEnd < 0 ? default : remaining.Slice(lineEnd + 1);
+            if (line.IndexOf(": error ".AsSpan()) < 0)
             {
                 continue;
             }
 
-            if (line.IndexOf("MSB4057", StringComparison.Ordinal) < 0 || line.IndexOf(ListTargetName, StringComparison.Ordinal) < 0)
+            if (line.IndexOf("MSB4057".AsSpan()) < 0 || line.IndexOf(ListTargetName.AsSpan()) < 0)
             {
                 return false;
             }
@@ -191,9 +212,17 @@ internal static class TestingPlatformModuleLocator
             errors++;
         }
 
-        return errors > 0;
+        return true;
     }
 
-    private static string Truncate(string text)
-        => text.Length > 1000 ? text.Substring(0, 1000) : text;
+    private static string Truncate(string output, string error)
+    {
+        const int maxLength = 1000;
+        if (output.Length >= maxLength)
+        {
+            return output.Substring(0, maxLength);
+        }
+
+        return error.Length > maxLength - output.Length ? output + error.Substring(0, maxLength - output.Length) : output + error;
+    }
 }

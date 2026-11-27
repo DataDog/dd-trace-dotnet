@@ -74,6 +74,7 @@ internal static class TestingPlatformCoverageRewriter
             return false;
         }
 
+        Log.Debug<int>("TestingPlatformCoverageRewriter: Rewriting the test assemblies in {Folders} folders.", existingFolders.Count);
         var coverageSettings = new CoverageSettings(configurationElement: null, tracerHome, settings);
         var logger = new RunnerCoverageLogger();
         var assemblies = 0;
@@ -102,16 +103,18 @@ internal static class TestingPlatformCoverageRewriter
         return true;
     }
 
+    // The messages of the coverage rewriter contain paths and names, so they are logged as a property, and each kind of message
+    // has its own template to be told apart in telemetry (errors with an exception also carry its type and stack).
     private sealed class RunnerCoverageLogger : ICollectorLogger
     {
-        public void Error(string? text) => Log.Error("TestingPlatformCoverageRewriter: {Message}", text);
+        public void Error(string? text) => Log.Error("TestingPlatformCoverageRewriter: Coverage rewriter error: {Message}", text);
 
-        public void Error(Exception exception) => Log.Error(exception, "TestingPlatformCoverageRewriter: Error rewriting the test assemblies.");
+        public void Error(Exception exception) => Log.Error(exception, "TestingPlatformCoverageRewriter: Coverage rewriter exception.");
 
-        public void Error(Exception exception, string? text) => Log.Error(exception, "TestingPlatformCoverageRewriter: {Message}", text);
+        public void Error(Exception exception, string? text) => Log.Error(exception, "TestingPlatformCoverageRewriter: Coverage rewriter exception: {Message}", text);
 
-        public void Warning(string? text) => Log.Warning("TestingPlatformCoverageRewriter: {Message}", text);
+        public void Warning(string? text) => Log.Warning("TestingPlatformCoverageRewriter: Coverage rewriter warning: {Message}", text);
 
-        public void Debug(string? text) => Log.Debug("TestingPlatformCoverageRewriter: {Message}", text);
+        public void Debug(string? text) => Log.Debug("TestingPlatformCoverageRewriter: Coverage rewriter debug message: {Message}", text);
     }
 }
