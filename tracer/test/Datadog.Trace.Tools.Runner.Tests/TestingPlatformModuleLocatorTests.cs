@@ -33,6 +33,13 @@ public class TestingPlatformModuleLocatorTests : IDisposable
         </Project>
         """;
 
+    // Like a docker-compose or database project: it doesn't import the common targets, so the listing target doesn't exist in it.
+    private const string ProjectWithoutCommonTargets = """
+        <Project>
+          <Target Name="Build" />
+        </Project>
+        """;
+
     private readonly string _root = Path.Combine(Path.GetTempPath(), "dd-mtp-locator-" + Path.GetRandomFileName());
 
     public TestingPlatformModuleLocatorTests()
@@ -83,6 +90,19 @@ public class TestingPlatformModuleLocatorTests : IDisposable
             Path.Combine("Tests1", "bin", "Debug", "net9.0"),
             Path.Combine("Tests2", "bin", "Debug", "net8.0"),
             Path.Combine("Tests2", "bin", "Debug", "net9.0"));
+    }
+
+    [Fact]
+    public void SkipsTheProjectsOfASolutionThatDoNotImportTheCommonTargets()
+    {
+        WriteProject("Tests1", TestingPlatformProject);
+        WriteProject("Compose", ProjectWithoutCommonTargets);
+        File.WriteAllText(Path.Combine(_root, "All.sln"), CreateSolution("Tests1", "Compose"));
+
+        var found = TestingPlatformModuleLocator.TryGetOutputFolders("dotnet", Parse("test", "--solution", "All.sln"), _root, out var folders);
+
+        found.Should().BeTrue();
+        Relative(folders).Should().BeEquivalentTo(Path.Combine("Tests1", "bin", "Debug", "net8.0"), Path.Combine("Tests1", "bin", "Debug", "net9.0"));
     }
 
     [Fact]

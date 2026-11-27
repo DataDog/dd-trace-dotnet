@@ -14,6 +14,13 @@ namespace Datadog.Trace.Tools.Runner;
 /// <summary>
 /// The parts of a <c>dotnet test</c> command line, for the Microsoft.Testing.Platform command, that decide which test assemblies run.
 /// </summary>
+/// <remarks>
+/// <see cref="Datadog.Trace.Ci.Coverage.Backfill.CoverageBackfillCommandLine"/> parses the VSTest <c>dotnet test</c> command for coverage
+/// backfill: it looks for options anywhere in the command (including after <c>--</c> and in <c>dotnet-coverage</c> child commands) and
+/// takes positional arguments as the project. The Microsoft.Testing.Platform command has a different grammar (<c>--project</c>,
+/// <c>--solution</c>, <c>--test-modules</c>, <c>--root-directory</c>, and everything after <c>--</c> belongs to the test
+/// applications), so it is parsed here instead of extending the backfill parser and the option lists it relies on.
+/// </remarks>
 internal sealed class TestingPlatformCommandLine
 {
     // Other options of the Microsoft.Testing.Platform `dotnet test` command that take a value, so the value is not taken for a

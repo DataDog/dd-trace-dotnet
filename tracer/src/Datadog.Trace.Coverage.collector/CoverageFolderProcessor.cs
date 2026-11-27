@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -187,8 +186,6 @@ internal static class CoverageFolderProcessor
                 }
             }
         }
-
-        logger?.Warning($"Processed {numAssemblies.ToString(CultureInfo.InvariantCulture)} assemblies in folder: {folder}");
 
         return numAssemblies;
     }

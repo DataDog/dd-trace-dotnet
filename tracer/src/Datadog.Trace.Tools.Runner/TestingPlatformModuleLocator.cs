@@ -21,16 +21,18 @@ namespace Datadog.Trace.Tools.Runner;
 /// </summary>
 internal static class TestingPlatformModuleLocator
 {
+    private const string ListTargetName = "DatadogListTestModules";
+
     // Evaluation only: the target writes the path of every Microsoft.Testing.Platform test assembly, one file per project and
     // target framework, and doesn't build anything. It is imported through the hooks MSBuild offers for the single-targeting
     // and the multi-targeting evaluation of a project, so it works for projects, solutions and solution filters.
     private const string TargetsFileContent =
         "<Project>\n" +
-        "  <Target Name=\"DatadogListTestModules\">\n" +
+        "  <Target Name=\"" + ListTargetName + "\">\n" +
         "    <ItemGroup Condition=\"'$(TargetFramework)' == '' and '$(TargetFrameworks)' != ''\">\n" +
         "      <_DatadogTargetFramework Include=\"$(TargetFrameworks)\" />\n" +
         "    </ItemGroup>\n" +
-        "    <MSBuild Projects=\"$(MSBuildProjectFullPath)\" Targets=\"DatadogListTestModules\" Properties=\"TargetFramework=%(_DatadogTargetFramework.Identity)\" Condition=\"'@(_DatadogTargetFramework)' != ''\" />\n" +
+        "    <MSBuild Projects=\"$(MSBuildProjectFullPath)\" Targets=\"" + ListTargetName + "\" Properties=\"TargetFramework=%(_DatadogTargetFramework.Identity)\" Condition=\"'@(_DatadogTargetFramework)' != ''\" />\n" +
         "    <WriteLinesToFile Condition=\"'$(TargetFramework)' != '' and '$(IsTestingPlatformApplication)' == 'true'\" File=\"$(DatadogModulesDirectory)/$([System.Guid]::NewGuid()).txt\" Lines=\"$(TargetPath)\" />\n" +
         "  </Target>\n" +
         "</Project>\n";
@@ -120,7 +122,7 @@ internal static class TestingPlatformModuleLocator
             arguments.Add("-nologo");
             arguments.Add("-verbosity:quiet");
             arguments.Add("-nodeReuse:false");
-            arguments.Add("-target:DatadogListTestModules");
+            arguments.Add("-target:" + ListTargetName);
             arguments.AddRange(commandLine.MsBuildArguments);
             arguments.Add("-p:CustomAfterMicrosoftCommonTargets=" + targetsFile);
             arguments.Add("-p:CustomAfterMicrosoftCommonCrossTargetingTargets=" + targetsFile);
@@ -134,8 +136,15 @@ internal static class TestingPlatformModuleLocator
 
             if (exitCode != 0)
             {
-                Log.Warning<int, string>("TestingPlatformModuleLocator: Evaluating the test projects failed (exit code {ExitCode}): {Output}", exitCode, Truncate(output + error));
-                return null;
+                // A solution can contain projects that don't import the common targets (docker-compose, database projects...);
+                // they can't be test applications, and the SDK skips them too, so only their missing target is tolerated.
+                if (!OnlyProjectsWithoutTheTargetFailed(output + error))
+                {
+                    Log.Warning<int, string>("TestingPlatformModuleLocator: Evaluating the test projects failed (exit code {ExitCode}): {Output}", exitCode, Truncate(output + error));
+                    return null;
+                }
+
+                Log.Debug("TestingPlatformModuleLocator: Some projects don't import the common targets and were skipped.");
             }
 
             return Directory.EnumerateFiles(modulesDirectory, "*.txt")
@@ -160,6 +169,29 @@ internal static class TestingPlatformModuleLocator
                 Log.Debug(ex, "TestingPlatformModuleLocator: Error deleting the temporary folder.");
             }
         }
+    }
+
+    // MSBuild reports a project without the target as "<project> : error MSB4057: The target "DatadogListTestModules" does not exist...".
+    // The error code and the target name aren't localized.
+    private static bool OnlyProjectsWithoutTheTargetFailed(string output)
+    {
+        var errors = 0;
+        foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (line.IndexOf(": error ", StringComparison.Ordinal) < 0)
+            {
+                continue;
+            }
+
+            if (line.IndexOf("MSB4057", StringComparison.Ordinal) < 0 || line.IndexOf(ListTargetName, StringComparison.Ordinal) < 0)
+            {
+                return false;
+            }
+
+            errors++;
+        }
+
+        return errors > 0;
     }
 
     private static string Truncate(string text)

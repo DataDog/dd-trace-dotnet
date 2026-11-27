@@ -155,6 +155,7 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             var numAssemblies = CoverageFolderProcessor.ProcessFolder(folder, searchOption, _settings, _logger);
+            _logger?.Warning($"Processed {numAssemblies.ToString(CultureInfo.InvariantCulture)} assemblies in folder: {folder}");
 
             // The following is just a best effort approach to indicate in the test session that
             // we successfully instrumented all assemblies to collect code coverage.

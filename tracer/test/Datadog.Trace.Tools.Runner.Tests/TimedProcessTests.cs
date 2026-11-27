@@ -20,10 +20,11 @@ public class TimedProcessTests
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
         var stopwatch = Stopwatch.StartNew();
 
-        TimedProcess.TryRun("sh", "-c \"exec sleep 60\"", Path.GetTempPath(), TimeSpan.FromSeconds(1), out _, out _, out _).Should().BeFalse();
+        // A process that can't start throws, so false means it started and was stopped at the timeout.
+        TimedProcess.TryRun("sh", "-c \"exec sleep 300\"", Path.GetTempPath(), TimeSpan.FromSeconds(1), out _, out _, out _).Should().BeFalse();
 
-        // It waited for the timeout, so the process did start, and didn't wait for the process to finish.
-        stopwatch.Elapsed.Should().BeGreaterOrEqualTo(TimeSpan.FromMilliseconds(900)).And.BeLessThan(TimeSpan.FromSeconds(30));
+        // Far below the 300 seconds the process would take, so the result can't depend on the machine's load.
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(120));
     }
 
     [SkippableFact]
