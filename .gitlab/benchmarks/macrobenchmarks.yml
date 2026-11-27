@@ -147,19 +147,16 @@ build-benchmark-ci-images:
     expire_in: 3 months
   variables:
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_WARMUP_DURATION: 30s
+    K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
     K6_OPTIONS_WARMUP_VUS: 2
 
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 1m
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 2
     K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2
 
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_HIGH_LOAD_DURATION: 30s
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_VUS: 2
 
@@ -178,8 +175,7 @@ build-benchmark-ci-images:
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 5000
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.baseline-x86:
+baseline-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: baseline-x86
@@ -197,8 +193,7 @@ calltarget_ngen-x86:
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.single_span-x86:
+single_span-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: single-span-x86
@@ -209,8 +204,7 @@ calltarget_ngen-x86:
     DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.trace_stats-x86:
+trace_stats-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: trace-stats-x86
@@ -221,8 +215,7 @@ calltarget_ngen-x86:
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_only-x86:
+manual_only-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: manual-only-x86
@@ -231,8 +224,7 @@ calltarget_ngen-x86:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_and_automatic-x86:
+manual_and_automatic-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: manual-and-automatic-x86
@@ -241,8 +233,7 @@ calltarget_ngen-x86:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.ddtraceenabled_false-x86:
+ddtraceenabled_false-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: ddtraceenabled-false-x86
@@ -251,8 +242,7 @@ calltarget_ngen-x86:
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions_baseline-x86:
+profiler_exceptions_baseline-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-exceptions-baseline-x86
@@ -260,8 +250,7 @@ calltarget_ngen-x86:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler-x86:
+profiler-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-x86
@@ -271,8 +260,7 @@ calltarget_ngen-x86:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_walltime-x86:
+profiler_walltime-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-walltime-x86
@@ -284,8 +272,7 @@ calltarget_ngen-x86:
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions-x86:
+profiler_exceptions-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-exceptions-x86
@@ -296,8 +283,7 @@ calltarget_ngen-x86:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu-x86:
+profiler_cpu-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-cpu-x86
@@ -309,8 +295,7 @@ calltarget_ngen-x86:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu_timer_create-x86:
+profiler_cpu_timer_create-x86:
   extends: .benchmarks-x86
   variables:
     DD_SERVICE: profiler-cpu-timer-create-x86
@@ -337,8 +322,7 @@ calltarget_ngen-x86:
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 4000
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.baseline-arm64:
+baseline-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: baseline-arm64
@@ -356,8 +340,7 @@ calltarget_ngen-arm64:
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.single_span-arm64:
+single_span-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: single-span-arm64
@@ -368,8 +351,7 @@ calltarget_ngen-arm64:
     DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.trace_stats-arm64:
+trace_stats-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: trace-stats-arm64
@@ -380,8 +362,7 @@ calltarget_ngen-arm64:
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_only-arm64:
+manual_only-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: manual-only-arm64
@@ -390,8 +371,7 @@ calltarget_ngen-arm64:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_and_automatic-arm64:
+manual_and_automatic-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: manual-and-automatic-arm64
@@ -400,8 +380,7 @@ calltarget_ngen-arm64:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.ddtraceenabled_false-arm64:
+ddtraceenabled_false-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: ddtraceenabled-false-arm64
@@ -410,8 +389,7 @@ calltarget_ngen-arm64:
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions_baseline-arm64:
+profiler_exceptions_baseline-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-exceptions-baseline-arm64
@@ -419,8 +397,7 @@ calltarget_ngen-arm64:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler-arm64:
+profiler-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-arm64
@@ -430,8 +407,7 @@ calltarget_ngen-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_walltime-arm64:
+profiler_walltime-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-walltime-arm64
@@ -443,8 +419,7 @@ calltarget_ngen-arm64:
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions-arm64:
+profiler_exceptions-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-exceptions-arm64
@@ -455,8 +430,7 @@ calltarget_ngen-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu-arm64:
+profiler_cpu-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-cpu-arm64
@@ -468,8 +442,7 @@ calltarget_ngen-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu_timer_create-arm64:
+profiler_cpu_timer_create-arm64:
   extends: .benchmarks-arm64
   variables:
     DD_SERVICE: profiler-cpu-timer-create-arm64
@@ -531,20 +504,17 @@ calltarget_ngen-arm64:
     ARTIFACTS_DIR: "reports"
 
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_WARMUP_DURATION: 30s
+    K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
     K6_OPTIONS_WARMUP_VUS: 2
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 1m
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 10m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
     K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
 
-    # TODO: restore the full duration after the migration iteration.
-    K6_OPTIONS_HIGH_LOAD_DURATION: 30s
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_VUS: 2
 
@@ -568,8 +538,7 @@ calltarget_ngen-arm64:
     - .gitlab/benchmarks/macrobenchmarks/steps/fetch-windows-results.sh
     - .gitlab/benchmarks/macrobenchmarks/steps/upload-windows-results-to-bp-ui.sh
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.baseline-win:
+baseline-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: baseline-win
@@ -585,8 +554,7 @@ calltarget_ngen-win:
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.single_span-win:
+single_span-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: single-span-win
@@ -597,8 +565,7 @@ calltarget_ngen-win:
     DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.trace_stats-win:
+trace_stats-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: trace-stats-win
@@ -609,8 +576,7 @@ calltarget_ngen-win:
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_only-win:
+manual_only-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: manual-only-win
@@ -619,8 +585,7 @@ calltarget_ngen-win:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.manual_and_automatic-win:
+manual_and_automatic-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: manual-and-automatic-win
@@ -629,8 +594,7 @@ calltarget_ngen-win:
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.ddtraceenabled_false-win:
+ddtraceenabled_false-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: ddtraceenabled-false-win
@@ -639,8 +603,7 @@ calltarget_ngen-win:
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions_baseline-win:
+profiler_exceptions_baseline-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-exceptions-baseline-win
@@ -648,8 +611,7 @@ calltarget_ngen-win:
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler-win:
+profiler-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-win
@@ -659,8 +621,7 @@ calltarget_ngen-win:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_walltime-win:
+profiler_walltime-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-walltime-win
@@ -672,8 +633,7 @@ calltarget_ngen-win:
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_exceptions-win:
+profiler_exceptions-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-exceptions-win
@@ -684,8 +644,7 @@ calltarget_ngen-win:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu-win:
+profiler_cpu-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-cpu-win
@@ -697,8 +656,7 @@ calltarget_ngen-win:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-# TODO: re-enable after the macrobenchmarks migration iteration.
-.profiler_cpu_timer_create-win:
+profiler_cpu_timer_create-win:
   extends: .benchmarks-win
   variables:
     DD_SERVICE: profiler-cpu-timer-create-win
@@ -723,9 +681,20 @@ calltarget_ngen-win:
 check-slo-breaches:
   extends: .check-slo-breaches
   stage: gate
-  # TODO: restore the full Windows needs list after the migration iteration.
   needs:
+    - baseline-win
     - calltarget_ngen-win
+    - single_span-win
+    - trace_stats-win
+    - manual_only-win
+    - manual_and_automatic-win
+    - ddtraceenabled_false-win
+    - profiler_exceptions_baseline-win
+    - profiler-win
+    - profiler_walltime-win
+    - profiler_exceptions-win
+    - profiler_cpu-win
+    - profiler_cpu_timer_create-win
   when: always
   variables:
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
