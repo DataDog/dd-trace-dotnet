@@ -843,7 +843,6 @@ namespace Samples.Computer01
         private void StopOpenLdapCrash()
         {
             _openldapCrash.Stop();
-            _openldapCrash.PrintStatistics();
         }
 #endif
 
