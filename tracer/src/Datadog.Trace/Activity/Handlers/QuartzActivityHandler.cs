@@ -74,7 +74,7 @@ namespace Datadog.Trace.Activity.Handlers
                 // Finish the span manually
                 EnhanceActivityMetadata(activity);
 
-                OtlpHelpers.UpdateSpanFromActivity(activity, span, Tracer.Instance.Settings.OtelSemanticsEnabled);
+                OtlpHelpers.UpdateSpanFromActivity(activity, span, span.OpenTelemetrySemanticsEnabled);
 
                 span.Finish((DateTimeOffset)activity.StartTimeUtc.Add(activity.Duration));
                 activityMapping.Scope.Close();

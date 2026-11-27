@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Configuration;
@@ -103,6 +104,59 @@ public class ReconciliationSweepTests
             result.Iterated.Should().Be(1);
             mappings.Should().BeEmpty();
             span.IsFinished.Should().BeTrue();
+        }
+        finally
+        {
+            GC.KeepAlive(activity);
+        }
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public async Task MissedStopActivity_UsesOtelSemanticsOfTheSpansTracer(bool otelSemanticsEnabled)
+    {
+        // On DiagnosticSource < 5.0 (net4x, netcoreapp2.x/3.x) this exercises the legacy fallback
+        // rung of the sweep; newer runtimes are handled by the IActivity5/6 rungs.
+        //
+        // OTel semantics are off by default, so the "true" case only passes if the conversion reads
+        // the setting from the span's own tracer rather than from global or default settings
+        new TracerSettings().OtelSemanticsEnabled.Should().BeFalse("the default must differ from the span's tracer for this test to be meaningful");
+
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false" },
+        }));
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+
+        var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
+
+        // Without OTel semantics, a "resource.name" tag is consumed as the span's resource name;
+        // with them, it's kept as a plain tag and the resource name falls back to the operation name
+        var activity = new SD.Activity("missed-stop");
+        activity.SetIdFormat(SD.ActivityIdFormat.W3C);
+        activity.AddTag("resource.name", "custom-resource");
+        activity.Start();
+        try
+        {
+            var (_, span) = AddMapping(mappings, tracer, activity);
+            activity.Stop();
+
+            ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
+
+            span.IsFinished.Should().BeTrue();
+            var tags = (OpenTelemetryTags)span.Tags;
+            if (otelSemanticsEnabled)
+            {
+                span.ResourceName.Should().Be("missed-stop");
+                span.GetTag("resource.name").Should().Be("custom-resource");
+                tags.OtelTraceId.Should().BeNull();
+            }
+            else
+            {
+                span.ResourceName.Should().Be("custom-resource");
+                span.GetTag("resource.name").Should().BeNull();
+                tags.OtelTraceId.Should().Be(activity.TraceId.ToHexString());
+            }
         }
         finally
         {
