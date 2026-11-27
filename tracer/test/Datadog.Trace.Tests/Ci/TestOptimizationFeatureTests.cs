@@ -89,6 +89,37 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
+    public void KnownTestsRequestFailureDisablesKnownTestsAndEarlyFlakeDetection()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.KnownTestsEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "true"));
+        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+        var client = new TestOptimizationClientStub(knownTestsException: new InvalidOperationException("known tests request failed"));
+
+        var knownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
+        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, knownTestsFeature);
+
+        knownTestsFeature.Enabled.Should().BeFalse();
+        settings.KnownTestsEnabled.Should().BeFalse();
+        settings.EarlyFlakeDetectionEnabled.Should().BeFalse();
+        earlyFlakeDetectionFeature.Enabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TestManagementRequestFailureDisablesTestManagement()
+    {
+        var settings = CreateSettings((ConfigurationKeys.CIVisibility.TestManagementEnabled, "true"));
+        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+        var client = new TestOptimizationClientStub(testManagementException: new InvalidOperationException("test management request failed"));
+
+        var testManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
+
+        testManagementFeature.Enabled.Should().BeFalse();
+        testManagementFeature.TestManagement.Modules.Should().BeNull();
+    }
+
+    [Fact]
     public void ExplicitEmptyKnownTestsPayloadKeepsKnownTestsAndEarlyFlakeDetectionEnabled()
     {
         var settings = CreateSettings(
@@ -3545,7 +3576,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     private sealed class TestOptimizationClientStub(
         TestOptimizationClient.KnownTestsResponse knownTestsResponse = default,
         TestOptimizationClient.SkippableTestsResponse skippableTestsResponse = default,
-        Func<SkippableTestsRequestScope, TestOptimizationClient.SkippableTestsResponse> skippableTestsResponseFactory = null) : ITestOptimizationClient
+        Func<SkippableTestsRequestScope, TestOptimizationClient.SkippableTestsResponse> skippableTestsResponseFactory = null,
+        Exception knownTestsException = null,
+        Exception testManagementException = null) : ITestOptimizationClient
     {
         public List<SkippableTestsRequestScope> SkippableRequestScopes { get; } = [];
 
@@ -3553,7 +3586,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             => Task.FromResult(default(TestOptimizationClient.SettingsResponse));
 
         public Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
-            => Task.FromResult(knownTestsResponse);
+            => knownTestsException is null ? Task.FromResult(knownTestsResponse) : Task.FromException<TestOptimizationClient.KnownTestsResponse>(knownTestsException);
 
         public Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
             => Task.FromResult(default(TestOptimizationClient.SearchCommitResponse));
@@ -3571,7 +3604,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             => Task.FromResult(0L);
 
         public Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests()
-            => Task.FromResult(default(TestOptimizationClient.TestManagementResponse));
+            => testManagementException is null ? Task.FromResult(default(TestOptimizationClient.TestManagementResponse)) : Task.FromException<TestOptimizationClient.TestManagementResponse>(testManagementException);
     }
 
     private sealed class TestCIEnvironmentValues : CIEnvironmentValues
