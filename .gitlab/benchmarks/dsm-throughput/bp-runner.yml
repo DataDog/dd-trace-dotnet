@@ -1,0 +1,94 @@
+# bp-runner configuration for Linux benchmarks. 
+# See https://github.com/DataDog/benchmarking-platform-tools/blob/main/bp-runner/README.md.
+
+global_setup:
+  - name: Hardware and software info
+    run: collect_hardware_software_info
+
+  - name: datadog-agent
+    run: datadog_agent
+    cpus: 14-15
+    config_sh: ./steps/update-dd-agent-config.sh
+    retries_on_failure: 2
+
+  - name: zookeeper
+    run: service
+    cpus: 16-17
+    path: ./steps/start-zookeeper.sh
+
+  - name: kafka
+    run: service
+    cpus: 18-19
+    path: ./steps/start-kafka.sh
+
+common_env: &common_env
+  DOTNET_GCHeapHardLimit: "134217728" # 128MB
+  DOTNET_GCConcurrent: "false"
+  NUM_THREADS: "5"
+
+parallelize: false
+experiments:
+  - name: benchmark-tracer-no-dsm
+    env:
+      EXPERIMENT_NAME: "tracer-no-dsm"
+      ENABLE_TRACER: "true"
+      DD_DATA_STREAMS_ENABLED: "false"
+      KAFKA_TOPIC: test-topic-no-dsm
+      NUM_MESSAGES: "1000"
+      DD_SERVICE: "dotnet-throughput-tracer-no-dsm"
+      <<: *common_env
+    steps:
+      - name: start-benchmark-tracer-no-dsm
+        run: shell
+        cpus: 20-23
+        script: $REPOSITORY_ROOT/steps/start-benchmark.sh
+
+  - name: benchmark-dsm-enabled
+    env:
+      EXPERIMENT_NAME: "dsm-enabled"
+      ENABLE_TRACER: "true"
+      DD_DATA_STREAMS_ENABLED: "true"
+      KAFKA_TOPIC: test-topic-dsm
+      NUM_MESSAGES: "1000"
+      ENABLE_TRACER: "true"
+      DD_SERVICE: "dotnet-throughput-dsm-enabled"
+      <<: *common_env
+    steps:
+      - name: start-benchmark-dsm
+        run: shell
+        cpus: 20-23
+        script: $REPOSITORY_ROOT/steps/start-benchmark.sh
+
+  - name: compare-results
+    steps:
+      - name: compare-results
+        run: shell
+        script: $REPOSITORY_ROOT/steps/compare-results.sh
+
+  - name: convert-to-common-format
+    steps:
+      - name: convert-to-common-format
+        run: shell
+        script: $REPOSITORY_ROOT/steps/convert-to-common-format.sh
+
+global_teardown:
+  - name: S3 uploading
+    run: upload_to_s3
+
+  - name: BP API uploading
+    run: upload_to_bp_api
+    retries_on_failure: 2
+    project: dd-trace-dotnet
+
+docker_config_for_local_runs:
+  image_name: bp_dotnet-dsm_kafka-worker
+  volumes:
+    - logs/agent/:/var/log/datadog/:rw
+    - steps/:/app/steps/:ro
+    - bp-runner.yml:/app/bp-runner.yml:ro
+  env:
+    CI_COMMIT_REF_NAME: master
+    CI_COMMIT_SHA: master
+    IS_LOCAL_RUN: "true"
+    CPU_MODEL: "$(uname | grep -q Darwin && sysctl -n machdep.cpu.brand_string || grep -m1 'model name' /proc/cpuinfo | cut -d: -f2-)"
+  command: bp-runner bp-runner.yml --debug
