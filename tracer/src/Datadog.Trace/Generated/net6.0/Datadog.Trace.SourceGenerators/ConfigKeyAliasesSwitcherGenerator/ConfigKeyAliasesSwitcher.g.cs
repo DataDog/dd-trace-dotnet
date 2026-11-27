@@ -27,6 +27,7 @@ internal static partial class ConfigKeyAliasesSwitcher
         {
         "DD_AGENT_HOST" => new string[] {"DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME"},
         "DD_API_SECURITY_ENABLED" => new string[] {"DD_EXPERIMENTAL_API_SECURITY_ENABLED"},
+        "DD_DOTNET_TRACER_HOME" => new string[] {"OTEL_DOTNET_AUTO_HOME"},
         "DD_EXCEPTION_REPLAY_ENABLED" => new string[] {"DD_EXCEPTION_DEBUGGING_ENABLED"},
         "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS" => new string[] {"DD_INTERNAL_RCM_POLL_INTERVAL"},
         "DD_SERVICE" => new string[] {"DD_SERVICE_NAME"},
@@ -57,6 +58,7 @@ internal static partial class ConfigKeyAliasesSwitcher
     {
             "DD_AGENT_HOST" => ["DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME"],
             "DD_API_SECURITY_ENABLED" => ["DD_EXPERIMENTAL_API_SECURITY_ENABLED"],
+            "DD_DOTNET_TRACER_HOME" => ["OTEL_DOTNET_AUTO_HOME"],
             "DD_EXCEPTION_REPLAY_ENABLED" => ["DD_EXCEPTION_DEBUGGING_ENABLED"],
             "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS" => ["DD_INTERNAL_RCM_POLL_INTERVAL"],
             "DD_SERVICE" => ["DD_SERVICE_NAME"],
