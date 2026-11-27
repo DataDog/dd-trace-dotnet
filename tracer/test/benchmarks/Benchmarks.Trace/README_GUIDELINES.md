@@ -263,7 +263,7 @@ BenchmarkDotNet's stability machinery (pilot, adaptive warmup and iteration coun
 
 Other rules that keep the suite measurable:
 
-- **Never commit TFM stubs**: a benchmark whose body compiles to nothing on a target framework (for example `#if NET6_0_OR_GREATER` around the real body) measures BenchmarkDotNet loop overhead and code alignment, not a scenario. Filter it out in `Program.cs` (see `IsRealAspNetCoreBenchmark`).
+- **Never commit TFM stubs**: a benchmark whose body compiles to nothing on a target framework (for example `#if NET6_0_OR_GREATER` around the real body) measures BenchmarkDotNet loop overhead and code alignment, not a scenario. If the stub cannot be avoided, mark the class with `[StubOn(...)]` listing the target frameworks where the stub compiles. `HasRealBody` in `Program.cs` skips the benchmark when the job's target framework is in that list. Put the attribute on a declaration that every target framework compiles, because CI filters all runtimes from one net6.0 host (see `AutoInstrumentation/AspNetCoreBenchmark.cs`).
 - **CI repetition budget**: each pipeline gives a benchmark 3 launches of about a minute each, with iterations of 500 ms. Keep one invocation cheap enough for the pilot to scale operations into the thousands; if a single call takes ~100 ms or more, the benchmark belongs to the macrobenchmark suite.
 
 ## References
