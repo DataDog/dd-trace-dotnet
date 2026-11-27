@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer
     {
         // Cache only supported descriptors. If the cache fills up, additional supported types still
         // serialize correctly but rebuild their descriptor; unsupported IEnumerable types are never cached.

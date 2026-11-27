@@ -15,27 +15,43 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 
-        private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
+        private readonly int _maximumSerializationTime;
+        private readonly bool _disableSerializationTimeout;
+
+        internal DebuggerSnapshotSerializer(int maximumSerializationTimeInMilliseconds)
+            : this(maximumSerializationTimeInMilliseconds, disableSerializationTimeout: false)
+        {
+        }
+
+        [TestingAndPrivateOnly]
+        internal DebuggerSnapshotSerializer(int maximumSerializationTimeInMilliseconds, bool disableSerializationTimeout)
+        {
+            _maximumSerializationTime = maximumSerializationTimeInMilliseconds;
+            _disableSerializationTimeout = disableSerializationTimeout;
+        }
+
+        internal static DebuggerSnapshotSerializer Instance { get; private set; } = new(DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds);
 
         internal static void SetConfig(DebuggerSettings debuggerSettings)
         {
-            _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
+            Instance = new DebuggerSnapshotSerializer(debuggerSettings.MaxSerializationTimeInMilliseconds);
         }
 
         /// <summary>
         /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the MethodDebuggerInvoker process).
         /// </summary>
-        internal static void Serialize(
+        internal void Serialize(
             object source,
             Type type,
             string name,
@@ -48,11 +64,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
-        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo, ref uint incompleteReasons)
+        public void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo, ref uint incompleteReasons)
         {
             using var cts = CreateCancellationTimeout();
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
             WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
+        }
+
+        private CancellationTokenSource CreateCancellationTimeout()
+        {
+            var cts = new CancellationTokenSource();
+            if (!_disableSerializationTimeout && !System.Diagnostics.Debugger.IsAttached)
+            {
+                cts.CancelAfter(_maximumSerializationTime);
+            }
+
+            return cts;
         }
 
         private static bool SerializeInternal(
@@ -761,17 +788,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return "Unknown";
                 }
             }
-        }
-
-        private static CancellationTokenSource CreateCancellationTimeout()
-        {
-            var cts = new CancellationTokenSource();
-            if (!System.Diagnostics.Debugger.IsAttached)
-            {
-                cts.CancelAfter(_maximumSerializationTime);
-            }
-
-            return cts;
         }
 
         private sealed class ObjectReferenceEqualityComparer : IEqualityComparer<object>
