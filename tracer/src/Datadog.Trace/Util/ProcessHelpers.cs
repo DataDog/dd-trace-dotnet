@@ -143,7 +143,7 @@ namespace Datadog.Trace.Util
 
             using var disposableProcessInfo = processInfo;
 
-            // The output is read on this thread until the process closes it, so a timer enforces the timeout by killing the
+            // The output is read synchronously until the process closes it, so a timer enforces the timeout by killing the
             // process, which ends the reads. Reading asynchronously isn't used: it caused deadlocks on Alpine arm64 (#6545) and
             // broke MSTest AppDomain unloading on .NET Framework.
             using var timeoutKiller = command.Timeout is { } timeout ? new TimeoutKiller(processInfo, timeout) : null;
@@ -175,8 +175,11 @@ namespace Datadog.Trace.Util
             var error = string.Empty;
             if (!processStartInfo.UseShellExecute)
             {
+                // Both streams are read at the same time, so a process that fills one of the pipes while the other one is
+                // being read doesn't block. The standard error is read on a dedicated thread, which ends before returning.
+                var errorReader = new StandardErrorReader(processInfo.StandardError);
                 output = processInfo.StandardOutput.ReadToEnd();
-                error = processInfo.StandardError.ReadToEnd();
+                error = errorReader.WaitForText();
             }
 
             processInfo.WaitForExit();
@@ -322,6 +325,46 @@ namespace Datadog.Trace.Util
                 ProcessName = process.ProcessName;
                 MachineName = process.MachineName;
                 Pid = process.Id;
+            }
+        }
+
+        /// <summary>
+        /// Reads the standard error of a process to the end on a dedicated thread.
+        /// </summary>
+        private sealed class StandardErrorReader
+        {
+            private readonly StreamReader _reader;
+            private readonly Thread _thread;
+            private string _text = string.Empty;
+
+            public StandardErrorReader(StreamReader reader)
+            {
+                _reader = reader;
+                _thread = new Thread(static state => ((StandardErrorReader)state!).Read())
+                {
+                    IsBackground = true,
+                    Name = "DD ProcessHelpers standard error reader"
+                };
+                _thread.Start(this);
+            }
+
+            public string WaitForText()
+            {
+                _thread.Join();
+                return _text;
+            }
+
+            private void Read()
+            {
+                try
+                {
+                    _text = _reader.ReadToEnd();
+                }
+                catch (Exception ex)
+                {
+                    // An exception on this thread would end the application.
+                    Log.Debug(ex, "Error reading the standard error of the process.");
+                }
             }
         }
 
