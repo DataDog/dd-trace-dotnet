@@ -115,6 +115,8 @@ partial class Build : NukeBuild
     [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to true locally, false in PRs, and true in CI on main branch only", List = false)]
     readonly bool IncludeAllTestFrameworks = true;
 
+    private const string UniversalToolchainFile = "/usr/local/share/musl/Toolchain.cmake";
+
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
 

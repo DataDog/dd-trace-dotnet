@@ -1,4 +1,4 @@
-﻿FROM datadog/libddwaf:toolchain AS base
+﻿FROM registry.datadoghq.com/musl-build-env:1.1.1@sha256:e2f24231aec45a21625b6d16b9f88d5c43bf100c00ffa43cb24bb0f4cc4be638 AS base
 
 ARG DOTNETSDK_VERSION
 
@@ -26,22 +26,12 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN apt-get update \
-    && apt-get -y upgrade \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
-      cmake \
-      git \
-      wget \
+RUN apk add --no-cache \
       curl \
-      cmake \
-      make \
-      gcc \
-      build-essential \
-      uuid-dev \
-      autoconf \
-      gdb \
-      \
-    && rm -rf /var/lib/apt/lists/*
+      icu-libs \
+      krb5-libs \
+      libintl \
+      libstdc++
 
 # We need to set this environment variable to make sure
 # that compiling/linking will act as if it was on Alpine
@@ -58,10 +48,8 @@ RUN curl -sSL https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6
 # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
-RUN ln -s `which clang-16` /usr/bin/clang  && \
-    ln -s `which clang++-16` /usr/bin/clang++
-
 ENV \
+    DOTNET_ROOT=/usr/share/dotnet \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
     USE_NATIVE_SDK_VERSION=true \
     CXX=clang++ \

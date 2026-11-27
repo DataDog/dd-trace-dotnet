@@ -135,7 +135,7 @@ partial class Build
 
             if (AsUniversal)
             {
-                additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
+                additionalArgs += " -DCMAKE_TOOLCHAIN_FILE=" + UniversalToolchainFile;
             }
 
             CMake.Value(
@@ -154,7 +154,9 @@ partial class Build
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
             var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
+            var snapshotName = AsUniversal
+                                   ? $"native-wrapper-symbols-universal-{UnixArchitectureIdentifier}"
+                                   : $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
         });
@@ -284,12 +286,6 @@ partial class Build
             var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
             var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
-
-            if (AsUniversal)
-            {
-                var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
-                PatchElf.Value.Invoke($"--remove-needed {libc} {dest} --remove-rpath");
-            }
         });
 
     Target PublishProfilerWindows => _ => _
