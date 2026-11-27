@@ -383,6 +383,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -435,6 +436,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -519,6 +521,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -573,6 +576,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -632,6 +636,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -722,6 +727,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
@@ -830,6 +836,7 @@ services:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-ubuntu}.dockerfile
+      target: tester
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
     image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}

@@ -44,6 +44,9 @@ partial class Build : NukeBuild
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
 
+    [Parameter("Run prebuilt managed unit-test assemblies for --framework without rebuilding or restoring packages. Defaults to false.")]
+    readonly bool RunManagedUnitTestsFromArtifacts;
+
     [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;
 

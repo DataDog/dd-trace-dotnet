@@ -163,7 +163,9 @@ ENV \
     CC=clang \
     UseGlibc217Sysroot=true
 
-FROM base AS builder
+FROM base AS build-environment
+
+FROM build-environment AS builder
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
@@ -172,7 +174,7 @@ COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
 
-FROM base AS tester
+FROM base AS test-environment
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
@@ -204,9 +206,19 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
         && rm azure-functions-core-tools.zip; \
     fi
 
+FROM test-environment AS tester
+
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
 RUN dotnet restore /build
 COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
+
+# Keep this after Azure's targets so they do not need private-registry access.
+FROM test-environment AS gitlab-test-environment
+
+# Keep the pinned multi-architecture CA image aligned with alpine.dockerfile.
+COPY --from=registry.ddbuild.io/images/datadog-ca-certs:standard@sha256:451a0209af8cff55760f798e99fa5a5a220b3ea94aef9d0da9208f533be90cea /certs/ /usr/local/share/ca-certificates/
+RUN chmod -R o-w /usr/local/share/ca-certificates \
+    && update-ca-certificates

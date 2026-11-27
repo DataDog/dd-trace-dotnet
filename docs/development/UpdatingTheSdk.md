@@ -22,6 +22,7 @@ Update all references to the SDK version across the repository:
   - `.azure-pipelines/steps/install-dotnet.yml`
   - `.github/workflows/*.yml` (all workflow files)
   - `.gitlab-ci.yml`
+  - `.gitlab/linux-build-common.yml` - keep `LINUX_DOTNET_SDK_VERSION` aligned with `global.json` for Linux image publication, builds and unit tests.
 - **Docker Files**:
   - `docker-compose.yml`
   - `tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile` - the new version should be built locally pushed, and synced to datadog/images, and used in the new build.

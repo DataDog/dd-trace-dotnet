@@ -241,6 +241,7 @@ namespace Datadog.Trace.TestHelpers
         private class CustomTestMethodRunner : XunitTestMethodRunner
         {
             private const int _maxTestFullNameLength = 200;
+            private readonly bool _logRoutineEvents = !string.Equals(Environment.GetEnvironmentVariable("DD_TEST_LOG_ROUTINE_EVENTS"), "false", StringComparison.OrdinalIgnoreCase);
             private readonly IMessageSink _diagnosticMessageSink;
             private readonly object[] _constructorArguments;
 
@@ -320,7 +321,10 @@ namespace Datadog.Trace.TestHelpers
                         TimeSpan.FromMinutes(15),
                         Timeout.InfiniteTimeSpan);
 
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
+                    if (_logRoutineEvents)
+                    {
+                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
+                    }
 
                     try
                     {
@@ -328,7 +332,10 @@ namespace Datadog.Trace.TestHelpers
 
                         var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
-                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
+                        if (_logRoutineEvents || result.Failed > 0 || result.Skipped > 0)
+                        {
+                            _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
+                        }
 
                         return result;
                     }

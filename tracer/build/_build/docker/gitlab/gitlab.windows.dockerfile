@@ -63,6 +63,26 @@ ENV VCPKG_VERSION="2024.11.16" \
 COPY install_vcpkg.ps1 .
 RUN powershell -Command .\install_vcpkg.ps1 -Version $ENV:VCPKG_VERSION -InstallRoot $ENV:VCPKG_ROOT
 
+# Container configuration and x64 runtimes shared by all managed unit-test jobs.
+# .NET Framework 4.8 comes from the base image; .NET 11 comes from the SDK above.
+RUN New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -PropertyType DWord -Value 1 -Force | Out-Null
+# Resolve runtime patches only during image publication, as in the Linux test images.
+RUN Invoke-WebRequest -UseBasicParsing -TimeoutSec 120 -Uri 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -OutFile dotnet-install.ps1; \
+    $channels = @('3.0', '3.1', '5.0', '6.0', '7.0', '8.0', '9.0', '10.0'); \
+    $dotnetRoot = Join-Path $env:ProgramFiles 'dotnet'; \
+    foreach ($channel in $channels) { \
+        powershell -NoProfile -ExecutionPolicy Bypass -File .\dotnet-install.ps1 -Runtime dotnet -Channel $channel -Architecture x64 -InstallDir $dotnetRoot -NoPath -SkipNonVersionedFiles -DownloadTimeout 120; \
+        if ($LASTEXITCODE -ne 0) { throw ('Installing .NET {0} runtime failed ({1})' -f $channel, $LASTEXITCODE) }; \
+    }; \
+    $installedRuntimes = & (Join-Path $dotnetRoot 'dotnet.exe') --list-runtimes; \
+    if ($LASTEXITCODE -ne 0) { throw 'Could not list installed .NET runtimes' }; \
+    foreach ($channel in $channels) { \
+        $runtimePattern = '^Microsoft\.NETCore\.App ' + [regex]::Escape($channel) + '\.'; \
+        if (-not ($installedRuntimes -match $runtimePattern)) { throw ('Missing .NET {0} runtime' -f $channel) }; \
+    }; \
+    $installedRuntimes; \
+    Remove-Item -LiteralPath .\dotnet-install.ps1
+
 # Copy everything else
 COPY . .
 ENTRYPOINT ["/entrypoint.bat"]

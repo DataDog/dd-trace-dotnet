@@ -1,0 +1,51 @@
+include:
+  - local: .gitlab/linux-build-common.yml
+
+.publish-linux-ci-images:
+  extends: .linux-docker
+  stage: .pre
+  needs: []
+  timeout: 2h
+  resource_group: linux-ci-images-$LINUX_IMAGE_ARCHITECTURE-$LINUX_IMAGE_FAMILY
+  allow_failure: true
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true" || $CI_COMMIT_TAG || $DOTNET_PACKAGE_VERSION'
+      when: never
+    # Publication executes candidate-controlled build code and writes shared tags.
+    # Keep a human review checkpoint, as for the Windows image job.
+    - when: manual
+  script:
+    - |
+      set -eu
+      . .gitlab/linux-ci-images.sh
+      echo 'Job filesystem usage (Docker storage may be on a different filesystem):'
+      df -h || true
+      echo 'Docker storage usage before publication:'
+      docker system df || true
+      if ! publish_linux_ci_images "$LINUX_IMAGE_ARCHITECTURE" "$LINUX_IMAGE_FAMILY"; then
+        echo 'Image publication failed. Docker storage usage:'
+        docker system df || true
+        exit 1
+      fi
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
+build-linux-ci-images-x64:
+  extends: .publish-linux-ci-images
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: x64
+  # Each family gets a separate job/daemon; large toolchains must not accumulate.
+  parallel:
+    matrix:
+      - LINUX_IMAGE_FAMILY: [ubuntu, alpine, universal]
+
+build-linux-ci-images-arm64:
+  extends: .publish-linux-ci-images
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    LINUX_IMAGE_ARCHITECTURE: arm64
+  parallel:
+    matrix:
+      - LINUX_IMAGE_FAMILY: [ubuntu, alpine, universal]
