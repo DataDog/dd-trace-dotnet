@@ -198,8 +198,9 @@ public class TestingPlatformModuleLocatorTests : IDisposable
         return string.Join(Environment.NewLine, lines);
     }
 
+    // MSBuild returns real paths: on macOS the temporary folder /var/folders/... is a link to /private/var/folders/...
     private string[] Relative(IEnumerable<string> folders)
-        => folders.Select(folder => Path.GetRelativePath(_root, folder)).ToArray();
+        => folders.Select(folder => Path.GetRelativePath(_root, folder.StartsWith("/private" + _root, StringComparison.Ordinal) ? folder.Substring("/private".Length) : folder)).ToArray();
 
     private void WriteProject(string name, string content)
     {
