@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.WafEncoding;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -17,8 +18,8 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="totals">the totals of the runs of the same scope of the request, which already include this
         /// run's wall clock; the duration reported by the WAF for this run is added to them</param>
         /// <param name="isRasp">whether the run is a RASP run</param>
-        /// <param name="truncated">whether the input was truncated</param>
-        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref WafRunTotals totals, bool isRasp = false, bool truncated = false)
+        /// <param name="truncation">what the encoder truncated in the input</param>
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref WafRunTotals totals, bool isRasp = false, in TruncationInfo truncation = default)
         {
             ReturnCode = returnCode;
 
@@ -100,7 +101,7 @@ namespace Datadog.Trace.AppSec.Waf
                 Timeout = timeoutValue;
             }
 
-            Truncated = truncated;
+            Truncation = truncation;
         }
 
         public WafReturnCode ReturnCode { get; }
@@ -156,7 +157,9 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool Timeout { get; }
 
-        public bool Truncated { get; }
+        public bool Truncated => Truncation.Truncated;
+
+        public TruncationInfo Truncation { get; }
 
         private void BuildDerivatives(Dictionary<string, object?> derivatives)
         {

@@ -71,6 +71,9 @@ services:
 
   cosmosdb-emulator_arm64:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview@sha256:54d7bc334494c50cea867c270880671a7db080626a9732832b34c0d69342f9b0
+    # Skip the background `tdnf distro-sync` the image runs at start: it replaces the Postgres files
+    # under the running server and breaks it (Azure/azure-cosmos-db-emulator-docker#390).
+    entrypoint: ["/bin/bash", "-c", 'sed "s/^if command -v tdnf/if false \&\& command -v tdnf/" /home/cosmosdev/docker_entrypoint.sh > /tmp/entrypoint.sh && exec bash /tmp/entrypoint.sh "$$@"', "bash"]
     command: ["--protocol", "https"]
 
   stackexchangeredis_arm64:
@@ -293,6 +296,9 @@ services:
   cosmosdb-emulator:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview@sha256:54d7bc334494c50cea867c270880671a7db080626a9732832b34c0d69342f9b0
     profiles: ["group2"]
+    # Skip the background `tdnf distro-sync` the image runs at start: it replaces the Postgres files
+    # under the running server and breaks it (Azure/azure-cosmos-db-emulator-docker#390).
+    entrypoint: ["/bin/bash", "-c", 'sed "s/^if command -v tdnf/if false \&\& command -v tdnf/" /home/cosmosdev/docker_entrypoint.sh > /tmp/entrypoint.sh && exec bash /tmp/entrypoint.sh "$$@"', "bash"]
     command: ["--protocol", "https"]
 
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
@@ -376,10 +382,10 @@ services:
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -428,10 +434,10 @@ services:
   IntegrationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -512,10 +518,10 @@ services:
   IntegrationTests.Debugger:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -566,10 +572,10 @@ services:
   IntegrationTests.Serverless:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -625,10 +631,10 @@ services:
   ExplorationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -715,10 +721,10 @@ services:
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -733,7 +739,7 @@ services:
       - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
       - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
-      - baseImage=${baseImage:-debian}
+      - baseImage=${baseImage:-ubuntu}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
@@ -823,10 +829,10 @@ services:
   IntegrationTests.ARM64.Debugger:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
+      dockerfile: docker/${baseImage:-ubuntu}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
+    image: dd-trace-dotnet/${baseImage:-ubuntu}-tester:${dotnetCoreSdkLatestVersion:-11.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -837,7 +843,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
-      - baseImage=${baseImage:-debian}
+      - baseImage=${baseImage:-ubuntu}
       - targetplatform=${targetplatform:-x64}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true

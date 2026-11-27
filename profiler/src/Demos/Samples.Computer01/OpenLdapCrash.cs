@@ -45,6 +45,12 @@ namespace Samples.Computer01
             ConnectToLdapServer();
         }
 
+        // Each call opens (and closes) a new TCP connection and OnProcess calls it in a tight loop.
+        // The client side keeps the sockets in TIME_WAIT for 60s, so running this scenario several times
+        // in a row in the same network namespace can exhaust the ephemeral ports: connect then fails and
+        // Bind throws 'The LDAP server is unavailable'.
+        // If this happens, add a small sleep after Bind (e.g. Thread.Sleep(5)) to reduce the number of
+        // connections, or enable net.ipv4.tcp_tw_reuse in the container running the test.
         private void ConnectToLdapServer()
         {
             try
@@ -55,7 +61,7 @@ namespace Samples.Computer01
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[Error] An error occurred while trying to connect to the LDAP server `{_serverHostname}:{_serverPort}`. Message: " + e.Message);
+                Console.WriteLine($"[Error] An error occurred while trying to connect to the LDAP server `{_serverHostname}:{_serverPort}`. " + e.ToString());
             }
         }
     }

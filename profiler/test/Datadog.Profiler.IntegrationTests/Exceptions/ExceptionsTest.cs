@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
@@ -31,64 +31,134 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [Flaky("Flaky on ARM64")]
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void ThrowExceptionsInParallel(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void ThrowExceptionsInParallel(TestAppContext app)
         {
             StackTrace expectedStack;
 
-            if (framework == "net48")
+            if (app.IsNetFramework)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("mscorlib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
-            else if (framework == "net6.0")
+            else if (app.Framework == TestFramework.Net6)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("Thread")
+                        .Function("StartCallback")
+                        .Signature("()"));
             }
-            else if (framework == "net7.0" || framework == "net8.0")
+            else if (app.Framework == TestFramework.Net7 || app.Framework == TestFramework.Net8)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"));
             }
-            else if (framework == "net9.0")
+            else if (app.Framework == TestFramework.Net9)
             {
                 if (IntPtr.Size == 4)
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("()"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object exceptionObj, ExInfo& exInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("RhThrowEx")
+                            .Signature("(object exceptionObj, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
-            else if (framework == "net10.0")
+            else if (app.Framework == TestFramework.Net10)
             {
                 if (IntPtr.Size == 4)
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("()"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
-            else if (framework == "net11.0")
+            else if (app.Framework == TestFramework.Net11)
             {
                 // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
                 // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
@@ -96,37 +166,69 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("(System.Threading.Thread* pThread)"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("RhThrowEx")
+                            .Signature("(object* pExceptionObj, ExInfo* pExInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
             else
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
 
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Scenario2);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            run.UploadCount.Should().BePositive();
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = run.Profiles.ExceptionSamples();
 
             long total = 0;
 
@@ -136,25 +238,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
                 var (matched, message) = AssertExpectedStack(sample.Stacktrace, expectedStack);
-                Assert.True(matched, message);
+                matched.Should().BeTrue("{0}", message);
             }
 
-            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
-            {
-                runner.XUnitLogger.WriteLine($"Log file: {file}");
-            }
+            int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
-            // This is expected so we remove those from the expected count
-            var missedExceptions = File.ReadLines(logFile)
-                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
-
-            int expectedExceptionCount = (4 * 1000) - missedExceptions;
-
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -168,64 +257,134 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [Flaky("Flaky on ARM64")]
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(TestAppContext app)
         {
             StackTrace expectedStack;
 
-            if (framework == "net48")
+            if (app.IsNetFramework)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("mscorlib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
-            else if (framework == "net6.0")
+            else if (app.Framework == TestFramework.Net6)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("Thread")
+                        .Function("StartCallback")
+                        .Signature("()"));
             }
-            else if (framework == "net7.0" || framework == "net8.0")
+            else if (app.Framework == TestFramework.Net7 || app.Framework == TestFramework.Net8)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"));
             }
-            else if (framework == "net9.0")
+            else if (app.Framework == TestFramework.Net9)
             {
                 if (IntPtr.Size == 4)
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("()"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object exceptionObj, ExInfo& exInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("RhThrowEx")
+                            .Signature("(object exceptionObj, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
-            else if (framework == "net10.0")
+            else if (app.Framework == TestFramework.Net10)
             {
                 if (IntPtr.Size == 4)
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("()"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
-            else if (framework == "net11.0")
+            else if (app.Framework == TestFramework.Net11)
             {
                 // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
                 // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
@@ -233,38 +392,69 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 {
                     // 32-bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Threading")
+                            .Type("Thread")
+                            .Function("StartCallback")
+                            .Signature("(System.Threading.Thread* pThread)"));
                 }
                 else
                 {
                     // 64 bit
                     expectedStack = new StackTrace(
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
-                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
-                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("DispatchEx")
+                            .Signature("(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        StackFrame.Build()
+                            .Module("System.Private.CoreLib")
+                            .Namespace("System.Runtime")
+                            .Type("EH")
+                            .Function("RhThrowEx")
+                            .Signature("(object* pExceptionObj, ExInfo* pExInfo)"),
+                        StackFrame.Build()
+                            .Module("Samples.ExceptionGenerator")
+                            .Namespace("Samples.ExceptionGenerator")
+                            .Type("ParallelExceptionsScenario")
+                            .Function("ThrowExceptions")
+                            .Signature("(object state)"));
                 }
             }
             else
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
 
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Scenario2);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions, ProfilerFeature.ManagedCodeCache);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
-            runner.Environment.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            run.UploadCount.Should().BePositive();
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = run.Profiles.ExceptionSamples();
 
             long total = 0;
 
@@ -274,25 +464,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
                 var (matched, message) = AssertExpectedStack(sample.Stacktrace, expectedStack);
-                Assert.True(matched, message);
+                matched.Should().BeTrue("{0}", message);
             }
 
-            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
-            {
-                runner.XUnitLogger.WriteLine($"Log file: {file}");
-            }
+            int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, runner.XUnitLogger);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
-            // This is expected so we remove those from the expected count
-            var missedExceptions = File.ReadLines(logFile)
-                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
-
-            int expectedExceptionCount = (4 * 1000) - missedExceptions;
-
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -307,78 +484,96 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
         [Flaky("Flaky on ARM64")]
         [Trait("Category", "LinuxOnly")]
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void ThrowExceptionsInParallelWithNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ThrowExceptionsInParallelWithNewCpuProfiler(TestAppContext app)
         {
             StackTrace expectedStack;
 
-            if (framework == "net48")
+            if (app.IsNetFramework)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("mscorlib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
-            else if (framework == "net6.0")
+            else if (app.Framework == TestFramework.Net6)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("Thread")
+                        .Function("StartCallback")
+                        .Signature("()"));
             }
-            else if (framework == "net7.0" || framework == "net8.0")
+            else if (app.Framework == TestFramework.Net7 || app.Framework == TestFramework.Net8)
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"));
             }
             else
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+                    StackFrame.Build()
+                        .Module("Samples.ExceptionGenerator")
+                        .Namespace("Samples.ExceptionGenerator")
+                        .Type("ParallelExceptionsScenario")
+                        .Function("ThrowExceptions")
+                        .Signature("(object state)"),
+                    StackFrame.Build()
+                        .Module("System.Private.CoreLib")
+                        .Namespace("System.Threading")
+                        .Type("ThreadHelper")
+                        .Function("ThreadStart")
+                        .Signature("(object obj)"));
             }
 
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Scenario2);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions, ProfilerFeature.Cpu);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = runner.Run();
 
-            runner.Run(agent);
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(run.LogDirectory);
 
-            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
+            run.UploadCount.Should().BePositive();
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            var exceptionSamples = run.Profiles.WithNonZeroValue(ProfileValue.ExceptionCount);
 
-            var exceptionSamples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "exception").ToArray();
+            long total = exceptionSamples.Count;
 
-            long total = exceptionSamples.Length;
-
-            foreach (var (stackTrace, labels, _) in exceptionSamples)
+            foreach (var sample in exceptionSamples)
             {
-                labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
-                labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
-                var (matched, message) = AssertExpectedStack(stackTrace, expectedStack);
-                Assert.True(matched, message);
+                sample.Labels.GetValues("exception type").Should().ContainSingle(value => value == "System.Exception");
+                sample.Labels.GetValues("exception message").Should().ContainSingle(value => string.IsNullOrWhiteSpace(value));
+                var (matched, message) = AssertExpectedStack(sample.CallStack, expectedStack);
+                matched.Should().BeTrue("{0}", message);
             }
 
-            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
-            {
-                _output.WriteLine($"Log file: {file}");
-            }
+            int expectedExceptionCount = (4 * 1000) - CountMissedExceptions(run, _output);
 
-            var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-
-            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
-            // This is expected so we remove those from the expected count
-            var missedExceptions = File.ReadLines(logFile)
-                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
-
-            int expectedExceptionCount = (4 * 1000) - missedExceptions;
-
-            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+            expectedExceptionCount.Should().BePositive("only a few exceptions should be missed");
 
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
@@ -392,20 +587,18 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [Flaky("Test flaked in CI")]
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void Sampling(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void Sampling(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: Scenario3);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
 
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = run.Profiles.ExceptionSamples();
 
             var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
@@ -422,100 +615,83 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [Flaky("Flaky on ARM64")]
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void GetExceptionSamplesWithTimestamp(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
             // timestamps are enabled by default
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
 
-            CheckExceptionProfiles(runner, true);
+            using var run = runner.Run();
+
+            CheckExceptionProfiles(run, true);
         }
 
         [Flaky("Flaky on ARM64")]
-        [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
-        public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, TestFramework.NetCoreApp31, TestFramework.Net6, TestFramework.Net8)] // FIXME: .NET 9 skipping .NET 9 for now
+        public void GetExceptionSamplesWithoutTimestamp(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            CheckExceptionProfiles(runner, false);
+            using var run = runner.Run();
+
+            CheckExceptionProfiles(run, false);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void ExceptionProfilerIsEnabledByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void ExceptionProfilerIsEnabledByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
+            runner.Environment.ResetToDefault(ProfilerFeature.Exceptions);
 
-            // Test that the exception profiler is enabled by default
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // On alpine, this check is flaky.
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+                run.UploadCount.Should().BePositive();
             }
 
-            // only exception profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void ExplicitlyDisableExceptionProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = app.CreateRunner(_output, commandLine: Scenario1);
+            runner.Environment.EnableOnly(ProfilerFeature.WallTime);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // On alpine, this check is flaky.
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+                run.UploadCount.Should().BePositive();
             }
 
-            // only walltime profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
         }
 
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void MeasureExceptions(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.ExceptionGenerator, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void MeasureExceptions(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureException);
+            var runner = app.CreateRunner(_output, commandLine: ScenarioMeasureException);
+            runner.Environment.EnableOnly(ProfilerFeature.Exceptions);
 
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            using var run = runner.Run();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            run.UploadCount.Should().BePositive();
 
-            runner.Run(agent);
-
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = run.Profiles.ExceptionSamples();
             exceptionSamples.Should().NotBeEmpty();
 
             // this test always succeeds: it is used to display the differences between sampled and real exceptions
             Dictionary<string, int> profiledExceptions = GetProfiledExceptions(exceptionSamples);
-            Dictionary<string, int> realExceptions = GetRealExceptions(runner.ProcessOutput);
+            Dictionary<string, int> realExceptions = GetRealExceptions(run.ProcessOutput);
 
             var logger = runner.XUnitLogger;
             logger.WriteLine("Comparing exceptions");
@@ -698,9 +874,25 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             return profiledExceptions;
         }
 
+        private static int CountMissedExceptions(ProfilerTestRun run, ITestOutputHelper logger)
+        {
+            foreach (var file in run.Logs.Matching("*").Files)
+            {
+                logger.WriteLine($"Log file: {file.Path}");
+            }
+
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+
+            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
+            // This is expected so we remove those from the expected count
+            return run.Logs.NativeProfiler
+                .LinesContaining("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)")
+                .Count;
+        }
+
         private static (bool Matched, string Message) AssertExpectedStack_x86_64(StackTrace actualStack, StackTrace expectedStack)
         {
-            if (!actualStack.EndWith(expectedStack, out var failureDetail))
+            if (!actualStack.StartsWith(expectedStack, out var failureDetail))
             {
                 return (false, failureDetail);
             }
@@ -715,9 +907,13 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         // - or the expectedStack is a subset of the actualStack (sliding window comparison)
         private static (bool Matched, string Message) AssertExpectedStack_Arm64(StackTrace actualStack, StackTrace expectedStack)
         {
-            var unknownFrameType = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
+            StackFrame unknownFrameType = StackFrame.Build()
+                .Module("Unknown-Assembly")
+                .Type("Unknown-Type")
+                .Function("Unknown-Frame-Type")
+                .Signature("(?)");
 
-            if (actualStack.FramesCount == 1 && actualStack[0].ToString() == unknownFrameType)
+            if (actualStack.FramesCount == 1 && actualStack[0].Equals(unknownFrameType))
             {
                 return (true, string.Empty);
             }
@@ -978,7 +1174,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             return false;
         }
 
-        private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
+        private static void CheckExceptionProfiles(ProfilerTestRun run, bool withTimestamps)
         {
             // in .NET 9 these stacks are different in the 64-bit case
             // Stack 1
@@ -991,27 +1187,81 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // |lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args).
 
             var stack1 = new StackTrace(
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_2 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_1 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw1_2")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw1_1")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw1")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Run")
+                    .Signature("()"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("Program")
+                    .Function("Main")
+                    .Signature("(string[] args)"));
 
             var stack2 = new StackTrace(
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_3 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_2 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_1 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2 |fg: |sg:(System.Exception ex)"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw2_3")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw2_2")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw2_1")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Throw2")
+                    .Signature("(System.Exception ex)"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("ExceptionsProfilerTestScenario")
+                    .Function("Run")
+                    .Signature("()"),
+                StackFrame.Build()
+                    .Module("Samples.ExceptionGenerator")
+                    .Namespace("Samples.ExceptionGenerator")
+                    .Type("Program")
+                    .Function("Main")
+                    .Signature("(string[] args)"));
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            run.UploadCount.Should().BePositive();
 
-            runner.Run(agent);
+            // Exact sample types before ExceptionSamples() drops other rows.
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.ExceptionCount);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = run.Profiles.ExceptionSamples();
 
             var unaggregatedProfile = new List<(string Type, string Message, long Count, StackTrace ExpectedStack)>
             {

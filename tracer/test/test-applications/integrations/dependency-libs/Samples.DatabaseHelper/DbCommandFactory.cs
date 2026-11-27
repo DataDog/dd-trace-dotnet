@@ -5,6 +5,7 @@ namespace Samples.DatabaseHelper
     public class DbCommandFactory
     {
         private string _quotedTableName;
+        private readonly string _quotedPrimaryKeyName;
 
         public string QuotedTableName
         {
@@ -15,9 +16,11 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        public DbCommandFactory(string quotedTableName)
+        public DbCommandFactory(string quotedTableName, string quotedPrimaryKeyName = null)
         {
             _quotedTableName = quotedTableName;
+            // SQL Server samples supply a table-derived name to avoid collisions between auto-generated constraint names.
+            _quotedPrimaryKeyName = quotedPrimaryKeyName;
         }
 
         public virtual IDbCommand GetCreateTableCommand(IDbConnection connection, IDbTransaction transaction = null)
@@ -27,7 +30,8 @@ namespace Samples.DatabaseHelper
             {
                 command.Transaction = transaction;
             }
-            command.CommandText = $"DROP TABLE IF EXISTS {_quotedTableName}; CREATE TABLE {_quotedTableName} (Id int PRIMARY KEY, Name varchar(100));";
+            var primaryKeyConstraint = _quotedPrimaryKeyName is null ? string.Empty : $"CONSTRAINT {_quotedPrimaryKeyName} ";
+            command.CommandText = $"DROP TABLE IF EXISTS {_quotedTableName}; CREATE TABLE {_quotedTableName} (Id int {primaryKeyConstraint}PRIMARY KEY, Name varchar(100));";
             return command;
         }
 

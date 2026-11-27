@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -238,7 +239,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var exceptionId = new ExceptionIdentifier(exceptionTypes, allParticipatingFramesFlattened, errorOrigin);
 
-            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(exceptionId, _ => new TrackedExceptionCase(exceptionId, exception.ToString(), _maxFramesToCapture));
+            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(
+                exceptionId,
+                static (id, args) => new TrackedExceptionCase(id, args.Exception.ToString(), args.MaxFramesToCapture),
+                new TrackedExceptionCaseArgs(exception, _maxFramesToCapture));
 
             if (trackedExceptionCase.IsDone)
             {
@@ -326,7 +330,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             // Update the status only if we're dealing with probes marked as ERRORs.
                             foreach (var status in statuses)
                             {
-                                var probe = receivedOrRequestedRejitStatusProbeIds.FirstOrDefault(p => p.ProbeId == status.ProbeId);
+                                var probe = receivedOrRequestedRejitStatusProbeIds.Find(p => p.ProbeId == status.ProbeId);
                                 if (probe != null)
                                 {
                                     probe.ProbeStatus = status.Status;
@@ -607,7 +611,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(in f));
         }
 
         private bool IsSupportedExceptionType(Exception ex) =>
@@ -825,5 +829,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag("_dd.di._er", exceptionPhase);
             span.Tags.SetTag("_dd.di._eh", exceptionHash.ToStringInvariant());
         }
+
+        private readonly record struct TrackedExceptionCaseArgs(Exception Exception, int MaxFramesToCapture);
     }
 }

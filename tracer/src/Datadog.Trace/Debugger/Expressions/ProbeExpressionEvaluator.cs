@@ -287,7 +287,7 @@ internal sealed class ProbeExpressionEvaluator
                     }
                     else
                     {
-                        HandleException(ref result, compiledExpressions[i], new ArgumentException("invalid template"));
+                        HandleException(ref result, compiledExpressions[i], new InvalidOperationException("invalid template"));
                     }
                 }
                 catch (Exception e)
@@ -418,7 +418,7 @@ internal sealed class ProbeExpressionEvaluator
                         {
                             if (Log.IsEnabled(LogEventLevel.Debug))
                             {
-                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", whenErrors));
+                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(';', whenErrors));
                             }
 
                             (result.Errors ??= new List<EvaluationError>()).AddRange(whenErrors);
@@ -482,7 +482,7 @@ internal sealed class ProbeExpressionEvaluator
                                         (errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
                                         if (Log.IsEnabled(LogEventLevel.Debug))
                                         {
-                                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(';', errors));
                                         }
                                     }
                                 }
@@ -504,7 +504,7 @@ internal sealed class ProbeExpressionEvaluator
 
                                 if (Log.IsEnabled(LogEventLevel.Debug))
                                 {
-                                    Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                                    Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(';', errors));
                                 }
                             }
                         }

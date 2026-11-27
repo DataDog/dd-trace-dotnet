@@ -68,7 +68,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         "X_B3_TRACEID",
         "X_B3_SPANID",
         "X_B3_SAMPLED",
-        "X_B3_FLAGS")]
+        "X_B3_FLAGS",
+        "DOTNET_TEST_RUNNER")]
     public class CiRunCommandTests : BaseRunCommandTests
     {
         /// <summary>
@@ -879,6 +880,106 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 environmentVariables.Should().ContainKey(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand);
                 environmentVariables[Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand].Should().Contain(expectedBackfillCommandFragment);
                 environmentVariables[Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand].Should().NotContain("DatadogCoverage");
+            }
+            finally
+            {
+                Program.CallbackForTests = null;
+                if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
+                    Directory.Exists(coveragePath))
+                {
+                    Directory.Delete(coveragePath, recursive: true);
+                }
+
+                TestOptimization.Instance.Reset();
+            }
+        }
+
+        [Theory]
+        [InlineData("Microsoft.Testing.Platform", "test", null)]
+        [InlineData("VSTest", "test", "--collect DatadogCoverage")]
+        [InlineData("Microsoft.Testing.Platform", "vstest", "/Collect:DatadogCoverage")]
+        public void RemoteInternalCoverageDoesNotInjectVstestCollectorWhenDotnetTestRunsTestingPlatform(string testRunner, string dotnetCommand, string expectedCollectorArgument)
+        {
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, testRunner);
+            string command = null;
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+            var settingsRequestReceived = false;
+
+            Program.CallbackForTests = (c, a, e) =>
+            {
+                command = c;
+                arguments = a;
+                environmentVariables = e;
+            };
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            agent.EventPlatformProxyPayloadReceived += (sender, args) =>
+            {
+                if (args.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+                {
+                    settingsRequestReceived = true;
+                    args.Value.Response = new MockTracerResponse(
+                        """
+                        {
+                          "data": {
+                            "id": "b5a855bffe6c0b2ae5d150fb6ad674363464c816",
+                            "type": "ci_app_tracers_test_service_settings",
+                            "attributes": {
+                              "code_coverage": false,
+                              "early_flake_detection": {
+                                "enabled": false,
+                                "slow_test_retries": {},
+                                "faulty_session_threshold": 0
+                              },
+                              "flaky_test_retries_enabled": false,
+                              "itr_enabled": true,
+                              "known_tests_enabled": false,
+                              "require_git": false,
+                              "test_management": {
+                                "enabled": false,
+                                "attempt_to_fix_retries": 0
+                              },
+                              "tests_skipping": true
+                            }
+                          }
+                        }
+                        """,
+                        200);
+                }
+            };
+
+            var agentUrl = $"http://localhost:{agent.Port}";
+            var commandLine = $"{CommandPrefix} dotnet {dotnetCommand} tests/Sample.Tests/Sample.Tests.dll --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+
+            using var console = ConsoleHelper.Redirect();
+
+            try
+            {
+                var exitCode = Program.Main(commandLine.Split(' '));
+
+                using var scope = new AssertionScope();
+                scope.AddReportable("output", console.Output);
+
+                exitCode.Should().Be(0);
+                settingsRequestReceived.Should().BeTrue();
+                command.Should().Be("dotnet");
+                environmentVariables.Should().NotBeNull();
+                environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+
+                if (expectedCollectorArgument is null)
+                {
+                    arguments.Should().Be($"{dotnetCommand} tests/Sample.Tests/Sample.Tests.dll");
+                    console.Output.Should().Contain("runs with Microsoft.Testing.Platform");
+                }
+                else
+                {
+                    arguments.Should().Contain(expectedCollectorArgument);
+                    console.Output.Should().NotContain("runs with Microsoft.Testing.Platform");
+                }
             }
             finally
             {

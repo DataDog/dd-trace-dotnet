@@ -27,11 +27,11 @@ namespace Datadog.Profiler.IntegrationTests
         }
 
         // cpu_arch is compiled into the native profiler, so one runtime is enough.
-        [TestAppFact("Samples.Computer01", new[] { "net8.0" })]
-        public void CheckCpuArchTag(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net8)]
+        public void CheckCpuArchTag(TestAppContext app)
         {
             var expectedCpuArch = GetExpectedCpuArch();
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableProfiler: true);
+            var runner = app.CreateRunner(_output, enableProfiler: true);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
@@ -43,7 +43,7 @@ namespace Datadog.Profiler.IntegrationTests
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             cpuArchValues.Should().NotBeEmpty();
             cpuArchValues.Should().AllBe(expectedCpuArch);
         }

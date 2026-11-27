@@ -36,7 +36,7 @@ internal static class CiUtils
     private static readonly string[] DotnetSdkGlobalFlagOptions = ["-d", "--diagnostics", "--info", "--version"];
 
     private static readonly char[] CommandLineQuoteCharacters = [' ', '\t', '\r', '\n', '"'];
-    private static readonly StringComparer PathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparer PathComparer = FilePathComparison.Comparer;
 
     private static readonly string[] RunScopedPropagationEnvironmentVariables =
     [
@@ -387,8 +387,14 @@ internal static class CiUtils
                 var usesTestingPlatformCoverage = isDotnetTestCommand &&
                                                    CoverageBackfillCapability.IsTestingPlatformCoverageCommand(GetCommandLine(program, expandedArguments), Environment.CurrentDirectory);
 
+                // The Microsoft.Testing.Platform `dotnet test` command rejects the VSTest-only --test-adapter-path and --collect options.
+                var usesTestingPlatformRunner = isDotnetTestCommand &&
+                                                !usesTestingPlatformCoverage &&
+                                                TestingPlatformRunnerDetector.IsDotnetTestUsingTestingPlatform(program, Environment.CurrentDirectory, EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner));
+                var addDotnetTestCollector = isDotnetTestCommand && !usesTestingPlatformCoverage && !usesTestingPlatformRunner;
+
                 var hasExpandedResponseFileArguments = !ReferenceEquals(expandedArguments, lstArguments);
-                if (((isDotnetTestCommand && !usesTestingPlatformCoverage) || isDotnetVsTestCommand || isVsTestConsoleCommand) &&
+                if ((addDotnetTestCollector || isDotnetVsTestCommand || isVsTestConsoleCommand) &&
                     hasExpandedResponseFileArguments &&
                     IndexOfDoubleDash(expandedArguments) >= 0)
                 {
@@ -398,7 +404,7 @@ internal static class CiUtils
 
                 var doubleDashIndex = IndexOfDoubleDash(lstArguments);
 
-                if (isDotnetTestCommand && !usesTestingPlatformCoverage)
+                if (addDotnetTestCollector)
                 {
                     var alreadyCollectsDatadogCoverage = HasDatadogCoverageCollector(program, lstArguments);
                     if (doubleDashIndex == -1)
@@ -423,6 +429,12 @@ internal static class CiUtils
                     }
 
                     Log.Debug("DatadogCoverage data collector added as a command argument");
+                }
+                else if (usesTestingPlatformRunner)
+                {
+                    const string message = "RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform (selected by global.json or DOTNET_TEST_RUNNER), which doesn't load the Datadog code coverage collector. Per-test code coverage will not be collected.";
+                    Log.Warning(message);
+                    Utils.WriteWarning(message);
                 }
                 else if (isDotnetTestCommand)
                 {
@@ -825,7 +837,7 @@ internal static class CiUtils
         {
             var argument = line.Trim();
             if (StringUtil.IsNullOrEmpty(argument) ||
-                argument.StartsWith("#", StringComparison.Ordinal))
+                argument.StartsWith('#'))
             {
                 continue;
             }

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -21,10 +21,10 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0", "net11.0" })]
-        public void CheckHeapSnapshot(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net8, TestFramework.Net10, TestFramework.Net11)]
+        public void CheckHeapSnapshot(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 13");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 13");
             // runner.Environment.SetVariable(EnvironmentVariables.ManagedActivationEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             // Use the smallest non-zero threshold to exercise first-snapshot scheduling through the memory-pressure path.
@@ -43,11 +43,11 @@ namespace Datadog.Profiler.IntegrationTests
             // uncomment to debug multipart http request
             // Thread.Sleep(10000000);
 
-            Assert.True(hasHeapSnapshot);
+            hasHeapSnapshot.Should().BeTrue();
 
             // check the heap snapshots content is correct
             var heapSnapshotFiles = System.IO.Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
-            Assert.True(heapSnapshotFiles.Length > 0);
+            heapSnapshotFiles.Length.Should().BePositive();
             foreach (var heapSnapshotFile in heapSnapshotFiles)
             {
                 var containsString = false;
@@ -91,11 +91,11 @@ namespace Datadog.Profiler.IntegrationTests
                     return true;
                 });
 
-                Assert.True(containsString, $"Heap snapshot file {heapSnapshotFile} does not contain System.String type");
-                Assert.True(containsRuntimeTypes, $"Heap snapshot file {heapSnapshotFile} does not contain System.Runtime type");
-                Assert.True(containsStackOverflowException, $"Heap snapshot file {heapSnapshotFile} does not contain System.StackOverflowException type");
-                Assert.True(containsOutofMemoryException, $"Heap snapshot file {heapSnapshotFile} does not contain System.OutOfMemoryException type");
-                Assert.True(containsComputer01Scenario, $"Heap snapshot file {heapSnapshotFile} does not contain Samples.Computer01.Scenario type");
+                containsString.Should().BeTrue("heap snapshot file {0} should contain System.String", heapSnapshotFile);
+                containsRuntimeTypes.Should().BeTrue("heap snapshot file {0} should contain System.Runtime", heapSnapshotFile);
+                containsStackOverflowException.Should().BeTrue("heap snapshot file {0} should contain System.StackOverflowException", heapSnapshotFile);
+                containsOutofMemoryException.Should().BeTrue("heap snapshot file {0} should contain System.OutOfMemoryException", heapSnapshotFile);
+                containsComputer01Scenario.Should().BeTrue("heap snapshot file {0} should contain Samples.Computer01.Scenario", heapSnapshotFile);
             }
         }
     }

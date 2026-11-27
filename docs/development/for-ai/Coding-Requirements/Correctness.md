@@ -78,6 +78,12 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `ParameterTypeNames = new[] { "_" }`
 - ✅ `ParameterTypeNames = new[] { "!0" }`
 
+### COR-5.4: Don't block (throw a `CallTargetBubbleUpException`) from `OnAsyncMethodEnd` in an integration that also declares `OnMethodEnd`
+- Flag: a CallTarget integration that declares both `OnMethodEnd` and `OnAsyncMethodEnd`, where `OnAsyncMethodEnd` can throw a `CallTargetBubbleUpException` (including AppSec's `BlockException`), directly or through a blocking call such as the `SecurityCoordinator` block helpers. Whether `OnMethodEnd` still runs then is undefined: it depends on whether the target is runtime-async, its return type, the runtime, and whether its task had already completed. See [How `OnMethodEnd` and `OnAsyncMethodEnd` run on async targets](../../AutomaticInstrumentation.md#how-onmethodend-and-onasyncmethodend-run-on-async-targets).
+- Not when: the target is not async (`Task`, `Task<T>`, `ValueTask` or `ValueTask<T>`), so `OnAsyncMethodEnd` never runs.
+- ❌ `OnMethodEnd` resets thread-local state while `OnAsyncMethodEnd` calls `securityCoordinator.BlockAndReport(...)`.
+- ✅ Block from an integration that only declares `OnAsyncMethodEnd`, or move the `OnMethodEnd` work into `OnAsyncMethodEnd`.
+
 ## 6. Tests
 
 ### COR-6.1: Create a fresh instance per test instead of using a static `.Instance` or the global tracer

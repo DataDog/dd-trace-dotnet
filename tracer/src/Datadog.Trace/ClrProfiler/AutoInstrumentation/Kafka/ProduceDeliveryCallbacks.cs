@@ -9,7 +9,7 @@ using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
-internal struct ProduceDeliveryCallbacks : IBegin1Callbacks, IVoidReturnCallback
+internal readonly struct ProduceDeliveryCallbacks : IBegin1Callbacks, IVoidReturnCallback
 {
     public void OnException(object? sender, Exception ex)
     {

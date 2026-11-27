@@ -75,6 +75,13 @@ internal static partial class ConfigurationKeys
         public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
 
         /// <summary>
+        /// Configuration key for writing portable PDBs when the Code Coverage collector rewrites an assembly that has a Windows PDB.
+        /// When disabled, the collector keeps the Windows PDB format and writes those assemblies one at a time.
+        /// Default value is true.
+        /// </summary>
+        public const string CodeCoveragePortablePdbEnabled = "DD_CIVISIBILITY_CODE_COVERAGE_PORTABLE_PDB_ENABLED";
+
+        /// <summary>
         /// Configuration key for re-signing assemblies after the Code Coverage modification.
         /// </summary>
         public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";

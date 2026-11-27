@@ -27,7 +27,7 @@ using Xunit;
 using ManualBenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
 using ManualBenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using ManualBenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
-using ManualDuckTypeTargetAttribute = DatadogTraceManual::Datadog.Trace.DuckTyping.DuckTypeTarget;
+using ManualDuckTypeTargetAttribute = DatadogTraceManual::Datadog.Trace.DuckTyping.DuckTypeTargetAttribute;
 using ManualIScope = DatadogTraceManual::Datadog.Trace.IScope;
 using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
 using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;

@@ -5,7 +5,8 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Bugs
@@ -21,53 +22,46 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void ShouldNotCrashWhenNullOrEmptyThreadName(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void ShouldNotCrashWhenNullOrEmptyThreadName(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioNullOrEmptyThreadName);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            var runner = app.CreateRunner(_output, commandLine: ScenarioNullOrEmptyThreadName);
+            // only CPU is disabled: the other default profilers stay on
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.GarbageCollection,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // we should not see any crash + get callstacks for threads with no name
             bool threadWithNameFound = false;
-            foreach (var profile in SamplesHelper.GetProfiles(runner.Environment.PprofDir))
+            foreach (var sample in run.Profiles.Samples)
             {
-                foreach (var sample in profile.Sample)
-                {
-                    var labels = sample.Labels(profile).ToArray();
-                    var threadName = labels.FirstOrDefault((l) =>
-                    {
-                        return (l.Name == "thread name");
-                    }).Value;
+                var threadName = sample.Labels.GetValues(ProfileLabelNames.ThreadName).FirstOrDefault();
 
-                    if (threadName == string.Empty)
-                    {
-                        var stackTrace = sample.StackTrace(profile);
-                        if (stackTrace.FramesCount == 0)
-                        {
-                            Assert.Fail("No call stack for thread without name");
-                            return;
-                        }
-                    }
-                    else if (threadName.StartsWith(".NET "))
-                    {
-                        // .NET ThreadPool IO, .NET TP Worker, .NET Long Running Task, .NET Timer, .NET TP Wait, etc...
-                    }
-                    else if (threadName == "CLR thread (garbage collector)")
-                    {
-                        // hard coded name for GC threads
-                    }
-                    else
-                    {
-                        threadWithNameFound = true;
-                    }
+                if (threadName == string.Empty)
+                {
+                    sample.CallStack.FramesCount.Should().BePositive("threads without a name should have a call stack");
+                }
+                else if (threadName.StartsWith(".NET "))
+                {
+                    // .NET ThreadPool IO, .NET TP Worker, .NET Long Running Task, .NET Timer, .NET TP Wait, etc...
+                }
+                else if (threadName == "CLR thread (garbage collector)")
+                {
+                    // hard coded name for GC threads
+                }
+                else
+                {
+                    threadWithNameFound = true;
                 }
             }
 
-            Assert.False(threadWithNameFound);
+            threadWithNameFound.Should().BeFalse();
         }
     }
 }

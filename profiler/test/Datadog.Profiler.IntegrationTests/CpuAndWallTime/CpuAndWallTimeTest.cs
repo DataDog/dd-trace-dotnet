@@ -4,8 +4,8 @@
 // </copyright>
 
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.CpuProfiler
@@ -20,150 +20,114 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void GetCpuSamplesIfCpuProfilerIsActivatedByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void GetCpuSamplesIfCpuProfilerIsActivatedByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            // disable default profilers except CPU
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.ResetToDefault(ProfilerFeature.Cpu);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            // only cpu profiler enabled so should see 2 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.CpuTime, ProfileValue.CpuSampleCount);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void GetWalltimeSamplesIfWalltimeProfilerIsActivatedByDefault(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void GetWalltimeSamplesIfWalltimeProfilerIsActivatedByDefault(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            // disable default profilers except wall time
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.ResetToDefault(ProfilerFeature.WallTime);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            // only wall time profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void NoSampleIfCpuAndWalltimeProfilersAreDeactivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void NoSampleIfCpuAndWalltimeProfilersAreDeactivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly();
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // no profiler enabled so should not see any sample
-            Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
+            run.Profiles.Samples.Should().BeEmpty();
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void GetCpuSamplesIfCpuProfilerIsActivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void GetCpuSamplesIfCpuProfilerIsActivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.Cpu);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.CpuTime, ProfileValue.CpuSampleCount);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckCpuDurationInSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckCpuDurationInSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.Cpu);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // Ensure that we don't count too much CPU like when that nano/milli sec bug was introduced
-            var cpuDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
+            var cpuDuration = run.Profiles.Sum(ProfileValue.CpuTime);
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
             // --> could be flacky otherwise
-            var totalDuration = runner.TotalTestDurationInMilliseconds * 1000000L;
-            Assert.True(cpuDuration <= totalDuration);
+            var totalDuration = run.Duration.TotalMilliseconds * 1000000L;
+            ((double)cpuDuration).Should().BeLessThanOrEqualTo(totalDuration);
 
-            var cpuSamples = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 1);
-            cpuSamples.Should().BeGreaterThan(0);
+            var cpuSamples = run.Profiles.Sum(ProfileValue.CpuSampleCount);
+            cpuSamples.Should().BePositive();
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckCpuDurationInSamplesForNewCpuProfiler(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckCpuDurationInSamplesForNewCpuProfiler(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.Cpu);
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(run.LogDirectory);
 
             // Ensure that we don't count too much CPU like when that nano/milli sec bug was introduced
-            var cpuDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
+            var cpuDuration = run.Profiles.Sum(ProfileValue.CpuTime);
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
             // --> could be flacky otherwise
-            var totalDuration = runner.TotalTestDurationInMilliseconds * 1000000L;
-            Assert.True(cpuDuration <= totalDuration);
+            var totalDuration = run.Duration.TotalMilliseconds * 1000000L;
+            ((double)cpuDuration).Should().BeLessThanOrEqualTo(totalDuration);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckWalltimeDurationInSamples(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void CheckWalltimeDurationInSamples(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.WallTime);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // the wall time duration depends on the number of managed threads
             // --> could be up to the number of threads x total test duration
-            var walltimeDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
-            var managedThreadsCount = SamplesHelper.GetThreadCount(runner.Environment.PprofDir);
-            var totalDuration = (runner.TotalTestDurationInMilliseconds * 1000000L) * managedThreadsCount;
-            Assert.True(walltimeDuration <= totalDuration);
+            var walltimeDuration = run.Profiles.Sum(ProfileValue.WallTime);
+            var managedThreadsCount = run.Profiles.Samples.DistinctLabelValues(ProfileLabelNames.ThreadId).Count;
+            var totalDuration = (run.Duration.TotalMilliseconds * 1000000L) * managedThreadsCount;
+            ((double)walltimeDuration).Should().BeLessThanOrEqualTo(totalDuration);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void GetWalltimeSamplesIfWalltimeProfilerIsActivated(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net48, MinimumFramework = TestFramework.NetCoreApp31)]
+        public void GetWalltimeSamplesIfWalltimeProfilerIsActivated(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: CmdLine);
+            runner.Environment.EnableOnly(ProfilerFeature.WallTime);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            using var run = runner.Run();
 
-            runner.Run(agent);
-
-            // only wall time profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+            run.Profiles.Should().HaveSampleTypes(ProfileValue.WallTime);
         }
     }
 }

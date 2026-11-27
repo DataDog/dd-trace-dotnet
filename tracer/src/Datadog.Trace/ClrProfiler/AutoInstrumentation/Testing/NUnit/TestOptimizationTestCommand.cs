@@ -177,7 +177,7 @@ internal sealed class TestOptimizationTestCommand
 
     private static void ApplyRetryTags(TestSpanTags testTags, in RetryState retryState)
     {
-        Common.ApplyRetryTags(testTags, retryState.IsARetry, GetRetryMode(retryState));
+        Common.ApplyRetryTags(testTags, retryState.IsARetry, GetRetryMode(in retryState));
     }
 
     private static TestRetryMode GetRetryMode(in RetryState retryState)
@@ -249,7 +249,7 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
-            ApplyRetryTags(testTags, retryState);
+            ApplyRetryTags(testTags, in retryState);
 
             // Non-retry execution: emit final_status only when no retry will be scheduled.
             // Final retry executions are handled in the isFinalExecution block below.

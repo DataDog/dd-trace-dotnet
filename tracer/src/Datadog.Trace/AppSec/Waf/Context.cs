@@ -54,7 +54,9 @@ internal sealed class Context : IContext
         _encodeResults = new(64);
     }
 
+#pragma warning disable MA0055 // Do not use finalizer - releases the native WAF context if Dispose isn't called
     ~Context() => Dispose(false);
+#pragma warning restore MA0055
 
     public static IContext? GetContext(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
     {
@@ -226,7 +228,13 @@ internal sealed class Context : IContext
             // started inside the lock so that a run waiting for a concurrent one doesn't count its time
             var start = Stopwatch.GetTimestamp();
             var args = _encoder.Encode(addressData!, applySafetyLimits: true);
-            var truncated = args.Truncated;
+            var truncation = args.Truncation;
+            if (!isRasp && truncation.Reason is { } truncationReason)
+            {
+                // one point per non-RASP WAF run, whose reason holds every kind of truncation of the run
+                TelemetryFactory.Metrics.RecordCountInputTruncated(truncationReason);
+            }
+
             WafReturnCode code;
 
             // WARNING: Don't use ref here, we need to make a copy because args is on the heap
@@ -287,7 +295,7 @@ internal sealed class Context : IContext
 
             ref var totals = ref isRasp ? ref _raspTotals : ref _wafTotals;
             totals.AddDurationWithBindings(Stopwatch.GetTimestamp() - start);
-            result = new Result(ref retNative, code, ref totals, isRasp, truncated);
+            result = new Result(ref retNative, code, ref totals, isRasp, in truncation);
         }
 
         outcome = WafOutcome.Success;

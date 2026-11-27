@@ -22,7 +22,7 @@ if (RUN_UBSAN)
 endif()
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 
 SET(TEST_EXECUTABLE_NAME "Datadog.Linux.ApiWrapper.Tests")

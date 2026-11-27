@@ -313,7 +313,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
             var description = response.TargetFiles?.Count > 0
-                                  ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
+                                  ? "with the following paths: " + string.Join(',', response.TargetFiles.Select(t => t.Path))
                                   : "that is empty.";
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
@@ -350,7 +350,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                     continue;
                 }
 
-                var targetFile = response.TargetFiles?.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
+                var targetFile = response.TargetFiles?.Find(file => file.Path == remoteConfigurationPath.Path);
                 if (targetFile is null)
                 {
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");

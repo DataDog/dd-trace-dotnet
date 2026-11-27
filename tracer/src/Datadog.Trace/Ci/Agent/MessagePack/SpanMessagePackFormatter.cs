@@ -409,7 +409,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
 
     public Span Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>

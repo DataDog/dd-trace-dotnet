@@ -21,15 +21,16 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", Frameworks = new[] { "net6.0", "net7.0" })]
-        public void CheckOpenLdapCrash(string appName, string framework, string appAssembly)
+        // The scenario opens a new TCP connection for each Bind in a tight loop: each run leaves ~15k
+        // sockets in TIME_WAIT (60s) and the container has ~28k ephemeral ports (32768-60999).
+        // All frameworks run back to back in the same container, so adding frameworks can exhaust the
+        // ports and the test fails with 'The LDAP server is unavailable' (even without the profiler).
+        // If that happens, throttle the scenario (see OpenLdapCrash.ConnectToLdapServer) or set
+        // net.ipv4.tcp_tw_reuse=1 (sysctls) on the ProfilerIntegrationTests service in docker-compose.yml.
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net9, TestFramework.Net10)]
+        public void CheckOpenLdapCrash(TestAppContext app)
         {
-            if (EnvironmentHelper.IsAlpine)
-            {
-                throw new SkipTestException("Alpine is not supported: connecting to openldap-server:389 crashes in the LDAP type initializer.");
-            }
-
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 21", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 21", output: _output);
             runner.RunAndCheck();
         }
     }

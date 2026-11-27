@@ -82,9 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             foundDirectSubmissionTarget = false;
             foreach (var target in configuredNamedTargets)
             {
-                if (target is IDuckType { Instance: DirectSubmissionNLogV5Target } ||
-                    target is IDuckType { Instance: DirectSubmissionNLogTarget } ||
-                    target is IDuckType { Instance: DirectSubmissionNLogLegacyTarget })
+                if (target is IDuckType { Instance: DirectSubmissionNLogV5Target or DirectSubmissionNLogTarget or DirectSubmissionNLogLegacyTarget })
                 {
                     // don't want to configure our own target
                     foundDirectSubmissionTarget = true;

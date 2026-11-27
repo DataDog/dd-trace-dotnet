@@ -10,7 +10,6 @@ using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
@@ -21,29 +20,6 @@ namespace Datadog.Profiler.SmokeTests
         private readonly TransportType _transportType;
 
         private readonly TestApplicationRunner _testApplicationRunner;
-
-        public SmokeTestRunner(
-            string appName,
-            string framework,
-            string appAssembly,
-            ITestOutputHelper output,
-            TransportType transportType = TransportType.Http)
-            : this(appName, framework, appAssembly, commandLine: null, output: output, transportType: transportType)
-        {
-        }
-
-        public SmokeTestRunner(
-            string appName,
-            string framework,
-            string appAssembly,
-            string commandLine,
-            ITestOutputHelper output,
-            TransportType transportType = TransportType.Http)
-        {
-            _transportType = transportType;
-            _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
-            _output = _testApplicationRunner.XUnitLogger;
-        }
 
         public SmokeTestRunner(
             TestAppContext context,
@@ -58,14 +34,10 @@ namespace Datadog.Profiler.SmokeTests
             string commandLine,
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
-            : this(
-                context.Application.FolderName,
-                TestFrameworkInfo.ToMoniker(context.Framework),
-                context.Application.AssemblyName,
-                commandLine,
-                output,
-                transportType)
         {
+            _transportType = transportType;
+            _testApplicationRunner = new TestApplicationRunner(context, output, commandLine);
+            _output = _testApplicationRunner.XUnitLogger;
         }
 
         public int MinimumExpectedNbPprofFiles { get; set; } = 2;
@@ -134,12 +106,12 @@ namespace Datadog.Profiler.SmokeTests
         private void CheckPprofFiles()
         {
             var pprofFiles = Directory.EnumerateFiles(EnvironmentHelper.PprofDir, "*.pprof", SearchOption.AllDirectories).ToList();
-            Assert.True(pprofFiles.Count >= MinimumExpectedNbPprofFiles, $"The number of pprof files was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {pprofFiles.Count}");
+            pprofFiles.Count.Should().BeGreaterThanOrEqualTo(MinimumExpectedNbPprofFiles);
         }
 
         private void CheckAgent(MockDatadogAgent agent)
         {
-            Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThanOrEqualTo(MinimumExpectedNbPprofFiles);
         }
     }
 }

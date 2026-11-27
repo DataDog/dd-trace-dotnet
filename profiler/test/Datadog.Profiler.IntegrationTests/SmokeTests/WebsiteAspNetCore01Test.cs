@@ -18,10 +18,10 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Website-AspNetCore01")]
-        public void CheckSmoke(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.WebsiteAspNetCore01)]
+        public void CheckSmoke(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            var runner = new SmokeTestRunner(app, _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
         }

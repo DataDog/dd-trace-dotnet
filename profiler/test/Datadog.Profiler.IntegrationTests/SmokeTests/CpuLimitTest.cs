@@ -22,11 +22,12 @@ namespace Datadog.Profiler.IntegrationTests.SmokeTests
         }
 
         [Trait("Category", "CpuLimitTest")]
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckCpuLimit(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckCpuLimit(TestAppContext app)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            var runner = new SmokeTestRunner(app, commandLine: "--scenario 1", output: _output);
 
+            // Below 1 CPU the profiler does not start and writes no profile directory: count the uploads on the agent.
             using var agent = runner.Run();
 
             var rawCpuLimit = Environment.GetEnvironmentVariable("CONTAINER_CPUS");
@@ -39,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.SmokeTests
             else
             {
                 runner.XUnitLogger.WriteLine("CPU limit set to >=1 CPU or not set, expecting profiler to be enabled");
-                agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+                agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             }
         }
     }

@@ -71,5 +71,5 @@ internal sealed class OverheadController
         }
     }
 
-    private static int ComputeSamplingParameter(int samplingPercent) => samplingPercent <= 0 ? 0 : (int)Math.Round(100m / samplingPercent);
+    private static int ComputeSamplingParameter(int samplingPercent) => samplingPercent <= 0 ? 0 : (int)Math.Round(100m / samplingPercent, MidpointRounding.ToEven);
 }

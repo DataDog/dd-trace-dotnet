@@ -184,7 +184,7 @@ internal static class AppHostHelper
         }
         catch (Exception ex)
         {
-            log.WriteError(ex, $"Error updating application pools");
+            log.WriteError(ex, "Error updating application pools");
             return false;
         }
     }

@@ -41,7 +41,7 @@ internal sealed class ActivatorHelper
             var ctor = _type.GetConstructor(Type.EmptyTypes)!;
 
             var createHeadersMethod = new DynamicMethod(
-                $"TypeActivator" + _type.Name,
+                "TypeActivator" + _type.Name,
                 _type,
                 new[] { typeof(object) },
                 typeof(DuckType).Module,

@@ -101,6 +101,11 @@ partial class Build
             {
                 additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
             }
+            else
+            {
+                // Must match the toolchain passed everywhere else (shared build dir).
+                additionalArgs += Glibc217SysrootCMakeArgs;
+            }
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
@@ -116,8 +121,9 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
+            // Must match the toolchain passed everywhere else (shared build dir).
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoaderTests}",
                 workingDirectory: NativeBuildDirectory);
@@ -308,18 +314,54 @@ partial class Build
             var (arch, extension) = GetUnixArchitectureAndExtension();
             var dest = MonitoringHomeDirectory / arch / $"{NativeTracerProject.Name}.{extension}";
 
-            // If we need to increase this version on arm64 later, that is ok as long
-            // as it doesn't go above 2.23. Just update the version below. We must
-            // NOT increase it beyond 2.23, or increase the version on x64.
-            //
-            // See also the ValidateNativeProfilerGlibcCompatibility Nuke task and the checks
-            // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
-            var expectedGlibcVersion = IsArm64
-                ? new Version(2, 17)
-                : new Version(2, 17);
+            // This is a compatibility ceiling, not an expected exact value. Requiring an
+            // older version is fine; requiring anything newer than 2.17 is not.
+            // See also ValidateNativeProfilerGlibcCompatibility.
+            var maximumAllowedGlibcVersion = new Version(2, 17);
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
-            nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+            nativeLibHelper.ValidateNativeLibraryCompatibility(dest, maximumAllowedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+        });
+
+    Target ValidateDdDotnetGlibcCompatibility => _ => _
+        .Unlisted()
+        .Description("Validates the glibc requirements of the uncompressed dd-dotnet NativeAOT executable")
+        .OnlyWhenStatic(() => UseGlibc217Sysroot && IsLinux && !IsAlpine)
+        .After(BuildDdDotnet)
+        .Executes(() =>
+        {
+            var binary = GetUncompressedDdDotnetPath(DdDotnetRuntimeIdentifier);
+            Assert.FileExists(binary, "BuildDdDotnet writes the uncompressed copy of dd-dotnet that is validated here.");
+
+            // Same compatibility ceiling as the native tracer and profiler.
+            var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
+            helper.ValidateNativeLibraryCompatibility(binary, new Version(2, 17), snapshotPrefix: null);
+
+            // The shared checker accepts a non-Alpine binary with no GLIBC_* requirements.
+            // dd-dotnet must fail that case: a scan that finds nothing is not evidence of glibc 2.17.
+            var nmOutput = Nm.Value($"--with-symbol-versions -D \"{binary}\"", logOutput: false)
+                             .Where(x => x.Type == OutputType.Std)
+                             .Select(x => x.Text);
+            var maximumRequiredVersion = GlibcSymbolVersionChecker.GetMaximumVersion(
+                GlibcSymbolVersionChecker.Scan(NmSymbolParser.Parse(nmOutput)));
+            if (maximumRequiredVersion is null)
+            {
+                throw new InvalidOperationException($"{binary}: no versioned glibc symbols were found.");
+            }
+
+            var loader = IsArm64 ? "ld-linux-aarch64.so.1" : "ld-linux-x86-64.so.2";
+            var interpreter = IsArm64 ? "/lib/ld-linux-aarch64.so.1" : "/lib64/ld-linux-x86-64.so.2";
+            var allowedLibraries = new[] { "libc.so.6", "libdl.so.2", "libm.so.6", "libpthread.so.0", "librt.so.1", loader };
+
+            var dynamicSection = ReadElf.Value($"--wide --dynamic \"{binary}\"", logOutput: false)
+                                        .Where(x => x.Type == OutputType.Std)
+                                        .Select(x => x.Text);
+            ElfDynamicLinkingChecker.ValidateNeededLibraries(dynamicSection, allowedLibraries, "dd-dotnet");
+
+            var programHeaders = ReadElf.Value($"--wide --program-headers \"{binary}\"", logOutput: false)
+                                        .Where(x => x.Type == OutputType.Std)
+                                        .Select(x => x.Text);
+            ElfDynamicLinkingChecker.ValidateInterpreter(programHeaders, interpreter, "dd-dotnet");
         });
 
     Target ValidateNativeConfigurations => _ => _

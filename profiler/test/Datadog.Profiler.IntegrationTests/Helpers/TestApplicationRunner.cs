@@ -8,7 +8,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
-using Xunit;
+using FluentAssertions.Execution;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -30,6 +30,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private string _appListenerPort;
 
         public TestApplicationRunner(
+            TestAppContext context,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableTracer = false,
+            bool enableProfiler = true)
+            : this(
+                context.Application.FolderName,
+                TestFrameworkInfo.ToMoniker(context.Framework),
+                context.Application.AssemblyName,
+                output,
+                commandLine,
+                enableTracer,
+                enableProfiler)
+        {
+        }
+
+        private TestApplicationRunner(
             string appName,
             string framework,
             string appAssembly,
@@ -49,23 +66,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output = new XUnitFileLogger(output, Path.Combine(logPath, "xunit.txt"));
             _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
-        }
-
-        public TestApplicationRunner(
-            TestAppContext context,
-            ITestOutputHelper output,
-            string commandLine = null,
-            bool enableTracer = false,
-            bool enableProfiler = true)
-            : this(
-                context.Application.FolderName,
-                TestFrameworkInfo.ToMoniker(context.Framework),
-                context.Application.AssemblyName,
-                output,
-                commandLine,
-                enableTracer,
-                enableProfiler)
-        {
         }
 
         public string TestOutputDir => _testBaseOutputDir;
@@ -98,6 +98,22 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
             var binPath = EnvironmentHelper.GetBinOutputPath();
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
+        }
+
+        public ProfilerTestRun Run()
+        {
+            var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            try
+            {
+                Run(agent);
+                return ProfilerTestRun.From(this, agent);
+            }
+            catch
+            {
+                // The caller does not receive a run on failure, so dispose one here. That dispose stops the agent.
+                agent.Dispose();
+                throw;
+            }
         }
 
         public void Run(MockDatadogAgent agent)
@@ -276,9 +292,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 _output.WriteLine($"[TestRunner] Standard output:\n{standardOutput}");
                 _output.WriteLine($"[TestRunner] Error output:\n{errorOutput}");
 
-                Assert.True(
-                    false,
-                    $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode:X})");
+                Execute.Assertion.FailWith(
+                    $"Exit code of {{0}} should be 0 instead of {{1}} (= 0x{process.ExitCode:X})",
+                    Path.GetFileName(process.StartInfo?.FileName ?? string.Empty),
+                    process.ExitCode);
             }
         }
 

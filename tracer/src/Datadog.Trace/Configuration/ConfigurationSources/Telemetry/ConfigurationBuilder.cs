@@ -198,7 +198,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             where T : struct
         {
             var result = GetAs(validator, converter);
-            return result is { Result: { } ddResult, IsValid: true } ? ddResult : null;
+            return result is { Result: var ddResult, IsValid: true } ? ddResult : null;
         }
 
         // ****************
@@ -227,7 +227,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetBoolResult(validator, converter: null);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -245,7 +245,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             // We don't "pre-record" the default because it's expensive to create
             var result = GetBoolResult(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -283,7 +283,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetInt32Result(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -319,7 +319,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetDoubleResult(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -479,59 +479,59 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
-            var source = Source;
-            var telemetry = Telemetry;
+            var configSource = Source;
+            var configTelemetry = Telemetry;
             return converter is null
-                ? GetResultWithFallback(key => source.GetString(key, telemetry, validator, recordValue))
-                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue));
+                ? GetResultWithFallback(key => configSource.GetString(key, configTelemetry, validator, recordValue))
+                : GetResultWithFallback(key => configSource.GetAs(key, configTelemetry, converter, validator, recordValue));
         }
 
         private ConfigurationResult<bool> GetBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
-            var source = Source;
-            var telemetry = Telemetry;
+            var configSource = Source;
+            var configTelemetry = Telemetry;
             return converter is null
-                ? GetResultWithFallback(key => source.GetBool(key, telemetry, validator))
-                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+                ? GetResultWithFallback(key => configSource.GetBool(key, configTelemetry, validator))
+                : GetResultWithFallback(key => configSource.GetAs(key, configTelemetry, converter, validator, recordValue: true));
         }
 
         private ConfigurationResult<int> GetInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
-            var source = Source;
-            var telemetry = Telemetry;
+            var configSource = Source;
+            var configTelemetry = Telemetry;
             return converter is null
-                ? GetResultWithFallback(key => source.GetInt32(key, telemetry, validator))
-                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+                ? GetResultWithFallback(key => configSource.GetInt32(key, configTelemetry, validator))
+                : GetResultWithFallback(key => configSource.GetAs(key, configTelemetry, converter, validator, recordValue: true));
         }
 
         private ConfigurationResult<double> GetDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
-            var source = Source;
-            var telemetry = Telemetry;
+            var configSource = Source;
+            var configTelemetry = Telemetry;
             return converter is null
-                ? GetResultWithFallback(key => source.GetDouble(key, telemetry, validator))
-                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+                ? GetResultWithFallback(key => configSource.GetDouble(key, configTelemetry, validator))
+                : GetResultWithFallback(key => configSource.GetAs(key, configTelemetry, converter, validator, recordValue: true));
         }
 
         private ConfigurationResult<T> GetAs<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
-            var source = Source;
-            var telemetry = Telemetry;
-            return GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+            var configSource = Source;
+            var configTelemetry = Telemetry;
+            return GetResultWithFallback(key => configSource.GetAs(key, configTelemetry, converter, validator, recordValue: true));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator, bool recordValue = true)
         {
-            var source = Source;
-            var telemetry = Telemetry;
-            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator, recordValue));
+            var configSource = Source;
+            var configTelemetry = Telemetry;
+            return GetResultWithFallback(key => configSource.GetDictionary(key, configTelemetry, validator: null, allowOptionalMappings, separator, recordValue));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)
         {
-            var source = Source;
-            var telemetry = Telemetry;
-            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, parser));
+            var configSource = Source;
+            var configTelemetry = Telemetry;
+            return GetResultWithFallback(key => configSource.GetDictionary(key, configTelemetry, validator: null, parser));
         }
 
         /// <summary>
@@ -589,7 +589,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public T? WithDefault(T? defaultValue)
         {
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            if (ConfigurationResult is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -623,7 +623,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return overridden;
             }
 
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            if (ConfigurationResult is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }

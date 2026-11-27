@@ -180,26 +180,26 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire();
-            sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
-            sb.AppendLine($"TraceId128: {Context.TraceId128}");
-            sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentId}");
-            sb.AppendLine($"SpanId: {Context.SpanId}");
-            sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
-            sb.AppendLine($"Origin: {Context.Origin}");
-            sb.AppendLine($"ServiceName: {ServiceName}");
-            sb.AppendLine($"OperationName: {OperationName}");
-            sb.AppendLine($"Resource: {ResourceName}");
-            sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime:O}");
-            sb.AppendLine($"Duration: {Duration}");
-            sb.AppendLine($"End: {StartTime.Add(Duration):O}");
-            sb.AppendLine($"Error: {Error}");
+            sb.Append("TraceId64: ").Append(Context.TraceId128.Lower).AppendLine();
+            sb.Append("TraceId128: ").Append(Context.TraceId128).AppendLine();
+            sb.Append("RawTraceId: ").AppendLine(Context.RawTraceId);
+            sb.Append("ParentId: ").Append(Context.ParentId).AppendLine();
+            sb.Append("SpanId: ").Append(Context.SpanId).AppendLine();
+            sb.Append("RawSpanId: ").AppendLine(Context.RawSpanId);
+            sb.Append("Origin: ").AppendLine(Context.Origin);
+            sb.Append("ServiceName: ").AppendLine(ServiceName);
+            sb.Append("OperationName: ").AppendLine(OperationName);
+            sb.Append("Resource: ").AppendLine(ResourceName);
+            sb.Append("Type: ").AppendLine(Type);
+            sb.Append("Start: ").AppendLine(StartTime.ToString("O", CultureInfo.InvariantCulture));
+            sb.Append("Duration: ").Append(Duration).AppendLine();
+            sb.Append("End: ").AppendLine(StartTime.Add(Duration).ToString("O", CultureInfo.InvariantCulture));
+            sb.Append("Error: ").Append(Error).AppendLine();
 
             var samplingPriority = Context.TraceContext?.SamplingPriority;
-            sb.AppendLine($"TraceSamplingPriority: {SamplingPriorityValues.ToString(samplingPriority) ?? "not set"}");
+            sb.Append("TraceSamplingPriority: ").AppendLine(SamplingPriorityValues.ToString(samplingPriority) ?? "not set");
 
-            sb.AppendLine($"Meta: {Tags}");
+            sb.Append("Meta: ").Append(Tags).AppendLine();
 
             return StringBuilderCache.GetStringAndRelease(sb);
         }

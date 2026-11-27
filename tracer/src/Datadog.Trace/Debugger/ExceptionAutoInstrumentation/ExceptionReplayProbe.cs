@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
@@ -16,7 +17,7 @@ using Datadog.Trace.Logging;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal sealed class ExceptionReplayProbe
+    internal sealed class ExceptionReplayProbe : IEquatable<ExceptionReplayProbe>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionReplayProbe>();
         private readonly int _hashCode;
@@ -153,15 +154,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return hashCode.ToHashCode();
         }
 
-        public bool Equals(ExceptionReplayProbe other)
+        public bool Equals([NotNullWhen(true)] ExceptionReplayProbe? other)
         {
-            return Method.Equals(other.Method);
+            return other is not null && Method.Equals(other.Method);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ExceptionReplayProbe other && Equals(other);
         }
+
+        public override string ToString()
+            => $"ExceptionReplayProbe(ProbeId={ProbeId}, Method={Method.Method.DeclaringType?.FullName}.{Method.Method.Name}, Status={ProbeStatus})";
 
         public override int GetHashCode()
         {

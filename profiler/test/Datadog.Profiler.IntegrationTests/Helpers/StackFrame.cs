@@ -46,14 +46,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Line = line;
         }
 
-        public StackFrame(string module, string ns, string type, string function, string signature)
-        {
-            Module = module;
-            Namespace = ns;
-            Type = type;
-            Function = function;
-            Signature = signature;
-        }
+        /// <summary>
+        /// Starts a frame where each part is set by name. Parts that are not set are empty.
+        /// The builder converts to a <see cref="StackFrame"/> implicitly.
+        /// </summary>
+        public static Builder Build() => new();
 
         public override string ToString() => $"|lm:{Module} |ns:{Namespace} |ct:{Type} |cg:{TypeAdornment} |fn:{Function} |fg:{FunctionAdornment} |sg:{Signature}";
 
@@ -89,6 +86,65 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 hashCode = (hashCode * 397) ^ (Signature != null ? Signature.GetHashCode() : 0);
                 return hashCode;
             }
+        }
+
+        // Same text as the native FrameStore::GetManagedFrame, parsed by the string constructor.
+        internal sealed class Builder
+        {
+            private string _module = string.Empty;
+            private string _namespace = string.Empty;
+            private string _type = string.Empty;
+            private string _typeParameters = string.Empty;
+            private string _function = string.Empty;
+            private string _functionParameters = string.Empty;
+            private string _signature = string.Empty;
+
+            public static implicit operator StackFrame(Builder builder) => builder.ToStackFrame();
+
+            public Builder Module(string module)
+            {
+                _module = module;
+                return this;
+            }
+
+            public Builder Namespace(string ns)
+            {
+                _namespace = ns;
+                return this;
+            }
+
+            public Builder Type(string type)
+            {
+                _type = type;
+                return this;
+            }
+
+            public Builder TypeParameters(string typeParameters)
+            {
+                _typeParameters = typeParameters;
+                return this;
+            }
+
+            public Builder Function(string function)
+            {
+                _function = function;
+                return this;
+            }
+
+            public Builder FunctionParameters(string functionParameters)
+            {
+                _functionParameters = functionParameters;
+                return this;
+            }
+
+            public Builder Signature(string signature)
+            {
+                _signature = signature;
+                return this;
+            }
+
+            public StackFrame ToStackFrame() =>
+                new($"|lm:{_module} |ns:{_namespace} |ct:{_type} |cg:{_typeParameters} |fn:{_function} |fg:{_functionParameters} |sg:{_signature}");
         }
     }
 }

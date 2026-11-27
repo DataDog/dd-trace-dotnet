@@ -8,17 +8,16 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Coverage.Collector;
 
 internal static class SharedFrameworkLocator
 {
-    private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly string[] DotnetRootEnvironmentVariables = ["DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_X86", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)"];
-    private static readonly ConcurrentDictionary<string, Lazy<string[]>> CachedDirectories = new(PathComparer);
+    private static readonly ConcurrentDictionary<string, Lazy<string[]>> CachedDirectories = new(FilePathComparison.Comparer);
 
     internal static IEnumerable<string> GetDirectories(string outputDirectory, string? sharedFrameworkRoot = null)
     {
@@ -30,7 +29,7 @@ internal static class SharedFrameworkLocator
         var roots = (sharedFrameworkRoot is null ? GetSharedFrameworkRoots() : [sharedFrameworkRoot])
                    .Where(Directory.Exists)
                    .Select(Path.GetFullPath)
-                   .Distinct(PathComparer)
+                   .Distinct(FilePathComparison.Comparer)
                    .ToArray();
         if (roots.Length == 0)
         {
@@ -51,7 +50,7 @@ internal static class SharedFrameworkLocator
     internal static string[] DiscoverDirectories(string outputDirectory, IEnumerable<string> sharedFrameworkRoots, bool rollForwardToPrerelease)
     {
         var directories = new List<string>();
-        var seenDirectories = new HashSet<string>(PathComparer);
+        var seenDirectories = new HashSet<string>(FilePathComparison.Comparer);
         foreach (var runtimeConfigPath in GetRuntimeConfigPaths(outputDirectory))
         {
             foreach (var framework in ReadFrameworkReferences(runtimeConfigPath))
@@ -76,7 +75,7 @@ internal static class SharedFrameworkLocator
     internal static string[] GetSharedFrameworkRoots(string coreLibraryPath, Func<string, string?> getEnvironmentVariable)
     {
         var roots = new List<string>();
-        var seenRoots = new HashSet<string>(PathComparer);
+        var seenRoots = new HashSet<string>(FilePathComparison.Comparer);
 
         var dotnetHostPath = getEnvironmentVariable("DOTNET_HOST_PATH");
         if (!string.IsNullOrEmpty(dotnetHostPath))
@@ -147,7 +146,7 @@ internal static class SharedFrameworkLocator
         try
         {
             return Directory.EnumerateFiles(outputDirectory, "*.runtimeconfig.json", SearchOption.TopDirectoryOnly)
-                            .OrderBy(path => path, PathComparer)
+                            .OrderBy(path => path, FilePathComparison.Comparer)
                             .ToList();
         }
         catch (IOException)

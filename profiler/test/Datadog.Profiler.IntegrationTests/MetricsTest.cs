@@ -6,7 +6,7 @@
 using System.IO;
 using System.Net;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -20,14 +20,17 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0" })]
-        public void CheckMetrics(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8)]
+        public void CheckMetrics(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10 --threads 20");
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            var runner = app.CreateRunner(_output, commandLine: "--scenario 10 --threads 20");
+            // CPU and GC are disabled: the other default profilers stay on
+            runner.Environment.EnableOnly(
+                ProfilerFeature.WallTime,
+                ProfilerFeature.Exceptions,
+                ProfilerFeature.LockContention,
+                ProfilerFeature.GcThreadsCpuTime,
+                ProfilerFeature.Timeline);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasMetrics = false;
@@ -41,14 +44,14 @@ namespace Datadog.Profiler.IntegrationTests
             // uncomment to debug multipart http request
             // Thread.Sleep(10000000);
 
-            Assert.True(hasMetrics);
+            hasMetrics.Should().BeTrue();
             ValidateMetrics(runner.Environment.PprofDir);
         }
 
         private static void ValidateMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
-            Assert.True(metricsFiles.Length > 0);
+            metricsFiles.Length.Should().BePositive();
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file
@@ -73,12 +76,12 @@ namespace Datadog.Profiler.IntegrationTests
                     }
                 }
 
-                Assert.True(threadCount > 0);
-                Assert.True(threadCountLow > 0);
-                Assert.True(threadCountHigh > 0);
+                threadCount.Should().BePositive();
+                threadCountLow.Should().BePositive();
+                threadCountHigh.Should().BePositive();
 
-                Assert.True(threadCountLow <= threadCount);
-                Assert.True(threadCount <= threadCountHigh);
+                threadCountLow.Should().BeLessThanOrEqualTo(threadCount);
+                threadCount.Should().BeLessThanOrEqualTo(threadCountHigh);
             }
         }
     }

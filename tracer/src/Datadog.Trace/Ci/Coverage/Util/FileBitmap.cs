@@ -145,7 +145,7 @@ internal readonly unsafe ref struct FileBitmap
 
         if (fromLine <= 0 || toLine < fromLine)
         {
-            ThrowHelper.ThrowArgumentException("Invalid range");
+            ThrowHelper.ThrowArgumentException("Invalid range", fromLine <= 0 ? nameof(fromLine) : nameof(toLine));
         }
 
         for (var i = fromLine; i <= toLine; i++)
@@ -973,9 +973,9 @@ internal readonly unsafe ref struct FileBitmap
             _size = size;
         }
 
-        public byte Current => _bitMap[_index];
+        public readonly byte Current => _bitMap[_index];
 
-        object IEnumerator.Current => Current;
+        readonly object IEnumerator.Current => Current;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() => ++_index < _size;

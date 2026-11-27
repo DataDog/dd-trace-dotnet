@@ -22,6 +22,7 @@
 #pragma warning disable SA1308 // Variable names should not be prefixed
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Tools.Shared.Windows
 {
@@ -88,7 +89,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
 
         public override int GetHashCode() => m_Value.GetHashCode();
 
-        public override bool Equals(object? obj) => obj is UniPtr other && Equals(other);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is UniPtr other && Equals(other);
 
         public bool Equals(UniPtr other) => m_Value == other.m_Value;
 

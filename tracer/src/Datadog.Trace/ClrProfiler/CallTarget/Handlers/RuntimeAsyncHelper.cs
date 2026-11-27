@@ -7,6 +7,7 @@
 // net6.0 is the only Datadog.Trace asset a .NET 10+ process can load, and Runtime-async is a .NET 10+ feature
 #if NET6_0_OR_GREATER // NET 10+ really
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -63,6 +64,67 @@ internal static class RuntimeAsyncHelper
         }
 
         return default;
+    }
+
+    /// <summary>
+    /// Builds a faulted or canceled value of a declared non-generic Task or ValueTask return type.
+    /// </summary>
+    /// <typeparam name="TDeclaredReturn">Task or ValueTask</typeparam>
+    /// <param name="exception">The exception thrown by the async body</param>
+    /// <returns>A completed value carrying the failure, or default if the type is not recognised</returns>
+    internal static TDeclaredReturn? CreateFailed<TDeclaredReturn>(Exception exception)
+    {
+        if (typeof(TDeclaredReturn) != typeof(Task) && typeof(TDeclaredReturn) != typeof(ValueTask))
+        {
+            return default;
+        }
+
+        // The builder preserves an OperationCanceledException and its token, even when the token
+        // is not canceled. Task.FromException would fault it, and Task.FromCanceled rejects that token.
+        var builder = AsyncTaskMethodBuilder.Create();
+        builder.SetException(exception);
+        var task = builder.Task;
+
+        // The runtime propagates the original failure to the caller through a separate task.
+        // Observe this instrumentation-only task so it cannot raise UnobservedTaskException as well.
+        _ = task.Exception;
+
+        if (typeof(TDeclaredReturn) == typeof(Task))
+        {
+            return Unsafe.As<Task, TDeclaredReturn>(ref task);
+        }
+
+        var valueTask = new ValueTask(task);
+        return Unsafe.As<ValueTask, TDeclaredReturn>(ref valueTask);
+    }
+
+    /// <summary>
+    /// Builds a faulted or canceled value of a declared Task&lt;TResult&gt; or ValueTask&lt;TResult&gt; return type.
+    /// </summary>
+    /// <typeparam name="TResult">The unwrapped result type</typeparam>
+    /// <typeparam name="TDeclaredReturn">Task&lt;TResult&gt; or ValueTask&lt;TResult&gt;</typeparam>
+    /// <param name="exception">The exception thrown by the async body</param>
+    /// <returns>A completed value carrying the failure, or default if the type is not recognised</returns>
+    internal static TDeclaredReturn? CreateFailed<TResult, TDeclaredReturn>(Exception exception)
+    {
+        if (typeof(TDeclaredReturn) != typeof(Task<TResult>) && typeof(TDeclaredReturn) != typeof(ValueTask<TResult>))
+        {
+            return default;
+        }
+
+        // Match the async method builder's fault/cancellation semantics and observe the synthetic task.
+        var builder = AsyncTaskMethodBuilder<TResult>.Create();
+        builder.SetException(exception);
+        var task = builder.Task;
+        _ = task.Exception;
+
+        if (typeof(TDeclaredReturn) == typeof(Task<TResult>))
+        {
+            return Unsafe.As<Task<TResult>, TDeclaredReturn>(ref task);
+        }
+
+        var valueTask = new ValueTask<TResult>(task);
+        return Unsafe.As<ValueTask<TResult>, TDeclaredReturn>(ref valueTask);
     }
 
     /// <summary>

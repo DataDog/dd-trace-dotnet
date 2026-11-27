@@ -213,7 +213,7 @@ partial class Build : NukeBuild
 
                     foreach (var framework in frameworks)
                     {
-                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}"});
+                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "ubuntu", artifactSuffix = $"linux-{platform}"});
                         matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}"});
                     }
 
@@ -393,7 +393,7 @@ partial class Build : NukeBuild
             {
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "ubuntu", artifactSuffix: "linux-x64"),
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
@@ -436,7 +436,7 @@ partial class Build : NukeBuild
             {
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-arm64"),
+                    (baseImage: "ubuntu", artifactSuffix: "linux-arm64"),
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
@@ -468,7 +468,7 @@ partial class Build : NukeBuild
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "ubuntu", artifactSuffix: "linux-x64"),
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
                 var optimizations = new[] { "true", "false" };
@@ -556,7 +556,7 @@ partial class Build : NukeBuild
 
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "ubuntu", artifactSuffix: "linux-x64"),
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
@@ -744,7 +744,7 @@ partial class Build : NukeBuild
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-arm64"),
+                    (baseImage: "ubuntu", artifactSuffix: "linux-arm64"),
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
                 var optimizations = new[] { "true", "false" };

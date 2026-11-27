@@ -16,10 +16,7 @@ endif()
 # so configure CMake from the repository root rather than from this directory
 project("Datadog.Trace.ClrProfiler.Native" VERSION ${DD_VERSION})
 
-if (UNIVERSAL)
-   find_package(GlibcCompat REQUIRED)
-   message(STATUS "Glibc Compat objects")
-endif()
+# glibc-compat is defined once at the root CMakeLists.txt (shared across subdirectories).
 
 # ******************************************************
 # Environment detection
@@ -126,7 +123,7 @@ if (UNIVERSAL)
 elseif (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden -Wno-deprecated-this-capture)
 else()
-    add_compile_options(-stdlib=libstdc++)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS})
 endif()
 
 if(ISLINUX)

@@ -12,8 +12,8 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using MessagePack;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.ProcessTags
@@ -30,59 +30,59 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsPropagation(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsPropagation(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.NotEmpty(profilerProcessTags);
-            Assert.NotEmpty(tracerProcessTags);
-            Assert.Equal(profilerProcessTags, tracerProcessTags);
+            profilerProcessTags.Should().NotBeEmpty();
+            tracerProcessTags.Should().NotBeEmpty();
+            profilerProcessTags.Should().BeEquivalentTo(tracerProcessTags);
         }
 
         [Flaky("Test flaked in CI")]
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsNotPropagatedWhenDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsNotPropagatedWhenDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "false";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.Empty(profilerProcessTags);
-            Assert.Empty(tracerProcessTags);
+            profilerProcessTags.Should().BeEmpty();
+            tracerProcessTags.Should().BeEmpty();
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsOnlyInTracerWhenProfilerDisabled(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsOnlyInTracerWhenProfilerDisabled(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
             runner.Environment.CustomEnvironmentVariables["DD_PROFILING_ENABLED"] = "0";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.Empty(profilerProcessTags);
-            Assert.NotEmpty(tracerProcessTags);
+            profilerProcessTags.Should().BeEmpty();
+            tracerProcessTags.Should().NotBeEmpty();
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckProcessTagsContentFormat(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void CheckProcessTagsContentFormat(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario, enableTracer: true);
+            var runner = app.CreateRunner(_output, commandLine: Scenario, enableTracer: true);
             runner.Environment.CustomEnvironmentVariables["DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED"] = "true";
 
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
-            Assert.NotEmpty(profilerProcessTags);
+            profilerProcessTags.Should().NotBeEmpty();
 
             foreach (var processTags in profilerProcessTags)
             {
                 // Should contain at least the basedir tag
-                Assert.Contains("entrypoint.basedir:", processTags);
+                processTags.Should().Contain("entrypoint.basedir:");
             }
         }
 

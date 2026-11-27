@@ -10,8 +10,8 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using ReferenceChainModel;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.ReferenceChain
@@ -29,13 +29,13 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainScenario(TestAppContext app)
         {
             // Scenario 1: Simple Chain (~1K objects)
             // Static Dictionary -> Order -> Customer -> Address
             //                            -> OrderItem[] -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -52,44 +52,43 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             runner.Run(agent);
 
-            Assert.True(hasReferenceTree, "No reference tree was sent to the agent");
+            hasReferenceTree.Should().BeTrue("a reference tree should be sent to the agent");
 
             // Verify reference tree JSON files were created locally
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected reference chains and Stack root
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasRootOfCategory(tree, "K") &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
-                    HasAncestorDescendantChain(tree, "Order", "Product")),
-                "Expected at least one snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
+                    HasAncestorDescendantChain(tree, "Order", "Product"),
+                "at least one snapshot should contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(TestAppContext app)
         {
             // Regression guard for fault handling: a memory access fault during one
             // snapshot's traversal must not disable reference chains for the following
             // snapshots. We run long enough for several snapshots and assert that a
             // valid reference tree is produced by each consecutive snapshot, not just
             // the first one.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 50;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "10");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             // Group the emitted files by the export (snapshot) they belong to. Each
             // snapshot that ran the traversal and found a root emits exactly one tree.
@@ -102,28 +101,26 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             // "A bad dump does not kill the next one": we must see trees from multiple
             // consecutive snapshots, not a single one followed by silence.
-            Assert.True(
-                snapshotIds.Count >= 2,
-                $"Expected reference trees from at least 2 consecutive snapshots, got {snapshotIds.Count}");
+            snapshotIds.Count.Should().BeGreaterThanOrEqualTo(2, "reference trees should be produced for at least 2 consecutive snapshots");
 
             // Every emitted tree must be structurally valid and contain the scenario chain,
             // proving traversal kept working snapshot after snapshot.
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
-            Assert.Equal(referenceTreeFiles.Length, trees.Count);
+            trees.Should().HaveCount(referenceTreeFiles.Length);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasRootOfCategory(tree, "K") &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
-                    HasAncestorDescendantChain(tree, "Customer", "Address")),
-                "Expected at least one snapshot to still contain the Order->Customer->Address chain");
+                    HasAncestorDescendantChain(tree, "Customer", "Address"),
+                "at least one snapshot should still contain the Order->Customer->Address chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainBinaryFormat(TestAppContext app)
         {
             // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -139,27 +136,27 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             runner.Run(agent);
 
-            Assert.True(hasReferenceTree, "No binary reference tree was sent to the agent");
+            hasReferenceTree.Should().BeTrue("a binary reference tree should be sent to the agent");
 
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree binary files were generated");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasRootOfCategory(tree, "K") &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
-                    HasAncestorDescendantChain(tree, "Order", "Product")),
-                "Expected at least one binary snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
+                    HasAncestorDescendantChain(tree, "Order", "Product"),
+                "at least one binary snapshot should contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSimpleChainBothFormats(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSimpleChainBothFormats(TestAppContext app)
         {
             // Format=3 emits both JSON and binary files for the same tree — useful for validation.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -182,13 +179,13 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             runner.Run(agent);
 
-            Assert.True(hasJsonTree, "No JSON reference tree was sent in both-formats mode");
-            Assert.True(hasBinTree, "No binary reference tree was sent in both-formats mode");
+            hasJsonTree.Should().BeTrue("a JSON reference tree should be sent in both-formats mode");
+            hasBinTree.Should().BeTrue("a binary reference tree should be sent in both-formats mode");
 
             var jsonFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             var binFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
-            Assert.True(jsonFiles.Length > 0, "No reference tree JSON files were generated in both-formats mode");
-            Assert.True(binFiles.Length > 0, "No reference tree binary files were generated in both-formats mode");
+            jsonFiles.Length.Should().BePositive();
+            binFiles.Length.Should().BePositive();
 
             // Pair JSON and binary files from the same export cycle by matching the
             // filename stem (everything before the extension). Both formats share the
@@ -197,9 +194,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
             var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
 
-            Assert.True(
-                commonStems.Count > 0,
-                "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
+            commonStems.Count.Should().BePositive();
 
             foreach (var stem in commonStems)
             {
@@ -208,43 +203,39 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
                 _output.WriteLine($"Comparing paired trees for {stem}: JSON has {jsonTree.Roots.Count} roots, binary has {binTree.Roots.Count} roots");
 
-                Assert.Equal(jsonTree.Version, binTree.Version);
-                Assert.Equal(jsonTree.TypeTable.Count, binTree.TypeTable.Count);
-                Assert.Equal(jsonTree.Roots.Count, binTree.Roots.Count);
+                jsonTree.Version.Should().Be(binTree.Version);
+                jsonTree.TypeTable.Count.Should().Be(binTree.TypeTable.Count);
+                jsonTree.Roots.Count.Should().Be(binTree.Roots.Count);
 
                 // Verify the same type names are present (order may differ between formats)
-                var jsonTypes = jsonTree.TypeTable.OrderBy(t => t).ToList();
-                var binTypes = binTree.TypeTable.OrderBy(t => t).ToList();
-                Assert.Equal(jsonTypes, binTypes);
+                jsonTree.TypeTable.Should().BeEquivalentTo(binTree.TypeTable);
 
                 // Verify both trees have the same root categories
-                var jsonCategories = jsonTree.Roots.Select(r => r.CategoryCode).OrderBy(c => c).ToList();
-                var binCategories = binTree.Roots.Select(r => r.CategoryCode).OrderBy(c => c).ToList();
-                Assert.Equal(jsonCategories, binCategories);
+                jsonTree.Roots.Select(r => r.CategoryCode).Should().BeEquivalentTo(binTree.Roots.Select(r => r.CategoryCode));
 
                 // Verify equivalent reference chains exist in both trees
                 AssertSameChains(jsonTree, binTree);
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeTypesAreInClassHistogramBinary(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeTypesAreInClassHistogramBinary(TestAppContext app)
         {
-            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
+            CheckReferenceTreeTypesAreInClassHistogram(app, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
         }
 
         // Run against JSON as well: the two serializers build their type table independently,
         // so a type/index mismatch in one of them would not show up in the other.
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckReferenceTreeTypesAreInClassHistogramJson(TestAppContext app)
         {
-            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
+            CheckReferenceTreeTypesAreInClassHistogram(app, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSkipTraversalProducesNoReferenceTree(TestAppContext app)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -261,626 +252,579 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             runner.Run(agent);
 
-            Assert.False(hasReferenceTree, "No reference tree should be sent when skip-traversal is enabled");
+            hasReferenceTree.Should().BeFalse("no reference tree should be sent when skip-traversal is enabled");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckCyclesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckCyclesScenario(TestAppContext app)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 3");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 3");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
             // Verify reference tree JSON files were created (cycle detection should prevent crashes)
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for cycle scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected self-referencing chain
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasSelfReferencingChain(tree, "TreeNode") &&
-                    GetMaxTreeDepth(tree) < 200),
-                "Expected at least one snapshot to contain TreeNode self-referencing chain with finite depth");
+                    GetMaxTreeDepth(tree) < 200,
+                "at least one snapshot should contain TreeNode self-referencing chain with finite depth");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckDeepHierarchyScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckDeepHierarchyScenario(TestAppContext app)
         {
             // Scenario 4: Deep Hierarchy - Root -> Level0 -> Level1 -> ... -> Level9
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 4");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 4");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for deep hierarchy scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the full deep hierarchy chain
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     Enumerable.Range(0, 9).All(i =>
-                        HasAncestorDescendantChain(tree, $"Level{i}", $"Level{i + 1}"))),
-                "Expected at least one snapshot to contain the full Level0->Level1->...->Level9 chain");
+                        HasAncestorDescendantChain(tree, $"Level{i}", $"Level{i + 1}")),
+                "at least one snapshot should contain the full Level0->Level1->...->Level9 chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMultipleRootsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMultipleRootsScenario(TestAppContext app)
         {
             // Scenario 2: Multiple Roots
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 2");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 2");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for multiple roots scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chains
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     tree.Roots.Count > 0 &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
-                    TypeExistsInTree(tree, "Product")),
-                "Expected at least one snapshot to contain Order->Customer chain and Product type");
+                    TypeExistsInTree(tree, "Product"),
+                "at least one snapshot should contain Order->Customer chain and Product type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckWideTreeScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckWideTreeScenario(TestAppContext app)
         {
             // Scenario 5: Wide Tree - 100 branches x 50 leaves
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 5");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 5");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for wide tree scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chain
-            Assert.True(
-                trees.Any(tree => HasAncestorDescendantChain(tree, "WideBranch", "Leaf")),
-                "Expected at least one snapshot to contain WideBranch->Leaf chain");
+            trees.Should().Contain(tree => HasAncestorDescendantChain(tree, "WideBranch", "Leaf"), "at least one snapshot should contain WideBranch->Leaf chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckMixedStructuresScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckMixedStructuresScenario(TestAppContext app)
         {
             // Scenario 6: Mixed Structures - arrays of arrays, dictionaries, byte[] (value-type arrays skipped)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 6");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 6");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for mixed structures scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chains
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasAncestorDescendantChain(tree, "Container", "Payload") &&
                     HasAncestorDescendantChain(tree, "Payload", "Metadata") &&
-                    HasAncestorDescendantChain(tree, "Container", "Leaf")),
-                "Expected at least one snapshot to contain Container->Payload->Metadata and Container->Leaf chains");
+                    HasAncestorDescendantChain(tree, "Container", "Leaf"),
+                "at least one snapshot should contain Container->Payload->Metadata and Container->Leaf chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckSharedReferencesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckSharedReferencesScenario(TestAppContext app)
         {
             // Scenario 8: Shared References - multiple holders reference the same payload
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 8");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 8");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for shared references scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chain with valid instance counts
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasAncestorDescendantChain(tree, "SharedHolder", "SharedPayload") &&
-                    FindNodesOfType(tree, "SharedPayload").Any(n => n.InstanceCount > 0)),
-                "Expected at least one snapshot to contain SharedHolder->SharedPayload chain with InstanceCount > 0");
+                    FindNodesOfType(tree, "SharedPayload").Any(n => n.InstanceCount > 0),
+                "at least one snapshot should contain SharedHolder->SharedPayload chain with InstanceCount > 0");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckLinkedListScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckLinkedListScenario(TestAppContext app)
         {
             // Scenario 9: Linked List - self-referencing type chain (LinkedNode -> LinkedNode -> ...)
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 9");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 9");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for linked list scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected self-referencing chain
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasSelfReferencingChain(tree, "LinkedNode") &&
-                    GetSelfReferencingDepth(tree, "LinkedNode") >= 2),
-                "Expected at least one snapshot to contain LinkedNode self-referencing chain with depth >= 2");
+                    GetSelfReferencingDepth(tree, "LinkedNode") >= 2,
+                "at least one snapshot should contain LinkedNode self-referencing chain with depth >= 2");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckNullFieldsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckNullFieldsScenario(TestAppContext app)
         {
             // Scenario 10: Null Fields - objects with most reference fields intentionally null
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 10");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 10");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for null fields scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chain with correct null field behavior
-            Assert.True(
-                trees.Any(tree =>
-                {
-                    if (!HasAncestorDescendantChain(tree, "SparseObject", "Customer"))
-                    {
-                        return false;
-                    }
-
-                    var sparseNodes = FindNodesOfType(tree, "SparseObject");
-                    return sparseNodes.All(sparseNode =>
-                    {
-                        var directChildTypeNames = sparseNode.Children
-                            .Select(c => tree.GetShortTypeName(c.TypeIndex))
-                            .ToHashSet();
-                        return !directChildTypeNames.Contains("Product") && !directChildTypeNames.Contains("Order");
-                    });
-                }),
-                "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
+            trees.Should().Contain(
+                tree => HasSparseObjectCustomerChainWithoutProductOrOrder(tree),
+                "at least one snapshot should contain SparseObject->Customer without Product/Order as direct children");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckStructWithReferencesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckStructWithReferencesScenario(TestAppContext app)
         {
             // Scenario 11: Value type array with embedded reference fields
             // StructWithReferences[] -> Customer -> Address
             //                        -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 11");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 11");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for struct with references scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected chains through value type array elements
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasAncestorDescendantChain(tree, "StructWithReferences", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
-                    HasAncestorDescendantChain(tree, "StructWithReferences", "Product")),
-                "Expected at least one snapshot to contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
+                    HasAncestorDescendantChain(tree, "StructWithReferences", "Product"),
+                "at least one snapshot should contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckStaticRootScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckStaticRootScenario(TestAppContext app)
         {
             // Scenario 12: Same simple chain as Scenario 1 but held by a static field.
             // The GC reports static roots via GCBulkRootStaticVar, bypassing stack root handling.
             // Static List<Order> -> Order -> Customer -> Address
             //                             -> OrderItem[] -> Product
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 12");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 12");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for static root scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // At least one snapshot must contain the expected reference chains and static root with field name
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasRootOfCategory(tree, "S") &&
                     tree.Roots.Any(r => r.CategoryCode == "S" && !string.IsNullOrEmpty(r.FieldName)) &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
-                    HasAncestorDescendantChain(tree, "Order", "Product")),
-                "Expected at least one snapshot to contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
+                    HasAncestorDescendantChain(tree, "Order", "Product"),
+                "at least one snapshot should contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckEventHandlerLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckEventHandlerLeakScenario(TestAppContext app)
         {
             // Scenario 13: Event handler leak - publisher holds subscribers via event delegate
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 13");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 13");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for event handler leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasAncestorDescendantChain(tree, "EventSubscriber", "LeakedPayload") &&
-                    TypeExistsInTree(tree, "EventPublisher")),
-                "Expected at least one snapshot to contain EventSubscriber->LeakedPayload chain and EventPublisher type");
+                    TypeExistsInTree(tree, "EventPublisher"),
+                "at least one snapshot should contain EventSubscriber->LeakedPayload chain and EventPublisher type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckClosureLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckClosureLeakScenario(TestAppContext app)
         {
             // Scenario 14: Closure / captured variable leak - lambdas capturing expensive objects
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 14");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 14");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for closure leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree => HasAncestorDescendantChain(tree, "ClosureHolder", "ExpensiveResource")),
-                "Expected at least one snapshot to contain ClosureHolder->ExpensiveResource chain");
+            trees.Should().Contain(tree => HasAncestorDescendantChain(tree, "ClosureHolder", "ExpensiveResource"), "at least one snapshot should contain ClosureHolder->ExpensiveResource chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckTimerLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckTimerLeakScenario(TestAppContext app)
         {
             // Scenario 15: Timer callback leak - Timer keeping callback targets alive
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 15");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 15");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for timer leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasAncestorDescendantChain(tree, "MonitoredService", "ServiceMetrics") &&
-                    TypeExistsInTree(tree, "TimerOwner")),
-                "Expected at least one snapshot to contain MonitoredService->ServiceMetrics chain and TimerOwner type");
+                    TypeExistsInTree(tree, "TimerOwner"),
+                "at least one snapshot should contain MonitoredService->ServiceMetrics chain and TimerOwner type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckGCHandleLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckGCHandleLeakScenario(TestAppContext app)
         {
             // Scenario 16: Strong GCHandle leak - tests Handle root category
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 16");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 16");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for GCHandle leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     HasRootOfCategory(tree, "H") &&
-                    HasAncestorDescendantChain(tree, "HandleTarget", "InteropPayload")),
-                "Expected at least one snapshot to contain Handle root and HandleTarget->InteropPayload chain");
+                    HasAncestorDescendantChain(tree, "HandleTarget", "InteropPayload"),
+                "at least one snapshot should contain Handle root and HandleTarget->InteropPayload chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckWeakGCHandleScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckWeakGCHandleScenario(TestAppContext app)
         {
             // Scenario 17: weak handles must not be treated as retention roots
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for weak GCHandle scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree => TypeExistsInTree(tree, "WeakHandleTarget")),
-                "Expected at least one snapshot to contain the strongly reachable WeakHandleTarget type");
-            Assert.DoesNotContain(
-                trees,
-                tree => HasRootOfCategoryAndType(tree, "H", "WeakHandleTarget"));
+            trees.Should().Contain(tree => TypeExistsInTree(tree, "WeakHandleTarget"), "at least one snapshot should contain the strongly reachable WeakHandleTarget type");
+            trees.Should().NotContain(tree => HasRootOfCategoryAndType(tree, "H", "WeakHandleTarget"));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckPinnedLeakScenario(TestAppContext app)
         {
             // Scenario 18: Pinned handle - tests Pinning root category
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 18");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 18");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for pinned leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree => HasRootOfCategory(tree, "P")),
-                "Expected at least one snapshot to contain Pinning root");
+            trees.Should().Contain(tree => HasRootOfCategory(tree, "P"), "at least one snapshot should contain Pinning root");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckAsyncLeakScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckAsyncLeakScenario(TestAppContext app)
         {
             // Scenario 19: Async state machine leak - never-completing Task capturing HeavyContext
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 19");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 19");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for async leak scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     TypeExistsInTree(tree, "AsyncLeakSource") &&
-                    TypeExistsInTree(tree, "HeavyContext")),
-                "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
+                    TypeExistsInTree(tree, "HeavyContext"),
+                "at least one snapshot should contain AsyncLeakSource and HeavyContext types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckNestedValueTypeScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckNestedValueTypeScenario(TestAppContext app)
         {
             // Scenario 20: Nested inline value types - OuterHolder<InnerStruct> where InnerStruct
             // contains a reference (NestedVtTarget) and a nested struct (NestedInnerStruct) that
             // itself contains a reference (DeepVtTarget). Tests recursive inline VT traversal.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 20");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 20");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for nested value type scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // The inline VT traversal via GCDesc + InlineVTCache should find both:
             // - NestedVtTarget (referenced by InnerStruct.ShallowRef, 1 level deep)
             // - DeepVtTarget (referenced by NestedInnerStruct.DeepRef inside InnerStruct.Nested, 2 levels deep)
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     TypeExistsInTree(tree, "OuterHolder") &&
                     TypeExistsInTree(tree, "NestedVtTarget") &&
-                    TypeExistsInTree(tree, "DeepVtTarget")),
-                "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
+                    TypeExistsInTree(tree, "DeepVtTarget"),
+                "at least one snapshot should contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInheritanceMultiSeriesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInheritanceMultiSeriesScenario(TestAppContext app)
         {
             // Scenario 21: Inheritance with mixed ref/non-ref fields.
             // DerivedAfterGap inherits from BaseWithGap which has a ref + non-ref field.
             // This produces multiple GCDesc series, validating that GCDesc correctly
             // discovers refs across series without MergeParentLayout.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 21");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 21");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inheritance multi-series scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
             // Both Ref1 and Ref2 targets should appear under DerivedAfterGap,
             // even though they are in separate GCDesc series (gap from NonRef field).
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     TypeExistsInTree(tree, "DerivedAfterGap") &&
-                    TypeExistsInTree(tree, "RefTarget")),
-                "Expected at least one snapshot to contain DerivedAfterGap and RefTarget types");
+                    TypeExistsInTree(tree, "RefTarget"),
+                "at least one snapshot should contain DerivedAfterGap and RefTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckVtArrayWithRefsScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckVtArrayWithRefsScenario(TestAppContext app)
         {
             // Scenario 22: Value type array with reference fields.
             // VtArrayElement[] where each element struct has a reference field.
             // Tests GCDesc negative series count (ValSerieItem encoding).
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 22");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 22");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for VT array scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
-                    TypeExistsInTree(tree, "VtArrayTarget")),
-                "Expected at least one snapshot to contain VtArrayTarget type (reachable via VT array element refs)");
+            trees.Should().Contain(
+                tree =>
+                    TypeExistsInTree(tree, "VtArrayTarget"),
+                "at least one snapshot should contain VtArrayTarget type (reachable via VT array element refs)");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInlineVtNonGenericScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInlineVtNonGenericScenario(TestAppContext app)
         {
             // Scenario 23: Non-generic inline VT with reference field.
             // HolderWithInlineVt has an embedded EmbeddedStruct (ELEMENT_TYPE_VALUETYPE)
             // that contains a reference field. Tests InlineVTCache detection of non-generic VTs.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 23");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 23");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT non-generic scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     TypeExistsInTree(tree, "HolderWithInlineVt") &&
-                    TypeExistsInTree(tree, "InlineVtTarget")),
-                "Expected at least one snapshot to contain HolderWithInlineVt and InlineVtTarget types");
+                    TypeExistsInTree(tree, "InlineVtTarget"),
+                "at least one snapshot should contain HolderWithInlineVt and InlineVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
-        public void CheckInlineVtGenericWithPrimitivesScenario(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.Computer01, TestFramework.Net11)]
+        public void CheckInlineVtGenericWithPrimitivesScenario(TestAppContext app)
         {
             // Scenario 24: Generic inline VT with primitive type arguments.
             // HolderWithGenericVt embeds GenericVtWithPrimitiveArgs<int, string> whose
             // ELEMENT_TYPE_GENERICINST signature contains primitive args (ELEMENT_TYPE_I4,
             // ELEMENT_TYPE_STRING). Tests InlineVTCache primitive type arg resolution.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 24");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 24");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
-            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT generic with primitives scenario");
+            var referenceTreeFiles = Directory.GetFiles(run.ProfileDirectory, "reference_tree_*.json");
+            referenceTreeFiles.Length.Should().BePositive();
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            Assert.True(
-                trees.Any(tree =>
+            trees.Should().Contain(
+                tree =>
                     TypeExistsInTree(tree, "HolderWithGenericVt") &&
-                    TypeExistsInTree(tree, "GenericVtTarget")),
-                "Expected at least one snapshot to contain HolderWithGenericVt and GenericVtTarget types");
+                    TypeExistsInTree(tree, "GenericVtTarget"),
+                "at least one snapshot should contain HolderWithGenericVt and GenericVtTarget types");
         }
 
         // ====================================================================
@@ -976,7 +920,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
         private static void AssertTypeIndicesResolveRecursive(ReferenceNode node, ReferenceTree tree)
         {
-            Assert.InRange(node.TypeIndex, 0, tree.TypeTable.Count - 1);
+            node.TypeIndex.Should().BeInRange(0, tree.TypeTable.Count - 1);
 
             foreach (var child in node.Children)
             {
@@ -990,35 +934,35 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         /// </summary>
         private static void ValidateReferenceTreeJsonStructure(string jsonContent)
         {
-            Assert.False(string.IsNullOrEmpty(jsonContent), "Reference tree JSON is empty");
-            Assert.NotEqual("{}", jsonContent);
+            jsonContent.Should().NotBeNullOrEmpty();
+            jsonContent.Should().NotBe("{}");
 
             using var doc = JsonDocument.Parse(jsonContent, new JsonDocumentOptions { MaxDepth = 256 });
 
             // Check required top-level fields
-            Assert.True(doc.RootElement.TryGetProperty("v", out var version), "Missing 'v' (version) field");
-            Assert.Equal(1, version.GetInt32());
+            doc.RootElement.TryGetProperty("v", out var version).Should().BeTrue("the 'v' (version) field should be present");
+            version.GetInt32().Should().Be(1);
 
-            Assert.True(doc.RootElement.TryGetProperty("tt", out var typeTable), "Missing 'tt' (type table) field");
-            Assert.True(typeTable.GetArrayLength() > 0, "Type table is empty");
+            doc.RootElement.TryGetProperty("tt", out var typeTable).Should().BeTrue("the 'tt' (type table) field should be present");
+            typeTable.GetArrayLength().Should().BePositive();
 
-            Assert.True(doc.RootElement.TryGetProperty("r", out var roots), "Missing 'r' (roots) field");
-            Assert.True(roots.GetArrayLength() > 0, "Roots array is empty");
+            doc.RootElement.TryGetProperty("r", out var roots).Should().BeTrue("the 'r' (roots) field should be present");
+            roots.GetArrayLength().Should().BePositive();
 
             // Validate each root has required fields
             foreach (var root in roots.EnumerateArray())
             {
-                Assert.True(root.TryGetProperty("t", out _), "Root missing 't' (type index) field");
-                Assert.True(root.TryGetProperty("c", out _), "Root missing 'c' (category) field");
-                Assert.True(root.TryGetProperty("ic", out _), "Root missing 'ic' (instance count) field");
-                Assert.True(root.TryGetProperty("ts", out _), "Root missing 'ts' (total size) field");
+                root.TryGetProperty("t", out _).Should().BeTrue("each root should have a 't' (type index) field");
+                root.TryGetProperty("c", out _).Should().BeTrue("each root should have a 'c' (category) field");
+                root.TryGetProperty("ic", out _).Should().BeTrue("each root should have an 'ic' (instance count) field");
+                root.TryGetProperty("ts", out _).Should().BeTrue("each root should have a 'ts' (total size) field");
             }
 
             // Validate type table entries are strings
             foreach (var type in typeTable.EnumerateArray())
             {
-                Assert.Equal(JsonValueKind.String, type.ValueKind);
-                Assert.False(string.IsNullOrEmpty(type.GetString()), "Type table entry is empty");
+                type.ValueKind.Should().Be(JsonValueKind.String);
+                type.GetString().Should().NotBeNullOrEmpty();
             }
 
             // Validate all instance counts and sizes are non-negative
@@ -1031,12 +975,12 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             {
                 if (node.TryGetProperty("ic", out var ic))
                 {
-                    Assert.True(ic.GetInt64() >= 0, "Instance count must be non-negative");
+                    ic.GetInt64().Should().BeGreaterThanOrEqualTo(0);
                 }
 
                 if (node.TryGetProperty("ts", out var ts))
                 {
-                    Assert.True(ts.GetInt64() >= 0, "Total size must be non-negative");
+                    ts.GetInt64().Should().BeGreaterThanOrEqualTo(0);
                 }
 
                 if (node.TryGetProperty("ch", out var children))
@@ -1096,6 +1040,26 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         private static bool HasRootOfCategory(ReferenceTree tree, string categoryCode)
         {
             return tree.Roots.Any(r => r.CategoryCode == categoryCode);
+        }
+
+        /// <summary>
+        /// Check if the tree contains the SparseObject->Customer chain and no SparseObject has Product or Order as a direct child.
+        /// </summary>
+        private static bool HasSparseObjectCustomerChainWithoutProductOrOrder(ReferenceTree tree)
+        {
+            if (!HasAncestorDescendantChain(tree, "SparseObject", "Customer"))
+            {
+                return false;
+            }
+
+            var sparseNodes = FindNodesOfType(tree, "SparseObject");
+            return sparseNodes.All(sparseNode =>
+            {
+                var directChildTypeNames = sparseNode.Children
+                    .Select(c => tree.GetShortTypeName(c.TypeIndex))
+                    .ToHashSet();
+                return !directChildTypeNames.Contains("Product") && !directChildTypeNames.Contains("Order");
+            });
         }
 
         /// <summary>
@@ -1231,12 +1195,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var jsonEdges = CollectTypeEdges(jsonTree);
             var binEdges = CollectTypeEdges(binTree);
 
-            var onlyInJson = jsonEdges.Except(binEdges).ToList();
-            var onlyInBin = binEdges.Except(jsonEdges).ToList();
-
-            Assert.True(
-                onlyInJson.Count == 0 && onlyInBin.Count == 0,
-                $"Trees differ. Edges only in JSON: [{string.Join(", ", onlyInJson)}], only in binary: [{string.Join(", ", onlyInBin)}]");
+            jsonEdges.Should().BeEquivalentTo(binEdges, "the JSON and binary trees should have the same type edges");
         }
 
         /// <summary>
@@ -1297,9 +1256,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         private void CheckReferenceTreeTypesAreInClassHistogram(
-            string appName,
-            string framework,
-            string appAssembly,
+            TestAppContext app,
             string referenceTreeFormat,
             string treeFileName,
             string treeExtension)
@@ -1307,7 +1264,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // The class histogram and the reference tree are built from the same heap snapshot
             // and use the same type names, so every heap object type listed in the tree is
             // expected to appear in the histogram of that snapshot.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            var runner = app.CreateRunner(_output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
@@ -1328,12 +1285,12 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             runner.Run(agent);
 
-            Assert.True(hasBothFiles, $"No profile was sent with both a class histogram and a {treeFileName}");
+            hasBothFiles.Should().BeTrue("a profile should be sent with both a class histogram and a {0}", treeFileName);
 
             var histogramFiles = Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, $"reference_tree_*.{treeExtension}");
-            Assert.True(histogramFiles.Length > 0, "No class histogram files were generated");
-            Assert.True(referenceTreeFiles.Length > 0, $"No reference tree .{treeExtension} files were generated");
+            histogramFiles.Length.Should().BePositive();
+            referenceTreeFiles.Length.Should().BePositive();
 
             // Pair the files coming from the same export: they share the generated
             // <service>_<pid>_<uid> suffix built from the id of the profile they belong to.
@@ -1343,7 +1300,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // A histogram without a reference tree is expected: no tree file is emitted when
             // the traversal did not find any root.
             var snapshotIds = histogramsById.Keys.Intersect(treesById.Keys).ToList();
-            Assert.True(snapshotIds.Count > 0, "No histogram/reference tree pair from the same export was found");
+            snapshotIds.Count.Should().BePositive();
 
             var typesPerSnapshot = new List<(HashSet<string> HistogramTypes, HashSet<string> TreeTypes)>();
 
@@ -1374,10 +1331,10 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Samples.Computer01.Product",
             };
 
-            Assert.True(
-                typesPerSnapshot.Any(snapshot => scenarioTypes.All(
-                    typeName => snapshot.TreeTypes.Contains(typeName) && snapshot.HistogramTypes.Contains(typeName))),
-                $"Expected at least one snapshot where both files report [{string.Join(", ", scenarioTypes)}]");
+            typesPerSnapshot.Should().Contain(
+                snapshot => scenarioTypes.All(
+                    typeName => snapshot.TreeTypes.Contains(typeName) && snapshot.HistogramTypes.Contains(typeName)),
+                "at least one snapshot should have both files report [{0}]", string.Join(", ", scenarioTypes));
         }
     }
 }

@@ -35,7 +35,7 @@ if (RUN_TSAN)
 endif()
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 
 if (BIT64)
@@ -94,7 +94,7 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   gmock_main
   -static-libgcc
   -static-libstdc++
-  -lstdc++fs
+  ${DD_CXX_FILESYSTEM_LIBRARIES}
   -Wc++20-extensions
 )
 

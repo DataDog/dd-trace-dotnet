@@ -102,7 +102,7 @@ internal static class DiagnosticResultUtils
                 return new ReportedDiagnostics(errors);
             }
 
-            var diagResult = new DiagnosticResult(diagObject);
+            var diagResult = new DiagnosticResult(in diagObject);
             if (diagResult.Rules is not null)
             {
                 rules.Loaded = (ushort)(diagResult.Rules.Loaded?.Count ?? 0);
@@ -196,7 +196,7 @@ internal struct ReportedDiagnostics
         Rules.Errors = errors;
     }
 
-    public bool HasErrors => Rules.HasErrors || Rest.HasErrors;
+    public readonly bool HasErrors => Rules.HasErrors || Rest.HasErrors;
 }
 
 internal struct WafStats
@@ -212,9 +212,9 @@ internal struct WafStats
     {
     }
 
-    public int Total => (Failed + Loaded + Skipped);
+    public readonly int Total => (Failed + Loaded + Skipped);
 
-    public bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
+    public readonly bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

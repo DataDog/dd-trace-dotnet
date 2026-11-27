@@ -42,7 +42,7 @@ internal static class Md5Helper
         {
             // Something very wrong and weird has happened
             // we have to use TryComputeHash because ComputeHash has no readonly overloads
-            ThrowHelper.ThrowArgumentException($"Error computing MD5 hash for {input}: ");
+            ThrowHelper.ThrowInvalidOperationException($"Error computing MD5 hash for {input}: ");
         }
 #endif
         System.Diagnostics.Debug.Assert(byteCount == 16, "we should always encode 16 bytes");

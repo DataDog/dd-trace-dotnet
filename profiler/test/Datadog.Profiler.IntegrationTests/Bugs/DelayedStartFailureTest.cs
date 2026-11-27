@@ -4,13 +4,11 @@
 // </copyright>
 
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Bugs
@@ -29,42 +27,43 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void ControlRun_DelayedStartSucceeds(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void ControlRun_DelayedStartSucceeds(TestAppContext app)
         {
-            var runner = CreateDelayedStartRunner(appName, framework, appAssembly, _output);
+            var runner = CreateDelayedStartRunner(app, _output);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
+            using var run = runner.Run();
 
-            AssertLogDoesNotContain(runner.Environment.LogDir, DelayedStartFailureLog);
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0, "the delayed start must succeed when the trigger is not applied");
+            run.Logs.NativeProfiler.Files.Should().ContainSingle();
+            run.Logs.NativeProfiler.Should().NotContainLine(DelayedStartFailureLog);
+            run.UploadCount.Should().BePositive("the delayed start must succeed when the trigger is not applied");
 
             // Do not assert on PendingSamplesMetric here
             // In success run, the metrics are dumped in the log *before* flushing the SamplesCollector, which means that
             // the count could be > 0.
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void NoPendingSamplesWhenDelayedStartFails(string appName, string framework, string appAssembly)
+        [TestAppFact(TestApplication.BuggyBits)]
+        public void NoPendingSamplesWhenDelayedStartFails(TestAppContext app)
         {
-            var runner = CreateDelayedStartRunner(appName, framework, appAssembly, _output);
+            var runner = CreateDelayedStartRunner(app, _output);
             ForceDelayedStartFailure(runner);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
-            var logDir = runner.Environment.LogDir;
+            var logs = ProfilerLogSet.Read(runner.Environment.LogDir);
+            logs.NativeProfiler.Files.Should().ContainSingle();
 
             // 1. the failure path really ran (otherwise the assertions below are vacuous)
-            AssertLogContains(logDir, DelayedStartFailureLog);
-            AssertLogContains(logDir, "[TEST ONLY] StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: not waiting for the watcher thread and failing the start.");
+            logs.NativeProfiler.Should().ContainLine(DelayedStartFailureLog);
+            logs.NativeProfiler.Should().ContainLine("[TEST ONLY] StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: not waiting for the watcher thread and failing the start.");
 
             // 2. the profiler stayed stopped
             agent.NbCallsOnProfilingEndpoint.Should().Be(0, "no profile can be exported once the delayed start failed");
 
             // 3. the regression itself: nothing accumulated in the providers
-            var pendingSamples = GetShutdownMetric(logDir, PendingSamplesMetric);
+            var pendingSamples = GetShutdownMetric(logs, PendingSamplesMetric);
             pendingSamples.Should().NotBeNull($"'{PendingSamplesMetric}' must be dumped at shutdown");
             pendingSamples.Should().Be(0, "no sample may be created once the SamplesCollector is stopped for good");
         }
@@ -72,16 +71,11 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
         // Reaches the SSI delayed start: deployed + enabled by SSI, long lived, and BuggyBits creates spans.
         // Same recipe as SingleStepInstrumentationTest.SsiAndProfilingSsiEnabled_AllTriggered.
         private static TestApplicationRunner CreateDelayedStartRunner(
-            string appName,
-            string framework,
-            string appAssembly,
+            TestAppContext app,
             ITestOutputHelper output,
             string commandLine = "--scenario 1")
         {
-            var runner = new TestApplicationRunner(
-                appName,
-                framework,
-                appAssembly,
+            var runner = app.CreateRunner(
                 output,
                 commandLine: commandLine,
                 enableTracer: true,
@@ -89,7 +83,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
 
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "auto");
-            EnvironmentHelper.ForceInjectionIfRequired(runner, framework);
+            EnvironmentHelper.ForceInjectionIfRequired(runner, app.Framework);
 
             // simulate long lived so the heuristics trigger quickly
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
@@ -107,42 +101,21 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             runner.Environment.SetVariable(EnvironmentVariables.WatcherStartTimeout, "0");
         }
 
-        private static string GetNativeLogFile(string logDir)
-        {
-            return Directory.GetFiles(logDir)
-                            .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
-        }
-
         // Reads a value out of the "=== Profiler Metrics at Shutdown ===" block, which CorProfilerCallback
         // dumps from the metrics registry so the counters are observable even when nothing is exported.
-        private static double? GetShutdownMetric(string logDir, string metricName)
+        private static double? GetShutdownMetric(ProfilerLogSet logs, string metricName)
         {
             var pattern = new Regex(@"\s" + Regex.Escape(metricName) + @":\s*(?<value>-?[0-9]+(\.[0-9]+)?)");
 
-            double? found = null;
-            foreach (var line in File.ReadLines(GetNativeLogFile(logDir)))
+            var matches = logs.NativeProfiler.LinesMatching(pattern);
+            if (matches.Count == 0)
             {
-                var match = pattern.Match(line);
-                if (match.Success)
-                {
-                    // keep the last occurrence: that is the value at shutdown
-                    found = double.Parse(match.Groups["value"].Value, CultureInfo.InvariantCulture);
-                }
+                return null;
             }
 
-            return found;
-        }
-
-        private static void AssertLogContains(string logDir, string expectedContent)
-        {
-            var found = File.ReadLines(GetNativeLogFile(logDir)).Any(line => line.Contains(expectedContent));
-            Assert.True(found, $"No log line contains: {expectedContent}");
-        }
-
-        private static void AssertLogDoesNotContain(string logDir, string unexpectedContent)
-        {
-            var found = File.ReadLines(GetNativeLogFile(logDir)).Any(line => line.Contains(unexpectedContent));
-            Assert.False(found, $"Log should not contain: {unexpectedContent}");
+            // keep the last occurrence: that is the value at shutdown
+            var value = pattern.Match(matches[matches.Count - 1].Line).Groups["value"].Value;
+            return double.Parse(value, CultureInfo.InvariantCulture);
         }
     }
 }

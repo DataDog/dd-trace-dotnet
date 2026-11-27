@@ -206,7 +206,7 @@ internal sealed class MsTestExecution
             if (Tracer.Instance.InternalActiveScope is { } scope && ReferenceEquals(scope.Span, span))
             {
                 var parentContext = new CallTargetState(scope.Parent, span.Context.Parent as SpanContext, CallTargetState.GetDefault());
-                IntegrationOptions.RestoreScopeFromAsyncExecution(parentContext);
+                IntegrationOptions.RestoreScopeFromAsyncExecution(in parentContext);
             }
         }
     }

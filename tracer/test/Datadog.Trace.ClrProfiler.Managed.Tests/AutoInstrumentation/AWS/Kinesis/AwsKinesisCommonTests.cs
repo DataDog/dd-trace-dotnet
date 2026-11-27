@@ -4,8 +4,14 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -55,5 +61,32 @@ public class AwsKinesisCommonTests
 
         tags.StreamName.Should().Be("mystream");
         tags.StreamArn.Should().Be(streamArn);
+    }
+
+    [Theory]
+    [InlineData("v0", SpanKinds.Producer, "aws.kinesis.produce")]
+    [InlineData("v0", SpanKinds.Consumer, "aws.kinesis.consume")]
+    [InlineData("v1", SpanKinds.Producer, "aws.kinesis.send")]
+    [InlineData("v1", SpanKinds.Consumer, "aws.kinesis.process")]
+    public async Task CreateScope_UsesOperationNameMatchingSpanKind(string schemaVersion, string spanKind, string expectedOperationName)
+    {
+        await using var tracer = GetTracer(schemaVersion);
+
+        using var scope = AwsKinesisCommon.CreateScope(tracer, "GetRecords", spanKind, parentContext: null, out var tags);
+
+        scope.Should().NotBeNull();
+        scope!.Span.OperationName.Should().Be(expectedOperationName);
+        tags!.SpanKind.Should().Be(spanKind);
+    }
+
+    private static ScopedTracer GetTracer(string schemaVersion)
+    {
+        var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
+        IConfigurationSource source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        var writerMock = new Mock<IAgentWriter>();
+        var samplerMock = new Mock<ITraceSampler>();
+
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }

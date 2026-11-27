@@ -49,7 +49,7 @@ internal sealed class SpanEventConverter : JsonConverter<SpanEvent>
 
     public override SpanEvent ReadJson(JsonReader reader, Type objectType, SpanEvent existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     internal static bool IsAllowedType(object value)
