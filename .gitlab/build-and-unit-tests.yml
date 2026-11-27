@@ -77,7 +77,26 @@ build:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
-    - '& .gitlab/run-windows-build-unit-tests.ps1'
+    - |
+      $ErrorActionPreference = 'Stop'
+      $containerEnvironment = @(
+        'CI_COMMIT_SHA',
+        'CI_COMMIT_BRANCH',
+        'ENABLE_MULTIPROCESSOR_COMPILATION=true',
+        'CL_MPCount=16'
+      )
+
+      & .gitlab/run-windows-container.ps1 -Environment $containerEnvironment -Command @(
+        'Info', 'Clean', 'BuildTracerHome', 'BuildProfilerHome', 'BuildNativeLoader', 'BuildDdDotnet',
+        'PublishOpenTelemetryStartupHook', 'BuildManagedUnitTests', '--NugetPackageDirectory', 'c:\mnt\packages'
+      )
+      if ($LASTEXITCODE -ne 0) { throw "Windows shadow build failed ($LASTEXITCODE)" }
+
+      & .gitlab/run-windows-container.ps1 -Environment $containerEnvironment -Command @(
+        'CompileTracerNativeTests', 'RunTracerNativeTests', 'CompileNativeLoaderNativeTests', 'RunNativeLoaderNativeTests',
+        'CompileProfilerNativeTests', 'RunProfilerNativeTests', '--NugetPackageDirectory', 'c:\mnt\packages'
+      )
+      if ($LASTEXITCODE -ne 0) { throw "Windows native unit tests failed ($LASTEXITCODE)" }
   artifacts:
     when: always
     expire_in: 2 weeks
