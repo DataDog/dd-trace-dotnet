@@ -6,9 +6,10 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
+using BenchmarkDotNet.Jobs;
 using Benchmarks.Trace.Jetbrains;
-using System.Reflection.Metadata;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Environments;
 using System.Reflection;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 using System.Collections;
@@ -63,7 +64,8 @@ namespace Benchmarks.Trace
             }
 
             config = config.WithDatadog(useDatadogProfiler)
-                           .AddExporter(JsonExporter.FullCompressed);
+                           .AddExporter(JsonExporter.FullCompressed)
+                           .AddFilter(new SimpleFilter(HasRealBody));
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
@@ -121,6 +123,32 @@ namespace Benchmarks.Trace
             initMethod?.Invoke(instance, null);
             method.Invoke(instance, args.Length > 0 ? args : null);
             cleanupMethod?.Invoke(instance, null);
+        }
+
+        /// <summary>
+        /// Skips a benchmark class when <see cref="StubOnAttribute"/> lists the
+        /// job's target framework. Classes without the attribute always run.
+        /// </summary>
+        private static bool HasRealBody(BenchmarkCase benchmarkCase)
+        {
+            var stubOn = benchmarkCase.Descriptor.Type.GetCustomAttribute<StubOnAttribute>(inherit: false);
+
+            if (stubOn is null)
+            {
+                return true;
+            }
+
+            // BenchmarkDotNet 0.15.8 keeps RuntimeInformation.GetCurrentRuntime()
+            // internal; EnvironmentResolver is the public path to the same value
+            // for jobs that do not pin a runtime.
+            var runtime = benchmarkCase.Job.Environment.Runtime
+                ?? benchmarkCase.Job.Environment.ResolveValue(EnvironmentMode.RuntimeCharacteristic, EnvironmentResolver.Instance);
+
+            // BenchmarkDotNet reports the installed .NET Framework version (e.g.
+            // net48), but the project builds .NET Framework only as net472.
+            var targetFramework = runtime is ClrRuntime ? "net472" : runtime.MsBuildMoniker;
+
+            return !stubOn.TargetFrameworks.Contains(targetFramework);
         }
     }
 }

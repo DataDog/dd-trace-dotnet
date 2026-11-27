@@ -67,16 +67,6 @@ public class AppSecWafBenchmark
         _waf?.Dispose();
     }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-        // Force GC to reduce variance from native memory interactions
-        // WAF library uses unmanaged memory with allocation patterns outside .NET GC control
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-    }
-
     private static Dictionary<string, object> MakeRealisticNestedMapStage1(bool withAttack)
     {
         var headersDict = new Dictionary<string, string[]>

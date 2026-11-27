@@ -140,12 +140,11 @@ $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    # We change this manually on benchmark methods from 200 ms to 500 ms on 
-    # less stable benchmarks with "[IterationTime(500)]"
-    "--iterationTime", "200",
-    "--launchCount", "5",
-    "--warmupCount", "10",
-    "--iterationCount", "10",
+    # One process draw is too noisy run-to-run; average over 3 launches.
+    "--launchCount", "3",
+    # The adaptive stop hits the 15-iteration floor on 97% of benchmarks;
+    # the cap only trims rare 100-iteration stragglers.
+    "--maxIterationCount", "20",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir

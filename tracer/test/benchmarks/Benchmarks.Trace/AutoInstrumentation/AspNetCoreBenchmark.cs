@@ -34,7 +34,7 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     [IterationTime(500)]
-    public class AspNetCoreBenchmark
+    public partial class AspNetCoreBenchmark
     {
         private HttpClient _client;
         private Tracer _tracer;
@@ -108,7 +108,7 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     [IterationTime(500)]
-    public class SingleSpanAspNetCoreBenchmark
+    public partial class SingleSpanAspNetCoreBenchmark
     {
         private HttpClient _client;
         private Tracer _tracer;
@@ -180,7 +180,7 @@ namespace Benchmarks.Trace
     }
 #else
     [MemoryDiagnoser]
-    public class SingleSpanAspNetCoreBenchmark
+    public partial class SingleSpanAspNetCoreBenchmark
     {
         [GlobalSetup]
         public void GlobalSetup()
@@ -227,7 +227,7 @@ using BenchmarkDotNet.Attributes;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    public class AspNetCoreBenchmark
+    public partial class AspNetCoreBenchmark
     {
         [GlobalSetup]
         public void GlobalSetup()
@@ -248,7 +248,7 @@ namespace Benchmarks.Trace
 
 #if !NET6_0_OR_GREATER
     [MemoryDiagnoser]
-    public class SingleSpanAspNetCoreBenchmark
+    public partial class SingleSpanAspNetCoreBenchmark
     {
         [GlobalSetup]
         public void GlobalSetup()
@@ -270,3 +270,17 @@ namespace Benchmarks.Trace
 }
 
 #endif
+
+namespace Benchmarks.Trace
+{
+    // Keep these lists in sync with the #if blocks above that compile the stubs.
+    [StubOn("net472", "netcoreapp2.1")]
+    public partial class AspNetCoreBenchmark
+    {
+    }
+
+    [StubOn("net472", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1")]
+    public partial class SingleSpanAspNetCoreBenchmark
+    {
+    }
+}
