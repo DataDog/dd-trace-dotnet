@@ -91,9 +91,9 @@ namespace Benchmarks.Trace.Asm
             var securityTransport = SecurityCoordinator.Get(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
             securityTransport!.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
 #endif
-            // The tracer stores the WAF context on the span's AppSecRequestContext, not on the
-            // HttpContext, so dispose it there (the same path used at request end). Otherwise the
-            // native context is left to the finalizer on every measured call.
+            // The WAF context lives on the span's `AppSecRequestContext`, not the `HttpContext`.
+            // Dispose it there, as the tracer does at request end, or every call leaves the
+            // native context to the finalizer.
             span.Context.TraceContext?.AppSecRequestContext.DisposeAdditiveContext();
         }
 

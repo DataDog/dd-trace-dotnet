@@ -67,11 +67,9 @@ namespace Benchmarks.Trace
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            // Drive the same SpanBuffer and serializer the AgentWriter writes into, but
-            // synchronously: an AgentWriter always starts its serialization and flush loops,
-            // and awaiting FlushTracesAsync() would time that background work (thread
-            // scheduling, watermark processing, flush-loop wakeups) instead of the
-            // synchronous write/flush path these benchmarks are about.
+            // Drive the `AgentWriter`'s `SpanBuffer` and serializer directly. An `AgentWriter`
+            // always starts its serialization and flush loops, so awaiting `FlushTracesAsync()`
+            // would time that background work instead of the write and flush path.
             _buffer = new SpanBuffer(MaxBufferSize, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
             _temporaryBuffer = new byte[1024];
         }
@@ -84,8 +82,6 @@ namespace Benchmarks.Trace
         public void WriteEnrichedTraces()
         {
             WriteEnrichedTracesToBuffer();
-
-            // Reset the buffer for the next invocation (the detach half of a flush, minus the API call)
             DetachPayload();
         }
 
@@ -110,12 +106,10 @@ namespace Benchmarks.Trace
             }
         }
 
-        // Mirrors the sizing half of AgentWriter.FlushBuffer: size the replacement array before
-        // detaching so the buffer is immediately writable again, then recycle the detached array
-        // for the next call. Unlike FlushBuffer, the recycled array aliases the payload until the
-        // returned send task completes; safe here only because BenchmarkDotNet awaits each
-        // invocation before starting the next one, so never call this concurrently with an
-        // in-flight send.
+        // Mirrors the sizing half of `AgentWriter.FlushBuffer`: size the replacement array before
+        // detaching, then recycle the detached array. Unlike `FlushBuffer`, the recycled array
+        // aliases the payload until the send task completes. This is safe only because
+        // BenchmarkDotNet awaits each invocation before starting the next one.
         private SpanBuffer.Payload DetachPayload()
         {
             if (_spareBuffer is null || _spareBuffer.Length < _buffer.CurrentLength)

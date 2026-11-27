@@ -52,11 +52,9 @@ namespace Benchmarks.Trace
         [Benchmark]
         public int WriteAndFlushEnrichedTraces()
         {
-            // CIVisibilityProtocolWriter enqueues events and lets background flush tasks
-            // serialize and send them, which makes the timed region measure queue handoff
-            // and task scheduling instead of the protocol writing path. Run the same work
-            // the flush loop performs (event transform, payload serialization, flush+reset)
-            // inline so the measurement is synchronous and self-contained.
+            // `CIVisibilityProtocolWriter` hands events to background flush tasks, so timing it
+            // measures queue handoff and task scheduling. Run the flush loop's work (event
+            // transform, payload serialization, flush and reset) inline instead.
             foreach (var span in _enrichedSpans)
             {
                 var @event = CIVisibilityEventsFactory.FromSpan(span);

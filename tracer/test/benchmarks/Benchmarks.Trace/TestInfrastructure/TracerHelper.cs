@@ -31,9 +31,8 @@ public static class TracerHelper
 
     public static Tracer CreateTracer(TracerSettings settings)
     {
-        // Using NullTelemetryController alone leaves the static metrics collector (and its
-        // 10s aggregation loop) running, which adds per-process noise to benchmarks.
-        // Install the null metrics collector and stop the previous collector's loop.
+        // `NullTelemetryController` alone leaves the static metrics collector and its 10 s
+        // aggregation loop running. Swap in the null collector and stop the old loop.
         var previousMetrics = TelemetryFactory.SetMetricsForTesting(NullMetricsTelemetryCollector.Instance);
         if (previousMetrics is MetricsTelemetryCollectorBase metricsCollector)
         {
@@ -43,9 +42,9 @@ public static class TracerHelper
         return new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
     }
 
-    // Auto-instrumentation resolves Tracer.Instance; install the dummy tracer globally so
-    // the benchmark doesn't lazily create a real tracer (real AgentWriter, discovery
-    // service, remote config, heartbeat) that targets a non-existent agent
+    // Auto-instrumentation reads `Tracer.Instance`. Without a global dummy tracer, the first
+    // call lazily creates a real one (agent writer, discovery, remote config, heartbeat)
+    // that targets a missing agent.
     public static Tracer CreateAndSetGlobalTracer(TracerSettings settings)
     {
         var tracer = CreateTracer(settings);
