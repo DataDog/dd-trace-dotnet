@@ -10,7 +10,7 @@ add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions)
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
     find_package(Threads REQUIRED)
 endif()
 
@@ -74,7 +74,7 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   gtest_main
   -static-libgcc
   -static-libstdc++
-  -lstdc++fs
+  ${DD_CXX_FILESYSTEM_LIBRARIES}
   -Wc++20-extensions
 )
 

@@ -127,7 +127,9 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -Wno-deprecated-this-capture)
 elseif(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    # DD_CXX_STDLIB_COMPILE_OPTIONS is empty under USE_GLIBC217_SYSROOT - see the root
+    # CMakeLists.txt for why.
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 if (BIT64)
     add_compile_options(-DBIT64 -DHOST_64BIT)
@@ -309,6 +311,7 @@ set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")
+
 if (ISLINUX)
     target_link_libraries("Datadog.Tracer.Native" Threads::Threads)
 endif()

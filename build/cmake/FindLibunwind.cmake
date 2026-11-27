@@ -8,6 +8,40 @@ string(SUBSTRING ${LIBUNWIND_GIT_TAG} 0 12 LIBUNWIND_SHORT_SHA)
 SET(LIBUNWIND_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libunwind-${LIBUNWIND_SHORT_SHA})
 SET(LIBUNWIND_BINARY_DIR ${LIBUNWIND_PREFIX}/src/libunwind-build)
 
+set(LIBUNWIND_CFLAGS "-fPIC -O3 -g")
+set(LIBUNWIND_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -O3 -g")
+set(LIBUNWIND_TOOLCHAIN_CONFIGURE_ARGS)
+
+set(LIBUNWIND_CC "${CMAKE_C_COMPILER}")
+set(LIBUNWIND_CXX "${CMAKE_CXX_COMPILER}")
+
+if (USE_GLIBC217_SYSROOT)
+    # Autoconf probes and the subsequent make do not inherit CMake's toolchain
+    # settings. Keep compilation and feature detection on the same compiler target,
+    # C++ headers, and glibc217 link sysroot as the parent native build.
+    #
+    # Libtool's shared-library link keeps an allowlist of flags (LDFLAGS' -B is
+    # not on it) and then asks clang for crtbeginS.o. Without -B, clang passes
+    # the bare filename to lld. Ubuntu 22.04 happened to have that file next to
+    # the host GCC; Ubuntu 26.04 does not. -B has to be part of CC/CXX.
+    if (NOT GLIBC217_TOOLCHAIN_LIB)
+        message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but GLIBC217_TOOLCHAIN_LIB is empty. "
+                            "The glibc 2.17 toolchain file should point it at the Developer Toolset lib directory.")
+    endif()
+    set(LIBUNWIND_SYSROOT_FLAG "--sysroot=${CMAKE_SYSROOT}")
+    set(LIBUNWIND_CC "${CMAKE_C_COMPILER} -B${GLIBC217_TOOLCHAIN_LIB}")
+    set(LIBUNWIND_CXX "${CMAKE_CXX_COMPILER} -B${GLIBC217_TOOLCHAIN_LIB}")
+    set(LIBUNWIND_CFLAGS "${CMAKE_C_FLAGS} ${LIBUNWIND_SYSROOT_FLAG} --target=${CMAKE_C_COMPILER_TARGET} ${LIBUNWIND_CFLAGS}")
+    set(LIBUNWIND_CXXFLAGS "${CMAKE_CXX_FLAGS} ${LIBUNWIND_SYSROOT_FLAG} --target=${CMAKE_CXX_COMPILER_TARGET} ${LIBUNWIND_CXXFLAGS}")
+    string(STRIP "${LIBUNWIND_CFLAGS}" LIBUNWIND_CFLAGS)
+    string(STRIP "${LIBUNWIND_CXXFLAGS}" LIBUNWIND_CXXFLAGS)
+    # CentOS 7 headers predate NT_ARM_PAC_MASK. 0x406 is that Linux note type.
+    # Defining it here compiles PAC stripping into libunwind.
+    set(LIBUNWIND_CFLAGS "${LIBUNWIND_CFLAGS} -DNT_ARM_PAC_MASK=0x406")
+    list(APPEND LIBUNWIND_TOOLCHAIN_CONFIGURE_ARGS
+        "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${LIBUNWIND_SYSROOT_FLAG}")
+endif()
+
 ExternalProject_Add(libunwind
     GIT_REPOSITORY https://github.com/DataDog/libunwind.git
     PREFIX ${LIBUNWIND_PREFIX}
@@ -16,7 +50,18 @@ ExternalProject_Add(libunwind
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -O3\ -g CFLAGS=-fPIC\ -O3\ -g --disable-minidebuginfo --disable-zlibdebuginfo --disable-tests && make -j$(nproc)
+    # Pass CC/CXX explicitly — autoconf's default PATH-search may pick a different compiler.
+    BUILD_COMMAND autoreconf -i <SOURCE_DIR> &&
+                  <SOURCE_DIR>/configure
+                  "CC=${LIBUNWIND_CC}"
+                  "CXX=${LIBUNWIND_CXX}"
+                  "CFLAGS=${LIBUNWIND_CFLAGS}"
+                  "CXXFLAGS=${LIBUNWIND_CXXFLAGS}"
+                  ${LIBUNWIND_TOOLCHAIN_CONFIGURE_ARGS}
+                  --disable-minidebuginfo
+                  --disable-zlibdebuginfo
+                  --disable-tests &&
+                  make -j$(nproc)
     BUILD_ALWAYS false
     BUILD_BYPRODUCTS ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
                      ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a

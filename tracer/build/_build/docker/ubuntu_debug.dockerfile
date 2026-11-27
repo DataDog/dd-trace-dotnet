@@ -1,12 +1,9 @@
-# We used a fixed, older version of debian for linking reasons
-FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
+# Debug image for opening core dumps (lldb, dotnet-dump, dotnet-symbol, dotnet-sos).
+# Based on Ubuntu 22.04 like ubuntu.dockerfile. Used by tools/dumps/start_debian-arm64.{sh,cmd}.
+FROM ubuntu:22.04 AS base
 ARG DOTNETSDK_VERSION
 
-# Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
-# and https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/src/sdk/5.0/buster-slim/amd64/Dockerfile
 ENV \
-    # Unset ASPNETCORE_URLS from aspnet base image
-    ASPNETCORE_URLS= \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
@@ -28,15 +25,15 @@ ENV \
     # https://github.com/dotnet/runtime/issues/13648
     DOTNET_EnableWriteXorExecute=0
 
-    # Add nfpm source
-RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+# Add nfpm source
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl wget gnupg \
+    && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
         git \
         procps \
-        wget \
-        curl \
         cmake \
         make \
         gcc \
@@ -48,12 +45,14 @@ RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/s
         liblzma-dev \
         gdb \
         cppcheck \
-		zlib1g-dev \
-        \
+        zlib1g-dev \
+        # .NET runtime dependencies
+        libicu70 \
+        libssl3 \
         # required to install clang
         lsb-release \
         software-properties-common \
-        gnupg \
+        unzip \
         nfpm \
         lldb \
     && rm -rf /var/lib/apt/lists/*
@@ -65,7 +64,9 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ln -s `which clang-16` /usr/bin/clang && \
     ln -s `which clang++-16` /usr/bin/clang++ && \
     ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
-    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
+    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy && \
+    # llvm.sh installs lldb-16, which makes apt remove Ubuntu's lldb package, so only the versioned binary is left
+    ln -s `which lldb-16` /usr/bin/lldb
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
@@ -76,13 +77,13 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && dotnet help
 
 ENV \
+    DOTNET_ROOT=/usr/share/dotnet \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
     CXX=clang++ \
     CC=clang
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
-
 RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
     else export NETCORERUNTIME2_1=dotnet; \
@@ -103,7 +104,8 @@ RUN dotnet tool install --global dotnet-counters
 RUN dotnet tool install --global dotnet-coverage
 RUN dotnet tool install --global dotnet-dump
 RUN dotnet tool install --global dotnet-gcdump
-RUN dotnet tool install --global dotnet-monitor
+# dotnet-monitor 10.x can't be installed with the .NET 9 SDK used by the dump launchers
+RUN dotnet tool install --global dotnet-monitor --version "9.*"
 RUN dotnet tool install --global dotnet-trace
 RUN dotnet tool install --global dotnet-stack
 RUN dotnet tool install --global dotnet-symbol
