@@ -16971,6 +16971,66 @@
     "TargetMethodName": "BasicPublishAsync",
     "TargetReturnType": "System.Threading.Tasks.ValueTask",
     "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.Boolean",
+      "!!0",
+      "System.ReadOnlyMemory`1[System.Byte]",
+      "System.IDisposable",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncBodyOwnerIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "RabbitMQ",
+    "AssemblyName": "RabbitMQ.Client",
+    "TargetTypeName": "RabbitMQ.Client.Impl.Channel",
+    "TargetMethodName": "BasicPublishAsync",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask",
+    "TargetParameterTypes": [
+      "RabbitMQ.Client.CachedString",
+      "RabbitMQ.Client.CachedString",
+      "System.Boolean",
+      "!!0",
+      "System.ReadOnlyMemory`1[System.Byte]",
+      "System.IDisposable",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncCachedStringsBodyOwnerIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "RabbitMQ",
+    "AssemblyName": "RabbitMQ.Client",
+    "TargetTypeName": "RabbitMQ.Client.Impl.Channel",
+    "TargetMethodName": "BasicPublishAsync",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask",
+    "TargetParameterTypes": [
       "RabbitMQ.Client.CachedString",
       "RabbitMQ.Client.CachedString",
       "System.Boolean",
@@ -17000,6 +17060,36 @@
     "TargetMethodName": "BasicPublishAsync",
     "TargetReturnType": "System.Threading.Tasks.ValueTask",
     "TargetParameterTypes": [
+      "RabbitMQ.Client.CachedString",
+      "RabbitMQ.Client.CachedString",
+      "System.Boolean",
+      "!!0",
+      "System.Buffers.ReadOnlySequence`1[System.Byte]",
+      "System.IDisposable",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncCachedStringsSequenceIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "RabbitMQ",
+    "AssemblyName": "RabbitMQ.Client",
+    "TargetTypeName": "RabbitMQ.Client.Impl.Channel",
+    "TargetMethodName": "BasicPublishAsync",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask",
+    "TargetParameterTypes": [
       "System.String",
       "System.String",
       "System.Boolean",
@@ -17018,6 +17108,36 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "RabbitMQ",
+    "AssemblyName": "RabbitMQ.Client",
+    "TargetTypeName": "RabbitMQ.Client.Impl.Channel",
+    "TargetMethodName": "BasicPublishAsync",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.Boolean",
+      "!!0",
+      "System.Buffers.ReadOnlySequence`1[System.Byte]",
+      "System.IDisposable",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncSequenceIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -17075,6 +17195,33 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.PopulateBasicPropertiesHeadersIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "RabbitMQ",
+    "AssemblyName": "RabbitMQ.Client",
+    "TargetTypeName": "RabbitMQ.Client.Impl.Channel",
+    "TargetMethodName": "PopulateBasicPropertiesHeaders",
+    "TargetReturnType": "RabbitMQ.Client.BasicProperties",
+    "TargetParameterTypes": [
+      "!!0",
+      "RabbitMQ.Client.ResolvedTracingOptions",
+      "System.Diagnostics.Activity",
+      "System.UInt64"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.PopulateBasicPropertiesHeadersWithTracingOptionsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

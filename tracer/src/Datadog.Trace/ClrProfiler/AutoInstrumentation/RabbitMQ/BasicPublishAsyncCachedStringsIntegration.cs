@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     TypeName = "RabbitMQ.Client.Impl.Channel",
     MethodName = "BasicPublishAsync",
     ReturnTypeName = "System.Threading.Tasks.ValueTask",
-    ParameterTypeNames = ["RabbitMQ.Client.CachedString", "RabbitMQ.Client.CachedString", ClrNames.Bool, "!!0", "System.ReadOnlyMemory`1[System.Byte]", ClrNames.CancellationToken],
+    ParameterTypeNames = ["RabbitMQ.Client.CachedString", "RabbitMQ.Client.CachedString", ClrNames.Bool, "!!0", ClrNames.ReadOnlyMemoryOfByteTypeName, ClrNames.CancellationToken],
     MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = RabbitMQConstants.IntegrationName)]
@@ -35,11 +35,7 @@ public sealed class BasicPublishAsyncCachedStringsIntegration
         where TExchange : ICachedStringProxy
         where TRoutingKey : ICachedStringProxy
         where TTarget : IModelBase
-    {
-        var exchangeString = exchange.Instance is not null ? exchange.Value : null;
-        var routingKeyString = routingKey.Instance is not null ? routingKey.Value : null;
-        return BasicPublishAsyncIntegration.OnMethodBegin(instance, exchangeString, routingKeyString, mandatory, basicProperties, body, default);
-    }
+        => BasicPublishAsyncIntegration.CreatePublishScope(instance, exchange.GetValue(), routingKey.GetValue(), basicProperties, body.GetLength());
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {

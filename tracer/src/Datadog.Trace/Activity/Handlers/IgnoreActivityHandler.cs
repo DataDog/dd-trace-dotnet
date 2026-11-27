@@ -28,6 +28,7 @@ namespace Datadog.Trace.Activity.Handlers
             "MySqlConnector",
             "connector-net",
             "Npgsql",
+            "RabbitMQ.Client.Connection", // Added in RabbitMQ.Client 7.3.0
             "RabbitMQ.Client.Publisher",
             "RabbitMQ.Client.Subscriber",
             "System.Net.Http.Desktop",

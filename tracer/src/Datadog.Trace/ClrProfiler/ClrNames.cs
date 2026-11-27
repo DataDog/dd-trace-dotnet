@@ -56,5 +56,8 @@ namespace Datadog.Trace.ClrProfiler
 
         public const string Activity = "System.Diagnostics.Activity";
         public const string ByteArray = "System.Byte[]";
+        internal const string IDisposableTypeName = "System.IDisposable";
+        internal const string ReadOnlyMemoryOfByteTypeName = "System.ReadOnlyMemory`1[System.Byte]";
+        internal const string ReadOnlySequenceOfByteTypeName = "System.Buffers.ReadOnlySequence`1[System.Byte]";
     }
 }

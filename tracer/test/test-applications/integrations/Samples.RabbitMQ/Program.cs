@@ -1,4 +1,7 @@
 using System;
+#if RABBITMQ_7_3
+using System.Buffers;
+#endif
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -135,7 +138,30 @@ namespace Samples.RabbitMQ
                 string message = $"{messagePrefix} - Message";
                 var body = Encoding.UTF8.GetBytes(message);
 
-#if RABBITMQ_7_0
+#if RABBITMQ_7_3
+                if (useDefaultQueue)
+                {
+                    // Use the CachedString + ReadOnlySequence<byte> overload added in 7.3.0, to trigger
+                    // BasicPublishAsyncCachedStringsSequenceIntegration
+                    await channel.BasicPublishAsync(
+                        exchange: new CachedString(publishExchangeName),
+                        routingKey: new CachedString(publishRoutingKey),
+                        mandatory: false,
+                        basicProperties: properties,
+                        body: new ReadOnlySequence<byte>(body),
+                        bodyOwner: null);
+                }
+                else
+                {
+                    // Use CachedString parameters to trigger BasicPublishAsyncCachedStringsIntegration
+                    await channel.BasicPublishAsync(
+                        exchange: new CachedString(publishExchangeName),
+                        routingKey: new CachedString(publishRoutingKey),
+                        mandatory: false,
+                        basicProperties: properties,
+                        body: body);
+                }
+#elif RABBITMQ_7_0
                 // Use CachedString parameters to trigger BasicPublishAsyncCachedStringsIntegration
                 var cachedExchange = new CachedString(publishExchangeName);
                 var cachedRoutingKey = new CachedString(publishRoutingKey);
@@ -192,7 +218,21 @@ namespace Samples.RabbitMQ
                         string message = $"Send - Message #{i}";
                         var body = Encoding.UTF8.GetBytes(message);
 
-#if RABBITMQ_7_0
+#if RABBITMQ_7_3
+                        // Cover the string + ReadOnlySequence<byte> and bodyOwner overloads added in 7.3.0
+                        switch (i)
+                        {
+                            case 0:
+                                await channel.BasicPublishAsync(exchange: "", routingKey: "hello", body: new ReadOnlySequence<byte>(body), bodyOwner: null);
+                                break;
+                            case 1:
+                                await channel.BasicPublishAsync(exchange: "", routingKey: "hello", body: body, bodyOwner: null);
+                                break;
+                            default:
+                                await channel.BasicPublishAsync(exchange: new CachedString(""), routingKey: new CachedString("hello"), body: body, bodyOwner: null);
+                                break;
+                        }
+#elif RABBITMQ_7_0
                         // Use CachedString parameters to trigger BasicPublishAsyncCachedStringsIntegration
                         var cachedExchange = new CachedString("");
                         var cachedRoutingKey = new CachedString("hello");
