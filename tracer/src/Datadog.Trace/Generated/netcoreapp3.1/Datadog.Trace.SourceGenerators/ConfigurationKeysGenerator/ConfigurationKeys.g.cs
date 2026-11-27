@@ -265,6 +265,18 @@ internal static partial class ConfigurationKeys
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
     /// <summary>
+    /// Configuration key for selecting how the Datadog SDK runs. Valid values are "datadog" and "otel" (case-insensitive).
+    /// "datadog" (the default) keeps the Datadog semantic conventions and the Datadog protocol.
+    /// "otel" makes <c>true</c> the default of <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled"/>,
+    /// <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>, <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
+    /// and <see cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>, and "otlp" the default of
+    /// <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>. Explicitly configured values of these settings take precedence,
+    /// and <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> still turns off the OpenTelemetry tracing API, metrics and logs.
+    /// Other values are invalid and keep "datadog".
+    /// </summary>
+    public const string SdkMode = "DD_SDK_MODE";
+
+    /// <summary>
     /// Overrides the default path to the serverless compatibility layer binary.
     /// Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
     /// Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.

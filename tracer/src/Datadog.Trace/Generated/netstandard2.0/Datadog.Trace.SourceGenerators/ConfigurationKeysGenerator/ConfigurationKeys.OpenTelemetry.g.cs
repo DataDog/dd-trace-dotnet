@@ -232,7 +232,8 @@ internal static partial class ConfigurationKeys
         /// the experimental export of traces using OTLP. The value 'none' disables
         /// the export of traces entirely, which is the equivalent of setting
         /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
-        /// When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled.
+        /// When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled,
+        /// or if <see cref="ConfigurationKeys.SdkMode"/> is 'otel'.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
 

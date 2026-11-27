@@ -819,6 +819,118 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
+        [Theory]
+        [InlineData("otel", true)]
+        [InlineData("OTEL", true)]
+        [InlineData(" Otel ", true)]
+        [InlineData("datadog", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        [InlineData("invalid", false)]
+        public void SdkMode_EnablesOpenTelemetryModeByDefault(string sdkMode, bool expectedOtelMode)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.SdkMode, sdkMode));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            using var scope = new AssertionScope();
+            settings.SdkMode.Should().Be(expectedOtelMode ? SdkModeValues.Otel : SdkModeValues.Datadog);
+            settings.IsActivityListenerEnabled.Should().Be(expectedOtelMode);
+            settings.OtelSemanticsEnabled.Should().Be(expectedOtelMode);
+            settings.OpenTelemetryMetricsEnabled.Should().Be(expectedOtelMode);
+            settings.OpenTelemetryLogsEnabled.Should().Be(expectedOtelMode);
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().Be(expectedOtelMode);
+
+            // Telemetry reports the defaults derived from DD_SDK_MODE=otel with the calculated origin
+            string[] derivedKeys =
+            [
+                ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
+                ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
+            ];
+
+            var entries = telemetry.GetQueueForTesting().ToList();
+            foreach (var key in derivedKeys)
+            {
+                entries.Any(e => e.Key == key && e is { Origin: ConfigurationOrigins.Calculated, BoolValue: true })
+                       .Should()
+                       .Be(expectedOtelMode, $"{key} should only be recorded as calculated when DD_SDK_MODE=otel");
+            }
+
+            entries.Any(e => e.Key == ConfigurationKeys.OpenTelemetry.TracesExporter && e is { Origin: ConfigurationOrigins.Calculated, StringValue: "otlp" })
+                   .Should()
+                   .Be(expectedOtelMode);
+        }
+
+        [Fact]
+        public void SdkMode_InvalidValueIsRecordedAsDatadogInTelemetry()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.SdkMode, "invalid"));
+            var telemetry = new ConfigurationTelemetry();
+            _ = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            var entry = telemetry.GetQueueForTesting()
+                                 .Where(e => e.Key == ConfigurationKeys.SdkMode)
+                                 .OrderByDescending(e => e.SeqId)
+                                 .First();
+            entry.StringValue.Should().Be(SdkModeValues.Datadog);
+            entry.Origin.Should().Be(ConfigurationOrigins.Default);
+        }
+
+        [Fact]
+        public void SdkMode_ExplicitSettingsTakePrecedence()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.SdkMode, "otel"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "false"),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "false"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "false"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "false"));
+            var settings = new TracerSettings(source);
+
+            using var scope = new AssertionScope();
+            settings.SdkMode.Should().Be(SdkModeValues.Otel);
+            settings.IsActivityListenerEnabled.Should().BeFalse();
+            settings.OtelSemanticsEnabled.Should().BeFalse();
+            settings.OpenTelemetryMetricsEnabled.Should().BeFalse();
+            settings.OpenTelemetryLogsEnabled.Should().BeFalse();
+            // OTEL_TRACES_EXPORTER isn't set, so DD_SDK_MODE=otel still makes OTLP the traces exporter
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("true", true)] // A misconfiguration, which logs a warning: DD_TRACE_ENABLED=true still turns tracing back on
+        public void SdkMode_OtelSdkDisabledTakesPrecedence(string traceEnabled, bool expectedTraceEnabled)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.SdkMode, "otel"),
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.TraceEnabled, traceEnabled));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            using var scope = new AssertionScope();
+            settings.SdkMode.Should().Be(SdkModeValues.Otel);
+            settings.IsActivityListenerEnabled.Should().BeFalse();
+            settings.OpenTelemetryMetricsEnabled.Should().BeFalse();
+            settings.OpenTelemetryLogsEnabled.Should().BeFalse();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedTraceEnabled);
+
+            // DD_SDK_MODE=otel doesn't enable the signals that OTEL_SDK_DISABLED=true turns off
+            string[] signalKeys =
+            [
+                ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
+            ];
+            telemetry.GetQueueForTesting()
+                     .Any(e => signalKeys.Contains(e.Key) && e is { Origin: ConfigurationOrigins.Calculated, BoolValue: true })
+                     .Should()
+                     .BeFalse();
+        }
+
         [Fact]
         public void OtelSdkDisabled_ResolvesTheSameValueAcrossCompositeSources()
         {
