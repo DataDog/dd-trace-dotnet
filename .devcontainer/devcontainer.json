@@ -6,6 +6,7 @@
   "dockerFile": "../tracer/build/_build/docker/ubuntu.dockerfile",
   "context": "../tracer/build/_build",
   "build": {
+    "target": "tester",
     "args": {
       "DOTNETSDK_VERSION": "11.0.100"
     }

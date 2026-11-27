@@ -1,4 +1,4 @@
-﻿FROM datadog/libddwaf:toolchain AS base
+﻿FROM datadog/libddwaf:toolchain AS build-environment
 
 ARG DOTNETSDK_VERSION
 
@@ -66,8 +66,6 @@ ENV \
     USE_NATIVE_SDK_VERSION=true \
     CXX=clang++ \
     CC=clang
-
-FROM base AS build-environment
 
 FROM build-environment AS builder
 

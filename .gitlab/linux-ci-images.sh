@@ -39,7 +39,6 @@ resolve_linux_ci_images() {
 .gitlab/linux-ci-images.sh
 .gitlab/get-dotnet-sdk-version.sh
 .gitlab/linux-ci-environment.dockerfile
-.gitlab/linux-unit-tests.dockerfile
 tracer/build/_build/.dockerignore
 tracer/build/_build/docker/ubuntu.dockerfile
 tracer/build/_build/docker/alpine.dockerfile
@@ -136,7 +135,7 @@ publish_linux_ci_images() {
         publish_sdk=$LINUX_DOTNET_SDK_VERSION
         case "$publish_base" in universal) publish_sdk=$LINUX_NATIVE_DOTNET_SDK_VERSION ;; esac
         publish_target=build-environment
-        [ "$publish_role" != tester ] || publish_target=test-environment
+        [ "$publish_role" != tester ] || publish_target=gitlab-test-environment
         environment_image="dd-trace-dotnet/$publish_base-$publish_role-environment:$LINUX_CI_IMAGE_HASH-$publish_arch"
         docker build \
             --build-arg "DOTNETSDK_VERSION=$publish_sdk" \
@@ -144,11 +143,6 @@ publish_linux_ci_images() {
             --target "$publish_target" \
             --file "tracer/build/_build/docker/$publish_base.dockerfile" \
             tracer/build/_build || return 1
-        if [ "$publish_role" = tester ]; then
-            docker build --build-arg "TESTER_IMAGE=$environment_image" \
-                --file .gitlab/linux-unit-tests.dockerfile --tag "$environment_image-ca" .gitlab || return 1
-            environment_image="$environment_image-ca"
-        fi
         docker build --build-arg "ENVIRONMENT_IMAGE=$environment_image" \
             --build-arg "DOTNETSDK_VERSION=$publish_sdk" --file .gitlab/linux-ci-environment.dockerfile \
             --tag "$publish_image" tracer/build/_build || return 1

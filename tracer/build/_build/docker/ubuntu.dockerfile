@@ -214,3 +214,11 @@ RUN dotnet restore /build
 COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
+
+# Keep this after Azure's targets so they do not need private-registry access.
+FROM test-environment AS gitlab-test-environment
+
+# Keep the pinned multi-architecture CA image aligned with alpine.dockerfile.
+COPY --from=registry.ddbuild.io/images/datadog-ca-certs:standard@sha256:451a0209af8cff55760f798e99fa5a5a220b3ea94aef9d0da9208f533be90cea /certs/ /usr/local/share/ca-certificates/
+RUN chmod -R o-w /usr/local/share/ca-certificates \
+    && update-ca-certificates
