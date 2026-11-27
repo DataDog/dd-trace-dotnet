@@ -98,9 +98,4 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -Wc++20-extensions
 )
 
-if (USE_GLIBC217_SYSROOT)
-  target_link_libraries(${TEST_EXECUTABLE_NAME} glibc217-compat)
-  add_dependencies(${TEST_EXECUTABLE_NAME} glibc217-compat)
-endif()
-
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})
