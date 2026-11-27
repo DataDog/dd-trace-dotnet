@@ -25,7 +25,11 @@ internal sealed class MetricReaderHandler
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReaderHandler));
     private readonly TracerSettings _settings;
     private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
-    private readonly HashSet<string> _streamNames = new(StringComparer.OrdinalIgnoreCase);
+    // Number of registered streams per stream name: different identities can share a name.
+    private readonly Dictionary<string, int> _streamNames = new(StringComparer.OrdinalIgnoreCase);
+    // Guarded by _completionLock.
+    private readonly Queue<MetricState> _completedStreams = new();
+    private readonly object _completionLock = new();
 
     public MetricReaderHandler(TracerSettings settings)
     {
@@ -82,16 +86,12 @@ internal sealed class MetricReaderHandler
             return;
         }
 
-        // Check for duplicate metric stream name
-        if (!_streamNames.Add(identity.MetricStreamName))
-        {
-            Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", identity.MetricStreamName);
-        }
-
         var state = new MetricState(identity, temporality, _settings.OpenTelemetryMetricsCardinalityLimit);
 
         if (_streams.TryAdd(identity, state))
         {
+            // Registered before enabling events: enabling can complete the stream right away (disposed meter).
+            RegisterStreamName(identity.MetricStreamName);
             listener.EnableMeasurementEvents(instrument, state);
             Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
         }
@@ -134,13 +134,62 @@ internal sealed class MetricReaderHandler
     }
 
     /// <summary>
+    /// Called when the listener stops receiving an instrument's measurements (its Meter or the listener was
+    /// disposed). The stream is unregistered right away, so a re-created instrument with the same identity is
+    /// subscribed again, and its remaining data is exported once more at the next collection.
+    /// </summary>
+    public void OnMeasurementsCompleted(Instrument instrument, object? state)
+    {
+        if (state is not MetricState metricState)
+        {
+            return;
+        }
+
+        lock (_completionLock)
+        {
+            if (!_streams.TryRemove(new KeyValuePair<MetricStreamIdentity, MetricState>(metricState.Identity, metricState)))
+            {
+                return;
+            }
+
+            _completedStreams.Enqueue(metricState);
+        }
+
+        ReleaseStreamName(metricState.Identity.MetricStreamName);
+    }
+
+    /// <summary>
     /// Gets a safe snapshot of all metric points.
     /// Uses ToArray() to avoid enumeration race conditions.
     /// </summary>
     public List<MetricPoint> GetMetricPointsSnapshot()
     {
-        var pairs = _streams.ToArray();
-        var list = new List<MetricPoint>(pairs.Length);
+        var list = new List<MetricPoint>();
+        List<MetricState>? completed = null;
+        KeyValuePair<MetricStreamIdentity, MetricState>[] pairs;
+
+        // Streams are chosen under the lock, so a stream completing meanwhile is either still in _streams or
+        // already queued, never missed. A stream completing after this point is exported again next time.
+        // Points are built outside the lock: Meter.Dispose() takes it on the application's thread.
+        lock (_completionLock)
+        {
+            if (_completedStreams.Count > 0)
+            {
+                completed = new List<MetricState>(_completedStreams);
+                _completedStreams.Clear();
+            }
+
+            pairs = _streams.ToArray();
+        }
+
+        // Last export of the streams whose instrument completed since the previous collection.
+        if (completed is not null)
+        {
+            foreach (var completedState in completed)
+            {
+                completedState.BuildPoints(list);
+            }
+        }
 
         foreach (var (_, state) in pairs)
         {
@@ -184,8 +233,14 @@ internal sealed class MetricReaderHandler
     {
         return kind switch
         {
-            InstrumentType.Gauge or InstrumentType.ObservableGauge
+            InstrumentType.ObservableGauge
                 => null,
+
+            // A synchronous gauge read with the cumulative or lowmemory preference repeats its last value on every collection.
+            InstrumentType.Gauge
+                => preference is OtlpTemporalityPreference.Cumulative or OtlpTemporalityPreference.LowMemory
+                    ? AggregationTemporality.Cumulative
+                    : null,
 
             InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
                 => AggregationTemporality.Cumulative,
@@ -242,6 +297,39 @@ internal sealed class MetricReaderHandler
         }
 
         return null;
+    }
+
+    private void RegisterStreamName(string metricStreamName)
+    {
+        int count;
+        lock (_streamNames)
+        {
+            _streamNames.TryGetValue(metricStreamName, out count);
+            _streamNames[metricStreamName] = count + 1;
+        }
+
+        if (count > 0)
+        {
+            Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamName);
+        }
+    }
+
+    private void ReleaseStreamName(string metricStreamName)
+    {
+        lock (_streamNames)
+        {
+            if (_streamNames.TryGetValue(metricStreamName, out var count))
+            {
+                if (count <= 1)
+                {
+                    _streamNames.Remove(metricStreamName);
+                }
+                else
+                {
+                    _streamNames[metricStreamName] = count - 1;
+                }
+            }
+        }
     }
 }
 #endif

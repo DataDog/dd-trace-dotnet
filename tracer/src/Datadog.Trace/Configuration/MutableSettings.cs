@@ -973,7 +973,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         // Read OTEL_SDK_DISABLED from this snapshot's source rather than tracerSettings,
         // so that settings created without default sources ignore it.
-        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
+        if (TracerSettings.IsOtelSdkDisabled(in config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
         {
             // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
             // A valid DD_TRACE_ENABLED value overrides it, but an empty or invalid one doesn't.
@@ -1227,7 +1227,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                 _ => ConfigurationResult<double>.ParseFailure(),
             };
 
-            if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
+            if (openTelemetrySampleRateResult is { Result: var sampleRateResult, IsValid: true })
             {
                 return sampleRateResult;
             }

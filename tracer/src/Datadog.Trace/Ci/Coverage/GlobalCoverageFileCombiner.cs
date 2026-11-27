@@ -105,5 +105,5 @@ internal static class GlobalCoverageFileCombiner
         => string.Equals(
             first,
             second,
-            FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+            FilePathComparison.Comparison);
 }

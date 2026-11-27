@@ -5,7 +5,7 @@
 
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
-using Xunit;
+using FluentAssertions.Execution;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Configuration
@@ -111,7 +111,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
-                    Assert.Fail($"unexpected configuration log - {line}");
+                    Execute.Assertion.FailWith("unexpected configuration log - {0}", line);
                 }
             }
 
@@ -218,7 +218,7 @@ namespace Datadog.Profiler.IntegrationTests.Configuration
                 else if (line.Contains("] Configuration: DD_"))
                 {
                     // This is the default value
-                    Assert.Fail($"unexpected configuration log - {line}");
+                    Execute.Assertion.FailWith("unexpected configuration log - {0}", line);
                 }
             }
 

@@ -83,7 +83,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         public void Reset()
         {
-            WriteToNative(SpanContext.Zero);
+            WriteToNative(in SpanContext.Zero);
         }
 
         private bool EnsureIsInitialized()

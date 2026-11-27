@@ -141,8 +141,8 @@ build-linux-tracer-x64:
   extends: [.build-linux-tracer, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
-    MANAGED_BASE_IMAGE: debian
-    NATIVE_BASE_IMAGE: centos7
+    MANAGED_BASE_IMAGE: ubuntu
+    NATIVE_BASE_IMAGE: ubuntu
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-x64-musl:
@@ -157,8 +157,8 @@ build-linux-tracer-arm64:
   extends: [.build-linux-tracer, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
-    MANAGED_BASE_IMAGE: debian
-    NATIVE_BASE_IMAGE: debian
+    MANAGED_BASE_IMAGE: ubuntu
+    NATIVE_BASE_IMAGE: ubuntu
     RUN_NATIVE_TESTS: "false"
 
 build-linux-tracer-arm64-musl:
@@ -217,8 +217,8 @@ build-linux-profiler-x64:
   extends: [.build-linux-profiler, .linux-ci-images-x64-ready]
   tags: ["docker-in-docker:amd64"]
   variables:
-    NATIVE_BASE_IMAGE: centos7
-    VALIDATION_BASE_IMAGE: debian
+    NATIVE_BASE_IMAGE: ubuntu
+    VALIDATION_BASE_IMAGE: ubuntu
     RUN_NATIVE_TESTS: "true"
 
 build-linux-profiler-x64-musl:
@@ -233,8 +233,8 @@ build-linux-profiler-arm64:
   extends: [.build-linux-profiler, .linux-ci-images-arm64-ready]
   tags: ["docker-in-docker:arm64"]
   variables:
-    NATIVE_BASE_IMAGE: debian
-    VALIDATION_BASE_IMAGE: debian
+    NATIVE_BASE_IMAGE: ubuntu
+    VALIDATION_BASE_IMAGE: ubuntu
     RUN_NATIVE_TESTS: "false"
 
 build-linux-profiler-arm64-musl:

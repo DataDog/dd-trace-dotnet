@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -46,11 +47,12 @@ public class FrameworkDescriptionTests
         SkipOn.Platform(Windows);
         SkipOn.Platform(MacOs);
 
+        // The glibc images are not all the same distro, so expect the OS this test runs on
         var expectedOs = (EnvironmentHelper.IsAlpine(), RuntimeInformation.OSArchitecture) switch
         {
             (true, Architecture.Arm64) => "Alpine Linux v3.18",
             (true, Architecture.X64) => "Alpine Linux v3.17",
-            _ => "Debian GNU/Linux 10 (buster)",
+            _ => GetPrettyOsName(),
         };
 
         var description = FrameworkDescription.Create();
@@ -59,6 +61,21 @@ public class FrameworkDescriptionTests
         description.OSPlatform.Should().Be("Linux");
         description.OSArchitecture.Should().Be(arch);
         description.OSDescription.Should().StartWith(expectedOs);
+    }
+
+    // Same source as FrameworkDescription on .NET < 8: PRETTY_NAME in /etc/os-release
+    private static string GetPrettyOsName()
+    {
+        foreach (var line in File.ReadAllLines("/etc/os-release"))
+        {
+            const string prefix = "PRETTY_NAME=";
+            if (line.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return line.Substring(prefix.Length).Trim('"');
+            }
+        }
+
+        return RuntimeInformation.OSDescription;
     }
 #endif
 }

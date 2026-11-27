@@ -43,7 +43,7 @@ public sealed class ExecuteAsyncIntegrationV14
     {
         if (request.Instance is not null)
         {
-            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromOperationRequest(Tracer.Instance, request));
+            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromOperationRequest(Tracer.Instance, in request));
         }
 
         return CallTargetState.GetDefault();

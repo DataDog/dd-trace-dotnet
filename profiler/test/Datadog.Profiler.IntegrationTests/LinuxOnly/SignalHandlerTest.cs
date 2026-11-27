@@ -38,15 +38,15 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Logs.NativeProfiler
                 .LinesContaining("Successfully setup signal handler for User defined signal 1 signal")
-                .Should().HaveCount(1);
+                .Should().ContainSingle();
 
             run.Logs.NativeProfiler
                 .LinesContaining("Successfully setup signal handler for Profiling timer expired signal")
-                .Should().HaveCount(1);
+                .Should().ContainSingle();
         }
     }
 }

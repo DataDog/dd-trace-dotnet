@@ -114,7 +114,7 @@ public class DatadogDiagnoser : IDiagnoser
         {
             if (_platformNotSupportedException is null)
             {
-                logger.WriteLine($"Datadog Profiler was attached.");
+                logger.WriteLine("Datadog Profiler was attached.");
             }
             else
             {

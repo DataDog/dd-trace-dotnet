@@ -7,6 +7,7 @@
 #pragma clang attribute push(__attribute__((no_sanitize("returns-nonnull-attribute"))), apply_to = function)
 #endif
 #ifdef __has_include                 // Check if __has_include is present
+// cppcheck-suppress preprocessorErrorDirective
 #if __has_include(<memory_resource>) // Check for a standard library
 #include <memory_resource>
 namespace shared::pmr {

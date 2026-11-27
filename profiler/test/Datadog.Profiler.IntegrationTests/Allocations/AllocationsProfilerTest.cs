@@ -10,7 +10,6 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Logs;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Allocations
@@ -51,11 +50,11 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             // Disable it on alpine for now
             if (!EnvironmentHelper.IsAlpine)
             {
-                Assert.True(run.UploadCount == 0);
+                run.UploadCount.Should().Be(0);
             }
 
             // no profiler enabled so should not see any sample
-            Assert.Empty(run.Profiles.Samples);
+            run.Profiles.Samples.Should().BeEmpty();
         }
 
         [TestAppFact(TestApplication.Computer01, TestFramework.Net6)]
@@ -77,7 +76,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             var allocationSamples = run.Profiles.AllocationSamples();
             allocationSamples.Should().NotBeEmpty();
@@ -149,7 +148,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             var profiles = ProfileReader.Read(runner.Environment.PprofDir);
 
@@ -335,7 +334,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
         private static void CheckAllocationProfiles(ProfilerTestRun run)
         {
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             // Exact sample types before AllocationSamples() drops other rows.
             run.Profiles.Should().HaveSampleTypes(ProfileValue.AllocationCount, ProfileValue.AllocationSize);
@@ -391,12 +390,12 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 }
             }
 
-            Assert.True(matrixOfArrayOfBytesFound);
-            Assert.True(jaggedArrayOfBytesFound);
-            Assert.True(arrayOfBytesFound);
-            Assert.True(genericElementFound);
-            Assert.True(arrayOfGenericsFound);
-            Assert.True(matrixOfGenericsFound);
+            matrixOfArrayOfBytesFound.Should().BeTrue();
+            jaggedArrayOfBytesFound.Should().BeTrue();
+            arrayOfBytesFound.Should().BeTrue();
+            genericElementFound.Should().BeTrue();
+            arrayOfGenericsFound.Should().BeTrue();
+            matrixOfGenericsFound.Should().BeTrue();
         }
 
         internal class AllocStats

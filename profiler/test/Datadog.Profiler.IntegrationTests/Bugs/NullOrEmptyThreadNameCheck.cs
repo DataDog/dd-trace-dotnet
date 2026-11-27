@@ -6,7 +6,7 @@
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Bugs
@@ -45,11 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
 
                 if (threadName == string.Empty)
                 {
-                    if (sample.CallStack.FramesCount == 0)
-                    {
-                        Assert.Fail("No call stack for thread without name");
-                        return;
-                    }
+                    sample.CallStack.FramesCount.Should().BePositive("threads without a name should have a call stack");
                 }
                 else if (threadName.StartsWith(".NET "))
                 {
@@ -65,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
                 }
             }
 
-            Assert.False(threadWithNameFound);
+            threadWithNameFound.Should().BeFalse();
         }
     }
 }

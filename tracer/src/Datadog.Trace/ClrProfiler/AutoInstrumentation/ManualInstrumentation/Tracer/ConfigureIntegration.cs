@@ -58,7 +58,7 @@ public sealed class ConfigureIntegration
          && uri.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
         {
             InvalidConfigurationException.Throw(
-                $"Error changing AgentUri. " +
+                "Error changing AgentUri. " +
                 "AgentUri can not be set to a UDS endpoint in code when running on Windows. " +
                 "If you need to use UDS on Windows, set the environment variable DD_TRACE_AGENT_URL instead to " +
                 "ensure the app starts with the correct configuration");

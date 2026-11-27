@@ -213,7 +213,7 @@ internal static class BsonSerializationHelper
             var jsonWriterCtor = jsonWriterType.GetConstructor(new[] { typeof(TextWriter), jsonWriterSettingsType })!;
 
             DynamicMethod createJsonWriterMethod = new DynamicMethod(
-                $"MongoJsonWriterSerializer",
+                "MongoJsonWriterSerializer",
                 jsonWriterType,
                 parameterTypes: new[] { typeof(TextWriter), typeof(object) },
                 typeof(DuckType).Module,
@@ -232,7 +232,7 @@ internal static class BsonSerializationHelper
 
             // Create BsonSerializationArgs
             DynamicMethod createBsonSerializationArgs = new DynamicMethod(
-                $"MongoBsonSerializationArgsType",
+                "MongoBsonSerializationArgsType",
                 typeof(object), // boxed bsonSerializationArgsType
                 parameterTypes: new[] { typeof(Type) },
                 typeof(DuckType).Module,

@@ -39,7 +39,7 @@ build-linux-ci-images-x64:
   # Each family gets a separate job/daemon; large toolchains must not accumulate.
   parallel:
     matrix:
-      - LINUX_IMAGE_FAMILY: [debian, alpine, centos7, universal]
+      - LINUX_IMAGE_FAMILY: [ubuntu, alpine, universal]
 
 build-linux-ci-images-arm64:
   extends: .publish-linux-ci-images
@@ -48,4 +48,4 @@ build-linux-ci-images-arm64:
     LINUX_IMAGE_ARCHITECTURE: arm64
   parallel:
     matrix:
-      - LINUX_IMAGE_FAMILY: [debian, alpine, universal]
+      - LINUX_IMAGE_FAMILY: [ubuntu, alpine, universal]

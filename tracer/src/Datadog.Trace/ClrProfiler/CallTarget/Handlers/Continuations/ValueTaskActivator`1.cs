@@ -48,7 +48,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         var ctor = valueTaskType.GetConstructor([typeof(Task<TResult>)])!;
 
         var createValueTaskMethod = new DynamicMethod(
-            $"TypeActivatorTask" + valueTaskType.Name,
+            "TypeActivatorTask" + valueTaskType.Name,
             returnType: valueTaskType,
             parameterTypes: [typeof(Task<TResult>)],
             typeof(DuckType).Module,
@@ -69,7 +69,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         var ctor = valueTaskType.GetConstructor([typeof(TResult)])!;
 
         var createValueTaskMethod = new DynamicMethod(
-            $"TypeActivatorResult" + valueTaskType.Name,
+            "TypeActivatorResult" + valueTaskType.Name,
             returnType: valueTaskType,
             parameterTypes: [typeof(TResult)],
             typeof(DuckType).Module,

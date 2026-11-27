@@ -11,7 +11,7 @@ for %%I in ("%SCRIPT_DIR%\..\..") do set "ROOT_DIR=%%~fI"
 set "BUILD_DIR=%ROOT_DIR%\tracer\build\_build"
 
 rem --- 3. Docker Image & Platform ---
-set "IMAGE_NAME=tonyredondo504/dd-trace-dotnet_debian-base-debug-%DOTNETSDK_VERSION%"
+set "IMAGE_NAME=tonyredondo504/dd-trace-dotnet_ubuntu-base-debug-%DOTNETSDK_VERSION%"
 set "DOCKER_DEFAULT_PLATFORM=linux/arm64"
 
 rem --- 4. Pull or Build Image ---
@@ -22,7 +22,7 @@ if %ERRORLEVEL% NEQ 0 (
   docker build ^
     --build-arg DOTNETSDK_VERSION=%DOTNETSDK_VERSION% ^
     --tag %IMAGE_NAME% ^
-    --file "%BUILD_DIR%\docker\debian_debug.dockerfile" ^
+    --file "%BUILD_DIR%\docker\ubuntu_debug.dockerfile" ^
     "%BUILD_DIR%"
 )
 

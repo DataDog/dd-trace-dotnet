@@ -82,7 +82,7 @@ workflow:
       job: build-linux-tracer-x64
       artifacts: true
   variables:
-    BASE_IMAGE: debian
+    BASE_IMAGE: ubuntu
     ARTIFACT_SUFFIX: linux-x64
 
 .linux-unit-test-x64-musl:
@@ -106,7 +106,7 @@ workflow:
       job: build-linux-tracer-arm64
       artifacts: true
   variables:
-    BASE_IMAGE: debian
+    BASE_IMAGE: ubuntu
     ARTIFACT_SUFFIX: linux-arm64
 
 .linux-unit-test-arm64-musl:

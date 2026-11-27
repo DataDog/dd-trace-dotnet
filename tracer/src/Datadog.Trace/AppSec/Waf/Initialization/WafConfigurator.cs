@@ -262,7 +262,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                                 }
 
                                 // only the last config's diagnostics survive this loop, so count each one now
-                                var configErrors = DiagnosticResultUtils.CountConfigErrors(configDiagnostics);
+                                var configErrors = DiagnosticResultUtils.CountConfigErrors(in configDiagnostics);
                                 if (configErrors > 0)
                                 {
                                     TelemetryFactory.Metrics.RecordCountWafConfigErrors(updating ? MetricTags.WafConfigAction.Update : MetricTags.WafConfigAction.Init, configErrors);
@@ -286,11 +286,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
-                    result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
+                    result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", in diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
                 }
                 else
                 {
-                    result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
+                    result = UpdateResult.FromSuccess(in diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder, totalConfigErrors);
                 }
 
                 if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||

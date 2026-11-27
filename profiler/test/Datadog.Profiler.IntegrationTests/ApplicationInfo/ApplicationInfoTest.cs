@@ -42,7 +42,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             var distinctInfos = infos.Distinct().ToList();
 
@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
 
             infos.Select(x => x.ToJsonString()).Should().OnlyContain(x => x != "{}");
         }
@@ -98,7 +98,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
 
             runner.Run(agent);
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             infoJsons.Should().NotBeEmpty();
 
             var lastInfo = infoJsons.Last();

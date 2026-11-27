@@ -25,8 +25,8 @@ internal static class ExternalCoverageXmlBackfill
 {
     private const string UppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private const string LowercaseLetters = "abcdefghijklmnopqrstuvwxyz";
-    private static readonly StringComparer ResolvedPathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-    private static readonly StringComparison ResolvedPathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    private static readonly StringComparer ResolvedPathComparer = FilePathComparison.Comparer;
+    private static readonly StringComparison ResolvedPathComparison = FilePathComparison.Comparison;
 
     private enum ExpectedXmlReportFormat
     {
@@ -3340,7 +3340,7 @@ internal static class ExternalCoverageXmlBackfill
     /// </summary>
     internal sealed class CoverageBackfillValidationState
     {
-        private static readonly StringComparer LocalCandidateComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        private static readonly StringComparer LocalCandidateComparer = FilePathComparison.Comparer;
         private readonly HashSet<string> _matchedBackendPaths = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _localCandidateByBackendPath = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _backendPathByLocalCandidate = new(LocalCandidateComparer);

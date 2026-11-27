@@ -6,7 +6,7 @@ DOTNETSDK_VERSION=9.0.100
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$(dirname -- "$SCRIPT_DIR" )/.."
 BUILD_DIR="$ROOT_DIR/tracer/build/_build"
-IMAGE_NAME="tonyredondo504/dd-trace-dotnet_debian-base-debug-$DOTNETSDK_VERSION"
+IMAGE_NAME="tonyredondo504/dd-trace-dotnet_ubuntu-base-debug-$DOTNETSDK_VERSION"
 
 export DOCKER_DEFAULT_PLATFORM=linux/arm64
 
@@ -25,7 +25,7 @@ build_image() {
   docker build \
     --build-arg DOTNETSDK_VERSION="$DOTNETSDK_VERSION" \
     --tag "$IMAGE_NAME" \
-    --file "$BUILD_DIR/docker/debian_debug.dockerfile" \
+    --file "$BUILD_DIR/docker/ubuntu_debug.dockerfile" \
     "$BUILD_DIR"
 }
 

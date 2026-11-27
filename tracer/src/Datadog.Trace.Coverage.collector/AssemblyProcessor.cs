@@ -20,6 +20,7 @@ using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Pdb;
 using CallSite = Mono.Cecil.CallSite;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
@@ -31,6 +32,11 @@ namespace Datadog.Trace.Coverage.Collector
     internal class AssemblyProcessor
     {
         internal const string StagingDirectoryPrefix = ".ddc-";
+
+        /// <summary>
+        /// Serializes the rewrites that keep a Windows PDB, so the collector process uses at most one COM Windows PDB writer at a time.
+        /// </summary>
+        internal static readonly object WindowsPdbWriteLock = new();
 
         private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
         private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
@@ -63,6 +69,7 @@ namespace Datadog.Trace.Coverage.Collector
         private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
         private readonly bool _enableJitOptimizations;
+        private readonly bool _writePortablePdb;
         private readonly CoverageMode _coverageMode;
 
         private byte[]? _strongNameKeyBlob;
@@ -73,6 +80,7 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger ?? new ConsoleCollectorLogger();
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _enableJitOptimizations = settings.TestOptimization.CodeCoverageEnableJitOptimizations;
+            _writePortablePdb = settings.TestOptimization.CodeCoveragePortablePdbEnabled;
             _coverageMode = CoverageMode.LineExecution;
             if (settings.TestOptimization.CodeCoverageMode is { Length: > 0 } strCodeCoverageMode)
             {
@@ -146,7 +154,7 @@ namespace Datadog.Trace.Coverage.Collector
                         // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
                         if (attrFullName == DebuggableAttributeFullName)
                         {
-                            _logger.Debug($"Modifying the DebuggableAttribute to enable jit optimizations");
+                            _logger.Debug("Modifying the DebuggableAttribute to enable jit optimizations");
 
                             // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
                             // We change it to `Default (1)` to enable jit optimizations.
@@ -800,7 +808,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
                     assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
-                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob, _logger);
+                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob, _writePortablePdb, _logger);
                 }
 
                 _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
@@ -838,16 +846,42 @@ namespace Datadog.Trace.Coverage.Collector
         /// <param name="assemblyDefinition">The rewritten assembly definition.</param>
         /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
         /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
-        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
+        /// <param name="writePortablePdb">Whether a Windows PDB is replaced by a portable PDB instead of being rewritten as a Windows PDB.</param>
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, static (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
 
-        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, ICollectorLogger logger)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger);
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, Action<string, string, string?> replaceFile)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, replaceFile, logger: null);
 
-        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, replaceFile, logger: null);
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, ICollectorLogger logger)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, writePortablePdb, static (source, destination, backup) => File.Replace(source, destination, backup), logger);
 
-        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, bool writePortablePdb, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
+        {
+            // Without a provider, Cecil writes the symbols in the format it read them from. Its Windows PDB writer is the COM
+            // ISymUnmanagedWriter2 (diasymreader), whose Close() has crashed the data collector with access violations, also
+            // when assemblies are written one at a time, so by default a Windows PDB is replaced with a portable PDB.
+            if (assemblyDefinition.MainModule.SymbolReader?.GetWriterProvider() is not NativePdbWriterProvider)
+            {
+                WriteStagedTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, symbolWriterProvider: null, replaceFile, logger);
+            }
+            else if (writePortablePdb)
+            {
+                logger?.Debug($"Writing a portable PDB for {assemblyFilePath}, which has a Windows PDB.");
+                WriteStagedTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, new PortablePdbWriterProvider(), replaceFile, logger);
+            }
+            else
+            {
+                // Taken before the target-path write lock, so a thread waiting here holds no lock that the current
+                // writer may need to read its dependencies.
+                lock (WindowsPdbWriteLock)
+                {
+                    WriteStagedTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, symbolWriterProvider: null, replaceFile, logger);
+                }
+            }
+        }
+
+        private static void WriteStagedTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, ISymbolWriterProvider? symbolWriterProvider, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
         {
             using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
             var targetDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
@@ -868,6 +902,7 @@ namespace Datadog.Trace.Coverage.Collector
                 assemblyDefinition.Write(stagedAssemblyPath, new WriterParameters
                 {
                     WriteSymbols = true,
+                    SymbolWriterProvider = symbolWriterProvider,
                     StrongNameKeyBlob = strongNameKeyBlob
                 });
 
@@ -1318,7 +1353,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var matchTarget = NetCorePattern.Match(targetValue);
                     if (matchTarget.Success)
                     {
-                        _logger.Debug($"GetTracerTarget: NetCoreApp pattern detected.");
+                        _logger.Debug("GetTracerTarget: NetCoreApp pattern detected.");
                         var versionValue = matchTarget.Groups[1].Value;
                         _logger.Debug($"GetTracerTarget: Version value {versionValue}");
                         if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var version))

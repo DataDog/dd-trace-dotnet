@@ -14,8 +14,7 @@ linux_ci_variants() {
         x64|arm64) ;;
         *) echo 'Unsupported Linux CI image architecture' >&2; return 1 ;;
     esac
-    printf '%s\n' debian/builder debian/tester alpine/builder alpine/tester
-    [ "$1" != x64 ] || printf '%s\n' centos7/builder
+    printf '%s\n' ubuntu/builder ubuntu/tester alpine/builder alpine/tester
     printf '%s\n' universal/builder
 }
 
@@ -42,9 +41,8 @@ resolve_linux_ci_images() {
 .gitlab/linux-ci-environment.dockerfile
 .gitlab/linux-unit-tests.dockerfile
 tracer/build/_build/.dockerignore
-tracer/build/_build/docker/debian.dockerfile
+tracer/build/_build/docker/ubuntu.dockerfile
 tracer/build/_build/docker/alpine.dockerfile
-tracer/build/_build/docker/centos7.dockerfile
 tracer/build/_build/docker/universal.dockerfile'
     checksums=$(
         for input in $inputs; do
@@ -136,7 +134,7 @@ publish_linux_ci_images() {
             continue
         fi
         publish_sdk=$LINUX_DOTNET_SDK_VERSION
-        case "$publish_base" in centos7|universal) publish_sdk=$LINUX_NATIVE_DOTNET_SDK_VERSION ;; esac
+        case "$publish_base" in universal) publish_sdk=$LINUX_NATIVE_DOTNET_SDK_VERSION ;; esac
         publish_target=build-environment
         [ "$publish_role" != tester ] || publish_target=test-environment
         environment_image="dd-trace-dotnet/$publish_base-$publish_role-environment:$LINUX_CI_IMAGE_HASH-$publish_arch"

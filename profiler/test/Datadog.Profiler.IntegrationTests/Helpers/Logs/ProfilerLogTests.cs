@@ -283,7 +283,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
 
         private static string AssertFailure(Action action)
         {
-            var exception = Assert.Throws<XunitException>(action);
+            var exception = action.Should().ThrowExactly<XunitException>().Which;
             return exception.Message;
         }
 

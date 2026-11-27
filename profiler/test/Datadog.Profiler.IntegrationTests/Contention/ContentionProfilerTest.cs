@@ -8,7 +8,6 @@ using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Contention
@@ -52,7 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")));
+            run.Profiles.Samples.Should().OnlyContain(sample => sample.Labels.Has("raw duration"));
 
             AssertContainWait(run.Profiles);
         }
@@ -66,7 +65,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("raw duration")));
+            run.Profiles.Samples.Should().NotContain(sample => !sample.Labels.Has("raw duration"));
 
             if (app.Framework == TestFramework.Net8)
             {
@@ -83,7 +82,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             using var run = runner.Run();
 
             run.Profiles.Should().HaveSampleTypes(ProfileValue.LockCount, ProfileValue.LockTime);
-            Assert.NotEmpty(run.Profiles.Samples);
+            run.Profiles.Samples.Should().NotBeEmpty();
 
             if (app.Framework == TestFramework.Net8)
             {
@@ -130,9 +129,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BePositive();
             ProfileReader.Read(runner.Environment.PprofDir).WithNonZeroValue(ProfileValue.LockCount).Should().NotBeEmpty();
-            Assert.True(eventsCount > 0);
+            eventsCount.Should().BePositive();
         }
 
         private static void AssertBlockingThreadLabel(ProfileOutput profiles)
@@ -158,7 +157,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             // get samples with lock-count value set and Wait as contention type
             var lockCountSamples = profiles.WithNonZeroValue(ProfileValue.LockCount);
             var waitSamples = lockCountSamples.WithLabel(ProfileLabelNames.ContentionType, "Wait");
-            Assert.True(waitSamples.Count > 8);
+            waitSamples.Count.Should().BeGreaterThan(8);
 
             // check that we get samples 500+ ms for supported wait handles based on callstacks
             // |lm:Samples.WaitHandles |ns:Samples.WaitHandles |ct:Program |cg: |fn:AutoResetEventThread |fg: |sg:()
@@ -175,7 +174,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             foreach (var sample in waitSamples.WithLabel("Duration bucket", "+500 ms"))
             {
                 var stackTrace = sample.CallStack;
-                stackTrace.FramesCount.Should().BeGreaterThan(0);
+                stackTrace.FramesCount.Should().BePositive();
 
                 for (int currentFrame = 0; currentFrame < stackTrace.FramesCount; currentFrame++)
                 {

@@ -528,7 +528,7 @@ namespace Datadog.Trace
         {
             if (manager != null)
             {
-                PathwayContext = manager.SetCheckpoint(parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
+                PathwayContext = manager.SetCheckpoint(in parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
             }
         }
 

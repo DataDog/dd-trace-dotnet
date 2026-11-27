@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Backfill;
 
@@ -15,7 +16,7 @@ namespace Datadog.Trace.Ci.Coverage.Backfill;
 /// </summary>
 internal sealed class CoverageBackfillPathMatchTracker
 {
-    private static readonly StringComparer LocalCandidateComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private static readonly StringComparer LocalCandidateComparer = FilePathComparison.Comparer;
     private readonly Dictionary<string, string> _matchesByBackendKey = new(StringComparer.Ordinal);
 
     /// <summary>

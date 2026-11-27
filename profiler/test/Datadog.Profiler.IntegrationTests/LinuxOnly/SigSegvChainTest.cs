@@ -42,7 +42,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             run.Logs.NativeProfiler.Should().ContainLine("Successfully setup signal handler for Segmentation fault");
 
-            run.UploadCount.Should().BeGreaterThan(0);
+            run.UploadCount.Should().BePositive();
         }
     }
 }
