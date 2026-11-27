@@ -7,13 +7,12 @@ include:
     file: 'images/templates/gitlab/build-ci-images.template.yml'
 
 variables:
-  DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
+  DSM_THROUGHPUT_CI_IMAGE: registry.ddbuild.io/ci/benchmarking-platform:dd-trace-dotnet-dsm-throughput-156790983
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-10
 
   # Image build, consumed by the included build-ci-images template. The per-pipeline
   # suffix pins each build to a unique tag so a rebuild can't shift what older
-  # pipelines pulled. Repin DSM_THROUGHPUT_CI_IMAGE above to the tag this build pushes
-  # (keep the old ECR pin until the first in-repo build succeeds).
+  # pipelines pulled. Repin DSM_THROUGHPUT_CI_IMAGE above to the tag this build pushes.
   BASE_CI_IMAGE_SUFFIX: dd-trace-dotnet-dsm-throughput-${CI_PIPELINE_ID}
   BASE_CI_IMAGE_CONTAINER_DIR: .gitlab/benchmarks/dsm-throughput/container
 
