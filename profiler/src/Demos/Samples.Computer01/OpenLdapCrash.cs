@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace Samples.Computer01
 {
@@ -49,18 +48,13 @@ namespace Samples.Computer01
             }
 
             ConnectToLdapServer();
-
-            // Throttle to <= 200 connections/s (<= 12,000 TIME_WAIT sockets in Linux's 60 s sliding window,
-            // well below the default 28,232 ephemeral ports in 32768-60999) regardless of how many frameworks
-            // run sequentially in the same container.
-            Thread.Sleep(5);
         }
 
-        private static string ReadLocalPortRange()
+        private static string ReadProcFile(string path)
         {
             try
             {
-                return File.ReadAllText("/proc/sys/net/ipv4/ip_local_port_range").Trim();
+                return File.ReadAllText(path).Trim();
             }
             catch (Exception e)
             {
@@ -74,15 +68,16 @@ namespace Samples.Computer01
         //
         // Because the client closes each TCP connection first, the test container's Linux kernel keeps each
         // (client_ip, ephemeral_port, openldap_ip, 389) 4-tuple in TIME_WAIT for 60 s, and TIME_WAIT entries
-        // outlive the child process. If the client container runs out of ephemeral ports, Linux fails
-        // connect() locally with EADDRNOTAVAIL (errno 99, "Address not available") without contacting the
-        // server, and libldap surfaces that as the misleading "LdapException: The LDAP server is unavailable."
-        // even though the LDAP server is healthy.
+        // outlive the child process. If the client runs out of ephemeral ports, Linux fails connect() locally
+        // with EADDRNOTAVAIL (errno 99, "Address not available") without contacting the server, and libldap
+        // surfaces that as the misleading "LdapException: The LDAP server is unavailable." even though the
+        // LDAP server is healthy.
         //
-        // If this error ever recurs (e.g. if OpenLdapTests runs in parallel or ip_local_port_range shrinks),
-        // increase the sleep in OnProcess or set sysctls `net.ipv4.tcp_tw_reuse: 1` on the
-        // ProfilerIntegrationTests service in docker-compose.yml (1, not 2, because openldap-server is a
-        // separate container, not loopback).
+        // In docker-compose.yml, ProfilerIntegrationTests sets `net.ipv4.tcp_tw_reuse=1` so the container can
+        // reuse TIME_WAIT port numbers for new connections after 1 s instead of 60 s (keeping full connect()
+        // coverage without throttling). Note: if you run all frameworks outside docker-compose against a
+        // non-loopback LDAP server IP, Linux's default `net.ipv4.tcp_tw_reuse=2` only applies to loopback
+        // (localhost), so enable `net.ipv4.tcp_tw_reuse=1` there too (or target localhost).
         private void ConnectToLdapServer()
         {
             _attempts++;
@@ -110,8 +105,9 @@ namespace Samples.Computer01
         private void LogFirstFailureDiagnostics()
         {
             var timeWaitCount = CountTimeWaitSockets();
-            var portRange = ReadLocalPortRange();
-            var prefix = $"[Info] OpenLdapCrash first failure at attempt {_attempts} ({DateTime.UtcNow:O}): {timeWaitCount} TIME_WAIT sockets to port {_serverPort}, ip_local_port_range={portRange}, Socket.Connect";
+            var portRange = ReadProcFile("/proc/sys/net/ipv4/ip_local_port_range");
+            var twReuse = ReadProcFile("/proc/sys/net/ipv4/tcp_tw_reuse");
+            var prefix = $"[Info] OpenLdapCrash first failure at attempt {_attempts} ({DateTime.UtcNow:O}): {timeWaitCount} TIME_WAIT sockets to port {_serverPort}, ip_local_port_range={portRange}, tcp_tw_reuse={twReuse}, Socket.Connect";
 
             try
             {

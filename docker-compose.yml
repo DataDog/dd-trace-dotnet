@@ -391,6 +391,12 @@ services:
       - ./:/project
     cap_add:
       - SYS_PTRACE
+    # OpenLdapTests runs --scenario 21 across 5 frameworks back-to-back within 60 s, opening a new
+    # TCP connection per Bind to openldap-server:389. Value 1 (not default 2, which is loopback-only)
+    # lets the container reuse client-side TIME_WAIT ports after 1 s instead of 60 s, preventing
+    # EADDRNOTAVAIL ephemeral port exhaustion while keeping full connect() syscall coverage.
+    sysctls:
+      - net.ipv4.tcp_tw_reuse=1
     environment:
       - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
