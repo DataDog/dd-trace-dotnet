@@ -53,6 +53,6 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
 
     public byte[] GetCapabilities() => [];
 
-    public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
+    public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null)
         => Task.CompletedTask;
 }

@@ -24,6 +24,7 @@ public sealed partial record TracerSettings
         private readonly ConfigurationTelemetry _initialTelemetry;
         private readonly ServerlessCompatPipeNames _pipeNames;
         private readonly List<SettingChangeSubscription> _subscribers = [];
+        private readonly object _exporterPublicationGate = new();
 
         private IConfigurationSource _dynamicConfigurationSource = NullConfigurationSource.Instance;
         private ManualInstrumentationConfigurationSourceBase _manualConfigurationSource =
@@ -67,6 +68,23 @@ public sealed partial record TracerSettings
         /// static sources. To subscribe to updates to these settings, from code or remote config, call <see cref="SubscribeToChanges"/>.
         /// </summary>
         public ExporterSettings InitialExporterSettings { get; }
+
+        internal ExporterSettings CurrentExporterSettings
+        {
+            get
+            {
+                var latest = Volatile.Read(ref _latest);
+                return latest?.UpdatedExporter ?? latest?.PreviousExporter ?? InitialExporterSettings;
+            }
+        }
+
+        internal bool TryRunWithCurrentExporter(ExporterSettings exporter, Func<bool> apply)
+        {
+            lock (_exporterPublicationGate)
+            {
+                return ReferenceEquals(CurrentExporterSettings, exporter) && apply();
+            }
+        }
 
         /// <summary>
         /// Subscribe to changes in <see cref="MutableSettings"/> and/or <see cref="ExporterSettings"/>.
@@ -130,11 +148,25 @@ public sealed partial record TracerSettings
         public bool UpdateDynamicConfigurationSettings(
             IConfigurationSource dynamicConfigSource,
             IConfigurationTelemetry centralTelemetry)
+            => TryUpdateDynamicConfigurationSettings(dynamicConfigSource, centralTelemetry, canInstall: null, out var updated) && updated;
+
+        internal bool TryUpdateDynamicConfigurationSettings(
+            IConfigurationSource dynamicConfigSource,
+            IConfigurationTelemetry centralTelemetry,
+            Func<bool>? canInstall,
+            out bool updated)
         {
             lock (_subscribers)
             {
+                if (canInstall is not null && !canInstall())
+                {
+                    updated = false;
+                    return false;
+                }
+
                 _dynamicConfigurationSource = dynamicConfigSource;
-                return UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
+                updated = UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
+                return true;
             }
         }
 
@@ -273,7 +305,11 @@ public sealed partial record TracerSettings
 
         private void NotifySubscribers(SettingChanges settings)
         {
-            _latest = settings;
+            // Subscribers can acquire the Debugger route lock. Release the publication gate before notifying them.
+            lock (_exporterPublicationGate)
+            {
+                Volatile.Write(ref _latest, settings);
+            }
 
             foreach (var subscriber in _subscribers)
             {

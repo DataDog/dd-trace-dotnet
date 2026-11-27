@@ -29,6 +29,8 @@ internal sealed class TracerFlareManager : ITracerFlareManager
     internal const string TracerFlareCompleteLog = "Disabled debug mode due to tracer flare complete";
     internal const string ReceivedTracerFlareRequestLog = "Received tracer flare request";
     private const int RevertGlobalDebugMinutes = 20;
+    private const string UploadFailureMessage = "There was an error uploading the debug log archive";
+    private static readonly TimeSpan UploadReceiptWait = TracerFlareApi.UploadTimeout + TimeSpan.FromSeconds(1);
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerFlareManager>();
 
     private readonly IDiscoveryService _discoveryService;
@@ -299,11 +301,16 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                 return emailError.Value;
             }
 
-            if (!DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, configId))
+            using var sentinel = DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, configId);
+            if (sentinel is null)
             {
-                // already accepted by a different tracer
-                Log.Debug("Tracer flare already handled by other tracer instance - ignoring");
-                return ApplyDetails.FromOk(configPath);
+                var uploadSucceeded = await DebugLogReader.WaitForSentinelResult(fileLogDirectory, configId, UploadReceiptWait).ConfigureAwait(false);
+                return uploadSucceeded switch
+                {
+                    true => ApplyDetails.FromOk(configPath),
+                    false => ApplyDetails.FromError(configPath, UploadFailureMessage),
+                    _ => ApplyDetails.FromError(configPath, "The debug log upload outcome is unavailable"),
+                };
             }
 
             // ok, do the thing
@@ -314,14 +321,15 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                                              hostname: hostname)
                                         .ConfigureAwait(false);
 
+            DebugLogReader.RecordSentinelResult(sentinel, result.Key);
             if (result.Key)
             {
                 return ApplyDetails.FromOk(configPath);
             }
 
             var error = string.IsNullOrEmpty(result.Value)
-                            ? "There was an error uploading the debug log archive"
-                            : $"There was an error uploading the debug log archive. Agent response: {result.Value}";
+                            ? UploadFailureMessage
+                            : $"{UploadFailureMessage}. Agent response: {result.Value}";
 
             return ApplyDetails.FromError(configPath, error);
         }

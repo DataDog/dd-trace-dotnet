@@ -22,6 +22,7 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -45,6 +46,7 @@ namespace Datadog.Trace.Debugger
         private const string LegacyProbeIdTag = "probe-id";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
+        private static readonly TimeSpan RcmAvailabilityTimeout = TimeSpan.FromMinutes(5);
 
         // Completed when this DI instance is being disposed (runtime disable via remote config, or process shutdown).
         // Used to abort in-flight initialization waits promptly.
@@ -55,16 +57,19 @@ namespace Datadog.Trace.Debugger
         private readonly ISnapshotUploader _snapshotUploader;
         private readonly ISnapshotUploader _logUploader;
         private readonly IDebuggerUploader _diagnosticsUploader;
+        private readonly DebuggerAgentTransport? _uploadTransport;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly Dictionary<string, LineProbeResolveErrorKey> _lastReportedUnboundProbeErrors;
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
         private readonly MemoryPressureMonitor _memoryPressureMonitor;
         private readonly DebuggerSettings _settings;
         private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
+        private volatile bool _isRegisteredForRemoteConfiguration;
         private int _disposeState;
         private int _initializationState;
         private Task? _initializationTask;
@@ -82,7 +87,8 @@ namespace Datadog.Trace.Debugger
             IDogStatsd dogStats,
             IDebuggerGlobalRateLimiter? globalRateLimiter = null,
             MemoryPressureMonitor? memoryPressureMonitor = null,
-            NativeProbeInstrumentationRequester? instrumentProbes = null)
+            NativeProbeInstrumentationRequester? instrumentProbes = null,
+            DebuggerAgentTransport? uploadTransport = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
@@ -92,16 +98,17 @@ namespace Datadog.Trace.Debugger
             _snapshotUploader = snapshotUploader;
             _logUploader = logUploader;
             _diagnosticsUploader = diagnosticsUploader;
+            _uploadTransport = uploadTransport;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
             _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
+            _globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
             _memoryPressureMonitor = memoryPressureMonitor ?? new MemoryPressureMonitor(MemoryPressureConfig.Default);
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
-            (globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance).Initialize();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -116,7 +123,12 @@ namespace Datadog.Trace.Debugger
 
         public bool IsInitialized => Volatile.Read(ref _initializationState) == 2;
 
-        internal void Initialize()
+        internal bool IsRegisteredForRemoteConfiguration => _isRegisteredForRemoteConfiguration;
+
+        internal bool TryRunWithRemoteConfigRoute(Action apply)
+            => _uploadTransport?.TryRunWithRemoteConfigRoute(apply) is true;
+
+        internal void Initialize(Func<Action, bool>? applyAndCheckForRouteChange = null, bool requireRemoteConfiguration = false)
         {
             var enabled = _settings.DynamicInstrumentationCanBeEnabled
                        && (_settings.DynamicSettings.DynamicInstrumentationEnabled ?? _settings.DynamicInstrumentationEnabled);
@@ -130,7 +142,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            _initializationTask = InitializeAsync();
+            _initializationTask = InitializeAsync(applyAndCheckForRouteChange, requireRemoteConfiguration);
         }
 
         /// <summary>
@@ -141,33 +153,33 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
 
-        private async Task InitializeAsync()
+        private async Task InitializeAsync(Func<Action, bool>? applyAndCheckForRouteChange, bool requireRemoteConfiguration)
         {
             try
             {
                 // Start loading probes from file and checking RCM availability in parallel
                 var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
-                var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
+                var rcmAvailabilityTask = requireRemoteConfiguration ? null : WaitForRcmAvailabilityAsync();
 
-                var hasFileProbes = false;
-
-                // Always attempt to load probes from file, even if RCM is unavailable
                 var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
-                if (probeConfiguration != null)
+                if (requireRemoteConfiguration)
                 {
-                    hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
-                    if (hasFileProbes)
+                    if (!await InitializeTakeoverAsync().ConfigureAwait(false))
                     {
-                        StartRuntimeIfNeeded(subscribeToRcm: false);
+                        return;
+                    }
+                }
+                else
+                {
+                    if (probeConfiguration is not null)
+                    {
+                        Apply(() => ApplyConfiguration(registerWithRcm: false));
                     }
 
-                    _configurationUpdater.AcceptFile(probeConfiguration);
-                }
-
-                var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
-                if (isRcmAvailable)
-                {
-                    StartRuntimeIfNeeded(subscribeToRcm: true);
+                    if (await rcmAvailabilityTask!.ConfigureAwait(false))
+                    {
+                        Apply(() => StartRuntimeIfNeeded(subscribeToRcm: true));
+                    }
                 }
 
                 // Start background processing and register the assembly load callback if either:
@@ -181,6 +193,62 @@ namespace Datadog.Trace.Debugger
                 {
                     Log.Information("Dynamic Instrumentation not initialized because RCM isn't available and no valid probes have loaded from file");
                 }
+
+                async Task<bool> InitializeTakeoverAsync()
+                {
+                    if (_uploadTransport is not { } transport)
+                    {
+                        return false;
+                    }
+
+                    var timeout = Task.Delay(RcmAvailabilityTimeout);
+                    Action takeOver = () => ApplyConfiguration(registerWithRcm: true);
+                    while (!timeout.IsCompleted)
+                    {
+                        var ready = transport.WaitForRemoteConfigRouteAsync();
+                        var completed = await Task.WhenAny(ready, timeout, _disposalSignal.Task).ConfigureAwait(false);
+                        if (completed == timeout)
+                        {
+                            break;
+                        }
+
+                        if (completed != ready || !await ready.ConfigureAwait(false))
+                        {
+                            return false;
+                        }
+
+                        if (!Apply(takeOver))
+                        {
+                            return true;
+                        }
+                    }
+
+                    Log.Warning("Dynamic Instrumentation could not replace the file runtime because the Agent did not provide both the Debugger and Remote Configuration endpoints.");
+                    return false;
+                }
+
+                void ApplyConfiguration(bool registerWithRcm)
+                {
+                    if (IsDisposed)
+                    {
+                        return;
+                    }
+
+                    if (probeConfiguration is not null)
+                    {
+                        if (_configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration))
+                        {
+                            StartRuntimeIfNeeded(subscribeToRcm: false);
+                        }
+
+                        _configurationUpdater.AcceptFile(probeConfiguration);
+                    }
+
+                    if (registerWithRcm)
+                    {
+                        StartRuntimeIfNeeded(subscribeToRcm: true);
+                    }
+                }
             }
             catch (OperationCanceledException e)
             {
@@ -193,6 +261,17 @@ namespace Datadog.Trace.Debugger
             finally
             {
                 Interlocked.CompareExchange(ref _initializationState, 0, 1);
+            }
+
+            bool Apply(Action effect)
+            {
+                if (applyAndCheckForRouteChange is { } apply)
+                {
+                    return apply(effect);
+                }
+
+                effect();
+                return false;
             }
         }
 
@@ -221,6 +300,7 @@ namespace Datadog.Trace.Debugger
                     var assemblyLoadSubscribed = false;
                     try
                     {
+                        _globalRateLimiter.Initialize();
                         AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
                         assemblyLoadSubscribed = true;
                         StartBackgroundProcess();
@@ -240,9 +320,10 @@ namespace Datadog.Trace.Debugger
                 // Subscribe only on the RCM path, and only if a disable hasn't landed in the meantime.
                 // Best-effort: correctness against a leaked subscription is guaranteed by Dispose's Unsubscribe
                 // running under this same lock.
-                if (subscribeToRcm && !IsDisposed)
+                if (subscribeToRcm && !_isRegisteredForRemoteConfiguration && !IsDisposed)
                 {
                     _subscriptionManager.SubscribeToChanges(_subscription);
+                    _isRegisteredForRemoteConfiguration = true;
                 }
             }
         }
@@ -1010,13 +1091,12 @@ namespace Datadog.Trace.Debugger
 
             try
             {
-                var rcmTimeout = TimeSpan.FromMinutes(5);
-                var timeoutTask = Task.Delay(rcmTimeout);
+                var timeoutTask = Task.Delay(RcmAvailabilityTimeout);
 
                 var completedTask = await Task.WhenAny(rcmAvailabilityTcs.Task, timeoutTask, _disposalSignal.Task).ConfigureAwait(false);
                 if (completedTask == timeoutTask)
                 {
-                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
+                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", RcmAvailabilityTimeout.TotalSeconds);
                     return false;
                 }
 
@@ -1055,11 +1135,7 @@ namespace Datadog.Trace.Debugger
             {
                 try
                 {
-                    UpdateRemovedProbeInstrumentations(_probeStatusPoller.GetBoundedProbes());
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error removing probes while disabling Dynamic Instrumentation");
+                    RemoveBoundProbes();
                 }
                 finally
                 {
@@ -1068,14 +1144,41 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        internal Action? RemoveProbesForTakeover()
+        {
+            lock (_instanceLock)
+            {
+                RemoveBoundProbes();
+                return BeginDisposal() ? CompleteDisposal : null;
+            }
+        }
+
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
+            if (BeginDisposal())
             {
-                return;
+                CompleteDisposal();
             }
+        }
 
+        private void RemoveBoundProbes()
+        {
+            try
+            {
+                UpdateRemovedProbeInstrumentations(_probeStatusPoller.GetBoundedProbes());
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, "Error removing probes while disabling Dynamic Instrumentation");
+            }
+        }
+
+        private bool BeginDisposal() => Interlocked.CompareExchange(ref _disposeState, 1, 0) == 0;
+
+        private void CompleteDisposal()
+        {
             _disposalSignal.TrySetResult(true);
+            SafeDisposal.TryDispose(_uploadTransport);
 
             lock (_instanceLock)
             {

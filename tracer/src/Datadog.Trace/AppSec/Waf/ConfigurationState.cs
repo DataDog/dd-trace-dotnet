@@ -120,6 +120,8 @@ internal sealed record ConfigurationState
 
     public string? RuleSetTitle => HasRemoteConfig ? "RemoteConfig" : _rulesPath;
 
+    internal string[] GetRemovalProducts() => [RcmProducts.AsmFeatures, .. _productConfigUpdaters.Keys];
+
     internal string[] WhatProductsAreRelevant(SecuritySettings settings)
     {
         var subscriptionsKeys = new List<string>();

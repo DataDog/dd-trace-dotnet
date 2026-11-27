@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework Condition="'$(ConformanceTargetFramework)' != ''">$(ConformanceTargetFramework)</TargetFramework>
+    <LangVersion Condition="'$(TargetFramework)' == 'net6.0'">14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Wasmtime" Version="[48.0.2]" PrivateAssets="all" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(AgentComparison)' == 'true'">
+    <DefineConstants>$(DefineConstants);RC_AGENT_COMPARISON</DefineConstants>
+    <AssemblyName>Datadog.Trace.Tests</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <NuGetLockFilePath>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)'))agent-comparison.packages.lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(AgentComparison)' == 'true'">
+    <ProjectReference Include="../../tracer/src/Datadog.Trace/Datadog.Trace.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(AgentComparison)' != 'true' Or '$(SharedRemoteConfig)' != 'true'">
+    <Compile Include="../../tracer/src/Datadog.Trace/RemoteConfigurationManagement/Shared/IReactorBinding.cs" />
+    <Compile Include="../../tracer/src/Datadog.Trace/RemoteConfigurationManagement/Shared/NativeReactorBinding.cs" />
+    <Compile Include="../../tracer/src/Datadog.Trace/RemoteConfigurationManagement/Shared/Reactor.cs" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(AgentComparison)' == 'true' And '$(SharedRemoteConfig)' == 'true'">
+    <DefineConstants>$(DefineConstants);VERIFY_SHARED_WORKER</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(AgentComparison)' == 'true' And '$(SharedRemoteConfig)' == 'true'">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

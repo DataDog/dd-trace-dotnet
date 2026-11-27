@@ -42,15 +42,15 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DynamicInstrumentationTests
 {
     [Fact]
-    public void DynamicInstrumentation_ResetsGlobalRateLimiterOnConstruction()
+    public async Task DynamicInstrumentation_ResetsGlobalRateLimiterWhenRuntimeStarts()
     {
         var settings = DebuggerSettings.FromSource(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" } }),
             NullConfigurationTelemetry.Instance);
 
         var globalRateLimiter = new GlobalRateLimiterMock();
 
-        _ = new DynamicInstrumentation(
+        using var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
             new RcmSubscriptionManagerMock(),
@@ -63,6 +63,9 @@ public class DynamicInstrumentationTests
             NoOpStatsd.Instance,
             globalRateLimiter);
 
+        globalRateLimiter.InitializeCallCount.Should().Be(0);
+        debugger.Initialize();
+        await WaitForInitializationAsync(debugger);
         globalRateLimiter.InitializeCallCount.Should().Be(1);
     }
 
@@ -322,6 +325,43 @@ public class DynamicInstrumentationTests
         {
             debugger.Dispose();
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DeferredDiscoveryStartsOnlyForTheCurrentActivation(bool stillCurrent)
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" } }),
+            NullConfigurationTelemetry.Instance);
+        var discovery = new DiscoveryServiceMock { DeferNotification = true };
+        var subscriptions = new RcmSubscriptionManagerMock();
+        var snapshots = new SnapshotUploaderMock();
+        var poller = new ProbeStatusPollerMock();
+        var rateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, rateLimiter);
+        using var debugger = new DynamicInstrumentation(settings, discovery, subscriptions, new LineProbeResolverMock(), snapshots, new LogUploaderMock(), new UploaderMock(), poller, updater, NoOpStatsd.Instance, rateLimiter);
+
+        var current = true;
+        debugger.Initialize(effect =>
+        {
+            if (Volatile.Read(ref current))
+            {
+                effect();
+            }
+
+            return false;
+        });
+        debugger.IsInitialized.Should().BeFalse();
+        Volatile.Write(ref current, stillCurrent);
+        discovery.Publish();
+        await WaitForInitializationAsync(debugger);
+
+        subscriptions.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().Be(stillCurrent);
+        poller.Called.Should().Be(stillCurrent);
+        snapshots.Called.Should().Be(stillCurrent);
+        debugger.IsInitialized.Should().Be(stillCurrent);
     }
 
     private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 30)
@@ -1459,11 +1499,47 @@ public class DynamicInstrumentationTests
 
     private class DiscoveryServiceMock : IDiscoveryService
     {
+        private Action<AgentConfiguration>? _pending;
+
         internal bool Called { get; private set; }
+
+        internal bool DeferNotification { get; init; }
 
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
+            if (DeferNotification)
+            {
+                _pending = callback;
+                return;
+            }
+
+            Notify(callback);
+        }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+            if (_pending == callback)
+            {
+                _pending = null;
+            }
+        }
+
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+
+        internal void Publish()
+        {
+            var callback = _pending ?? throw new InvalidOperationException("Discovery was not deferred");
+            _pending = null;
+            Notify(callback);
+        }
+
+        private static void Notify(Action<AgentConfiguration> callback)
+        {
             callback(
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
@@ -1482,16 +1558,6 @@ public class DynamicInstrumentationTests
                     spanMetaStructs: true,
                     spanEvents: true));
         }
-
-        public void RemoveSubscription(Action<AgentConfiguration> callback)
-        {
-        }
-
-        public void SetCurrentConfigStateHash(string configStateHash)
-        {
-        }
-
-        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     private class DiscoveryServiceFailsOnceMock : IDiscoveryService
@@ -1622,7 +1688,7 @@ public class DynamicInstrumentationTests
             throw new NotImplementedException();
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null)
         {
             throw new NotImplementedException();
         }

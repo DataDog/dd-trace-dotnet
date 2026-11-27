@@ -16,9 +16,15 @@ on:
       - 'tracer/build/_build/**'
       - '.github/workflows/validate_native_configurations.yml'
   workflow_dispatch:
+    inputs:
+      remote-config-source:
+        description: Full libdatadog commit for the .NET Remote Config preview check
+        type: string
+        required: false
 
 jobs:
   validate_native_configurations:
+    if: github.event_name != 'workflow_dispatch' || inputs.remote-config-source == ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -34,3 +40,94 @@ jobs:
 
       - name: "Validate native configurations are registered"
         run: ./tracer/build.sh ValidateNativeConfigurations
+
+  verify_remote_config_preview:
+    name: Verify native Remote Config (${{ matrix.target }})
+    if: github.event_name == 'workflow_dispatch' && inputs.remote-config-source != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      RC_SOURCE_COMMIT: ${{ inputs.remote-config-source }}
+      RC_NATIVE_TARGET: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runtime-image: mcr.microsoft.com/dotnet/aspnet@sha256:aac50ceef10391e78a899e3d2ccd00bbafa2dcb56ccf4586cbccf00edb84fc21
+          - target: x86_64-unknown-linux-musl
+            runtime-image: mcr.microsoft.com/dotnet/aspnet@sha256:21c3f9798416cba4c0576a947c286231cb71ea2884896cb968253f5c9668f930
+            builder-image: docker.io/library/rust:1.91.1-alpine3.22@sha256:84f263251b0ada72c1913d82a824d47be15a607f3faf015d8bdae48db544cdf2
+    steps:
+      - name: Check the source input and runner architecture
+        run: |
+          if [[ ! "$RC_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'remote-config-source must be a full libdatadog commit ID' >&2
+            exit 2
+          fi
+          test "$(uname -m)" = x86_64
+      - name: Check out dd-trace-dotnet
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Build the tracer worker fixture
+        run: |
+          dotnet build -c Release --disable-build-servers -o "$RUNNER_TEMP/remote-config-worker" \
+            -p:AgentComparison=true -p:SharedRemoteConfig=true -p:UseAppHost=false tools/RemoteConfig.Wasm.Conformance
+      - name: Check out libdatadog
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: DataDog/libdatadog
+          ref: ${{ inputs.remote-config-source }}
+          path: libdatadog-source
+          persist-credentials: false
+      - name: Build and test the native Remote Config bundle
+        working-directory: libdatadog-source
+        env:
+          CARGO_PROFILE_RELEASE_OPT_LEVEL: 3
+          RC_BUILDER_IMAGE: ${{ matrix.builder-image }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RC_SOURCE_COMMIT"
+          if [[ "$RC_NATIVE_TARGET" == *-musl ]]; then
+            docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
+              --volume "$RUNNER_TEMP:/output" --env CARGO_PROFILE_RELEASE_OPT_LEVEL \
+              "$RC_BUILDER_IMAGE" \
+              sh -ec 'apk add --no-cache bash build-base git
+                exec bash libdd-remote-config-wasm/test/build-native-unix.sh "$@"' \
+              sh "$RC_NATIVE_TARGET" /output "$RC_SOURCE_COMMIT"
+          else
+            bash libdd-remote-config-wasm/test/build-native-unix.sh "$RC_NATIVE_TARGET" "$RUNNER_TEMP" "$RC_SOURCE_COMMIT"
+          fi
+      - name: Verify the tracer worker against the bundle
+        env:
+          RC_RUNTIME_IMAGE: ${{ matrix.runtime-image }}
+        run: |
+          native_dir="$RUNNER_TEMP/remote-config-native-installed.moved"
+          test "$(cat "$native_dir/SOURCE_COMMIT")" = "$RC_SOURCE_COMMIT"
+          test "$(cat "$native_dir/TARGET")" = "$RC_NATIVE_TARGET"
+          docker run --rm --network none \
+            --volume "$RUNNER_TEMP/remote-config-worker:/fixture:ro" \
+            --volume "$native_dir:/native:ro" "$RC_RUNTIME_IMAGE" sh -ec '
+              ulimit -c 0
+              dotnet --list-runtimes
+              reactor=/native/lib/liblibdd_remote_config_wasm.so
+              dotnet /fixture/Datadog.Trace.Tests.dll --native "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-worker "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-replacement "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-retired-callback "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-feature-flags-handoff "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-feature-flags-managed-chain "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-late-managed-start "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-managed-retirement-cancels-request
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-takeover "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-split-route "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-cutover "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-agent-change "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-exporter-publication
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-discovery-publication
+              exec dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-disable "$reactor"'

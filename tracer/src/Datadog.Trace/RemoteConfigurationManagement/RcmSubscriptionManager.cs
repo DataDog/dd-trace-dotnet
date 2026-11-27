@@ -27,6 +27,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 {
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
+#if SHARED_REMOTE_CONFIG
+    private static readonly HashSet<string> EmptyAssignment = new(StringComparer.Ordinal);
+#endif
 
     private readonly object _syncRoot = new();
     private readonly SemaphoreSlim _sendRequestMutex = new(1, 1);
@@ -36,13 +39,15 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     /// </summary>
     private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-    private readonly string _id = Guid.NewGuid().ToString();
-
     // Persistent request object, mutated in-place each poll
-    private readonly GetRcmRequest _request;
+    private GetRcmRequest _request;
 
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
+#if SHARED_REMOTE_CONFIG
+    private Dictionary<object, Dictionary<string, RemoteConfigurationPath>>? _deliveredPaths;
+    private int _managedSessionRetired;
+#endif
 
     private long _rootVersion = 1;
     private string? _backendClientState;
@@ -51,8 +56,6 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     private string? _lastPollError;
     private long _appliedConfigsVersion;
 
-    // Cached capabilities byte[] — only recomputed when _capabilities changes
-    private BigInteger _cachedCapabilities;
     private byte[]? _cachedCapabilitiesBytes;
 
     // Version tracking for lists that are expensive to rebuild
@@ -60,7 +63,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     public RcmSubscriptionManager()
     {
-        _request = new GetRcmRequest(new RcmClient(_id, new RcmClientState()));
+        _request = CreateManagedRequest();
     }
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
@@ -107,6 +110,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
 
             _subscriptions = newSubscriptions;
+#if SHARED_REMOTE_CONFIG
+            ForgetUnregisteredOwner(oldSubscription);
+#endif
 
             RefreshProductKeys();
         }
@@ -117,44 +123,104 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         lock (_syncRoot)
         {
             _subscriptions = new List<ISubscription>(_subscriptions.Where(s => s != subscription));
+#if SHARED_REMOTE_CONFIG
+            ForgetUnregisteredOwner(subscription);
+#endif
             RefreshProductKeys();
         }
     }
 
+#if SHARED_REMOTE_CONFIG
+    internal static HashSet<string> GetProductsWithChangedOwners(IReadOnlyList<ISubscription> previous, IReadOnlyList<ISubscription> current)
+    {
+        var products = new HashSet<string>(StringComparer.Ordinal);
+        AddProducts(previous);
+        AddProducts(current);
+        products.RemoveWhere(product => HaveSameDeliveryOwners(
+            previous,
+            current,
+            subscription => subscription.ProductKeys.Contains(product) || GetRemovalProducts(subscription).Contains(product)));
+        return products;
+
+        void AddProducts(IReadOnlyList<ISubscription> subscriptions)
+        {
+            foreach (var subscription in subscriptions)
+            {
+                products.UnionWith(subscription.ProductKeys);
+                products.UnionWith(GetRemovalProducts(subscription));
+            }
+        }
+    }
+#endif
+
     /// <summary>
     /// Called by RCM
     /// </summary>
-    private async Task<List<ApplyDetails>?> Update(Dictionary<string, List<RemoteConfiguration>>? configByProducts, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
+    internal async Task<List<ApplyDetails>?> ApplyChanges(
+        Dictionary<string, List<RemoteConfiguration>>? configByProducts,
+        Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct,
+        ISubscription? watched = null,
+        IReadOnlyList<ISubscription>? subscriptions = null,
+        Func<bool>? tryBeginDelivery = null,
+        HashSet<string>? assignedPaths = null,
+        HashSet<string>? replayProducts = null)
     {
         List<ApplyDetails>? results = null;
 
-        var subscriptions = Volatile.Read(ref _subscriptions);
-
-        foreach (var subscription in subscriptions)
+#if SHARED_REMOTE_CONFIG
+        HashSet<string>? explicitlyRemoved = null;
+        if (assignedPaths is not null && removedConfigsByProduct is { Count: > 0 })
         {
-            Dictionary<string, List<RemoteConfiguration>>? filteredConfigs = null;
-            if (configByProducts is not null)
+            explicitlyRemoved = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var removedConfigs in removedConfigsByProduct.Values)
             {
-                foreach (var productKey in subscription.ProductKeys)
+                foreach (var path in removedConfigs)
                 {
-                    if (configByProducts.TryGetValue(productKey, out var configs))
-                    {
-                        filteredConfigs ??= new(subscription.ProductKeys.Count);
-                        filteredConfigs[productKey] = configs;
-                    }
+                    explicitlyRemoved.Add(path.Path);
                 }
             }
+        }
+#endif
 
-            var haveChanges = filteredConfigs?.Count > 0 || removedConfigsByProduct?.Count > 0;
+        foreach (var subscription in subscriptions ?? Volatile.Read(ref _subscriptions))
+        {
+            if (ReferenceEquals(subscription, watched))
+            {
+                continue;
+            }
+
+            var productKeys = subscription.ProductKeys;
+            var filteredConfigs = FilterProductChanges(productKeys, configByProducts);
+            var filteredRemovals = subscriptions is null ? removedConfigsByProduct : FilterProductChanges(GetRemovalProducts(subscription), removedConfigsByProduct);
+
+#if SHARED_REMOTE_CONFIG
+            if (assignedPaths is not null)
+            {
+                filteredRemovals = ReconcileDeliveredPaths(subscription, filteredRemovals, assignedPaths, replayProducts, explicitlyRemoved);
+            }
+#endif
+
+            var haveChanges = filteredConfigs?.Count > 0 || filteredRemovals?.Count > 0;
             if (!haveChanges)
             {
                 continue;
             }
 
+            if (tryBeginDelivery?.Invoke() is false)
+            {
+                break;
+            }
+
             try
             {
+#if SHARED_REMOTE_CONFIG
+                RememberDeliveredPaths(subscription, filteredConfigs);
+#endif
                 results ??= new();
-                results.AddRange(await subscription.Invoke(filteredConfigs ?? [], removedConfigsByProduct).ConfigureAwait(false));
+                results.AddRange(await subscription.Invoke(filteredConfigs ?? [], filteredRemovals).ConfigureAwait(false));
+#if SHARED_REMOTE_CONFIG
+                ForgetWithdrawnPaths(subscription, filteredRemovals);
+#endif
             }
             catch (Exception e)
             {
@@ -165,61 +231,299 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         return results;
     }
 
+    private static IReadOnlyCollection<string> GetRemovalProducts(ISubscription subscription) =>
+        (subscription as Subscription)?.RemovalProductKeys ?? subscription.ProductKeys;
+
+    private static Dictionary<string, List<TChange>>? FilterProductChanges<TChange>(IReadOnlyCollection<string> products, Dictionary<string, List<TChange>>? changes)
+    {
+        if (changes is null || changes.Count == 0)
+        {
+            return null;
+        }
+
+        Dictionary<string, List<TChange>>? filtered = null;
+        foreach (var product in products)
+        {
+            if (changes.TryGetValue(product, out var files))
+            {
+                filtered ??= new(products.Count);
+                filtered[product] = files;
+            }
+        }
+
+        return filtered;
+    }
+
+#if SHARED_REMOTE_CONFIG
+    internal void RetireManagedSession() => Volatile.Write(ref _managedSessionRetired, 1);
+
+    internal bool HasDeliveredPaths()
+    {
+        lock (_syncRoot)
+        {
+            return _deliveredPaths is { Count: > 0 };
+        }
+    }
+
+    internal (IReadOnlyList<ISubscription> Subscriptions, ICollection<string> Products, byte[] Capabilities) CapturePollInterest()
+    {
+        lock (_syncRoot)
+        {
+            return (_subscriptions, ProductKeys, GetCachedCapabilities());
+        }
+    }
+
+    internal bool AreSubscriptionsCurrent(
+        IReadOnlyList<ISubscription> subscriptions,
+        Dictionary<string, List<RemoteConfiguration>> upserts,
+        Dictionary<string, List<RemoteConfigurationPath>> removals,
+        bool completeAssignment)
+    {
+        var current = Volatile.Read(ref _subscriptions);
+        return ReferenceEquals(subscriptions, current) ||
+               (!completeAssignment && HaveSameDeliveryOwners(subscriptions, current, ReceivesChanges));
+
+        bool ReceivesChanges(ISubscription subscription) =>
+            ContainsProduct(subscription.ProductKeys, upserts) || ContainsProduct(GetRemovalProducts(subscription), removals);
+
+        static bool ContainsProduct<TChange>(IReadOnlyCollection<string> products, Dictionary<string, List<TChange>> changes)
+        {
+            if (changes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var product in products)
+            {
+                if (changes.ContainsKey(product))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private static bool HaveSameDeliveryOwners(
+        IReadOnlyList<ISubscription> previous,
+        IReadOnlyList<ISubscription> current,
+        Func<ISubscription, bool> receivesChanges)
+    {
+        using var owners = current.Where(receivesChanges).GetEnumerator();
+        foreach (var subscription in previous)
+        {
+            if (receivesChanges(subscription) && (!owners.MoveNext() || !ReferenceEquals(subscription, owners.Current)))
+            {
+                return false;
+            }
+        }
+
+        return !owners.MoveNext();
+    }
+
+    private static object GetDeliveryOwner(ISubscription subscription) =>
+        (subscription as Subscription)?.DeliveryOwner ?? subscription;
+
+    private void ForgetUnregisteredOwner(ISubscription subscription)
+    {
+        var owner = GetDeliveryOwner(subscription);
+        if (_deliveredPaths is { } owners && owners.ContainsKey(owner) &&
+            !_subscriptions.Any(current => ReferenceEquals(GetDeliveryOwner(current), owner)))
+        {
+            owners.Remove(owner);
+        }
+    }
+
+    private void RememberDeliveredPaths(ISubscription subscription, Dictionary<string, List<RemoteConfiguration>>? upserts)
+    {
+        if (upserts is not { Count: > 0 })
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            var owner = GetDeliveryOwner(subscription);
+            if (!_subscriptions.Any(current => ReferenceEquals(GetDeliveryOwner(current), owner)))
+            {
+                return;
+            }
+
+            _deliveredPaths ??= new(ReferenceEqualityComparer.Instance);
+            if (!_deliveredPaths.TryGetValue(owner, out var paths))
+            {
+                paths = new(StringComparer.Ordinal);
+                _deliveredPaths.Add(owner, paths);
+            }
+
+            // A subscriber can install part of an assignment before returning an error.
+            foreach (var files in upserts.Values)
+            {
+                foreach (var file in files)
+                {
+                    paths[file.Path.Path] = file.Path;
+                }
+            }
+        }
+    }
+
+    private void ForgetWithdrawnPaths(ISubscription subscription, Dictionary<string, List<RemoteConfigurationPath>>? removals)
+    {
+        if (removals is not { Count: > 0 })
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            var owner = GetDeliveryOwner(subscription);
+            if (_deliveredPaths is not { } owners || !owners.TryGetValue(owner, out var paths))
+            {
+                return;
+            }
+
+            foreach (var files in removals.Values)
+            {
+                foreach (var path in files)
+                {
+                    paths.Remove(path.Path);
+                }
+            }
+
+            if (paths.Count == 0)
+            {
+                owners.Remove(owner);
+            }
+        }
+    }
+
+    private Dictionary<string, List<RemoteConfigurationPath>>? ReconcileDeliveredPaths(
+        ISubscription subscription,
+        Dictionary<string, List<RemoteConfigurationPath>>? removals,
+        HashSet<string> assignedPaths,
+        HashSet<string>? replayProducts,
+        HashSet<string>? explicitlyRemoved)
+    {
+        lock (_syncRoot)
+        {
+            if (_deliveredPaths is not { } owners || !owners.TryGetValue(GetDeliveryOwner(subscription), out var paths))
+            {
+                return removals;
+            }
+
+            Dictionary<string, List<RemoteConfigurationPath>>? merged = null;
+            foreach (var product in GetRemovalProducts(subscription))
+            {
+                if (replayProducts is not null && !replayProducts.Contains(product))
+                {
+                    continue;
+                }
+
+                var alreadyRemoved = removals?.GetValueOrDefault(product);
+                List<RemoteConfigurationPath>? combined = null;
+                foreach (var path in paths.Values)
+                {
+                    if (path.Product == product && !assignedPaths.Contains(path.Path) &&
+                        explicitlyRemoved?.Contains(path.Path) is not true)
+                    {
+                        combined ??= alreadyRemoved is null ? [] : [.. alreadyRemoved];
+                        combined.Add(path);
+                    }
+                }
+
+                if (combined is not null)
+                {
+                    merged ??= removals is null ? [] : new(removals);
+                    merged[product] = combined;
+                }
+            }
+
+            return merged ?? removals;
+        }
+    }
+#endif
+
+    internal Subscription? GetSnapshotSubscription(string product, IReadOnlyList<ISubscription>? subscriptions = null)
+    {
+        Subscription? owner = null;
+        foreach (var item in subscriptions ?? Volatile.Read(ref _subscriptions))
+        {
+            if (!item.ProductKeys.Contains(product))
+            {
+                continue;
+            }
+
+            if (owner is not null || item.ProductKeys.Count != 1 || item is not Subscription { InstallSnapshot: not null } subscription)
+            {
+                return null;
+            }
+
+            owner = subscription;
+        }
+
+        return owner;
+    }
+
     public void SetCapability(BigInteger index, bool available)
     {
-        if (available)
+        lock (_syncRoot)
         {
-            _capabilities |= index;
-        }
-        else
-        {
-            _capabilities &= ~index;
+            var updated = available ? _capabilities | index : _capabilities & ~index;
+            if (updated != _capabilities)
+            {
+                _capabilities = updated;
+                Volatile.Write(ref _cachedCapabilitiesBytes, null);
+            }
         }
     }
 
     public byte[] GetCapabilities()
     {
-        // capabilitiesArray needs to be big endian
-#if NETCOREAPP
-        // isUnsigned: true avoids the extra 0x00 byte in some values, no need to remove it.
-        // isBigEndian: true returns the bytes in big-endian order, no need to reverse them.
-        return _capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
-#else
-        var bytes = _capabilities.ToByteArray();
-
-        if (bytes.Length > 1 && bytes[bytes.Length - 1] == 0)
+        lock (_syncRoot)
         {
-            // HACK: BigInteger.ToByteArray() adds a 0x00 byte at the end of the array to
-            // distinguish positive numbers where the highest bit it set from negative numbers.
-            // The code below drops this last byte if present.
-            var unsignedBytes = new byte[bytes.Length - 1];
-            Array.Copy(bytes, unsignedBytes, unsignedBytes.Length);
-            bytes = unsignedBytes;
+            return EncodeCapabilities(_capabilities);
         }
-
-        // we need a big-endian array
-        Array.Reverse(bytes);
-        return bytes;
-#endif
     }
 
-    public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
+    public async Task SendRequest(
+        RcmClientTracer rcmTracer,
+        Func<GetRcmRequest, Task<GetRcmResponse?>> callback,
+        Func<bool>? acceptResponse = null,
+        Action<Action>? commitResponse = null)
     {
         await _sendRequestMutex.WaitAsync().ConfigureAwait(false);
 
         try
         {
-            var response = await TrySendRequest(rcmTracer, callback).ConfigureAwait(false);
-            if (response is null)
+#if SHARED_REMOTE_CONFIG
+            if (Interlocked.Exchange(ref _managedSessionRetired, 0) != 0)
+            {
+                _request = CreateManagedRequest();
+                _appliedConfigurations.Clear();
+                _appliedConfigsVersion = 0;
+                _requestAppliedConfigsVersion = -1;
+                _rootVersion = 1;
+                _targetsVersion = 0;
+                _backendClientState = null;
+                _lastPollError = null;
+            }
+#endif
+
+            var response = await TrySendRequest(rcmTracer, callback, acceptResponse, commitResponse).ConfigureAwait(false);
+            if (response is null || acceptResponse?.Invoke() is false)
             {
                 return;
             }
 
-            UpdateRootVersionFromResponseRoots(response.Roots);
-
+            var rootVersion = ReadRootVersion(response.Roots);
             if (response.Targets?.Signed != null)
             {
-                await ProcessResponse(response).ConfigureAwait(false);
+                await ProcessResponse(response, rootVersion, acceptResponse, commitResponse).ConfigureAwait(false);
+            }
+            else if (rootVersion is { } version)
+            {
+                PublishIfCurrent(() => _rootVersion = version, acceptResponse, commitResponse);
             }
         }
         catch (Exception ex)
@@ -227,13 +531,92 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             // this is a processing issue, not a communication issue
             // so we should report the error to the agent next time
             Log.Error(ex, "Error processing RCM request");
-            _lastPollError = ex.Message;
+            PublishIfCurrent(() => _lastPollError = ex.Message, acceptResponse, commitResponse);
         }
         finally
         {
             _sendRequestMutex.Release();
         }
     }
+
+    internal byte[] GetCachedCapabilities()
+    {
+        if (Volatile.Read(ref _cachedCapabilitiesBytes) is { } cached)
+        {
+            return cached;
+        }
+
+        lock (_syncRoot)
+        {
+            if (_cachedCapabilitiesBytes is { } published)
+            {
+                return published;
+            }
+
+            var encoded = EncodeCapabilities(_capabilities);
+            Volatile.Write(ref _cachedCapabilitiesBytes, encoded);
+            return encoded;
+        }
+    }
+
+    private static byte[] EncodeCapabilities(BigInteger capabilities)
+    {
+#if NETCOREAPP
+        return capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
+#else
+        var bytes = capabilities.ToByteArray();
+
+        if (bytes.Length > 1 && bytes[bytes.Length - 1] == 0)
+        {
+            // ToByteArray includes a sign byte. Capabilities use an unsigned encoding.
+            var unsignedBytes = new byte[bytes.Length - 1];
+            Array.Copy(bytes, unsignedBytes, unsignedBytes.Length);
+            bytes = unsignedBytes;
+        }
+
+        Array.Reverse(bytes);
+        return bytes;
+#endif
+    }
+
+    private static long? ReadRootVersion(List<string>? roots)
+    {
+        if (roots is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        // The response contains a list of Root objects with different versions
+        // We don't currently do anything with these root objects, hence why we just leave
+        // these un-deserialized initially. However, we need to send back the _last_
+        // version from the final root object in the array, so we deserialize that one only,
+        // and extract the version
+
+        var lastRoot = roots[roots.Count - 1];
+        using var stream = new Base64DecodingStream(lastRoot);
+        using var streamReader = new StreamReader(stream);
+        using var jsonReader = new JsonTextReader(streamReader)
+        {
+            ArrayPool = JsonArrayPool.Shared,
+        };
+        var tufRoot = new JsonSerializer().Deserialize<MinimalTufRoot>(jsonReader);
+
+        return tufRoot?.Signed?.Version;
+    }
+
+    private static void PublishIfCurrent(Action update, Func<bool>? acceptResponse, Action<Action>? commitResponse)
+    {
+        if (commitResponse is not null)
+        {
+            commitResponse(update);
+        }
+        else if (acceptResponse?.Invoke() is not false)
+        {
+            update();
+        }
+    }
+
+    private static GetRcmRequest CreateManagedRequest() => new(new RcmClient(Guid.NewGuid().ToString(), new RcmClientState()));
 
     private GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
     {
@@ -268,35 +651,31 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
 
         return _request;
-
-        byte[] GetCachedCapabilities()
-        {
-            if (_cachedCapabilitiesBytes is not null && _capabilities == _cachedCapabilities)
-            {
-                return _cachedCapabilitiesBytes;
-            }
-
-            _cachedCapabilities = _capabilities;
-            _cachedCapabilitiesBytes = GetCapabilities();
-            return _cachedCapabilitiesBytes;
-        }
     }
 
-    private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> func)
+    private async Task<GetRcmResponse?> TrySendRequest(
+        RcmClientTracer rcmClientTracer,
+        Func<GetRcmRequest, Task<GetRcmResponse?>> send,
+        Func<bool>? acceptResponse,
+        Action<Action>? commitResponse)
     {
         try
         {
             var request = BuildRequest(rcmClientTracer, _lastPollError);
-            _lastPollError = null;
+            if (acceptResponse?.Invoke() is false)
+            {
+                return null;
+            }
 
-            return await func(request).ConfigureAwait(false);
+            _lastPollError = null;
+            return await send(request).ConfigureAwait(false);
         }
         catch (RemoteConfigurationDeserializationException e)
         {
             Log.Error(e, "Error sending request to RCM endpoint: serialization error");
             // serialization errors should be reported to the agent
             // but we want the _inner_ message
-            _lastPollError = $"{e.Message}: {e.InnerException?.Message}";
+            PublishIfCurrent(() => _lastPollError = $"{e.Message}: {e.InnerException?.Message}", acceptResponse, commitResponse);
             return null;
         }
         catch (Exception e)
@@ -308,7 +687,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    private async Task ProcessResponse(GetRcmResponse response)
+    private async Task ProcessResponse(GetRcmResponse response, long? rootVersion, Func<bool>? acceptResponse, Action<Action>? commitResponse)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -321,16 +700,20 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         var signed = response.Targets?.Signed?.Targets;
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
-        List<string>? receivedPaths = null;
+        HashSet<string>? receivedPaths = null;
+        List<RemoteConfigurationCache>? updates = null;
         if (response.ClientConfigs?.Count > 0)
         {
-            receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
+            receivedPaths = new HashSet<string>(StringComparer.Ordinal);
 
             // handle new configurations
             foreach (var clientConfig in response.ClientConfigs)
             {
                 var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
-                receivedPaths.Add(remoteConfigurationPath.Path);
+                if (!receivedPaths.Add(remoteConfigurationPath.Path))
+                {
+                    continue;
+                }
 
                 if (signed is null || !signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
                 {
@@ -357,8 +740,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 }
 
                 var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
-                _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
-                _appliedConfigsVersion++;
+                (updates ??= []).Add(remoteConfigurationCache);
 
                 var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
                 configByProducts ??= [];
@@ -392,47 +774,72 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             removedConfig.Add(appliedConfiguration.Value.Path);
         }
 
-        // update applied configurations after removal
-        if (removedConfigsByProduct is not null)
+#if SHARED_REMOTE_CONFIG
+        var assignedPaths = receivedPaths ?? EmptyAssignment;
+#else
+        HashSet<string>? assignedPaths = null;
+#endif
+        var results = await ApplyChanges(
+                          configByProducts,
+                          removedConfigsByProduct,
+                          tryBeginDelivery: acceptResponse,
+                          assignedPaths: assignedPaths).ConfigureAwait(false);
+        PublishIfCurrent(Commit, acceptResponse, commitResponse);
+
+        void Commit()
         {
-            foreach (var removedConfig in removedConfigsByProduct.Values)
+            if (rootVersion is { } version)
             {
-                foreach (var value in removedConfig)
+                _rootVersion = version;
+            }
+
+            if (updates is not null)
+            {
+                foreach (var update in updates)
                 {
-                    _appliedConfigurations.Remove(value.Path);
+                    _appliedConfigurations[update.Path.Path] = update;
                     _appliedConfigsVersion++;
                 }
             }
-        }
 
-        var results = await Update(configByProducts, removedConfigsByProduct).ConfigureAwait(false);
-
-        if (results is not null)
-        {
-            foreach (var result in results)
+            if (removedConfigsByProduct is not null)
             {
-                switch (result.ApplyState)
+                foreach (var removedConfig in removedConfigsByProduct.Values)
                 {
-                    case ApplyStates.UNACKNOWLEDGED:
-                        // Do nothing
-                        break;
-                    case ApplyStates.ACKNOWLEDGED:
-                        _appliedConfigurations[result.Filename].Applied();
+                    foreach (var value in removedConfig)
+                    {
+                        _appliedConfigurations.Remove(value.Path);
                         _appliedConfigsVersion++;
-                        break;
-                    case ApplyStates.ERROR:
-                        _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
-                        _appliedConfigsVersion++;
-                        break;
-                    default:
-                        Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                        break;
+                    }
                 }
             }
-        }
 
-        _targetsVersion = response.Targets?.Signed?.Version ?? 0;
-        _backendClientState = response.Targets?.Signed?.Custom?.OpaqueBackendState;
+            if (results is not null)
+            {
+                foreach (var result in results)
+                {
+                    switch (result.ApplyState)
+                    {
+                        case ApplyStates.UNACKNOWLEDGED:
+                            break;
+                        case ApplyStates.ACKNOWLEDGED:
+                            _appliedConfigurations[result.Filename].Applied();
+                            _appliedConfigsVersion++;
+                            break;
+                        case ApplyStates.ERROR:
+                            _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                            _appliedConfigsVersion++;
+                            break;
+                        default:
+                            Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                            break;
+                    }
+                }
+            }
+
+            _targetsVersion = response.Targets?.Signed?.Version ?? 0;
+            _backendClientState = response.Targets?.Signed?.Custom?.OpaqueBackendState;
+        }
 
         static bool IsConfigAlreadyApplied(RemoteConfigurationCache appliedConfig, Target signedTarget)
         {
@@ -452,34 +859,6 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
 
             return true;
-        }
-    }
-
-    private void UpdateRootVersionFromResponseRoots(List<string>? roots)
-    {
-        if (roots is not { Count: > 0 })
-        {
-            return;
-        }
-
-        // The response contains a list of Root objects with different versions
-        // We don't currently do anything with these root objects, hence why we just leave
-        // these un-deserialized initially. However, we need to send back the _last_
-        // version from the final root object in the array, so we deserialize that one only,
-        // and extract the version
-
-        var lastRoot = roots[roots.Count - 1];
-        using var stream = new Base64DecodingStream(lastRoot);
-        using var streamReader = new StreamReader(stream);
-        using var jsonReader = new JsonTextReader(streamReader)
-        {
-            ArrayPool = JsonArrayPool.Shared,
-        };
-        var tufRoot = new JsonSerializer().Deserialize<MinimalTufRoot>(jsonReader);
-
-        if (tufRoot?.Signed is not null)
-        {
-            _rootVersion = tufRoot.Signed.Version;
         }
     }
 

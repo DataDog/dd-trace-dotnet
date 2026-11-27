@@ -186,7 +186,8 @@ namespace Datadog.Trace.FeatureFlags
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
             IDiscoveryService? discoveryService = null,
             IDatadogLogger? logger = null,
-            FlagSelectionDiagnostics? flagSelectionDiagnostics = null)
+            FlagSelectionDiagnostics? flagSelectionDiagnostics = null,
+            bool deferRemoteConfigSubscription = false)
         {
             if (!settings.FeatureFlags.Enabled)
             {
@@ -209,7 +210,7 @@ namespace Datadog.Trace.FeatureFlags
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
-            if (settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            if (!deferRemoteConfigSubscription && settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
             {
                 module.SubscribeToRemoteConfiguration();
             }
@@ -224,7 +225,6 @@ namespace Datadog.Trace.FeatureFlags
 
         internal Task DisposeAsync()
         {
-            ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
             FlagEvaluationWriter? writer;
@@ -240,9 +240,16 @@ namespace Datadog.Trace.FeatureFlags
                     return _disposeCompletion.Task;
                 }
 
+                // A concurrent tracer retirement can return as soon as disposal has started.
+                // Detach from Remote Config before it can start the successor's poller.
+                if (_rcmSubscription is { } subscription)
+                {
+                    _rcmSubscriptionManager.Unsubscribe(subscription);
+                    _rcmSubscription = null;
+                }
+
                 _disposed = true;
 
-                subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
                 lock (_evaluationLock)
@@ -258,7 +265,6 @@ namespace Datadog.Trace.FeatureFlags
                 discoveryCallback = _evaluationDiscoveryCallback;
                 evpTransport = _evpTransport;
 
-                _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
                 _evaluationSettingsSubscription = null;
@@ -272,7 +278,7 @@ namespace Datadog.Trace.FeatureFlags
 
             // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
             var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
-            _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
+            _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, agentlessSource, exposureApi, evpTransport);
             return _disposeCompletion.Task;
         }
 
@@ -852,7 +858,6 @@ namespace Datadog.Trace.FeatureFlags
             FeatureFlagsEvpTransport? evaluationTransport,
             IDisposable? settingsSubscription,
             Action<AgentConfiguration>? discoveryCallback,
-            ISubscription? subscription,
             IFeatureFlagsDeliverySource? agentlessSource,
             ExposureApi? exposureApi,
             FeatureFlagsEvpTransport? evpTransport)
@@ -863,11 +868,6 @@ namespace Datadog.Trace.FeatureFlags
                 if (discoveryCallback is not null)
                 {
                     _discoveryService.RemoveSubscription(discoveryCallback);
-                }
-
-                if (subscription is not null)
-                {
-                    _rcmSubscriptionManager.Unsubscribe(subscription);
                 }
 
                 agentlessSource?.Dispose();
@@ -1007,11 +1007,11 @@ namespace Datadog.Trace.FeatureFlags
         /// Deferring it made .NET the one tracer that never advertised the capability until the
         /// application resolved a flag.
         /// </summary>
-        private void SubscribeToRemoteConfiguration()
+        internal void SubscribeToRemoteConfiguration()
         {
             lock (_stateLock)
             {
-                if (_disposed)
+                if (_disposed || _rcmSubscription is not null)
                 {
                     return;
                 }

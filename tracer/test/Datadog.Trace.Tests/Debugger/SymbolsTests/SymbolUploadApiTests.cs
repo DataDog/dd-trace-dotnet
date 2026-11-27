@@ -11,6 +11,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -357,7 +358,7 @@ public class SymbolUploadApiTests
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
             => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
 
-        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings, CancellationToken cancellationToken = default)
         {
             ContentType = MimeTypes.Json;
             return Task.FromResult<IApiResponse>(new TestApiResponse(_statusCode, "{}", MimeTypes.Json));

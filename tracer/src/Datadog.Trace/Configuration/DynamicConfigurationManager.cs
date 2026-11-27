@@ -32,18 +32,40 @@ namespace Datadog.Trace.Configuration
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
+#if SHARED_REMOTE_CONFIG
+        private readonly bool _usesSharedClient;
+#endif
         private ISubscription? _subscription;
+        private Dictionary<string, ApmTracingConfig>? _watchedConfigurations;
+        private long _watchTargetGeneration;
 
-        public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
+        public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager, bool usesSharedClient)
         {
             _subscriptionManager = subscriptionManager;
+#if SHARED_REMOTE_CONFIG
+            _usesSharedClient = usesSharedClient;
+#endif
         }
 
-        public void Start()
+        public void Start(TracerManager owner)
         {
-            if (Interlocked.Exchange(ref _subscription, new Subscription(ConfigurationUpdated, ProductName)) == null)
+            ApplyDetails[] ApplyChanges(
+                Dictionary<string, List<RemoteConfiguration>> upserts,
+                Dictionary<string, List<RemoteConfigurationPath>>? removals) => ConfigurationUpdated(owner, upserts, removals);
+
+#if SHARED_REMOTE_CONFIG
+            var subscription = new Subscription(ApplyChanges, ProductName)
             {
-                _subscriptionManager.SubscribeToChanges(_subscription!);
+                InstallSnapshot = _subscriptionManager is RcmSubscriptionManager && _usesSharedClient
+                                      ? (files, rejections, generation, canInstall) => ApplyMergedConfiguration(owner, files, rejections, generation, canInstall)
+                                      : null,
+            };
+#else
+            var subscription = new Subscription(ApplyChanges, ProductName);
+#endif
+            if (Interlocked.CompareExchange(ref _subscription, subscription, null) == null)
+            {
+                _subscriptionManager.SubscribeToChanges(subscription);
 
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);                          // 15
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);                      // 14
@@ -72,9 +94,17 @@ namespace Datadog.Trace.Configuration
             OnConfigurationChanged(dynamicConfig, tracerSettings);
         }
 
-        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
+        private static bool OnConfigurationChanged(
+            IConfigurationSource dynamicConfig,
+            TracerSettings tracerSettings,
+            TracerManager? owner = null,
+            Func<bool>? canInstall = null)
         {
-            var wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config);
+            if (!tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config, canInstall, out var wasUpdated))
+            {
+                return false;
+            }
+
             if (wasUpdated)
             {
                 Log.Information("Setting updates made via dynamic configuration were applied");
@@ -90,33 +120,46 @@ namespace Datadog.Trace.Configuration
                 CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
             };
 
-            // DebuggerManager construction is cheap; so we don't try to defer creation here.
-            var manager = DebuggerManager.Instance;
-            var oldDebuggerSettings = manager.DebuggerSettings;
-
-            if (!ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, dynamicDebuggerSettings, manager.ExceptionReplaySettings.Enabled, manager.HasActiveDynamicDebuggerProduct))
+            if (owner is null)
             {
-                return;
+                UpdateDebugger();
+            }
+            else
+            {
+                owner.TryRunWhileCurrent(UpdateDebugger);
             }
 
-            Log.Information("Applying new dynamic debugger configuration");
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            return true;
+
+            void UpdateDebugger()
             {
-                Log.Debug(
-                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
-                    dynamicDebuggerSettings.DynamicInstrumentationEnabled,
-                    dynamicDebuggerSettings.ExceptionReplayEnabled,
-                    dynamicDebuggerSettings.CodeOriginEnabled);
+                var manager = DebuggerManager.Instance;
+                var oldDebuggerSettings = manager.DebuggerSettings;
+
+                var needsActivation = owner is not null && manager.NeedsDynamicInstrumentationActivation(owner, oldDebuggerSettings, dynamicDebuggerSettings.DynamicInstrumentationEnabled);
+                if (!needsActivation && !ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, dynamicDebuggerSettings, manager.ExceptionReplaySettings.Enabled, manager.HasActiveDynamicDebuggerProduct))
+                {
+                    return;
+                }
+
+                Log.Information("Applying new dynamic debugger configuration");
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
+                        dynamicDebuggerSettings.DynamicInstrumentationEnabled,
+                        dynamicDebuggerSettings.ExceptionReplayEnabled,
+                        dynamicDebuggerSettings.CodeOriginEnabled);
+                }
+
+                var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
+                _ = manager.UpdateConfiguration(tracerSettings, newDebuggerSettings, owner)
+                           .ContinueWith(
+                                static t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
+                                CancellationToken.None,
+                                TaskContinuationOptions.OnlyOnFaulted,
+                                TaskScheduler.Default);
             }
-
-            var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
-
-            _ = manager.UpdateConfiguration(tracerSettings, newDebuggerSettings)
-                   .ContinueWith(
-                        static t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
-                        CancellationToken.None,
-                        TaskContinuationOptions.OnlyOnFaulted,
-                        TaskScheduler.Default);
         }
 
         // Decides whether a new dynamic debugger configuration should actually be applied.
@@ -215,6 +258,7 @@ namespace Datadog.Trace.Configuration
         }
 
         private ApplyDetails[] ConfigurationUpdated(
+            TracerManager owner,
             Dictionary<string, List<RemoteConfiguration>> configByProduct,
             Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
@@ -227,10 +271,7 @@ namespace Datadog.Trace.Configuration
                     // the RcmSubscriptionManager so that's fine
                     var valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
 
-                    // Phase 3: Apply merged configuration
-                    ApplyMergedConfiguration(valuesToApply);
-
-                    return [..applyDetailsResult];
+                    return ApplyMergedConfiguration(owner, valuesToApply) ? [..applyDetailsResult] : [];
                 }
                 catch (Exception ex)
                 {
@@ -240,20 +281,47 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        private void ApplyMergedConfiguration(List<RemoteConfiguration> remoteConfigurations)
+        private bool ApplyMergedConfiguration(
+            TracerManager owner,
+            List<RemoteConfiguration> remoteConfigurations,
+            Dictionary<string, string>? rejections = null,
+            long targetGeneration = 0,
+            Func<bool>? canInstall = null)
         {
-            // Get current service/environment for filtering
-            var tracer = Tracer.Instance;
-            var currentSettings = tracer.CurrentTraceSettings.Settings;
+            var currentSettings = owner.PerTraceSettings.Settings;
+            var accepted = rejections is not null ? new Dictionary<string, ApmTracingConfig>(remoteConfigurations.Count, StringComparer.Ordinal) : null;
+            var lastGood = accepted is not null && _watchTargetGeneration == targetGeneration ? _watchedConfigurations : null;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 remoteConfigurations,
                 serviceName: currentSettings.ServiceName,
-                environment: currentSettings.Environment);
+                environment: currentSettings.Environment,
+                rejections: rejections,
+                lastGood: lastGood,
+                accepted: accepted);
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
 
-            OnConfigurationChanged(configurationSource, tracer.Settings);
+            var committed = false;
+            // Match tracer replacement's lock order: owner first, settings second.
+            owner.TryRunWhileCurrent(() => committed = Commit());
+            return committed;
+
+            bool Commit()
+            {
+                if (!OnConfigurationChanged(configurationSource, owner.Settings, owner, canInstall))
+                {
+                    return false;
+                }
+
+                if (accepted is not null)
+                {
+                    _watchTargetGeneration = targetGeneration;
+                    _watchedConfigurations = accepted;
+                }
+
+                return true;
+            }
         }
     }
 }

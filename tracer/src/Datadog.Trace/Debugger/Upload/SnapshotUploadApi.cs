@@ -17,6 +17,11 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SnapshotUploadApi>();
 
+        internal SnapshotUploadApi(DebuggerAgentTransport transport, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(transport, static configuration => configuration.DebuggerUploadEndpoint, gitMetadataTagsProvider)
+        {
+        }
+
         private SnapshotUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService? discoveryService,
@@ -53,19 +58,18 @@ namespace Datadog.Trace.Debugger.Upload
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
-            var uri = BuildUri();
-            if (StringUtil.IsNullOrEmpty(uri))
+            if (BuildTarget() is not { } target)
             {
                 Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            Log.Debug("SnapshotUploadApi: Sending snapshots to {Uri}", uri);
-            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
+            Log.Debug("Sending debugger snapshots");
+            using var response = await PostAsync(target, data).ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {
-                Log.Debug<string?, int>("Successfully sent snapshots to {Uri}: {StatusCode}", uri, response.StatusCode);
+                Log.Debug<int>("Sent debugger snapshots with status code {StatusCode}", response.StatusCode);
                 return true;
             }
 

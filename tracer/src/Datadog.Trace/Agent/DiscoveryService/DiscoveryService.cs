@@ -25,7 +25,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
 #pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
-    internal sealed class DiscoveryService : IDiscoveryService
+    internal sealed class DiscoveryService : IDiscoveryService, IDiscoverySnapshot
 #pragma warning restore MA0049
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";
@@ -125,6 +125,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTracerFlareEndpoint,
             };
 
+        public AgentConfiguration? CurrentConfiguration => Volatile.Read(ref _configuration);
+
         [TestingOnly]
         internal string? ConfigStateHash => Volatile.Read(ref _configurationHash);
 
@@ -173,6 +175,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 recheckIntervalMs,
                 exporterSettings: exporterSettings);
 
+        public bool TryRunWithCurrentConfiguration(AgentConfiguration configuration, Func<bool> apply)
+        {
+            lock (_lock)
+            {
+                return ReferenceEquals(configuration, _configuration) && apply();
+            }
+        }
+
         [TestingAndPrivateOnly]
         internal void UpdateRequestFactory(IApiRequestFactory factory, ExporterSettings exporterSettings)
         {
@@ -181,7 +191,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 _apiRequestFactory = new(factory, exporterSettings);
                 // A different Agent must be polled even if it returns the same body/hash. Never
                 // replay the previous Agent's cached capabilities to a new subscriber.
-                _configuration = null;
+                Volatile.Write(ref _configuration, null);
                 _configurationHash = null;
             }
         }
@@ -197,7 +207,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 }
             }
 
-            if (Volatile.Read(ref _configuration) is { } currentConfig)
+            if (CurrentConfiguration is { } currentConfig)
             {
                 try
                 {
@@ -257,7 +267,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 // Setting the configuration immediately after grabbing
                 // the subscribers ensures subscribers receive the
                 // notification exactly once
-                _configuration = newConfig;
+                Volatile.Write(ref _configuration, newConfig);
             }
 
             foreach (var subscriber in subscribers)

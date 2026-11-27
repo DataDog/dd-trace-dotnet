@@ -9,6 +9,6 @@ namespace Datadog.Trace.Configuration
 {
     internal interface IDynamicConfigurationManager : IDisposable
     {
-        void Start();
+        void Start(TracerManager owner);
     }
 }

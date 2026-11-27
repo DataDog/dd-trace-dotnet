@@ -7,12 +7,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
 using Xunit;
 
@@ -136,6 +142,45 @@ public class RcmSubscriptionManagerTests
         captured.Client.Products.Should()
                 .BeEquivalentTo(
                      new[] { RcmProducts.AsmFeatures, RcmProducts.AsmDd, RcmProducts.LiveDebugging });
+    }
+
+    [Fact]
+    public async Task SendRequest_DeclinedResponse_DoesNotChangeClientState()
+    {
+        var manager = new RcmSubscriptionManager();
+        var delivered = false;
+        manager.SubscribeToChanges(new Subscription(
+            (_, _) =>
+            {
+                delivered = true;
+                return [];
+            },
+            RcmProducts.AsmFeatures));
+
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "late", """{"asm":{"enabled":true}}""");
+        var response = CreateSingleProductResponse([entry]);
+        var accept = true;
+        await manager.SendRequest(
+            CreateTracer(),
+            _ =>
+            {
+                accept = false;
+                return Task.FromResult(response);
+            },
+            () => accept);
+
+        GetRcmRequest captured = null;
+        await manager.SendRequest(CreateTracer(), request =>
+        {
+            captured = request;
+            return Task.FromResult<GetRcmResponse>(null);
+        });
+
+        delivered.Should().BeFalse();
+        captured.CachedTargetFiles.Should().BeEmpty();
+        captured.Client.State.ConfigStates.Should().BeEmpty();
+        captured.Client.State.TargetsVersion.Should().Be(0);
+        captured.Client.State.BackendClientState.Should().BeNull();
     }
 
     [Fact]
@@ -882,6 +927,88 @@ public class RcmSubscriptionManagerTests
                 return Task.FromResult<GetRcmResponse>(null);
             });
             return captured;
+        }
+    }
+
+    [Fact]
+    public async Task SendRequest_SkippedTransport_ReportsPendingDiagnosticOnNextSend()
+    {
+        var manager = new RcmSubscriptionManager();
+        var tracer = CreateTracer();
+        const string Diagnostic = "fixture response could not be read";
+        await manager.SendRequest(
+            tracer,
+            _ => Task.FromException<GetRcmResponse>(new RemoteConfigurationDeserializationException(new FormatException(Diagnostic))));
+
+        var sentErrors = new List<string>();
+        await manager.SendRequest(tracer, Send, acceptResponse: static () => false);
+        await manager.SendRequest(tracer, Send);
+        await manager.SendRequest(tracer, Send);
+
+        sentErrors.Should().Equal($"Error deserializing RCM request: {Diagnostic}", null);
+
+        Task<GetRcmResponse> Send(GetRcmRequest request)
+        {
+            sentErrors.Add(request.Client.State.Error);
+            return Task.FromResult<GetRcmResponse>(null);
+        }
+    }
+
+    [Theory]
+    [InlineData(true, ApplyStates.ACKNOWLEDGED)]
+    [InlineData(false, ApplyStates.ERROR)]
+    public async Task SendRequest_SharedFlareClaim_ReportsTheUploadOutcomeOnTheNextPoll(bool succeeded, ulong expectedState)
+    {
+        var logDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+        try
+        {
+            var id = Guid.NewGuid().ToString();
+            var product = RcmProducts.TracerFlareRequested;
+            var entry = MakeConfig(
+                product,
+                id,
+                """{"task_type":"tracer_flare","args":{"case_id":"mock-case","hostname":"fixture.invalid","user_handle":"fixture@example.invalid"}}""");
+            var response = CreateSingleProductResponse([entry]);
+            var manager = new RcmSubscriptionManager();
+            var requests = new TestRequestFactory();
+            var flare = new TracerFlareManager(new DiscoveryServiceMock(), manager, NullTelemetryController.Instance, new TracerFlareApi(requests));
+            var deliveries = 0;
+            manager.SubscribeToChanges(
+                new Subscription(
+                    async (configs, _) =>
+                    {
+                        deliveries++;
+                        var config = configs[product].Single();
+                        return [await flare.TrySendDebugLogs(config.Path.Path, config.Contents, config.Path.Id, logDirectory)];
+                    },
+                    product));
+
+            var tracer = CreateTracer();
+            Task delivery;
+            using (var claim = DebugLogReader.TryToCreateSentinelFile(logDirectory, id))
+            {
+                claim.Should().NotBeNull();
+                delivery = manager.SendRequest(tracer, _ => Task.FromResult(response));
+                DebugLogReader.RecordSentinelResult(claim, succeeded);
+            }
+
+            await delivery;
+            ulong? applyState = null;
+            await manager.SendRequest(
+                tracer,
+                request =>
+                {
+                    applyState = request.Client.State.ConfigStates.Should().ContainSingle().Which.ApplyState;
+                    return Task.FromResult(response);
+                });
+
+            applyState.Should().Be(expectedState);
+            deliveries.Should().Be(1);
+            requests.RequestsSent.Should().BeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(logDirectory, recursive: true);
         }
     }
 

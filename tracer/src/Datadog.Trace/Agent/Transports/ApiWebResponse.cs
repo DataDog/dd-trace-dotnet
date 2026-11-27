@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.Transports
@@ -16,10 +17,12 @@ namespace Datadog.Trace.Agent.Transports
     internal sealed class ApiWebResponse : IApiResponse, IDisposable
     {
         private readonly HttpWebResponse _response;
+        private readonly CancellationTokenRegistration _requestCancellation;
 
-        public ApiWebResponse(HttpWebResponse response)
+        public ApiWebResponse(HttpWebResponse response, CancellationTokenRegistration requestCancellation = default)
         {
             _response = response;
+            _requestCancellation = requestCancellation;
         }
 
         public int StatusCode => (int)_response.StatusCode;
@@ -43,6 +46,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public void Dispose()
         {
+            _requestCancellation.Dispose();
             _response?.Dispose();
         }
     }

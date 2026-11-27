@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
@@ -52,7 +53,15 @@ namespace Datadog.Trace.Agent.Transports
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, null);
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+            => PostAsync(bytes, contentType, contentEncoding, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+
+#if SHARED_REMOTE_CONFIG
+        internal Task<IApiResponse> PostStreamingAsync(ArraySegment<byte> bytes, string contentType, CancellationToken cancellationToken)
+            => PostAsync(bytes, contentType, null, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+#endif
+
+        private async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding, HttpCompletionOption completionOption, CancellationToken cancellationToken)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
@@ -65,7 +74,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 _postRequest.Content = content;
 
-                var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+                var response = await _client.SendAsync(_postRequest, completionOption, cancellationToken).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
             }
@@ -74,7 +83,7 @@ namespace Datadog.Trace.Agent.Transports
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
             => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
 
-        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings, CancellationToken cancellationToken = default)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -91,7 +100,7 @@ namespace Datadog.Trace.Agent.Transports
 
             _postRequest.Content = content;
 
-            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+            var response = await _client.SendAsync(_postRequest, cancellationToken).ConfigureAwait(false);
             return new HttpClientResponse(response);
         }
 

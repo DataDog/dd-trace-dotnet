@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
@@ -23,26 +24,22 @@ internal static class DebugLogReader
 {
     public const long MaximumCompressedSizeBytes = 29_000_000; // 31457280 would be 30MiB, we go to 29MB to be safe
     private const string SentinelFilePrefix = "dotnet-tracer-sentinel-";
+    private const byte Succeeded = 1;
+    private const byte Failed = 2;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebugLogReader));
 
-    public static bool TryToCreateSentinelFile(string logDirectory, string flareRequestId)
+    public static FileStream? TryToCreateSentinelFile(string logDirectory, string flareRequestId)
     {
-        // Assuming the log directory is accessible and writeable
-        // If it isn't this will return false anyway, but we do an extra check, just to be sure
         try
         {
             // Using the dotnet-tracer-sentinel-*.log pattern means it gets automatically cleaned up by the log cleaning task
-            var filePath = Path.Combine(logDirectory, $"{SentinelFilePrefix}{flareRequestId}.log");
-            using var file = File.Open(filePath, FileMode.CreateNew, FileAccess.Write);
-
-            // if we got this far, the file was created
-            return true;
+            return File.Open(GetSentinelPath(logDirectory, flareRequestId), FileMode.CreateNew, FileAccess.Write, FileShare.Read);
         }
         catch (IOException)
         {
             // expected, the file already exists
             Log.Information("Sentinel file for config {FlareRequestID} found in {LogDirectory}", flareRequestId, logDirectory);
-            return false;
+            return null;
         }
         catch (Exception ex)
         {
@@ -57,7 +54,46 @@ internal static class DebugLogReader
                 Log.Warning(ex, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}: Directory does not exist", flareRequestId, logDirectory);
             }
 
-            return false;
+            return null;
+        }
+    }
+
+    public static void RecordSentinelResult(FileStream sentinel, bool succeeded)
+        => sentinel.WriteByte(succeeded ? Succeeded : Failed);
+
+    public static async Task<bool?> WaitForSentinelResult(string logDirectory, string flareRequestId, TimeSpan timeout)
+    {
+        var path = GetSentinelPath(logDirectory, flareRequestId);
+        Stopwatch? waiting = null;
+        while (true)
+        {
+            try
+            {
+                using var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var result = file.ReadByte();
+                if (result != -1)
+                {
+                    return result switch
+                    {
+                        Succeeded => true,
+                        Failed => false,
+                        _ => null,
+                    };
+                }
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                return null;
+            }
+
+            // An empty marker can also be left by an earlier tracer or an interrupted upload.
+            waiting ??= Stopwatch.StartNew();
+            if (waiting.Elapsed >= timeout)
+            {
+                return null;
+            }
+
+            await Task.Delay(250).ConfigureAwait(false);
         }
     }
 
@@ -194,6 +230,9 @@ internal static class DebugLogReader
         var estimatedFileSize = fileDetails.Length / 10;
         return remainingCapacity >= estimatedFileSize;
     }
+
+    private static string GetSentinelPath(string logDirectory, string flareRequestId)
+        => Path.Combine(logDirectory, $"{SentinelFilePrefix}{flareRequestId}.log");
 
     public sealed class WriteCountingStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
     {

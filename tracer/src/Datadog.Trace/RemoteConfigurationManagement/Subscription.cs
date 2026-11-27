@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
+    internal delegate bool SnapshotInstaller(List<RemoteConfiguration> files, Dictionary<string, string> rejections, long targetGeneration, Func<bool> canInstall);
+
     internal sealed class Subscription : ISubscription
     {
         private readonly HashSet<string> _productKeys;
@@ -30,5 +32,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public IReadOnlyCollection<string> ProductKeys => _productKeys;
 
         public Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, Task<ApplyDetails[]>> Invoke { get; }
+
+        internal SnapshotInstaller? InstallSnapshot { get; init; }
+
+        // Retained configuration may need a withdrawal after poll interest changes.
+        internal IReadOnlyCollection<string>? RemovalProductKeys { get; init; }
+
+#if SHARED_REMOTE_CONFIG
+        internal object? DeliveryOwner { get; init; }
+#endif
+
+        internal bool HasSameProducts(string[] productKeys) => _productKeys.SetEquals(productKeys);
     }
 }

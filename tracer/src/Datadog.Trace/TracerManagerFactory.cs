@@ -174,7 +174,12 @@ namespace Datadog.Trace
                     TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
                 }
 
-                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+#if SHARED_REMOTE_CONFIG
+                var usesSharedClient = remoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: true };
+#else
+                const bool usesSharedClient = false;
+#endif
+                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance, usesSharedClient);
                 tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.CreateManaged(settings.Manager));
                 spanEventsManager ??= new SpanEventsManager(discoveryService);
             }
@@ -191,7 +196,13 @@ namespace Datadog.Trace
                 }
             }
 
-            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance, discoveryService: discoveryService);
+#if SHARED_REMOTE_CONFIG
+            const bool deferRemoteConfigSubscription = true;
+#else
+            const bool deferRemoteConfigSubscription = false;
+#endif
+            featureFlags = FeatureFlagsModule.Create(
+                settings, RcmSubscriptionManager.Instance, discoveryService: discoveryService, deferRemoteConfigSubscription: deferRemoteConfigSubscription);
 
             return CreateTracerManagerFrom(
                 settings,

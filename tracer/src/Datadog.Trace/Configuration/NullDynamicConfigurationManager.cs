@@ -13,7 +13,7 @@ internal sealed class NullDynamicConfigurationManager : IDynamicConfigurationMan
     {
     }
 
-    public void Start()
+    public void Start(TracerManager owner)
     {
     }
 }

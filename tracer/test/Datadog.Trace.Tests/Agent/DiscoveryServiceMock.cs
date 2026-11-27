@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Tests.Agent;
 
@@ -30,7 +31,8 @@ internal class DiscoveryServiceMock : IDiscoveryService
         bool clientDropP0 = true,
         bool spanMetaStructs = true,
         bool spanEvents = true,
-        bool eventPlatformProxySupportsEvpOriginHeaders = true)
+        bool eventPlatformProxySupportsEvpOriginHeaders = true,
+        ExporterSettings discoverySettings = null)
         => TriggerChange(
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
@@ -48,7 +50,8 @@ internal class DiscoveryServiceMock : IDiscoveryService
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents,
-                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders));
+                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders,
+                discoverySettings: discoverySettings));
 
     public void TriggerChange(AgentConfiguration config)
     {

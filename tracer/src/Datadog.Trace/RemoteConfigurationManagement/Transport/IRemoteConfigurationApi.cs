@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
@@ -12,6 +13,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
     internal interface IRemoteConfigurationApi
     {
-        Task<GetRcmResponse?> GetConfigs(GetRcmRequest request);
+        Task<GetRcmResponse?> GetConfigs(GetRcmRequest request, string endpoint, CancellationToken cancellationToken = default);
     }
 }

@@ -44,54 +44,88 @@ internal static class AgentTransportStrategy
     {
         var strategy = settings.TracesTransport;
 
-        switch (strategy)
+        if (strategy == TracesTransportType.WindowsNamedPipe)
+        {
+            var pipe = CreatePipeStreamFactory(settings, productName);
+            var pipeEndpoint = getBaseEndpoint?.Invoke(Localhost) ?? Localhost;
+            return new HttpStreamRequestFactory(
+                pipe,
+                new DatadogHttpClient(httpHeaderHelper),
+                pipeEndpoint,
+                requestTimeout);
+        }
+
+#if !NET5_0_OR_GREATER
+        if (strategy == TracesTransportType.UnixDomainSocket)
+        {
+#if NETCOREAPP3_1_OR_GREATER
+            Log.Information<string, string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
+            return new HttpStreamRequestFactory(
+                new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
+                new DatadogHttpClient(httpHeaderHelper),
+                getBaseEndpoint?.Invoke(Localhost) ?? Localhost,
+                requestTimeout);
+#else
+            Log.Error("Using Unix Domain Sockets for {ProductName} transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.", productName);
+#endif
+        }
+#endif
+
+#if NETCOREAPP
+        return GetHttpClient(settings, productName, tcpTimeout, httpHeaderHelper, getBaseEndpoint, allowAutoRedirect, requestTimeout);
+#else
+        Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
+        return new ApiWebRequestFactory(
+            getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
+            httpHeaderHelper.DefaultHeaders,
+            timeout: requestTimeout ?? tcpTimeout,
+            allowAutoRedirect: allowAutoRedirect);
+#endif
+    }
+
+#if NETCOREAPP
+    internal static HttpClientRequestFactory GetHttpClient(
+        ExporterSettings settings,
+        string productName,
+        TimeSpan? tcpTimeout,
+        HttpHeaderHelperBase httpHeaderHelper,
+        Func<Uri, Uri>? getBaseEndpoint = null,
+        bool allowAutoRedirect = true,
+        TimeSpan? requestTimeout = null)
+    {
+#if NET5_0_OR_GREATER
+        switch (settings.TracesTransport)
         {
             case TracesTransportType.WindowsNamedPipe:
-                Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesPipeName, settings.TracesPipeTimeoutMs);
-                return new HttpStreamRequestFactory(
-                    new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
-                    new DatadogHttpClient(httpHeaderHelper),
+                return new SocketHandlerRequestFactory(
+                    CreatePipeStreamFactory(settings, productName),
+                    httpHeaderHelper.DefaultHeaders,
                     getBaseEndpoint?.Invoke(Localhost) ?? Localhost,
-                    requestTimeout);
+                    timeout: requestTimeout ?? tcpTimeout,
+                    allowAutoRedirect: false);
 
             case TracesTransportType.UnixDomainSocket:
-#if NET5_0_OR_GREATER
                 Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, settings.TracesUnixDomainSocketPath);
-                // use http://localhost as base endpoint
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     httpHeaderHelper.DefaultHeaders,
                     getBaseEndpoint?.Invoke(Localhost) ?? Localhost,
                     timeout: requestTimeout,
                     allowAutoRedirect: allowAutoRedirect);
-#elif NETCOREAPP3_1_OR_GREATER
-                Log.Information<string, string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
-                return new HttpStreamRequestFactory(
-                    new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
-                    new DatadogHttpClient(httpHeaderHelper),
-                    getBaseEndpoint?.Invoke(Localhost) ?? Localhost,
-                    requestTimeout);
-#else
-                Log.Error("Using Unix Domain Sockets for {ProductName} transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.", productName);
-                goto case TracesTransportType.Default;
-#endif
-            case TracesTransportType.Default:
-            default:
-#if NETCOREAPP
-                Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
-                return new HttpClientRequestFactory(
-                    getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
-                    httpHeaderHelper.DefaultHeaders,
-                    timeout: requestTimeout ?? tcpTimeout,
-                    allowAutoRedirect: allowAutoRedirect);
-#else
-                Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
-                return new ApiWebRequestFactory(
-                    getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
-                    httpHeaderHelper.DefaultHeaders,
-                    timeout: requestTimeout ?? tcpTimeout,
-                    allowAutoRedirect: allowAutoRedirect);
-#endif
         }
+#endif
+        Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
+        return new HttpClientRequestFactory(
+            getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
+            httpHeaderHelper.DefaultHeaders,
+            timeout: requestTimeout ?? tcpTimeout,
+            allowAutoRedirect: allowAutoRedirect);
+    }
+#endif
+
+    private static NamedPipeClientStreamFactory CreatePipeStreamFactory(ExporterSettings settings, string productName)
+    {
+        Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesPipeName, settings.TracesPipeTimeoutMs);
+        return new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs);
     }
 }

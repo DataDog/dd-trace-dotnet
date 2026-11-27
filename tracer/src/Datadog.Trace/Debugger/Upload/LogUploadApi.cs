@@ -7,7 +7,6 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -17,37 +16,20 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LogUploadApi>();
 
-        private LogUploadApi(
-            IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-            : base(apiRequestFactory, gitMetadataTagsProvider)
+        internal LogUploadApi(DebuggerAgentTransport transport, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(transport, static configuration => configuration.DebuggerUploadEndpoint, gitMetadataTagsProvider)
         {
-            discoveryService.SubscribeToChanges(c =>
-            {
-                Endpoint = c.DebuggerUploadEndpoint;
-                Log.Debug("LogUploadApi: Updated endpoint to {Endpoint}", Endpoint);
-            });
-        }
-
-        public static LogUploadApi Create(
-            IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-        {
-            return new LogUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
-            var uri = BuildUri();
-            if (string.IsNullOrEmpty(uri))
+            if (BuildTarget() is not { } target)
             {
                 Log.Warning("Failed to upload log: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
+            using var response = await PostAsync(target, data).ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {

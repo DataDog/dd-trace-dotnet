@@ -6,7 +6,9 @@
 
 using System;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
+#if SHARED_REMOTE_CONFIG
+using Datadog.Trace.Agent.Transports;
+#endif
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 
@@ -14,15 +16,30 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
     internal static class RemoteConfigurationApiFactory
     {
-        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings, IDiscoveryService discoveryService)
+        private const string ProductName = "rcm";
+        private static readonly TimeSpan AgentTimeout = TimeSpan.FromSeconds(15);
+
+        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings)
         {
             var apiRequestFactory = AgentTransportStrategy.Get(
                 exporterSettings,
-                productName: "rcm",
-                tcpTimeout: TimeSpan.FromSeconds(15),
+                productName: ProductName,
+                tcpTimeout: AgentTimeout,
                 httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
 
-            return RemoteConfigurationApi.Create(apiRequestFactory, discoveryService);
+            return new RemoteConfigurationApi<IApiRequest>(apiRequestFactory);
         }
+
+#if SHARED_REMOTE_CONFIG
+        internal static RemoteConfigurationApi<HttpClientRequest> CreateStreaming(ExporterSettings exporterSettings)
+        {
+            var factory = AgentTransportStrategy.GetHttpClient(
+                exporterSettings,
+                productName: ProductName,
+                tcpTimeout: AgentTimeout,
+                httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
+            return new RemoteConfigurationApi<HttpClientRequest>(factory);
+        }
+#endif
     }
 }

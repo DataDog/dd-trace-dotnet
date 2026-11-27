@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent.Transports
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
             => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
 
-        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings, CancellationToken cancellationToken = default)
         {
             var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -68,7 +68,8 @@ namespace Datadog.Trace.Agent.Transports
                 contentType: MimeTypes.Json,
                 contentEncoding,
                 state: new JsonState<T>(payload, settings, compression),
-                writeBody: static (reqStream, state) => SerializationHelpers.WriteAsJson(reqStream, state.Payload, state.Settings, state.Compression));
+                writeBody: static (reqStream, state) => SerializationHelpers.WriteAsJson(reqStream, state.Payload, state.Settings, state.Compression),
+                cancellationToken);
         }
 
         public Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string? contentEncoding, string multipartBoundary)
@@ -186,14 +187,23 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        private Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task> writeBody)
-            => SendAsync(method, contentType, contentEncoding, state, writeBody, new CancellationTokenSource(_request.Timeout));
+        private Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task> writeBody, CancellationToken cancellationToken = default)
+        {
+            if (!cancellationToken.CanBeCanceled)
+            {
+                return SendAsync(method, contentType, contentEncoding, state, writeBody, new CancellationTokenSource(_request.Timeout));
+            }
+
+            var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None);
+            deadline.CancelAfter(_request.Timeout);
+            return SendAsync(method, contentType, contentEncoding, state, writeBody, deadline, cancellationToken);
+        }
 
         [TestingOnly]
         internal Task<IApiResponse> SendAsync(string method, string? contentType, string? contentEncoding, Func<Stream, Task>? writeBody, CancellationTokenSource cts)
             => SendAsync(method, contentType, contentEncoding, state: writeBody, writeBody is null ? null : static (stream, writeFunc) => writeFunc!(stream), cts);
 
-        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody, CancellationTokenSource cts)
+        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody, CancellationTokenSource cts, CancellationToken cancellationToken = default)
         {
             CancellationTokenRegistration registration = default;
             try
@@ -213,7 +223,7 @@ namespace Datadog.Trace.Agent.Transports
                 // ResponseHeadersRead to avoid the full buffering into memory as we do today.
                 var deadlineExpired = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
                 using var tcsRegistration = cts.Token.Register(x => ((TaskCompletionSource<object?>)x!).TrySetResult(true), deadlineExpired, useSynchronizationContext: false);
-                registration = cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
+                registration = cts.Token.Register(AbortRequest, _request);
 
                 if (writeBody is not null)
                 {
@@ -266,7 +276,7 @@ namespace Datadog.Trace.Agent.Transports
                     ThrowCancelledException(_request, cts.Token, null);
                 }
 
-                return new ApiWebResponse(httpWebResponse);
+                return new ApiWebResponse(httpWebResponse, cancellationToken.Register(AbortRequest, _request));
             }
             catch (WebException exception)
                 when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
@@ -280,7 +290,7 @@ namespace Datadog.Trace.Agent.Transports
                 }
 
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
+                return new ApiWebResponse((HttpWebResponse)exception.Response, cancellationToken.Register(AbortRequest, _request));
             }
             catch (Exception ex) when (cts.IsCancellationRequested && ex is not OperationCanceledException)
             {
@@ -291,6 +301,18 @@ namespace Datadog.Trace.Agent.Transports
             {
                 registration.Dispose();
                 cts.Dispose();
+            }
+
+            static void AbortRequest(object? state)
+            {
+                try
+                {
+                    ((HttpWebRequest)state!).Abort();
+                }
+                catch (Exception error)
+                {
+                    Log.Debug(error, "Error aborting a canceled Agent request");
+                }
             }
 
             [DoesNotReturn]

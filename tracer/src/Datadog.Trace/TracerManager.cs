@@ -62,6 +62,10 @@ namespace Datadog.Trace
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
         private volatile bool _isClosing;
+#if SHARED_REMOTE_CONFIG
+        private Task _remoteConfigurationPredecessor;
+        private bool _remoteConfigurationStartScheduled;
+#endif
 
         public TracerManager(
             TracerSettings settings,
@@ -206,10 +210,25 @@ namespace Datadog.Trace
         {
             TracerManager oldManager;
             TracerManager newManager;
+            Task remoteConfigurationRetirement = null;
             lock (_globalInstanceLock)
             {
                 oldManager = _instance;
                 newManager = CreateInitializedTracer(settings, factory);
+#if SHARED_REMOTE_CONFIG
+                if (oldManager is not null)
+                {
+                    newManager._remoteConfigurationPredecessor = oldManager._remoteConfigurationPredecessor;
+                    if (oldManager.RemoteConfigurationManager is RemoteConfigurationManager oldConfiguration
+                     && !ReferenceEquals(oldConfiguration, newManager.RemoteConfigurationManager))
+                    {
+                        oldManager._isClosing = true;
+                        oldConfiguration.RequestStop();
+                        remoteConfigurationRetirement = oldManager.RetireRemoteConfiguration(newManager, oldConfiguration);
+                        newManager._remoteConfigurationPredecessor = remoteConfigurationRetirement;
+                    }
+                }
+#endif
                 _instance = newManager;
                 _globalInstanceInitialized = true;
             }
@@ -219,7 +238,7 @@ namespace Datadog.Trace
                 // Clean up the old TracerManager instance
                 oldManager._isClosing = true;
                 // Fire and forget
-                _ = CleanUpOldTracerManager(oldManager, newManager);
+                _ = CleanUpOldTracerManager(oldManager, newManager, remoteConfigurationRetirement);
             }
         }
 
@@ -236,6 +255,20 @@ namespace Datadog.Trace
             }
         }
 
+        internal bool TryRunWhileCurrent(Action update)
+        {
+            lock (_globalInstanceLock)
+            {
+                if (!ReferenceEquals(_instance, this) || _isClosing)
+                {
+                    return false;
+                }
+
+                update();
+                return true;
+            }
+        }
+
         /// <summary>
         /// Start internal processes that require Tracer.Instance is already set
         /// </summary>
@@ -244,10 +277,127 @@ namespace Datadog.Trace
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
-            DynamicConfigurationManager.Start();
+#if SHARED_REMOTE_CONFIG
+            ScheduleRemoteConfigurationStart();
+#else
+            StartRemoteConfiguration();
+#endif
+
+            SpanEventsManager.Start();
+        }
+
+        private void StartRemoteConfiguration()
+        {
+#if SHARED_REMOTE_CONFIG
+            if (Settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            {
+                FeatureFlags?.SubscribeToRemoteConfiguration();
+            }
+#endif
+            DynamicConfigurationManager.Start(this);
             TracerFlareManager.Start();
             RemoteConfigurationManager.Start();
-            SpanEventsManager.Start();
+        }
+
+#if SHARED_REMOTE_CONFIG
+        private void ScheduleRemoteConfigurationStart()
+        {
+            lock (_globalInstanceLock)
+            {
+                if (_isClosing || _remoteConfigurationStartScheduled)
+                {
+                    return;
+                }
+
+                _remoteConfigurationStartScheduled = true;
+                var predecessor = _remoteConfigurationPredecessor;
+                if (predecessor is null || predecessor.IsCompletedSuccessfully)
+                {
+                    StartRemoteConfiguration();
+                    return;
+                }
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await predecessor.ConfigureAwait(false);
+                        lock (_globalInstanceLock)
+                        {
+                            if (!_isClosing)
+                            {
+                                StartRemoteConfiguration();
+                            }
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        Log.Error(error, "Error starting remote configuration after replacing the tracer manager");
+                    }
+                });
+            }
+        }
+
+        private Task RetireRemoteConfiguration(TracerManager successor, RemoteConfigurationManager configuration)
+        {
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    await AwaitRemoteConfigurationAsync(configuration.RetireAsync()).ConfigureAwait(false);
+                }
+                finally
+                {
+                    DisposeRemoteConfigurationSubscriptions(this, successor);
+                    if (Settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig && FeatureFlags != successor.FeatureFlags)
+                    {
+                        FeatureFlags?.Dispose();
+                    }
+                }
+            });
+        }
+
+        private Task AwaitRemoteConfigurationAsync(Task stopped)
+        {
+            // A replacement can arrive while this instance is waiting for its predecessor.
+            return _remoteConfigurationPredecessor is { IsCompletedSuccessfully: false } predecessor
+                       ? Task.WhenAll(predecessor, stopped)
+                       : stopped;
+        }
+
+        private async Task ShutdownRemoteConfigurationAsync(RemoteConfigurationManager configuration)
+        {
+            try
+            {
+                await AwaitRemoteConfigurationAsync(configuration?.StopAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, "Error stopping remote configuration during tracer shutdown");
+            }
+            finally
+            {
+                DisposeRemoteConfigurationSubscriptions(this, null);
+            }
+        }
+
+        private async Task DisposeFeatureFlagsAfterRemoteConfigurationAsync(Task stopped)
+        {
+            try
+            {
+                await stopped.ConfigureAwait(false);
+            }
+            finally
+            {
+                await DisposeFeatureFlagsAsync().ConfigureAwait(false);
+            }
+        }
+#endif
+
+        private Task DisposeFeatureFlagsAsync()
+        {
+            Log.Debug("Disposing FeatureFlagsManager");
+            return FeatureFlags?.DisposeAsync() ?? Task.CompletedTask;
         }
 
         /// <summary>
@@ -258,7 +408,7 @@ namespace Datadog.Trace
         [TestingOnly]
         internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
 
-        private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
+        private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager, Task remoteConfigurationRetirement)
         {
             try
             {
@@ -301,31 +451,36 @@ namespace Datadog.Trace
                     await oldManager.DataStreamsManager.DisposeAsync().ConfigureAwait(false);
                 }
 
-                var configurationManagerReplaced = false;
-                if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
+                var configurationManagerReplaced = oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null;
+                var dynamicConfigurationManagerReplaced = oldManager.DynamicConfigurationManager != newManager.DynamicConfigurationManager && oldManager.DynamicConfigurationManager is not null;
+                var tracerFlareManagerReplaced = oldManager.TracerFlareManager != newManager.TracerFlareManager && oldManager.TracerFlareManager is not null;
+                if (remoteConfigurationRetirement is not null)
                 {
-                    configurationManagerReplaced = true;
-                    oldManager.RemoteConfigurationManager.Dispose();
+                    await remoteConfigurationRetirement.ConfigureAwait(false);
+                }
+                else
+                {
+                    if (configurationManagerReplaced)
+                    {
+#if SHARED_REMOTE_CONFIG
+                        if (oldManager.RemoteConfigurationManager is RemoteConfigurationManager configurationManager)
+                        {
+                            await configurationManager.StopAsync().ConfigureAwait(false);
+                        }
+                        else
+#endif
+                        {
+                            oldManager.RemoteConfigurationManager.Dispose();
+                        }
+                    }
+
+                    DisposeRemoteConfigurationSubscriptions(oldManager, newManager);
                 }
 
-                var dynamicConfigurationManagerReplaced = false;
-                if (oldManager.DynamicConfigurationManager != newManager.DynamicConfigurationManager && oldManager.DynamicConfigurationManager is not null)
+                var featureFlagsReplaced = oldManager.FeatureFlags != newManager.FeatureFlags && oldManager.FeatureFlags is not null;
+                if (featureFlagsReplaced
+                 && (remoteConfigurationRetirement is null || oldManager.Settings.FeatureFlags.Source != FeatureFlagsSource.RemoteConfig))
                 {
-                    dynamicConfigurationManagerReplaced = true;
-                    oldManager.DynamicConfigurationManager.Dispose();
-                }
-
-                var tracerFlareManagerReplaced = false;
-                if (oldManager.TracerFlareManager != newManager.TracerFlareManager && oldManager.TracerFlareManager is not null)
-                {
-                    tracerFlareManagerReplaced = true;
-                    oldManager.TracerFlareManager.Dispose();
-                }
-
-                var featureFlagsReplaced = false;
-                if (oldManager.FeatureFlags != newManager.FeatureFlags && oldManager.FeatureFlags is not null)
-                {
-                    featureFlagsReplaced = true;
                     oldManager.FeatureFlags.Dispose();
                 }
 
@@ -337,6 +492,21 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Error(ex, "Error cleaning up old tracer manager");
+            }
+        }
+
+        private static void DisposeRemoteConfigurationSubscriptions(TracerManager oldManager, TracerManager newManager)
+        {
+            if (oldManager.DynamicConfigurationManager != newManager?.DynamicConfigurationManager)
+            {
+                Log.Debug("Disposing DynamicConfigurationManager");
+                oldManager.DynamicConfigurationManager?.Dispose();
+            }
+
+            if (oldManager.TracerFlareManager != newManager?.TracerFlareManager)
+            {
+                Log.Debug("Disposing TracerFlareManager");
+                oldManager.TracerFlareManager?.Dispose();
             }
         }
 
@@ -891,11 +1061,28 @@ namespace Datadog.Trace
 
                 if (instance is not null)
                 {
+#if SHARED_REMOTE_CONFIG
+                    var nativeConfiguration = instance.RemoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: true } configuration
+                                                  ? configuration
+                                                  : null;
+                    var waitForRemoteConfiguration = nativeConfiguration is not null || instance._remoteConfigurationPredecessor is not null;
+                    if (waitForRemoteConfiguration)
+                    {
+                        lock (_globalInstanceLock)
+                        {
+                            instance._isClosing = true;
+                            nativeConfiguration?.RequestStop();
+                        }
+                    }
+#endif
                     instance._settingSubscription.Dispose();
-                    Log.Debug("Disposing DynamicConfigurationManager");
-                    instance.DynamicConfigurationManager.Dispose();
-                    Log.Debug("Disposing TracerFlareManager");
-                    instance.TracerFlareManager.Dispose();
+#if SHARED_REMOTE_CONFIG
+                    if (!waitForRemoteConfiguration)
+#endif
+                    {
+                        DisposeRemoteConfigurationSubscriptions(instance, null);
+                    }
+
                     Log.Debug("Disposing SpanEventsManager");
                     instance.SpanEventsManager.Dispose();
 
@@ -908,12 +1095,33 @@ namespace Datadog.Trace
                     Log.Debug("Disposing Data streams.");
                     var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing RemoteConfigurationManager");
-                    instance.RemoteConfigurationManager?.Dispose();
-                    Log.Debug("Disposing FeatureFlagsManager");
-                    var featureFlagsTask = instance.FeatureFlags?.DisposeAsync() ?? Task.CompletedTask;
+                    var remoteConfigurationTask = Task.CompletedTask;
+#if SHARED_REMOTE_CONFIG
+                    if (waitForRemoteConfiguration)
+                    {
+                        remoteConfigurationTask = instance.ShutdownRemoteConfigurationAsync(nativeConfiguration);
+                    }
+
+                    if (nativeConfiguration is null)
+#endif
+                    {
+                        instance.RemoteConfigurationManager?.Dispose();
+                    }
+
+                    Task featureFlagsTask;
+#if SHARED_REMOTE_CONFIG
+                    if (waitForRemoteConfiguration && instance.Settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+                    {
+                        featureFlagsTask = instance.DisposeFeatureFlagsAfterRemoteConfigurationAsync(remoteConfigurationTask);
+                    }
+                    else
+#endif
+                    {
+                        featureFlagsTask = instance.DisposeFeatureFlagsAsync();
+                    }
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask, featureFlagsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask, remoteConfigurationTask, featureFlagsTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

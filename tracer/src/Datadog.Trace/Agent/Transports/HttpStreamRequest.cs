@@ -53,7 +53,7 @@ namespace Datadog.Trace.Agent.Transports
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
             => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
 
-        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings, CancellationToken cancellationToken = default)
         {
             var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -66,7 +66,8 @@ namespace Datadog.Trace.Agent.Transports
                                  contentType: MimeTypes.Json,
                                  content: new HttpOverStreams.HttpContent.PushStreamContent(stream => SerializationHelpers.WriteAsJson(stream, payload, settings, compression)),
                                  contentEncoding: contentEncoding,
-                                 chunkedEncoding: true) // must use chunked encoding because push-stream content
+                                 chunkedEncoding: true, // must use chunked encoding because push-stream content
+                                 cancellationToken: cancellationToken)
                             .ConfigureAwait(false);
 
             return result.Item1;
@@ -96,20 +97,22 @@ namespace Datadog.Trace.Agent.Transports
             return sendResult.Item1;
         }
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null, CancellationToken cancellationToken = default)
         {
-            using var cancellation = _requestTimeout is { } timeout ? new CancellationTokenSource(timeout) : null;
+            using var deadline = StartRequestDeadline(cancellationToken);
+            cancellationToken = deadline?.Token ?? cancellationToken;
+            cancellationToken.ThrowIfCancellationRequested();
 #if NET5_0_OR_GREATER
-            using (var bidirectionalStream = cancellation is null
-                                                ? _streamFactory.GetBidirectionalStream()
-                                                : await _streamFactory.GetBidirectionalStreamAsync(cancellation.Token).ConfigureAwait(false))
+            using (var bidirectionalStream = cancellationToken.CanBeCanceled
+                                                ? await _streamFactory.GetBidirectionalStreamAsync(cancellationToken).ConfigureAwait(false)
+                                                : _streamFactory.GetBidirectionalStream())
 #else
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
 #endif
             {
                 // Disposing the underlying pipe/socket interrupts pending reads and writes,
                 // including on runtimes whose stream APIs do not support cancellation tokens.
-                using var registration = cancellation?.Token.Register(static state => ((Stream)state).Dispose(), bidirectionalStream) ?? default;
+                using var registration = cancellationToken.Register(CloseStream, bidirectionalStream);
                 if (contentType != null)
                 {
                     _headers.Add("Content-Type", ContentTypeHelper.GetContentType(contentType, multipartBoundary));
@@ -150,6 +153,35 @@ namespace Datadog.Trace.Agent.Transports
 
                 return new Tuple<IApiResponse, HttpRequest>(new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers), request);
             }
+
+            static void CloseStream(object state)
+            {
+                try
+                {
+                    ((Stream)state).Dispose();
+                }
+                catch (Exception error)
+                {
+                    Log.Debug(error, "Error closing the stream for a canceled Agent request");
+                }
+            }
+        }
+
+        private CancellationTokenSource StartRequestDeadline(CancellationToken cancellationToken)
+        {
+            if (_requestTimeout is not { } timeout)
+            {
+                return null;
+            }
+
+            if (!cancellationToken.CanBeCanceled)
+            {
+                return new CancellationTokenSource(timeout);
+            }
+
+            var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None);
+            deadline.CancelAfter(timeout);
+            return deadline;
         }
     }
 }

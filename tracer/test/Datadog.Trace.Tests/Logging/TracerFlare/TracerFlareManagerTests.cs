@@ -124,7 +124,7 @@ public class TracerFlareManagerTests
     }
 
     [Fact]
-    public async Task WhenSentinelIsAlreadySet_DoesNotSend_ReturnsSuccess()
+    public async Task WhenClaimCannotBeCreatedOrRead_DoesNotSend_ReportsUnknownOutcome()
     {
         var requestMock = new Mock<IApiRequestFactory>();
         var manager = new TracerFlareManager(
@@ -133,16 +133,39 @@ public class TracerFlareManagerTests
             NullTelemetryController.Instance,
             new TracerFlareApi(requestMock.Object));
 
-        // pre-create the sentinel, to simulate another tracer catching it
-        var configId = Guid.NewGuid().ToString();
-        DebugLogReader.TryToCreateSentinelFile(_logsDir, configId);
-
-        var result = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
+        var result = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, Path.Combine(_logsDir, "missing"));
 
         result.Filename.Should().Be(ConfigPath);
-        result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
-        result.Error.Should().BeNull();
+        result.ApplyState.Should().Be(ApplyStates.ERROR);
+        result.Error.Should().Be("The debug log upload outcome is unavailable");
         requestMock.Verify(x => x.Create(It.IsAny<Uri>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task WhenEarlierUploadFailed_ReplayPreservesTheErrorReceipt()
+    {
+        var failedRequests = new TestRequestFactory(
+            endpoint => new TestApiRequest(endpoint, statusCode: 500, responseContent: """{"error":"mock upload failed"}"""));
+        var original = new TracerFlareManager(
+            new DiscoveryServiceMock(),
+            Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
+            new TracerFlareApi(failedRequests));
+        var result = await original.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
+        result.ApplyState.Should().Be(ApplyStates.ERROR);
+        result.Error.Should().Contain("mock upload failed");
+        failedRequests.RequestsSent.Should().ContainSingle();
+
+        var replayRequests = new TestRequestFactory();
+        var successor = new TracerFlareManager(
+            new DiscoveryServiceMock(),
+            Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
+            new TracerFlareApi(replayRequests));
+        var replay = await successor.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
+        replay.ApplyState.Should().Be(ApplyStates.ERROR);
+        replay.Error.Should().Be("There was an error uploading the debug log archive");
+        replayRequests.RequestsSent.Should().BeEmpty();
     }
 
     [Fact]
@@ -164,6 +187,8 @@ public class TracerFlareManagerTests
         result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
         result.Error.Should().BeNull();
 
+        var replay = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
+        replay.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
         requestFactory.RequestsSent.Should().ContainSingle();
     }
 }

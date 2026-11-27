@@ -13,9 +13,9 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.Agent.Transports
 {
 #if NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
-    internal class HttpClientRequestFactory : IApiRequestFactory
+    internal class HttpClientRequestFactory : IApiRequestFactory, IApiRequestFactory<HttpClientRequest>
 #else
-    internal sealed class HttpClientRequestFactory : IApiRequestFactory
+    internal sealed class HttpClientRequestFactory : IApiRequestFactory, IApiRequestFactory<HttpClientRequest>
 #endif
     {
         private readonly HttpClient _client;
@@ -61,10 +61,12 @@ namespace Datadog.Trace.Agent.Transports
             return endpoint.ToString();
         }
 
-        public IApiRequest Create(Uri endpoint)
+        public HttpClientRequest Create(Uri endpoint)
         {
             return new HttpClientRequest(_client, endpoint);
         }
+
+        IApiRequest IApiRequestFactory<IApiRequest>.Create(Uri endpoint) => Create(endpoint);
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
         {

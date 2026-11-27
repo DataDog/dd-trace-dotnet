@@ -27,8 +27,8 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         Directory.CreateDirectory(directory);
 
         var id = Guid.NewGuid().ToString();
-        var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
-        result.Should().BeTrue();
+        using var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        result.Should().NotBeNull();
     }
 
     [Fact]
@@ -40,11 +40,11 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         var id1 = Guid.NewGuid().ToString();
         var id2 = Guid.NewGuid().ToString();
 
-        var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id1);
-        var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id2);
+        using var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id1);
+        using var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id2);
 
-        result1.Should().BeTrue();
-        result2.Should().BeTrue();
+        result1.Should().NotBeNull();
+        result2.Should().NotBeNull();
     }
 
     [Fact]
@@ -55,11 +55,11 @@ public class DebugLogReaderTests(ITestOutputHelper output)
 
         var id = Guid.NewGuid().ToString();
 
-        var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id);
-        var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id);
 
-        result1.Should().BeTrue();
-        result2.Should().BeFalse();
+        result1.Should().NotBeNull();
+        result2.Should().BeNull();
     }
 
     [Fact]
@@ -75,15 +75,15 @@ public class DebugLogReaderTests(ITestOutputHelper output)
             var tryToCreateSentinel = () =>
             {
                 barrier.SignalAndWait();
-                return DebugLogReader.TryToCreateSentinelFile(directory, id);
+                using var claim = DebugLogReader.TryToCreateSentinelFile(directory, id);
+                return claim is not null;
             };
 
             var result1 = Task.Run(tryToCreateSentinel);
             var result2 = Task.Run(tryToCreateSentinel);
 
-            await Task.WhenAll(result1, result2);
-
-            result1.Should().NotBe(result2);
+            var outcomes = await Task.WhenAll(result1, result2);
+            outcomes[0].Should().NotBe(outcomes[1]);
         }
     }
 
@@ -93,9 +93,29 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         var id = Guid.NewGuid().ToString();
 
-        var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
 
-        result.Should().BeFalse();
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task WaitForSentinelResult_ExpiredEmptyClaim_HasNoOutcome()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var id = Guid.NewGuid().ToString();
+            File.WriteAllBytes(Path.Combine(directory, $"dotnet-tracer-sentinel-{id}.log"), []);
+
+            var result = await DebugLogReader.WaitForSentinelResult(directory, id, TimeSpan.Zero);
+
+            result.Should().BeNull();
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Fact]
@@ -165,8 +185,8 @@ public class DebugLogReaderTests(ITestOutputHelper output)
 
         // Create a sentinel file in the logs directory
         // It shouldn't be included in the archive
-        var result = DebugLogReader.TryToCreateSentinelFile(directory, Guid.NewGuid().ToString());
-        result.Should().BeTrue();
+        using var result = DebugLogReader.TryToCreateSentinelFile(directory, Guid.NewGuid().ToString());
+        result.Should().NotBeNull();
 
         var extractTo = await CreateAndExtractZipFile(directory, files);
 

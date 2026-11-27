@@ -7,7 +7,6 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -17,37 +16,20 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticsUploadApi>();
 
-        private DiagnosticsUploadApi(
-            IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-            : base(apiRequestFactory, gitMetadataTagsProvider)
+        internal DiagnosticsUploadApi(DebuggerAgentTransport transport, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(transport, static configuration => configuration.DebuggerDiagnosticsUploadEndpoint, gitMetadataTagsProvider)
         {
-            discoveryService.SubscribeToChanges(c =>
-            {
-                Endpoint = c.DebuggerDiagnosticsUploadEndpoint;
-                Log.Debug("DiagnosticsUploadApi: Updated endpoint to {Endpoint}", Endpoint);
-            });
-        }
-
-        public static DiagnosticsUploadApi Create(
-            IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-        {
-            return new DiagnosticsUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
-            var uri = BuildUri();
-            if (string.IsNullOrEmpty(uri))
+            if (BuildTarget() is not { } target)
             {
                 Log.Warning("Failed to upload diagnostics: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
+            using var response = await PostAsync(target, data).ConfigureAwait(false);
             if (response.StatusCode is >= 200 and <= 299)
             {
                 return true;

@@ -37,29 +37,39 @@ internal sealed class DebuggerFactory
         var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Log);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
-        var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
-        var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
-        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
-        var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
-        var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
-        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
+        var uploadTransport = new DebuggerAgentTransport(tracerSettings.Manager, discoveryService, CreateAgentRequestFactory);
+        try
+        {
+            var snapshotUploader = SnapshotUploader.Create(snapshotSink, BatchUploader.Create(new SnapshotUploadApi(uploadTransport, gitMetadataTagsProvider)), debuggerSettings);
+            var logUploader = SnapshotUploader.Create(logSink, BatchUploader.Create(new LogUploadApi(uploadTransport, gitMetadataTagsProvider)), debuggerSettings);
+            var diagnosticsUploader = DiagnosticsUploader.Create(diagnosticsSink, BatchUploader.Create(new DiagnosticsUploadApi(uploadTransport, gitMetadataTagsProvider)), debuggerSettings);
+            var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
+            var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
+            var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
+            var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
-        var statsd = GetDogStatsd(tracerSettings);
+            var statsd = GetDogStatsd(tracerSettings);
 
-        return new DynamicInstrumentation(
-            settings: debuggerSettings,
-            discoveryService: discoveryService,
-            remoteConfigurationManager: remoteConfigurationManager,
-            lineProbeResolver: lineProbeResolver,
-            snapshotUploader: snapshotUploader,
-            logUploader: logUploader,
-            diagnosticsUploader: diagnosticsUploader,
-            probeStatusPoller: probeStatusPoller,
-            configurationUpdater: configurationUpdater,
-            dogStats: statsd,
-            globalRateLimiter: globalRateLimiter,
-            memoryPressureMonitor: memoryPressureMonitor);
+            return new DynamicInstrumentation(
+                settings: debuggerSettings,
+                discoveryService: discoveryService,
+                remoteConfigurationManager: remoteConfigurationManager,
+                lineProbeResolver: lineProbeResolver,
+                snapshotUploader: snapshotUploader,
+                logUploader: logUploader,
+                diagnosticsUploader: diagnosticsUploader,
+                probeStatusPoller: probeStatusPoller,
+                configurationUpdater: configurationUpdater,
+                dogStats: statsd,
+                globalRateLimiter: globalRateLimiter,
+                memoryPressureMonitor: memoryPressureMonitor,
+                uploadTransport: uploadTransport);
+        }
+        catch
+        {
+            uploadTransport.Dispose();
+            throw;
+        }
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings)
@@ -84,48 +94,17 @@ internal sealed class DebuggerFactory
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
-    {
-        var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
-        var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
-
-        var debuggerSink = SnapshotUploader.Create(snapshotSink, snapshotBatchUploader, debuggerSettings);
-
-        return debuggerSink;
-    }
-
-    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
-    {
-        var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
-        var logBatchUploader = BatchUploader.Create(logUploaderApi);
-
-        var debuggerSink = SnapshotUploader.Create(snapshotSink, logBatchUploader, debuggerSettings);
-
-        return debuggerSink;
-    }
-
-    private static DiagnosticsUploader CreateDiagnosticsUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, DiagnosticsSink diagnosticsSink)
-    {
-        var diagnosticsBatchUploadApi = DebuggerUploadApiFactory.CreateDiagnosticsUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
-        var diagnosticsBatchUploader = BatchUploader.Create(diagnosticsBatchUploadApi);
-
-        var debuggerSink = DiagnosticsUploader.Create(diagnosticsSink, diagnosticsBatchUploader: diagnosticsBatchUploader, debuggerSettings);
-
-        return debuggerSink;
-    }
-
     internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(CreateAgentRequestFactory(tracerSettings.Manager.InitialExporterSettings), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
     }
 
-    private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings, bool isMultipart)
+    private static IApiRequestFactory CreateAgentRequestFactory(ExporterSettings exporter)
     {
-        // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            tracerSettings.Manager.InitialExporterSettings,
+            exporter,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             httpHeaderHelper: MinimalAgentHeaderHelper.Instance);

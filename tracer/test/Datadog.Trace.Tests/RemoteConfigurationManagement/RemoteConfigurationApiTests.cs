@@ -5,13 +5,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Pipes;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
-using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -21,41 +26,52 @@ namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
 public class RemoteConfigurationApiTests
 {
+    private const string ConfigEndpoint = "configurationEndpoint";
+
+#if NET6_0_OR_GREATER
     [Fact]
-    public async Task WhenDiscoveryServiceDoesNotTriggerChange_GetConfigsReturnsNull()
+    public async Task CancelsPendingNamedPipeResponse()
     {
-        var requestFactory = new TestRequestFactory();
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
+        var pipeName = Path.GetRandomFileName();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cancellation = new CancellationTokenSource();
+        using var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        var factory = new HttpStreamRequestFactory(
+            new NamedPipeClientStreamFactory(pipeName, timeoutMs: 5000),
+            new DatadogHttpClient(MinimalAgentHeaderHelper.Instance),
+            new Uri("http://localhost"));
+        var api = new RemoteConfigurationApi<IApiRequest>(factory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var poll = api.GetConfigs(GetRequest(), ConfigEndpoint, cancellation.Token);
+        await pipe.WaitForConnectionAsync(timeout.Token);
+        using var reader = new StreamReader(pipe, leaveOpen: true);
+        var request = await reader.ReadLineAsync().WaitAsync(timeout.Token);
+        request.Should().StartWith($"POST /{ConfigEndpoint} ");
+        string header;
+        do
+        {
+            header = await reader.ReadLineAsync().WaitAsync(timeout.Token);
+        }
+        while (!string.IsNullOrEmpty(header));
 
-        result.Should().BeNull();
+        header.Should().BeEmpty();
+        var responseHeaders = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n"u8.ToArray();
+        await pipe.WriteAsync(responseHeaders, timeout.Token);
+        poll.IsCompleted.Should().BeFalse();
+
+        cancellation.Cancel();
+
+        (await poll.WaitAsync(timeout.Token)).Should().BeNull();
     }
-
-    [Fact]
-    public async Task WhenDiscoveryServiceDoesNotIndicateRcmAvailable_GetConfigsReturnsNull()
-    {
-        var requestFactory = new TestRequestFactory();
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-
-        discoveryService.TriggerChange(configurationEndpoint: null);
-
-        var result = await api.GetConfigs(GetRequest());
-
-        result.Should().BeNull();
-    }
+#endif
 
     [Fact]
     public async Task WhenConfigEndpointAvailable_SendsRequestToGetConfig()
     {
         var requestFactory = new TestRequestFactory();
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should()
                       .ContainSingle()
@@ -79,11 +95,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, statusCode: statusCode, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
         result.Should().BeNull();
@@ -96,11 +110,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, statusCode: statusCode, responseContent: string.Empty));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
         result.Should().BeNull();
@@ -114,11 +126,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        await api.Invoking(x => x.GetConfigs(GetRequest()))
+        await api.Invoking(x => x.GetConfigs(GetRequest(), ConfigEndpoint))
                  .Should()
                  .ThrowAsync<RemoteConfigurationDeserializationException>()
                  .WithInnerExceptionExactly<RemoteConfigurationDeserializationException, JsonException>()
@@ -135,11 +145,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        await api.Invoking(x => x.GetConfigs(GetRequest()))
+        await api.Invoking(x => x.GetConfigs(GetRequest(), ConfigEndpoint))
                  .Should()
                  .ThrowAsync<RemoteConfigurationDeserializationException>()
                  .WithInnerExceptionExactly<RemoteConfigurationDeserializationException, JsonException>()
@@ -153,11 +161,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
 
@@ -173,11 +179,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
 
@@ -192,11 +196,9 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
 
@@ -211,11 +213,9 @@ public class RemoteConfigurationApiTests
         var responseContent = RcmResponses.HugeConfig();
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var discoveryService = new DiscoveryServiceMock();
-        var api = RemoteConfigurationApi.Create(requestFactory, discoveryService);
-        discoveryService.TriggerChange();
+        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
 
-        var result = await api.GetConfigs(GetRequest());
+        var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
         requestFactory.RequestsSent.Should().ContainSingle();
 

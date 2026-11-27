@@ -23,6 +23,7 @@ internal sealed class TracerFlareApi
 {
     internal const string TracerFlareSentLog = "Tracer flare sent successfully";
     private const string TracerFlareEndpoint = "tracer_flare/v1";
+    internal static readonly TimeSpan UploadTimeout = TimeSpan.FromSeconds(30);
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerFlareApi>();
 
     private Api _api;
@@ -100,8 +101,9 @@ internal sealed class TracerFlareApi
         var requestFactory = AgentTransportStrategy.Get(
             exporterSettings,
             productName: "tracer_flare",
-            tcpTimeout: TimeSpan.FromSeconds(30),
-            httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
+            tcpTimeout: null,
+            httpHeaderHelper: MinimalAgentHeaderHelper.Instance,
+            requestTimeout: UploadTimeout);
         return requestFactory;
     }
 

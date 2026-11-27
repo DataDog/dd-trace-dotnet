@@ -20,6 +20,13 @@
     <CompilerGeneratedFilesOutputPath>$(GeneratedFolder)\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(SharedRemoteConfig)' == 'true' And '$(TargetFramework)' == 'net6.0'">
+    <DefineConstants>$(DefineConstants);SHARED_REMOTE_CONFIG</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SharedRemoteConfig)' != 'true' Or '$(TargetFramework)' != 'net6.0'">
+    <Compile Remove="RemoteConfigurationManagement/Shared/*.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace\README.md" Pack="true" PackagePath="\" />
     <!-- Don't include source generator output in the compilation - this is implicitly included anyway.

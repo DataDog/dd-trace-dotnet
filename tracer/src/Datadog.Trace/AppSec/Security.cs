@@ -47,7 +47,7 @@ namespace Datadog.Trace.AppSec
         /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
         /// </summary>
         private readonly Concurrency.ReaderWriterLock _activeAddressesLocker;
-        private ISubscription? _rcmSubscription;
+        private Subscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
         private WafLibraryInvoker? _wafLibraryInvoker;
@@ -184,19 +184,30 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary>
-        /// This is cumulative, if a subscription already existed with other product names,  the new ones will be unioned
+        /// Replace the current poll interests while retaining ownership of stored configuration.
         /// </summary>
         internal void SubscribeToChanges(params string[] productNames)
         {
+            if (_rcmSubscription?.HasSameProducts(productNames) is true)
+            {
+                return;
+            }
+
+            var newSubscription = new Subscription(UpdateFromRcm, [.. productNames])
+            {
+                RemovalProductKeys = _configurationState.GetRemovalProducts(),
+#if SHARED_REMOTE_CONFIG
+                DeliveryOwner = this,
+#endif
+            };
             if (_rcmSubscription is not null)
             {
-                var newSubscription = new Subscription(UpdateFromRcm, [.. productNames]);
                 _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
                 _rcmSubscription = newSubscription;
             }
             else
             {
-                _rcmSubscription = new Subscription(UpdateFromRcm, [.. productNames]);
+                _rcmSubscription = newSubscription;
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
             }
         }

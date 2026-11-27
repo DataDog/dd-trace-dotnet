@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -22,7 +23,9 @@ internal abstract class DebuggerUploadApiBase
 {
     protected const string DebuggerV1Endpoint = "debugger/v1/input";
 
-    private readonly IApiRequestFactory _apiRequestFactory;
+    private readonly IApiRequestFactory? _apiRequestFactory;
+    private readonly DebuggerAgentTransport? _liveTransport;
+    private readonly Func<AgentConfiguration, string?>? _selectEndpoint;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
 
     private string? _endpoint;
@@ -34,33 +37,53 @@ internal abstract class DebuggerUploadApiBase
         _gitMetadataTagsProvider = gitMetadataTagsProvider;
     }
 
+    protected DebuggerUploadApiBase(DebuggerAgentTransport liveTransport, Func<AgentConfiguration, string?> selectEndpoint, IGitMetadataTagsProvider? gitMetadataTagsProvider)
+    {
+        _liveTransport = liveTransport;
+        _selectEndpoint = selectEndpoint;
+        _gitMetadataTagsProvider = gitMetadataTagsProvider;
+    }
+
     protected string? Endpoint
     {
         get => _endpoint;
         set => Volatile.Write(ref _endpoint, value);
     }
 
-    protected string? BuildUri()
+    protected string? BuildUri() => BuildTarget()?.Uri;
+
+    protected UploadTarget? BuildTarget()
     {
-        if (Volatile.Read(ref _endpoint) is not { } endpoint)
+        if (_liveTransport is not null)
+        {
+            var route = _liveTransport.Current;
+            return route is null ? null : BuildTarget(route.Factory, _selectEndpoint!(route.Configuration));
+        }
+
+        return BuildTarget(_apiRequestFactory!, Volatile.Read(ref _endpoint));
+    }
+
+    private UploadTarget? BuildTarget(IApiRequestFactory factory, string? endpoint)
+    {
+        if (endpoint is null)
         {
             return null;
         }
 
-        var uri = _apiRequestFactory.GetEndpoint(endpoint);
+        var uri = factory.GetEndpoint(endpoint);
         var builder = new UriBuilder(uri);
         var query = HttpUtility.ParseQueryString(builder.Query);
         _tags ??= GetDefaultTagsMergedWithGlobalTags();
         query["ddtags"] = _tags;
         builder.Query = query.ToString();
-        return builder.ToString();
+        return new UploadTarget(factory, builder.ToString());
     }
 
-    protected Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
+    protected Task<IApiResponse> PostAsync(UploadTarget target, ArraySegment<byte> data)
     {
-        var request = _apiRequestFactory.Create(new Uri(uri));
+        var request = target.Factory.Create(new Uri(target.Uri));
         request.AddHeader("DD-REQUEST-ID", Guid.NewGuid().ToString());
-        var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
+        var isDebuggerV1 = target.Uri.Contains(DebuggerV1Endpoint);
 
         return this is DiagnosticsUploadApi && !isDebuggerV1
                    ? request.PostAsync([new("event", MimeTypes.Json, "event.json", data)])
@@ -124,5 +147,12 @@ internal abstract class DebuggerUploadApiBase
         {
             StringBuilderCache.Release(sb);
         }
+    }
+
+    protected readonly struct UploadTarget(IApiRequestFactory factory, string uri)
+    {
+        public IApiRequestFactory Factory { get; } = factory;
+
+        public string Uri { get; } = uri;
     }
 }

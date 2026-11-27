@@ -11,7 +11,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -21,70 +20,63 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    internal sealed class RemoteConfigurationApi : IRemoteConfigurationApi
+    internal sealed class RemoteConfigurationApi<TRequest> : IRemoteConfigurationApi
+        where TRequest : class, IApiRequest
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi<TRequest>));
         private static readonly JsonSerializerSettings SerializerSettings = new();
 
-        private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IApiRequestFactory<TRequest> _apiRequestFactory;
         private readonly ContainerMetadata _containerMetadata;
-        private string? _configEndpoint;
 
-        private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        internal RemoteConfigurationApi(IApiRequestFactory<TRequest> apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(
-                config =>
-                {
-                    _configEndpoint = config.ConfigurationEndpoint;
-                });
-
             _containerMetadata = ContainerMetadata.Instance;
         }
 
-        public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        public async Task<GetRcmResponse?> GetConfigs(GetRcmRequest request, string endpoint, CancellationToken cancellationToken = default)
         {
-            return new RemoteConfigurationApi(apiRequestFactory, discoveryService);
-        }
-
-        public async Task<GetRcmResponse?> GetConfigs(GetRcmRequest request)
-        {
-            var configEndpoint = Volatile.Read(ref _configEndpoint);
-            if (string.IsNullOrEmpty(configEndpoint))
-            {
-                Log.Debug("Waiting for discovery service to retrieve configuration.");
-                return null;
-            }
-
-            var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
-            var apiRequest = _apiRequestFactory.Create(uri);
-
-            apiRequest.AddContainerMetadataHeaders(_containerMetadata);
-
-            using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
-            var isRcmDisabled = apiResponse.StatusCode == 404;
-            if (isRcmDisabled)
-            {
-                Log.Debug("Remote Configuration has been disabled.");
-                return null;
-            }
-
-            if (apiResponse.StatusCode is not (>= 200 and <= 299))
-            {
-                var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
-                Log.Warning<int, string>("Failed to receive remote configurations {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
-
-                return null;
-            }
-
+            var apiRequest = CreateRequest(endpoint);
             try
             {
-                return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+                using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None, SerializerSettings, cancellationToken).ConfigureAwait(false);
+                var isRcmDisabled = apiResponse.StatusCode == 404;
+                if (isRcmDisabled)
+                {
+                    Log.Debug("Remote Configuration has been disabled.");
+                    return null;
+                }
+
+                if (apiResponse.StatusCode is not (>= 200 and <= 299))
+                {
+                    var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+                    Log.Warning<int, string>("Failed to receive remote configurations {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
+
+                    return null;
+                }
+
+                try
+                {
+                    return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+                }
+                catch (Exception error)
+                {
+                    throw new RemoteConfigurationDeserializationException(error);
+                }
             }
-            catch (Exception ex)
+            catch (Exception error) when (cancellationToken.IsCancellationRequested)
             {
-                throw new RemoteConfigurationDeserializationException(ex);
+                Log.Debug(error, "Remote Configuration request canceled during retirement");
+                return null;
             }
+        }
+
+        internal TRequest CreateRequest(string endpoint)
+        {
+            var request = _apiRequestFactory.Create(_apiRequestFactory.GetEndpoint(endpoint));
+            request.AddContainerMetadataHeaders(_containerMetadata);
+            return request;
         }
     }
 }

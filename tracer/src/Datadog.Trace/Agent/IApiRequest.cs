@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Agent
 
         Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression);
 
-        Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings);
+        Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings, CancellationToken cancellationToken = default);
 
         Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string? contentEncoding, string multipartBoundary);
 

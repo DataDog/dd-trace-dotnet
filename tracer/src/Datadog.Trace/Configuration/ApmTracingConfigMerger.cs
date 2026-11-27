@@ -26,7 +26,13 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Merges multiple APM_TRACING configurations based on priority ordering and returns a JToken.
         /// </summary>
-        public static JToken MergeConfigurations(List<RemoteConfiguration> configs, string? serviceName, string? environment)
+        public static JToken MergeConfigurations(
+            List<RemoteConfiguration> configs,
+            string? serviceName,
+            string? environment,
+            Dictionary<string, string>? rejections = null,
+            IReadOnlyDictionary<string, ApmTracingConfig>? lastGood = null,
+            Dictionary<string, ApmTracingConfig>? accepted = null)
         {
             if (configs.Count == 0)
             {
@@ -37,29 +43,31 @@ namespace Datadog.Trace.Configuration
 
             foreach (var config in configs)
             {
+                ApmTracingConfig? configData = null;
                 try
                 {
                     var jsonContent = Encoding.UTF8.GetString(config.Contents);
-                    var configData = ParseConfiguration(config.Path.Id, jsonContent);
+                    configData = ParseConfiguration(config.Path.Id, jsonContent);
 
                     if (configData == null)
                     {
-                        continue;
+                        rejections?.Add(config.Path.Path, "Invalid APM tracing configuration or missing lib_config");
                     }
-
-                    // Do not filter un-matched config for now. We will address it in a later PR.
-                    applicableConfigs.Add(configData);
-                    /*
-                    if (configData?.Matches(serviceName, environment) == true)
-                    {
-                        applicableConfigs.Add(configData);
-                    }
-                    */
                 }
-                catch (Exception ex)
+                catch (Exception error)
                 {
-                    Log.Error(ex, "Failed to merge APM_TRACING configuration {ConfigPath}", config.Path.Path);
+                    rejections?.Add(config.Path.Path, "Cannot read APM tracing configuration");
+                    Log.Error(error, "Failed to merge APM_TRACING configuration {ConfigPath}", config.Path.Path);
                 }
+
+                if (configData is null && (lastGood is null || !lastGood.TryGetValue(config.Path.Path, out configData)))
+                {
+                    continue;
+                }
+
+                accepted?.Add(config.Path.Path, configData);
+                // Do not filter unmatched configurations until service and environment targeting is supported.
+                applicableConfigs.Add(configData);
             }
 
             if (applicableConfigs.Count == 0)

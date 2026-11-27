@@ -5,8 +5,13 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -24,6 +29,25 @@ namespace Datadog.Trace.Security.Unit.Tests
             action.StatusCode.Should().Be(403);
             action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate.Replace(SecurityConstants.SecurityResponseIdPlaceholder, string.Empty));
             action.ContentType.Should().Be("application/json");
+        }
+
+        [Fact]
+        public void EquivalentProductInterestsKeepTheExistingSubscription()
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection { [ConfigurationKeys.AppSec.Enabled] = "false" });
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+            var subscriptions = new MockRcmSubscriptionManager();
+            using var security = new AppSec.Security(settings, rcmSubscriptionManager: subscriptions);
+
+            security.SubscribeToChanges(RcmProducts.AsmFeatures, RcmProducts.AsmData);
+            var original = subscriptions.LastSubscription;
+
+            security.SubscribeToChanges(RcmProducts.AsmData, RcmProducts.AsmFeatures, RcmProducts.AsmData);
+            subscriptions.LastSubscription.Should().BeSameAs(original);
+
+            security.SubscribeToChanges(RcmProducts.AsmFeatures);
+            subscriptions.LastSubscription.Should().NotBeSameAs(original);
+            subscriptions.LastSubscription!.ProductKeys.Should().Equal(RcmProducts.AsmFeatures);
         }
 
         [Theory]

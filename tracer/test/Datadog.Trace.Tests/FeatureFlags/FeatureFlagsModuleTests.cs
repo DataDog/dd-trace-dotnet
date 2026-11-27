@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -177,6 +178,39 @@ public class FeatureFlagsModuleTests
                     },
                     useDefaultSources: false),
                 NullConfigurationTelemetry.Instance).Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task RepeatedDisposalSeesTheRemoteConfigSubscriptionDetached()
+    {
+        var settings = CreateSettings();
+        var subscriptions = new RcmSubscriptionManager();
+        var discovery = new Mock<IDiscoveryService>();
+        var removingDiscovery = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var releaseDiscovery = new ManualResetEventSlim();
+        var timeout = TimeSpan.FromSeconds(10);
+        discovery.Setup(service => service.RemoveSubscription(It.IsAny<Action<AgentConfiguration>>())).Callback(() =>
+        {
+            removingDiscovery.TrySetResult(true);
+            releaseDiscovery.Wait(timeout);
+        });
+        using var module = FeatureFlagsModule.Create(settings, subscriptions, discoveryService: discovery.Object)!;
+        module.Activate();
+        subscriptions.ProductKeys.Should().Contain(RcmProducts.FfeFlags);
+
+        var shutdown = Task.Run(module.DisposeAsync);
+        try
+        {
+            (await Task.WhenAny(removingDiscovery.Task, Task.Delay(timeout))).Should().BeSameAs(removingDiscovery.Task);
+            module.Dispose();
+            subscriptions.ProductKeys.Should().NotContain(RcmProducts.FfeFlags);
+            shutdown.IsCompleted.Should().BeFalse();
+        }
+        finally
+        {
+            releaseDiscovery.Set();
+            await shutdown;
         }
     }
 

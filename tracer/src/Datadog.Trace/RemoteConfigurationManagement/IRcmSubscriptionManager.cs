@@ -23,5 +23,5 @@ internal interface IRcmSubscriptionManager
 
     void SetCapability(BigInteger index, bool available);
 
-    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback);
+    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null);
 }
