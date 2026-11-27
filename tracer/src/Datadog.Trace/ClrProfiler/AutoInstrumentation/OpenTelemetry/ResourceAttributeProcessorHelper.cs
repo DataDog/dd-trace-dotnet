@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             }
 
             ActivityKey key;
-            if (activityData.TryDuckCast<IW3CActivity>(out var w3cActivity) && w3cActivity.TraceId is { } traceId && w3cActivity.SpanId is { } spanId)
+            if (activity.TraceId is { } traceId && activity.SpanId is { } spanId)
             {
                 key = new(traceId, spanId);
             }

@@ -348,7 +348,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             // Extract data from the Activity if there is one, and it's the one we expect
             // We're using GetCurrentActivityObject rather than GetCurrentActivity because
-            // we don't actually need to duck cast as IActivity6 or IW3CActivity
+            // we pick the duck type (IActivity5, else IActivity) ourselves below
             // This will only be non-null if the activity listener is enabled by enabling
             // the OTel integration
             var rawActivity = ActivityListener.GetCurrentActivityObject();

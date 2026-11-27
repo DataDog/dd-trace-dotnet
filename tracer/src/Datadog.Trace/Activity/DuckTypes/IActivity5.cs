@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Activity.DuckTypes
 {
-    internal interface IActivity5 : IW3CActivity
+    internal interface IActivity5 : IActivity
     {
         string DisplayName { get; set; }
 

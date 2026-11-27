@@ -51,7 +51,6 @@ namespace Datadog.Trace.Activity
             }
 
             // Perform activity casts first and check for null when their members need to be accessed
-            var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
@@ -66,9 +65,9 @@ namespace Datadog.Trace.Activity
             // - service.namespace
             // - service.version
 
-            if (!openTelemetrySemanticsEnabled && w3cActivity is not null)
+            if (!openTelemetrySemanticsEnabled)
             {
-                tags.OtelTraceId = w3cActivity.TraceId;
+                tags.OtelTraceId = activity.TraceId;
             }
 
             // Copy over tags from Activity to the Datadog Span

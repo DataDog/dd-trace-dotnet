@@ -50,31 +50,33 @@ namespace Datadog.Trace.Activity.Handlers
         public static void IgnoreActivity<T>(T activity, Span? span)
             where T : IActivity
         {
-            if (span is not null && activity is IW3CActivity w3cActivity)
+            if (span is null)
             {
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
-                 && w3cActivity.SpanId is not null
-                 && w3cActivity.TraceId is not null)
-                {
-                    // If we ignore the activity and there's an existing active span
-                    // We modify the activity spanId with the one in the span
-                    // The reason for that is in case this ignored activity is used
-                    // for propagation then the current active span will appear as parentId
-                    // in the context propagation, and we will keep the entire trace.
-
-                    // TraceId (always 32 chars long even when using 64-bit ids)
-                    w3cActivity.TraceId = span.Context.RawTraceId;
-
-                    // SpanId (always 16 chars long)
-                    w3cActivity.RawParentSpanId = span.Context.RawSpanId;
-
-                    // We clear internal Ids to force recalculation.
-                    w3cActivity.RawId = null;
-                    w3cActivity.RawParentId = null;
-                }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
+                return;
             }
+
+#pragma warning disable DDDUCK001 // Checking IDuckType for null
+            if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
+             && activity.SpanId is not null
+             && activity.TraceId is not null)
+            {
+                // If we ignore the activity and there's an existing active span
+                // We modify the activity spanId with the one in the span
+                // The reason for that is in case this ignored activity is used
+                // for propagation then the current active span will appear as parentId
+                // in the context propagation, and we will keep the entire trace.
+
+                // TraceId (always 32 chars long even when using 64-bit ids)
+                activity.TraceId = span.Context.RawTraceId;
+
+                // SpanId (always 16 chars long)
+                activity.RawParentSpanId = span.Context.RawSpanId;
+
+                // We clear internal Ids to force recalculation.
+                activity.RawId = null;
+                activity.RawParentId = null;
+            }
+#pragma warning restore DDDUCK001 // Checking IDuckType for null
         }
 
         public bool ShouldListenTo(string sourceName, string? version)
