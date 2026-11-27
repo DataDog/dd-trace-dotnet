@@ -1,0 +1,10 @@
+[
+  {"flag":"scale-one-of-small-integers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":999},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-small-integers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":1},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-small-integers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":"549"},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-small-integers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":1000003},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-one-of-powers-of-two","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":8796093022208},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-powers-of-two","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":1},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-powers-of-two","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":"281474976710656"},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-powers-of-two","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"count":1000003},"result":{"value":"unlisted","reason":"STATIC"}}
+]

@@ -1,0 +1,18 @@
+[
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-00000"},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-05000"},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-09999"},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-10000"},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"ACCT-00001"},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-0001"},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-not-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-00000"},"result":{"value":"inside","reason":"STATIC"}},
+  {"flag":"scale-not-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-04242"},"result":{"value":"inside","reason":"STATIC"}},
+  {"flag":"scale-not-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-09999"},"result":{"value":"inside","reason":"STATIC"}},
+  {"flag":"scale-not-one-of-strings","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account":"acct-99999"},"result":{"value":"outside","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-numbers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account_num":1000000},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-numbers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account_num":1000042},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-numbers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account_num":1069993},"result":{"value":"listed","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-one-of-numbers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account_num":1000043},"result":{"value":"unlisted","reason":"STATIC"}},
+  {"flag":"scale-one-of-numbers","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"account_num":"1000042"},"result":{"value":"listed","reason":"TARGETING_MATCH"}}
+]

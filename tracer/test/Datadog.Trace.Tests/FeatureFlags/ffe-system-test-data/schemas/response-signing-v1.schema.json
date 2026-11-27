@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Response signing v1 conformance corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "profile_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "synthetic": {
+      "const": true
+    },
+    "anchor_der_base64": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    },
+    "signing_cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/signingCase"
+      }
+    }
+  },
+  "required": [
+    "anchor_der_base64",
+    "cases"
+  ],
+  "$defs": {
+    "credential": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "generation": {
+          "type": "string"
+        },
+        "private_key_pkcs8_der_base64": {
+          "type": "string"
+        },
+        "certificate_der_base64": {
+          "type": "string"
+        },
+        "intermediate_der_base64": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "generation",
+        "private_key_pkcs8_der_base64",
+        "certificate_der_base64",
+        "intermediate_der_base64"
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "body_base64": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "method",
+        "headers",
+        "body_base64"
+      ]
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "body_base64": {
+          "type": "string",
+          "description": "Application bytes after HTTP content decoding; these bytes are bound by the signature."
+        },
+        "wire_body_base64": {
+          "type": "string",
+          "description": "Optional compressed transport bytes, served with the response encoding headers in transport tests. Direct verifier tests use body_base64."
+        }
+      },
+      "required": [
+        "status",
+        "headers",
+        "body_base64"
+      ]
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "response": {
+          "$ref": "#/$defs/response"
+        },
+        "now": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Fixed verification clock in Unix epoch seconds."
+        },
+        "expected_accept": {
+          "type": "boolean"
+        },
+        "rejection_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transcript_base64": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "credential": {
+          "$ref": "#/$defs/credential"
+        }
+      },
+      "required": [
+        "id",
+        "request",
+        "response",
+        "now",
+        "expected_accept",
+        "rejection_reason"
+      ]
+    },
+    "signingCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "credential": {
+          "$ref": "#/$defs/credential"
+        },
+        "expected_signing": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "case_id",
+        "credential",
+        "expected_signing"
+      ]
+    }
+  }
+}

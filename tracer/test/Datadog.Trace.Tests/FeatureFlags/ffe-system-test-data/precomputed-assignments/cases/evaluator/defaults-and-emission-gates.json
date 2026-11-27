@@ -1,6 +1,6 @@
 {
   "name": "defaults-and-emission-gates",
-  "description": "Precomputed assignments that validate exposure gates, unknown variation isolation, and default/error flagevaluation payloads.",
+  "description": "Precomputed assignments that validate exposure gates, unsupported variation type isolation, and default/error flag evaluation results. Unsupported variation types preserve a per-flag PARSE_ERROR; healthy sibling flags remain evaluable.",
   "context": {
     "targetingKey": "precomputed-user",
     "attributes": {
@@ -71,7 +71,7 @@
       "expectedResult": {
         "value": false,
         "reason": "ERROR",
-        "errorCode": "TYPE_MISMATCH",
+        "errorCode": "PARSE_ERROR",
         "variantKey": null
       }
     },

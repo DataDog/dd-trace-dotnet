@@ -1047,6 +1047,137 @@
         }
       ]
     },
+    "time-bounded-holdout-flag": {
+      "key": "time-bounded-holdout-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "status-quo": {
+          "key": "status-quo",
+          "value": "status-quo"
+        },
+        "shipped": {
+          "key": "shipped",
+          "value": "shipped"
+        },
+        "targeted": {
+          "key": "targeted",
+          "value": "targeted"
+        }
+      },
+      "allocations": [
+        {
+          "key": "targeted-override",
+          "startAt": "2022-10-31T09:00:00.594Z",
+          "endAt": "2050-10-31T09:00:00.594Z",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "tier",
+                  "operator": "ONE_OF",
+                  "value": [
+                    "internal"
+                  ]
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "targeted",
+              "serialId": 201,
+              "shards": [
+                {
+                  "salt": "targeted-override",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": false
+        },
+        {
+          "key": "holdout-a",
+          "splits": [
+            {
+              "variationKey": "status-quo",
+              "shards": [
+                {
+                  "salt": "holdout-a-holdout-traffic",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2560000
+                    }
+                  ],
+                  "totalShards": 5120000
+                },
+                {
+                  "salt": "holdout-a-holdout-split",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ],
+                  "totalShards": 10000
+                }
+              ],
+              "serialId": 202
+            },
+            {
+              "variationKey": "shipped",
+              "shards": [
+                {
+                  "salt": "holdout-a-holdout-traffic",
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2560000
+                    }
+                  ],
+                  "totalShards": 5120000
+                },
+                {
+                  "salt": "holdout-a-holdout-split",
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ],
+                  "totalShards": 10000
+                }
+              ],
+              "serialId": 203
+            }
+          ],
+          "startAt": "2022-10-31T09:00:00.594Z",
+          "endAt": "2050-10-31T09:00:00.594Z",
+          "doLog": true,
+          "randomizationActivatedAt": "2022-10-31T09:00:00.594Z"
+        },
+        {
+          "key": "rollout",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "shipped",
+              "shards": [],
+              "serialId": 204
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
     "null-operator-test": {
       "key": "null-operator-test",
       "enabled": true,
@@ -5625,6 +5756,282 @@
         }
       ]
     },
+    "layer-checkout-layout": {
+      "key": "layer-checkout-layout",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-layout-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 31001,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-layout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 31002,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 2500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-layout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-layout-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 31003,
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "layer-checkout-pricing": {
+      "key": "layer-checkout-pricing",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-pricing-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 32001,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 2500,
+                      "end": 5000
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-pricing-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 32002,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 2500,
+                      "end": 5000
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-pricing-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-pricing-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 32003,
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
+    "layer-checkout-messaging": {
+      "key": "layer-checkout-messaging",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "not-enrolled": {
+          "key": "not-enrolled",
+          "value": "not-enrolled"
+        },
+        "control": {
+          "key": "control",
+          "value": "control"
+        },
+        "treatment": {
+          "key": "treatment",
+          "value": "treatment"
+        }
+      },
+      "allocations": [
+        {
+          "key": "checkout-messaging-experiment",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "control",
+              "serialId": 33001,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 7500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-messaging-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 0,
+                      "end": 5000
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "variationKey": "treatment",
+              "serialId": 33002,
+              "shards": [
+                {
+                  "salt": "layer-checkout-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 7500
+                    }
+                  ]
+                },
+                {
+                  "salt": "split-layer-checkout-messaging-v1",
+                  "totalShards": 10000,
+                  "ranges": [
+                    {
+                      "start": 5000,
+                      "end": 10000
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "checkout-messaging-not-enrolled",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "not-enrolled",
+              "serialId": 33003,
+              "shards": []
+            }
+          ],
+          "doLog": false
+        }
+      ]
+    },
     "split-features-selected-allocation": {
       "key": "split-features-selected-allocation",
       "enabled": true,
@@ -5692,6 +6099,85 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    "json-number-precision-flag": {
+      "key": "json-number-precision-flag",
+      "enabled": true,
+      "variationType": "JSON",
+      "variations": {
+        "within-double": {
+          "key": "within-double",
+          "value": {
+            "zero": 0,
+            "small": 5,
+            "negative": -7,
+            "int32Max": 2147483647,
+            "int32Min": -2147483648,
+            "aboveInt32": 2147483648,
+            "maxSafeInteger": 9007199254740991,
+            "float": 5.0,
+            "fraction": 0.25,
+            "nested": {
+              "count": 3,
+              "values": [
+                1,
+                2.5,
+                -3
+              ]
+            }
+          }
+        },
+        "above-double": {
+          "key": "above-double",
+          "value": {
+            "aboveMaxSafeInteger": 9007199254740993,
+            "int64Max": 9223372036854775807,
+            "int64Min": -9223372036854775808,
+            "nested": {
+              "ids": [
+                9007199254740993,
+                18014398509481985
+              ]
+            }
+          }
+        }
+      },
+      "allocations": [
+        {
+          "key": "above-double-precision",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "precision",
+                  "operator": "ONE_OF",
+                  "value": [
+                    "above-double"
+                  ]
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "above-double",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "within-double-precision",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "within-double",
+              "shards": []
+            }
+          ],
+          "doLog": true
         }
       ]
     }

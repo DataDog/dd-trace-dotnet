@@ -1,0 +1,10 @@
+{
+  "flags": [
+    {"key": "checkout-banner", "tags": ["team:checkout"]},
+    {"key": "checkout-pricing", "tags": ["team:checkout"]},
+    {"key": "search-ranking", "tags": ["team:search"]},
+    {"key": "summer-sale", "tags": ["release:summer sale"]},
+    {"key": "ops-kill-switch", "tags": ["team:ops"]},
+    {"key": "untagged-flag", "tags": []}
+  ]
+}

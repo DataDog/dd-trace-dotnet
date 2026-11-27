@@ -1,0 +1,4 @@
+[
+  {"flag":"scale-time-windows","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"plan":"pro"},"result":{"value":"active","reason":"TARGETING_MATCH"}},
+  {"flag":"scale-time-windows","variationType":"STRING","defaultValue":"default","targetingKey":"scale-subject","attributes":{"plan":"free"},"result":{"value":"fallback","reason":"STATIC"}}
+]
