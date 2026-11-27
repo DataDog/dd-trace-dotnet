@@ -101,7 +101,7 @@ For example:
 
 #### Tips
 
-- Currently, the devcontainer is configured to use `debian.dockerfile`, but you can change it to either a local Dockerfile or a remote image as per your requirements.
+- Currently, the devcontainer is configured to use `ubuntu.dockerfile`, but you can change it to either a local Dockerfile or a remote image as per your requirements.
 - Building Tracer can be resource-intensive and may even run out of memory (OOM) in some cases. If you encounter the error `MSB6006: "csc.dll" exited with code 137.`, increase the memory allocated to the devcontainer (16GB is recommended).
 - `Datadog.Trace.Minimal.slnf` is a minimal solution file that includes all the projects required to build the tracer. You can open other solutions as well, but they may not be fully supported in the devcontainer.
 

@@ -71,12 +71,26 @@ RUN set -eux; \
     dpkg -i libssl1.1.deb; \
     rm libssl1.1.deb
 
+# Jammy's /etc/ssl/openssl.cnf is OpenSSL 3 style: [openssl_init] has "providers = provider_sect".
+# OpenSSL 1.1 (used by .NET Core 3.1 and older, and .NET 5) doesn't know the "providers" module and
+# fails with "error:0E076071 ... unknown module name", intermittently depending on which thread
+# initializes OpenSSL first. OpenSSL 3 auto-loads the default provider without that line, so removing it
+# keeps the shared config valid for both versions. grep makes the build fail if the line ever changes.
+RUN grep -q '^providers = provider_sect$' /etc/ssl/openssl.cnf \
+    && sed -i '/^providers = provider_sect$/d' /etc/ssl/openssl.cnf
+
 # System.DirectoryServices.Protocols (LDAP client) dlopens libldap-2.4.so.2 by name; jammy
 # ships OpenLDAP 2.5 (libldap-2.5.so.0) via curl's transitive dep instead. The client ABI for
 # bind/search (what .NET's interop actually calls) stayed compatible across the SONAME bump,
 # so a symlink is the standard workaround - see dotnet/runtime#69456.
 RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
     && ln -s "/usr/lib/$MULTIARCH/libldap-2.5.so.0" "/usr/lib/$MULTIARCH/libldap-2.4.so.2"
+
+# Grpc.Core 2.29/2.30 DllImports "libdl.so" (unversioned name). glibc 2.34+ merged libdl into libc and
+# jammy's libc6-dev only ships libdl.a, so the symlink is missing and Grpc.Core fails with
+# DllNotFoundException. GrpcLegacy then hangs instead of failing. Debian buster's libc6-dev shipped it.
+RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
+    && ln -s "/usr/lib/$MULTIARCH/libdl.so.2" "/usr/lib/$MULTIARCH/libdl.so"
 
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
