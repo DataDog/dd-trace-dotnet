@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -117,6 +118,29 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DynamicFlakyRetryCounts.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
+        }
+
+        [Theory]
+        [InlineData(null, "")]
+        [InlineData("", "")]
+        [InlineData("  ", "")]
+        [InlineData("{invalid json}", "")]
+        [InlineData("[\"os.version\"]", "")]
+        [InlineData("\"6.12.0\"", "")]
+        [InlineData("null", "")]
+        [InlineData("{}", "")]
+        [InlineData("{\"os.version\":\"6.12.0\"} trailing", "")]
+        [InlineData("{\"os.version\":\" 6.12.0 \"}", "os.version=6.12.0")]
+        [InlineData("{\"os.version\":\"2026-01-02T03:04:05Z\"}", "os.version=2026-01-02T03:04:05Z")]
+        [InlineData("{\"os.platform\":\"Linux\",\"os.architecture\":\"X64\",\"os.version\":\"6.12.0\",\"runtime.name\":\".NET\",\"runtime.version\":\"8.0.0\",\"runtime.architecture\":\"X64\"}", "os.architecture=X64,os.platform=Linux,os.version=6.12.0,runtime.architecture=X64,runtime.name=.NET,runtime.version=8.0.0")]
+        [InlineData("{\"os.version\":\"6.12.0\",\"runtime.version\":\"  \",\"os.platform\":null,\"os.architecture\":64,\"runtime.vendor\":\"ignored\",\"custom.tag\":\"ignored\"}", "os.version=6.12.0")]
+        public void RuntimeTags(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.TestOptimizationRuntimeTags, value));
+            var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
+
+            string.Join(",", settings.RuntimeTags.OrderBy(tag => tag.Key, StringComparer.Ordinal).Select(tag => $"{tag.Key}={tag.Value}"))
+                  .Should().Be(expected);
         }
 
         [Theory]

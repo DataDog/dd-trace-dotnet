@@ -68,6 +68,7 @@ public sealed class Test
                 startTime: startDate,
                 traceId: traceId,
                 spanId: spanId);
+            TestOptimizationRuntimeTags.SetOverrides(_testOptimization, span);
             activatedScope = tracer.TracerManager.ScopeManager.Activate(span, true);
             _scope = activatedScope;
 

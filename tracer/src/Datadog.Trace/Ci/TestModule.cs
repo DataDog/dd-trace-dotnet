@@ -60,7 +60,7 @@ public sealed class TestModule
         _testOptimization.InitializeFromManualInstrumentation();
         var ciValues = _testOptimization.CIValues;
 
-        var frameworkDescription = FrameworkDescription.Instance;
+        var runtimeTags = TestOptimizationRuntimeTags.Create(_testOptimization);
         _suites = new Dictionary<string, TestSuite>();
 
         Name = name;
@@ -101,12 +101,12 @@ public sealed class TestModule
                 GitCommitCommitterEmail = sessionSpanTags.GitCommitCommitterEmail,
                 GitCommitMessage = sessionSpanTags.GitCommitMessage,
                 BuildSourceRoot = sessionSpanTags.BuildSourceRoot,
-                RuntimeName = frameworkDescription.Name,
-                RuntimeVersion = frameworkDescription.ProductVersion,
-                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
-                OSArchitecture = frameworkDescription.OSArchitecture,
-                OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _testOptimization.HostInfo.GetOperatingSystemVersion(),
+                RuntimeName = runtimeTags.RuntimeName,
+                RuntimeVersion = runtimeTags.RuntimeVersion,
+                RuntimeArchitecture = runtimeTags.RuntimeArchitecture,
+                OSArchitecture = runtimeTags.OSArchitecture,
+                OSPlatform = runtimeTags.OSPlatform,
+                OSVersion = runtimeTags.OSVersion,
                 CiEnvVars = sessionSpanTags.CiEnvVars,
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
@@ -124,12 +124,12 @@ public sealed class TestModule
                 Module = name,
                 Framework = framework,
                 FrameworkVersion = frameworkVersion,
-                RuntimeName = frameworkDescription.Name,
-                RuntimeVersion = frameworkDescription.ProductVersion,
-                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
-                OSArchitecture = frameworkDescription.OSArchitecture,
-                OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _testOptimization.HostInfo.GetOperatingSystemVersion(),
+                RuntimeName = runtimeTags.RuntimeName,
+                RuntimeVersion = runtimeTags.RuntimeVersion,
+                RuntimeArchitecture = runtimeTags.RuntimeArchitecture,
+                OSArchitecture = runtimeTags.OSArchitecture,
+                OSPlatform = runtimeTags.OSPlatform,
+                OSVersion = runtimeTags.OSVersion,
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
                 IntelligentTestRunnerTestsSkippingEnabled =
                     _testOptimization.SkippableFeature is { } sf
@@ -189,6 +189,7 @@ public sealed class TestModule
             string.IsNullOrEmpty(framework) ? "test_module" : $"{StringUtil.ToLowerInvariant(framework)}.test_module",
             tags: tags,
             startTime: startDate);
+        TestOptimizationRuntimeTags.SetOverrides(_testOptimization, span);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestModule;
