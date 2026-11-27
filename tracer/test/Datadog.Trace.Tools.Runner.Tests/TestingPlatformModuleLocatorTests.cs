@@ -75,6 +75,17 @@ public class TestingPlatformModuleLocatorTests : IDisposable
     }
 
     [Fact]
+    public void GivesTheConfigurationOptionPrecedenceOverTheConfigurationProperty()
+    {
+        WriteProject("Tests", TestingPlatformProject);
+
+        var found = TestingPlatformModuleLocator.TryGetOutputFolders("dotnet", Parse("test", "--project", "Tests", "-c", "Release", "-p:Configuration=Debug"), _root, out var folders);
+
+        found.Should().BeTrue();
+        Relative(folders).Should().BeEquivalentTo(Path.Combine("Tests", "bin", "Release", "net8.0"), Path.Combine("Tests", "bin", "Release", "net9.0"));
+    }
+
+    [Fact]
     public void FindsTheProjectsOfASolutionAndSkipsTheOnesThatAreNotTestApplications()
     {
         WriteProject("Tests1", TestingPlatformProject);

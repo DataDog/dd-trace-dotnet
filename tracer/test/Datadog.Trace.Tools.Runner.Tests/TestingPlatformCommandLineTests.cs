@@ -34,6 +34,11 @@ public class TestingPlatformCommandLineTests : IDisposable
     [InlineData("test --test-modules **/*.Tests.dll --no-build", true, true)]
     [InlineData("test --no-build -- --report-trx", true, false)]
     [InlineData("test -- --no-build", false, false)]
+    [InlineData("test --no-build true", true, false)]
+    [InlineData("test --no-build false", false, false)]
+    [InlineData("test --no-build False -c Release", false, false)]
+    [InlineData("test --no-build:false", false, false)]
+    [InlineData("test --no-build=true", true, false)]
     public void ReportsWhetherTheAssembliesAreRunWithoutBuilding(string commandLine, bool noBuild, bool hasTestModules)
     {
         var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);
@@ -79,7 +84,14 @@ public class TestingPlatformCommandLineTests : IDisposable
     [InlineData("test -p:Foo=Bar", new[] { "-p:Foo=Bar" })]
     [InlineData("test /p:Foo=Bar --property:Baz=1", new[] { "-p:Foo=Bar", "-p:Baz=1" })]
     [InlineData("test -p Foo=Bar", new[] { "-p:Foo=Bar" })]
-    [InlineData("test -c Debug -f net8.0 -p:A=1", new[] { "-p:Configuration=Debug", "-p:TargetFramework=net8.0", "-p:A=1" })]
+    [InlineData("test --p:Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test -property Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test --property Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test /p Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test --p Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test -c Debug -f net8.0 -p:A=1", new[] { "-p:A=1", "-p:Configuration=Debug", "-p:TargetFramework=net8.0" })]
+    [InlineData("test -c Debug -p:Configuration=Release", new[] { "-p:Configuration=Release", "-p:Configuration=Debug" })]
+    [InlineData("test -f net8.0 --property TargetFramework=net9.0", new[] { "-p:TargetFramework=net9.0", "-p:TargetFramework=net8.0" })]
     public void ForwardsTheOptionsThatChooseTheOutput(string commandLine, string[] expected)
     {
         var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);
@@ -124,6 +136,10 @@ public class TestingPlatformCommandLineTests : IDisposable
     [InlineData("test --no-restore tests/Sample.Tests", "tests/Sample.Tests")]
     [InlineData("test --list-tests Sample.slnx", "Sample.slnx")]
     [InlineData("test --no-ansi --no-progress tests/Sample.Tests/Sample.Tests.csproj", "tests/Sample.Tests/Sample.Tests.csproj")]
+    [InlineData("test --no-artifact-post-processing tests/Sample.Tests", "tests/Sample.Tests")]
+    [InlineData("test -nologo --list-devices Sample.slnx", "Sample.slnx")]
+    [InlineData("test --no-build tests/Sample.Tests", "tests/Sample.Tests")]
+    [InlineData("test --no-build true tests/Sample.Tests", "tests/Sample.Tests")]
     public void KeepsTheProjectAfterOptionsThatTakeNoValue(string commandLine, string expected)
     {
         var parsed = TestingPlatformCommandLine.Parse(commandLine.Split(' '), _workingDirectory);

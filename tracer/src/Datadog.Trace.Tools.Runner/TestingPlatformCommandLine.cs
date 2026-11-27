@@ -28,7 +28,7 @@ internal sealed class TestingPlatformCommandLine
     private static readonly string[] OptionsWithValue =
     [
         "--results-directory", "--results-directory-layout", "--config-file", "--diagnostic-output-directory", "--max-parallel-test-modules",
-        "--minimum-expected-tests", "--maximum-failed-tests", "--timeout", "-e", "--environment", "-v", "--verbosity", "--output"
+        "--minimum-expected-tests", "--maximum-failed-tests", "--timeout", "-e", "--environment", "-v", "-verbosity", "--verbosity", "--output"
     ];
 
     // Options that change the output folders in ways this class doesn't reproduce.
@@ -37,11 +37,14 @@ internal sealed class TestingPlatformCommandLine
     // Options of the command that don't take a value.
     private static readonly string[] FlagOptions =
     [
-        "--no-restore", "--no-dependencies", "--no-ansi", "--no-progress", "--no-launch-profile", "--no-launch-profile-arguments",
-        "--list-tests", "--no-logo", "--nologo", "--no-banner", "-?", "-h", "--help"
+        "--no-restore", "--no-dependencies", "--no-ansi", "--no-progress", "--no-artifact-post-processing", "--no-launch-profile",
+        "--no-launch-profile-arguments", "--list-tests", "--list-devices", "--no-logo", "-nologo", "--nologo", "--no-banner", "-?", "-h", "--help"
     ];
 
-    private static readonly string[] MsBuildPropertyPrefixes = ["-p:", "/p:", "-property:", "/property:", "--property:"];
+    private static readonly string[] MsBuildPropertyPrefixes = ["-p:", "/p:", "--p:", "-property:", "/property:", "--property:"];
+
+    // The same option with the property in the next argument.
+    private static readonly string[] MsBuildPropertyOptions = ["-p", "/p", "--p", "-property", "/property", "--property"];
 
     private static readonly string[] ProjectFileExtensions = [".sln", ".slnx", ".slnf"];
 
@@ -106,6 +109,10 @@ internal sealed class TestingPlatformCommandLine
         string? positional = null;
         string? unsupportedOption = null;
         var msBuildArguments = new List<string>();
+
+        // The SDK gives -c, -f, -r and --artifacts-path precedence over the same properties set with -p, whatever their order,
+        // so they are added after the properties (the last value of a global property wins).
+        var optionMsBuildArguments = new List<string>();
         var previousIsUnknownOption = false;
 
         var index = 0;
@@ -127,7 +134,17 @@ internal sealed class TestingPlatformCommandLine
 
             if (argument == "--no-build")
             {
+                // The SDK also accepts an explicit value, as in --no-build false.
                 noBuild = true;
+                if (index + 1 < arguments.Count && bool.TryParse(Unquote(arguments[index + 1]), out var nextValue))
+                {
+                    noBuild = nextValue;
+                    index++;
+                }
+            }
+            else if (argument.StartsWith("--no-build:", StringComparison.Ordinal) || argument.StartsWith("--no-build=", StringComparison.Ordinal))
+            {
+                noBuild = bool.TryParse(argument.Substring("--no-build:".Length), out var attachedValue) && attachedValue;
             }
             else if (TryGetValue(arguments, ref index, argument, ["--test-modules"], out var value))
             {
@@ -147,26 +164,26 @@ internal sealed class TestingPlatformCommandLine
             }
             else if (TryGetValue(arguments, ref index, argument, ["-c", "--configuration"], out value))
             {
-                msBuildArguments.Add("-p:Configuration=" + value);
+                optionMsBuildArguments.Add("-p:Configuration=" + value);
             }
             else if (TryGetValue(arguments, ref index, argument, ["-f", "--framework"], out value))
             {
-                msBuildArguments.Add("-p:TargetFramework=" + value);
+                optionMsBuildArguments.Add("-p:TargetFramework=" + value);
             }
             else if (TryGetValue(arguments, ref index, argument, ["-r", "--runtime"], out value))
             {
-                msBuildArguments.Add("-p:RuntimeIdentifier=" + value);
-                msBuildArguments.Add("-p:_CommandLineDefinedRuntimeIdentifier=true");
+                optionMsBuildArguments.Add("-p:RuntimeIdentifier=" + value);
+                optionMsBuildArguments.Add("-p:_CommandLineDefinedRuntimeIdentifier=true");
             }
             else if (TryGetValue(arguments, ref index, argument, ["--artifacts-path"], out value))
             {
-                msBuildArguments.Add("-p:ArtifactsPath=" + Path.GetFullPath(Path.Combine(workingDirectory, value)));
+                optionMsBuildArguments.Add("-p:ArtifactsPath=" + Path.GetFullPath(Path.Combine(workingDirectory, value)));
             }
             else if (IsMsBuildProperty(argument, out var property))
             {
                 msBuildArguments.Add("-p:" + property);
             }
-            else if (TryGetValue(arguments, ref index, argument, ["-p", "--property"], out value))
+            else if (TryGetValue(arguments, ref index, argument, MsBuildPropertyOptions, out value))
             {
                 msBuildArguments.Add("-p:" + value);
             }
@@ -201,6 +218,7 @@ internal sealed class TestingPlatformCommandLine
             }
         }
 
+        msBuildArguments.AddRange(optionMsBuildArguments);
         return new TestingPlatformCommandLine(noBuild, testModules, rootDirectory, solution ?? project ?? positional, msBuildArguments, unsupportedOption);
     }
 
