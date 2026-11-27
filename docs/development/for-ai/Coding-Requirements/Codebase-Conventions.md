@@ -90,6 +90,9 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 - ❌ `WarnFailure(result, attempts: 1);`
 - ✅ `WarnFailure(in result, attempts: 1);`
 
+### CONV-3.9: Inject time and external checks through `ITimeProvider` or a generic struct parameter, not delegates
+- Flag: delegate, `Stopwatch`, or wait-callback parameters added to tracer code as test seams for time, delays, or health checks. Use the existing `ITimeProvider`, or a generic struct parameter that implements an interface.
+
 ## 4. Tests
 
 ### CONV-4.1: Assert integration-test spans with Verify snapshots, not per-tag assertions
