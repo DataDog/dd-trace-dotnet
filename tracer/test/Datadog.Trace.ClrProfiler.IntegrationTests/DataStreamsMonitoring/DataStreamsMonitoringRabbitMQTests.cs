@@ -75,6 +75,33 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         }
     }
 
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    public async Task NormalizesPerInstanceQueueNames(string packageVersion)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
+
+        using var assertionScope = new AssertionScope();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix} PerInstanceQueues", packageVersion: packageVersion))
+        {
+            // 3 produce + 3 consume checkpoints
+            var points = PayloadsToPoints(await agent.WaitForDataStreamsPointsAsync(statsCount: 6));
+            var edgeTags = points.Select(p => string.Join(",", p.EdgeTags)).Distinct().ToList();
+
+            edgeTags.Should().Contain("direction:out,topic:amq.gen-*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:in,topic:amq.gen-*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:out,topic:callback-*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:in,topic:callback-*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:out,topic:*,type:rabbitmq");
+            edgeTags.Should().Contain("direction:in,topic:*,type:rabbitmq");
+            edgeTags.Should().OnlyContain(t => !t.Contains("amq.gen-") || t.Contains("amq.gen-*"));
+            edgeTags.Should().OnlyContain(t => !t.Contains("callback-") || t.Contains("callback-*"));
+        }
+    }
+
     private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
     {
         var points = new List<MockDataStreamsStatsPoint>();

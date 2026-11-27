@@ -21,6 +21,7 @@ namespace Samples.DataStreams.RabbitMQ
         private static readonly string FanoutExchange = nameof(FanoutExchange);
         private static readonly string DirectRoutingKey = nameof(DirectRoutingKey);
         private static readonly string Message = nameof(Message);
+        private const string PerInstanceQueuesArg = "PerInstanceQueues";
         private static readonly string Host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         
         public static async Task Main(string[] args)
@@ -35,6 +36,16 @@ namespace Samples.DataStreams.RabbitMQ
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();
 #endif
+
+            if (Array.IndexOf(args, PerInstanceQueuesArg) >= 0)
+            {
+                // Per-instance queue names should be normalized in DSM edge tags:
+                //    (direction:out, topic:amq.gen-*) -> (direction:in, topic:amq.gen-*)
+                //    (direction:out, topic:callback-*) -> (direction:in, topic:callback-*)
+                //    (direction:out, topic:*) -> (direction:in, topic:*)
+                await PublishAndGetPerInstanceQueues(model);
+                return;
+            }
 
             // This should create 4 separate Rabbit Pipeline:
             // 1. default exchange pipeline:
@@ -79,6 +90,28 @@ namespace Samples.DataStreams.RabbitMQ
         }
 
 #if RABBITMQ_7_0
+        private static async Task PublishAndGetPerInstanceQueues(IChannel model)
+        {
+            // server-named queue (amq.gen-...)
+            var serverNamed = (await model.QueueDeclareAsync()).QueueName;
+            await model.BasicPublishAsync("", serverNamed, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, serverNamed);
+
+            // queue name with a trailing UUID
+            var callbackQueue = $"callback-{Guid.NewGuid()}";
+            await model.QueueDeclareAsync(queue: callbackQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            await model.BasicPublishAsync("", callbackQueue, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, callbackQueue);
+
+            // queue name that is only a UUID
+            var uuidQueue = Guid.NewGuid().ToString();
+            await model.QueueDeclareAsync(queue: uuidQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            await model.BasicPublishAsync("", uuidQueue, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, uuidQueue);
+
+            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed}, {callbackQueue} and {uuidQueue}.");
+        }
+
         private static async Task PublishMessageToDefaultExchange(IChannel model)
         {
             // Atomically binded to default exchange with routing key of the same name
@@ -211,6 +244,28 @@ namespace Samples.DataStreams.RabbitMQ
             return message;
         }
 #else
+        private static async Task PublishAndGetPerInstanceQueues(IModel model)
+        {
+            // server-named queue (amq.gen-...)
+            var serverNamed = model.QueueDeclare().QueueName;
+            model.BasicPublish("", serverNamed, null, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, serverNamed);
+
+            // queue name with a trailing UUID
+            var callbackQueue = $"callback-{Guid.NewGuid()}";
+            model.QueueDeclare(queue: callbackQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            model.BasicPublish("", callbackQueue, null, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, callbackQueue);
+
+            // queue name that is only a UUID
+            var uuidQueue = Guid.NewGuid().ToString();
+            model.QueueDeclare(queue: uuidQueue, durable: false, exclusive: true, autoDelete: true, arguments: null);
+            model.BasicPublish("", uuidQueue, null, Encoding.UTF8.GetBytes(Message));
+            await GetMessage(model, uuidQueue);
+
+            Console.WriteLine($"[Sent] {Message} to per-instance queues {serverNamed}, {callbackQueue} and {uuidQueue}.");
+        }
+
         private static Task PublishMessageToDefaultExchange(IModel model)
         {
             // Atomically binded to default exchange with routing key of the same name
