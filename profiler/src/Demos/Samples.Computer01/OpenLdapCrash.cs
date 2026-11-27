@@ -62,22 +62,12 @@ namespace Samples.Computer01
             }
         }
 
-        // Intentionally creates and disposes a new LdapConnection on every iteration (do NOT reuse one
-        // connection across iterations): this test exercises the connect() syscall wrapper in
-        // Datadog.Linux.ApiWrapper/socket_operations.c in addition to poll/select/recv.
-        //
-        // Because the client closes each TCP connection first, the test container's Linux kernel keeps each
-        // (client_ip, ephemeral_port, openldap_ip, 389) 4-tuple in TIME_WAIT for 60 s, and TIME_WAIT entries
-        // outlive the child process. If the client runs out of ephemeral ports, Linux fails connect() locally
-        // with EADDRNOTAVAIL (errno 99, "Address not available") without contacting the server, and libldap
-        // surfaces that as the misleading "LdapException: The LDAP server is unavailable." even though the
-        // LDAP server is healthy.
-        //
-        // In docker-compose.yml, ProfilerIntegrationTests sets `net.ipv4.tcp_tw_reuse=1` so the container can
-        // reuse TIME_WAIT port numbers for new connections after 1 s instead of 60 s (keeping full connect()
-        // coverage without throttling). Note: if you run all frameworks outside docker-compose against a
-        // non-loopback LDAP server IP, Linux's default `net.ipv4.tcp_tw_reuse=2` only applies to loopback
-        // (localhost), so enable `net.ipv4.tcp_tw_reuse=1` there too (or target localhost).
+        // Do not reuse LdapConnection across iterations: each Bind must open a new TCP connection to
+        // exercise the connect() wrapper in Datadog.Linux.ApiWrapper/socket_operations.c.
+        // Client-closed sockets stay in TIME_WAIT (60 s); exhausting ephemeral ports fails locally with
+        // EADDRNOTAVAIL, which libldap reports as "The LDAP server is unavailable".
+        // docker-compose.yml sets net.ipv4.tcp_tw_reuse=1 (1 s reuse) on ProfilerIntegrationTests.
+        // Outside Compose against a non-loopback LDAP IP, set tcp_tw_reuse=1 (default 2 is loopback-only).
         private void ConnectToLdapServer()
         {
             _attempts++;
