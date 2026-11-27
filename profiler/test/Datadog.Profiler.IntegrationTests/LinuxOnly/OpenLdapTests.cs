@@ -21,12 +21,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        // The scenario opens a new TCP connection for each Bind in a tight loop: each run leaves ~15k
-        // sockets in TIME_WAIT (60s) and the container has ~28k ephemeral ports (32768-60999).
-        // All frameworks run back to back in the same container, so adding frameworks can exhaust the
-        // ports and the test fails with 'The LDAP server is unavailable' (even without the profiler).
-        // If that happens, throttle the scenario (see OpenLdapCrash.ConnectToLdapServer) or set
-        // net.ipv4.tcp_tw_reuse=1 (sysctls) on the ProfilerIntegrationTests service in docker-compose.yml.
+        // Frameworks run sequentially in one container and open a new TCP connection per Bind
+        // (see OpenLdapCrash.ConnectToLdapServer); docker-compose.yml sets net.ipv4.tcp_tw_reuse=1
+        // to avoid client-side TIME_WAIT port exhaustion ("The LDAP server is unavailable").
+        // Outside Compose against a non-loopback LDAP IP, set tcp_tw_reuse=1 (default 2 is loopback-only).
         [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net9, TestFramework.Net10)]
         public void CheckOpenLdapCrash(TestAppContext app)
         {

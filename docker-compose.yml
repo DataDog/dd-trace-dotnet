@@ -391,6 +391,10 @@ services:
       - ./:/project
     cap_add:
       - SYS_PTRACE
+    # Allow reusing TIME_WAIT ports after 1 s (not default 2, which is loopback-only) so
+    # OpenLdapTests does not exhaust ephemeral ports against openldap-server:389.
+    sysctls:
+      - net.ipv4.tcp_tw_reuse=1
     environment:
       - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
