@@ -30,6 +30,11 @@ internal static partial class PlatformKeys
     public const string ForceEnc = "COMPLUS_ForceEnc";
 
     /// <summary>
+    /// Selects the command that <c>dotnet test</c> runs (<c>VSTest</c> or <c>Microsoft.Testing.Platform</c>), on .NET SDK 11 and later.
+    /// </summary>
+    public const string DotNetTestRunner = "DOTNET_TEST_RUNNER";
+
+    /// <summary>
     /// Program data folder
     /// </summary>
     public const string ProgramData = "ProgramData";
