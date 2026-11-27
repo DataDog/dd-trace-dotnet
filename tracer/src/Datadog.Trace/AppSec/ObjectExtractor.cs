@@ -16,6 +16,7 @@ using System.Reflection.Emit;
 using System.Runtime.Serialization;
 #endif
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -122,9 +123,15 @@ namespace Datadog.Trace.AppSec
 
             for (var i = 0; i < memberExtractors.Length; i++)
             {
-                if (dict.Count >= WafConstants.MaxContainerSize || depth >= WafConstants.MaxContainerDepth)
+                if (depth >= WafConstants.MaxContainerDepth)
                 {
                     return dict;
+                }
+
+                if (dict.Count >= WafConstants.MaxContainerSize)
+                {
+                    var remaining = CountEmittedMembers(memberExtractors, i, body);
+                    return remaining > 0 ? new TruncatedDictionary(dict, dict.Count + remaining) : dict;
                 }
 
                 var memberExtractor = memberExtractors[i];
@@ -135,7 +142,7 @@ namespace Datadog.Trace.AppSec
 
                     // [DataMember(EmitDefaultValue = false)] means the serializer omits this member
                     // when its value is null/default — skip it to match the actual response body.
-                    if (!memberExtractor.EmitDefaultValue && memberExtractor.IsDefault(value))
+                    if (!memberExtractor.IsEmitted(value))
                     {
                         continue;
                     }
@@ -157,6 +164,25 @@ namespace Datadog.Trace.AppSec
             }
 
             return dict;
+        }
+
+        // Only the members the serializer would write count: an object whose remaining members are all
+        // omitted, by [DataMember(EmitDefaultValue = false)], isn't truncated
+        private static int CountEmittedMembers(MemberExtractor?[] memberExtractors, int start, object body)
+        {
+            var count = 0;
+            for (var i = start; i < memberExtractors.Length; i++)
+            {
+                // a member that is always emitted counts without reading it; only an EmitDefaultValue = false one, which
+                // the serializer reads too to decide whether to omit it, is read
+                if (memberExtractors[i] is { } memberExtractor
+                    && (memberExtractor.EmitDefaultValue || memberExtractor.IsEmitted(memberExtractor.Accessor.Invoke(body))))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private static MemberExtractor?[] CreateDefaultExtractors(Type bodyType)
@@ -585,7 +611,8 @@ namespace Datadog.Trace.AppSec
 
             Dictionary<string, object?> items;
             // some types, like System.Web.Routing.RouteValueDictionary don't inherit ICollection, but ICollection<,> which never inherits ICollection but IEnumerable instead.
-            if (value is ICollection sourceColl)
+            var sourceColl = value as ICollection;
+            if (sourceColl is not null)
             {
                 var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceColl.Count);
                 items = new Dictionary<string, object?>(dictSize);
@@ -599,6 +626,11 @@ namespace Datadog.Trace.AppSec
             {
                 foreach (var item in sourceDict)
                 {
+                    if (items.Count >= WafConstants.MaxContainerSize)
+                    {
+                        return new TruncatedDictionary(items, sourceColl?.Count ?? items.Count + 1);
+                    }
+
                     var dictKey = keyProp.GetValue(item)?.ToString();
                     var dictValue = valueProp.GetValue(item);
 
@@ -612,11 +644,6 @@ namespace Datadog.Trace.AppSec
                         {
                             var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                             items.Add(dictKey, extractedvalue);
-                        }
-
-                        if (items.Count >= WafConstants.MaxContainerSize)
-                        {
-                            break;
                         }
                     }
                 }
@@ -656,7 +683,8 @@ namespace Datadog.Trace.AppSec
             var valueProp = tkvp.GetProperty("Value");
 
             var sourceDict = value as IEnumerable;
-            var items = value is ICollection sourceColl
+            var sourceColl = value as ICollection;
+            var items = sourceColl is not null
                 ? new List<object?>(Math.Min(WafConstants.MaxContainerSize, sourceColl.Count))
                 : new List<object?>();
 
@@ -664,6 +692,11 @@ namespace Datadog.Trace.AppSec
             {
                 foreach (var entry in sourceDict)
                 {
+                    if (items.Count >= WafConstants.MaxContainerSize)
+                    {
+                        return new TruncatedList(items, sourceColl?.Count ?? items.Count + 1);
+                    }
+
                     var dictKey = keyProp.GetValue(entry);
                     var dictValue = valueProp.GetValue(entry);
 
@@ -673,11 +706,6 @@ namespace Datadog.Trace.AppSec
                         ["Value"] = dictValue is null ? null : ExtractType(dictValue.GetType(), dictValue, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
                     };
                     items.Add(pair);
-
-                    if (items.Count >= WafConstants.MaxContainerSize)
-                    {
-                        break;
-                    }
                 }
             }
 
@@ -713,6 +741,11 @@ namespace Datadog.Trace.AppSec
                 var mapEnumerator = source.GetEnumerator();
                 while (mapEnumerator.MoveNext())
                 {
+                    if (map.Count >= WafConstants.MaxContainerSize)
+                    {
+                        return new TruncatedDictionary(map, source.Count);
+                    }
+
                     var entry = mapEnumerator.Entry;
                     var key = entry.Key?.ToString();
                     if (key is null)
@@ -721,10 +754,6 @@ namespace Datadog.Trace.AppSec
                     }
 
                     map[key] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
-                    if (map.Count >= WafConstants.MaxContainerSize)
-                    {
-                        break;
-                    }
                 }
 
                 return map;
@@ -739,16 +768,17 @@ namespace Datadog.Trace.AppSec
             var enumerator = source.GetEnumerator();
             while (enumerator.MoveNext())
             {
+                if (items.Count >= WafConstants.MaxContainerSize)
+                {
+                    return new TruncatedList(items, source.Count);
+                }
+
                 var entry = enumerator.Entry;
                 items.Add(new Dictionary<string, object?>(2)
                 {
                     ["Key"] = entry.Key is null ? null : ExtractType(entry.Key.GetType(), entry.Key, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
                     ["Value"] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
                 });
-                if (items.Count >= WafConstants.MaxContainerSize)
-                {
-                    break;
-                }
             }
 
             return items;
@@ -782,12 +812,18 @@ namespace Datadog.Trace.AppSec
 
             // Use ICollection for pre-sizing when available. Some types (e.g. HashSet<T>) implement
             // ICollection<T> but not the non-generic ICollection, so fall back to default capacity.
-            var items = value is ICollection sourceColl
+            var sourceColl = value as ICollection;
+            var items = sourceColl is not null
                 ? new List<object?>(Math.Min(WafConstants.MaxContainerSize, sourceColl.Count))
                 : new List<object?>();
 
             foreach (var item in source)
             {
+                if (items.Count >= WafConstants.MaxContainerSize)
+                {
+                    return new TruncatedList(items, sourceColl?.Count ?? items.Count + 1);
+                }
+
                 if (item is null)
                 {
                     items.Add(item);
@@ -797,14 +833,20 @@ namespace Datadog.Trace.AppSec
                     var extractedvalue = ExtractType(item.GetType(), item, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                     items.Add(extractedvalue);
                 }
-
-                if (items.Count >= WafConstants.MaxContainerSize)
-                {
-                    break;
-                }
             }
 
             return items;
+        }
+
+        // The containers cut to the WAF size limit, which keep their original size for the encoder to report
+        private sealed class TruncatedList(List<object?> items, int originalCount) : List<object?>(items), ITruncatedContainer
+        {
+            public int OriginalCount { get; } = originalCount;
+        }
+
+        private sealed class TruncatedDictionary(Dictionary<string, object?> items, int originalCount) : Dictionary<string, object?>(items), ITruncatedContainer
+        {
+            public int OriginalCount { get; } = originalCount;
         }
 
         private sealed class MemberExtractor
@@ -833,7 +875,10 @@ namespace Datadog.Trace.AppSec
 
             public bool EmitDefaultValue { get; }
 
-            public bool IsDefault(object? value)
+            // whether the serializer writes the member with this value
+            public bool IsEmitted(object? value) => EmitDefaultValue || !IsDefault(value);
+
+            private bool IsDefault(object? value)
                 => value is null || (_valueTypeDefault is not null && value.Equals(_valueTypeDefault));
         }
     }
