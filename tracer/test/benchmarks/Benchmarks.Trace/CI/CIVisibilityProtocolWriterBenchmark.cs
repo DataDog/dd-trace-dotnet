@@ -1,12 +1,12 @@
 using System;
-using System.Threading.Tasks;
+using System.IO;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 
@@ -19,7 +19,7 @@ namespace Benchmarks.Trace
     {
         private const int SpanCount = 1000;
 
-        private IEventWriter _eventWriter;
+        private CITestCyclePayload _payload;
         private SpanCollection _enrichedSpans;
 
         [GlobalSetup]
@@ -42,35 +42,36 @@ namespace Benchmarks.Trace
             config[ConfigurationKeys.TraceEnabled] = false;
             var settings = new TestOptimizationSettings(new DictionaryObjectConfigurationSource(config), NullConfigurationTelemetry.Instance);
 
-            _eventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter(), CIFormatterResolver.Instance);
-
-            // Warmup to reduce noise
-            WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+            _payload = new CITestCyclePayload(settings, CIFormatterResolver.Instance);
         }
-
-        [GlobalCleanup]
-        public void GlobalCleanup()
-        {
-            _eventWriter.FlushAndCloseAsync();
-        }
-
 
         /// <summary>
-        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
+        /// Synchronously writes enriched spans (with tags and metrics) into the CI test-cycle
+        /// payload and flushes it, mirroring the CIVisibilityProtocolWriter flush loop.
         /// </summary>
         [Benchmark]
-        public Task WriteAndFlushEnrichedTraces()
+        public int WriteAndFlushEnrichedTraces()
         {
-            _eventWriter.WriteTrace(_enrichedSpans);
-            return _eventWriter.FlushTracesAsync();
+            // `CIVisibilityProtocolWriter` hands events to background flush tasks, so timing it
+            // measures queue handoff and task scheduling. Run the flush loop's work (event
+            // transform, payload serialization, flush and reset) inline instead.
+            foreach (var span in _enrichedSpans)
+            {
+                var @event = CIVisibilityEventsFactory.FromSpan(span);
+                while (!_payload.TryProcessEvent(@event) && _payload.HasEvents)
+                {
+                    FlushPayload();
+                }
+            }
+
+            return FlushPayload();
         }
 
-        private class FakeCIVisibilityProtocolWriter : ICIVisibilityProtocolWriterSender
+        private int FlushPayload()
         {
-            public Task SendPayloadAsync(EventPlatformPayload payload)
-            {
-                return Task.CompletedTask;
-            }
+            var bytesWritten = _payload.WriteTo(Stream.Null);
+            _payload.Reset();
+            return bytesWritten;
         }
     }
 }

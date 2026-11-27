@@ -30,7 +30,27 @@ public static class TracerHelper
                 new OverrideErrorLog()));
 
     public static Tracer CreateTracer(TracerSettings settings)
-        => new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+    {
+        // `NullTelemetryController` alone leaves the static metrics collector and its 10 s
+        // aggregation loop running. Swap in the null collector and stop the old loop.
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(NullMetricsTelemetryCollector.Instance);
+        if (previousMetrics is MetricsTelemetryCollectorBase metricsCollector)
+        {
+            metricsCollector.DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        return new(settings, new DummyAgentWriter(), null, null, null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+    }
+
+    // Auto-instrumentation reads `Tracer.Instance`. Without a global dummy tracer, the first
+    // call lazily creates a real one (agent writer, discovery, remote config, heartbeat)
+    // that targets a missing agent.
+    public static Tracer CreateAndSetGlobalTracer(TracerSettings settings)
+    {
+        var tracer = CreateTracer(settings);
+        Tracer.UnsafeSetTracerInstance(tracer);
+        return tracer;
+    }
 
     public static void SetGlobalTracer(Dictionary<string, object> config = null)
     {

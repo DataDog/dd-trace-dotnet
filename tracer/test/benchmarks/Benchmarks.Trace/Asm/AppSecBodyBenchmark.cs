@@ -6,7 +6,6 @@ using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
@@ -18,7 +17,6 @@ using System.Web;
 
 #else
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 #endif
 
 namespace Benchmarks.Trace.Asm
@@ -89,16 +87,14 @@ namespace Benchmarks.Trace.Asm
 
 #if !NETFRAMEWORK
             _security.CheckBody(_httpContext, span, body, false);
-            var context = _httpContext.Features.Get<IContext>();
-            context?.Dispose();
-            _httpContext.Features.Set<IContext>(null);
 #else
             var securityTransport = SecurityCoordinator.Get(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
             securityTransport!.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
-            var context = _httpContext.Items["waf"] as IContext;
-            context?.Dispose();
-            _httpContext.Items["waf"] = null;
 #endif
+            // The WAF context lives on the span's `AppSecRequestContext`, not the `HttpContext`.
+            // Dispose it there, as the tracer does at request end, or every call leaves the
+            // native context to the finalizer.
+            span.Context.TraceContext?.AppSecRequestContext.DisposeAdditiveContext();
         }
 
         [Benchmark]
