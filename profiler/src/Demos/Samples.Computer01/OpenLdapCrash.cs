@@ -6,7 +6,10 @@
 #if NET5_0_OR_GREATER
 using System;
 using System.DirectoryServices.Protocols;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace Samples.Computer01
@@ -15,6 +18,8 @@ namespace Samples.Computer01
     {
         private readonly string _serverHostname;
         private readonly int _serverPort;
+        private long _attempts;
+        private long _failures;
 
         public OpenLdapCrash()
         {
@@ -51,6 +56,18 @@ namespace Samples.Computer01
             Thread.Sleep(5);
         }
 
+        private static string ReadLocalPortRange()
+        {
+            try
+            {
+                return File.ReadAllText("/proc/sys/net/ipv4/ip_local_port_range").Trim();
+            }
+            catch (Exception e)
+            {
+                return $"unknown ({e.Message})";
+            }
+        }
+
         // Intentionally creates and disposes a new LdapConnection on every iteration (do NOT reuse one
         // connection across iterations): this test exercises the connect() syscall wrapper in
         // Datadog.Linux.ApiWrapper/socket_operations.c in addition to poll/select/recv.
@@ -68,6 +85,7 @@ namespace Samples.Computer01
         // separate container, not loopback).
         private void ConnectToLdapServer()
         {
+            _attempts++;
             try
             {
                 using var ldapConnection = new LdapConnection(new LdapDirectoryIdentifier(_serverHostname, _serverPort), new NetworkCredential("cn=admin,dc=dd-trace-dotnet,dc=com", "Passw0rd"), AuthType.Basic);
@@ -76,8 +94,72 @@ namespace Samples.Computer01
             }
             catch (Exception e)
             {
+                _failures++;
                 Console.WriteLine($"[Error] An error occurred while trying to connect to the LDAP server `{_serverHostname}:{_serverPort}`. " + e.ToString());
+
+                if (_failures == 1)
+                {
+                    LogFirstFailureDiagnostics();
+                }
             }
+        }
+
+        // Only runs on the first Bind failure (zero cost on passing runs). libldap collapses almost any
+        // socket failure into "The LDAP server is unavailable", so this distinguishes client-side port
+        // exhaustion (EADDRNOTAVAIL + high TIME_WAIT) from an unreachable server or a post-connect error.
+        private void LogFirstFailureDiagnostics()
+        {
+            var timeWaitCount = CountTimeWaitSockets();
+            var portRange = ReadLocalPortRange();
+            var prefix = $"[Info] OpenLdapCrash first failure at attempt {_attempts} ({DateTime.UtcNow:O}): {timeWaitCount} TIME_WAIT sockets to port {_serverPort}, ip_local_port_range={portRange}, Socket.Connect";
+
+            try
+            {
+                using var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(_serverHostname, _serverPort);
+                Console.WriteLine($"{prefix} succeeded");
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine($"{prefix} failed: SocketError={e.SocketErrorCode}, NativeErrorCode={e.NativeErrorCode}, Message={e.Message}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{prefix} failed: {e.GetType().Name}: {e.Message}");
+            }
+        }
+
+        // Counts sockets in TIME_WAIT (state 06) to the LDAP server port in /proc/net/tcp and /proc/net/tcp6.
+        private int CountTimeWaitSockets()
+        {
+            var count = 0;
+            foreach (var file in new[] { "/proc/net/tcp", "/proc/net/tcp6" })
+            {
+                try
+                {
+                    foreach (var line in File.ReadLines(file).Skip(1))
+                    {
+                        var columns = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (columns.Length < 4 || columns[3] != "06")
+                        {
+                            continue;
+                        }
+
+                        var remote = columns[2];
+                        var port = Convert.ToInt32(remote[(remote.LastIndexOf(':') + 1)..], 16);
+                        if (port == _serverPort)
+                        {
+                            count++;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    return -1;
+                }
+            }
+
+            return count;
         }
     }
 }
