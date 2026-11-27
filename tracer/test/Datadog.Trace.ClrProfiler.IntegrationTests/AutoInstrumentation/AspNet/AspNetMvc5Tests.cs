@@ -24,6 +24,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsCallTargetClassic : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
@@ -33,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsCallTargetIntegrated : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -42,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsCallTargetClassicWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -51,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -60,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsCallTargetIntegratedWithRouteTemplateExpansion : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetIntegratedWithRouteTemplateExpansion(IisFixture iisFixture, ITestOutputHelper output)
@@ -69,6 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsVirtualAppIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -80,6 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsModuleOnlyClassic : AspNetMvc5ModuleOnlyTests
     {
         public AspNetMvc5TestsModuleOnlyClassic(IisFixture iisFixture, ITestOutputHelper output)
@@ -89,6 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsModuleOnlyIntegrated : AspNetMvc5ModuleOnlyTests
     {
         public AspNetMvc5TestsModuleOnlyIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -98,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsModuleOnlyVirtualAppIntegrated : AspNetMvc5ModuleOnlyTests
     {
         public AspNetMvc5TestsModuleOnlyVirtualAppIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -107,6 +116,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag : AspNetMvc5ModuleOnlyTests
     {
         public AspNetMvc5TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -116,6 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5Tests128BitTraceIds : AspNetMvc5Tests
     {
         public AspNetMvc5Tests128BitTraceIds(IisFixture iisFixture, ITestOutputHelper output)
@@ -157,6 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsInferredProxySpansEnabled : AspNetMvc5TestsInferredProxySpans
     {
         public AspNetMvc5TestsInferredProxySpansEnabled(IisFixture iisFixture, ITestOutputHelper output)
@@ -166,6 +178,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsInferredProxySpansDisabled : AspNetMvc5TestsInferredProxySpans
     {
         public AspNetMvc5TestsInferredProxySpansDisabled(IisFixture iisFixture, ITestOutputHelper output)
@@ -273,6 +286,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsWithBaggageEnabled : AspNetMvc5TestsWithBaggage
     {
         public AspNetMvc5TestsWithBaggageEnabled(IisFixture iisFixture, ITestOutputHelper output)

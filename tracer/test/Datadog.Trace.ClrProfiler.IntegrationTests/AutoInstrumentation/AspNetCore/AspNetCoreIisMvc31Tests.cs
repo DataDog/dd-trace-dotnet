@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsInProcess : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsInProcess(IisFixture fixture, ITestOutputHelper output)
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsInProcessWithFeatureFlag : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
@@ -35,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsOutOfProcess : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
@@ -44,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
@@ -54,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
 #if NET6_0_OR_GREATER
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsInProcessSingleSpan : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsInProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
@@ -62,6 +67,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc31TestsOutOfProcessSingleSpan : AspNetCoreIisMvc31Tests
     {
         public AspNetCoreIisMvc31TestsOutOfProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)

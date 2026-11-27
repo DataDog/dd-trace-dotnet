@@ -192,8 +192,9 @@ partial class Build
             CMake.Value(
                 arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
+            var parallelism = IsGitlab ? Math.Min(4, Environment.ProcessorCount) : Environment.ProcessorCount;
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                arguments: $"--build {buildDirectory} --parallel {parallelism} --target {FileNames.NativeLoader}",
                 environmentVariables: envVariables);
 
             var sourceFile = GetNativeOutputDirectory(NativeLoaderProject.Name) / $"{NativeLoaderProject.Name}.dylib";
