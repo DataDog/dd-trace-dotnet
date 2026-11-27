@@ -51,6 +51,21 @@ public class ProcessHelpersTests
 #endif
 
     [SkippableFact]
+    public void StopsAProcessThatDoesNotReadItsInputWithinTheTimeout()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        // More input than the pipe holds, so writing it blocks until the process reads it, after the timeout.
+        var input = new string('a', 1024 * 1024);
+
+        var output = ProcessHelpers.RunCommand(new ProcessHelpers.Command("sh", "-c \"sleep 5; cat >/dev/null\"", timeout: TimeSpan.FromMilliseconds(200)), input);
+
+        output.Should().NotBeNull();
+        output!.TimedOut.Should().BeTrue();
+        output.ExitCode.Should().Be(-1);
+    }
+
+    [SkippableFact]
     public void ReturnsTheOutputOfAProcessThatFinishesWithinTheTimeout()
     {
         SkipOn.Platform(SkipOn.PlatformValue.Windows);

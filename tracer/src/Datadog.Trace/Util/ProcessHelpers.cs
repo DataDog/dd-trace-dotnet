@@ -150,9 +150,16 @@ namespace Datadog.Trace.Util
 
             if (input is not null)
             {
-                processInfo.StandardInput.Write(input);
-                processInfo.StandardInput.Flush();
-                processInfo.StandardInput.Close();
+                try
+                {
+                    processInfo.StandardInput.Write(input);
+                    processInfo.StandardInput.Flush();
+                    processInfo.StandardInput.Close();
+                }
+                catch (IOException) when (timeoutKiller?.TimedOut == true)
+                {
+                    // The process was killed at the timeout before it read all the input.
+                }
             }
 
             var output = string.Empty;
