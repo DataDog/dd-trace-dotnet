@@ -21,15 +21,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        // Each Bind in --scenario 21 intentionally opens and closes a new TCP connection (to exercise the
-        // connect() syscall wrapper), leaving client-side sockets in Linux's 60 s TIME_WAIT state in the
-        // test container. All frameworks run sequentially in the same container (sharing one 28,232-port
-        // ephemeral range, 32768-60999); docker-compose.yml sets `net.ipv4.tcp_tw_reuse=1` on
-        // ProfilerIntegrationTests so TIME_WAIT port numbers can be reused after 1 s instead of 60 s.
-        // Note: if you run all frameworks outside docker-compose against a non-loopback LDAP server IP,
-        // Linux's default `net.ipv4.tcp_tw_reuse=2` only covers loopback (localhost), so you may hit
-        // client-side EADDRNOTAVAIL ('The LDAP server is unavailable' even though the server is healthy)
-        // unless `net.ipv4.tcp_tw_reuse=1` is set there too.
+        // Frameworks run sequentially in one container and open a new TCP connection per Bind
+        // (see OpenLdapCrash.ConnectToLdapServer); docker-compose.yml sets net.ipv4.tcp_tw_reuse=1
+        // to avoid client-side TIME_WAIT port exhaustion ("The LDAP server is unavailable").
+        // Outside Compose against a non-loopback LDAP IP, set tcp_tw_reuse=1 (default 2 is loopback-only).
         [TestAppFact(TestApplication.Computer01, TestFramework.Net6, TestFramework.Net7, TestFramework.Net8, TestFramework.Net9, TestFramework.Net10)]
         public void CheckOpenLdapCrash(TestAppContext app)
         {
