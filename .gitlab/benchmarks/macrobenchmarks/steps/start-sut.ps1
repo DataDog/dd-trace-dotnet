@@ -1,7 +1,8 @@
 # Differently from the Linux version, we assume that the SUT is already built
 $ErrorActionPreference = "Stop"
 
-Set-Location -Path "./dd-trace-dotnet/tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController"
+# The suite lives in the dd-trace-dotnet checkout, four levels below its root.
+Set-Location -Path "$PSScriptRoot/../../../../tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController"
 
 # Needed for runtime metrics to work - https://docs.datadoghq.com/tracing/metrics/runtime_metrics/?tab=net
 net localgroup "Performance Monitor Users" "IIS APPPOOL\DefaultAppPool" /add
