@@ -4370,6 +4370,80 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Microsoft.Azure.ServiceBus",
+    "TargetTypeName": "Microsoft.Azure.ServiceBus.Core.MessageReceiver",
+    "TargetMethodName": "ReceiveAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Collections.Generic.IList`1[Microsoft.Azure.ServiceBus.Message]]",
+    "TargetParameterTypes": [
+      "System.Int32",
+      "System.TimeSpan"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBusLegacy.MessageReceiverReceiveAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Microsoft.Azure.ServiceBus",
+    "TargetTypeName": "Microsoft.Azure.ServiceBus.Core.MessageSender",
+    "TargetMethodName": "ScheduleMessageAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int64]",
+    "TargetParameterTypes": [
+      "Microsoft.Azure.ServiceBus.Message",
+      "System.DateTimeOffset"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBusLegacy.MessageSenderScheduleMessageAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "AssemblyName": "Microsoft.Azure.ServiceBus",
+    "TargetTypeName": "Microsoft.Azure.ServiceBus.Core.MessageSender",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IList`1[Microsoft.Azure.ServiceBus.Message]"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBusLegacy.MessageSenderSendAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "CosmosDb",
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",
