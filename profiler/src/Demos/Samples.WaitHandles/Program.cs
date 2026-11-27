@@ -22,6 +22,10 @@ namespace Samples.WaitHandles
         private static ReaderWriterLock rwlock = new ReaderWriterLock();
         private static ReaderWriterLockSlim rwlockSlim = new ReaderWriterLockSlim();
 
+        // set by OwningThread once it holds all the resources so the waiting threads are guaranteed to block;
+        // waiting on it is spin-only (no wait handle or Monitor) so it does not emit contention/wait events itself
+        private static volatile bool resourcesHeld;
+
         public static void Main(string[] args)
         {
             // to support integration test, we need to support --iterations
@@ -43,9 +47,10 @@ namespace Samples.WaitHandles
                 sw.Restart();
 
                 // start a thread that will own the mutex and the semaphore
+                resourcesHeld = false;
                 var owningThread = new Thread(OwningThread);
                 owningThread.Start();
-                Thread.Sleep(5);
+                SpinWait.SpinUntil(() => resourcesHeld);
 
                 var autoResetEventThread = new Thread(AutoResetEventThread);
                 autoResetEventThread.Start();
@@ -75,6 +80,7 @@ namespace Samples.WaitHandles
                 owningThread.Join();
                 autoResetEventThread.Join();
                 manualResetEventThread.Join();
+                manualResetEventSlimThread.Join();
                 mutexThread.Join();
                 semaphoreThread.Join();
                 semaphoreSlimThread.Join();
@@ -99,6 +105,7 @@ namespace Samples.WaitHandles
             semaphoreSlim.Wait();
             rwlock.AcquireWriterLock(5000);
             rwlockSlim.EnterWriteLock();
+            resourcesHeld = true;
 
             Thread.Sleep(3000);
             Console.WriteLine();
