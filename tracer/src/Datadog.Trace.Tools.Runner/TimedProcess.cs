@@ -1,0 +1,72 @@
+// <copyright file="TimedProcess.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Datadog.Trace.Logging;
+
+namespace Datadog.Trace.Tools.Runner;
+
+/// <summary>
+/// Runs short helper processes of the runner, such as <c>dotnet --version</c> or <c>dotnet msbuild</c>, with a timeout that is enforced.
+/// </summary>
+internal static class TimedProcess
+{
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TimedProcess));
+
+    /// <summary>
+    /// Runs a process and returns its output, stopping it when it doesn't finish within the timeout.
+    /// </summary>
+    /// <remarks>
+    /// <c>ProcessHelpers.RunCommand</c> isn't used because it blocks reading the output before it checks its timeout. Both
+    /// streams are drained asynchronously instead, which is fine in the runner: it only runs on .NET Core, without AppDomains.
+    /// </remarks>
+    public static bool TryRun(string fileName, string arguments, string? workingDirectory, TimeSpan timeout, out string output, out string error, out int exitCode)
+    {
+        output = string.Empty;
+        error = string.Empty;
+        exitCode = -1;
+        var startInfo = new ProcessStartInfo(fileName, arguments)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        if (workingDirectory is not null)
+        {
+            startInfo.WorkingDirectory = workingDirectory;
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"'{fileName}' couldn't be started.");
+
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit((int)timeout.TotalMilliseconds) ||
+            !Task.WaitAll([outputTask, errorTask], timeout > stopwatch.Elapsed ? timeout - stopwatch.Elapsed : TimeSpan.Zero))
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex)
+            {
+                // The process can exit on its own between the timeout and the kill.
+                Log.Debug(ex, "TimedProcess: Unable to stop '{FileName}' after the timeout.", fileName);
+            }
+
+            return false;
+        }
+
+        output = outputTask.Result;
+        error = errorTask.Result;
+        exitCode = process.ExitCode;
+        return true;
+    }
+}

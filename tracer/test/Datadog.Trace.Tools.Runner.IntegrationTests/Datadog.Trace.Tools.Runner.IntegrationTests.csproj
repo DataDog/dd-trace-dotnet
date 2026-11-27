@@ -41,6 +41,9 @@
     <None Update="V2\DummyLibrary.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\Datadog.Trace.Tools.Runner.Tests\CoverageRewriterAssembly.dll;..\Datadog.Trace.Tools.Runner.Tests\CoverageRewriterAssembly.pdb" Link="CoverageRewriterAssembly\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

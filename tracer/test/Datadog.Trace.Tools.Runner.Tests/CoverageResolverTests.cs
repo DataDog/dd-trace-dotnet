@@ -698,7 +698,7 @@ public class CoverageResolverTests
         rewrittenAssembly.MainModule.GetType("CoverageRewriterAssembly.AddedByTest").Should().NotBeNull();
         Path.GetFileName(stagedAssemblyPath).Should().Be(Path.GetFileName(assemblyPath));
         (stagedAssemblyPath.Length - assemblyPath.Length).Should().BeLessOrEqualTo(20);
-        stagingPaths.Where(CoverageCollector.HasAssemblyExtension).Should().BeEmpty();
+        stagingPaths.Where(CoverageFolderProcessor.HasAssemblyExtension).Should().BeEmpty();
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
         Directory.GetDirectories(directory.Path).Should().BeEmpty();
 

@@ -6,10 +6,8 @@
 #nullable enable
 
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -81,7 +79,7 @@ internal static class TestingPlatformRunnerDetector
     {
         try
         {
-            if (!TryRunWithTimeout(program, "--version", workingDirectory, SdkVersionTimeout, out var output, out var error, out var exitCode))
+            if (!TimedProcess.TryRun(program, "--version", workingDirectory, SdkVersionTimeout, out var output, out var error, out var exitCode))
             {
                 Log.Warning<string, TimeSpan>("RunCiCommand: '{Program} --version' didn't finish within {Timeout}, so the .NET SDK version is unknown.", program, SdkVersionTimeout);
                 return null;
@@ -103,58 +101,6 @@ internal static class TestingPlatformRunnerDetector
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Runs a process and returns its output, stopping it when it doesn't finish within the timeout.
-    /// </summary>
-    /// <remarks>
-    /// <c>ProcessHelpers.RunCommand</c> isn't used because it blocks reading the output before it checks its timeout. Both
-    /// streams are drained asynchronously instead, which is fine in the runner: it only runs on .NET Core, without AppDomains.
-    /// </remarks>
-    [TestingAndPrivateOnly]
-    internal static bool TryRunWithTimeout(string fileName, string arguments, string? workingDirectory, TimeSpan timeout, out string output, out string error, out int exitCode)
-    {
-        output = string.Empty;
-        error = string.Empty;
-        exitCode = -1;
-        var startInfo = new ProcessStartInfo(fileName, arguments)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        if (workingDirectory is not null)
-        {
-            startInfo.WorkingDirectory = workingDirectory;
-        }
-
-        var stopwatch = Stopwatch.StartNew();
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"'{fileName}' couldn't be started.");
-
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit((int)timeout.TotalMilliseconds) ||
-            !Task.WaitAll([outputTask, errorTask], timeout > stopwatch.Elapsed ? timeout - stopwatch.Elapsed : TimeSpan.Zero))
-        {
-            try
-            {
-                process.Kill();
-            }
-            catch (Exception ex)
-            {
-                // The process can exit on its own between the timeout and the kill.
-                Log.Debug(ex, "RunCiCommand: Unable to stop '{FileName}' after the timeout.", fileName);
-            }
-
-            return false;
-        }
-
-        output = outputTask.Result;
-        error = errorTask.Result;
-        exitCode = process.ExitCode;
-        return true;
     }
 
     private static string? GetGlobalJsonTestRunner(string? workingDirectory)

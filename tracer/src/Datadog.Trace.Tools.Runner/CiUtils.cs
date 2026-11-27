@@ -432,9 +432,17 @@ internal static class CiUtils
                 }
                 else if (usesTestingPlatformRunner)
                 {
-                    const string message = "RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform (selected by global.json or DOTNET_TEST_RUNNER), which doesn't load the Datadog code coverage collector. Per-test code coverage will not be collected.";
-                    Log.Warning(message);
-                    Utils.WriteWarning(message);
+                    // Microsoft.Testing.Platform doesn't load the data collector, so the assemblies are rewritten before the command runs instead.
+                    profilerEnvironmentVariables.TryGetValue(Configuration.ConfigurationKeys.DotNetTracerHome, out var tracerHome);
+                    if (TestingPlatformCoverageRewriter.TryRewrite(program, expandedArguments, Environment.CurrentDirectory, tracerHome, testOptimizationSettings, out var reason))
+                    {
+                        Log.Information("RunCiCommand: 'dotnet test' runs with Microsoft.Testing.Platform, so the test assemblies were rewritten for per-test code coverage before the run.");
+                    }
+                    else
+                    {
+                        Log.Warning("RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform, and the test assemblies couldn't be rewritten for per-test code coverage. {Reason}", reason);
+                        Utils.WriteWarning("RunCiCommand: Code coverage is enabled but 'dotnet test' runs with Microsoft.Testing.Platform (selected by global.json or DOTNET_TEST_RUNNER), and the test assemblies couldn't be rewritten for per-test code coverage. Per-test code coverage will not be collected. " + reason);
+                    }
                 }
                 else if (isDotnetTestCommand)
                 {

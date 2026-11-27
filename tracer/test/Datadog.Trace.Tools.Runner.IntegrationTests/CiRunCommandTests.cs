@@ -994,6 +994,88 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void RemoteInternalCoverageRewritesTestModulesWhenDotnetTestRunsTestingPlatform(bool noBuild)
+        {
+            var root = Path.Combine(Path.GetTempPath(), "dd-mtp-ci-run-" + Path.GetRandomFileName());
+            var output = Directory.CreateDirectory(Path.Combine(root, "Tests", "bin", "Release", "net8.0")).FullName;
+            var tracerHome = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
+            foreach (var extension in new[] { ".dll", ".pdb" })
+            {
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "CoverageRewriterAssembly", "CoverageRewriterAssembly" + extension), Path.Combine(output, "CoverageRewriterAssembly" + extension));
+            }
+
+            foreach (var folder in new[] { "net461", "netstandard2.0", "netcoreapp3.1", "net6.0" })
+            {
+                var tracerAssembly = typeof(Tracer).Assembly.Location;
+                File.Copy(tracerAssembly, Path.Combine(Directory.CreateDirectory(Path.Combine(tracerHome, folder)).FullName, Path.GetFileName(tracerAssembly)));
+            }
+
+            var assemblyPath = Path.Combine(output, "CoverageRewriterAssembly.dll");
+            var originalAssembly = File.ReadAllBytes(assemblyPath);
+
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, "Microsoft.Testing.Platform");
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+
+            Program.CallbackForTests = (c, a, e) =>
+            {
+                arguments = a;
+                environmentVariables = e;
+            };
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            var childCommand = new List<string> { "dotnet", "test", "--test-modules", "**/CoverageRewriterAssembly.dll", "--root-directory", root };
+            if (noBuild)
+            {
+                childCommand.Add("--no-build");
+            }
+
+            var commandLine = new List<string> { "ci", "run", "--dd-env", "TestEnv", "--dd-service", "TestService", "--dd-version", "TestVersion", "--tracer-home", tracerHome, "--agent-url", $"http://localhost:{agent.Port}", "--" };
+            commandLine.AddRange(childCommand);
+
+            using var console = ConsoleHelper.Redirect();
+
+            try
+            {
+                var exitCode = Program.Main(commandLine.ToArray());
+
+                using var scope = new AssertionScope();
+                scope.AddReportable("output", console.Output);
+
+                exitCode.Should().Be(0);
+                arguments.Should().NotContain("--collect").And.NotContain("--test-adapter-path");
+                console.Output.Should().NotContain("couldn't be rewritten");
+                File.ReadAllBytes(assemblyPath).Should().NotEqual(originalAssembly);
+                File.Exists(Path.Combine(output, "Datadog.Trace.dll")).Should().BeTrue();
+            }
+            finally
+            {
+                Program.CallbackForTests = null;
+                if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
+                    Directory.Exists(coveragePath))
+                {
+                    Directory.Delete(coveragePath, recursive: true);
+                }
+
+                TestOptimization.Instance.Reset();
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch
+                {
+                    // best effort
+                }
+            }
+        }
+
         [Fact]
         public void RemoteInternalCoverageInjectsCollectorForBareVstestCommand()
         {
