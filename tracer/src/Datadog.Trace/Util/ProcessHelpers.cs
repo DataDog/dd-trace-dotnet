@@ -349,10 +349,14 @@ namespace Datadog.Trace.Util
                     _process.Kill();
 #endif
                 }
-                catch (Exception ex)
+                catch (InvalidOperationException ex)
                 {
                     // The process exited, or RunCommand returned and disposed it, in the meantime.
                     Log.Debug(ex, "Error killing the process after its timeout.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error killing the process after its timeout.");
                 }
             }
         }
