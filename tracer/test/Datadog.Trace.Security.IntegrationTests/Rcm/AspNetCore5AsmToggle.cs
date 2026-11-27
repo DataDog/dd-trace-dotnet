@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
@@ -26,7 +27,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityDefault : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDefault(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefault))
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefault), managedClient: false)
+        {
+        }
+    }
+
+    // The managed remote configuration client, the fallback of libdatadog's: same snapshots as AspNetCore5AsmToggleSecurityDefault
+    public class AspNetCore5AsmToggleSecurityDefaultManagedClient : AspNetCore5AsmToggle
+    {
+        public AspNetCore5AsmToggleSecurityDefaultManagedClient(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefaultManagedClient), managedClient: true)
         {
         }
     }
@@ -34,7 +44,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityDisabled : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: false, testName: nameof(AspNetCore5AsmToggleSecurityDisabled))
+            : base(fixture, outputHelper, enableSecurity: false, testName: nameof(AspNetCore5AsmToggleSecurityDisabled), managedClient: false)
         {
         }
     }
@@ -42,17 +52,24 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleSecurityEnabled : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleSecurityEnabled))
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleSecurityEnabled), managedClient: false)
         {
         }
     }
 
     public abstract class AspNetCore5AsmToggle : RcmBase
     {
-        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+        private readonly bool _managedClient;
+
+        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName, bool managedClient)
             : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
+            _managedClient = managedClient;
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+            if (managedClient)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationNativeClientEnabled, "false");
+            }
         }
 
         [SkippableFact]
@@ -74,19 +91,25 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             void CheckRequest(GetRcmRequest associatedRcmRequest, int fileNumberIfSecurityCanBeToggled)
             {
+                if (_managedClient)
+                {
+                    // Shows the managed client sent the request: it sends a null apply error, libdatadog's client an empty one
+                    associatedRcmRequest.Client.State.ConfigStates.Should().NotContain(s => s.ApplyError != null);
+                }
+
                 if (EnableSecurity != null)
                 {
-                    // AsmFeatures is requested when security is enabled, as it contains info about userId collection
-                    if (EnableSecurity is false)
-                    {
-                        associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
-                    }
-
-                    // Other products may be included, but none of the ASM ones should be
-                    var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd };
+                    // Other products may be included, but none of the ASM ones should be. AsmFeatures is requested when
+                    // security is enabled, as it contains info about userId collection.
+                    string[] asmProducts = [RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd, RcmProducts.AsmFeatures];
                     if (EnableSecurity == false)
                     {
                         associatedRcmRequest.Client.Products.Should().NotContain(asmProducts);
+                        // libdatadog still caches the file this mock agent sends (a real agent only sends requested products),
+                        // but the tracer doesn't apply it
+                        var asmFeatures = associatedRcmRequest.Client.State.ConfigStates.Where(s => s.Product == RcmProducts.AsmFeatures).ToList();
+                        asmFeatures.Should().HaveCount(fileNumberIfSecurityCanBeToggled);
+                        asmFeatures.Should().NotContain(s => s.ApplyState != ApplyStates.UNACKNOWLEDGED);
                     }
                     else
                     {

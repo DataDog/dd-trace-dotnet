@@ -257,6 +257,8 @@ public class ProbesTests : TestHelper
                                           .Probe;
 
         using var agent = EnvironmentHelper.GetMockAgent();
+        // While DI is off, its product isn't requested, so the agent drops the probe, and sends it again once DI is back on
+        agent.RemoteConfigOnlyRequestedProducts = true;
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");

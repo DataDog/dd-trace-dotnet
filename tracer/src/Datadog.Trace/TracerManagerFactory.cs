@@ -21,7 +21,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;

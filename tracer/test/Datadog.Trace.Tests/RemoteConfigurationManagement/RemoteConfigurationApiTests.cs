@@ -256,9 +256,7 @@ public class RemoteConfigurationApiTests
         };
 
         // make sure we test with something valid at least
-        var rcm = new RcmSubscriptionManager();
-        rcm.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
-        var capabilities = rcm.GetCapabilities();
+        var capabilities = ManagedRemoteConfigClient.GetCapabilities(RcmCapabilitiesIndices.ApmTracingTracingEnabled);
 
         var client = new RcmClient(Guid.NewGuid().ToString(), state)
         {

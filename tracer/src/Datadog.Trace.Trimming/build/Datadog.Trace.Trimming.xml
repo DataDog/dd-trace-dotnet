@@ -795,6 +795,7 @@
       <type fullname="System.IO.StringWriter" />
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
+      <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.IObservable`1" />
       <type fullname="System.IObserver`1" />
       <type fullname="System.ISpanFormattable" />
@@ -937,6 +938,7 @@
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
       <type fullname="System.Runtime.InteropServices.LayoutKind" />
+      <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
       <type fullname="System.Runtime.InteropServices.StructLayoutAttribute" />
       <type fullname="System.Runtime.JitInfo" />
@@ -1083,6 +1085,7 @@
    <assembly fullname="System.Runtime.InteropServices">
       <type fullname="System.DllNotFoundException" />
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
+      <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
@@ -1096,6 +1099,7 @@
       <type fullname="System.Runtime.InteropServices.PosixSignal" />
       <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
       <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
+      <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
    </assembly>
@@ -1224,6 +1228,7 @@
       <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
+      <type fullname="System.Threading.ThreadStart" />
       <type fullname="System.Threading.ThreadState" />
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">

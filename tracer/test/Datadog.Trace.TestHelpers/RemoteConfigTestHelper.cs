@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -20,10 +21,13 @@ namespace Datadog.Trace.TestHelpers
     {
         public const int WaitForAcknowledgmentTimeout = 50000;
 
+        // Omits null fields, as the agent does: the client rejects e.g. "roots": null
+        private static readonly JsonSerializerSettings AgentResponseSettings = new() { NullValueHandling = NullValueHandling.Ignore };
+
         internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
-            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response, AgentResponseSettings));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
             return response;
         }
@@ -31,7 +35,7 @@ namespace Datadog.Trace.TestHelpers
         internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }), c.ProductName, c.Id)));
-            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response, AgentResponseSettings));
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response} with custom opaque state {response.Targets.Signed.Custom.OpaqueBackendState}");
             var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;
@@ -59,7 +63,7 @@ namespace Datadog.Trace.TestHelpers
                 if (lastRemoteConfigPayload != null)
                 {
                     // prefer a request that has been processed, meaning the config states have been filled in
-                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    request = GetRcmRequestExtensions.DeserializeRcmRequest(lastRemoteConfigPayload);
                     if (request.Matches(response))
                     {
                         return request;
@@ -92,7 +96,7 @@ namespace Datadog.Trace.TestHelpers
                 if (lastRemoteConfigPayload != null)
                 {
                     // prefer a request that has been processed, meaning the config states have been filled in
-                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    request = GetRcmRequestExtensions.DeserializeRcmRequest(lastRemoteConfigPayload);
 
                     var configState = request.Client.State.ConfigStates.SingleOrDefault(s => s.Product == product);
 
@@ -119,15 +123,22 @@ namespace Datadog.Trace.TestHelpers
 
                 clientConfigs.Add(path);
 
-                targetFiles.Add(new RcmFile { Path = path, Raw = Encoding.UTF8.GetBytes(configuration.Config) });
-                var guid = Guid.NewGuid().ToString();
-                targets.Add(path, new Target { Hashes = new Dictionary<string, string> { { "guid", guid } } });
+                var raw = Encoding.UTF8.GetBytes(configuration.Config);
+                targetFiles.Add(new RcmFile { Path = path, Raw = raw });
+                // The client verifies the hash of each file, and ignores files whose hash didn't change
+                targets.Add(path, new Target { Hashes = new Dictionary<string, string> { { "sha256", Sha256Hex(raw) } }, Length = raw.Length, Custom = new TargetCustom { V = 1 } });
             }
 
             var root = new TufRoot { Signed = new Signed { Targets = targets, Custom = new TargetsCustom { OpaqueBackendState = Guid.NewGuid().ToString() } } };
 
             var response = new GetRcmResponse { ClientConfigs = clientConfigs, TargetFiles = targetFiles, Targets = root };
             return response;
+        }
+
+        private static string Sha256Hex(byte[] bytes)
+        {
+            using var sha256 = SHA256.Create();
+            return string.Concat(sha256.ComputeHash(bytes).Select(b => b.ToString("x2")));
         }
     }
 }
