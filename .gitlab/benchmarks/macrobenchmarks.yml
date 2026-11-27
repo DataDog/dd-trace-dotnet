@@ -38,11 +38,11 @@ workflow:
     on_new_commit: interruptible
 
 variables:
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-10
+  MACROBENCHMARKS_CI_IMAGE: registry.ddbuild.io/ci/benchmarking-platform:dd-trace-dotnet-macrobenchmarks-156764099
   # Consumed by the included build-ci-images template to build and push
   # registry.ddbuild.io/ci/benchmarking-platform:$BASE_CI_IMAGE_SUFFIX from
-  # container/. After the first build, repin MACROBENCHMARKS_CI_IMAGE to the
-  # produced tag.
+  # container/. After a container/ change, run the manual build and repin
+  # MACROBENCHMARKS_CI_IMAGE to the produced tag.
   BASE_CI_IMAGE_SUFFIX: dd-trace-dotnet-macrobenchmarks-${CI_PIPELINE_ID}
   BASE_CI_IMAGE_CONTAINER_DIR: .gitlab/benchmarks/macrobenchmarks/container
 
