@@ -142,12 +142,12 @@ namespace Datadog.Trace.Activity
                 {
                     // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
                     // and not when an Activity object is created manually and having .Start() called on it
-                    if (!string.IsNullOrEmpty(activity5.Source.Name))
+                    if (!StringUtil.IsNullOrEmpty(activity5.Source.Name))
                     {
                         tags.OtelLibraryName = activity5.Source.Name;
                     }
 
-                    if (!string.IsNullOrEmpty(activity5.Source.Version))
+                    if (!StringUtil.IsNullOrEmpty(activity5.Source.Version))
                     {
                         tags.OtelLibraryVersion = activity5.Source.Version;
                     }

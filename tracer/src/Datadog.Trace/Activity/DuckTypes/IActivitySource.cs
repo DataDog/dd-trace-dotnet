@@ -9,6 +9,6 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivitySource : ISource
     {
-        string Version { get; }
+        string? Version { get; }
     }
 }
