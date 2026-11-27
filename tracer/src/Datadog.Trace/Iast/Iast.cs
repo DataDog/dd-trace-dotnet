@@ -19,7 +19,9 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// The class responsible for coordinating IAST
 /// </summary>
+#pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
 internal sealed class Iast
+#pragma warning restore MA0049
 {
     private static Iast? _instance;
     private static bool _globalInstanceInitialized;

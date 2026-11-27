@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Xml;
@@ -24,8 +25,8 @@ internal static class ExternalCoverageXmlBackfill
 {
     private const string UppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private const string LowercaseLetters = "abcdefghijklmnopqrstuvwxyz";
-    private static readonly StringComparer ResolvedPathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-    private static readonly StringComparison ResolvedPathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    private static readonly StringComparer ResolvedPathComparer = FilePathComparison.Comparer;
+    private static readonly StringComparison ResolvedPathComparison = FilePathComparison.Comparison;
 
     private enum ExpectedXmlReportFormat
     {
@@ -3192,7 +3193,7 @@ internal static class ExternalCoverageXmlBackfill
                StartLine == other.StartLine &&
                EndLine == other.EndLine;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is CoverageLineKey other && Equals(other);
 
         public override int GetHashCode()
@@ -3227,7 +3228,7 @@ internal static class ExternalCoverageXmlBackfill
             => ResolvedPathComparer.Equals(SourcePath, other.SourcePath) &&
                Line == other.Line;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is MicrosoftSourceLineKey other && Equals(other);
 
         public override int GetHashCode()
@@ -3339,7 +3340,7 @@ internal static class ExternalCoverageXmlBackfill
     /// </summary>
     internal sealed class CoverageBackfillValidationState
     {
-        private static readonly StringComparer LocalCandidateComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        private static readonly StringComparer LocalCandidateComparer = FilePathComparison.Comparer;
         private readonly HashSet<string> _matchedBackendPaths = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _localCandidateByBackendPath = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _backendPathByLocalCandidate = new(LocalCandidateComparer);

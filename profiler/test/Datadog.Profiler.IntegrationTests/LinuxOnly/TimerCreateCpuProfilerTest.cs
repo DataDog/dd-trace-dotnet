@@ -97,7 +97,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             foreach (var sample in run.Profiles.Samples)
             {
                 sample.Values.GetRequired(ProfileValue.CpuTime).Should().Be(long.Parse(samplingInterval) * 1_000_000);
-                sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BeGreaterThan(0);
+                sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BePositive();
             }
 
             AssertTimestampInProfile(run.Profiles, runner.ProfilingExportsIntervalInSeconds);
@@ -122,7 +122,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             foreach (var sample in run.Profiles.Samples)
             {
                 sample.Values.GetRequired(ProfileValue.CpuTime).Should().Be(expectedInterval);
-                sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BeGreaterThan(0);
+                sample.Values.GetRequired(ProfileValue.CpuSampleCount).Should().BePositive();
             }
 
             AssertTimestampInProfile(run.Profiles, runner.ProfilingExportsIntervalInSeconds);

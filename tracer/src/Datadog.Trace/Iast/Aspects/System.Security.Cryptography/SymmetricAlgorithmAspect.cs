@@ -138,15 +138,15 @@ public sealed class SymmetricAlgorithmAspect
     /// </summary>
     /// <param name="target">SymmetricAlgorithm instance</param>
     /// <returns>main SymmetricAlgorithm instance</returns>
-    [AspectMethodInsertAfter($"System.Security.Cryptography.DES::Create()")]
+    [AspectMethodInsertAfter("System.Security.Cryptography.DES::Create()")]
     [AspectMethodInsertAfter($"System.Security.Cryptography.DES::Create({ClrNames.String})")]
-    [AspectMethodInsertAfter($"System.Security.Cryptography.RC2::Create()")]
+    [AspectMethodInsertAfter("System.Security.Cryptography.RC2::Create()")]
     [AspectMethodInsertAfter($"System.Security.Cryptography.RC2::Create({ClrNames.String})")]
-    [AspectMethodInsertAfter($"System.Security.Cryptography.TripleDES::Create()")]
+    [AspectMethodInsertAfter("System.Security.Cryptography.TripleDES::Create()")]
     [AspectMethodInsertAfter($"System.Security.Cryptography.TripleDES::Create({ClrNames.String})")]
-    [AspectMethodInsertAfter($"System.Security.Cryptography.Rijndael::Create()")]
+    [AspectMethodInsertAfter("System.Security.Cryptography.Rijndael::Create()")]
     [AspectMethodInsertAfter($"System.Security.Cryptography.Rijndael::Create({ClrNames.String})")]
-    [AspectMethodInsertAfter($"System.Security.Cryptography.Aes::Create()")]
+    [AspectMethodInsertAfter("System.Security.Cryptography.Aes::Create()")]
     [AspectMethodInsertAfter($"System.Security.Cryptography.Aes::Create({ClrNames.String})")]
     public static SymmetricAlgorithm Create(SymmetricAlgorithm target)
     {

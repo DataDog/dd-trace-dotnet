@@ -395,7 +395,7 @@ internal static class TracerHomeCache
             return false;
         }
 
-        var relativePathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var relativePathComparer = FilePathComparison.Comparer;
         var actualByPath = new Dictionary<string, CacheIntegrityEntry>(relativePathComparer);
         foreach (var actualEntry in actualEntries)
         {
@@ -552,7 +552,7 @@ internal static class TracerHomeCache
     {
         rootPath = EnsureTrailingDirectorySeparator(Path.GetFullPath(rootPath));
         path = Path.GetFullPath(path);
-        var pathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var pathComparison = FilePathComparison.Comparison;
         if (!path.StartsWith(rootPath, pathComparison))
         {
             throw new IOException($"Path '{path}' is not under root '{rootPath}'.");

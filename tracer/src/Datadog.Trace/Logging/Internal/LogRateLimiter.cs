@@ -7,7 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
-
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Logging
             var timestamp = ((DateTimeOffset)Clock.UtcNow).ToUnixTimeSeconds();
 
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
-            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");
+            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, "Time bucket should be greater than 0");
 
             var newLogInfo = _buckets.AddOrUpdate(
                 key,
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Logging
                 LineNo = lineNo;
             }
 
-            public override bool Equals(object? obj)
+            public override bool Equals([NotNullWhen(true)] object? obj)
             {
                 return obj is LogRateBucketKey key &&
                        FilePath == key.FilePath &&

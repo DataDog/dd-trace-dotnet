@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         public static string FormatLogEvent(LogFormatter logFormatter, in LogEntry logEntryWrapper)
         {
             var sb = StringBuilderCache.Acquire();
-            FormatLogEvent(logFormatter, sb, logEntryWrapper);
+            FormatLogEvent(logFormatter, sb, in logEntryWrapper);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var logEntry = logEntryWrapper.LogEventInfo;
             logFormatter.FormatLog(
                 sb,
-                logEntryWrapper,
+                in logEntryWrapper,
                 logEntry.TimeStamp.ToUniversalTime(),
                 logEntry.FormattedMessage,
                 eventId: null,

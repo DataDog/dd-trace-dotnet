@@ -16,6 +16,7 @@ namespace Datadog.Trace.BenchmarkDotNet
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Reports.Metric> ProcessResults(BenchmarkDotNet.Diagnosers.DiagnoserResults results) { }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Validators.ValidationError> Validate(BenchmarkDotNet.Validators.ValidationParameters validationParameters) { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.Class | System.AttributeTargets.All)]
     public class DatadogDiagnoserAttribute : System.Attribute, BenchmarkDotNet.Configs.IConfigSource
     {
         public DatadogDiagnoserAttribute() { }

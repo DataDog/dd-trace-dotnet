@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public CaptureExpression[]? CaptureExpressions { get; set; }
 
-        public bool Equals(LogProbe? other)
+        public bool Equals([NotNullWhen(true)] LogProbe? other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             return base.Equals(other) && Equals(Capture, other.Capture) && Equals(Sampling, other.Sampling) && Template == other.Template && CaptureSnapshot == other.CaptureSnapshot && Segments.NullableSequentialEquals(other.Segments) && Equals(When, other.When) && CaptureExpressions.NullableSequentialEquals(other.CaptureExpressions);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (ReferenceEquals(null, obj))
             {

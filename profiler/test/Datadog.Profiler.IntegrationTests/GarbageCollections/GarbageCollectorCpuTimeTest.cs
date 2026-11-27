@@ -8,7 +8,6 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Helpers.Profiles;
 using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.GarbageCollections
@@ -54,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.Should().Contain(sample => IsGcCpuSample(sample) && sample.CallStack.Equals(GcStack));
         }
@@ -76,7 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("DOTNET_GCDynamicAdaptationMode", "0");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.Should()
                 // match the GC stacktrace and check that the waltime value is 0 and the cpu value is not 0
@@ -95,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.Should().NotContain(sample => sample.CallStack.Equals(GcStack));
         }
@@ -110,7 +109,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.Should().NotContain(sample => IsGcCpuSample(sample));
         }
@@ -125,7 +124,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable("COMPlus_gcServer", "1");
 
             using var run = runner.Run();
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
 
             run.Profiles.Samples.Should().NotContain(sample => IsGcCpuSample(sample));
         }

@@ -12,11 +12,13 @@ namespace Datadog.Trace.FeatureFlags;
 /// <summary> Evaluation result type </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [Browsable(false)]
+#pragma warning disable MA0104 // Do not create a type with a name from the BCL - public API in Datadog.Trace (internal only when compiled into Datadog.FeatureFlags.OpenFeature), so renaming it would be a breaking change
 #if INTERNAL_FFE
 internal enum ValueType
 #else
 public enum ValueType
 #endif
+#pragma warning restore MA0104
 {
     /// <summary> Integer numeric value </summary>
     Integer,

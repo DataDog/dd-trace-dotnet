@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Xunit;
+using FluentAssertions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -28,12 +28,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             string error = string.Empty;
             foreach (var metric in parser.Profiles)
             {
-                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
+                metric.ContainsTags(containedTags, mandatory, ref error).Should().BeTrue("{0}", error);
             }
 
             foreach (var metric in parser.RuntimeIds)
             {
-                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
+                metric.ContainsTags(containedTags, mandatory, ref error).Should().BeTrue("{0}", error);
             }
         }
 
@@ -42,13 +42,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             string error = string.Empty;
             foreach (var metric in metrics)
             {
-                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
+                metric.ContainsTags(containedTags, mandatory, ref error).Should().BeTrue("{0}", error);
             }
         }
 
         public static void AssertTagsContains(this TelemetryMetric metric, string name, string value)
         {
-            Assert.Contains(metric.Tags, t => t.Item1 == name && t.Item2 == value);
+            metric.Tags.Should().Contain(t => t.Item1 == name && t.Item2 == value);
         }
 
         public static bool Contains(this List<Tuple<string, string>> tags, string name, string value)

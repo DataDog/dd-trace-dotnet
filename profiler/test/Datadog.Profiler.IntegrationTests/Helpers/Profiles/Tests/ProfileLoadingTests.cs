@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
     public class ProfileLoadingTests
     {
         [Fact]
-        public void Read_LoadsRawLz4AndZstd_AndSumsLikeTheLegacyReader()
+        public void Read_LoadsRawLz4AndZstd()
         {
             using var directory = new TempPprofDirectory();
             CpuProfile(10, 0).WriteRaw(directory.DirectoryPath, "raw.pprof");
@@ -28,10 +28,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
 
             var output = ProfileReader.Read(directory.DirectoryPath);
 
-            output.Samples.Count.Should().Be(SamplesHelper.GetSamplesCount(directory.DirectoryPath));
-            output.Sum(ProfileValue.CpuTime).Should().Be(SamplesHelper.GetValueSum(directory.DirectoryPath, 0));
+            output.Samples.Count.Should().Be(4);
             output.Sum(ProfileValue.CpuTime).Should().Be(35);
-            output.Sum(ProfileValue.CpuSampleCount).Should().Be(SamplesHelper.GetValueSum(directory.DirectoryPath, 1));
             output.Sum(ProfileValue.CpuSampleCount).Should().Be(4);
             output.Profiles.Should().HaveCount(3);
         }
@@ -48,8 +46,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             output.Labels.Should().BeEmpty();
             output.CallStacks.Should().BeEmpty();
             output.Sum(ProfileValue.CpuTime).Should().Be(0);
-            SamplesHelper.GetSamplesCount(directory.DirectoryPath).Should().Be(0);
-            SamplesHelper.GetValueSum(directory.DirectoryPath, 0).Should().Be(0);
         }
 
         [Fact]

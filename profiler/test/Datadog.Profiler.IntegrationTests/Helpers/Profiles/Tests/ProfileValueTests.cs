@@ -119,7 +119,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             missing.IsPresent.Should().BeFalse();
             missing.IsZero.Should().BeFalse();
             missing.IsUnknown.Should().BeFalse();
-            var missingError = Assert.Throws<InvalidOperationException>(() => values.GetRequired(ProfileValue.CpuSampleCount));
+            var missingError = FluentActions.Invoking(() => values.GetRequired(ProfileValue.CpuSampleCount)).Should().ThrowExactly<InvalidOperationException>().Which;
             missingError.Message.Should().Contain("missing");
             missingError.Message.Should().Contain(path);
             missingError.Message.Should().Contain(read.TimestampUtc.ToString("o"));
@@ -130,7 +130,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             unknown.IsMissing.Should().BeFalse();
             unknown.IsPresent.Should().BeFalse();
             unknown.IsZero.Should().BeFalse();
-            var unknownError = Assert.Throws<InvalidOperationException>(() => values.GetRequired(ProfileValue.WallTime));
+            var unknownError = FluentActions.Invoking(() => values.GetRequired(ProfileValue.WallTime)).Should().ThrowExactly<InvalidOperationException>().Which;
             unknownError.Message.Should().Contain("does not contain");
             unknownError.Message.Should().Contain("wall");
             unknownError.Message.Should().Contain(path);

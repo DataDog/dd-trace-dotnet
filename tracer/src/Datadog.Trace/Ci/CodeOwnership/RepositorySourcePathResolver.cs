@@ -137,7 +137,7 @@ internal sealed class RepositorySourcePathResolver
         var rootWithSeparator = root;
         try
         {
-            var pathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            var pathComparison = FilePathComparison.Comparison;
             var pathWithoutTrailingSeparator = absolutePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var rootWithoutTrailingSeparator = rootWithSeparator.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             if (pathWithoutTrailingSeparator.Equals(rootWithoutTrailingSeparator, pathComparison))

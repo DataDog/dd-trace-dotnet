@@ -40,7 +40,7 @@ internal static class CoverageBackfillDataStore
     // Coverlet XML fallback is produced after direct Coverlet coverage, so give that higher-priority
     // result a separate bounded window without extending unrelated file-read retries.
     private static readonly TimeSpan CoverletXmlFallbackResultTimeout = TimeSpan.FromSeconds(5);
-    private static readonly StringComparison PathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    private static readonly StringComparison PathComparison = FilePathComparison.Comparison;
 
     private enum CoverageBackfillLoadResult
     {

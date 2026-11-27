@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// </summary>
         /// <param name="obj">Object to compare</param>
         /// <returns>True if both are equals; otherwise, false.</returns>
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is RuntimeHandleTuple vTuple &&
                    MethodHandle.Equals(vTuple.MethodHandle) &&

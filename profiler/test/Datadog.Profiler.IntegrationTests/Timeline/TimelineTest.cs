@@ -3,10 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.IntegrationTests.Xunit;
-using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Timeline
@@ -41,9 +40,9 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
 
             using var run = runner.Run();
 
-            Assert.True(run.UploadCount > 0);
+            run.UploadCount.Should().BePositive();
             // only the GC CPU sample does not have a timestamp label
-            Assert.True(run.Profiles.Samples.All(sample => sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")));
+            run.Profiles.Samples.Should().NotContain(sample => !(sample.Labels.Has("end_timestamp_ns") || sample.Labels.Has("gc_cpu_sample")));
         }
     }
 }

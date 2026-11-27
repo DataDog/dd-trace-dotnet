@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -144,7 +145,7 @@ namespace Datadog.Trace.Sampling
                 return _service == other._service && _env == other._env;
             }
 
-            public override bool Equals(object? obj)
+            public override bool Equals([NotNullWhen(true)] object? obj)
             {
                 return obj is SampleRateKey other && Equals(other);
             }

@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Coverage.Collector
 {
@@ -23,8 +23,7 @@ namespace Datadog.Trace.Coverage.Collector
         static CoverageAssemblyPathLock()
         {
             DefaultTimeout = TimeSpan.FromSeconds(5);
-            var pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-            Locks = new(pathComparer);
+            Locks = new(FilePathComparison.Comparer);
         }
 
         /// <summary>
@@ -75,6 +74,45 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             return new LockScope(pathLock, isWriteLock: true);
+        }
+
+        /// <summary>
+        /// Checks whether an assembly file exists, waiting for an in-progress rewrite of the path when the file looks missing.
+        /// On Windows, <see cref="File.Replace(string, string, string)"/> briefly removes the target name, so a check that
+        /// doesn't take the lock can miss an assembly while another thread publishes its rewrite.
+        /// </summary>
+        /// <param name="path">The assembly path to check.</param>
+        /// <returns><see langword="true"/> if the file exists.</returns>
+        public static bool FileExists(string path) => FileExists(path, DefaultTimeout);
+
+        /// <summary>
+        /// Checks whether an assembly file exists, waiting for an in-progress rewrite of the path when the file looks missing.
+        /// </summary>
+        /// <param name="path">The assembly path to check.</param>
+        /// <param name="timeout">The maximum time to wait for a rewrite before failing with an <see cref="IOException"/>.</param>
+        /// <returns><see langword="true"/> if the file exists.</returns>
+        internal static bool FileExists(string path, TimeSpan timeout)
+        {
+            if (File.Exists(path))
+            {
+                return true;
+            }
+
+            var normalizedPath = NormalizePath(path);
+            ReaderWriterLockSlim? pathLock;
+            lock (Locks)
+            {
+                Locks.TryGetValue(normalizedPath, out pathLock);
+            }
+
+            // A rewrite takes the path lock before replacing the file, so a path without a lock entry isn't being rewritten.
+            if (pathLock is null)
+            {
+                return false;
+            }
+
+            using var readLock = EnterRead(normalizedPath, timeout);
+            return File.Exists(path);
         }
 
         /// <summary>

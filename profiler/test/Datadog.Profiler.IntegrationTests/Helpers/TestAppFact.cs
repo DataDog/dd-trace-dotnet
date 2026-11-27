@@ -11,27 +11,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     [XunitTestCaseDiscoverer("Datadog.Profiler.IntegrationTests.Xunit.TestAppFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
     internal class TestAppFact : FactAttribute
     {
-        public TestAppFact(string appAssembly, string[] frameworks = null)
-        {
-            AppAssembly = appAssembly;
-            AppName = appAssembly;
-            Frameworks = frameworks;
-        }
-
         public TestAppFact(TestApplication application, params TestFramework[] frameworks)
         {
-            IsTyped = true;
             Application = application;
             SelectedFrameworks = frameworks ?? [];
         }
-
-        public string AppAssembly { get; }
-
-        public string AppName { get; set; }
-
-        public string[] Frameworks { get; set; }
-
-        public bool IsTyped { get; }
 
         public TestApplication Application { get; }
 

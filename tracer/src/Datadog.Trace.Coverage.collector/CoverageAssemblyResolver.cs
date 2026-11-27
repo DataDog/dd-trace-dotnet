@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Util;
 using Mono.Cecil;
 
 namespace Datadog.Trace.Coverage.Collector;
@@ -20,7 +20,6 @@ namespace Datadog.Trace.Coverage.Collector;
 internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 {
     private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
-    private static readonly StringComparison PathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
     private static readonly string[] ManagedAssemblyExtensions = [".exe", ".dll"];
     private static readonly string[] WindowsRuntimeAssemblyExtensions = [".winmd", ".dll"];
     private readonly Dictionary<string, AssemblyDefinition> _cache = new(StringComparer.Ordinal);
@@ -87,7 +86,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     {
         ThrowIfDisposed();
         assemblyLocation ??= string.Empty;
-        if (string.Equals(_tracerAssemblyLocation, assemblyLocation, PathComparison))
+        if (string.Equals(_tracerAssemblyLocation, assemblyLocation, FilePathComparison.Comparison))
         {
             return;
         }
@@ -119,6 +118,18 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
            string.Equals(requestedName.Culture ?? string.Empty, candidateName.Culture ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
            (requestedName.PublicKeyToken ?? []).SequenceEqual(candidateName.PublicKeyToken ?? []);
 
+    private static IEnumerable<string> GetDirectoryCandidatePaths(AssemblyNameReference name, IEnumerable<string> directories)
+    {
+        var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
+        foreach (var directory in directories)
+        {
+            foreach (var extension in extensions)
+            {
+                yield return Path.Combine(directory, name.Name + extension);
+            }
+        }
+    }
+
     private AssemblyDefinition ResolveAndCache(AssemblyNameReference name)
     {
         var tracerAssemblyName = TracerAssembly.GetName();
@@ -138,6 +149,14 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         if (assemblyFromSharedFramework is not null)
         {
             return assemblyFromSharedFramework;
+        }
+
+        // Different manifests can provide distinct versions. Copies of the same package in multiple probing roots can still unify a reference.
+        string[] packageAssemblyPaths = name.IsWindowsRuntime ? [] : PackageAssemblyLocator.GetCandidatePaths(_preferredSearchDirectory, name.Name, _logger);
+        var assemblyFromPackages = ResolveFromFiles(name, packageAssemblyPaths, requireMatchingIdentity: packageAssemblyPaths.Length > 1, allowUnambiguousFallback: true);
+        if (assemblyFromPackages is not null)
+        {
+            return assemblyFromPackages;
         }
 
         if (IsTracerAssembly(name, tracerAssemblyName))
@@ -162,38 +181,57 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         => ResolveFromDirectories(name, GetSearchDirectoryCandidates(), requireMatchingIdentity: false);
 
     private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity)
-    {
-        var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
-        foreach (var directory in directories)
-        {
-            foreach (var extension in extensions)
-            {
-                var path = Path.Combine(directory, name.Name + extension);
-                _logger.Debug($"Looking for: {path}");
-                if (!File.Exists(path))
-                {
-                    continue;
-                }
+        => ResolveFromFiles(name, GetDirectoryCandidatePaths(name, directories), requireMatchingIdentity);
 
-                try
+    private AssemblyDefinition? ResolveFromFiles(AssemblyNameReference name, IEnumerable<string> paths, bool requireMatchingIdentity, bool allowUnambiguousFallback = false)
+    {
+        string? fallbackIdentity = null;
+        string? fallbackPath = null;
+        foreach (var path in paths)
+        {
+            _logger.Debug($"Looking for: {path}");
+            if (!CoverageAssemblyPathLock.FileExists(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                var assembly = ReadAssembly(path);
+                if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
                 {
-                    var assembly = ReadAssembly(path);
-                    if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
+                    if (allowUnambiguousFallback)
                     {
-                        assembly.Dispose();
-                        continue;
+                        if (fallbackIdentity is null)
+                        {
+                            fallbackIdentity = assembly.Name.FullName;
+                            fallbackPath = path;
+                        }
+                        else if (!string.Equals(fallbackIdentity, assembly.Name.FullName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            fallbackPath = null;
+                        }
                     }
 
-                    return CacheAssembly(name.FullName, assembly);
-                }
-                catch (BadImageFormatException)
-                {
+                    assembly.Dispose();
                     continue;
                 }
+
+                return CacheAssembly(name.FullName, assembly);
+            }
+            catch (BadImageFormatException)
+            {
+                continue;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Like a missing file, a candidate the collector can't read doesn't stop probing the next ones.
+                _logger.Debug($"Skipping unreadable assembly: {path}");
+                continue;
             }
         }
 
-        return null;
+        return fallbackPath is null ? null : ReadAndCache(name.FullName, fallbackPath);
     }
 
     private IEnumerable<string> GetSearchDirectoryCandidates()
@@ -205,7 +243,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
         foreach (var directory in GetSearchDirectories())
         {
-            if (!string.Equals(directory, _preferredSearchDirectory, PathComparison))
+            if (!string.Equals(directory, _preferredSearchDirectory, FilePathComparison.Comparison))
             {
                 yield return directory;
             }
