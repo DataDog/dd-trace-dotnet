@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
@@ -22,14 +23,17 @@ namespace Datadog.Trace.OpenTelemetry.Metrics;
 /// </summary>
 internal sealed class MetricReaderHandler
 {
+    // Compares stream names for the duplicate-stream warning; MetricStreamIdentity normalizes them.
+    [TestingAndPrivateOnly]
+    internal static readonly StringComparer StreamNameComparer = StringComparer.Ordinal;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReaderHandler));
     private readonly TracerSettings _settings;
     private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
     // Number of registered streams per stream name: different identities can share a name.
-    private readonly Dictionary<string, int> _streamNames = new(StringComparer.OrdinalIgnoreCase);
-    // Guarded by _completionLock.
+    private readonly Dictionary<string, int> _streamNames = new(StreamNameComparer);
     private readonly Queue<MetricState> _completedStreams = new();
-    private readonly object _completionLock = new();
+    // Guards stream registration and removal, _streamNames, _completedStreams and the instrument count of each stream.
+    private readonly object _registrationLock = new();
 
     public MetricReaderHandler(TracerSettings settings)
     {
@@ -37,6 +41,20 @@ internal sealed class MetricReaderHandler
     }
 
     public void OnInstrumentPublished(Instrument instrument, MeterListener listener)
+    {
+        // Runs synchronously in the application's Meter.CreateXxx call, and calls ToString on the application's
+        // meter tag values: never let an exception escape into the application.
+        try
+        {
+            RegisterInstrument(instrument, listener);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error registering instrument '{InstrumentName}' from meter '{MeterName}'. Its measurements will not be exported.", instrument.Name, instrument.Meter.Name);
+        }
+    }
+
+    private void RegisterInstrument(Instrument instrument, MeterListener listener)
     {
         var meterName = instrument.Meter.Name;
 
@@ -78,23 +96,43 @@ internal sealed class MetricReaderHandler
         var temporality = GetTemporality(instrumentType.Value, _settings.OtlpMetricsTemporalityPreference);
         var identity = new MetricStreamIdentity(instrument, instrumentType.Value);
 
-        if (_streams.ContainsKey(identity))
+        MetricState state;
+        var duplicateName = false;
+        string? firstSeenName = null;
+        lock (_registrationLock)
         {
-            Log.Warning(
-                "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
-                [instrumentType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
-            return;
+            if (_streams.TryGetValue(identity, out var existing))
+            {
+                // OTel metrics SDK spec, "Duplicate instrument registration": the SDK MUST aggregate data from
+                // identical instruments together. Like OTel .NET, observable instruments that report the same
+                // attributes overwrite each other (the spec says callbacks SHOULD NOT make duplicate observations).
+                existing.AddInstrument();
+                state = existing;
+                firstSeenName = existing.Identity.InstrumentName;
+            }
+            else
+            {
+                state = new MetricState(identity, temporality, _settings.OpenTelemetryMetricsCardinalityLimit);
+                _streams[identity] = state;
+                duplicateName = RegisterStreamName(identity.MetricStreamName);
+            }
         }
 
-        var state = new MetricState(identity, temporality, _settings.OpenTelemetryMetricsCardinalityLimit);
-
-        if (_streams.TryAdd(identity, state))
+        // OTel metrics SDK spec, "Name conflict": names that differ only in case are exported under the first-seen
+        // name. The spec asks for an error to be logged; a warning is logged instead.
+        if (firstSeenName is not null && !string.Equals(firstSeenName, instrument.Name, StringComparison.Ordinal))
         {
-            // Registered before enabling events: enabling can complete the stream right away (disposed meter).
-            RegisterStreamName(identity.MetricStreamName);
-            listener.EnableMeasurementEvents(instrument, state);
-            Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
+            Log.Warning("Duplicate instrument registration: '{InstrumentName}' from meter '{MeterName}' differs only in case from the first-seen name '{FirstSeenName}', under which its measurements are exported.", instrument.Name, meterName, firstSeenName);
         }
+
+        if (duplicateName)
+        {
+            Log.Warning("Duplicate metric stream detected for instrument '{InstrumentName}': {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", instrument.Name, identity.MetricStreamName);
+        }
+
+        // Enabled after registration: enabling can complete the stream right away (disposed meter).
+        listener.EnableMeasurementEvents(instrument, state);
+        Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
     }
 
     public void OnMeasurementRecordedLong(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
@@ -135,8 +173,9 @@ internal sealed class MetricReaderHandler
 
     /// <summary>
     /// Called when the listener stops receiving an instrument's measurements (its Meter or the listener was
-    /// disposed). The stream is unregistered right away, so a re-created instrument with the same identity is
-    /// subscribed again, and its remaining data is exported once more at the next collection.
+    /// disposed). Once no instrument records into the stream, it is unregistered right away, so a re-created
+    /// instrument with the same identity is subscribed again, and its remaining data is exported once more at
+    /// the next collection.
     /// </summary>
     public void OnMeasurementsCompleted(Instrument instrument, object? state)
     {
@@ -145,17 +184,17 @@ internal sealed class MetricReaderHandler
             return;
         }
 
-        lock (_completionLock)
+        lock (_registrationLock)
         {
-            if (!_streams.TryRemove(new KeyValuePair<MetricStreamIdentity, MetricState>(metricState.Identity, metricState)))
+            if (!metricState.RemoveInstrument()
+                || !_streams.TryRemove(new KeyValuePair<MetricStreamIdentity, MetricState>(metricState.Identity, metricState)))
             {
                 return;
             }
 
+            ReleaseStreamName(metricState.Identity.MetricStreamName);
             _completedStreams.Enqueue(metricState);
         }
-
-        ReleaseStreamName(metricState.Identity.MetricStreamName);
     }
 
     /// <summary>
@@ -170,8 +209,9 @@ internal sealed class MetricReaderHandler
 
         // Streams are chosen under the lock, so a stream completing meanwhile is either still in _streams or
         // already queued, never missed. A stream completing after this point is exported again next time.
-        // Points are built outside the lock: Meter.Dispose() takes it on the application's thread.
-        lock (_completionLock)
+        // Points are built outside the lock: Meter.Dispose() and instrument creation take it on the
+        // application's thread.
+        lock (_registrationLock)
         {
             if (_completedStreams.Count > 0)
             {
@@ -182,7 +222,7 @@ internal sealed class MetricReaderHandler
             pairs = _streams.ToArray();
         }
 
-        // Last export of the streams whose instrument completed since the previous collection.
+        // Last export of the streams whose last instrument completed since the previous collection.
         if (completed is not null)
         {
             foreach (var completedState in completed)
@@ -299,35 +339,26 @@ internal sealed class MetricReaderHandler
         return null;
     }
 
-    private void RegisterStreamName(string metricStreamName)
+    // Returns true when another stream already has this name. Called under _registrationLock.
+    private bool RegisterStreamName(string metricStreamName)
     {
-        int count;
-        lock (_streamNames)
-        {
-            _streamNames.TryGetValue(metricStreamName, out count);
-            _streamNames[metricStreamName] = count + 1;
-        }
-
-        if (count > 0)
-        {
-            Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamName);
-        }
+        _streamNames.TryGetValue(metricStreamName, out var count);
+        _streamNames[metricStreamName] = count + 1;
+        return count > 0;
     }
 
+    // Called under _registrationLock.
     private void ReleaseStreamName(string metricStreamName)
     {
-        lock (_streamNames)
+        if (_streamNames.TryGetValue(metricStreamName, out var count))
         {
-            if (_streamNames.TryGetValue(metricStreamName, out var count))
+            if (count <= 1)
             {
-                if (count <= 1)
-                {
-                    _streamNames.Remove(metricStreamName);
-                }
-                else
-                {
-                    _streamNames[metricStreamName] = count - 1;
-                }
+                _streamNames.Remove(metricStreamName);
+            }
+            else
+            {
+                _streamNames[metricStreamName] = count - 1;
             }
         }
     }

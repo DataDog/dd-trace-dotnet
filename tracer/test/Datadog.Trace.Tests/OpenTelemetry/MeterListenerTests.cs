@@ -5,6 +5,7 @@
 
 #if NET6_0_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -933,7 +934,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
+        public async Task InstrumentsWhoseNamesDifferOnlyInCaseShareTheFirstSeenNameStream()
         {
             // Arrange
             var settings = TracerSettings.Create(new());
@@ -952,13 +953,192 @@ namespace Datadog.Trace.Tests
             counter2.Add(2, new KeyValuePair<string, object>("tag2", "value2"));
 
             await pipeline.ForceCollectAndExportAsync();
-            var capturedMetrics = testExporter.ExportedMetrics;
 
-            capturedMetrics.Count.Should().Be(1, "Should have 1 metric point.");
-            // Verify both metrics have different instrument names (case-sensitive)
-            var instrumentNames = capturedMetrics.Select(m => m.InstrumentName).ToList();
-            instrumentNames.Should().Contain("duplicate.test.counter");
+            // Both instruments record into the first one's stream.
+            testExporter.ExportedMetrics.Select(m => (m.InstrumentName, m.SnapshotSum))
+                .Should().BeEquivalentTo([("duplicate.test.counter", 1.0), ("duplicate.test.counter", 2.0)]);
         }
+
+        [Fact]
+        public async Task InstrumentsWithTheSameIdentityShareOneStreamUntilTheLastIsDisposed()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, "cumulative" },
+                });
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string meterName = "TestMeter.SameIdentity";
+            const string name = "test.sync.same.identity";
+            using var oldMeter = new Meter(meterName);
+            using var newMeter = new Meter(meterName);
+            var oldCounter = oldMeter.CreateCounter<long>(name);
+            var newCounter = newMeter.CreateCounter<long>(name);
+
+            oldCounter.Add(1);
+            newCounter.Add(2);
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(3.0);
+
+            // The stream outlives the first Meter while the second instrument still records into it.
+            oldMeter.Dispose();
+            newCounter.Add(4);
+            var before = testExporter.ExportedMetrics.Count;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(before).Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(7.0);
+        }
+
+        [Fact]
+        public async Task IntegerAndFloatingPointInstrumentsWithTheSameNameAreSeparateStreams()
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string meterName = "TestMeter.NumberType";
+            const string name = "test.sync.number.type";
+            using var longMeter = new Meter(meterName);
+            using var doubleMeter = new Meter(meterName);
+            longMeter.CreateCounter<long>(name).Add(1);
+            doubleMeter.CreateCounter<double>(name).Add(0.5);
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Where(m => m.InstrumentName == name).Select(m => (m.IsLongType, m.SnapshotSum))
+                .Should().BeEquivalentTo([(true, 1.0), (false, 0.5)]);
+        }
+
+        [Fact]
+        public async Task ObservableInstrumentsWithTheSameIdentityOverwriteEachOther()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, "cumulative" },
+                });
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string meterName = "TestMeter.SameIdentityObservable";
+            const string name = "test.async.same.identity";
+            using var meter1 = new Meter(meterName);
+            using var meter2 = new Meter(meterName);
+            meter1.CreateObservableCounter(name, () => 100L);
+            meter2.CreateObservableCounter(name, () => 5L);
+
+            // As in OTel .NET, the last observation wins: the values are not summed.
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().BeOneOf(100.0, 5.0);
+
+            // The second instrument records into the shared stream: it keeps reporting once the first meter is disposed.
+            meter1.Dispose();
+            var before = testExporter.ExportedMetrics.Count;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(before).Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(5.0);
+        }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void StreamNamesIgnoreCaseOnlyInTheInstrumentName()
+        {
+            // The duplicate-stream warning fires when two streams' names are equal under StreamNameComparer.
+            var comparer = MetricReaderHandler.StreamNameComparer;
+            using var prodMeter = new Meter("TestMeter.StreamName", null, [new KeyValuePair<string, object>("env", "Prod")]);
+            using var lowerProdMeter = new Meter("TestMeter.StreamName", null, [new KeyValuePair<string, object>("env", "prod")]);
+
+            // Meter tags that differ only in case: separate streams with separate names, so no warning.
+            var prod = new MetricStreamIdentity(prodMeter.CreateCounter<long>("requests"), InstrumentType.Counter);
+            var lowerProd = new MetricStreamIdentity(lowerProdMeter.CreateCounter<long>("requests"), InstrumentType.Counter);
+            prod.Should().NotBe(lowerProd);
+            comparer.Equals(prod.MetricStreamName, lowerProd.MetricStreamName).Should().BeFalse();
+
+            // Instrument names that differ only in case, in separate streams (integer and floating-point):
+            // the same stream name, so the warning still fires.
+            var doubleRequests = new MetricStreamIdentity(prodMeter.CreateCounter<double>("REQUESTS"), InstrumentType.Counter);
+            prod.Should().NotBe(doubleRequests);
+            comparer.Equals(prod.MetricStreamName, doubleRequests.MetricStreamName).Should().BeTrue();
+        }
+#endif
+
+#if NET8_0_OR_GREATER
+        [Theory]
+        [InlineData(1, 1L, true)]     // int and long: not Equals, both exported as "1"
+        [InlineData(null, "", true)]  // both exported as an empty string
+        [InlineData(1, 2, false)]     // exported differently: separate streams
+        public async Task InstrumentsFromMetersWhoseTagValuesAreExportedAlikeShareOneStream(object firstValue, object secondValue, bool shareOneStream)
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string name = "test.sync.tag.value.text";
+            using var firstMeter = new Meter("TestMeter.TagValueText", null, [new KeyValuePair<string, object>("region", firstValue)]);
+            using var secondMeter = new Meter("TestMeter.TagValueText", null, [new KeyValuePair<string, object>("region", secondValue)]);
+            firstMeter.CreateCounter<long>(name).Add(5);
+            secondMeter.CreateCounter<long>(name).Add(3);
+
+            await pipeline.ForceCollectAndExportAsync();
+            var sums = testExporter.ExportedMetrics.Where(m => m.InstrumentName == name).Select(m => m.SnapshotSum);
+            if (shareOneStream)
+            {
+                sums.Should().Equal(8.0);
+            }
+            else
+            {
+                sums.Should().BeEquivalentTo([5.0, 3.0]);
+            }
+        }
+#endif
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public async Task InstrumentsFromATaggedMeterWithTheSameIdentityShareOneStream()
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string name = "test.sync.tagged.meter";
+            // Two meters with equal tags: on .NET 9+, a Meter returns its cached instrument for an identical second creation.
+            using var meter1 = new Meter("TestMeter.Tagged", null, [new KeyValuePair<string, object>("meter.tag", "value")]);
+            using var meter2 = new Meter("TestMeter.Tagged", null, [new KeyValuePair<string, object>("meter.tag", "value")]);
+            meter1.CreateCounter<long>(name).Add(1);
+            meter2.CreateCounter<long>(name).Add(2);
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Single(m => m.InstrumentName == name).SnapshotSum.Should().Be(3.0);
+        }
+
+        [Fact]
+        public async Task MeterTagValueThatThrowsDoesNotEscapeIntoTheApplication()
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            const string name = "test.throwing.meter.tag";
+            using var meter = new Meter("TestMeter.ThrowingTag", null, [new KeyValuePair<string, object>("meter.tag", new ThrowingTagValue())]);
+
+            var createCounter = () => meter.CreateCounter<long>(name).Add(1);
+            createCounter.Should().NotThrow();
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Should().NotContain(m => m.InstrumentName == name);
+        }
+#endif
 
         [Fact]
         public async Task CapturesAllMetricsWithCorrectTemporality_Default()
@@ -1140,6 +1320,15 @@ namespace Datadog.Trace.Tests
             gaugeMetric.SnapshotGaugeValue.Should().Be(77.0);
             gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 #endif
+        }
+
+        private sealed class ThrowingTagValue
+        {
+            public override string ToString() => throw new InvalidOperationException("ToString");
+
+            public override bool Equals(object obj) => throw new InvalidOperationException("Equals");
+
+            public override int GetHashCode() => 0;
         }
     }
 }

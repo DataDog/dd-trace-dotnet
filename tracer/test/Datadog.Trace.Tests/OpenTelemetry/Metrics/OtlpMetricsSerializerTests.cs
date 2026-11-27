@@ -6,7 +6,9 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -24,6 +26,172 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Metrics;
 [Collection(nameof(MeterListenerTests))]
 public class OtlpMetricsSerializerTests
 {
+#if NET10_0_OR_GREATER
+    [Fact]
+    public async Task MetersThatDifferOnlyBySchemaUrlAreExportedAsSeparateScopes()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        using var meter1 = new Meter(new MeterOptions("TestMeter.SchemaUrl") { TelemetrySchemaUrl = "https://opentelemetry.io/schemas/1.0.0" });
+        using var meter2 = new Meter(new MeterOptions("TestMeter.SchemaUrl") { TelemetrySchemaUrl = "https://opentelemetry.io/schemas/2.0.0" });
+        meter1.CreateCounter<long>("test.schema.counter").Add(1);
+        meter2.CreateCounter<long>("test.schema.counter").Add(2);
+        await pipeline.ForceCollectAndExportAsync();
+
+        var scopes = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                .Where(s => s.Scope.Name == "TestMeter.SchemaUrl");
+
+        scopes.Select(s => (s.SchemaUrl, s.Metrics.Single().Sum.DataPoints.Single().AsInt))
+              .Should().BeEquivalentTo([("https://opentelemetry.io/schemas/1.0.0", 1L), ("https://opentelemetry.io/schemas/2.0.0", 2L)]);
+    }
+#endif
+
+#if NET8_0_OR_GREATER
+    [Fact]
+    public async Task MeterTagValuesAreFormattedTheSameWayWhateverTheThreadCulture()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        const string name = "test.culture.counter";
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            // An instrument is registered on the thread that creates it: here fr-FR, where the double 1.5 prints "1,5",
+            // the same text as the string "1,5".
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            using var doubleMeter = new Meter("TestMeter.Culture", null, [new KeyValuePair<string, object>("ratio", 1.5)]);
+            using var stringMeter = new Meter("TestMeter.Culture", null, [new KeyValuePair<string, object>("ratio", "1,5")]);
+            doubleMeter.CreateCounter<long>(name).Add(5);
+            stringMeter.CreateCounter<long>(name).Add(3);
+
+            // Exported under en-US, where 1.5 prints "1.5": each meter keeps its own scope and attribute text.
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            await pipeline.ForceCollectAndExportAsync();
+
+            var scopes = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                    .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                    .Where(s => s.Scope.Name == "TestMeter.Culture");
+
+            scopes.Select(s => (s.Scope.Attributes.Single(a => a.Key == "ratio").Value.StringValue, s.Metrics.Single().Sum.DataPoints.Single().AsInt))
+                  .Should().BeEquivalentTo([("1.5", 5L), ("1,5", 3L)]);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+#endif
+
+#if NET8_0_OR_GREATER
+    [Fact]
+    public async Task MeterTagsAreExportedWithTheTextComputedAtRegistration()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        const string name = "test.culture.object.counter";
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            // A custom object's ToString() isn't made culture-independent by the invariant format provider. Under
+            // fr-FR it prints "1,5" (or "1.5" where culture data is unavailable); a meter tagged with that string is
+            // the same stream.
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            var objectValue = new CultureDependentValue(1.5);
+            var registrationText = objectValue.ToString();
+            using var objectMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", objectValue)]);
+            using var stringMeter = new Meter("TestMeter.CultureObject", null, [new KeyValuePair<string, object>("ratio", registrationText)]);
+            objectMeter.CreateCounter<long>(name).Add(5);
+            stringMeter.CreateCounter<long>(name).Add(3);
+
+            // Exported under en-US, where the object prints "1.5": the stream keeps the registration text.
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            await pipeline.ForceCollectAndExportAsync();
+
+            var scope = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                   .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                   .Single(s => s.Scope.Name == "TestMeter.CultureObject");
+
+            scope.Scope.Attributes.Single(a => a.Key == "ratio").Value.StringValue.Should().Be(registrationText);
+            scope.Metrics.Single().Sum.DataPoints.Single().AsInt.Should().Be(8);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+#endif
+
+    [Fact]
+    public async Task DataPointTagValuesAreFormattedWithTheInvariantCulture()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        const string name = "test.culture.point.counter";
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            // Under fr-FR the double 1.5 prints "1,5", the same text as the string "1,5": both points must keep their
+            // own attribute text instead of being exported as two points with identical attributes.
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            using var meter = new Meter("TestMeter.PointCulture");
+            var counter = meter.CreateCounter<long>(name);
+            counter.Add(5, new KeyValuePair<string, object>("ratio", 1.5));
+            counter.Add(3, new KeyValuePair<string, object>("ratio", "1,5"));
+
+            await pipeline.ForceCollectAndExportAsync();
+
+            var points = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                    .ResourceMetrics.SelectMany(r => r.ScopeMetrics).SelectMany(s => s.Metrics)
+                                    .Single(m => m.Name == name).Sum.DataPoints;
+
+            points.Select(p => (p.Attributes.Single(a => a.Key == "ratio").Value.StringValue, p.AsInt))
+                  .Should().BeEquivalentTo([("1.5", 5L), ("1,5", 3L)]);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
+    [Fact]
+    public async Task IntegerAndFloatingPointInstrumentsWithTheSameNameAreExportedAsSeparateMetrics()
+    {
+        var settings = TracerSettings.Create(new());
+        var exporter = new InMemoryExporter();
+        await using var pipeline = new OtelMetricsPipeline(settings, exporter);
+        pipeline.Start();
+
+        using var meter = new Meter("TestMeter.NumberType");
+        meter.CreateCounter<long>("test.numbertype.counter").Add(10);
+        meter.CreateCounter<double>("test.numbertype.counter").Add(2.5);
+        await pipeline.ForceCollectAndExportAsync();
+
+        var metrics = MetricsData.Parser.ParseFrom(new OtlpMetricsSerializer(settings).SerializeMetrics(exporter.ExportedMetrics.ToList()))
+                                 .ResourceMetrics.SelectMany(r => r.ScopeMetrics)
+                                 .Where(s => s.Scope.Name == "TestMeter.NumberType")
+                                 .SelectMany(s => s.Metrics)
+                                 .ToList();
+
+        metrics.Should().HaveCount(2);
+        metrics.Should().OnlyContain(m => m.Name == "test.numbertype.counter" && m.Sum.DataPoints.Count == 1);
+        metrics.Select(m => m.Sum.DataPoints.Single())
+               .Select(p => p.ValueCase == NumberDataPoint.ValueOneofCase.AsInt ? (object)p.AsInt : p.AsDouble)
+               .Should().BeEquivalentTo<object>([10L, 2.5]);
+    }
+
     [Theory]
     [InlineData("cumulative", "Cumulative", "Cumulative")]
     [InlineData("delta", "Delta", "Delta")]
@@ -100,6 +268,12 @@ public class OtlpMetricsSerializerTests
             default:
                 return (null, double.NaN);
         }
+    }
+
+    // A meter tag value whose ToString() depends on the current culture, like a record holding a double.
+    private sealed class CultureDependentValue(double value)
+    {
+        public override string ToString() => value.ToString(CultureInfo.CurrentCulture);
     }
 }
 

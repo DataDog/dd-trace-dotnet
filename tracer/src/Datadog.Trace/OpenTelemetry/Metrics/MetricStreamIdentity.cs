@@ -31,6 +31,15 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             var meterDuck = instrument.Meter.DuckAs<IMeterDuck>();
             MeterTags = meterDuck?.Tags?.ToArray() ?? [];
 
+            // Replace each value in this copy with its exported text, computed once: identity, scope grouping and
+            // export then all use the same text, even for values whose ToString() depends on the current culture.
+            for (var i = 0; i < MeterTags.Length; i++)
+            {
+                MeterTags[i] = new KeyValuePair<string, object?>(MeterTags[i].Key, OtlpMetricsSerializer.FormatAttributeValue(MeterTags[i].Value));
+            }
+
+            MeterSchemaUrl = instrument.Meter.DuckAs<IMeterSchemaUrlDuck>()?.TelemetrySchemaUrl ?? string.Empty;
+
             Unit = instrument.Unit ?? string.Empty;
             Description = instrument.Description ?? string.Empty;
             InstrumentType = instrumentType;
@@ -42,7 +51,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                          instrumentGenericType == typeof(short) ||
                          instrumentGenericType == typeof(byte);
 
-            MetricStreamName = $"{MeterName}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
+            // Includes the meter version, tags and schema URL, so streams from different meters don't collide.
+            // Only the instrument name is case-insensitive (OTel spec, "Name conflict"), so only it is lowercased;
+            // stream names are compared ordinally.
+            MetricStreamName = $"{MeterName}.{MeterVersion}.{OtlpMetricsSerializer.JoinMeterTags(MeterTags)}.{MeterSchemaUrl}.{InstrumentName.ToLowerInvariant()}.{InstrumentType}.{Unit}.{Description}";
         }
 
         public string InstrumentName { get; }
@@ -51,7 +63,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public string MeterVersion { get; }
 
+        // Values are the exported text (strings), set in the constructor; Equals and GetHashCode rely on it.
         public KeyValuePair<string, object?>[] MeterTags { get; }
+
+        public string MeterSchemaUrl { get; }
 
         public string Unit { get; }
 
@@ -80,10 +95,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             if (!string.Equals(InstrumentName, other.InstrumentName, StringComparison.OrdinalIgnoreCase) ||
                 MeterName != other.MeterName ||
                 MeterVersion != other.MeterVersion ||
-                MeterTags != other.MeterTags ||
+                !MeterTagsEqual(in other) ||
+                MeterSchemaUrl != other.MeterSchemaUrl ||
                 Unit != other.Unit ||
                 Description != other.Description ||
-                InstrumentType != other.InstrumentType)
+                InstrumentType != other.InstrumentType ||
+                IsLongType != other.IsLongType)
             {
                 return false;
             }
@@ -102,17 +119,43 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             hashCode.Add(InstrumentName, StringComparer.OrdinalIgnoreCase);
             hashCode.Add(MeterName);
             hashCode.Add(MeterVersion);
+            hashCode.Add(MeterSchemaUrl);
             hashCode.Add(Unit);
             hashCode.Add(Description);
             hashCode.Add(InstrumentType);
+            hashCode.Add(IsLongType);
 
             for (int i = 0; i < MeterTags.Length; i++)
             {
                 hashCode.Add(MeterTags[i].Key);
-                hashCode.Add(MeterTags[i].Value);
+                hashCode.Add((string?)MeterTags[i].Value);
             }
 
             return hashCode.ToHashCode();
+        }
+
+        // Meters are identical when all their parameters are equal (OTel metrics API spec, "Meter"). Tag values are
+        // compared by the text they are exported as (replaced in the constructor), not by the spec's
+        // typed equality: this exporter writes every attribute as a string, so meters exported as the same scope are
+        // made the same stream instead of two streams with overlapping points in one OTLP metric. This deliberately
+        // also merges values the spec types apart, such as 1 and "1", or null and "".
+        private bool MeterTagsEqual(in MetricStreamIdentity other)
+        {
+            if (MeterTags.Length != other.MeterTags.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < MeterTags.Length; i++)
+            {
+                if (!string.Equals(MeterTags[i].Key, other.MeterTags[i].Key, StringComparison.Ordinal)
+                    || !string.Equals((string?)MeterTags[i].Value, (string?)other.MeterTags[i].Value, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
