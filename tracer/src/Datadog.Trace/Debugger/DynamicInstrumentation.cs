@@ -68,6 +68,7 @@ namespace Datadog.Trace.Debugger
         private int _disposeState;
         private int _initializationState;
         private Task? _initializationTask;
+        private Task _uploads = Task.CompletedTask;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -251,26 +252,28 @@ namespace Datadog.Trace.Debugger
         {
             _probeStatusPoller.StartPolling();
 
-            _ = _diagnosticsUploader.StartFlushingAsync()
-                                    .ContinueWith(
-                                         t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
-                                         CancellationToken.None,
-                                         TaskContinuationOptions.OnlyOnFaulted,
-                                         TaskScheduler.Default);
+            var diagnostics = _diagnosticsUploader.StartFlushingAsync();
+            var snapshots = _snapshotUploader.StartFlushingAsync();
+            var logs = _logUploader.StartFlushingAsync();
+            _uploads = Task.WhenAll(diagnostics, snapshots, logs);
 
-            _ = _snapshotUploader.StartFlushingAsync()
-                                 .ContinueWith(
-                                      t => Log.Error(t?.Exception, "Error in snapshot uploader"),
-                                      CancellationToken.None,
-                                      TaskContinuationOptions.OnlyOnFaulted,
-                                      TaskScheduler.Default);
+            _ = diagnostics.ContinueWith(
+                t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
 
-            _ = _logUploader.StartFlushingAsync()
-                            .ContinueWith(
-                                 t => Log.Error(t?.Exception, "Error in log uploader"),
-                                 CancellationToken.None,
-                                 TaskContinuationOptions.OnlyOnFaulted,
-                                 TaskScheduler.Default);
+            _ = snapshots.ContinueWith(
+                t => Log.Error(t?.Exception, "Error in snapshot uploader"),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
+
+            _ = logs.ContinueWith(
+                t => Log.Error(t?.Exception, "Error in log uploader"),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
         }
 
         internal List<ConfigurationUpdater.UpdateResult> UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -1068,6 +1071,18 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        internal async Task DisposeAsync()
+        {
+            Dispose();
+            Task uploads;
+            lock (_instanceLock)
+            {
+                uploads = _uploads;
+            }
+
+            await uploads.ConfigureAwait(false);
+        }
+
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
@@ -1085,10 +1100,10 @@ namespace Datadog.Trace.Debugger
 
                 SafeDisposal.New()
                             .Execute(() => _subscriptionManager.Unsubscribe(_subscription), "unsubscribing from RCM")
+                            .Add(_probeStatusPoller)
                             .Add(_snapshotUploader)
                             .Add(_logUploader)
                             .Add(_diagnosticsUploader)
-                            .Add(_probeStatusPoller)
                             .Add(_memoryPressureMonitor)
                             .DisposeAll();
             }

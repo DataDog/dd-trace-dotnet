@@ -306,7 +306,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var method = typeof(DebuggerManager).GetMethod("ShutdownTasks", BindingFlags.Instance | BindingFlags.NonPublic);
             method.Should().NotBeNull();
-            method!.Invoke(manager, [null]);
+            ((Task)method!.Invoke(manager, [null])!).GetAwaiter().GetResult();
         }
 
         private static DebuggerSettings CreateDebuggerSettings(string redactedIdentifier)

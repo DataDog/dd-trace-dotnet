@@ -23,6 +23,8 @@ namespace Datadog.Trace.Debugger.Sink
             _snapshotSink = snapshotSink;
         }
 
+        protected override bool HasPendingEvents => !_snapshotSink.IsEmpty;
+
         public static SnapshotUploader Create(SnapshotSink snapshotSink, IBatchUploader snapshotBatchUploader, DebuggerSettings settings)
         {
             return new SnapshotUploader(snapshotSink, snapshotBatchUploader, settings);

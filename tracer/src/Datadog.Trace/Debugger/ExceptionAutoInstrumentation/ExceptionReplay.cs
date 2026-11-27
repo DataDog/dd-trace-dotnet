@@ -21,6 +21,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
         private bool _isDisabled;
         private SnapshotUploader? _uploader;
+        private Task _uploads = Task.CompletedTask;
         private SnapshotSink? _snapshotSink;
         private ExceptionTrackManager? _exceptionTrackManager;
 
@@ -87,16 +88,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 Log.Information("Exception Replay agentless uploads enabled. Symbol uploads remain unavailable without the Datadog Agent.");
             }
 
-            _ = Task.Run(() => _uploader.StartFlushingAsync())
-                    .ContinueWith(
-                         t =>
-                         {
-                             if (t.Exception?.GetType() != typeof(OperationCanceledException))
-                             {
-                                 Log.Error(t.Exception, "Error in flushing task");
-                             }
-                         },
-                         TaskContinuationOptions.OnlyOnFaulted);
+            _uploads = Task.Run(() => _uploader.StartFlushingAsync());
+            _ = _uploads.ContinueWith(
+                t =>
+                {
+                    if (t.Exception?.GetType() != typeof(OperationCanceledException))
+                    {
+                        Log.Error(t.Exception, "Error in flushing task");
+                    }
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
         }
 
         internal void Report(Span span, Exception exception)
@@ -148,6 +149,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             _snapshotSink?.Add(probeId, snapshot);
+        }
+
+        internal async Task DisposeAsync()
+        {
+            Dispose();
+            await _uploads.ConfigureAwait(false);
         }
 
         public void Dispose()
