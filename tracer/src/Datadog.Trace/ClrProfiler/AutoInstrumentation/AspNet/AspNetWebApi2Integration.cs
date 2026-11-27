@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -177,6 +178,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     HttpSemanticConventions.SetHttpRoute(serverSpan, route);
                     serverSpan.ResourceName = resourceName;
+
+                    SetNormalizedRoute(serverSpan, route, controllerContext.RouteData?.Values, controllerContext, httpContext);
                 }
 
                 if (httpContext is not null)
@@ -304,6 +307,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
                     }
+
+                    if (span.Context.TraceContext.RootSpan is { } rootSpan)
+                    {
+                        SetNormalizedRoute(rootSpan, route, routeValues, controllerContext, System.Web.HttpContext.Current);
+                    }
                 }
 
                 if (newResourceNamesEnabled)
@@ -352,6 +360,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return null;
+        }
+
+        private static void SetNormalizedRoute(Span span, string route, IDictionary<string, object> routeValues, IHttpControllerContext controllerContext, HttpContext httpContext)
+        {
+            // Web-hosted Web API is routed by System.Web on the app-relative path, like MVC
+            if (httpContext?.Request is { } request)
+            {
+                AspNetRouteTemplate.SetTag(Security.Instance, span, route, routeValues, request);
+            }
+            else
+            {
+                AspNetRouteTemplate.SetTagForSelfHost(Security.Instance, span, route, routeValues, controllerContext.RequestContext.VirtualPathRoot, controllerContext.Request?.RequestUri);
+            }
         }
 
         /// <summary>

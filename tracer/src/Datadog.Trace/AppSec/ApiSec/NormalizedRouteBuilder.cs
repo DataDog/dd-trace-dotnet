@@ -55,6 +55,11 @@ internal struct NormalizedRouteBuilder
     public readonly bool IsEnabled => _sb is not null;
 
     /// <summary>
+    /// Gets a value indicating whether the request path is known, so that the presence of the parameters can be resolved against it
+    /// </summary>
+    public readonly bool HasRequestPath => _requestSegmentCount >= 0;
+
+    /// <summary>
     /// Gets whether the normalized route is computed, so that callers don't compute its inputs otherwise.
     /// </summary>
     /// <param name="security">The security instance</param>
@@ -173,13 +178,27 @@ internal struct NormalizedRouteBuilder
     /// <param name="text">The static text</param>
     public void AddStaticText(string? text)
     {
-        if (_sb is null || text is null)
+        if (text is not null)
+        {
+            AddStaticText(text, 0, text.Length);
+        }
+    }
+
+    /// <summary>
+    /// Adds the static text between <paramref name="start"/> (inclusive) and <paramref name="end"/> (exclusive) to the current segment.
+    /// </summary>
+    /// <param name="text">The text that contains the static text</param>
+    /// <param name="start">The index of the first character</param>
+    /// <param name="end">The index after the last character</param>
+    public void AddStaticText(string text, int start, int end)
+    {
+        if (_sb is null || start >= end)
         {
             return;
         }
 
         AppendPendingSeparator(_sb);
-        AppendStaticConstant(_sb, text, 0, text.Length, preserveEscapes: false);
+        AppendStaticConstant(_sb, text, start, end, preserveEscapes: false);
     }
 
     /// <summary>
