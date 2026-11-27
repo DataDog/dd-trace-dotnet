@@ -3101,7 +3101,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var frameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
             var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
                             .Split(Path.PathSeparator)
-                            .Where(path => string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
+                            .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                                           string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
                             .Select(path => MetadataReference.CreateFromFile(path));
             var compilation = CSharpCompilation.Create(
                 Path.GetFileNameWithoutExtension(assemblyPath),

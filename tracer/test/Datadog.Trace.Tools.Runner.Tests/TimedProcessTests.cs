@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -14,15 +14,13 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class TimedProcessTests
 {
-    private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
     [Fact]
     public void StopsAProcessThatDoesNotFinishWithinTheTimeout()
     {
         var stopwatch = Stopwatch.StartNew();
 
         // A process that can't start throws, so false means it started and was stopped at the timeout.
-        var finished = IsWindows
+        var finished = EnvironmentTools.IsWindows()
                            ? TimedProcess.TryRun("ping", "-n 300 127.0.0.1", Path.GetTempPath(), TimeSpan.FromSeconds(1), out _, out _, out _)
                            : TimedProcess.TryRun("sh", "-c \"exec sleep 300\"", Path.GetTempPath(), TimeSpan.FromSeconds(1), out _, out _, out _);
 
@@ -36,7 +34,7 @@ public class TimedProcessTests
     public void ReadsBothStreamsWhenTheProcessFillsStandardErrorFirst()
     {
         // More than a pipe holds on standard error before anything on standard output.
-        var finished = IsWindows
+        var finished = EnvironmentTools.IsWindows()
                            ? TimedProcess.TryRun("powershell", "-NoProfile -Command \"[Console]::Error.Write('x' * 200000); [Console]::Out.Write('done')\"", Path.GetTempPath(), TimeSpan.FromMinutes(1), out var output, out var error, out var exitCode)
                            : TimedProcess.TryRun("sh", "-c \"head -c 200000 /dev/zero | tr '\\0' x 1>&2; printf done\"", Path.GetTempPath(), TimeSpan.FromMinutes(1), out output, out error, out exitCode);
 

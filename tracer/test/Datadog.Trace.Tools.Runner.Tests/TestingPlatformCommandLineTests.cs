@@ -86,6 +86,7 @@ public class TestingPlatformCommandLineTests : IDisposable
     [InlineData("test /p:Foo=Bar --property:Baz=1", new[] { "-p:Foo=Bar", "-p:Baz=1" })]
     [InlineData("test -p Foo=Bar", new[] { "-p:Foo=Bar" })]
     [InlineData("test --p:Foo=Bar", new[] { "-p:Foo=Bar" })]
+    [InlineData("test -p:Foo='bar'", new[] { "-p:Foo='bar'" })]
     [InlineData("test -property Foo=Bar", new[] { "-p:Foo=Bar" })]
     [InlineData("test --property Foo=Bar", new[] { "-p:Foo=Bar" })]
     [InlineData("test /p Foo=Bar", new[] { "-p:Foo=Bar" })]

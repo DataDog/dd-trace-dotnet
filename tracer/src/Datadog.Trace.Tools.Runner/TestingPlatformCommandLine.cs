@@ -46,8 +46,6 @@ internal sealed class TestingPlatformCommandLine
 
     private static readonly string[] ProjectFileExtensions = [".sln", ".slnx", ".slnf"];
 
-    private static readonly char[] QuoteCharacters = ['"', '\''];
-
     private TestingPlatformCommandLine(bool noBuild, string? testModules, string? testModulesRootDirectory, string? projectOrSolution, List<string> msBuildArguments, string? unsupportedOption)
     {
         NoBuild = noBuild;
@@ -222,7 +220,11 @@ internal sealed class TestingPlatformCommandLine
         return new TestingPlatformCommandLine(noBuild, testModules, rootDirectory, solution ?? project ?? positional, msBuildArguments, unsupportedOption);
     }
 
-    private static string Unquote(string argument) => argument.Trim(QuoteCharacters);
+    // Removes the quotes around an argument, when it starts and ends with the same quote character.
+    private static string Unquote(string argument)
+        => argument.Length >= 2 && argument[0] == argument[argument.Length - 1] && argument[0] is '"' or '\''
+               ? argument.Substring(1, argument.Length - 2)
+               : argument;
 
     private static string GetOptionName(string argument)
     {

@@ -25,6 +25,8 @@ internal static class TimedProcess
     /// <remarks>
     /// <c>ProcessHelpers.RunCommand</c> isn't used because it blocks reading the output before it checks its timeout. Both
     /// streams are drained asynchronously instead, which is fine in the runner: it only runs on .NET Core, without AppDomains.
+    /// This class is temporary: once https://github.com/DataDog/dd-trace-dotnet/pull/9841 enforces that timeout, the callers
+    /// switch to <c>ProcessHelpers.RunCommand</c> and this class is removed.
     /// </remarks>
     public static bool TryRun(string fileName, string arguments, string? workingDirectory, TimeSpan timeout, out string output, out string error, out int exitCode)
     {
@@ -88,8 +90,8 @@ internal static class TimedProcess
         }
         catch (Exception ex)
         {
-            // The process can exit on its own between the timeout and the kill.
-            Log.Debug(ex, "TimedProcess: Unable to stop '{FileName}' after the timeout.", fileName);
+            // The process can exit on its own before the kill.
+            Log.Debug(ex, "TimedProcess: Unable to stop '{FileName}'.", fileName);
         }
     }
 }
