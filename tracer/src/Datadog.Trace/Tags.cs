@@ -791,6 +791,12 @@ namespace Datadog.Trace
         internal const string AppSecFpSession = "_dd.appsec.fp.session";
 
         /// <summary>
+        /// The framework-agnostic representation of the matched route, as defined by RFC-1103.
+        /// Only set when API Security is enabled and the span has an http.route.
+        /// </summary>
+        internal const string AppSecNormalizedRoute = "_dd.appsec.normalized_route";
+
+        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";
