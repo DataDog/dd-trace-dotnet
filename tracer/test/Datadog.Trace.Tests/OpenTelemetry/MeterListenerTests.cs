@@ -898,6 +898,30 @@ namespace Datadog.Trace.Tests
             point.CreateSnapshotAndReset().SnapshotSum.Should().Be(5.0);
         }
 
+        [Theory]
+        [InlineData("test.ascii.name_1/x-y", true)]
+        [InlineData("test.requ\u00EAtes", false)]   // ê: a letter, but not ASCII
+        [InlineData("\u00E9clair.count", false)]   // non-ASCII first character
+        [InlineData("test.count\u0131", false)]    // dotless ı
+        // Kelvin sign, rejected on purpose: OTel .NET's case-insensitive name regex probably accepts it (it
+        // case-folds to ASCII k), but the spec only allows ASCII names.
+        [InlineData("test.\u212Aelvin", false)]
+        [InlineData("test.count\u0662", false)]    // Arabic-Indic digit two: a digit, but not ASCII
+        public async Task OnlyAsciiInstrumentNamesAreExported(string name, bool exported)
+        {
+            var settings = TracerSettings.Create(new());
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter.AsciiNames");
+            meter.CreateCounter<long>(name).Add(1);
+
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Any(m => m.InstrumentName == name).Should().Be(exported);
+        }
+
         [Fact]
         public async Task RecreatedInstrumentIsSubscribedAgain()
         {
