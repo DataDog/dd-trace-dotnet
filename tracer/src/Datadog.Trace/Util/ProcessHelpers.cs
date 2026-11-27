@@ -141,45 +141,55 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
-            var startTime = DateTime.UtcNow;
-            bool HasTimedOut() => command.Timeout.HasValue && DateTime.UtcNow - startTime > command.Timeout;
             using var disposableProcessInfo = processInfo;
+
+            // The output is read synchronously until the process closes it, so a timer enforces the timeout by killing the
+            // process, which ends the reads. Reading asynchronously isn't used: it caused deadlocks on Alpine arm64 (#6545) and
+            // broke MSTest AppDomain unloading on .NET Framework.
+            using var timeoutKiller = command.Timeout is { } timeout ? new TimeoutKiller(processInfo, timeout) : null;
 
             if (input is not null)
             {
-                processInfo.StandardInput.Write(input);
-                processInfo.StandardInput.Flush();
-                processInfo.StandardInput.Close();
+                try
+                {
+                    processInfo.StandardInput.Write(input);
+                    processInfo.StandardInput.Flush();
+                    processInfo.StandardInput.Close();
+                }
+                catch (IOException) when (timeoutKiller?.TimedOut == true)
+                {
+                    // The process was killed at the timeout before it read all the input. Close the input now: disposing the
+                    // process doesn't, and the finalizer would otherwise try to flush what is left into the broken pipe.
+                    try
+                    {
+                        processInfo.StandardInput.Dispose();
+                    }
+                    catch (IOException)
+                    {
+                        // The writer flushes again before closing; the stream is closed anyway.
+                    }
+                }
             }
 
-            var outputStringBuilder = new StringBuilder();
-            var errorStringBuilder = new StringBuilder();
-            while (!processInfo.HasExited)
-            {
-                if (HasTimedOut())
-                {
-                    Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
-                    processInfo.Kill();
-                    return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
-                }
-
-                if (!processStartInfo.UseShellExecute)
-                {
-                    outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                    errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
-                }
-
-                Thread.Sleep(15);
-            }
-
+            var output = string.Empty;
+            var error = string.Empty;
             if (!processStartInfo.UseShellExecute)
             {
-                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
-                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                // Both streams are read at the same time, so a process that fills one of the pipes while the other one is
+                // being read doesn't block. The standard error is read on a dedicated thread, which ends before returning.
+                var errorReader = new StandardErrorReader(processInfo.StandardError);
+                output = processInfo.StandardOutput.ReadToEnd();
+                error = errorReader.WaitForText();
+            }
+
+            processInfo.WaitForExit();
+            if (timeoutKiller?.TimedOut == true)
+            {
+                return new CommandOutput(output, error, exitCode: -1, timedOut: true);
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
-            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode, timedOut: false);
+            return new CommandOutput(output, error, processInfo.ExitCode, timedOut: false);
         }
 
         internal static IEnumerable<string> ParseWhereisOutput(string output)
@@ -315,6 +325,99 @@ namespace Datadog.Trace.Util
                 ProcessName = process.ProcessName;
                 MachineName = process.MachineName;
                 Pid = process.Id;
+            }
+        }
+
+        /// <summary>
+        /// Reads the standard error of a process to the end on a dedicated thread.
+        /// </summary>
+        private sealed class StandardErrorReader
+        {
+            private readonly StreamReader _reader;
+            private readonly Thread _thread;
+            private string _text = string.Empty;
+
+            public StandardErrorReader(StreamReader reader)
+            {
+                _reader = reader;
+                _thread = new Thread(Read) { IsBackground = true, Name = "DD ProcessHelpers standard error reader" };
+                _thread.Start();
+            }
+
+            public string WaitForText()
+            {
+                _thread.Join();
+                return _text;
+            }
+
+            private void Read()
+            {
+                try
+                {
+                    _text = _reader.ReadToEnd();
+                }
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+                {
+                    // The process was disposed or its pipe broke while reading.
+                    Log.Debug(ex, "Error reading the standard error of the process.");
+                }
+                catch (Exception ex)
+                {
+                    // Caught anyway: an exception on this thread would end the application.
+                    Log.Error(ex, "Unexpected error reading the standard error of the process.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Kills a process that is still running when its timeout elapses.
+        /// </summary>
+        private sealed class TimeoutKiller : IDisposable
+        {
+            private readonly Process _process;
+            private readonly TimeSpan _timeout;
+            private readonly Timer _timer;
+            private int _timedOut;
+
+            public TimeoutKiller(Process process, TimeSpan timeout)
+            {
+                _process = process;
+                _timeout = timeout;
+                _timer = new Timer(static state => ((TimeoutKiller)state!).Kill(), this, timeout, Timeout.InfiniteTimeSpan);
+            }
+
+            public bool TimedOut => Volatile.Read(ref _timedOut) == 1;
+
+            public void Dispose() => _timer.Dispose();
+
+            private void Kill()
+            {
+                try
+                {
+                    if (_process.HasExited)
+                    {
+                        return;
+                    }
+
+                    // Set before killing: the reads end as soon as the process is gone, possibly before Kill returns.
+                    Volatile.Write(ref _timedOut, 1);
+                    Log.Warning<TimeSpan>("Process timed out after {Timeout}. Killing process.", _timeout);
+#if NETCOREAPP3_0_OR_GREATER
+                    // Child processes that inherited the output pipes would keep the reads waiting.
+                    _process.Kill(entireProcessTree: true);
+#else
+                    _process.Kill();
+#endif
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // The process exited, or RunCommand returned and disposed it, in the meantime.
+                    Log.Debug(ex, "Error killing the process after its timeout.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error killing the process after its timeout.");
+                }
             }
         }
     }
