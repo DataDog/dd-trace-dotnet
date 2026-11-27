@@ -66,9 +66,7 @@ check-azure-pipeline:
     expire_in: 3 months
   variables:
     # Set this for quickly testing benchmarking workflows.
-    # TODO: clear after the migration iteration. Pins master build 215747
-    # because the branch build 215777 lost its arm64 stages to agent errors.
-    HARDCODED_BUILD_ID: "215747"
+    HARDCODED_BUILD_ID: ""
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
