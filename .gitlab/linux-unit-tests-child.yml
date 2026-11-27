@@ -9,17 +9,12 @@ workflow:
   extends: .linux-docker
   stage: test
   timeout: 1h
-  needs:
-    - &linux-ci-images-metadata
-      pipeline: "$PARENT_PIPELINE_ID"
-      job: resolve-linux-ci-images
-      artifacts: true
   script:
     - |
       set -eu
 
       . .gitlab/linux-ci-images.sh
-      load_linux_ci_images
+      resolve_linux_ci_images
       tester_image=$(pull_linux_ci_image "$BASE_IMAGE" tester)
       mkdir -p artifacts/build_data/infra_logs
 
@@ -83,7 +78,6 @@ workflow:
 .linux-unit-test-x64-glibc:
   extends: .linux-unit-test-x64
   needs:
-    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-x64
       artifacts: true
@@ -94,7 +88,6 @@ workflow:
 .linux-unit-test-x64-musl:
   extends: .linux-unit-test-x64
   needs:
-    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-x64-musl
       artifacts: true
@@ -109,7 +102,6 @@ workflow:
 .linux-unit-test-arm64-glibc:
   extends: .linux-unit-test-arm64
   needs:
-    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-arm64
       artifacts: true
@@ -120,7 +112,6 @@ workflow:
 .linux-unit-test-arm64-musl:
   extends: .linux-unit-test-arm64
   needs:
-    - *linux-ci-images-metadata
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build-linux-tracer-arm64-musl
       artifacts: true

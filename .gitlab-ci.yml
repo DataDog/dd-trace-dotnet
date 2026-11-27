@@ -46,6 +46,7 @@ variables:
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
   SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+  LINUX_CI_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci"
   # Build OpenTelemetry Operator-compatible .NET images through one-pipeline.
   CI_OTEL_OPERATOR_IMAGES_ENABLED: "true"
   CI_OTEL_OPERATOR_LANGUAGE: dotnet
@@ -76,6 +77,7 @@ shadow-build-unit-tests:
     strategy: depend
   variables:
     SHADOW_ALL_TEST_FRAMEWORKS: $run_all_test_frameworks
+    LINUX_CI_IMAGE_BASE: $LINUX_CI_IMAGE_BASE
 
 check-windows-ci-image:
   stage: build

@@ -34,8 +34,8 @@ resolve_linux_ci_images() {
         }
     ' .azure-pipelines/ultimate-pipeline.yml) || return 1
 
-    # C# sources are deliberately excluded: changing NUKE code must not require
-    # publishing environments. Its restore inputs are included to warm packages.
+    # NUKE source and restore inputs are excluded: jobs restore/build the current
+    # checkout, using the image's package cache only as an optimization.
     inputs='global.json
 .gitlab/linux-ci-images.sh
 .gitlab/get-dotnet-sdk-version.sh
@@ -46,24 +46,17 @@ tracer/build/_build/docker/debian.dockerfile
 tracer/build/_build/docker/alpine.dockerfile
 tracer/build/_build/docker/centos7.dockerfile
 tracer/build/_build/docker/universal.dockerfile'
-    restore_inputs=$(find tracer/build/_build -maxdepth 1 -type f \( -name '*.csproj' -o -name '*.props' -o -name '*.targets' \) | sort) || return 1
     checksums=$(
-        for input in $inputs $restore_inputs; do
+        for input in $inputs; do
             sha256sum "$input" || exit 1
         done
     ) || return 1
     digest=$(printf '%s\n' "$checksums" "$LINUX_DOTNET_SDK_VERSION" "$LINUX_NATIVE_DOTNET_SDK_VERSION" | sha256sum) || return 1
     LINUX_CI_IMAGE_HASH=$(printf '%s' "$digest" | cut -c 1-12)
+    export LINUX_CI_IMAGE_BASE LINUX_CI_IMAGE_HASH LINUX_DOTNET_SDK_VERSION LINUX_NATIVE_DOTNET_SDK_VERSION
 
     printf 'LINUX_CI_IMAGE_BASE=%s\nLINUX_CI_IMAGE_HASH=%s\nLINUX_DOTNET_SDK_VERSION=%s\nLINUX_NATIVE_DOTNET_SDK_VERSION=%s\n' \
         "$LINUX_CI_IMAGE_BASE" "$LINUX_CI_IMAGE_HASH" "$LINUX_DOTNET_SDK_VERSION" "$LINUX_NATIVE_DOTNET_SDK_VERSION"
-}
-
-load_linux_ci_images() {
-    # Downloaded from the resolver in this same shadow pipeline, never a prior run.
-    set -a
-    . .gitlab/generated/linux-ci-images.env
-    set +a
 }
 
 linux_ci_image() {

@@ -18,7 +18,7 @@ Publication runs candidate-controlled Dockerfiles and writes shared registry tag
 | CentOS 7 native builder | x64 | Azure's `nativeBuildDotnetSdkVersion` |
 | Universal native builder | x64, ARM64 | Azure's `nativeBuildDotnetSdkVersion` |
 
-[`linux-ci-images.sh`](linux-ci-images.sh) owns the 11 image references and publication flow. Tags in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci` contain a recipe hash, environment, role and architecture. The hash includes the toolchain Dockerfiles, managed/native SDK versions, NUKE restore inputs, image-layer definitions and publication helpers. It excludes NUKE C# source and this guide. Existing tags are skipped rather than overwritten.
+[`linux-ci-images.sh`](linux-ci-images.sh) owns the 11 image references and publication flow. Tags in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci` contain a recipe hash, environment, role and architecture. The hash includes the toolchain Dockerfiles, managed/native SDK versions, image-layer definitions and publication helpers. It excludes NUKE source and restore inputs, which are restored/built at job startup, and this guide. Existing tags are skipped rather than overwritten.
 
 The shared Dockerfiles expose `build-environment` and, where applicable, `test-environment` stages without compiled NUKE code. Azure's existing `builder` and `tester` stages retain their behavior. Test environments include the existing runtime inventory and pinned Datadog CA layer. Runtime channels in the shared Dockerfiles are resolved during manual publication, not ordinary test jobs.
 
@@ -26,8 +26,8 @@ The shared Dockerfiles expose `build-environment` and, where applicable, `test-e
 
 ## Update and validate
 
-1. Edit the environment inputs or SDK pins. C#-only changes do not require new images.
-2. Push the branch. `resolve-linux-ci-images` resolves SDK/image metadata once in the shadow pipeline and retains `.gitlab/generated/linux-ci-images.env`. Producers and managed-test children download that same-pipeline artifact explicitly.
+1. Edit the environment inputs or SDK pins. NUKE source/dependency-only changes do not require new images.
+2. Push the branch. Image checks, producers and managed-test jobs resolve the same image references and SDK versions directly from their checkout; no metadata job or artifact is needed. `LINUX_CI_IMAGE_BASE` overrides are forwarded through the nested test triggers.
 3. `check-linux-ci-images-x64` and `check-linux-ci-images-arm64` inspect every expected image manifest for their architecture before its producers start. They are read-only, use the same inventory as publication, and have no dependency on the other architecture's check. Windows jobs do not depend on them.
 4. If a check reports missing images, review the changes and run the matching toolchain-family entries in the root pipeline. On the first publication or when shared inputs change, all seven entries may be needed. Publication requires CI Identity registry access; do not pass registry credentials into image layers.
 5. Wait for publication to succeed, retry the failed architecture check, then retry any skipped consumers. Retrying a check never builds or publishes images. Authentication or connectivity errors may not require rebuilding. A partial publication can be retried: images already pushed are skipped.

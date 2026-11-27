@@ -10,35 +10,16 @@ stages:
   - build
   - test
 
-resolve-linux-ci-images:
-  extends: .linux-docker
-  stage: build
-  needs: []
-  tags: ["docker-in-docker:amd64"]
-  script:
-    - |
-      set -eu
-      . .gitlab/linux-ci-images.sh
-      mkdir -p .gitlab/generated
-      resolve_linux_ci_images > .gitlab/generated/linux-ci-images.env
-  artifacts:
-    expire_in: 2 weeks
-    paths:
-      - .gitlab/generated/linux-ci-images.env
-
 .check-linux-ci-images:
   extends: .linux-docker
   stage: build
   timeout: 15m
-  needs:
-    - &linux-ci-image-metadata
-      job: resolve-linux-ci-images
-      artifacts: true
+  needs: []
   script:
     - |
       set -eu
       . .gitlab/linux-ci-images.sh
-      load_linux_ci_images
+      resolve_linux_ci_images
       check_linux_ci_images "$LINUX_IMAGE_ARCHITECTURE"
 
 check-linux-ci-images-x64:
@@ -53,16 +34,14 @@ check-linux-ci-images-arm64:
   variables:
     LINUX_IMAGE_ARCHITECTURE: arm64
 
-# Consumer overlays retain metadata artifacts and gate only their architecture.
+# Consumer overlays gate only their architecture.
 .linux-ci-images-x64-ready:
   needs:
-    - *linux-ci-image-metadata
     - job: check-linux-ci-images-x64
       artifacts: false
 
 .linux-ci-images-arm64-ready:
   needs:
-    - *linux-ci-image-metadata
     - job: check-linux-ci-images-arm64
       artifacts: false
 
@@ -126,7 +105,7 @@ build:
       set -eu
 
       . .gitlab/linux-ci-images.sh
-      load_linux_ci_images
+      resolve_linux_ci_images
       managed_image=$(pull_linux_ci_image "$MANAGED_BASE_IMAGE" builder)
       if [ "$NATIVE_BASE_IMAGE" = "$MANAGED_BASE_IMAGE" ]; then
         native_image="$managed_image"
@@ -199,7 +178,7 @@ build-linux-tracer-arm64-musl:
       set -eu
 
       . .gitlab/linux-ci-images.sh
-      load_linux_ci_images
+      resolve_linux_ci_images
       native_image=$(pull_linux_ci_image "$NATIVE_BASE_IMAGE" builder)
       if [ "$NATIVE_BASE_IMAGE" = "$VALIDATION_BASE_IMAGE" ]; then
         validation_image="$native_image"
@@ -275,7 +254,7 @@ build-linux-profiler-arm64-musl:
       set -eu
 
       . .gitlab/linux-ci-images.sh
-      load_linux_ci_images
+      resolve_linux_ci_images
       universal_image=$(pull_linux_ci_image universal builder)
 
       . .gitlab/run-nuke-linux.sh
@@ -335,6 +314,7 @@ unit-tests-linux-x64:
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    LINUX_CI_IMAGE_BASE: $LINUX_CI_IMAGE_BASE
 
 unit-tests-linux-arm64:
   stage: test
@@ -352,3 +332,4 @@ unit-tests-linux-arm64:
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    LINUX_CI_IMAGE_BASE: $LINUX_CI_IMAGE_BASE
