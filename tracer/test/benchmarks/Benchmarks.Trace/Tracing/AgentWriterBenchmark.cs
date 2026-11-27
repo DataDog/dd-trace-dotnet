@@ -86,7 +86,8 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
+        /// Write realistic traces (with tags and metrics), then detach the payload and send it
+        /// through `Api.SendTracesAsync` to the fake transport.
         /// </summary>
         [Benchmark]
         [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
