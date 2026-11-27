@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -22,6 +24,9 @@ using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
@@ -991,6 +996,78 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 }
 
                 TestOptimization.Instance.Reset();
+            }
+        }
+
+        [Fact]
+        public void RemoteInternalCoverageRewritesTestModulesWhenDotnetTestRunsTestingPlatform()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "dd-mtp-ci-run-" + Path.GetRandomFileName());
+            var output = Directory.CreateDirectory(Path.Combine(root, "Tests", "bin", "Release", "net8.0")).FullName;
+            var tracerHome = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
+            var assemblyPath = Path.Combine(output, "CoverageTarget.dll");
+            CompileAssemblyWithPortablePdb(assemblyPath, "namespace CoverageTarget { public static class Calculator { public static int Add(int a, int b) => a + b; } }");
+
+            foreach (var folder in new[] { "net461", "netstandard2.0", "netcoreapp3.1", "net6.0" })
+            {
+                var tracerAssembly = typeof(Tracer).Assembly.Location;
+                File.Copy(tracerAssembly, Path.Combine(Directory.CreateDirectory(Path.Combine(tracerHome, folder)).FullName, Path.GetFileName(tracerAssembly)));
+            }
+
+            var originalAssembly = File.ReadAllBytes(assemblyPath);
+
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.PlatformKeys.DotNetTestRunner, "Microsoft.Testing.Platform");
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+
+            Program.CallbackForTests = (c, a, e) =>
+            {
+                arguments = a;
+                environmentVariables = e;
+            };
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            string[] childCommand = ["dotnet", "test", "--test-modules", "**/CoverageTarget.dll", "--root-directory", root];
+            var commandLine = new List<string> { "ci", "run", "--dd-env", "TestEnv", "--dd-service", "TestService", "--dd-version", "TestVersion", "--tracer-home", tracerHome, "--agent-url", $"http://localhost:{agent.Port}", "--" };
+            commandLine.AddRange(childCommand);
+
+            using var console = ConsoleHelper.Redirect();
+
+            try
+            {
+                var exitCode = Program.Main(commandLine.ToArray());
+
+                using var scope = new AssertionScope();
+                scope.AddReportable("output", console.Output);
+
+                exitCode.Should().Be(0);
+                arguments.Should().NotContain("--collect").And.NotContain("--test-adapter-path");
+                console.Output.Should().NotContain("couldn't be rewritten");
+                File.ReadAllBytes(assemblyPath).Should().NotEqual(originalAssembly);
+                File.Exists(Path.Combine(output, "Datadog.Trace.dll")).Should().BeTrue();
+            }
+            finally
+            {
+                Program.CallbackForTests = null;
+                if (environmentVariables?.TryGetValue(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, out var coveragePath) == true &&
+                    Directory.Exists(coveragePath))
+                {
+                    Directory.Delete(coveragePath, recursive: true);
+                }
+
+                TestOptimization.Instance.Reset();
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch
+                {
+                    // best effort
+                }
             }
         }
 
@@ -3014,6 +3091,31 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
             result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
             result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
+        }
+
+        /// <summary>
+        /// Compiles a library with a portable PDB next to it, which is what the coverage rewriter needs.
+        /// </summary>
+        private static void CompileAssemblyWithPortablePdb(string assemblyPath, string source)
+        {
+            var frameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
+            var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
+                            .Split(Path.PathSeparator)
+                            .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                                           string.Equals(Path.GetDirectoryName(path), frameworkDirectory, StringComparison.OrdinalIgnoreCase))
+                            .Select(path => MetadataReference.CreateFromFile(path));
+            var compilation = CSharpCompilation.Create(
+                Path.GetFileNameWithoutExtension(assemblyPath),
+                [CSharpSyntaxTree.ParseText(source, path: "Source.cs", encoding: Encoding.UTF8)],
+                references,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+            using var assemblyStream = File.Create(assemblyPath);
+            using var pdbStream = File.Create(pdbPath);
+            var result = compilation.Emit(assemblyStream, pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: pdbPath));
+            result.Diagnostics.Should().NotContain(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+            result.Success.Should().BeTrue();
         }
 
         /// <summary>
