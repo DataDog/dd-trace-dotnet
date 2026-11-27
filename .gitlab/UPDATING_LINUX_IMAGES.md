@@ -13,8 +13,8 @@ Publication runs candidate-controlled Dockerfiles and writes shared registry tag
 
 | Environment | Architectures | SDK |
 | --- | --- | --- |
-| Ubuntu builder/tester (glibc 2.17 sysroot) | x64, ARM64 | `global.json` |
-| Alpine builder/tester | x64, ARM64 | `global.json` |
+| Ubuntu builder/tester (glibc 2.17 sysroot) | x64, ARM64 | `LINUX_DOTNET_SDK_VERSION` in `linux-build-common.yml` |
+| Alpine builder/tester | x64, ARM64 | `LINUX_DOTNET_SDK_VERSION` in `linux-build-common.yml` |
 | Universal native builder | x64, ARM64 | Azure's `nativeBuildDotnetSdkVersion` |
 
 [`linux-ci-images.sh`](linux-ci-images.sh) owns the 10 image references and publication flow. Tags in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci` contain a recipe hash, environment, role and architecture. The hash includes the toolchain Dockerfiles, managed/native SDK versions, image-layer definitions and publication helpers. It excludes NUKE source and restore inputs, which are restored/built at job startup, and this guide. Existing tags are skipped rather than overwritten.
@@ -25,7 +25,7 @@ The shared Dockerfiles expose `build-environment` and, for Ubuntu/Alpine, `gitla
 
 ## Update and validate
 
-1. Edit the environment inputs or SDK pins. NUKE source/dependency-only changes do not require new images.
+1. Edit the environment inputs or SDK pins. Keep `LINUX_DOTNET_SDK_VERSION` in `linux-build-common.yml` aligned with `global.json`. NUKE source/dependency-only changes do not require new images.
 2. Push the branch. Image checks, producers and managed-test jobs resolve the same image references and SDK versions directly from their checkout; no metadata job or artifact is needed. `LINUX_CI_IMAGE_BASE` overrides are forwarded through the nested test triggers.
 3. `check-linux-ci-images-x64` and `check-linux-ci-images-arm64` inspect every expected image manifest for their architecture before its producers start. They are read-only, use the same inventory as publication, and have no dependency on the other architecture's check. Windows jobs do not depend on them.
 4. If a check reports missing images, review the changes and run the matching toolchain-family entries in the root pipeline. On the first publication or when shared inputs change, all six entries may be needed. Publication requires CI Identity registry access; do not pass registry credentials into image layers.

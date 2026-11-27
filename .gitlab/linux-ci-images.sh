@@ -23,7 +23,7 @@ resolve_linux_ci_images() {
     case "$LINUX_CI_IMAGE_BASE" in
         ''|*[!a-zA-Z0-9./:_-]*) echo 'Invalid Linux image repository' >&2; return 1 ;;
     esac
-    LINUX_DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh) || return 1
+    : "${LINUX_DOTNET_SDK_VERSION:?Set LINUX_DOTNET_SDK_VERSION in .gitlab/linux-build-common.yml}"
     # Reuse Azure's native-toolchain pin instead of maintaining another copy.
     LINUX_NATIVE_DOTNET_SDK_VERSION=$(awk '
         /^[[:space:]]*nativeBuildDotnetSdkVersion:/ { version = $2; sub(/\r$/, "", version); count++ }
@@ -37,7 +37,6 @@ resolve_linux_ci_images() {
     # checkout, using the image's package cache only as an optimization.
     inputs='global.json
 .gitlab/linux-ci-images.sh
-.gitlab/get-dotnet-sdk-version.sh
 .gitlab/linux-ci-environment.dockerfile
 tracer/build/_build/.dockerignore
 tracer/build/_build/docker/ubuntu.dockerfile
