@@ -51,6 +51,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IStatsAggregator _statsAggregator;
         private readonly NormalizerTraceProcessor _normalizerProcessor = new();
+        private readonly bool _alwaysProcessTrace;
 
         private readonly bool _apmTracingEnabled;
 
@@ -121,6 +122,8 @@ namespace Datadog.Trace.Agent
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
             _api = api;
+            var isOtlp = api.TracesEncoding is TracesEncoding.OtlpJson or TracesEncoding.OtlpProtobuf;
+            _alwaysProcessTrace = apmTracingEnabled && isOtlp;
             _statsd = statsd;
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
@@ -586,10 +589,13 @@ namespace Datadog.Trace.Agent
 
             int? chunkSamplingPriority = null;
             var chunk = spans;
-            if (CanComputeStats)
+            var canComputeStats = CanComputeStats;
+            if (canComputeStats || _alwaysProcessTrace)
             {
                 chunk = NormalizeTrace(in chunk);
-                var keepState = _statsAggregator.ProcessTrace(ref chunk);
+                var keepState = canComputeStats
+                                    ? _statsAggregator.ProcessTrace(ref chunk)
+                                    : SamplingHelpers.IsKeptBySamplingPriority(in chunk) ? TraceKeepState.AggregateAndExport : TraceKeepState.AggregateOnly;
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
                 // and we can just stop before we go any further.
@@ -601,8 +607,10 @@ namespace Datadog.Trace.Agent
                     return;
                 }
 
-                // Trace wasn't filtered
-                _statsAggregator.AddRange(in chunk);
+                if (canComputeStats)
+                {
+                    _statsAggregator.AddRange(in chunk);
+                }
 
                 if (keepState == TraceKeepState.AggregateAndExport)
                 {

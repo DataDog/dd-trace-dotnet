@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -44,6 +45,46 @@ namespace Datadog.Trace.Tests.Agent
         public Task InitializeAsync() => Task.CompletedTask;
 
         public Task DisposeAsync() => _agentWriter.FlushAndCloseAsync();
+
+        [Theory]
+        [CombinatorialData]
+        public async Task OtlpWithoutStats_PreservesNormalizationAndSampling(
+            bool protobuf,
+            bool singleSpanSampled,
+            [CombinatorialValues(SamplingPriorityValues.UserReject, SamplingPriorityValues.AutoReject, SamplingPriorityValues.AutoKeep, SamplingPriorityValues.UserKeep)] int priority)
+        {
+            var api = new Mock<IApi>();
+            api.SetupGet(x => x.TracesEncoding).Returns(protobuf ? TracesEncoding.OtlpProtobuf : TracesEncoding.OtlpJson);
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), false, It.IsAny<long>(), It.IsAny<long>(), true)).ReturnsAsync(true);
+            var stats = StatsAggregator.Create(api.Object, TracerSettings.Create(new()), NullDiscoveryService.Instance, TestStatsdManager.NoOp, isOtlp: true);
+            var agent = AgentWriterHelper.CreateWithManualFlush(api.Object, stats);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var traceContext = new TraceContext(tracer);
+            var span = new Span(new SpanContext(null, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "bad-name" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority, SamplingMechanism.Manual, rate: null, limiterRate: null);
+            if (singleSpanSampled)
+            {
+                span.SetMetric(Metrics.SingleSpanSampling.SamplingMechanism, SamplingMechanism.SpanSamplingRule);
+            }
+
+            span.Finish();
+
+            try
+            {
+                agent.WriteTrace(new SpanCollection([span]));
+                await agent.FlushTracesAsync();
+
+                span.OperationName.Should().Be("bad_name");
+                api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, false, It.IsAny<long>(), It.IsAny<long>(), true), priority > 0 || singleSpanSampled ? Times.Once() : Times.Never());
+            }
+            finally
+            {
+                await agent.FlushAndCloseAsync();
+            }
+
+            api.Verify(x => x.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never());
+        }
 
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
