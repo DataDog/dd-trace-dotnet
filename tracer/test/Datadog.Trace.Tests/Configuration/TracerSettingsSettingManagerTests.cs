@@ -37,9 +37,11 @@ public class TracerSettingsSettingManagerTests
         var dynamicConfig = new DynamicConfigConfigurationSource(rawConfig1, ConfigurationOrigins.RemoteConfig);
         var telemetry = new ConfigurationTelemetry();
 
-        var wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(
+        tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(
             dynamicConfig,
-            centralTelemetry: telemetry);
+            centralTelemetry: telemetry,
+            tryCommit: null,
+            out var wasUpdated).Should().BeTrue();
 
         wasUpdated.Should().BeTrue();
         settingChanges.Should().NotBeNull();
@@ -58,9 +60,11 @@ public class TracerSettingsSettingManagerTests
         var rawConfig2 = """{"action": "enable", "revision": 1698167126064, "service_target": {"service": "test_service", "env": "test_env"}, "lib_config": {"tracing_sampling_rate": null, "log_injection_enabled": null, "tracing_header_tags": null, "runtime_metrics_enabled": null, "tracing_debug": null, "tracing_service_mapping": null, "tracing_sampling_rules": null, "data_streams_enabled": null, "dynamic_instrumentation_enabled": null, "exception_replay_enabled": null, "code_origin_enabled": null, "live_debugging_enabled": null}, "id": "5931732111467439992"}""";
         dynamicConfig = new DynamicConfigConfigurationSource(rawConfig2, ConfigurationOrigins.RemoteConfig);
 
-        wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(
+        tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(
             dynamicConfig,
-            centralTelemetry: telemetry);
+            centralTelemetry: telemetry,
+            tryCommit: null,
+            out wasUpdated).Should().BeTrue();
 
         wasUpdated.Should().BeTrue();
         settingChanges.Should().NotBeNull();
@@ -77,13 +81,31 @@ public class TracerSettingsSettingManagerTests
 
         // Send the same config again, and make sure we _don't_ record more telemetry, so what we already have is correct
         var existingChanges = settingChanges;
-        wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(
+        tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(
             dynamicConfig,
-            centralTelemetry: telemetry);
+            centralTelemetry: telemetry,
+            tryCommit: null,
+            out wasUpdated).Should().BeTrue();
 
         wasUpdated.Should().BeFalse();
         existingChanges.Should().Be(settingChanges);
         telemetry.GetQueueForTesting().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DeclinedDynamicConfigurationPreservesQueuedTelemetryPrecedence()
+    {
+        var telemetry = new ConfigurationTelemetry();
+        var tracerSettings = new TracerSettings(source: null, telemetry);
+        telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 0.8, ConfigurationOrigins.Code);
+        var configuration = new DynamicConfigConfigurationSource("""{"lib_config":{"tracing_sampling_rate":0.42}}""", ConfigurationOrigins.RemoteConfig);
+
+        tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(configuration, telemetry, tryCommit: _ => false, out var wasUpdated).Should().BeFalse();
+
+        wasUpdated.Should().BeFalse();
+        var mostRecent = GetLatestSampleRateTelemetry(telemetry);
+        mostRecent.Origin.Should().Be(ConfigurationOrigins.Code);
+        mostRecent.DoubleValue.Should().Be(0.8);
     }
 
     private static ConfigurationTelemetry.ConfigurationTelemetryEntry GetLatestSampleRateTelemetry(ConfigurationTelemetry telemetry)

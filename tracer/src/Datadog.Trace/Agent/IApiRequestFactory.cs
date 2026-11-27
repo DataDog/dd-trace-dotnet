@@ -8,18 +8,13 @@ using System.Net;
 
 namespace Datadog.Trace.Agent
 {
-    internal interface IApiRequestFactory : IApiRequestFactory<IApiRequest>
-    {
-    }
-
-    internal interface IApiRequestFactory<out TRequest>
-        where TRequest : IApiRequest
+    internal interface IApiRequestFactory
     {
         string Info(Uri endpoint);
 
         Uri GetEndpoint(string relativePath);
 
-        TRequest Create(Uri endpoint);
+        IApiRequest Create(Uri endpoint);
 
         void SetProxy(WebProxy proxy, NetworkCredential credential);
     }

@@ -175,11 +175,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 recheckIntervalMs,
                 exporterSettings: exporterSettings);
 
-        public bool TryRunWithCurrentConfiguration(AgentConfiguration configuration, Func<bool> apply)
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
         {
             lock (_lock)
             {
-                return ReferenceEquals(configuration, _configuration) && apply();
+                return _configuration is { } configuration && apply(configuration);
             }
         }
 

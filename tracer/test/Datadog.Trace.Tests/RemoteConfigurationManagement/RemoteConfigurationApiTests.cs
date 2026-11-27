@@ -40,7 +40,7 @@ public class RemoteConfigurationApiTests
             new NamedPipeClientStreamFactory(pipeName, timeoutMs: 5000),
             new DatadogHttpClient(MinimalAgentHeaderHelper.Instance),
             new Uri("http://localhost"));
-        var api = new RemoteConfigurationApi<IApiRequest>(factory);
+        var api = new RemoteConfigurationApi(factory);
 
         var poll = api.GetConfigs(GetRequest(), ConfigEndpoint, cancellation.Token);
         await pipe.WaitForConnectionAsync(timeout.Token);
@@ -69,7 +69,7 @@ public class RemoteConfigurationApiTests
     public async Task WhenConfigEndpointAvailable_SendsRequestToGetConfig()
     {
         var requestFactory = new TestRequestFactory();
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -95,7 +95,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, statusCode: statusCode, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -110,7 +110,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, statusCode: statusCode, responseContent: string.Empty));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -126,7 +126,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         await api.Invoking(x => x.GetConfigs(GetRequest(), ConfigEndpoint))
                  .Should()
@@ -145,7 +145,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         await api.Invoking(x => x.GetConfigs(GetRequest(), ConfigEndpoint))
                  .Should()
@@ -161,7 +161,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -179,7 +179,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -196,7 +196,7 @@ public class RemoteConfigurationApiTests
     {
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 
@@ -213,7 +213,7 @@ public class RemoteConfigurationApiTests
         var responseContent = RcmResponses.HugeConfig();
         var requestFactory = new TestRequestFactory(
             url => new TestApiRequest(url, responseContent: responseContent));
-        var api = new RemoteConfigurationApi<IApiRequest>(requestFactory);
+        var api = new RemoteConfigurationApi(requestFactory);
 
         var result = await api.GetConfigs(GetRequest(), ConfigEndpoint);
 

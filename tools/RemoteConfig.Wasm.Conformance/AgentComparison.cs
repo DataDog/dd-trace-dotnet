@@ -136,7 +136,7 @@ internal static class AgentComparison
             },
             Product));
         var tracer = new RcmClientTracer("benchmark", "1", "test", "test", "1", [], null);
-        var api = new RemoteConfigurationApi<IApiRequest>(factory);
+        var api = new RemoteConfigurationApi(factory);
         Func<GetRcmRequest, Task<GetRcmResponse?>> fetch = request => api.GetConfigs(request, Endpoint);
         return () => manager.SendRequest(tracer, fetch);
     }

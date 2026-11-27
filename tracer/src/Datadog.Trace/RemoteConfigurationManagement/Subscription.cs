@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal delegate bool SnapshotInstaller(List<RemoteConfiguration> files, Dictionary<string, string> rejections, long targetGeneration, Func<bool> canInstall);
+    internal delegate bool SnapshotInstaller(List<RemoteConfiguration> files, Dictionary<string, string> rejections, long targetGeneration, Func<Action, bool> tryCommit);
 
     internal sealed class Subscription : ISubscription
     {

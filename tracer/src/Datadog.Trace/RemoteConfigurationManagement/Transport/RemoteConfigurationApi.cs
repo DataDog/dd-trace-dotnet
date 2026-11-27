@@ -20,16 +20,15 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    internal sealed class RemoteConfigurationApi<TRequest> : IRemoteConfigurationApi
-        where TRequest : class, IApiRequest
+    internal sealed class RemoteConfigurationApi : IRemoteConfigurationApi
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi<TRequest>));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
         private static readonly JsonSerializerSettings SerializerSettings = new();
 
-        private readonly IApiRequestFactory<TRequest> _apiRequestFactory;
+        private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ContainerMetadata _containerMetadata;
 
-        internal RemoteConfigurationApi(IApiRequestFactory<TRequest> apiRequestFactory)
+        internal RemoteConfigurationApi(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
             _containerMetadata = ContainerMetadata.Instance;
@@ -72,7 +71,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             }
         }
 
-        internal TRequest CreateRequest(string endpoint)
+#if SHARED_REMOTE_CONFIG
+        // The streaming factory uses HttpClient for TCP, named pipes, and Unix sockets.
+        public Task<IApiResponse> PostStreamingAsync(string endpoint, ArraySegment<byte> body, CancellationToken cancellationToken)
+            => ((HttpClientRequest)CreateRequest(endpoint)).PostStreamingAsync(body, MimeTypes.Json, cancellationToken);
+#endif
+
+        private IApiRequest CreateRequest(string endpoint)
         {
             var request = _apiRequestFactory.Create(_apiRequestFactory.GetEndpoint(endpoint));
             request.AddContainerMetadataHeaders(_containerMetadata);

@@ -54,16 +54,7 @@ internal static class LiveWorkerBenchmark
             Product)
         {
             InstallSnapshot = backend == "watch"
-                                  ? (files, _, _, canInstall) =>
-                                  {
-                                      if (!canInstall())
-                                      {
-                                          return false;
-                                      }
-
-                                      Interlocked.Add(ref delivered, files.Count);
-                                      return true;
-                                  }
+                                  ? (files, _, _, tryCommit) => tryCommit(() => Interlocked.Add(ref delivered, files.Count))
                                   : null,
         });
         var discovery = new NativeWorkerProof.Discovery();

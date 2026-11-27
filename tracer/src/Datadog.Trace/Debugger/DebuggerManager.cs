@@ -179,10 +179,10 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetGeneralConfig(TracerSettings tracerSettings)
+        private void SetGeneralConfig(MutableSettings settings)
         {
-            ServiceName = GetServiceName(tracerSettings.Manager.InitialMutableSettings);
-            ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
+            ServiceName = GetServiceName(settings);
+            ProcessTags = settings.ProcessTags?.SerializedTags;
         }
 
         // The snapshot serializer and redaction caches are only used by Dynamic Instrumentation and
@@ -267,7 +267,6 @@ namespace Datadog.Trace.Debugger
             }
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
-            SetGeneralConfig(tracerSettings);
             if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
@@ -301,6 +300,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 SafeDisposal.TryDispose(_tracerSettingsSubscription);
+                SetGeneralConfig(settingsManager.InitialMutableSettings);
                 _tracerSettingsSubscription = settingsManager.SubscribeToChanges(OnTracerSettingsChanged);
                 _subscribedSettingsManager = settingsManager;
             }
@@ -313,13 +313,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            if (changes.UpdatedMutable is not { } updatedMutable)
-            {
-                return;
-            }
-
-            ServiceName = GetServiceName(updatedMutable);
-            ProcessTags = updatedMutable.ProcessTags?.SerializedTags;
+            SetGeneralConfig(changes.UpdatedMutable ?? changes.PreviousMutable);
 
             // Note: `SymbolsUploader` captures the service name on first use (symbol extraction/upload) and then keeps it fixed for its lifetime,
             // to avoid mixing symbols across services. If the service name changes after that point, the correct behavior would be to stop and
@@ -655,7 +649,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                await ActivateDynamicInstrumentation(tracerSettings, activation, ownerStop).ConfigureAwait(false);
+                await ActivateDynamicInstrumentation(activation, ownerStop).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -699,7 +693,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task ActivateDynamicInstrumentation(TracerSettings tracerSettings, DynamicInstrumentationActivation activation, Task? ownerStop)
+        private async Task ActivateDynamicInstrumentation(DynamicInstrumentationActivation activation, Task? ownerStop)
         {
             await _diInitialization.WaitAsync().ConfigureAwait(false);
             DynamicInstrumentation? instrumentation = null;
@@ -810,10 +804,11 @@ namespace Datadog.Trace.Debugger
                     }
 
                     initializing = !replaceFileRuntime;
+                    EnsureTracerSettingsSubscription(tracerManager.Settings);
                     instrumentation = DebuggerFactory.CreateDynamicInstrumentation(
                         discoveryService,
                         RcmSubscriptionManager.Instance,
-                        tracerSettings,
+                        tracerManager.Settings,
                         () => ServiceName,
                         settings,
                         tracerManager.GitMetadataTagsProvider);

@@ -5,8 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
@@ -14,5 +16,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
     internal interface IRemoteConfigurationApi
     {
         Task<GetRcmResponse?> GetConfigs(GetRcmRequest request, string endpoint, CancellationToken cancellationToken = default);
+
+#if SHARED_REMOTE_CONFIG
+        Task<IApiResponse> PostStreamingAsync(string endpoint, ArraySegment<byte> body, CancellationToken cancellationToken);
+#endif
     }
 }

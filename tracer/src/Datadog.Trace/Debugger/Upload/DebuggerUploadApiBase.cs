@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.CodeDom;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -57,13 +58,13 @@ internal abstract class DebuggerUploadApiBase
         if (_liveTransport is not null)
         {
             var route = _liveTransport.Current;
-            return route is null ? null : BuildTarget(route.Factory, _selectEndpoint!(route.Configuration));
+            return route is null ? null : BuildTarget(route.Factory, _selectEndpoint!(route.Configuration), route);
         }
 
         return BuildTarget(_apiRequestFactory!, Volatile.Read(ref _endpoint));
     }
 
-    private UploadTarget? BuildTarget(IApiRequestFactory factory, string? endpoint)
+    private UploadTarget? BuildTarget(IApiRequestFactory factory, string? endpoint, DebuggerAgentTransport.Route? route = null)
     {
         if (endpoint is null)
         {
@@ -76,18 +77,26 @@ internal abstract class DebuggerUploadApiBase
         _tags ??= GetDefaultTagsMergedWithGlobalTags();
         query["ddtags"] = _tags;
         builder.Query = query.ToString();
-        return new UploadTarget(factory, builder.ToString());
+        return new UploadTarget(factory, builder.ToString(), route);
     }
 
-    protected Task<IApiResponse> PostAsync(UploadTarget target, ArraySegment<byte> data)
+    protected bool TryStartPost(UploadTarget target, ArraySegment<byte> data, [NotNullWhen(true)] out Task<IApiResponse>? post)
     {
         var request = target.Factory.Create(new Uri(target.Uri));
         request.AddHeader("DD-REQUEST-ID", Guid.NewGuid().ToString());
         var isDebuggerV1 = target.Uri.Contains(DebuggerV1Endpoint);
 
-        return this is DiagnosticsUploadApi && !isDebuggerV1
+        // Opening a named-pipe connection can block. Admit the upload before entering the transport.
+        if (_liveTransport is { } transport && !transport.TryAdmitUpload(target.LiveRoute!))
+        {
+            post = null;
+            return false;
+        }
+
+        post = this is DiagnosticsUploadApi && !isDebuggerV1
                    ? request.PostAsync([new("event", MimeTypes.Json, "event.json", data)])
                    : request.PostAsync(data, MimeTypes.Json);
+        return true;
     }
 
     private string GetDefaultTagsMergedWithGlobalTags()
@@ -149,10 +158,12 @@ internal abstract class DebuggerUploadApiBase
         }
     }
 
-    protected readonly struct UploadTarget(IApiRequestFactory factory, string uri)
+    protected readonly struct UploadTarget(IApiRequestFactory factory, string uri, DebuggerAgentTransport.Route? liveRoute)
     {
         public IApiRequestFactory Factory { get; } = factory;
 
         public string Uri { get; } = uri;
+
+        public DebuggerAgentTransport.Route? LiveRoute { get; } = liveRoute;
     }
 }

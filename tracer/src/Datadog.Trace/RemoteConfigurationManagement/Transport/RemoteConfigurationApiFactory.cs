@@ -27,18 +27,18 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 tcpTimeout: AgentTimeout,
                 httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
 
-            return new RemoteConfigurationApi<IApiRequest>(apiRequestFactory);
+            return new RemoteConfigurationApi(apiRequestFactory);
         }
 
 #if SHARED_REMOTE_CONFIG
-        internal static RemoteConfigurationApi<HttpClientRequest> CreateStreaming(ExporterSettings exporterSettings)
+        internal static IRemoteConfigurationApi CreateStreaming(ExporterSettings exporterSettings)
         {
             var factory = AgentTransportStrategy.GetHttpClient(
                 exporterSettings,
                 productName: ProductName,
                 tcpTimeout: AgentTimeout,
                 httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
-            return new RemoteConfigurationApi<HttpClientRequest>(factory);
+            return new RemoteConfigurationApi(factory);
         }
 #endif
     }

@@ -23,13 +23,13 @@ namespace Datadog.Trace.Debugger.Upload
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
-            if (BuildTarget() is not { } target)
+            if (BuildTarget() is not { } target || !TryStartPost(target, data, out var post))
             {
-                Log.Warning("Failed to upload log: debugger endpoint not yet retrieved from discovery service");
+                Log.Warning("Failed to upload log: debugger route unavailable");
                 return false;
             }
 
-            using var response = await PostAsync(target, data).ConfigureAwait(false);
+            using var response = await post.ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {

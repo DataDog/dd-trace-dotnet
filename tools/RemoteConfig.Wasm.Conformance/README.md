@@ -67,9 +67,17 @@ The `--verify-native-debugger-cutover` case changes discovery when the old trans
 
 The `--verify-debugger-exporter-publication` case pauses settings notification before the Debugger transport updates its route. It checks that takeover waits for both endpoints on the published exporter.
 
-The `--verify-debugger-discovery-publication` case keeps the Agent URL fixed and pauses discovery notification after `/info` withdraws the Debugger endpoint. Takeover waits until discovery publishes both endpoints again.
+The `--verify-debugger-discovery-publication` case keeps the Agent URL fixed and checks readiness with each endpoint alone. It also pauses discovery notification after `/info` withdraws the Debugger endpoint. Takeover waits until discovery publishes both endpoints again.
+
+The `--verify-debugger-upload-admission` case pauses a diagnostics upload after it selects a route. It checks that disposal and exporter changes reject pending admission and that replay of an identical snapshot preserves admission. The control upload uses an Agent with only a Debugger endpoint.
+
+The `--verify-debugger-upload-blocked-connect` case pauses a synchronous stream connection after admission. Exporter publication completes while the connection waits. The admitted upload can then finish.
+
+The `--verify-rc-route-withdrawal` cases hold a Remote Configuration reply while `/info` withdraws that endpoint on the same Agent. They check that the managed poller, raw native poller, and native watch discard the held reply before discovery finishes notifying subscribers. The `watch-commit` case withdraws the route after the watch builds new settings and checks that those settings never reach subscribers.
 
 The `--verify-native-debugger-disable` case applies a disable update while debugger startup waits for Agent discovery. It checks that startup ends and that the tracer has no Live Debugging subscription.
+
+The `--verify-debugger-startup-replacement` case replaces the tracer after startup captures its settings. The debugger must send a snapshot through the successor's Agent route and label it with the successor's service.
 
 The `--verify-native-debugger-agent-change` case changes the Agent before and after debugger activation. It leaves a poll outstanding on the original Agent during the first switch. The same tracer rejects that response and sends each synthetic snapshot to the current Agent.
 

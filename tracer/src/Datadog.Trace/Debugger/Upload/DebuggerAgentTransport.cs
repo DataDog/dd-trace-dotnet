@@ -89,29 +89,39 @@ internal sealed class DebuggerAgentTransport : IDisposable
     }
 
     internal bool TryRunWithRemoteConfigRoute(Action apply)
+        => _discoverySnapshot is not null &&
+           Current is { HasRemoteConfigEndpoints: true } route &&
+           TryRunWithCurrentRoute(route, apply);
+
+    internal bool TryAdmitUpload(Route route)
+        => TryRunWithCurrentRoute(route, static () => { });
+
+    private bool TryRunWithCurrentRoute(Route route, Action apply)
     {
-        if (_discoverySnapshot is not { } snapshot ||
-            Current is not { HasRemoteConfigEndpoints: true } route ||
-            route.Configuration.DiscoverySettings is not { } exporter)
+        if (route.Configuration.DiscoverySettings is not { } exporter)
         {
             return false;
         }
 
         return _settings.TryRunWithCurrentExporter(
             exporter,
-            () => snapshot.TryRunWithCurrentConfiguration(route.Configuration, () =>
-            {
-                lock (_gate)
-                {
-                    if (!ReferenceEquals(_current, route))
-                    {
-                        return false;
-                    }
+            () => _discoverySnapshot is { } snapshot
+                      ? snapshot.TryRunWithCurrentConfiguration(configuration => ReferenceEquals(configuration, route.Configuration) && ApplyIfCurrent())
+                      : ApplyIfCurrent());
 
-                    apply();
-                    return true;
+        bool ApplyIfCurrent()
+        {
+            lock (_gate)
+            {
+                if (!ReferenceEquals(_current, route))
+                {
+                    return false;
                 }
-            }));
+
+                apply();
+                return true;
+            }
+        }
     }
 
     public void Dispose()
@@ -149,7 +159,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
             _factory = _createFactory(exporter);
             if (_lastDiscovery is { } discovered && ReferenceEquals(discovered.DiscoverySettings, exporter))
             {
-                SetCurrentRoute(new Route(_factory, discovered));
+                SetCurrentRoute(_factory, discovered);
             }
         }
     }
@@ -168,14 +178,20 @@ internal sealed class DebuggerAgentTransport : IDisposable
             _lastDiscovery = discovered;
             if (ReferenceEquals(discovered.DiscoverySettings, _exporter) && _factory is { } factory)
             {
-                SetCurrentRoute(new Route(factory, discovered));
+                SetCurrentRoute(factory, discovered);
             }
         }
     }
 
-    private void SetCurrentRoute(Route route)
+    private void SetCurrentRoute(IApiRequestFactory factory, AgentConfiguration configuration)
     {
-        Volatile.Write(ref _current, route);
+        if (_current is not { } route ||
+            !ReferenceEquals(route.Factory, factory) ||
+            !ReferenceEquals(route.Configuration, configuration))
+        {
+            Volatile.Write(ref _current, new Route(factory, configuration));
+        }
+
         if (_remoteConfigRouteReady is { } ready && HasRemoteConfigRoute)
         {
             _remoteConfigRouteReady = null;

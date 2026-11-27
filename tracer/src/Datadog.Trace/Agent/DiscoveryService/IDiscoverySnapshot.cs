@@ -14,5 +14,5 @@ internal interface IDiscoverySnapshot
     AgentConfiguration? CurrentConfiguration { get; }
 
     // Hold publication through the synchronous effect. Subscribers run outside this guard.
-    bool TryRunWithCurrentConfiguration(AgentConfiguration configuration, Func<bool> apply);
+    bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply);
 }

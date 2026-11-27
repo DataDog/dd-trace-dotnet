@@ -365,11 +365,11 @@ namespace Datadog.Trace
                        : stopped;
         }
 
-        private async Task ShutdownRemoteConfigurationAsync(RemoteConfigurationManager configuration)
+        private async Task ShutdownRemoteConfigurationAsync(Func<Task> drain)
         {
             try
             {
-                await AwaitRemoteConfigurationAsync(configuration?.StopAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                await AwaitRemoteConfigurationAsync(drain?.Invoke() ?? Task.CompletedTask).ConfigureAwait(false);
             }
             catch (Exception error)
             {
@@ -1062,16 +1062,18 @@ namespace Datadog.Trace
                 if (instance is not null)
                 {
 #if SHARED_REMOTE_CONFIG
-                    var nativeConfiguration = instance.RemoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: true } configuration
-                                                  ? configuration
-                                                  : null;
-                    var waitForRemoteConfiguration = nativeConfiguration is not null || instance._remoteConfigurationPredecessor is not null;
+                    var configuration = instance.RemoteConfigurationManager as RemoteConfigurationManager;
+                    var drainRemoteConfiguration = configuration?.GetShutdownDrain();
+                    var waitForRemoteConfiguration = drainRemoteConfiguration is not null || instance._remoteConfigurationPredecessor is not null;
                     if (waitForRemoteConfiguration)
                     {
                         lock (_globalInstanceLock)
                         {
                             instance._isClosing = true;
-                            nativeConfiguration?.RequestStop();
+                            if (drainRemoteConfiguration is not null)
+                            {
+                                configuration.RequestStop();
+                            }
                         }
                     }
 #endif
@@ -1099,10 +1101,10 @@ namespace Datadog.Trace
 #if SHARED_REMOTE_CONFIG
                     if (waitForRemoteConfiguration)
                     {
-                        remoteConfigurationTask = instance.ShutdownRemoteConfigurationAsync(nativeConfiguration);
+                        remoteConfigurationTask = instance.ShutdownRemoteConfigurationAsync(drainRemoteConfiguration);
                     }
 
-                    if (nativeConfiguration is null)
+                    if (drainRemoteConfiguration is null)
 #endif
                     {
                         instance.RemoteConfigurationManager?.Dispose();

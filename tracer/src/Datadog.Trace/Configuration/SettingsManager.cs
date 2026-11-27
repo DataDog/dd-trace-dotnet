@@ -134,7 +134,14 @@ public sealed partial record TracerSettings
             lock (_subscribers)
             {
                 _manualConfigurationSource = manualSource;
-                return UpdateSettings(_dynamicConfigurationSource, manualSource, centralTelemetry);
+                if (BuildNewSettings(_dynamicConfigurationSource, manualSource) is not { } prepared)
+                {
+                    return false;
+                }
+
+                PublishSettings(prepared.Changes);
+                CompletePublication(prepared, centralTelemetry);
+                return true;
             }
         }
 
@@ -144,29 +151,44 @@ public sealed partial record TracerSettings
         /// </summary>
         /// <param name="dynamicConfigSource">An <see cref="IConfigurationSource"/> for dynamic config via remote config</param>
         /// <param name="centralTelemetry">The central <see cref="IConfigurationTelemetry"/> to report config telemetry updates to</param>
-        /// <returns>True if changes were detected and consumers were updated, false otherwise</returns>
-        public bool UpdateDynamicConfigurationSettings(
-            IConfigurationSource dynamicConfigSource,
-            IConfigurationTelemetry centralTelemetry)
-            => TryUpdateDynamicConfigurationSettings(dynamicConfigSource, centralTelemetry, canInstall: null, out var updated) && updated;
-
+        /// <param name="tryCommit">An optional guard that publishes the settings while the caller still owns the route.</param>
+        /// <param name="updated">Whether the effective settings changed.</param>
+        /// <returns>Whether the caller could install the configuration.</returns>
         internal bool TryUpdateDynamicConfigurationSettings(
             IConfigurationSource dynamicConfigSource,
             IConfigurationTelemetry centralTelemetry,
-            Func<bool>? canInstall,
+            Func<Action, bool>? tryCommit,
             out bool updated)
         {
             lock (_subscribers)
             {
-                if (canInstall is not null && !canInstall())
+                var prepared = BuildNewSettings(dynamicConfigSource, _manualConfigurationSource);
+                if (tryCommit is null)
+                {
+                    Publish();
+                }
+                else if (!tryCommit(Publish))
                 {
                     updated = false;
                     return false;
                 }
 
-                _dynamicConfigurationSource = dynamicConfigSource;
-                updated = UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
+                updated = prepared.HasValue;
+                if (prepared is { } committed)
+                {
+                    CompletePublication(committed, centralTelemetry);
+                }
+
                 return true;
+
+                void Publish()
+                {
+                    _dynamicConfigurationSource = dynamicConfigSource;
+                    if (prepared is { } settings)
+                    {
+                        PublishSettings(settings.Changes);
+                    }
+                }
             }
         }
 
@@ -194,25 +216,9 @@ public sealed partial record TracerSettings
             return names;
         }
 
-        private bool UpdateSettings(
+        private PreparedSettings? BuildNewSettings(
             IConfigurationSource dynamicConfigSource,
-            ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry centralTelemetry)
-        {
-            if (BuildNewSettings(dynamicConfigSource, manualSource, centralTelemetry) is { } newSettings)
-            {
-                NotifySubscribers(newSettings);
-                return true;
-            }
-
-            return false;
-        }
-
-        // Internal for testing
-        internal SettingChanges? BuildNewSettings(
-            IConfigurationSource dynamicConfigSource,
-            ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry telemetry)
+            ManualInstrumentationConfigurationSourceBase manualSource)
         {
             // Set the correct default telemetry and initial settings depending
             // on whether the manual config source explicitly disables using the default sources
@@ -276,16 +282,13 @@ public sealed partial record TracerSettings
                 return null;
             }
 
-            // we have changes, so we need to report them
-            // First record the "default"/fallback values, then record the "new" values
-            defaultTelemetry.CopyTo(telemetry);
-            tempTelemetry.CopyTo(telemetry);
-
-            Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
-            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry, _pipeNames);
+            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, tempTelemetry, _pipeNames);
 
-            return new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter);
+            return new PreparedSettings(
+                new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter),
+                defaultTelemetry,
+                tempTelemetry);
         }
 
         [MemberNotNull(nameof(_noDefaultSettingsTelemetry))]
@@ -303,19 +306,27 @@ public sealed partial record TracerSettings
             _noDefaultSourcesSettings = MutableSettings.CreateWithoutDefaultSources(_tracerSettings, telemetry);
         }
 
-        private void NotifySubscribers(SettingChanges settings)
+        private void PublishSettings(SettingChanges settings)
         {
-            // Subscribers can acquire the Debugger route lock. Release the publication gate before notifying them.
             lock (_exporterPublicationGate)
             {
                 Volatile.Write(ref _latest, settings);
             }
+        }
 
+        private void CompletePublication(PreparedSettings prepared, IConfigurationTelemetry telemetry)
+        {
+            // CopyTo updates the sequence IDs of reusable fallback entries.
+            prepared.DefaultTelemetry.CopyTo(telemetry);
+            prepared.UpdateTelemetry.CopyTo(telemetry);
+
+            // Subscribers can acquire the Debugger route lock. Notify them outside the publication guards.
+            Log.Information("Notifying consumers of new settings");
             foreach (var subscriber in _subscribers)
             {
                 try
                 {
-                    subscriber.Notify(settings);
+                    subscriber.Notify(prepared.Changes);
                 }
                 catch (Exception ex)
                 {
@@ -323,6 +334,11 @@ public sealed partial record TracerSettings
                 }
             }
         }
+
+        private readonly record struct PreparedSettings(
+            SettingChanges Changes,
+            ConfigurationTelemetry DefaultTelemetry,
+            ConfigurationTelemetry UpdateTelemetry);
 
         private sealed class SettingChangeSubscription(SettingsManager owner, Action<SettingChanges> notify) : IDisposable
         {

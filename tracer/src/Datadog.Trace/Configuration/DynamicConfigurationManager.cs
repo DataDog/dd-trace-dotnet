@@ -32,19 +32,13 @@ namespace Datadog.Trace.Configuration
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
-#if SHARED_REMOTE_CONFIG
-        private readonly bool _usesSharedClient;
-#endif
         private ISubscription? _subscription;
         private Dictionary<string, ApmTracingConfig>? _watchedConfigurations;
         private long _watchTargetGeneration;
 
-        public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager, bool usesSharedClient)
+        public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
         {
             _subscriptionManager = subscriptionManager;
-#if SHARED_REMOTE_CONFIG
-            _usesSharedClient = usesSharedClient;
-#endif
         }
 
         public void Start(TracerManager owner)
@@ -56,8 +50,8 @@ namespace Datadog.Trace.Configuration
 #if SHARED_REMOTE_CONFIG
             var subscription = new Subscription(ApplyChanges, ProductName)
             {
-                InstallSnapshot = _subscriptionManager is RcmSubscriptionManager && _usesSharedClient
-                                      ? (files, rejections, generation, canInstall) => ApplyMergedConfiguration(owner, files, rejections, generation, canInstall)
+                InstallSnapshot = _subscriptionManager is RcmSubscriptionManager
+                                      ? (files, rejections, generation, tryCommit) => ApplyMergedConfiguration(owner, files, rejections, generation, tryCommit)
                                       : null,
             };
 #else
@@ -98,9 +92,9 @@ namespace Datadog.Trace.Configuration
             IConfigurationSource dynamicConfig,
             TracerSettings tracerSettings,
             TracerManager? owner = null,
-            Func<bool>? canInstall = null)
+            Func<Action, bool>? tryCommit = null)
         {
-            if (!tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config, canInstall, out var wasUpdated))
+            if (!tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config, tryCommit, out var wasUpdated))
             {
                 return false;
             }
@@ -286,7 +280,7 @@ namespace Datadog.Trace.Configuration
             List<RemoteConfiguration> remoteConfigurations,
             Dictionary<string, string>? rejections = null,
             long targetGeneration = 0,
-            Func<bool>? canInstall = null)
+            Func<Action, bool>? tryCommit = null)
         {
             var currentSettings = owner.PerTraceSettings.Settings;
             var accepted = rejections is not null ? new Dictionary<string, ApmTracingConfig>(remoteConfigurations.Count, StringComparer.Ordinal) : null;
@@ -309,7 +303,7 @@ namespace Datadog.Trace.Configuration
 
             bool Commit()
             {
-                if (!OnConfigurationChanged(configurationSource, owner.Settings, owner, canInstall))
+                if (!OnConfigurationChanged(configurationSource, owner.Settings, owner, tryCommit))
                 {
                     return false;
                 }

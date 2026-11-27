@@ -113,6 +113,30 @@ if (args is ["--verify-debugger-discovery-publication"])
     return;
 }
 
+if (args is ["--verify-debugger-upload-admission", "dispose" or "exporter" or "replay"])
+{
+    await NativeWorkerProof.VerifyDebuggerUploadAdmission(args[1]);
+    return;
+}
+
+if (args is ["--verify-debugger-upload-blocked-connect"])
+{
+    await NativeWorkerProof.VerifyDebuggerUploadBlockedConnect();
+    return;
+}
+
+if (args is ["--verify-rc-route-withdrawal", "managed" or "native" or "watch" or "watch-commit", var routeArtifact])
+{
+    await NativeWorkerProof.VerifyRemoteConfigRouteWithdrawal(args[1], routeArtifact);
+    return;
+}
+
+if (args is ["--verify-debugger-startup-replacement"])
+{
+    await NativeWorkerProof.VerifyDebuggerStartupReplacement();
+    return;
+}
+
 if (args is ["--verify-native-debugger-agent-change", var agentChangeArtifact])
 {
     await NativeWorkerProof.VerifyDebuggerAgentChange(agentChangeArtifact);

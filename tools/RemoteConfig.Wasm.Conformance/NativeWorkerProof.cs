@@ -1,4 +1,5 @@
 #if VERIFY_SHARED_WORKER
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
@@ -8,12 +9,14 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.PlatformHelpers;
@@ -264,16 +267,16 @@ internal static class NativeWorkerProof
         var agentUrl = agent.Urls.Single();
         TracerManager.ReplaceGlobalManager(ReplacementSettings(agentUrl, "delayed-managed-start", remoteConfigEnabled: true), TracerManagerFactory.Instance);
         var previous = TracerManager.Instance;
-        Require(previous.RemoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: false }, "The delayed manager did not select managed Remote Config");
+        Require(previous.RemoteConfigurationManager is RemoteConfigurationManager, "The delayed manager did not register Remote Config");
 
         AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, artifact);
         Tracer.Configure(ReplacementSettings(agentUrl, "native-successor", remoteConfigEnabled: true));
         var successor = TracerManager.Instance;
-        Require(successor.RemoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: true }, "The successor did not select native Remote Config");
 
         var poll = await requests.Reader.ReadAsync(timeout.Token);
         try
         {
+            VerifyPollBackend(poll, native: true);
             Require(poll.Request.GetProperty("client").GetProperty("client_tracer").GetProperty("service").GetString() == "native-successor",
                     "The first poll did not come from the native successor");
             var subscriptions = (RcmSubscriptionManager)RcmSubscriptionManager.Instance;
@@ -308,14 +311,14 @@ internal static class NativeWorkerProof
 
         Tracer.Configure(ReplacementSettings(agentUrl, "shutdown-native-predecessor", remoteConfigEnabled: true));
         var nativePoll = await requests.Reader.ReadAsync(timeout.Token);
+        VerifyPollBackend(nativePoll, native: true);
         AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, null);
         Tracer.Configure(ReplacementSettings(agentUrl, managedService, remoteConfigEnabled: true));
         var manager = Tracer.Instance.TracerManager;
-        Require(manager.RemoteConfigurationManager is RemoteConfigurationManager { UsesSharedClient: false },
-                "The successor did not select managed Remote Config");
 
         await nativePoll.Disconnected.WaitAsync(timeout.Token);
         var managedPoll = await requests.Reader.ReadAsync(timeout.Token);
+        VerifyPollBackend(managedPoll, native: false);
         var service = managedPoll.Request.GetProperty("client").GetProperty("client_tracer").GetProperty("service").GetString();
         Require(service == managedService, "The in-flight poll did not belong to the managed successor");
         var shutdown = manager.ShutdownAsync();
@@ -363,8 +366,8 @@ internal static class NativeWorkerProof
         Tracer.Configure(ReplacementSettings(address, "managed-predecessor", remoteConfigEnabled: true));
         var previous = Tracer.Instance.TracerManager;
         var worker = (RemoteConfigurationManager)previous.RemoteConfigurationManager;
-        Require(!worker.UsesSharedClient, "The predecessor did not start the managed worker");
         var pending = await requests.Reader.ReadAsync(timeout.Token);
+        VerifyPollBackend(pending, native: false);
         const string configuration = """{"lib_config":{"tracing_sampling_rate":0.81}}""";
         var reply = new Reply(200, WatchAssignment(1, ("retired-managed", 1, configuration)));
         if (pauseDuringDelivery)
@@ -393,11 +396,10 @@ internal static class NativeWorkerProof
 
             if (nativeArtifact is not null || cancelInFlight)
             {
-                Require(successor.RemoteConfigurationManager is RemoteConfigurationManager next && next.UsesSharedClient == (nativeArtifact is not null),
-                        "The successor selected an unexpected Remote Config backend");
                 successor.Start();
                 var first = await requests.Reader.ReadAsync(timeout.Token);
                 first.Completion.SetResult(new Reply(204, []));
+                VerifyPollBackend(first, native: nativeArtifact is not null);
                 Require(ConfigStates(first).GetArrayLength() == 0, "The successor inherited the retired managed receipt");
             }
             else
@@ -729,14 +731,14 @@ internal static class NativeWorkerProof
             var reachedInstall = new TaskCompletionSource<Thread>(TaskCreationOptions.RunContinuationsAsynchronously);
             var observing = new Subscription(original.Invoke, Product)
             {
-                InstallSnapshot = (files, rejections, generation, canInstall) =>
+                InstallSnapshot = (files, rejections, generation, tryCommit) =>
                 {
                     if (files.Exists(file => file.Path.Id == "obsolete"))
                     {
                         reachedInstall.TrySetResult(Thread.CurrentThread);
                     }
 
-                    return install(files, rejections, generation, canInstall);
+                    return install(files, rejections, generation, tryCommit);
                 },
             };
             subscriptions.Unsubscribe(original);
@@ -978,28 +980,22 @@ internal static class NativeWorkerProof
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var readyEndpoints = new[] { configurationEndpoint, debuggerEndpoint };
         var configOnlyEndpoints = new[] { configurationEndpoint };
-        var endpoints = readyEndpoints;
+        var endpoints = new[] { debuggerEndpoint };
         await using var agent = CreateAgent(configurationEndpoint, socketPath: null, Channel.CreateUnbounded<Exchange>().Writer, timeout.Token);
         agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
         await agent.StartAsync(timeout.Token);
 
         var settings = ReplacementSettings(agent.Urls.Single(), "debugger-discovery", remoteConfigEnabled: true).Manager;
         var exporter = settings.InitialExporterSettings;
-        await using var discovery = new DiscoveryService(
-            CreateDebuggerRequestFactory(exporter),
-            new ServiceRemappingHash(null),
-            initialRetryDelayMs: 1,
-            maxRetryDelayMs: 1,
-            recheckIntervalMs: 1,
-            autoStartLoop: false,
-            exporterSettings: exporter);
+        await using var discovery = CreateManualDiscovery(exporter);
         await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
 
         var published = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var pauseWithdrawal = false;
         Action<AgentConfiguration> pause = configuration =>
         {
-            if (configuration.ConfigurationEndpoint is not null && configuration.DebuggerEndpoint is null)
+            if (Volatile.Read(ref pauseWithdrawal) && configuration.ConfigurationEndpoint is not null && configuration.DebuggerEndpoint is null)
             {
                 published.TrySetResult();
                 resume.Task.WaitAsync(timeout.Token).GetAwaiter().GetResult();
@@ -1007,9 +1003,18 @@ internal static class NativeWorkerProof
         };
         discovery.SubscribeToChanges(pause);
         using var transport = new DebuggerAgentTransport(settings, discovery, CreateDebuggerRequestFactory);
+        var initialReady = transport.WaitForRemoteConfigRouteAsync();
+        Require(!initialReady.IsCompleted, "Debugger-only discovery satisfied takeover readiness");
+        Volatile.Write(ref endpoints, configOnlyEndpoints);
+        await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+        Require(!initialReady.IsCompleted, "Remote Configuration-only discovery satisfied takeover readiness");
+        Volatile.Write(ref endpoints, readyEndpoints);
+        await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+        Require(await initialReady.WaitAsync(timeout.Token), "Discovery of both endpoints did not satisfy takeover readiness");
         Require(transport.TryRunWithRemoteConfigRoute(static () => { }), "The initial Debugger route was not ready");
         var original = transport.Current?.Configuration;
 
+        Volatile.Write(ref pauseWithdrawal, true);
         Volatile.Write(ref endpoints, configOnlyEndpoints);
         var refresh = Task.Run(() => discovery.RunOneIterationAsync(null));
         try
@@ -1041,8 +1046,288 @@ internal static class NativeWorkerProof
         }
     }
 
+    public static async Task VerifyRemoteConfigRouteWithdrawal(string backend, string artifact)
+    {
+        const string endpoint = "/v0.7/config";
+        const string debuggerEndpoint = "/debugger/v1/input";
+        AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, backend == "managed" ? null : artifact);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var endpoints = new[] { endpoint, debuggerEndpoint };
+        var requests = Channel.CreateUnbounded<Exchange>();
+        await using var agent = CreateAgent(endpoint, socketPath: null, requests.Writer, timeout.Token);
+        agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
+        await agent.StartAsync(timeout.Token);
+
+        var tracerSettings = ReplacementSettings(agent.Urls.Single(), "test", remoteConfigEnabled: true);
+        await using var discovery = CreateManualDiscovery(tracerSettings.Manager.InitialExporterSettings);
+        await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+        var published = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        discovery.SubscribeToChanges(configuration =>
+        {
+            if (configuration.ConfigurationEndpoint is null)
+            {
+                published.TrySetResult();
+                resume.Task.WaitAsync(timeout.Token).GetAwaiter().GetResult();
+            }
+        });
+        var observedDiscovery = new ObservedWithdrawal(discovery);
+        var firstDelivery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var staleDelivery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var watchCommit = backend == "watch-commit";
+        var pauseCommit = false;
+        var commitReady = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resumeCommit = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var commitResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var settingsSubscription = watchCommit ? tracerSettings.Manager.SubscribeToChanges(_ => staleDelivery.TrySetResult()) : null;
+        var deliveries = 0;
+        var subscriptions = new RcmSubscriptionManager();
+        subscriptions.SubscribeToChanges(new Subscription(
+            (upserts, _) =>
+            {
+                if (!upserts.TryGetValue(Product, out var files))
+                {
+                    return [];
+                }
+
+                RecordDelivery();
+                return files.Select(file => ApplyDetails.FromOk(file.Path.Path)).ToArray();
+            },
+            Product)
+        {
+            InstallSnapshot = backend is "watch" or "watch-commit"
+                                  ? (files, _, _, tryCommit) =>
+                                  {
+                                      if (Volatile.Read(ref pauseCommit))
+                                      {
+                                          var payload = Encoding.UTF8.GetString(files.Single().Contents);
+                                          var configuration = new DynamicConfigConfigurationSource(payload, ConfigurationOrigins.RemoteConfig);
+                                          var accepted = tracerSettings.Manager.TryUpdateDynamicConfigurationSettings(configuration, new ConfigurationTelemetry(), PauseBeforePublication, out _);
+                                          commitResult.TrySetResult(accepted);
+                                          return accepted;
+                                      }
+
+                                      return tryCommit(() =>
+                                      {
+                                          if (files.Count > 0)
+                                          {
+                                              RecordDelivery();
+                                          }
+                                      });
+
+                                      bool PauseBeforePublication(Action publishSettings)
+                                      {
+                                          commitReady.TrySetResult();
+                                          resumeCommit.Task.WaitAsync(timeout.Token).GetAwaiter().GetResult();
+                                          return tryCommit(publishSettings);
+                                      }
+                                  }
+                                  : null,
+        });
+
+        var telemetry = new ConfigurationTelemetry();
+        var source = new DictionaryConfigurationSource(new Dictionary<string, string> { ["DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS"] = "0.05" });
+        var manager = RemoteConfigurationManager.Create(
+            observedDiscovery, RemoteConfigurationSettings.FromSource(source, telemetry), tracerSettings, new NullGitMetadataProvider(), subscriptions);
+        manager.Start();
+        Task<int?>? withdrawal = null;
+        Task? stopping = null;
+        try
+        {
+            var first = await requests.Reader.ReadAsync(timeout.Token);
+            first.Completion.SetResult(new Reply(200, AgentComparison.CreateFixture(1, 0, 1).Response));
+            await firstDelivery.Task.WaitAsync(timeout.Token);
+
+            var pending = await requests.Reader.ReadAsync(timeout.Token);
+            var firstState = ConfigStates(pending).EnumerateArray().Single();
+            Require(firstState.GetProperty("apply_state").GetInt32() == 2, "The first reply was not acknowledged");
+            if (watchCommit)
+            {
+                const string payload = """{"lib_config":{"tracing_sampling_rate":0.42}}""";
+                Volatile.Write(ref pauseCommit, true);
+                pending.Completion.SetResult(new Reply(200, WatchAssignment(2, ("watch-commit", 2, payload))));
+                await commitReady.Task.WaitAsync(timeout.Token);
+            }
+
+            Volatile.Write(ref endpoints, new[] { debuggerEndpoint });
+            withdrawal = Task.Run(() => discovery.RunOneIterationAsync(null));
+            await published.Task.WaitAsync(timeout.Token);
+
+            if (watchCommit)
+            {
+                resumeCommit.TrySetResult();
+                var accepted = await commitResult.Task.WaitAsync(timeout.Token);
+                Require(!staleDelivery.Task.IsCompleted, "The APM watch published settings after its route was withdrawn");
+                Require(!accepted, "The APM watch accepted settings after its route was withdrawn");
+            }
+            else
+            {
+                pending.Completion.SetResult(new Reply(200, AgentComparison.CreateFixture(1, 0, 2).Response));
+                var outcome = await Task.WhenAny(observedDiscovery.WorkerPassedWithdrawal.Task, staleDelivery.Task).WaitAsync(timeout.Token);
+                Require(outcome != staleDelivery.Task, "Remote Configuration applied a reply after its route was withdrawn");
+            }
+
+            stopping = manager.RetireAsync();
+            await stopping.WaitAsync(timeout.Token);
+            Require(Volatile.Read(ref deliveries) == 1, "Remote Configuration delivered an obsolete revision");
+            Require(!requests.Reader.TryRead(out _), "Remote Configuration polled a withdrawn endpoint");
+            Console.WriteLine($"Discarded the held {backend} reply after /info withdrew its route");
+        }
+        finally
+        {
+            resumeCommit.TrySetResult();
+            resume.TrySetResult();
+            if (withdrawal is not null)
+            {
+                await withdrawal.WaitAsync(timeout.Token);
+            }
+
+            await (stopping ?? manager.RetireAsync()).WaitAsync(timeout.Token);
+        }
+
+        void RecordDelivery()
+        {
+            if (Interlocked.Increment(ref deliveries) == 1)
+            {
+                firstDelivery.TrySetResult();
+            }
+            else
+            {
+                staleDelivery.TrySetResult();
+            }
+        }
+    }
+
+    public static async Task VerifyDebuggerUploadAdmission(string routeChange)
+    {
+        const string debuggerEndpoint = "/debugger/v1/input";
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var uploads = 0;
+        await using var agent = CreateAgent("/unused", socketPath: null, Channel.CreateUnbounded<Exchange>().Writer, timeout.Token);
+        agent.MapPost(debuggerEndpoint, () =>
+        {
+            Interlocked.Increment(ref uploads);
+            return Results.Ok();
+        });
+        await agent.StartAsync(timeout.Token);
+
+        var settings = ReplacementSettings(agent.Urls.Single(), "debugger-upload", remoteConfigEnabled: false).Manager;
+        var discovery = new DebuggerTakeoverDiscovery(debuggerEndpoint, settings.InitialExporterSettings, configurationEndpoint: null);
+        using var transport = new DebuggerAgentTransport(settings, discovery, CreateDebuggerRequestFactory);
+        var data = new ArraySegment<byte>("[]"u8.ToArray());
+        var currentTags = new PausedUploadTags(timeout.Token);
+        currentTags.Resume.TrySetResult();
+        var current = new DiagnosticsUploadApi(transport, currentTags);
+        Require(await current.SendBatchAsync(data).WaitAsync(timeout.Token), "A route with only the Debugger endpoint did not accept uploads");
+        Require(Volatile.Read(ref uploads) == 1, "The current route did not reach the loopback Agent");
+
+        var pausedTags = new PausedUploadTags(timeout.Token);
+        var obsolete = new DiagnosticsUploadApi(transport, pausedTags);
+        var pending = Task.Run(() => obsolete.SendBatchAsync(data));
+        try
+        {
+            await pausedTags.Entered.Task.WaitAsync(timeout.Token);
+            if (routeChange == "replay")
+            {
+                discovery.ReplayCurrentSnapshot();
+            }
+            else if (routeChange == "dispose")
+            {
+                transport.Dispose();
+            }
+            else
+            {
+                Require(MoveDebuggerExporter(settings), "The exporter settings did not change");
+            }
+
+            pausedTags.Resume.TrySetResult();
+            var sent = await pending.WaitAsync(timeout.Token);
+            if (routeChange == "replay")
+            {
+                Require(sent && Volatile.Read(ref uploads) == 2, "Replaying discovery dropped an upload on the current route");
+                Console.WriteLine("Debugger upload admission preserved the replayed route");
+            }
+            else
+            {
+                Require(!sent && Volatile.Read(ref uploads) == 1, "Debugger upload started after its route retired");
+                Console.WriteLine("Debugger upload admission rejected the retired route");
+            }
+        }
+        finally
+        {
+            pausedTags.Resume.TrySetResult();
+            await pending.WaitAsync(timeout.Token);
+        }
+    }
+
+    public static async Task VerifyDebuggerUploadBlockedConnect()
+    {
+        const string debuggerEndpoint = "/debugger/v1/input";
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        await using var agent = CreateAgent("/unused", socketPath: null, Channel.CreateUnbounded<Exchange>().Writer, timeout.Token);
+        agent.MapPost(debuggerEndpoint, async (HttpContext context) =>
+        {
+            await context.Request.Body.CopyToAsync(Stream.Null, timeout.Token);
+            context.Response.ContentLength = 2;
+            context.Response.Headers["Connection"] = "close";
+            await context.Response.WriteAsync("{}", timeout.Token);
+        });
+        await agent.StartAsync(timeout.Token);
+
+        var address = new Uri(agent.Urls.Single());
+        var connections = new PausedUploadConnection(address.Port, timeout.Token);
+        var factory = new HttpStreamRequestFactory(connections, new DatadogHttpClient(MinimalAgentHeaderHelper.Instance), address);
+        var settings = ReplacementSettings(address.ToString(), "debugger-connect", remoteConfigEnabled: false).Manager;
+        var discovery = new DebuggerTakeoverDiscovery(debuggerEndpoint, settings.InitialExporterSettings, configurationEndpoint: null);
+        using var transport = new DebuggerAgentTransport(settings, discovery, _ => factory);
+        var tags = new PausedUploadTags(timeout.Token);
+        tags.Resume.TrySetResult();
+        var uploader = new DiagnosticsUploadApi(transport, tags);
+        var pending = Task.Run(() => uploader.SendBatchAsync(new ArraySegment<byte>("[]"u8.ToArray())));
+        Task<bool>? moved = null;
+        try
+        {
+            await connections.Entered.Task.WaitAsync(timeout.Token);
+            moved = Task.Run(() => MoveDebuggerExporter(settings));
+            bool changed;
+            try
+            {
+                changed = await moved.WaitAsync(TimeSpan.FromSeconds(3), timeout.Token);
+            }
+            catch (TimeoutException exception)
+            {
+                throw new InvalidOperationException("Debugger connection blocked exporter publication", exception);
+            }
+
+            Require(changed && transport.Current is null, "The exporter was not moved while the connection waited");
+            connections.Resume.TrySetResult();
+            Require(await pending.WaitAsync(timeout.Token), "The admitted upload did not finish after the exporter moved");
+            Console.WriteLine("Debugger connection setup left exporter publication available");
+        }
+        finally
+        {
+            connections.Resume.TrySetResult();
+            if (moved is not null)
+            {
+                await moved.WaitAsync(timeout.Token);
+            }
+
+            await pending.WaitAsync(timeout.Token);
+        }
+    }
+
+    private static bool MoveDebuggerExporter(TracerSettings.SettingsManager settings)
+    {
+        var manual = new ManualInstrumentationConfigurationSource(
+            new Dictionary<string, object?> { ["DD_TRACE_AGENT_URL"] = "http://127.0.0.1:18126" }, useDefaultSources: true);
+        return settings.UpdateManualConfigurationSettings(manual, new ConfigurationTelemetry());
+    }
+
     private static IApiRequestFactory CreateDebuggerRequestFactory(ExporterSettings exporter)
         => AgentTransportStrategy.Get(exporter, "debugger", TimeSpan.FromSeconds(2), MinimalAgentHeaderHelper.Instance);
+
+    private static DiscoveryService CreateManualDiscovery(ExporterSettings exporter)
+        => new(CreateDebuggerRequestFactory(exporter), new ServiceRemappingHash(null), 1, 1, 1, autoStartLoop: false, exporterSettings: exporter);
 
     public static async Task VerifyDebuggerTakeover(string artifact, bool splitRoute, bool changeRouteOnTeardown)
     {
@@ -1230,6 +1515,63 @@ internal static class NativeWorkerProof
         }
     }
 
+    public static async Task VerifyDebuggerStartupReplacement()
+    {
+        const string configEndpoint = "/v0.7/config";
+        const string debuggerEndpoint = "/debugger/v1/input";
+        const string uploadEndpoint = "/debugger/v2/input";
+        const string marker = "after-startup-replacement";
+        Environment.SetEnvironmentVariable("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "true");
+        Environment.SetEnvironmentVariable("DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE", null);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+        var uploaded = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var builder = WebApplication.CreateBuilder();
+        builder.Logging.ClearProviders();
+        builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0));
+        await using var agent = builder.Build();
+        agent.MapGet("/info", () => Results.Json(new { endpoints = new[] { configEndpoint, debuggerEndpoint, uploadEndpoint } }));
+        agent.MapPost(configEndpoint, () => Results.NoContent());
+        agent.MapPost(uploadEndpoint, async (HttpContext context) =>
+        {
+            using var reader = new StreamReader(context.Request.Body);
+            uploaded.TrySetResult(await reader.ReadToEndAsync());
+            return Results.Ok();
+        });
+        await agent.StartAsync(timeout.Token);
+
+        var address = agent.Urls.Single();
+        Tracer.Configure(ReplacementSettings(address, "debugger-predecessor", remoteConfigEnabled: true));
+        var capturedSettings = Tracer.Instance.Settings;
+        Tracer.Configure(ReplacementSettings(address, "debugger-successor", remoteConfigEnabled: true));
+        var successor = Tracer.Instance.TracerManager;
+        try
+        {
+            var manager = DebuggerManager.Instance;
+            // Startup has already captured the predecessor's settings when the replacement occurs.
+            await manager.UpdateConfiguration(capturedSettings).WaitAsync(timeout.Token);
+            var runtime = manager.DynamicInstrumentation;
+            Require(runtime is { IsInitialized: true }, "The debugger did not start on the successor");
+            var probe = new ProbeInfo("fixture", 1, ProbeType.Snapshot, default, default, null, string.Empty, false, [], null, default, IsEmitted: true);
+            using var creator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, [], default, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
+            creator.StartEntry();
+            creator.EndEntry();
+            creator.StartReturn();
+            creator.EndReturn();
+            creator.FinalizeSnapshot(marker, nameof(NativeWorkerProof), null);
+            runtime!.AddSnapshot(probe, creator.GetSnapshotJson(), creator.IncompleteReasons);
+            using var upload = JsonDocument.Parse(await uploaded.Task.WaitAsync(timeout.Token));
+            var snapshot = upload.RootElement.EnumerateArray().Single();
+            Require(snapshot.GetProperty("service").GetString() == "debugger-successor", "Debugger labeled the startup snapshot with the predecessor's service");
+        }
+        finally
+        {
+            await successor.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        Console.WriteLine("Debugger startup uploaded a snapshot after tracer replacement");
+    }
+
     public static async Task VerifyDebuggerAgentChange(string artifact)
     {
         const string configEndpoint = "/v0.7/config";
@@ -1399,7 +1741,11 @@ internal static class NativeWorkerProof
             var reply = await completion.Task.WaitAsync(cancellationToken);
             context.Response.StatusCode = reply.Status;
             context.Response.ContentType = "application/json";
-            context.Response.ContentLength = reply.DeclaredLength ?? reply.Body.Length;
+            if (!reply.OmitContentLength)
+            {
+                context.Response.ContentLength = reply.DeclaredLength ?? reply.Body.Length;
+            }
+
             if (reply.Location is { } location)
             {
                 context.Response.Headers.Location = location;
@@ -1474,7 +1820,18 @@ internal static class NativeWorkerProof
             VerifyCapabilities(first, [16, 0]);
             var rawOwner = CreateRawSubscription();
             subscriptions.Replace(rawSubscription, rawOwner);
-            first.Completion.SetResult(new Reply(200, valid));
+            if (pipeName is null && socketPath is null)
+            {
+                first.Completion.SetResult(new Reply(200, valid, OmitContentLength: true));
+            }
+            else
+            {
+                // Put the assignment after the buffer reuse limit so the test requires the full body.
+                var padded = new byte[(512 * 1024) + valid.Length];
+                padded.AsSpan(0, 512 * 1024).Fill((byte)' ');
+                valid.CopyTo(padded, 512 * 1024);
+                first.Completion.SetResult(new Reply(200, padded));
+            }
 
             var successor = await Next("/rc/current");
             var delivery = await deliveries.Reader.ReadAsync(timeout.Token);
@@ -1617,7 +1974,7 @@ internal static class NativeWorkerProof
             Environment.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
             var owner = Tracer.Instance.TracerManager;
             var originalRate = owner.PerTraceSettings.Settings.GlobalSamplingRate;
-            using var dynamicConfiguration = new DynamicConfigurationManager(subscriptions, manager.UsesSharedClient);
+            using var dynamicConfiguration = new DynamicConfigurationManager(subscriptions);
             dynamicConfiguration.Start(owner);
             dynamicConfiguration.Start(owner);
 
@@ -1724,7 +2081,7 @@ internal static class NativeWorkerProof
 
             Subscription ObserveWatch(int watchOwner) => new Subscription(original.Invoke, Product)
             {
-                InstallSnapshot = (files, rejections, generation, canInstall) =>
+                InstallSnapshot = (files, rejections, generation, tryCommit) =>
                 {
                     Append(snapshots.Writer, (watchOwner, files.Select(file => file.Path.Id).ToArray()));
                     if (failNextUpdate && files.Exists(file => file.Path.Id == "a" && file.Version == 2))
@@ -1733,7 +2090,7 @@ internal static class NativeWorkerProof
                         throw new InvalidOperationException("proof install failed");
                     }
 
-                    return install(files, rejections, generation, canInstall);
+                    return install(files, rejections, generation, tryCommit);
                 },
             };
 
@@ -1894,6 +2251,13 @@ internal static class NativeWorkerProof
 
     private static JsonElement ConfigStates(Exchange exchange) => exchange.Request.GetProperty("client").GetProperty("state").GetProperty("config_states");
 
+    private static void VerifyPollBackend(Exchange exchange, bool native)
+    {
+        // The managed serializer emits base64. The native reactor emits an array of bytes.
+        var capabilities = exchange.Request.GetProperty("client").GetProperty("capabilities");
+        Require(capabilities.ValueKind == (native ? JsonValueKind.Array : JsonValueKind.String), "The poll did not come from the expected worker");
+    }
+
     private static void VerifyCapabilities(Exchange exchange, byte[] expected)
     {
         var actual = exchange.Request.GetProperty("client").GetProperty("capabilities");
@@ -1912,13 +2276,97 @@ internal static class NativeWorkerProof
 
     private sealed record Exchange(string Path, JsonElement Request, TaskCompletionSource<Reply> Completion, Task Disconnected);
 
-    private sealed record Reply(int Status, byte[] Body, TaskCompletionSource? HeadersSent = null, string? Location = null, bool Truncate = false, long? DeclaredLength = null);
+    private sealed record Reply(
+        int Status,
+        byte[] Body,
+        TaskCompletionSource? HeadersSent = null,
+        string? Location = null,
+        bool Truncate = false,
+        long? DeclaredLength = null,
+        bool OmitContentLength = false);
 
     private sealed record Delivery(Dictionary<string, byte[]> Files, string[] Removed);
 
     private sealed class DiscoveryTracerManagerFactory(IDiscoveryService discovery) : TracerManagerFactory
     {
         internal override IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash) => discovery;
+    }
+
+    private sealed class ObservedWithdrawal(DiscoveryService discovery) : IDiscoveryService, IDiscoverySnapshot
+    {
+        private int _readsAfterWithdrawal;
+
+        internal TaskCompletionSource WorkerPassedWithdrawal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public AgentConfiguration? CurrentConfiguration
+        {
+            get
+            {
+                var configuration = discovery.CurrentConfiguration;
+                if (configuration is { ConfigurationEndpoint: null } && Interlocked.Increment(ref _readsAfterWithdrawal) == 2)
+                {
+                    // A single worker reads once for the held reply and again on its next poll.
+                    WorkerPassedWithdrawal.TrySetResult();
+                }
+
+                return configuration;
+            }
+        }
+
+        public void SubscribeToChanges(Action<AgentConfiguration> callback) => discovery.SubscribeToChanges(callback);
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback) => discovery.RemoveSubscription(callback);
+
+        public void SetCurrentConfigStateHash(string configStateHash) => discovery.SetCurrentConfigStateHash(configStateHash);
+
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+            => discovery.TryRunWithCurrentConfiguration(apply);
+
+        public Task DisposeAsync() => discovery.DisposeAsync();
+    }
+
+    private sealed class PausedUploadConnection(int port, CancellationToken cancellationToken) : IStreamFactory
+    {
+        internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        internal TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Info() => "loopback test connection";
+
+        public Stream GetBidirectionalStream()
+        {
+            Entered.TrySetResult();
+            Resume.Task.WaitAsync(cancellationToken).GetAwaiter().GetResult();
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                socket.Connect(IPAddress.Loopback, port);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch
+            {
+                socket.Dispose();
+                throw;
+            }
+        }
+
+        public Task<Stream> GetBidirectionalStreamAsync(CancellationToken token)
+            => throw new InvalidOperationException("The fixture expects the synchronous stream connect");
+    }
+
+    private sealed class PausedUploadTags(CancellationToken cancellationToken) : IGitMetadataTagsProvider
+    {
+        internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        internal TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool TryExtractGitMetadata([NotNullWhen(true)] out GitMetadata? gitMetadata)
+        {
+            Entered.TrySetResult();
+            Resume.Task.WaitAsync(cancellationToken).GetAwaiter().GetResult();
+            gitMetadata = null;
+            return false;
+        }
     }
 
     private sealed class DebuggerTakeoverDiscovery(string debuggerEndpoint, ExporterSettings exporter, string? configurationEndpoint) : IDiscoveryService, IDiscoverySnapshot
@@ -1934,11 +2382,11 @@ internal static class NativeWorkerProof
 
         public Action? TransportRemoved { get; set; }
 
-        public bool TryRunWithCurrentConfiguration(AgentConfiguration configuration, Func<bool> apply)
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
         {
             lock (_gate)
             {
-                return ReferenceEquals(configuration, _configuration) && apply();
+                return apply(_configuration);
             }
         }
 
@@ -1988,6 +2436,8 @@ internal static class NativeWorkerProof
 
         public void PublishReadyRoute(ExporterSettings? agentExporter = null)
             => PublishConfiguration(CreateConfiguration(configurationEndpoint, debuggerEndpoint, agentExporter ?? exporter));
+
+        public void ReplayCurrentSnapshot() => PublishConfiguration(_configuration);
 
         public void PublishConfigurationOnlyRoute(ExporterSettings? agentExporter = null)
             => PublishConfiguration(CreateConfiguration(configurationEndpoint, null, agentExporter ?? exporter));

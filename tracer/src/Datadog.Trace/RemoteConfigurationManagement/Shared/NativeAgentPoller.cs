@@ -17,7 +17,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -31,7 +30,9 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
     private const string ApmProduct = DynamicConfigurationManager.ProductName;
     private const string ResponseTooLarge = "Agent Remote Configuration response exceeded the size limit";
+    private const int MaxPooledResponseBytes = 256 * 1024;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NativeAgentPoller>();
+    private static readonly ArrayPool<byte> ResponseBuffers = ArrayPool<byte>.Create(MaxPooledResponseBytes, maxArraysPerBucket: 1);
 
     private readonly string _libraryPath = libraryPath;
     private readonly RcmSubscriptionManager _subscriptions = subscriptions;
@@ -70,7 +71,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                (ReferenceEquals(before.ProcessTags, after.ProcessTags) || before.ProcessTags.SequenceEqual(after.ProcessTags));
     }
 
-    internal async Task Poll(RemoteConfigurationApi<HttpClientRequest> api, string endpoint, RcmClientTracer tracer, Task stop, Func<bool> isCurrent)
+    internal async Task Poll(IRemoteConfigurationApi api, string endpoint, RcmClientTracer tracer, Task stop, Func<bool> isCurrent, Func<Func<bool>, bool> tryCommitResponse)
     {
         if (_activationFailed || stop.IsCompleted || !isCurrent())
         {
@@ -112,10 +113,9 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 var operation = http.GetProperty("id").GetInt32();
                 var timer = ReadEvent(reactor, reactor.Check(reactor.Event(_client)), "sleep");
                 var timerId = timer.GetProperty("id").GetInt32();
-                var request = api.CreateRequest(endpoint);
                 using var cancellation = new CancellationTokenSource();
                 var deadline = Task.Delay(timer.GetProperty("delayMs").GetInt32(), cancellation.Token);
-                var pending = Fetch(request, bytes, cancellation.Token);
+                var pending = Fetch(api, endpoint, bytes, cancellation.Token);
                 var completed = pending.IsCompleted ? pending : await Task.WhenAny(pending, deadline, stop).ConfigureAwait(false);
                 cancellation.Cancel();
                 if (stop.IsCompleted || !isCurrent() || completed == deadline)
@@ -136,13 +136,13 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                     }
                     finally
                     {
-                        await pending.ConfigureAwait(false);
+                        (await pending.ConfigureAwait(false)).Dispose();
                     }
 
                     return;
                 }
 
-                var reply = await pending.ConfigureAwait(false);
+                using var reply = await pending.ConfigureAwait(false);
                 fetchFailure = reply.Failure;
                 if (fetchFailure != FetchFailure.None)
                 {
@@ -151,7 +151,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 }
                 else
                 {
-                    reactor.CompleteHttp(_client, operation, reply.Bytes.AsSpan(0, reply.Length), reply.Status);
+                    reactor.CompleteHttp(_client, operation, reply.Body.Span, reply.Status);
                 }
 
                 DrainEvents(reactor);
@@ -211,7 +211,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
                 if (!_resetTarget && owner is { InstallSnapshot: { } install } && !stop.IsCompleted && isCurrent())
                 {
-                    ApplyWatched(reactor, owner, install, stop, isCurrent);
+                    ApplyWatched(reactor, owner, install, stop, isCurrent, tryCommitResponse);
                 }
             }
         }
@@ -291,15 +291,17 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         list.Add(entry);
     }
 
-    private static async Task<Reply> Fetch(HttpClientRequest request, byte[] bytes, CancellationToken cancellationToken)
+    private static async Task<Reply> Fetch(IRemoteConfigurationApi api, string endpoint, byte[] bytes, CancellationToken cancellationToken)
     {
+        byte[]? rented = null;
         try
         {
             var body = new ArraySegment<byte>(bytes);
-            using var response = await request.PostStreamingAsync(body, "application/json", cancellationToken).ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
+            using var response = await api.PostStreamingAsync(endpoint, body, cancellationToken).ConfigureAwait(false);
+            var status = response.StatusCode;
+            if (status is < 200 or >= 300)
             {
-                return new Reply(response.StatusCode, Array.Empty<byte>(), 0);
+                return new Reply(status, default);
             }
 
             var length = response.ContentLength;
@@ -308,8 +310,34 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 return Reply.TooLarge;
             }
 
-            using var stream = await response.GetStreamAsync().ConfigureAwait(false);
-            using var output = new MemoryStream((int)Math.Max(0, length));
+            var stream = await response.GetStreamAsync().ConfigureAwait(false);
+            // Transfer-Encoding takes precedence over Content-Length.
+            if (length >= 0 && response.GetHeader("Transfer-Encoding") is null)
+            {
+                if (length == 0)
+                {
+                    return new Reply(status, default);
+                }
+
+                var size = (int)length;
+                var storage = size <= MaxPooledResponseBytes ? (rented = ResponseBuffers.Rent(size)) : new byte[size];
+                var destination = storage.AsMemory(0, size);
+                var used = 0;
+                while (used < destination.Length)
+                {
+                    var read = await stream.ReadAsync(destination[used..], cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    used += read;
+                }
+
+                return new Reply(status, destination[..used], Rented: rented);
+            }
+
+            using var output = new MemoryStream();
             var buffer = ArrayPool<byte>.Shared.Rent(8192);
             try
             {
@@ -324,16 +352,30 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                     output.Write(buffer, 0, count);
                 }
 
-                return new Reply(response.StatusCode, output.GetBuffer(), (int)output.Length);
+                return new Reply(status, output.GetBuffer().AsMemory(0, (int)output.Length));
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
         }
-        catch (Exception exception) when (exception is IOException or HttpRequestException or OperationCanceledException)
+        catch (Exception exception)
         {
-            return Reply.Unavailable;
+            ReturnResponseBuffer(rented);
+            if (exception is IOException or HttpRequestException or OperationCanceledException)
+            {
+                return Reply.Unavailable;
+            }
+
+            throw;
+        }
+    }
+
+    private static void ReturnResponseBuffer(byte[]? buffer)
+    {
+        if (buffer is not null)
+        {
+            ResponseBuffers.Return(buffer);
         }
     }
 
@@ -448,7 +490,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         _activationFailed = false;
     }
 
-    private void ApplyWatched(Reactor reactor, Subscription owner, SnapshotInstaller install, Task stop, Func<bool> isCurrent)
+    private void ApplyWatched(Reactor reactor, Subscription owner, SnapshotInstaller install, Task stop, Func<bool> isCurrent, Func<Func<bool>, bool> tryCommitResponse)
     {
         var calls = _watchCalls!;
         var view = reactor.Check(calls.Next(_client, _watch));
@@ -496,7 +538,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             var commitDeclined = false;
             try
             {
-                commitDeclined = !install(configuration, rejections, _targetGeneration, CanInstall);
+                commitDeclined = !install(configuration, rejections, _targetGeneration, CommitSettings);
             }
             catch (Exception exception)
             {
@@ -552,6 +594,17 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         }
 
         bool CanInstall() => !stop.IsCompleted && isCurrent() && ReferenceEquals(owner, _subscriptions.GetSnapshotSubscription(ApmProduct));
+
+        bool CommitSettings(Action publish) => tryCommitResponse(() =>
+        {
+            if (!CanInstall())
+            {
+                return false;
+            }
+
+            publish();
+            return true;
+        });
 
         void Abandon()
         {
@@ -770,10 +823,12 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
     private readonly record struct Target(string Service, string Env, string AppVersion, IReadOnlyCollection<string> ProcessTags);
 
-    private readonly record struct Reply(int Status, byte[] Bytes, int Length, FetchFailure Failure = FetchFailure.None)
+    private readonly record struct Reply(int Status, ReadOnlyMemory<byte> Body, FetchFailure Failure = FetchFailure.None, byte[]? Rented = null) : IDisposable
     {
-        public static readonly Reply Unavailable = new(0, Array.Empty<byte>(), 0, FetchFailure.Transport);
-        public static readonly Reply TooLarge = new(0, Array.Empty<byte>(), 0, FetchFailure.TooLarge);
+        public static readonly Reply Unavailable = new(0, default, FetchFailure.Transport);
+        public static readonly Reply TooLarge = new(0, default, FetchFailure.TooLarge);
+
+        public void Dispose() => ReturnResponseBuffer(Rented);
     }
 
     private sealed record Identity(string ClientId, string RuntimeId, string[] Tags, string[] ExtraServices);

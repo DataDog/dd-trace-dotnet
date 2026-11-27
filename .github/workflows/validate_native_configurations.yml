@@ -120,6 +120,9 @@ jobs:
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-worker "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-replacement "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-retired-callback "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-shutdown "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-shutdown-after-replacement "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-managed-successor-shutdown "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-feature-flags-handoff "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-feature-flags-managed-chain "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-late-managed-start "$reactor"
@@ -127,7 +130,16 @@ jobs:
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-takeover "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-split-route "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-cutover "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-startup-replacement
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-agent-change "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-exporter-publication
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-discovery-publication
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-admission dispose
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-admission exporter
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-admission replay
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-blocked-connect
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal managed "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal native "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal watch "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal watch-commit "$reactor"
               exec dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-disable "$reactor"'
