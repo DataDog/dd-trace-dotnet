@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
         ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, },
         MinimumVersion = "4.0.0",
-        MaximumVersion = "8.*.*",
+        MaximumVersion = "11.*.*",
         IntegrationName = nameof(IntegrationId.Npgsql),
         InstrumentationCategory = InstrumentationCategory.Iast)]
     [Browsable(false)]

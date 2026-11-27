@@ -295,14 +295,17 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "11.0.0",
+    "MaxVersionExclusive": "12.0.0",
     "SpecificVersions": [
       "4.*.*",
       "6.*.*",
-      "9.*.*",
-      "10.*.*"
+      "10.*.*",
+      "11.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "11.0.0",
+      "ExcludeTargetFrameworks": ["net48","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0", "net8.0", "net9.0"]
+    },{
       "MinVersion": "10.0.0",
       "ExcludeTargetFrameworks": ["net48","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
