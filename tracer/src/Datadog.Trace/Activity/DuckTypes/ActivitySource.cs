@@ -13,6 +13,6 @@ namespace Datadog.Trace.Activity.DuckTypes
     internal struct ActivitySource
     {
         public string Name;
-        public string Version;
+        public string? Version;
     }
 }

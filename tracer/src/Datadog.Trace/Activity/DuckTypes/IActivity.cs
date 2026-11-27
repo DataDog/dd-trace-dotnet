@@ -71,7 +71,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         object AddTag(string key, string value);
 
-        string GetBaggageItem(string key);
+        string? GetBaggageItem(string key);
 
         object SetEndTime(DateTime endTimeUtc);
 
