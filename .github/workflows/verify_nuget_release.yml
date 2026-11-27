@@ -1,0 +1,135 @@
+name: Verify NuGet release
+
+# The draft release workflow (_create_draft_release.yml) stages the NuGet packages on nuget.org by
+# default. Someone has to promote the staging group on nuget.org before publishing the GitHub
+# release. This workflow catches a forgotten (or failed) promotion: it checks that every .nupkg
+# listed in the release's sha512.txt is available on nuget.org, and alerts Slack if not.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The release tag to verify, e.g. v3.58.0'
+        required: true
+        type: string
+
+jobs:
+  verify_nuget_packages:
+    runs-on: ubuntu-latest
+    # Holds the SLACK_WEBHOOK_URL_NUGET_RELEASE secret. The environment's deployment rules must only
+    # allow master (for workflow_dispatch) and v* tags (release events run on the release's tag),
+    # so a workflow on any other branch can't read the secret.
+    environment: nuget-release-verification-env
+    # Only public endpoints are used (the release asset and nuget.org), so no token is needed
+    permissions: {}
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      # TAG can be free text (workflow_dispatch), so validate it before it's used anywhere. The Slack
+      # payload only uses these validated outputs, never TAG directly.
+      - name: Validate tag
+        id: tag
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$TAG' is not a release tag, expected e.g. v3.58.0 or v3.58.0-prerelease"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Must match the group name used by _create_draft_release.yml (dd-trace-dotnet-v<version>)
+          echo "staging_group=dd-trace-dotnet-$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Get expected packages from sha512.txt
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          url="https://github.com/${REPO}/releases/download/${TAG}/sha512.txt"
+          if ! curl -fsSL --retry 3 -o "$RUNNER_TEMP/sha512.txt" "$url"; then
+            echo "::error::Could not download $url. Is $TAG a published release?"
+            exit 1
+          fi
+          # Each line is "<sha512> <filename>"; keep the NuGet packages (not .snupkg)
+          awk '{print $2}' "$RUNNER_TEMP/sha512.txt" | grep -E '\.nupkg$' > "$RUNNER_TEMP/packages.txt" || true
+          if [ ! -s "$RUNNER_TEMP/packages.txt" ]; then
+            echo "::error::No .nupkg files are listed in the sha512.txt asset of release $TAG"
+            exit 1
+          fi
+          echo "Expected packages:"
+          cat "$RUNNER_TEMP/packages.txt"
+
+      - name: Check packages are available on nuget.org
+        id: check
+        env:
+          STAGING_GROUP: ${{ steps.tag.outputs.staging_group }}
+        run: |
+          set -euo pipefail
+          max_attempts=10
+          delay_seconds=60
+
+          missing=()
+          for attempt in $(seq 1 "$max_attempts"); do
+            missing=()
+            while read -r file; do
+              # <Id>.<Version>.nupkg: the version starts at the first dot-separated segment that
+              # starts with a digit, e.g. Datadog.Trace.Annotations.1.0.0.nupkg or
+              # Datadog.Trace.Trimming.3.58.0-prerelease.nupkg. Only NuGet id/version characters are
+              # allowed, as the results end up in the Slack payload.
+              if [[ ! "$file" =~ ^([A-Za-z0-9_-]+(\.[A-Za-z_-][A-Za-z0-9_-]*)*)\.([0-9]+\.[0-9A-Za-z.+-]+)\.nupkg$ ]]; then
+                echo "::error::Could not parse package id and version from '$file'"
+                exit 1
+              fi
+              id="${BASH_REMATCH[1]}"
+              version="${BASH_REMATCH[3]}"
+              id_lower="${id,,}"
+              version_lower="${version,,}"
+              url="https://api.nuget.org/v3-flatcontainer/${id_lower}/${version_lower}/${id_lower}.nuspec"
+              if curl -fs -o /dev/null "$url"; then
+                echo "Found $id $version"
+              else
+                echo "Not yet available: $id $version ($url)"
+                missing+=("$id $version")
+              fi
+            done < "$RUNNER_TEMP/packages.txt"
+
+            if [ ${#missing[@]} -eq 0 ]; then
+              echo "All packages for $TAG are available on nuget.org"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              echo "Attempt $attempt/$max_attempts: ${#missing[@]} package(s) missing, retrying in ${delay_seconds}s"
+              sleep "$delay_seconds"
+            fi
+          done
+
+          missing_list=$(IFS=,; echo "${missing[*]}" | sed 's/,/, /g')
+          echo "missing_packages=$missing_list" >> "$GITHUB_OUTPUT"
+          echo "::error::Release $TAG is published, but these packages are not available on nuget.org: $missing_list. Did you promote the staging group on nuget.org?"
+          {
+            echo "## :x: NuGet packages missing for $TAG"
+            echo ""
+            echo "The GitHub release is published, but these packages are not available on nuget.org:"
+            for m in "${missing[@]}"; do
+              echo "- $m"
+            done
+            echo ""
+            echo "If the release was staged, promote the \`$STAGING_GROUP\` staging group on https://www.nuget.org (2FA required), then re-run this workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Send Slack notification about missing packages
+        if: failure()
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL_NUGET_RELEASE }}
+          webhook-type: webhook-trigger
+          payload: |
+            version: "${{ steps.tag.outputs.tag || 'invalid tag' }}"
+            missing_packages: "${{ steps.check.outputs.missing_packages || 'unknown - the verification workflow failed, see the run' }}"
+            staging_group: "${{ steps.tag.outputs.staging_group || 'unknown' }}"
+            release_url: "${{ github.server_url }}/${{ github.repository }}/releases/${{ steps.tag.outputs.tag && format('tag/{0}', steps.tag.outputs.tag) || '' }}"
+            run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            nuget_manage_url: "https://www.nuget.org/account/Packages"

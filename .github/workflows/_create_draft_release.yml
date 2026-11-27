@@ -16,6 +16,10 @@ on:
         description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
         required: true
         type: boolean
+      stage_nuget_packages:
+        description: "Stage the NuGet packages on nuget.org (they must then be promoted on nuget.org before the GitHub release is published). If false, publishes them immediately (fallback)"
+        required: true
+        type: boolean
     # These must be declared (and explicitly passed by the caller below) even though their
     # actual values come from the job's `environment: publish-debug-symbols-env` secrets, not
     # from the caller's own secrets. Without a declared+passed secret of the same name, the
@@ -36,6 +40,15 @@ jobs:
     permissions:
       contents: read # actions/checkout uses the workflow token to clone
       id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
+    env:
+      NUGET_AUTH_HELP: |
+        This workflow uses Trusted Publishing: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing
+        The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org.
+        If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user
+          1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209
+             If the policy is restricted to staging only, only nuget_publish_mode=stage works.
+          2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME secret on the publish-debug-symbols-env environment with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/environments
+          3. Try running this release again
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,15 +75,23 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      # Use the ambient GitHub token to login to NuGet and retrieve an API key
-      - name: NuGet login (OIDC → temp API key)
+      # When pushing directly (not staging), check the NuGet credentials work before doing anything
+      # else, as the packages are only pushed after the draft release is created. When staging,
+      # the staging step below does this job, as it runs before anything modifies GitHub.
+      # Use the ambient GitHub token to login to NuGet and retrieve an API key. Each NuGet step logs
+      # in just before it needs a key, so the short-lived key is never held across other steps.
+      - name: NuGet login for token check (OIDC → temp API key)
+        if: ${{ !inputs.stage_nuget_packages }}
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
-        id: nuget_login
+        id: nuget_login_check
         with:
           # Secret is your NuGet username (not email), e.g. andrewlock
           user: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
 
       - name: "Check NuGet token validity"
+        if: ${{ !inputs.stage_nuget_packages }}
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login_check.outputs.NUGET_API_KEY }}
         run: |
           echo "Downloading test package"
           if ! curl -fL -o Datadog.Trace.Annotations.1.0.0.nupkg https://www.nuget.org/api/v2/package/Datadog.Trace.Annotations/1.0.0; then
@@ -79,17 +100,12 @@ jobs:
           fi
 
           echo "Pushing package to test NuGet API key validity"
-          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate --source https://api.nuget.org/v3/index.json; then
-           echo "Push failed - there is likely an issue with authentication." >&2
-           echo "This workflow uses Trusted Publishing: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing" >&2
-           echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
-           echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
-           echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
-           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME secret on the publish-debug-symbols-env environment with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/environments " >&2
-           echo "  3. Try running this release again" >&2
+          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key "$NUGET_API_KEY" --skip-duplicate --source https://api.nuget.org/v3/index.json; then
+            echo "Push failed - there is likely an issue with authentication." >&2
+            echo "$NUGET_AUTH_HELP" >&2
             exit 1
           fi
-          
+
           echo "Push succeeded, cleaning up"
           rm Datadog.Trace.Annotations.1.0.0.nupkg
 
@@ -130,6 +146,75 @@ jobs:
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
           AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
+      # Staging runs before anything that modifies GitHub (milestones, the draft release), so an
+      # authentication or validation failure aborts the release without side effects.
+      #
+      # Staged packages are validated by nuget.org, but are NOT visible or restorable until someone
+      # promotes the staging group on nuget.org (website only, requires 2FA). Promote the group
+      # BEFORE publishing the GitHub release. verify_nuget_release.yml alerts Slack if a published
+      # release's packages aren't available on nuget.org.
+      # See https://devblogs.microsoft.com/dotnet/nuget-staged-publishing/
+      - name: NuGet login for staging (OIDC → temp API key)
+        if: ${{ inputs.stage_nuget_packages }}
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        id: nuget_login_stage
+        with:
+          # Secret is your NuGet username (not email), e.g. andrewlock
+          user: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
+
+      - name: "Stage nuget packages on nuget.org"
+        if: ${{ inputs.stage_nuget_packages }}
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login_stage.outputs.NUGET_API_KEY }}
+          FULL_VERSION: ${{ steps.versions.outputs.full_version }}
+        run: |
+          set -euo pipefail
+
+          # *.nupkg doesn't match *.snupkg; sibling symbol packages are staged automatically
+          shopt -s nullglob
+          packages=(*.nupkg)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "::error::No .nupkg files found in $(pwd)"
+            exit 1
+          fi
+
+          # verify_nuget_release.yml rebuilds this name as dd-trace-dotnet-<tag> (the tag is v<version>)
+          group="dd-trace-dotnet-v${FULL_VERSION}"
+          for pkg in "${packages[@]}"; do
+            echo "Staging $pkg in group $group"
+            # 'stage push' has no --skip-duplicate. Treat a conflict as success so the
+            # workflow can be re-run after a partial failure.
+            if output=$(dotnet package stage push "$pkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --group "$group" 2>&1); then
+              echo "$output"
+            # Use a here-string, not echo | grep -q: with pipefail, an early grep exit can SIGPIPE echo
+            elif grep -qE '\b409\b|Conflict' <<<"$output"; then
+              echo "$output"
+              echo "::warning::$pkg was already uploaded (409 Conflict), assuming it was staged by a previous run"
+            else
+              echo "$output" >&2
+              echo "Staging failed - if this is an authentication issue:" >&2
+              echo "$NUGET_AUTH_HELP" >&2
+              exit 1
+            fi
+          done
+
+          {
+            echo "## :warning: NuGet packages are staged, not published"
+            echo ""
+            echo "The following packages were uploaded to the nuget.org staging group \`$group\`."
+            echo "They are **not** available to customers until the group is promoted."
+            echo ""
+            for pkg in "${packages[@]}"; do
+              echo "- \`$pkg\`"
+            done
+            echo ""
+            echo "**Before publishing the GitHub release:**"
+            echo "1. Sign in to https://www.nuget.org (2FA required) and open the staging page in package management"
+            echo "2. Wait for every package in \`$group\` to pass validation, then click **Promote group**"
+            echo "3. Wait for the packages to become restorable, then publish the draft GitHub release"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: "Generate release notes"
         id: release_notes
         run: ./tracer/build.sh GenerateReleaseNotes
@@ -164,10 +249,23 @@ jobs:
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
             ${{steps.assets.outputs.sha_path}}
 
+      # Fallback when not staging: publishes the packages immediately. Logs in again rather than
+      # reusing the token-check key, which was issued before the artifact download.
+      - name: NuGet login for push (OIDC → temp API key)
+        if: ${{ !inputs.stage_nuget_packages }}
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        id: nuget_login_push
+        with:
+          # Secret is your NuGet username (not email), e.g. andrewlock
+          user: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
+
       - name: "Publish nuget packages to nuget.org"
+        if: ${{ !inputs.stage_nuget_packages }}
         working-directory: ${{steps.assets.outputs.artifacts_path}}
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login_push.outputs.NUGET_API_KEY }}
         run: |
-          dotnet nuget push "*.nupkg" --skip-duplicate --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "*.nupkg" --skip-duplicate --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json
 
       - name: "Copy gitlab artifacts to artifacts_path"
         run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/"*.zip "${{steps.assets.outputs.artifacts_path}}/"
