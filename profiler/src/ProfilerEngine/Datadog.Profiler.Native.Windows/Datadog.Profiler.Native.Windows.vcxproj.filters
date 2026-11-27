@@ -83,6 +83,12 @@
     <ClInclude Include="..\Datadog.Profiler.Native\ManagedCodeCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Datadog.Profiler.Native\CodeRangeTrie.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Datadog.Profiler.Native\EpochReclaimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -137,6 +143,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Datadog.Profiler.Native\ManagedCodeCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Datadog.Profiler.Native\CodeRangeTrie.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Datadog.Profiler.Native\EpochReclaimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
