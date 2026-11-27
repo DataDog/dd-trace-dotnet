@@ -16,7 +16,6 @@ partial class Build
 
     AbsolutePath GitlabUnitTestsOutputDirectory => RootDirectory / ".gitlab" / "generated";
 
-    // Explicit CI setup only; ordinary Azure/local test targets do not depend on it.
     Target ConfigureGitlabCiVisibility => _ => _
         .Unlisted()
         .Before(RunManagedUnitTests)
@@ -24,46 +23,38 @@ partial class Build
         {
             var oidcToken = Environment.GetEnvironmentVariable("DD_STS_OIDC_TOKEN");
             Environment.SetEnvironmentVariable("DD_STS_OIDC_TOKEN", null);
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(oidcToken))
+            {
+                throw new InvalidOperationException("CI Visibility credentials are required: DD_STS_OIDC_TOKEN is unavailable");
+            }
+
             try
             {
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oidcToken);
+                using var response = await client.GetAsync("https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key");
+                response.EnsureSuccessStatusCode();
+                var result = JObject.Parse(await response.Content.ReadAsStringAsync());
+                var apiKey = result["api_key"];
+                if (apiKey?.Type != JTokenType.String || string.IsNullOrWhiteSpace((string)apiKey))
                 {
-                    return;
+                    throw new InvalidOperationException();
                 }
 
-                if (string.IsNullOrWhiteSpace(oidcToken))
-                {
-                    throw new InvalidOperationException("CI Visibility credentials are required: DD_STS_OIDC_TOKEN is unavailable");
-                }
-
-                try
-                {
-                    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oidcToken);
-                    using var response = await client.GetAsync("https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key");
-                    response.EnsureSuccessStatusCode();
-                    var result = JObject.Parse(await response.Content.ReadAsStringAsync());
-                    var apiKey = result["api_key"];
-                    if (apiKey?.Type != JTokenType.String || string.IsNullOrWhiteSpace((string)apiKey))
-                    {
-                        throw new InvalidOperationException();
-                    }
-
-                    Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", (string)apiKey);
-                }
-                catch
-                {
-                    // Do not include HTTP/JSON exception details, which could contain credentials.
-                    throw new InvalidOperationException("CI Visibility credential exchange failed or returned an invalid API key");
-                }
-
-                Logger.Information("CI Visibility API key configured using dd-sts");
+                Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", (string)apiKey);
             }
-            finally
+            catch
             {
-                Environment.SetEnvironmentVariable("DD_STS_OIDC_TOKEN", null);
-                oidcToken = null;
+                // Do not include HTTP/JSON exception details, which could contain credentials.
+                throw new InvalidOperationException("CI Visibility credential exchange failed or returned an invalid API key");
             }
+
+            Logger.Information("CI Visibility API key configured using dd-sts");
         });
 
     Target WriteGitlabUnitTestsBaseBranch => _ => _
