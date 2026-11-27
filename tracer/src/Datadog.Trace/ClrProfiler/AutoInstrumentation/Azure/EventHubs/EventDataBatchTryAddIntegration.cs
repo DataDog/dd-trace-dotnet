@@ -39,8 +39,7 @@ public sealed class EventDataBatchTryAddIntegration
         where TEventData : IEventData, IDuckType
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) ||
-            !tracer.Settings.AzureEventHubsBatchLinksEnabled)
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
             return CallTargetState.GetDefault();
         }
@@ -50,12 +49,20 @@ public sealed class EventDataBatchTryAddIntegration
             return CallTargetState.GetDefault();
         }
 
-        return EventHubsCommon.CreateSenderSpan(
-            instance,
-            OperationName,
-            messages: new[] { eventData.Instance },
-            messageCount: 1,
-            spanLinks: null);
+        var state = tracer.Settings.AzureEventHubsBatchLinksEnabled
+                        ? EventHubsCommon.CreateSenderSpan(
+                            instance,
+                            OperationName,
+                            messages: new[] { eventData.Instance },
+                            messageCount: 1,
+                            spanLinks: null)
+                        : CallTargetState.GetDefault();
+
+        // The batch snapshots the event's properties as part of TryAdd, so the pathway must be
+        // injected into them here rather than at the later SendAsync(EventDataBatch) call.
+        EventHubsCommon.SetBatchAddProduceCheckpoint(tracer, eventData, instance.EventHubName);
+
+        return new CallTargetState(state.Scope, eventData.Instance);
     }
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(
@@ -64,6 +71,11 @@ public sealed class EventDataBatchTryAddIntegration
         Exception? exception,
         in CallTargetState state)
     {
+        if (state.State is { } eventData)
+        {
+            EventHubsCommon.CompleteBatchAdd(eventData, exception == null && returnValue is true);
+        }
+
         if (state.Scope != null)
         {
             if (exception == null && returnValue is bool success && success && instance != null)

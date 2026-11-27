@@ -3969,6 +3969,33 @@
   {
     "IntegrationName": "AzureEventHubs",
     "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Processor.ProcessEventArgs",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.Consumer.PartitionContext",
+      "Azure.Messaging.EventHubs.EventData",
+      "System.Func`2[System.Threading.CancellationToken,System.Threading.Tasks.Task]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.ProcessEventArgsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
     "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventDataBatch",
     "TargetMethodName": "TryAdd",
     "TargetReturnType": "System.Boolean",
@@ -4036,6 +4063,32 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendEnumerableAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]",
+      "Azure.Messaging.EventHubs.Producer.SendEventOptions",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendEnumerableWithOptionsAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

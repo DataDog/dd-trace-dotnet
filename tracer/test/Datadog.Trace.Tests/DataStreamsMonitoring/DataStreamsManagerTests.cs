@@ -358,6 +358,27 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public async Task WhenEnabled_ProduceUsesConsumePathwayRestoredFromAnotherExecutionContext()
+    {
+        var dsm = GetDataStreamManager(enabled: true, out var writer);
+
+        var consumePathway = await Task.Run(
+            () => dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(["in"]), payloadSizeBytes: 100, timeInQueueMs: 100));
+
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new EdgeTags(["out"]), payloadSizeBytes: 100, timeInQueueMs: 0);
+
+        DataStreamsManager.SetLastConsumePathway(consumePathway!.Value);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new EdgeTags(["out"]), payloadSizeBytes: 100, timeInQueueMs: 0);
+
+        await dsm.DisposeAsync();
+
+        var points = writer.Points.ToArray();
+        points.Should().HaveCount(3);
+        points[1].ParentHash.Value.Should().Be(0);
+        points[2].ParentHash.Should().Be(points[0].Hash);
+    }
+
+    [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
         var dsm = GetDataStreamManager(true, out _);

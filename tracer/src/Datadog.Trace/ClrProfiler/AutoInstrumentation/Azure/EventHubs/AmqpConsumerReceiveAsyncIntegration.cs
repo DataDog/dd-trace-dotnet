@@ -72,6 +72,12 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         if (scope != null && eventsList.Count > 0)
         {
             ReinjectContextIntoMessages(tracer, scope, eventsList);
+
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager is { IsEnabled: true })
+            {
+                EventHubsCommon.SetConsumeCheckpoints(tracer, eventsList, consumerInstance.EventHubName, scope.Span);
+            }
         }
 
         scope?.Dispose();

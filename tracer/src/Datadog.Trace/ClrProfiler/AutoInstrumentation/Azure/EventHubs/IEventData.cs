@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
@@ -18,4 +19,24 @@ internal interface IEventData : IDuckType
     IDictionary<string, object> Properties { get; }
 
     string MessageId { get; }
+
+    IEventDataBody? EventBody { get; }
+
+    DateTimeOffset EnqueuedTime { get; }
+}
+
+/// <summary>
+/// Duck type for Azure.BinaryData
+/// </summary>
+internal interface IEventDataBody
+{
+    IEventDataBodyMemory ToMemory();
+}
+
+/// <summary>
+/// Duck type for System.ReadOnlyMemory&lt;byte&gt;
+/// </summary>
+internal interface IEventDataBodyMemory
+{
+    int Length { get; }
 }

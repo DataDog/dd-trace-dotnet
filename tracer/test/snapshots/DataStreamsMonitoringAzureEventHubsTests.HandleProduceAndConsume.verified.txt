@@ -1,0 +1,52 @@
+﻿[
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-test-hub,
+      type:eventhubs
+    ],
+    Hash: 16244166056597673459,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    PayloadSize: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-test-hub,
+      type:eventhubs
+    ],
+    Hash: 16244166056597673459,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    PayloadSize: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-test-hub,
+      type:eventhubs
+    ],
+    Hash: 887440108971507458,
+    ParentHash: 16244166056597673459,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    PayloadSize: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-test-hub,
+      type:eventhubs
+    ],
+    Hash: 887440108971507458,
+    ParentHash: 16244166056597673459,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    PayloadSize: /w==,
+    TimestampType: origin
+  }
+]
