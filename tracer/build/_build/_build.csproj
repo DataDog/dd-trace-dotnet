@@ -6,7 +6,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net11.0</TargetFramework>
-    <TargetFramework Condition="$(USE_NATIVE_SDK_VERSION) == 'true'">net7.0</TargetFramework>
     <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.19041</TargetFramework>
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>
     <RootNamespace></RootNamespace>
@@ -17,9 +16,7 @@
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
     <NukeTasksEnabled>False</NukeTasksEnabled>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
-    <!-- We need to run with both the .NET 7 and .NET 10 SDKs, because .NET 7 is the -->
-    <!-- latest version we can use in CentOs 7 -->
-    <LangVersion>11</LangVersion>
+    <LangVersion>latest</LangVersion>
     <!-- Required, otherwise we can't run with .NET 8 -->
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
@@ -56,7 +53,7 @@
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <!-- Enable binary serialization for .NET 9+ -->
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="11.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="11.0.0" />
   </ItemGroup>
 
   <!-- On it's own, since windows only and just used for notifications -->

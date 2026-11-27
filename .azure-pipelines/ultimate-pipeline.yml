@@ -76,7 +76,6 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 11.0.100
-  nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
   linuxX64SmokePool: azure-managed-linux-smoke-2
@@ -543,9 +542,6 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        # keep it for now, we'll see if we can update the "universal" image to
-        # be able to use latest .NET SDK version
-        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -881,7 +877,6 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10

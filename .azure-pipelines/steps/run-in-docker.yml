@@ -7,11 +7,6 @@ parameters:
     type: 'string'
     default: tester
 
-    # This should be a boolean, but AzDo
-  - name: useNativeSdkVersion
-    type: string
-    default: ''
-
   - name: build
     type: boolean
     default: false
@@ -40,11 +35,7 @@ steps:
 
 - ${{ if eq(parameters.build, true) }}:
   - script: |
-      if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
-        sdkVersion=$(dotnetCoreSdkLatestVersion)
-      else
-        sdkVersion=$(nativeBuildDotnetSdkVersion)
-      fi
+      sdkVersion=$(dotnetCoreSdkLatestVersion)
 
       echo "Using SDK version $sdkVersion"
 
@@ -57,11 +48,7 @@ steps:
     displayName: Build ${{ parameters.baseImage }} Docker image
     retryCountOnTaskFailure: 5
 - script: |
-    if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
-      sdkVersion=$(dotnetCoreSdkLatestVersion)
-    else
-      sdkVersion=$(nativeBuildDotnetSdkVersion)
-    fi
+    sdkVersion=$(dotnetCoreSdkLatestVersion)
 
     echo "Using SDK version $sdkVersion"
 
