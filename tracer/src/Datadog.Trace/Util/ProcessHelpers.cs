@@ -158,7 +158,16 @@ namespace Datadog.Trace.Util
                 }
                 catch (IOException) when (timeoutKiller?.TimedOut == true)
                 {
-                    // The process was killed at the timeout before it read all the input.
+                    // The process was killed at the timeout before it read all the input. Close the input now: disposing the
+                    // process doesn't, and the finalizer would otherwise try to flush what is left into the broken pipe.
+                    try
+                    {
+                        processInfo.StandardInput.Dispose();
+                    }
+                    catch (IOException)
+                    {
+                        // The writer flushes again before closing; the stream is closed anyway.
+                    }
                 }
             }
 
