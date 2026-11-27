@@ -263,6 +263,79 @@ public class HttpRequestUtilsTests
         result.Should().Be(expected);
     }
 
+    [Theory]
+    // Relative URIs are resolved against the base
+    [InlineData("/api/values?id=1", "https://example.com:8443/app/api/values?id=1", "https://example.com:8443/api/values?id=1")]
+    [InlineData("/api/values", "http://localhost/", "http://localhost/api/values")]
+    [InlineData("values?id=2", "http://localhost/api/", "http://localhost/api/values?id=2")]
+    // Without a usable base, the URI can't be made absolute
+    [InlineData("/api/values?id=1", null, null)]
+    [InlineData("/api/values", "/base/", null)]
+    public void GetAbsoluteUri_ShouldResolveRelativeUris(string relativeUrl, string baseUrl, string expected)
+    {
+        // The UriKind is explicit: with RelativeOrAbsolute, a path such as "/api" is an absolute file URI on Unix
+        var relativeUri = new Uri(relativeUrl, UriKind.Relative);
+        var baseUri = baseUrl switch
+        {
+            null => null,
+            _ when baseUrl.StartsWith("/", StringComparison.Ordinal) => new Uri(baseUrl, UriKind.Relative),
+            _ => new Uri(baseUrl, UriKind.Absolute),
+        };
+
+        var result = HttpRequestUtils.GetAbsoluteUri(relativeUri, baseUri);
+
+        if (expected is null)
+        {
+            result.Should().BeNull();
+        }
+        else
+        {
+            result.Should().Be(new Uri(expected, UriKind.Absolute));
+        }
+    }
+
+    [Theory]
+    [InlineData("/api/values?id=1", "/api/values", "?id=1")]
+    [InlineData("/api/values", "/api/values", "")]
+    [InlineData("api/values", "/api/values", "")]
+    [InlineData("", "/", "")]
+    [InlineData("/api/values?", "/api/values", "?")]
+    [InlineData("/api/values?id=1&q=a?b", "/api/values", "?id=1&q=a?b")]
+    // The fragment is discarded, even when it looks like a query
+    [InlineData("/api/values?id=1#section", "/api/values", "?id=1")]
+    [InlineData("/api/values#section?id=1", "/api/values", "")]
+    // The path is escaped and normalized like Uri.AbsolutePath, so it matches what an absolute URI would report
+    [InlineData("/api/my values", "/api/my%20values", "")]
+    [InlineData("/api/../values", "/values", "")]
+    [InlineData(@"api\values", "/api/values", "")]
+    [InlineData("  /api/values?id=1", "/api/values", "?id=1")]
+    public void TryGetRelativeUriPathAndQuery_ShouldSplitPathAndQuery(string relativeUrl, string expectedPath, string expectedQuery)
+    {
+        HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeTrue();
+
+        path.Should().Be(expectedPath);
+        queryString.Should().Be(expectedQuery);
+    }
+
+    [Theory]
+    // Network-path references start with an authority, which can include credentials
+    [InlineData("//user:password@host/api/values?id=1")]
+    [InlineData("//host/api/values")]
+    [InlineData(@"\\user:password@host/api/values")]
+    [InlineData(@"/\host/api/values")]
+    [InlineData(@"\/host/api/values")]
+    // Leading whitespace is ignored when the reference is resolved
+    [InlineData(" //user:password@host/api/values")]
+    [InlineData("\t//user:password@host/api/values")]
+    [InlineData(@" \\user:password@host/api/values")]
+    public void TryGetRelativeUriPathAndQuery_RejectsNetworkPathReferences(string relativeUrl)
+    {
+        HttpRequestUtils.TryGetRelativeUriPathAndQuery(new Uri(relativeUrl, UriKind.Relative), out var path, out var queryString).Should().BeFalse();
+
+        path.Should().BeEmpty();
+        queryString.Should().BeEmpty();
+    }
+
     private class DerivedUri : Uri
     {
         public DerivedUri(string uriString)

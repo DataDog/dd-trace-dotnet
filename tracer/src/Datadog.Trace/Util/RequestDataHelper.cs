@@ -228,6 +228,17 @@ internal static class RequestDataHelper
     }
 
     /// <summary>
+    /// Gets the Uri from the <paramref name="request"/>, either with <see cref="GetUrl(HttpRequest)"/>, which can
+    /// <em>CACHE</em> the <c>Uri</c> of the <paramref name="request"/>, or with <see cref="BuildUrl(HttpRequest)"/>, which doesn't.
+    /// </summary>
+    /// <param name="request">The <see cref="HttpRequest"/> to get the <c>Uri</c> of.</param>
+    /// <param name="bypassHttpRequestUrlCaching">Whether to avoid caching the <c>Uri</c>, as controlled by
+    /// <see cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>.</param>
+    /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
+    internal static Uri? GetUrl(HttpRequest request, bool bypassHttpRequestUrlCaching)
+        => bypassHttpRequestUrlCaching ? BuildUrl(request) : GetUrl(request);
+
+    /// <summary>
     /// Builds the Uri from the <paramref name="request"/>.
     /// <para>
     /// Note that this will <em>bypass</em> the caching behavior of the <see cref="HttpRequest.Url"/> property.
