@@ -19,7 +19,7 @@ linux_ci_variants() {
 }
 
 resolve_linux_ci_images() {
-    LINUX_CI_IMAGE_BASE=${LINUX_CI_IMAGE_BASE:-registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci}
+    LINUX_CI_IMAGE_BASE=${SHADOW_LINUX_CI_IMAGE_BASE:-${LINUX_CI_IMAGE_BASE:-registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-ci}}
     case "$LINUX_CI_IMAGE_BASE" in
         ''|*[!a-zA-Z0-9./:_-]*) echo 'Invalid Linux image repository' >&2; return 1 ;;
     esac
