@@ -17,6 +17,9 @@ namespace Datadog.Trace.Tagging
         // TableNameBytes = MessagePack.Serialize("tablename");
         private static ReadOnlySpan<byte> TableNameBytes => [169, 116, 97, 98, 108, 101, 110, 97, 109, 101];
 
+        // TableArnBytes = MessagePack.Serialize("aws.table.arn");
+        private static ReadOnlySpan<byte> TableArnBytes => [173, 97, 119, 115, 46, 116, 97, 98, 108, 101, 46, 97, 114, 110];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
@@ -25,6 +28,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "tablename" => TableName,
+                "aws.table.arn" => TableArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -36,6 +40,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "tablename": 
                     TableName = value;
+                    break;
+                case "aws.table.arn": 
+                    TableArn = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsDynamoDbTags));
@@ -53,6 +60,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("tablename", TableName, TableNameBytes));
             }
 
+            if (TableArn is not null)
+            {
+                processor.Process(new TagItem<string>("aws.table.arn", TableArn, TableArnBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -67,6 +79,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("tablename (tag):")
                   .Append(TableName)
+                  .Append(',');
+            }
+
+            if (TableArn is not null)
+            {
+                sb.Append("aws.table.arn (tag):")
+                  .Append(TableArn)
                   .Append(',');
             }
 

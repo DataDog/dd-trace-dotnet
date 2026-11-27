@@ -56,6 +56,7 @@
       aws.operation: StartExecutionAsync,
       aws.requestId: Guid_2,
       aws.service: StepFunctions,
+      aws.state_machine.arn: arn:aws:states:us-east-1:000000000000:stateMachine:StepFunction,
       aws_service: StepFunctions,
       component: aws-sdk,
       env: integration_tests,

@@ -539,6 +539,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The OpenTelemetry name of the queue URL associated with the AWS SDK SQS span.
+        /// </summary>
+        internal const string AwsSqsQueueUrl = "aws.sqs.queue.url";
+
+        /// <summary>
         /// The rule name associated with the AWS EventBridge span.
         /// </summary>
         internal const string RuleName = "rulename";
@@ -559,14 +564,29 @@ namespace Datadog.Trace
         internal const string StreamName = "streamname";
 
         /// <summary>
+        /// The stream ARN associated with the AWS SDK Kinesis span.
+        /// </summary>
+        internal const string AwsStreamArn = "aws.stream.arn";
+
+        /// <summary>
         /// The table name associated with the AWS SDK DynamoDB span.
         /// </summary>
         internal const string TableName = "tablename";
 
         /// <summary>
+        /// The table ARN associated with the AWS SDK DynamoDB span.
+        /// </summary>
+        internal const string AwsTableArn = "aws.table.arn";
+
+        /// <summary>
         /// The state machine name associated with the AWS SDK Step Functions span.
         /// </summary>
         internal const string StateMachineName = "statemachinename";
+
+        /// <summary>
+        /// The state machine ARN associated with the AWS SDK Step Functions span.
+        /// </summary>
+        internal const string AwsStateMachineArn = "aws.state_machine.arn";
 
         /// <summary>
         /// Configures Trace Analytics.

@@ -24,6 +24,7 @@ namespace Samples.AWS.DynamoDBv2
                 Thread.Sleep(1000);
                 await PutItemAsync(dynamoDBClient);
                 await GetItemAsync(dynamoDBClient);
+                await GetItemByTableArnAsync(dynamoDBClient);
                 await UpdateItemAsync(dynamoDBClient);
                 await DeleteItemAsync(dynamoDBClient);
                 
@@ -126,6 +127,24 @@ namespace Samples.AWS.DynamoDBv2
 
             var response = await dynamoDBClient.BatchWriteItemAsync(batchWriteItemRequest);
             Console.WriteLine($"BatchWriteItemAsync(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
+        // A table can be named by its ARN, which the span tags as aws.table.arn
+        public static async Task GetItemByTableArnAsync(AmazonDynamoDBClient dynamoDBClient)
+        {
+            var describeResponse = await dynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = TableName });
+            var getItemRequest = new GetItemRequest
+            {
+                TableName = describeResponse.Table.TableArn,
+                Key = new Dictionary<string, AttributeValue>
+                {
+                    ["id"] = new() { S = "1" },
+                    ["name"] = new() { S = "Jordan" }
+                }
+            };
+
+            var response = await dynamoDBClient.GetItemAsync(getItemRequest);
+            Console.WriteLine($"GetItemAsync(GetItemRequest) by table ARN HTTP status code: {response.HttpStatusCode}");
         }
 
         public static async Task GetItemAsync(AmazonDynamoDBClient dynamoDBClient)

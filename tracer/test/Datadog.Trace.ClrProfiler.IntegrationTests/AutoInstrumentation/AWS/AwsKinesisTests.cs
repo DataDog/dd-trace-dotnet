@@ -46,16 +46,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
             const string metadataSchemaVersion = "v0";
             var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-kinesis";
+            // The sample's default version is 3.3.3. Requests have StreamARN from 3.7.0 on, but the
+            // records put by stream ARN are only tagged with the stream name and ARN on AWSSDK v4:
+            // every AWSSDK v3 package, 3.7.x included, has the assembly version 3.3.0.0, so the
+            // PutRecord(s)V3_7 integrations (3.7.0 to 4.*.*) only bind for v4, and the integrations
+            // that bind for v3 read StreamName only. Supporting StreamARN on v3.7.x is possible, by
+            // reading it in those integrations when the request type has it, but it would change the
+            // spans (stream name, peer.service) and Data Streams Monitoring checkpoints of existing
+            // v3.7.x applications that put records by ARN, so it is left out of this change.
+            var hasStreamArn = !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("4.0.0");
+            if (hasStreamArn)
+            {
+                // The sample also puts records by stream ARN, which DataStreamsMonitoringAwsKinesisTests does not expect
+                SetEnvironmentVariable("KINESIS_SAMPLE_USE_STREAM_ARN", "true");
+            }
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 12;
+                // The stream ARN lookup and two puts by stream ARN, sync and async
+                var expectedCount = hasStreamArn ? 18 : 12;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 7;
+                var expectedCount = hasStreamArn ? 10 : 7;
                 var frameworkName = "NetCore";
 #endif
                 var spans = await agent.WaitForSpansAsync(expectedCount);
@@ -68,7 +83,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var snapshotSuffix = hasStreamArn ? string.Empty : "_v3";
+                settings.UseFileName($"{nameof(AwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_kinesis");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_kinesis");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_kinesis");

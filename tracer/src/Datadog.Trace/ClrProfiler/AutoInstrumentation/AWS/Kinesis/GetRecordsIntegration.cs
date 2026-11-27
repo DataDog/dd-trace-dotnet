@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             string? streamName = AwsKinesisCommon.StreamNameFromARN(request.StreamARN);
             if (tags is not null && streamName is not null)
             {
-                tags.StreamName = streamName;
+                AwsKinesisCommon.TagStream(tags, streamName, request.StreamARN);
             }
 
             return new CallTargetState(scope, streamName);

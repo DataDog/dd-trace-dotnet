@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.Dynamo
 public class AwsDynamoDbCommonTests
 {
     private const string TableName = "MyTableName";
+    private const string TableArn = "arn:aws:dynamodb:us-east-1:123456789012:table/MyTableName";
 
     [Fact]
     public async Task TagTableNameAndResourceName_TagsProperly()
@@ -36,6 +37,46 @@ public class AwsDynamoDbCommonTests
 
         var span = scope.Span;
         span.ResourceName.Should().Be("DynamoDB.GetItem MyTableName");
+    }
+
+    [Fact]
+    public async Task TagTableNameAndResourceName_WithTableArn_TagsTableArn()
+    {
+        await using var tracer = GetTracer();
+        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+
+        AwsDynamoDbCommon.TagTableNameAndResourceName(TableArn, tags, scope);
+
+        tags.TableName.Should().Be(TableArn);
+        tags.TableArn.Should().Be(TableArn);
+    }
+
+    [Theory]
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012:table/MyTableName")]
+    [InlineData("arn:aws-us-gov:dynamodb:us-gov-west-1:123456789012:table/my-table_1.v2")]
+    public void GetTableArn_WithTableArn_ReturnsArn(string tableName)
+    {
+        AwsDynamoDbCommon.GetTableArn(tableName).Should().Be(tableName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("MyTableName")]
+    // not a DynamoDB ARN
+    [InlineData("arn:aws:kinesis:us-east-1:123456789012:stream/MyStream")]
+    // missing components
+    [InlineData("arn::dynamodb:us-east-1:123456789012:table/MyTableName")]
+    [InlineData("arn:aws:dynamodb::123456789012:table/MyTableName")]
+    [InlineData("arn:aws:dynamodb:us-east-1::table/MyTableName")]
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012:table/")]
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012")]
+    // not a table resource
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012:global-table/MyTableName")]
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012:table/MyTableName/index/MyIndex")]
+    [InlineData("arn:aws:dynamodb:us-east-1:123456789012:table/MyTableName/stream/2024-01-01T00:00:00.000")]
+    public void GetTableArn_WithoutTableArn_ReturnsNull(string tableName)
+    {
+        AwsDynamoDbCommon.GetTableArn(tableName).Should().BeNull();
     }
 
     [Fact]

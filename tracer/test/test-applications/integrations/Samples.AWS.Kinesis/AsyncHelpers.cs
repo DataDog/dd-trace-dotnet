@@ -27,6 +27,14 @@ namespace Samples.AWS.Kinesis
                 Thread.Sleep(1000);
                 await PutRecordAsync(kinesisClient);
                 await PutRecordsAsync(kinesisClient);
+#if KINESIS_3_7_0
+                if (Common.UseStreamArn)
+                {
+                    var streamArn = await GetStreamArnAsync(kinesisClient);
+                    await PutRecordByStreamArnAsync(kinesisClient, streamArn);
+                    await PutRecordsByStreamArnAsync(kinesisClient, streamArn);
+                }
+#endif
 
                 await DeleteStreamAsync(kinesisClient);
 
@@ -91,5 +99,47 @@ namespace Samples.AWS.Kinesis
             var response = await kinesisClient.PutRecordsAsync(putRecordsRequest);
             Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) HTTP status code: {response.HttpStatusCode}");
         }
+
+#if KINESIS_3_7_0
+        // A stream can be named by its ARN, which the span tags as aws.stream.arn
+        public static async Task<string> GetStreamArnAsync(AmazonKinesisClient kinesisClient)
+        {
+            var request = new DescribeStreamSummaryRequest { StreamName = StreamName };
+            var response = await kinesisClient.DescribeStreamSummaryAsync(request);
+            return response.StreamDescriptionSummary.StreamARN;
+        }
+
+        public static async Task PutRecordByStreamArnAsync(AmazonKinesisClient kinesisClient, string streamArn)
+        {
+            var putRecordRequest = new PutRecordRequest
+            {
+                StreamARN = streamArn,
+                PartitionKey = Guid.NewGuid().ToString(),
+                Data = Common.DictionaryToMemoryStream(new Dictionary<string, object> { { "name", "Jordan" } }),
+            };
+
+            var response = await kinesisClient.PutRecordAsync(putRecordRequest);
+            Console.WriteLine($"PutRecordAsync(PutRecordRequest) by stream ARN HTTP status code: {response.HttpStatusCode}");
+        }
+
+        public static async Task PutRecordsByStreamArnAsync(AmazonKinesisClient kinesisClient, string streamArn)
+        {
+            var putRecordsRequest = new PutRecordsRequest
+            {
+                StreamARN = streamArn,
+                Records = new List<PutRecordsRequestEntry>
+                {
+                    new PutRecordsRequestEntry
+                    {
+                        Data = Common.DictionaryToMemoryStream(new Dictionary<string, object> { { "name", "Piplup" } }),
+                        PartitionKey = Guid.NewGuid().ToString()
+                    }
+                }
+            };
+
+            var response = await kinesisClient.PutRecordsAsync(putRecordsRequest);
+            Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) by stream ARN HTTP status code: {response.HttpStatusCode}");
+        }
+#endif
     }
 }

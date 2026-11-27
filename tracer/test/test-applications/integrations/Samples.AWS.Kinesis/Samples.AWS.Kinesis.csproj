@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.3.3</ApiVersion>
+    <!-- Requests have StreamARN from 3.7 on -->
+    <DefineConstants Condition="$(ApiVersion) &gt;= 3.7.0">$(DefineConstants);KINESIS_3_7_0</DefineConstants>
     <RequiresDockerDependency>All</RequiresDockerDependency>
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

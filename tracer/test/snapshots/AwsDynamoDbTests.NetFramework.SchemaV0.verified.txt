@@ -109,6 +109,64 @@
   {
     TraceId: Id_1,
     SpanId: Id_6,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: aws.dynamodb.request,
+    Resource: DynamoDB.GetItem arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
+    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
+    Type: dynamodb,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: GetItem,
+      aws.requestId: Guid_4,
+      aws.service: DynamoDB,
+      aws.table.arn: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
+      aws_service: DynamoDB,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      peer.service: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
+      runtime-id: Guid_1,
+      span.kind: client,
+      tablename: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
     Name: aws.dynamodb.request,
     Resource: DynamoDB.UpdateItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
@@ -117,7 +175,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: UpdateItem,
-      aws.requestId: Guid_4,
+      aws.requestId: Guid_5,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -142,7 +200,7 @@
         Attributes: {
           link.kind: span-pointer,
           ptr.dir: d,
-          ptr.hash: Guid_5,
+          ptr.hash: Guid_6,
           ptr.kind: aws.dynamodb.item
         }
       }
@@ -150,7 +208,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_7,
+    SpanId: Id_9,
     Name: aws.dynamodb.request,
     Resource: DynamoDB.DeleteItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
@@ -159,48 +217,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteItem,
-      aws.requestId: Guid_6,
-      aws.service: DynamoDB,
-      aws_service: DynamoDB,
-      component: aws-sdk,
-      env: integration_tests,
-      http.method: POST,
-      http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
-      peer.service: MyTableName,
-      runtime-id: Guid_1,
-      span.kind: client,
-      tablename: MyTableName,
-      _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename,
-      _dd.svc_src: aws-dynamodb
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    },
-    SpanLinks: [
-      {
-        Attributes: {
-          link.kind: span-pointer,
-          ptr.dir: d,
-          ptr.hash: Guid_5,
-          ptr.kind: aws.dynamodb.item
-        }
-      }
-    ]
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_8,
-    Name: aws.dynamodb.request,
-    Resource: DynamoDB.BatchWriteItem MyTableName,
-    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
-    Type: dynamodb,
-    ParentId: Id_2,
-    Tags: {
-      aws.agent: dotnet-aws-sdk,
-      aws.operation: BatchWriteItem,
       aws.requestId: Guid_7,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -220,19 +236,29 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_6,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
-    SpanId: Id_9,
+    SpanId: Id_10,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.BatchGetItem MyTableName,
+    Resource: DynamoDB.BatchWriteItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
     ParentId: Id_2,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: BatchGetItem,
+      aws.operation: BatchWriteItem,
       aws.requestId: Guid_8,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -256,15 +282,15 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_10,
+    SpanId: Id_11,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.BatchWriteItem MyTableName,
+    Resource: DynamoDB.BatchGetItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
     ParentId: Id_2,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: BatchWriteItem,
+      aws.operation: BatchGetItem,
       aws.requestId: Guid_9,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -288,49 +314,31 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_11,
-    Name: http.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.DynamoDBv2-http-client,
-    Type: http,
+    SpanId: Id_12,
+    Name: aws.dynamodb.request,
+    Resource: DynamoDB.BatchWriteItem MyTableName,
+    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
+    Type: dynamodb,
     ParentId: Id_2,
     Tags: {
-      component: WebRequest,
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: BatchWriteItem,
+      aws.requestId: Guid_10,
+      aws.service: DynamoDB,
+      aws_service: DynamoDB,
+      component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      out.host: aws_dynamodb,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
+      tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.svc_src: http-client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_12,
-    Name: http.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.DynamoDBv2-http-client,
-    Type: http,
-    ParentId: Id_4,
-    Tags: {
-      component: WebRequest,
-      env: integration_tests,
-      http.method: POST,
-      http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
-      out.host: aws_dynamodb,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.svc_src: http-client
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -343,7 +351,7 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_5,
+    ParentId: Id_2,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -368,7 +376,7 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_6,
+    ParentId: Id_4,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -393,7 +401,7 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_7,
+    ParentId: Id_5,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -418,7 +426,7 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_8,
+    ParentId: Id_7,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -443,7 +451,7 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_9,
+    ParentId: Id_8,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -468,6 +476,31 @@
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
+    ParentId: Id_9,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_19,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
     ParentId: Id_10,
     Tags: {
       component: WebRequest,
@@ -487,31 +520,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_20,
-    Name: sync-methods,
-    Resource: sync-methods,
-    Service: Samples.AWS.DynamoDBv2,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_21,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_20,
+    ParentId: Id_11,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -530,48 +545,84 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_22,
-    Name: aws.dynamodb.request,
-    Resource: DynamoDB.PutItem MyTableName,
-    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
-    Type: dynamodb,
-    ParentId: Id_20,
+    TraceId: Id_1,
+    SpanId: Id_21,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_12,
     Tags: {
-      aws.agent: dotnet-aws-sdk,
-      aws.operation: PutItem,
-      aws.requestId: Guid_10,
-      aws.service: DynamoDB,
-      aws_service: DynamoDB,
-      component: aws-sdk,
+      component: WebRequest,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      peer.service: MyTableName,
+      out.host: aws_dynamodb,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename,
-      _dd.svc_src: aws-dynamodb
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_22,
     SpanId: Id_23,
+    Name: sync-methods,
+    Resource: sync-methods,
+    Service: Samples.AWS.DynamoDBv2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_24,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_25,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.GetItem MyTableName,
+    Resource: DynamoDB.PutItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: GetItem,
+      aws.operation: PutItem,
       aws.requestId: Guid_11,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -594,16 +645,16 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_24,
+    TraceId: Id_22,
+    SpanId: Id_26,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.UpdateItem MyTableName,
+    Resource: DynamoDB.GetItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: UpdateItem,
+      aws.operation: GetItem,
       aws.requestId: Guid_12,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -623,31 +674,47 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    },
-    SpanLinks: [
-      {
-        Attributes: {
-          link.kind: span-pointer,
-          ptr.dir: d,
-          ptr.hash: Guid_5,
-          ptr.kind: aws.dynamodb.item
-        }
-      }
-    ]
+    }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_25,
+    TraceId: Id_22,
+    SpanId: Id_27,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_28,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.DeleteItem MyTableName,
+    Resource: DynamoDB.GetItem arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: DeleteItem,
+      aws.operation: GetItem,
       aws.requestId: Guid_13,
       aws.service: DynamoDB,
+      aws.table.arn: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
       aws_service: DynamoDB,
       component: aws-sdk,
       env: integration_tests,
@@ -655,39 +722,29 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      peer.service: MyTableName,
+      peer.service: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName,
+      tablename: arn:aws:dynamodb:us-east-1:000000000000:table/MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
       _dd.peer.service.source: tablename,
       _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
-    },
-    SpanLinks: [
-      {
-        Attributes: {
-          link.kind: span-pointer,
-          ptr.dir: d,
-          ptr.hash: Guid_5,
-          ptr.kind: aws.dynamodb.item
-        }
-      }
-    ]
+    }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_26,
+    TraceId: Id_22,
+    SpanId: Id_29,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.BatchWriteItem MyTableName,
+    Resource: DynamoDB.UpdateItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: BatchWriteItem,
+      aws.operation: UpdateItem,
       aws.requestId: Guid_14,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -707,19 +764,29 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_6,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_27,
+    TraceId: Id_22,
+    SpanId: Id_30,
     Name: aws.dynamodb.request,
-    Resource: DynamoDB.BatchGetItem MyTableName,
+    Resource: DynamoDB.DeleteItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: BatchGetItem,
+      aws.operation: DeleteItem,
       aws.requestId: Guid_15,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
@@ -739,16 +806,26 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_6,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_28,
+    TraceId: Id_22,
+    SpanId: Id_31,
     Name: aws.dynamodb.request,
     Resource: DynamoDB.BatchWriteItem MyTableName,
     Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
     Type: dynamodb,
-    ParentId: Id_20,
+    ParentId: Id_23,
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
@@ -774,58 +851,72 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_29,
-    Name: http.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.DynamoDBv2-http-client,
-    Type: http,
-    ParentId: Id_20,
+    TraceId: Id_22,
+    SpanId: Id_32,
+    Name: aws.dynamodb.request,
+    Resource: DynamoDB.BatchGetItem MyTableName,
+    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
+    Type: dynamodb,
+    ParentId: Id_23,
     Tags: {
-      component: WebRequest,
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: BatchGetItem,
+      aws.requestId: Guid_17,
+      aws.service: DynamoDB,
+      aws_service: DynamoDB,
+      component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      out.host: aws_dynamodb,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
+      tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.svc_src: http-client
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_30,
-    Name: http.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.DynamoDBv2-http-client,
-    Type: http,
-    ParentId: Id_22,
+    TraceId: Id_22,
+    SpanId: Id_33,
+    Name: aws.dynamodb.request,
+    Resource: DynamoDB.BatchWriteItem MyTableName,
+    Service: Samples.AWS.DynamoDBv2-aws-dynamodb,
+    Type: dynamodb,
+    ParentId: Id_23,
     Tags: {
-      component: WebRequest,
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: BatchWriteItem,
+      aws.requestId: Guid_18,
+      aws.service: DynamoDB,
+      aws_service: DynamoDB,
+      component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      out.host: aws_dynamodb,
+      peer.service: MyTableName,
       runtime-id: Guid_1,
       span.kind: client,
+      tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.svc_src: http-client
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_31,
+    TraceId: Id_22,
+    SpanId: Id_34,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
@@ -849,33 +940,8 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_32,
-    Name: http.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.DynamoDBv2-http-client,
-    Type: http,
-    ParentId: Id_24,
-    Tags: {
-      component: WebRequest,
-      env: integration_tests,
-      http.method: POST,
-      http.status_code: 200,
-      http.url: http://localhost:00000/,
-      language: dotnet,
-      out.host: aws_dynamodb,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.svc_src: http-client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_33,
+    TraceId: Id_22,
+    SpanId: Id_35,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
@@ -899,8 +965,8 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_34,
+    TraceId: Id_22,
+    SpanId: Id_36,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
@@ -924,13 +990,13 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_35,
+    TraceId: Id_22,
+    SpanId: Id_37,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_27,
+    ParentId: Id_28,
     Tags: {
       component: WebRequest,
       env: integration_tests,
@@ -949,13 +1015,113 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_36,
+    TraceId: Id_22,
+    SpanId: Id_38,
     Name: http.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.DynamoDBv2-http-client,
     Type: http,
-    ParentId: Id_28,
+    ParentId: Id_29,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_39,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_40,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_31,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_41,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_32,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_dynamodb,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_42,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.DynamoDBv2-http-client,
+    Type: http,
+    ParentId: Id_33,
     Tags: {
       component: WebRequest,
       env: integration_tests,
