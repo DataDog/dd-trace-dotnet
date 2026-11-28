@@ -19,7 +19,7 @@ namespace Datadog.Trace.Agent.Transports
         private readonly HttpWebResponse _response;
         private readonly CancellationTokenRegistration _requestCancellation;
 
-        public ApiWebResponse(HttpWebResponse response, CancellationTokenRegistration requestCancellation = default)
+        public ApiWebResponse(HttpWebResponse response, CancellationTokenRegistration requestCancellation)
         {
             _response = response;
             _requestCancellation = requestCancellation;

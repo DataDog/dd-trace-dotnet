@@ -16,8 +16,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
     internal static class RemoteConfigurationApiFactory
     {
+        internal const int AgentTimeoutMs = 15_000;
         private const string ProductName = "rcm";
-        private static readonly TimeSpan AgentTimeout = TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan AgentTimeout = TimeSpan.FromMilliseconds(AgentTimeoutMs);
 
         public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings)
         {
@@ -33,7 +34,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 #if SHARED_REMOTE_CONFIG
         internal static IRemoteConfigurationApi CreateStreaming(ExporterSettings exporterSettings)
         {
-            var factory = AgentTransportStrategy.GetHttpClient(
+            IStreamingApiRequestFactory factory = AgentTransportStrategy.GetHttpClient(
                 exporterSettings,
                 productName: ProductName,
                 tcpTimeout: AgentTimeout,

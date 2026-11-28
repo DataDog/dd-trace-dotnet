@@ -25,7 +25,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
 #pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
-    internal sealed class DiscoveryService : IDiscoveryService, IDiscoverySnapshot
+    internal sealed class DiscoveryService : IDiscoveryService
 #pragma warning restore MA0049
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";

@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Datadog.Trace.RemoteConfigurationManagement.Shared;
 using Datadog.Trace.Tools.RemoteConfigConformance;
@@ -56,6 +55,23 @@ if (args is ["--verify-managed-replacement-with-native", var nativeSuccessorArti
 if (args is ["--verify-managed-retirement-cancels-request"])
 {
     await NativeWorkerProof.VerifyManagedRetiredResponse(null, pauseDuringDelivery: false, cancelInFlight: true);
+    return;
+}
+
+if (args is ["--verify-managed-shutdown-during-retirement"])
+{
+    await NativeWorkerProof.VerifyManagedRetiredResponse(null, pauseDuringDelivery: true, shutdownDuringRetirement: true);
+    return;
+}
+
+if (args is ["--verify-shutdown-with-unstarted-native" or "--verify-shutdown-after-unstarted-native", var unstartedArtifact])
+{
+    var intermediate = args[0] == "--verify-shutdown-after-unstarted-native";
+    await NativeWorkerProof.VerifyManagedRetiredResponse(
+        intermediate ? null : unstartedArtifact,
+        pauseDuringDelivery: true,
+        shutdownDuringRetirement: true,
+        intermediateNativeArtifact: intermediate ? unstartedArtifact : null);
     return;
 }
 
@@ -308,12 +324,4 @@ static JsonElement Exchange(Reactor reactor, int client, byte[] response, out Js
 }
 
 static byte[] Assignment(string path, ulong version, byte[] payload, bool includePayload)
-{
-    var targets = new Dictionary<string, object>(StringComparer.Ordinal)
-    {
-        [path] = new { custom = new { v = version }, hashes = new { sha256 = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant() }, length = payload.Length },
-    };
-    var signed = JsonSerializer.SerializeToUtf8Bytes(new { signed = new { custom = new { opaque_backend_state = "dotnet-test" }, targets, version = 1 } });
-    var files = includePayload ? new[] { new { path, raw = payload } } : [];
-    return JsonSerializer.SerializeToUtf8Bytes(new { targets = signed, target_files = files, client_configs = new[] { path } });
-}
+    => AssignmentFixture.Encode(1, "dotnet-test", [new(path, payload, version, includePayload)]);

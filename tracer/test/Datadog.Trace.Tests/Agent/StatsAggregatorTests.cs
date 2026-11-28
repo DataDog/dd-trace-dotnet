@@ -2140,9 +2140,14 @@ namespace Datadog.Trace.Tests.Agent
             AgentTraceFilterConfig traceFilterConfig = null,
             List<string> featureFlags = null) : IDiscoveryService
         {
+            public AgentConfiguration CurrentConfiguration { get; private set; }
+
+            public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+                => CurrentConfiguration is { } configuration && apply(configuration);
+
             public void SubscribeToChanges(Action<AgentConfiguration> callback)
             {
-                callback(new AgentConfiguration(
+                callback(CurrentConfiguration ??= new AgentConfiguration(
                              configurationEndpoint: "configurationEndpoint",
                              debuggerEndpoint: "debuggerEndpoint",
                              debuggerV2Endpoint: "debuggerV2Endpoint",

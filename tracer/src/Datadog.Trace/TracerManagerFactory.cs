@@ -191,13 +191,11 @@ namespace Datadog.Trace
                 }
             }
 
-#if SHARED_REMOTE_CONFIG
-            const bool deferRemoteConfigSubscription = true;
-#else
-            const bool deferRemoteConfigSubscription = false;
-#endif
             featureFlags = FeatureFlagsModule.Create(
-                settings, RcmSubscriptionManager.Instance, discoveryService: discoveryService, deferRemoteConfigSubscription: deferRemoteConfigSubscription);
+                settings,
+                RcmSubscriptionManager.Instance,
+                discoveryService: discoveryService,
+                deferRemoteConfigSubscription: remoteConfigurationManager is RemoteConfigurationManager);
 
             return CreateTracerManagerFrom(
                 settings,

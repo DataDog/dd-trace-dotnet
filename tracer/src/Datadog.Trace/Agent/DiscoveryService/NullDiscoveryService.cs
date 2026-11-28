@@ -17,6 +17,10 @@ internal sealed class NullDiscoveryService : IDiscoveryService
     {
     }
 
+    public AgentConfiguration? CurrentConfiguration => null;
+
+    public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply) => false;
+
     public void SubscribeToChanges(Action<AgentConfiguration> callback)
     {
     }

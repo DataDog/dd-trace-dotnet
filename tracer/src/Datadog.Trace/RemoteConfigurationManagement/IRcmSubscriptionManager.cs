@@ -11,6 +11,12 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
+internal delegate Task ManagedRcmPoll(
+    RcmClientTracer tracer,
+    Func<GetRcmRequest, Task<GetRcmResponse?>> send,
+    Func<bool>? acceptResponse = null,
+    Action<Action>? commitResponse = null);
+
 internal interface IRcmSubscriptionManager
 {
     bool HasAnySubscription { get; }
@@ -23,5 +29,5 @@ internal interface IRcmSubscriptionManager
 
     void SetCapability(BigInteger index, bool available);
 
-    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null);
+    ManagedRcmPoll CreateManagedPoller();
 }

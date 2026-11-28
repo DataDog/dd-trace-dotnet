@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Datadog.Trace.Agent;
@@ -138,7 +137,8 @@ internal static class AgentComparison
         var tracer = new RcmClientTracer("benchmark", "1", "test", "test", "1", [], null);
         var api = new RemoteConfigurationApi(factory);
         Func<GetRcmRequest, Task<GetRcmResponse?>> fetch = request => api.GetConfigs(request, Endpoint);
-        return () => manager.SendRequest(tracer, fetch);
+        var poll = manager.CreateManagedPoller();
+        return () => poll(tracer, fetch);
     }
 
     private static Func<Task> CreateReactorPoll(Reactor reactor, HttpClientRequestFactory factory, Action<string, byte[]> observe, int[] capabilityIndices)
@@ -211,18 +211,16 @@ internal static class AgentComparison
     internal static (byte[] Response, Dictionary<string, byte[]> Files) CreateFixture(int count, int padding, int variant)
     {
         var files = new Dictionary<string, byte[]>(count, StringComparer.Ordinal);
-        var targets = new Dictionary<string, object>(count, StringComparer.Ordinal);
         var pad = new string('x', padding);
         for (var index = 0; index < count; index++)
         {
             var path = $"datadog/2/{Product}/benchmark-{index}/config";
             var payload = Encoding.UTF8.GetBytes($$"""{"action":"enable","service_target":{"service":"test","env":"test"},"lib_config":{"tracing_sampling_rate":0.{{variant}}},"padding":"{{pad}}"}""");
             files.Add(path, payload);
-            targets.Add(path, new { custom = new { v = 1 }, hashes = new { sha256 = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant() }, length = payload.Length });
         }
 
-        var metadata = JsonSerializer.SerializeToUtf8Bytes(new { signed = new { custom = new { opaque_backend_state = "benchmark" }, targets, version = 1 } });
-        return (JsonSerializer.SerializeToUtf8Bytes(new { targets = metadata, target_files = files.Select(file => new { path = file.Key, raw = file.Value }), client_configs = files.Keys }), files);
+        var response = AssignmentFixture.Encode(1, "benchmark", files.Select(file => new AssignmentFixture.TargetFile(file.Key, file.Value, 1)));
+        return (response, files);
     }
 
     private static void VerifyAcknowledgements(byte[] request, int count, byte[] expectedCapabilities, bool legacy)

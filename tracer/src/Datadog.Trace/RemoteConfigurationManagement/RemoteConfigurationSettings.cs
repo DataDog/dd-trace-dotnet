@@ -8,6 +8,9 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+#if SHARED_REMOTE_CONFIG
+using Datadog.Trace.RemoteConfigurationManagement.Shared;
+#endif
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -25,9 +28,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                               .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
+#if SHARED_REMOTE_CONFIG
+            NativeLibraryPath = AppContext.GetData(NativeAgentPoller.LibraryPathSetting) as string;
+#endif
         }
 
         public TimeSpan PollInterval { get; }
+
+#if SHARED_REMOTE_CONFIG
+        internal string? NativeLibraryPath { get; }
+#endif
 
         public static RemoteConfigurationSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
             => new(source, telemetry);

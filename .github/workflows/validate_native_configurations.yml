@@ -127,6 +127,9 @@ jobs:
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-feature-flags-managed-chain "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-late-managed-start "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-managed-retirement-cancels-request
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-managed-shutdown-during-retirement
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-shutdown-with-unstarted-native "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-shutdown-after-unstarted-native "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-takeover "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-split-route "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-native-debugger-cutover "$reactor"

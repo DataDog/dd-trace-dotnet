@@ -19,7 +19,6 @@ internal sealed class DebuggerAgentTransport : IDisposable
     private readonly object _gate = new();
     private readonly TracerSettings.SettingsManager _settings;
     private readonly IDiscoveryService _discoveryService;
-    private readonly IDiscoverySnapshot? _discoverySnapshot;
     private readonly Action<AgentConfiguration> _discoveryCallback;
     private readonly Func<ExporterSettings, IApiRequestFactory> _createFactory;
     private readonly IDisposable _settingsSubscription;
@@ -37,7 +36,6 @@ internal sealed class DebuggerAgentTransport : IDisposable
     {
         _settings = settings;
         _discoveryService = discoveryService;
-        _discoverySnapshot = discoveryService as IDiscoverySnapshot;
         _discoveryCallback = UpdateDiscovery;
         _createFactory = createFactory;
         _exporter = settings.InitialExporterSettings;
@@ -45,18 +43,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
         _settingsSubscription = settings.SubscribeToChanges(UpdateExporter);
         try
         {
-            if (_discoverySnapshot is not null)
-            {
-                discoveryService.SubscribeToChanges(_discoveryCallback);
-            }
-            else
-            {
-                // Serialize replay for discovery sources that only provide callbacks.
-                lock (_gate)
-                {
-                    discoveryService.SubscribeToChanges(_discoveryCallback);
-                }
-            }
+            discoveryService.SubscribeToChanges(_discoveryCallback);
         }
         catch
         {
@@ -71,7 +58,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
     private bool HasRemoteConfigRoute
         => _current is { HasRemoteConfigEndpoints: true } route &&
            ReferenceEquals(route.Configuration.DiscoverySettings, _settings.CurrentExporterSettings) &&
-           ReferenceEquals(route.Configuration, _discoverySnapshot?.CurrentConfiguration);
+           ReferenceEquals(route.Configuration, _discoveryService.CurrentConfiguration);
 
     internal Task<bool> WaitForRemoteConfigRouteAsync()
     {
@@ -89,8 +76,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
     }
 
     internal bool TryRunWithRemoteConfigRoute(Action apply)
-        => _discoverySnapshot is not null &&
-           Current is { HasRemoteConfigEndpoints: true } route &&
+        => Current is { HasRemoteConfigEndpoints: true } route &&
            TryRunWithCurrentRoute(route, apply);
 
     internal bool TryAdmitUpload(Route route)
@@ -105,9 +91,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
 
         return _settings.TryRunWithCurrentExporter(
             exporter,
-            () => _discoverySnapshot is { } snapshot
-                      ? snapshot.TryRunWithCurrentConfiguration(configuration => ReferenceEquals(configuration, route.Configuration) && ApplyIfCurrent())
-                      : ApplyIfCurrent());
+            () => _discoveryService.TryRunWithCurrentConfiguration(configuration => ReferenceEquals(configuration, route.Configuration) && ApplyIfCurrent()));
 
         bool ApplyIfCurrent()
         {
@@ -168,8 +152,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
     {
         lock (_gate)
         {
-            if (_disposed ||
-                (_discoverySnapshot is { } snapshot && !ReferenceEquals(discovered, snapshot.CurrentConfiguration)))
+            if (_disposed || !ReferenceEquals(discovered, _discoveryService.CurrentConfiguration))
             {
                 return;
             }

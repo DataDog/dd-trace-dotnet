@@ -31,48 +31,41 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
 
         private readonly IDiscoveryService _discoveryService;
-        private readonly IDiscoverySnapshot? _discoverySnapshot;
-        private readonly Action<AgentConfiguration>? _discoveryCallback;
-        private readonly object _discoveryGate = new();
         private readonly TracerSettings.SettingsManager _settings;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly IDisposable _settingSubscription;
-#if SHARED_REMOTE_CONFIG
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly string? _nativeLibraryPath;
         private readonly object _workerGate = new();
+#if SHARED_REMOTE_CONFIG
+        private readonly string? _nativeLibraryPath;
+#endif
         private CancellationTokenSource? _managedPollCancellation;
         private Task? _worker;
         private int _disposed;
-#else
-        private readonly TaskCompletionSource<bool> _processExit = new();
-#endif
 
+        private ManagedRcmPoll? _managedPoll;
         private AgentTransport _transport;
-        private AgentConfiguration? _agentConfiguration;
         private RcmClientTracer _rcmTracer;
-        private int _isPollingStarted;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
             TracerSettings settings,
-            TimeSpan pollInterval,
+            RemoteConfigurationSettings remoteConfigurationSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
             _discoveryService = discoveryService;
-            _discoverySnapshot = discoveryService as IDiscoverySnapshot;
             _settings = settings.Manager;
-            _pollInterval = pollInterval;
+            _pollInterval = remoteConfigurationSettings.PollInterval;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
             _subscriptionManager = subscriptionManager;
 #if SHARED_REMOTE_CONFIG
             if (subscriptionManager is RcmSubscriptionManager)
             {
-                _nativeLibraryPath = AppContext.GetData(NativeAgentPoller.LibraryPathSetting) as string;
+                _nativeLibraryPath = remoteConfigurationSettings.NativeLibraryPath;
             }
 #endif
 
@@ -96,25 +89,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     Volatile.Write(ref _transport, CreateTransport(exporter));
                 }
             });
-
-            if (_discoverySnapshot is null)
-            {
-                var callback = _discoveryCallback = UpdateAgentConfiguration;
-                try
-                {
-                    // Order synchronous replay before concurrent notifications.
-                    lock (_discoveryGate)
-                    {
-                        discoveryService.SubscribeToChanges(callback);
-                    }
-                }
-                catch
-                {
-                    _settingSubscription.Dispose();
-                    discoveryService.RemoveSubscription(callback);
-                    throw;
-                }
-            }
 
             [MemberNotNull(nameof(_rcmTracer))]
             void UpdateRcmClientTracer(MutableSettings mutable)
@@ -176,6 +150,24 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         internal Task StopRequested => _processExit.Task;
 
+        internal bool HasNativeWorkerToDrain
+        {
+            get
+            {
+#if SHARED_REMOTE_CONFIG
+                if (_nativeLibraryPath is not null)
+                {
+                    lock (_workerGate)
+                    {
+                        return _worker is not null;
+                    }
+                }
+#endif
+
+                return false;
+            }
+        }
+
         public static RemoteConfigurationManager Create(
             IDiscoveryService discoveryService,
             RemoteConfigurationSettings settings,
@@ -186,14 +178,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return new RemoteConfigurationManager(
                     discoveryService,
                     tracerSettings,
-                    pollInterval: settings.PollInterval,
+                    settings,
                     gitMetadataTagsProvider,
                     subscriptionManager);
         }
 
         public void Start()
         {
-#if SHARED_REMOTE_CONFIG
             lock (_workerGate)
             {
                 if (_processExit.Task.IsCompleted || _worker is not null)
@@ -203,26 +194,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 _worker = SchedulePolling();
             }
-#else
-            _ = SchedulePolling();
-#endif
         }
 
         public void Dispose()
         {
-#if SHARED_REMOTE_CONFIG
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 RequestStop();
-#else
-            if (_processExit.TrySetResult(true))
-            {
-#endif
-                if (_discoveryCallback is { } callback)
-                {
-                    _discoveryService.RemoveSubscription(callback);
-                }
-
                 _settingSubscription.Dispose();
             }
             else
@@ -232,10 +210,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-#if SHARED_REMOTE_CONFIG
         internal void RequestStop() => _processExit.TrySetResult(true);
-
-        internal Func<Task>? GetShutdownDrain() => _nativeLibraryPath is null ? null : StopAsync;
 
         internal Task StopAsync()
         {
@@ -267,11 +242,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
         }
-#endif
 
         private Task SchedulePolling()
         {
-#if SHARED_REMOTE_CONFIG
             var cancellation = new CancellationTokenSource();
             _managedPollCancellation = cancellation;
             var worker = Task.Run(async () =>
@@ -292,21 +265,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     }
                 }
             });
-#else
-            var worker = Task.Run(() => StartPollingAsync(default));
-#endif
             _ = worker.ContinueWith(task => { Log.Error(task.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
             return worker;
         }
 
         private async Task StartPollingAsync(CancellationToken managedPollCancellation)
         {
-            if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
-            {
-                Log.Warning("Remote Configuration management polling is already started.");
-                return;
-            }
-
 #if SHARED_REMOTE_CONFIG
             using var nativePoller = _nativeLibraryPath is { } path
                                          ? new NativeAgentPoller(path, (RcmSubscriptionManager)_subscriptionManager)
@@ -315,7 +279,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             while (!_processExit.Task.IsCompleted)
             {
                 var transport = Volatile.Read(ref _transport);
-                if (GetConfigEndpoint(transport, ReadAgentConfiguration()) is { Length: > 0 } endpoint && _subscriptionManager.HasAnySubscription)
+                if (GetConfigEndpoint(transport, _discoveryService.CurrentConfiguration) is { Length: > 0 } endpoint && _subscriptionManager.HasAnySubscription)
                 {
                     try
                     {
@@ -355,13 +319,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return Task.CompletedTask;
             }
 
-            var rcm = Volatile.Read(ref _rcmTracer);
-            EnrichTagsWithGitMetadata(rcm);
-            rcm.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
+            var rcm = CapturePollIdentity();
+            var poll = _managedPoll ??= _subscriptionManager.CreateManagedPoller();
+            return poll(rcm, request => transport.Api.GetConfigs(request, endpoint, cancellationToken), AcceptResponse, CommitResponse);
 
-            return _subscriptionManager.SendRequest(rcm, request => transport.Api.GetConfigs(request, endpoint, cancellationToken), AcceptResponse, CommitResponse);
-
-            bool AcceptResponse() => CanAcceptResponse() && IsCurrentTransport(transport, endpoint, ReadAgentConfiguration());
+            bool AcceptResponse() => CanAcceptResponse() && IsCurrentTransport(transport, endpoint, _discoveryService.CurrentConfiguration);
 
             bool CanAcceptResponse()
                 => !_processExit.Task.IsCompleted &&
@@ -396,39 +358,28 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #if SHARED_REMOTE_CONFIG
         private Task PollNative(NativeAgentPoller poller, AgentTransport transport, string endpoint)
         {
-            var tracer = Volatile.Read(ref _rcmTracer);
-
-            EnrichTagsWithGitMetadata(tracer);
-            tracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
+            var tracer = CapturePollIdentity();
             return poller.Poll(transport.Api, endpoint, tracer, _processExit.Task, IsCurrent, TryCommit);
 
             bool IsCurrent() => tracer.TargetGeneration == Volatile.Read(ref _rcmTracer).TargetGeneration &&
-                                IsCurrentTransport(transport, endpoint, ReadAgentConfiguration());
+                                IsCurrentTransport(transport, endpoint, _discoveryService.CurrentConfiguration);
 
             bool TryCommit(Func<bool> publish) => TryCommitResponse(transport, endpoint, publish);
         }
 #endif
 
-        private bool TryCommitResponse(AgentTransport transport, string endpoint, Func<bool> publish)
+        private RcmClientTracer CapturePollIdentity()
         {
-            return _settings.TryRunWithCurrentExporter(transport.Exporter, () =>
-            {
-                if (_discoverySnapshot is { } snapshot)
-                {
-                    return snapshot.TryRunWithCurrentConfiguration(CommitIfCurrent);
-                }
-
-                lock (_discoveryGate)
-                {
-                    return CommitIfCurrent(_agentConfiguration);
-                }
-            });
-
-            bool CommitIfCurrent(AgentConfiguration? configuration) => IsCurrentTransport(transport, endpoint, configuration) && publish();
+            var tracer = Volatile.Read(ref _rcmTracer);
+            EnrichTagsWithGitMetadata(tracer);
+            tracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
+            return tracer;
         }
 
-        private AgentConfiguration? ReadAgentConfiguration()
-            => _discoverySnapshot is { } snapshot ? snapshot.CurrentConfiguration : Volatile.Read(ref _agentConfiguration);
+        private bool TryCommitResponse(AgentTransport transport, string endpoint, Func<bool> publish)
+            => _settings.TryRunWithCurrentExporter(
+                transport.Exporter,
+                () => _discoveryService.TryRunWithCurrentConfiguration(configuration => IsCurrentTransport(transport, endpoint, configuration) && publish()));
 
         private string? GetConfigEndpoint(AgentTransport transport, AgentConfiguration? configuration)
             => configuration is not null &&
@@ -461,14 +412,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             details.IsGitMetadataAddedToRequestTags = true;
-        }
-
-        private void UpdateAgentConfiguration(AgentConfiguration configuration)
-        {
-            lock (_discoveryGate)
-            {
-                Volatile.Write(ref _agentConfiguration, configuration);
-            }
         }
 
         private sealed class AgentTransport(ExporterSettings exporter, IRemoteConfigurationApi api)

@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -57,6 +56,7 @@ internal static class NativeWorkerProof
         await VerifyRetainedRawPaths(artifact, artifact);
         await VerifyRetainedRawPaths(null, artifact);
         await VerifyRetainedRawPaths(artifact, null);
+        await VerifyRetainedRawPaths(null, null);
     }
 
     private static async Task VerifyRetainedRawPaths(string? before, string? after)
@@ -125,6 +125,9 @@ internal static class NativeWorkerProof
         {
             var noChange = await requests.Reader.ReadAsync(timeout.Token);
             Require(ConfigStates(noChange).GetArrayLength() == 0, "The successor sent a receipt from the previous backend");
+            var successorClient = noChange.Request.GetProperty("client");
+            Require(successorClient.GetProperty("id").GetString() != previousClientId, "The successor reused the retired client ID");
+            Require(successorClient.GetProperty("state").GetProperty("targets_version").GetInt64() == 0, "The successor reused the retired targets version");
             noChange.Completion.SetResult(new Reply(204, []));
             var noAssignment = await requests.Reader.ReadAsync(timeout.Token);
             Require(!withdrawn.Task.IsCompleted, "A 204 withdrew a retained assignment");
@@ -336,7 +339,12 @@ internal static class NativeWorkerProof
         Console.WriteLine("Tracer shutdown completed with a managed successor poll in flight");
     }
 
-    public static async Task VerifyManagedRetiredResponse(string? nativeArtifact, bool pauseDuringDelivery, bool cancelInFlight = false)
+    public static async Task VerifyManagedRetiredResponse(
+        string? nativeArtifact,
+        bool pauseDuringDelivery,
+        bool cancelInFlight = false,
+        bool shutdownDuringRetirement = false,
+        string? intermediateNativeArtifact = null)
     {
         const string endpoint = "/v0.7/config";
         Environment.SetEnvironmentVariable("DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS", "0.05");
@@ -376,14 +384,33 @@ internal static class NativeWorkerProof
             await entered.Task.WaitAsync(timeout.Token);
         }
 
+        if (intermediateNativeArtifact is not null)
+        {
+            AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, intermediateNativeArtifact);
+            TracerManager.ReplaceGlobalManager(
+                ReplacementSettings(address, "unstarted-native", remoteConfigEnabled: true),
+                TracerManagerFactory.Instance);
+            Tracer.Instance.TracerManager.Start();
+        }
+
         AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, nativeArtifact);
         TracerManager.ReplaceGlobalManager(
-            ReplacementSettings(address, "managed-retired-successor", remoteConfigEnabled: nativeArtifact is not null || cancelInFlight),
+            ReplacementSettings(address, "managed-retired-successor", remoteConfigEnabled: nativeArtifact is not null || cancelInFlight || shutdownDuringRetirement),
             TracerManagerFactory.Instance);
         var successor = Tracer.Instance.TracerManager;
+        Task? shutdown = null;
         try
         {
             await worker.StopRequested.WaitAsync(timeout.Token);
+            if (shutdownDuringRetirement)
+            {
+                successor.Start();
+                shutdown = successor.ShutdownAsync();
+                await shutdown.WaitAsync(TimeSpan.FromSeconds(2), timeout.Token);
+                Console.WriteLine("Shutdown finished while the retired managed worker's callback was still held");
+                return;
+            }
+
             release.TrySetResult();
             if (cancelInFlight)
             {
@@ -422,7 +449,7 @@ internal static class NativeWorkerProof
             subscriptions.Unsubscribe(blocker);
             release.TrySetResult();
             pending.Completion.TrySetResult(new Reply(204, []));
-            await successor.ShutdownAsync().WaitAsync(timeout.Token);
+            await (shutdown ?? successor.ShutdownAsync()).WaitAsync(timeout.Token);
         }
 
         Console.WriteLine(cancelInFlight
@@ -1110,14 +1137,14 @@ internal static class NativeWorkerProof
             var pending = await requests.Reader.ReadAsync(timeout.Token);
             pending.Completion.SetResult(new Reply(200, WatchAssignment(1, ("obsolete", 1, obsolete))));
             await entered.Task.WaitAsync(timeout.Token);
-            Volatile.Write(ref endpoints, new[] { "/debugger/v1/input" });
+            Volatile.Write(ref endpoints, ["/debugger/v1/input"]);
             await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
             Require(discovery.CurrentConfiguration?.ConfigurationEndpoint is null, "Discovery did not withdraw the Remote Configuration route");
             resume.TrySetResult();
             await completed.Task.WaitAsync(timeout.Token);
             Require(owner.PerTraceSettings.Settings.GlobalSamplingRate == 1.0, "Raw APM published a sampling rate after route withdrawal");
 
-            Volatile.Write(ref endpoints, new[] { endpoint });
+            Volatile.Write(ref endpoints, [endpoint]);
             await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
             var restored = await requests.Reader.ReadAsync(timeout.Token);
             restored.Completion.SetResult(new Reply(200, WatchAssignment(2, ("current", 2, current))));
@@ -1238,7 +1265,7 @@ internal static class NativeWorkerProof
                 await commitReady.Task.WaitAsync(timeout.Token);
             }
 
-            Volatile.Write(ref endpoints, new[] { debuggerEndpoint });
+            Volatile.Write(ref endpoints, [debuggerEndpoint]);
             withdrawal = Task.Run(() => discovery.RunOneIterationAsync(null));
             await published.Task.WaitAsync(timeout.Token);
 
@@ -1622,7 +1649,7 @@ internal static class NativeWorkerProof
         agent.MapPost(configEndpoint, () => Results.NoContent());
         agent.MapPost(uploadEndpoint, async (HttpContext context) =>
         {
-            using var reader = new StreamReader(context.Request.Body);
+            using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
             uploaded.TrySetResult(await reader.ReadToEndAsync());
             return Results.Ok();
         });
@@ -1723,7 +1750,7 @@ internal static class NativeWorkerProof
             agent.MapGet("/info", () => Results.Json(new { endpoints = new[] { configEndpoint, debuggerEndpoint, uploadEndpoint } }));
             agent.MapPost(uploadEndpoint, async (HttpContext http) =>
             {
-                using var body = new StreamReader(http.Request.Body);
+                using var body = new StreamReader(http.Request.Body, leaveOpen: true);
                 await uploads.Writer.WriteAsync((name, await body.ReadToEndAsync()), timeout.Token);
                 return Results.Ok();
             });
@@ -1768,10 +1795,15 @@ internal static class NativeWorkerProof
 
     private static async Task WaitForDebugger(Func<bool> ready, Task startup, CancellationToken cancellationToken)
     {
+        var deadline = Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
         while (!ready())
         {
             Require(!startup.IsCompleted, "Debugger startup finished before reaching the expected state");
-            await Task.Delay(20, cancellationToken);
+            await Task.WhenAny(startup, deadline, Task.Delay(20));
+            if (!ready())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
     }
 
@@ -1981,7 +2013,7 @@ internal static class NativeWorkerProof
             var retained = await Next("/rc/current");
             VerifyCapabilities(retained, [8, 0, 0]);
             Require(retained.Request.GetProperty("client").GetProperty("products").EnumerateArray()
-                            .Select(item => item.GetString()).SequenceEqual(new[] { "LIVE_DEBUGGING" }),
+                            .Select(item => item.GetString()).SequenceEqual(["LIVE_DEBUGGING"]),
                     "Withdrawal interest changed the advertised products");
             Require(!deliveries.Reader.TryRead(out _) && ConfigStates(retained).GetArrayLength() == FileCount, "A 404 cleared a live assignment");
             subscriptions.Unsubscribe(detached);
@@ -2040,7 +2072,7 @@ internal static class NativeWorkerProof
                 var path = upserts[Product].Single().Path.Path;
                 installed.TrySetResult(path);
                 subscriptions.Replace(applying!, successor);
-                return new[] { ApplyDetails.FromOk(path) };
+                return [ApplyDetails.FromOk(path)];
             }, Product);
             subscriptions.Replace(rawOwner, applying);
             pending.Completion.SetResult(new Reply(204, []));
@@ -2207,19 +2239,10 @@ internal static class NativeWorkerProof
         => Assignment(version, configs.Select(config => (product, config.Id, config.Version, config.Text)));
 
     private static byte[] Assignment(int version, IEnumerable<(string Product, string Id, int Version, string Text)> configs)
-    {
-        var files = configs.Select(config =>
-        {
-            var raw = Encoding.UTF8.GetBytes(config.Text);
-            var path = $"datadog/2/{config.Product}/{config.Id}/config";
-            return (path, raw, config.Version);
-        }).ToArray();
-        var targets = files.ToDictionary(
-            file => file.path,
-            file => new { custom = new { v = file.Version }, hashes = new { sha256 = Convert.ToHexString(SHA256.HashData(file.raw)).ToLowerInvariant() }, length = file.raw.Length });
-        var metadata = JsonSerializer.SerializeToUtf8Bytes(new { signed = new { custom = new { opaque_backend_state = "watch-proof" }, targets, version } });
-        return JsonSerializer.SerializeToUtf8Bytes(new { targets = metadata, target_files = files.Select(file => new { file.path, file.raw }), client_configs = files.Select(file => file.path) });
-    }
+        => AssignmentFixture.Encode(version, "watch-proof", configs.Select(config => new AssignmentFixture.TargetFile(
+            $"datadog/2/{config.Product}/{config.Id}/config",
+            Encoding.UTF8.GetBytes(config.Text),
+            checked((ulong)config.Version))));
 
     private static void VerifyReceipt(Exchange exchange, string id, int expectedState, string? error = null, int? version = null)
     {
@@ -2390,7 +2413,7 @@ internal static class NativeWorkerProof
         internal override IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash) => discovery;
     }
 
-    private sealed class ObservedWithdrawal(DiscoveryService discovery) : IDiscoveryService, IDiscoverySnapshot
+    private sealed class ObservedWithdrawal(DiscoveryService discovery) : IDiscoveryService
     {
         private int _readsAfterWithdrawal;
 
@@ -2467,7 +2490,7 @@ internal static class NativeWorkerProof
         }
     }
 
-    private sealed class DebuggerTakeoverDiscovery(string debuggerEndpoint, ExporterSettings exporter, string? configurationEndpoint) : IDiscoveryService, IDiscoverySnapshot
+    private sealed class DebuggerTakeoverDiscovery(string debuggerEndpoint, ExporterSettings exporter, string? configurationEndpoint) : IDiscoveryService
     {
         private readonly object _gate = new();
         private readonly TaskCompletionSource _candidateCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -2559,15 +2582,36 @@ internal static class NativeWorkerProof
 
     internal sealed class Discovery : IDiscoveryService
     {
+        private readonly object _publicationGate = new();
         private Action<AgentConfiguration>? _observers;
+        private AgentConfiguration? _configuration;
+
+        public AgentConfiguration? CurrentConfiguration => Volatile.Read(ref _configuration);
+
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+        {
+            lock (_publicationGate)
+            {
+                return _configuration is { } configuration && apply(configuration);
+            }
+        }
 
         public void SubscribeToChanges(Action<AgentConfiguration> callback) => _observers += callback;
 
         public void RemoveSubscription(Action<AgentConfiguration> callback) => _observers -= callback;
 
-        public void Publish(string endpoint, ExporterSettings exporter) => _observers?.Invoke(new AgentConfiguration(
-            endpoint, null, null, null, null, null, null, null, null, null, null,
-            containerTagsHash: null, clientDropP0: false, spanMetaStructs: false, spanEvents: false, discoverySettings: exporter));
+        public void Publish(string endpoint, ExporterSettings exporter)
+        {
+            var configuration = new AgentConfiguration(
+                endpoint, null, null, null, null, null, null, null, null, null, null,
+                containerTagsHash: null, clientDropP0: false, spanMetaStructs: false, spanEvents: false, discoverySettings: exporter);
+            lock (_publicationGate)
+            {
+                Volatile.Write(ref _configuration, configuration);
+            }
+
+            _observers?.Invoke(configuration);
+        }
 
         public void SetCurrentConfigStateHash(string configStateHash) => throw new NotSupportedException();
 

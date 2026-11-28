@@ -20,6 +20,25 @@ internal sealed class FlagEvaluationTestDiscovery : IDiscoveryService
     private Action<AgentConfiguration>? _callbacks;
     private AgentConfiguration? _configuration;
 
+    public AgentConfiguration? CurrentConfiguration
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _configuration;
+            }
+        }
+    }
+
+    public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+    {
+        lock (_lock)
+        {
+            return _configuration is { } configuration && apply(configuration);
+        }
+    }
+
     public void SubscribeToChanges(Action<AgentConfiguration> callback)
     {
         AgentConfiguration? configuration;

@@ -90,29 +90,17 @@ internal sealed class LinuxFlareClaimDirectory : IDisposable
         }
     }
 
+    public static FileStream? TryOpenFileReceipt(string claimPath)
+    {
+        var handle = new SafeFileHandle((IntPtr)Open(claimPath, NoFollow | CloseOnExec | NonBlocking), ownsHandle: true);
+        return OpenReceiptStream(handle, create: false);
+    }
+
     public FileStream? TryOpenReceipt(bool create = false)
     {
         var flags = NoFollow | CloseOnExec | (create ? WriteOnly | Create | Exclusive : NonBlocking);
         var handle = new SafeFileHandle((IntPtr)OpenAt(Descriptor(_directory), ReceiptName, flags, 0b110_110_110), ownsHandle: true);
-        var transferred = false;
-        try
-        {
-            if (handle.IsInvalid || (!create && !TryReadReceiptStatus(handle, out _)))
-            {
-                return null;
-            }
-
-            var stream = new FileStream(handle, create ? FileAccess.Write : FileAccess.Read, bufferSize: 1);
-            transferred = true;
-            return stream;
-        }
-        finally
-        {
-            if (!transferred)
-            {
-                handle.Dispose();
-            }
-        }
+        return OpenReceiptStream(handle, create);
     }
 
     public void CleanIfExpired(long cutoffSeconds)
@@ -139,6 +127,29 @@ internal sealed class LinuxFlareClaimDirectory : IDisposable
     {
         _directory.Dispose();
         _parent.Dispose();
+    }
+
+    private static FileStream? OpenReceiptStream(SafeFileHandle handle, bool create)
+    {
+        var transferred = false;
+        try
+        {
+            if (handle.IsInvalid || (!create && !TryReadReceiptStatus(handle, out _)))
+            {
+                return null;
+            }
+
+            var stream = new FileStream(handle, create ? FileAccess.Write : FileAccess.Read, bufferSize: 1);
+            transferred = true;
+            return stream;
+        }
+        finally
+        {
+            if (!transferred)
+            {
+                handle.Dispose();
+            }
+        }
     }
 
     private static int Descriptor(SafeFileHandle handle) => handle.DangerousGetHandle().ToInt32();

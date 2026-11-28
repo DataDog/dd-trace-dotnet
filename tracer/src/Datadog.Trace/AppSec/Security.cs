@@ -196,9 +196,7 @@ namespace Datadog.Trace.AppSec
             var newSubscription = new Subscription(UpdateFromRcm, [.. productNames])
             {
                 RemovalProductKeys = _configurationState.GetRemovalProducts(),
-#if SHARED_REMOTE_CONFIG
                 DeliveryOwner = this,
-#endif
             };
             if (_rcmSubscription is not null)
             {

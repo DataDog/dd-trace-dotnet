@@ -12,7 +12,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -294,10 +293,7 @@ public class SymDbRemoteConfigTests
         {
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null)
-        {
-            return Task.CompletedTask;
-        }
+        public ManagedRcmPoll CreateManagedPoller() => static (_, _, _, _) => Task.CompletedTask;
 
         public Task<ApplyDetails[]> Update(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
         {

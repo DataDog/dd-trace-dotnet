@@ -20,7 +20,11 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Agent.Transports
 {
+#if SHARED_REMOTE_CONFIG
+    internal sealed class HttpClientRequest : IStreamingApiRequest
+#else
     internal sealed class HttpClientRequest : IApiRequest
+#endif
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
@@ -57,7 +61,7 @@ namespace Datadog.Trace.Agent.Transports
             => PostAsync(bytes, contentType, contentEncoding, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
 
 #if SHARED_REMOTE_CONFIG
-        internal Task<IApiResponse> PostStreamingAsync(ArraySegment<byte> bytes, string contentType, CancellationToken cancellationToken)
+        public Task<IApiResponse> PostStreamingAsync(ArraySegment<byte> bytes, string contentType, CancellationToken cancellationToken)
             => PostAsync(bytes, contentType, null, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 #endif
 

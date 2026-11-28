@@ -28,7 +28,6 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 using DebuggerSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
@@ -328,13 +327,12 @@ public class DynamicInstrumentationTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task DeferredDiscoveryStartsOnlyForTheCurrentActivation(bool stillCurrent)
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" } }),
-            NullConfigurationTelemetry.Instance);
+            new ConfigurationTelemetry());
         var discovery = new DiscoveryServiceMock { DeferNotification = true };
         var subscriptions = new RcmSubscriptionManagerMock();
         var snapshots = new SnapshotUploaderMock();
@@ -1501,9 +1499,14 @@ public class DynamicInstrumentationTests
     {
         private Action<AgentConfiguration>? _pending;
 
+        public AgentConfiguration? CurrentConfiguration { get; private set; }
+
         internal bool Called { get; private set; }
 
         internal bool DeferNotification { get; init; }
+
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+            => CurrentConfiguration is { } configuration && apply(configuration);
 
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
@@ -1538,10 +1541,10 @@ public class DynamicInstrumentationTests
             Notify(callback);
         }
 
-        private static void Notify(Action<AgentConfiguration> callback)
+        private void Notify(Action<AgentConfiguration> callback)
         {
             callback(
-                new AgentConfiguration(
+                CurrentConfiguration ??= new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
                     debuggerV2Endpoint: "debuggerV2Endpoint",
@@ -1562,7 +1565,12 @@ public class DynamicInstrumentationTests
 
     private class DiscoveryServiceFailsOnceMock : IDiscoveryService
     {
+        public AgentConfiguration? CurrentConfiguration { get; private set; }
+
         internal int SubscribeCount { get; private set; }
+
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+            => CurrentConfiguration is { } configuration && apply(configuration);
 
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
@@ -1573,7 +1581,7 @@ public class DynamicInstrumentationTests
             }
 
             callback(
-                new AgentConfiguration(
+                CurrentConfiguration ??= new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
                     debuggerV2Endpoint: "debuggerV2Endpoint",
@@ -1604,13 +1612,18 @@ public class DynamicInstrumentationTests
 
     private class DiscoveryServiceWithoutRcmMock : IDiscoveryService
     {
+        public AgentConfiguration? CurrentConfiguration { get; private set; }
+
         internal bool Called { get; private set; }
+
+        public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+            => CurrentConfiguration is { } configuration && apply(configuration);
 
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
             callback(
-                new AgentConfiguration(
+                CurrentConfiguration ??= new AgentConfiguration(
                     configurationEndpoint: null,
                     debuggerEndpoint: "debuggerEndpoint",
                     debuggerV2Endpoint: "debuggerV2Endpoint",
@@ -1688,10 +1701,7 @@ public class DynamicInstrumentationTests
             throw new NotImplementedException();
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null)
-        {
-            throw new NotImplementedException();
-        }
+        public ManagedRcmPoll CreateManagedPoller() => static (_, _, _, _) => throw new NotImplementedException();
     }
 
     private class LineProbeResolverMock : ILineProbeResolver

@@ -11,7 +11,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -41,8 +40,7 @@ public class RemoteConfigurationManagerTests
         var publishOnRead = false;
         var gate = new object();
         var discovery = new Mock<IDiscoveryService>();
-        var snapshot = discovery.As<IDiscoverySnapshot>();
-        snapshot.SetupGet(service => service.CurrentConfiguration).Returns(() =>
+        discovery.SetupGet(service => service.CurrentConfiguration).Returns(() =>
         {
             lock (gate)
             {
@@ -51,7 +49,7 @@ public class RemoteConfigurationManagerTests
                 return observed;
             }
         });
-        snapshot.Setup(service => service.TryRunWithCurrentConfiguration(It.IsAny<Func<AgentConfiguration, bool>>()))
+        discovery.Setup(service => service.TryRunWithCurrentConfiguration(It.IsAny<Func<AgentConfiguration, bool>>()))
                 .Returns((Func<AgentConfiguration, bool> apply) =>
                 {
                     lock (gate)
@@ -64,19 +62,15 @@ public class RemoteConfigurationManagerTests
         var committed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var subscriptions = new Mock<IRcmSubscriptionManager>();
         subscriptions.SetupGet(manager => manager.HasAnySubscription).Returns(true);
-        subscriptions.Setup(manager => manager.SendRequest(
-                         It.IsAny<RcmClientTracer>(),
-                         It.IsAny<Func<GetRcmRequest, Task<GetRcmResponse>>>(),
-                         It.IsAny<Func<bool>>(),
-                         It.IsAny<Action<Action>>()))
-                     .Returns((RcmClientTracer _, Func<GetRcmRequest, Task<GetRcmResponse>> _, Func<bool> _, Action<Action> commit) =>
-                     {
-                         var applied = false;
-                         publishOnRead = refreshDuringCommit;
-                         commit(() => applied = true);
-                         committed.TrySetResult(applied);
-                         return Task.CompletedTask;
-                     });
+        ManagedRcmPoll poll = (_, _, _, commit) =>
+        {
+            var applied = false;
+            publishOnRead = refreshDuringCommit;
+            commit(() => applied = true);
+            committed.TrySetResult(applied);
+            return Task.CompletedTask;
+        };
+        subscriptions.Setup(manager => manager.CreateManagedPoller()).Returns(poll);
 
         using var manager = RemoteConfigurationManager.Create(
             discovery.Object, RemoteConfigurationSettings.FromSource(source, telemetry), settings, new NullGitMetadataProvider(), subscriptions.Object);
@@ -112,7 +106,7 @@ public class RemoteConfigurationManagerTests
     }
 
     [Fact]
-    public void AgentChangesReuseOneDiscoverySubscriptionAndDisposalRemovesIt()
+    public void AgentChangesReadPublishedDiscoveryWithoutRegisteringCallbacks()
     {
         var telemetry = new ConfigurationTelemetry();
         var source = new DictionaryConfigurationSource(new Dictionary<string, string>
@@ -125,7 +119,6 @@ public class RemoteConfigurationManagerTests
             discovery, RemoteConfigurationSettings.FromSource(source, telemetry), settings, new NullGitMetadataProvider(), new RcmSubscriptionManager());
         try
         {
-            var initialCount = discovery.Callbacks.Count;
             for (var port = 8127; port <= 8129; port++)
             {
                 var manual = new ManualInstrumentationConfigurationSource(
@@ -134,8 +127,7 @@ public class RemoteConfigurationManagerTests
                 settings.Manager.UpdateManualConfigurationSettings(manual, telemetry).Should().BeTrue();
             }
 
-            discovery.Callbacks.Should().HaveCount(initialCount);
-            discovery.Callbacks.Should().ContainSingle();
+            discovery.Callbacks.Should().BeEmpty();
         }
         finally
         {

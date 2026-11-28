@@ -168,20 +168,6 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         private CancellationTokenSource StartRequestDeadline(CancellationToken cancellationToken)
-        {
-            if (_requestTimeout is not { } timeout)
-            {
-                return null;
-            }
-
-            if (!cancellationToken.CanBeCanceled)
-            {
-                return new CancellationTokenSource(timeout);
-            }
-
-            var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None);
-            deadline.CancelAfter(timeout);
-            return deadline;
-        }
+            => _requestTimeout is { } timeout ? RequestDeadline.Create(timeout, cancellationToken) : null;
     }
 }

@@ -12,7 +12,9 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
-#if NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
+#if SHARED_REMOTE_CONFIG
+    internal class HttpClientRequestFactory : IStreamingApiRequestFactory
+#elif NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
     internal class HttpClientRequestFactory : IApiRequestFactory
 #else
     internal sealed class HttpClientRequestFactory : IApiRequestFactory
@@ -61,10 +63,7 @@ namespace Datadog.Trace.Agent.Transports
             return endpoint.ToString();
         }
 
-        public IApiRequest Create(Uri endpoint)
-        {
-            return new HttpClientRequest(_client, endpoint);
-        }
+        public HttpClientRequest Create(Uri endpoint) => new(_client, endpoint);
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
         {
@@ -77,6 +76,12 @@ namespace Datadog.Trace.Agent.Transports
                 }
             }
         }
+
+        IApiRequest IApiRequestFactory.Create(Uri endpoint) => Create(endpoint);
+
+#if SHARED_REMOTE_CONFIG
+        IStreamingApiRequest IStreamingApiRequestFactory.CreateStreamingRequest(Uri endpoint) => Create(endpoint);
+#endif
     }
 }
 #endif

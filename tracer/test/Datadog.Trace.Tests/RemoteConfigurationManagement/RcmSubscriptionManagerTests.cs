@@ -65,10 +65,11 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_FirstRequest_HasEmptyCachedFilesAndConfigStates()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures));
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -90,11 +91,12 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_FirstRequest_PassesThroughTracerInfo()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures));
 
         var tracer = CreateTracer();
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             tracer,
             request =>
             {
@@ -109,11 +111,12 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_FirstRequest_IncludesCapabilities()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures));
         manager.SetCapability(RcmCapabilitiesIndices.AsmActivation, true);
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -128,11 +131,12 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_FirstRequest_ProductsReflectAllSubscriptions()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures, RcmProducts.AsmDd));
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.LiveDebugging));
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -149,6 +153,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_DeclinedResponse_DoesNotChangeClientState()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         var delivered = false;
         manager.SubscribeToChanges(new Subscription(
             (_, _) =>
@@ -161,7 +166,7 @@ public class RcmSubscriptionManagerTests
         var entry = MakeConfig(RcmProducts.AsmFeatures, "late", """{"asm":{"enabled":true}}""");
         var response = CreateSingleProductResponse([entry]);
         var accept = true;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             _ =>
             {
@@ -171,7 +176,7 @@ public class RcmSubscriptionManagerTests
             () => accept);
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(CreateTracer(), request =>
+        await poll(CreateTracer(), request =>
         {
             captured = request;
             return Task.FromResult<GetRcmResponse>(null);
@@ -188,6 +193,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_NewConfigs_DeliveredToSubscriber()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         Dictionary<string, List<RemoteConfiguration>> receivedConfigs = null;
 
         var subscription = new Subscription(
@@ -204,7 +210,7 @@ public class RcmSubscriptionManagerTests
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1", """{"asm":{"enabled":true}}""");
         var response = CreateSingleProductResponse(new[] { entry });
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         receivedConfigs.Should().NotBeNull();
         receivedConfigs.Should().ContainKey(RcmProducts.AsmFeatures);
@@ -220,6 +226,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_MultipleConfigs_AllDelivered()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         Dictionary<string, List<RemoteConfiguration>> receivedConfigs = null;
         manager.SubscribeToChanges(
             new Subscription(
@@ -236,7 +243,7 @@ public class RcmSubscriptionManagerTests
         var entry2 = MakeConfig(RcmProducts.AsmFeatures, "config-2");
         var response = CreateSingleProductResponse(new[] { entry1, entry2 });
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         receivedConfigs[RcmProducts.AsmFeatures].Should().HaveCount(2);
         receivedConfigs[RcmProducts.AsmFeatures]
@@ -249,6 +256,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_UnchangedHashes_SubscriberNotCalled()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         int callCount = 0;
         manager.SubscribeToChanges(
             new Subscription(
@@ -265,12 +273,12 @@ public class RcmSubscriptionManagerTests
         var response = CreateSingleProductResponse(new[] { entry });
 
         // First poll: applies config
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
         callCount.Should().Be(1);
 
         // Second poll with same hash: subscriber should NOT be called
         var sameResponse = CreateSingleProductResponse(new[] { entry });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(sameResponse));
+        await poll(CreateTracer(), _ => Task.FromResult(sameResponse));
         callCount.Should().Be(1, "subscriber should not be called when hashes are unchanged");
     }
 
@@ -278,6 +286,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_ChangedHash_ConfigRedelivered()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         var receivedVersions = new List<long>();
         manager.SubscribeToChanges(
             new Subscription(
@@ -296,12 +305,12 @@ public class RcmSubscriptionManagerTests
 
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
         var response1 = CreateSingleProductResponse(new[] { entry });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response1));
+        await poll(CreateTracer(), _ => Task.FromResult(response1));
 
         // Second poll with different hash
         var updatedEntry = new ConfigEntry(entry.Path, entry.Raw, "new-hash", 2);
         var response2 = CreateSingleProductResponse(new[] { updatedEntry }, targetsVersion: 2);
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response2));
+        await poll(CreateTracer(), _ => Task.FromResult(response2));
 
         receivedVersions.Should().BeEquivalentTo(new long[] { 1, 2 });
     }
@@ -310,6 +319,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_ConfigRemoved_SubscriberNotifiedOfRemoval()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         Dictionary<string, List<RemoteConfigurationPath>> receivedRemovals = null;
         manager.SubscribeToChanges(
             new Subscription(
@@ -327,11 +337,11 @@ public class RcmSubscriptionManagerTests
 
         // First poll: apply both configs
         var response1 = CreateSingleProductResponse(new[] { entry1, entry2 });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response1));
+        await poll(CreateTracer(), _ => Task.FromResult(response1));
 
         // Second poll: only config-1 remains (config-2 removed)
         var response2 = CreateSingleProductResponse(new[] { entry1 }, targetsVersion: 2);
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response2));
+        await poll(CreateTracer(), _ => Task.FromResult(response2));
 
         receivedRemovals.Should().NotBeNull();
         receivedRemovals.Should().ContainKey(RcmProducts.AsmFeatures);
@@ -346,6 +356,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_RemovedConfig_NotIncludedInSubsequentRequest()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(
             new Subscription(
                 (configs, removed) =>
@@ -359,15 +370,15 @@ public class RcmSubscriptionManagerTests
 
         // Apply both
         var response1 = CreateSingleProductResponse(new[] { entry1, entry2 });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response1));
+        await poll(CreateTracer(), _ => Task.FromResult(response1));
 
         // Remove config-2
         var response2 = CreateSingleProductResponse(new[] { entry1 }, targetsVersion: 2);
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response2));
+        await poll(CreateTracer(), _ => Task.FromResult(response2));
 
         // Third request: only config-1 should be cached
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -389,6 +400,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_AfterProcessing_RequestContainsCachedTargetFiles()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(
             new Subscription(
                 (configs, removed) =>
@@ -399,11 +411,11 @@ public class RcmSubscriptionManagerTests
 
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
         var response = CreateSingleProductResponse(new[] { entry });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         // Next request should include cached file
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -426,6 +438,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_AfterProcessing_ConfigState_ReflectsApplyResult(ulong expectedState, string expectedError)
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(
             new Subscription(
                 (configs, removed) =>
@@ -444,10 +457,10 @@ public class RcmSubscriptionManagerTests
 
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
         var response = CreateSingleProductResponse(new[] { entry });
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -466,6 +479,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_AfterProcessing_RequestContainsTargetsVersionAndBackendState()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(
             new Subscription(
                 (configs, removed) =>
@@ -479,10 +493,10 @@ public class RcmSubscriptionManagerTests
             new[] { entry },
             targetsVersion: 42,
             backendClientState: "my-opaque-state");
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -498,6 +512,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_UnrequestedProduct_ConfigIgnored()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         Dictionary<string, List<RemoteConfiguration>> receivedConfigs = null;
         manager.SubscribeToChanges(
             new Subscription(
@@ -545,7 +560,7 @@ public class RcmSubscriptionManagerTests
         var clientConfigs = new List<string> { asmEntry.Path, diEntry.Path };
         var response = CreateResponse(targets, targetFiles, clientConfigs);
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         // Only ASM_FEATURES config should be delivered
         receivedConfigs.Should().ContainKey(RcmProducts.AsmFeatures);
@@ -553,7 +568,7 @@ public class RcmSubscriptionManagerTests
 
         // Subsequent request should only cache the subscribed config
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -571,6 +586,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ProcessResponse_MultipleSubscriptions_EachReceivesOwnProducts()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         Dictionary<string, List<RemoteConfiguration>> asmConfigs = null;
         Dictionary<string, List<RemoteConfiguration>> diConfigs = null;
 
@@ -630,7 +646,7 @@ public class RcmSubscriptionManagerTests
         var clientConfigs = new List<string> { asmEntry.Path, diEntry.Path };
         var response = CreateResponse(targets, targetFiles, clientConfigs);
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         asmConfigs.Should().ContainKey(RcmProducts.AsmFeatures);
         asmConfigs.Should().NotContainKey(RcmProducts.LiveDebugging);
@@ -643,6 +659,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_NullResponse_NoProcessing()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         int callCount = 0;
         manager.SubscribeToChanges(
             new Subscription(
@@ -653,7 +670,7 @@ public class RcmSubscriptionManagerTests
                 },
                 RcmProducts.AsmFeatures));
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult<GetRcmResponse>(null));
+        await poll(CreateTracer(), _ => Task.FromResult<GetRcmResponse>(null));
 
         callCount.Should().Be(0);
     }
@@ -662,6 +679,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_ResponseWithNullTargets_NoProcessing()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         int callCount = 0;
         manager.SubscribeToChanges(
             new Subscription(
@@ -673,7 +691,7 @@ public class RcmSubscriptionManagerTests
                 RcmProducts.AsmFeatures));
 
         var response = new GetRcmResponse(); // Targets defaults to null
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         callCount.Should().Be(0);
     }
@@ -682,6 +700,7 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_FullLifecycle_ApplyThenSteadyStateThenUpdateThenRemove()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         var allReceivedConfigs = new List<Dictionary<string, List<RemoteConfiguration>>>();
         var allReceivedRemovals = new List<Dictionary<string, List<RemoteConfigurationPath>>>();
 
@@ -704,14 +723,14 @@ public class RcmSubscriptionManagerTests
             new[] { entry },
             targetsVersion: 1,
             backendClientState: "state-v1");
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response1));
+        await poll(CreateTracer(), _ => Task.FromResult(response1));
 
         allReceivedConfigs.Should().HaveCount(1);
         allReceivedConfigs[0][RcmProducts.AsmFeatures].Should().ContainSingle();
 
         // Verify request state after step 1
         GetRcmRequest req1 = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             r =>
             {
@@ -732,7 +751,7 @@ public class RcmSubscriptionManagerTests
             new[] { entry },
             targetsVersion: 1,
             backendClientState: "state-v1");
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response2));
+        await poll(CreateTracer(), _ => Task.FromResult(response2));
 
         // Subscriber not called again (no new configs or removals)
         allReceivedConfigs.Should().HaveCount(1, "subscriber should not be called when nothing changed");
@@ -743,7 +762,7 @@ public class RcmSubscriptionManagerTests
             new[] { updatedEntry },
             targetsVersion: 2,
             backendClientState: "state-v2");
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response3));
+        await poll(CreateTracer(), _ => Task.FromResult(response3));
 
         allReceivedConfigs.Should().HaveCount(2);
         allReceivedConfigs[1][RcmProducts.AsmFeatures]
@@ -754,7 +773,7 @@ public class RcmSubscriptionManagerTests
 
         // Verify request state after step 3
         GetRcmRequest req3 = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             r =>
             {
@@ -776,7 +795,7 @@ public class RcmSubscriptionManagerTests
             Array.Empty<ConfigEntry>(),
             targetsVersion: 3,
             backendClientState: "state-v3");
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response4));
+        await poll(CreateTracer(), _ => Task.FromResult(response4));
 
         allReceivedConfigs.Should().HaveCount(3);
         allReceivedRemovals.Last().Should().ContainKey(RcmProducts.AsmFeatures);
@@ -788,7 +807,7 @@ public class RcmSubscriptionManagerTests
 
         // Verify request state after step 4: no cached files
         GetRcmRequest req4 = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             r =>
             {
@@ -806,11 +825,12 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_RootVersion_DefaultsToOneAndUpdatesFromLastRootsEntry()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures));
 
         // First request: root version should default to 1
         GetRcmRequest captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -829,11 +849,11 @@ public class RcmSubscriptionManagerTests
             Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")),
         ];
 
-        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+        await poll(CreateTracer(), _ => Task.FromResult(response));
 
         // Third request: should use the version from the last roots entry
         captured = null;
-        await manager.SendRequest(
+        await poll(
             CreateTracer(),
             request =>
             {
@@ -848,6 +868,7 @@ public class RcmSubscriptionManagerTests
     public async Task BuildRequest_CachesRequest_AndInvalidatesWhenInputsChange()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         manager.SubscribeToChanges(
             new Subscription(
                 (configs, _) =>
@@ -857,48 +878,48 @@ public class RcmSubscriptionManagerTests
                 RcmProducts.AsmFeatures));
 
         var tracer = CreateTracer();
-        var request = await CaptureRequest(manager, tracer);
+        var request = await CaptureRequest(poll, tracer);
 
         // Always returns the same object (mutated in-place)
-        var request2 = await CaptureRequest(manager, tracer);
+        var request2 = await CaptureRequest(poll, tracer);
         request2.Should().BeSameAs(request, "request should always be the same object (mutated in-place)");
 
         // Different tracer reference → tracer updated on the client
         var tracer2 = CreateTracer();
-        await CaptureRequest(manager, tracer2);
+        await CaptureRequest(poll, tracer2);
         request.Client.ClientTracer.Should().BeSameAs(tracer2, "tracer should be updated when reference changes");
 
         // Capabilities change → capabilities updated on the client
         var capsBefore = request.Client.Capabilities;
         manager.SetCapability(RcmCapabilitiesIndices.AsmActivation, true);
-        await CaptureRequest(manager, tracer2);
+        await CaptureRequest(poll, tracer2);
         request.Client.Capabilities.Should().NotBeEquivalentTo(capsBefore, "capabilities should be updated when they change");
 
         // Product keys change (new subscription) → products updated on the client
         var productsBefore = request.Client.Products;
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.LiveDebugging));
-        await CaptureRequest(manager, tracer2);
+        await CaptureRequest(poll, tracer2);
         request.Client.Products.Should().NotBeSameAs(productsBefore, "products should be updated when subscriptions change");
         request.Client.Products.Should().Contain(RcmProducts.LiveDebugging);
 
         // Process a response (changes targets version, backend state, applied configs)
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
         var response = CreateSingleProductResponse(new[] { entry }, targetsVersion: 5, backendClientState: "state-1");
-        await manager.SendRequest(tracer2, _ => Task.FromResult(response));
-        await CaptureRequest(manager, tracer2);
+        await poll(tracer2, _ => Task.FromResult(response));
+        await CaptureRequest(poll, tracer2);
         request.Client.State.TargetsVersion.Should().Be(5);
         request.Client.State.BackendClientState.Should().Be("state-1");
         request.CachedTargetFiles.Should().NotBeEmpty();
 
         // Steady state → values remain the same
         var targetFilesBefore = request.CachedTargetFiles;
-        await CaptureRequest(manager, tracer2);
+        await CaptureRequest(poll, tracer2);
         request.CachedTargetFiles.Should().BeSameAs(targetFilesBefore, "cached target files should not be rebuilt when nothing changed");
 
         // Config removed → cached target files cleared
         var emptyResponse = CreateSingleProductResponse(Array.Empty<ConfigEntry>(), targetsVersion: 6, backendClientState: "state-2");
-        await manager.SendRequest(tracer2, _ => Task.FromResult(emptyResponse));
-        await CaptureRequest(manager, tracer2);
+        await poll(tracer2, _ => Task.FromResult(emptyResponse));
+        await CaptureRequest(poll, tracer2);
         request.CachedTargetFiles.Should().BeEmpty();
 
         // Poll error → hasError set
@@ -915,14 +936,14 @@ public class RcmSubscriptionManagerTests
                 }
             },
         };
-        await manager.SendRequest(tracer2, _ => Task.FromResult(malformedResponse));
-        await CaptureRequest(manager, tracer2);
+        await poll(tracer2, _ => Task.FromResult(malformedResponse));
+        await CaptureRequest(poll, tracer2);
         request.Client.State.HasError.Should().BeTrue();
 
-        static async Task<GetRcmRequest> CaptureRequest(RcmSubscriptionManager mgr, RcmClientTracer t)
+        static async Task<GetRcmRequest> CaptureRequest(ManagedRcmPoll sender, RcmClientTracer tracer)
         {
             GetRcmRequest captured = null;
-            await mgr.SendRequest(t, req =>
+            await sender(tracer, req =>
             {
                 captured = req;
                 return Task.FromResult<GetRcmResponse>(null);
@@ -935,16 +956,17 @@ public class RcmSubscriptionManagerTests
     public async Task SendRequest_SkippedTransport_ReportsPendingDiagnosticOnNextSend()
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         var tracer = CreateTracer();
         const string Diagnostic = "fixture response could not be read";
-        await manager.SendRequest(
+        await poll(
             tracer,
             _ => Task.FromException<GetRcmResponse>(new RemoteConfigurationDeserializationException(new FormatException(Diagnostic))));
 
         var sentErrors = new List<string>();
-        await manager.SendRequest(tracer, Send, acceptResponse: static () => false);
-        await manager.SendRequest(tracer, Send);
-        await manager.SendRequest(tracer, Send);
+        await poll(tracer, Send, acceptResponse: static () => false);
+        await poll(tracer, Send);
+        await poll(tracer, Send);
 
         sentErrors.Should().Equal($"Error deserializing RCM request: {Diagnostic}", null);
 
@@ -956,11 +978,140 @@ public class RcmSubscriptionManagerTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
+    public async Task SendRequest_WithdrawsRawConfigInstalledBeforeRouteWithdrawal(bool replaceSubscription)
+    {
+        const string Product = "RAW_PRODUCT";
+        var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
+        var tracer = CreateTracer();
+        var entry = MakeConfig(Product, "raw", "active");
+        var owner = new object();
+        var routeCurrent = true;
+        string installedPath = null;
+        var withdrawn = new List<string>();
+        var requests = new List<(int Cached, int Receipts)>();
+        var otherDeliveries = 0;
+
+        var subscription = new Subscription(ApplyRaw, Product) { DeliveryOwner = owner };
+        manager.SubscribeToChanges(subscription);
+        manager.SubscribeToChanges(new Subscription(
+            (_, _) =>
+            {
+                otherDeliveries++;
+                return [];
+            },
+            Product));
+
+        await Poll(CreateSingleProductResponse([entry]));
+        installedPath.Should().Be(entry.Path);
+        routeCurrent = true;
+        if (replaceSubscription)
+        {
+            manager.Replace(subscription, new Subscription(ApplyRaw) { DeliveryOwner = owner, RemovalProductKeys = [Product] });
+        }
+
+        await Poll(new GetRcmResponse());
+        installedPath.Should().Be(entry.Path);
+
+        var withdrawal = CreateSingleProductResponse([], targetsVersion: 2);
+        await Poll(withdrawal);
+        installedPath.Should().BeNull();
+        await Poll(withdrawal);
+        withdrawn.Should().Equal(entry.Path);
+        requests.Should().Equal((0, 0), (0, 0), (0, 0), (0, 0));
+        otherDeliveries.Should().Be(0);
+
+        ApplyDetails[] ApplyRaw(Dictionary<string, List<RemoteConfiguration>> upserts, Dictionary<string, List<RemoteConfigurationPath>> removals)
+        {
+            if (upserts.TryGetValue(Product, out var configs))
+            {
+                installedPath = configs.Single().Path.Path;
+                routeCurrent = false;
+                return [ApplyDetails.FromOk(installedPath)];
+            }
+
+            foreach (var removal in removals[Product])
+            {
+                withdrawn.Add(removal.Path);
+                installedPath = null;
+            }
+
+            return [];
+        }
+
+        Task Poll(GetRcmResponse response) => poll(
+            tracer,
+            request =>
+            {
+                requests.Add((request.CachedTargetFiles.Count, request.Client.State.ConfigStates.Count));
+                return Task.FromResult(response);
+            },
+            acceptResponse: () => routeCurrent);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public async Task SendRequest_ReappliesRawRevisionWhenReceiptCommitIsDeclined(bool remove)
+    {
+        const string Product = "RAW_PRODUCT";
+        var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
+        var tracer = CreateTracer();
+        var previous = MakeConfig(Product, "raw", "previous");
+        var replacement = new ConfigEntry(previous.Path, Encoding.UTF8.GetBytes("replacement"), "sha256-replacement", 2);
+        var current = true;
+        var declineReceipt = false;
+        string installedHash = null;
+        var requestCaches = new List<(int Files, int Receipts)>();
+
+        manager.SubscribeToChanges(new Subscription(
+            (upserts, removals) =>
+            {
+                if (removals?.ContainsKey(Product) == true)
+                {
+                    installedHash = null;
+                }
+
+                var files = upserts.TryGetValue(Product, out var changed) ? changed : [];
+                foreach (var file in files)
+                {
+                    installedHash = file.Hashes["sha256"];
+                }
+
+                current = !declineReceipt;
+                return files.Select(file => ApplyDetails.FromOk(file.Path.Path)).ToArray();
+            },
+            Product));
+
+        await Poll(CreateSingleProductResponse([previous]));
+        installedHash.Should().Be(previous.Hash);
+        declineReceipt = true;
+        await Poll(CreateSingleProductResponse(remove ? [] : [replacement], targetsVersion: 2));
+        installedHash.Should().Be(remove ? null : replacement.Hash);
+
+        current = true;
+        declineReceipt = false;
+        await Poll(CreateSingleProductResponse([previous], targetsVersion: 3));
+        installedHash.Should().Be(previous.Hash);
+        requestCaches.Should().Equal((0, 0), (1, 1), (0, 0));
+
+        Task Poll(GetRcmResponse response) => poll(
+            tracer,
+            request =>
+            {
+                requestCaches.Add((request.CachedTargetFiles.Count, request.Client.State.ConfigStates.Count));
+                return Task.FromResult(response);
+            },
+            acceptResponse: () => current);
+    }
+
+    [Theory]
+    [CombinatorialData]
     public async Task SendRequest_ReconcilesSettingsPublishedBeforeRouteWithdrawal(bool rollback)
     {
         var manager = new RcmSubscriptionManager();
+        var poll = manager.CreateManagedPoller();
         var tracer = CreateTracer();
         const string Product = DynamicConfigurationManager.ProductName;
         var previous = MakeConfig(Product, "apm", "previous");
@@ -1013,7 +1164,7 @@ public class RcmSubscriptionManagerTests
         recorded.CachedTargetFiles.Should().BeEmpty();
         recorded.Client.State.ConfigStates.Should().BeEmpty();
 
-        Task Poll(GetRcmResponse response, bool captureRequest = false) => manager.SendRequest(
+        Task Poll(GetRcmResponse response, bool captureRequest = false) => poll(
             tracer,
             request =>
             {
@@ -1050,6 +1201,7 @@ public class RcmSubscriptionManagerTests
                 """{"task_type":"tracer_flare","args":{"case_id":"mock-case","hostname":"fixture.invalid","user_handle":"fixture@example.invalid"}}""");
             var response = CreateSingleProductResponse([entry]);
             var manager = new RcmSubscriptionManager();
+            var poll = manager.CreateManagedPoller();
             var requests = new TestRequestFactory();
             var flare = new TracerFlareManager(new DiscoveryServiceMock(), manager, NullTelemetryController.Instance, new TracerFlareApi(requests));
             var deliveries = 0;
@@ -1065,16 +1217,16 @@ public class RcmSubscriptionManagerTests
 
             var tracer = CreateTracer();
             Task delivery;
-            using (var claim = DebugLogReader.TryToCreateSentinelFile(logDirectory, id))
+            using (var claim = FlareClaimStore.TryToCreateSentinelFile(logDirectory, id))
             {
                 claim.Should().NotBeNull();
-                delivery = manager.SendRequest(tracer, _ => Task.FromResult(response));
-                DebugLogReader.RecordSentinelResult(claim, succeeded);
+                delivery = poll(tracer, _ => Task.FromResult(response));
+                FlareClaimStore.RecordSentinelResult(claim, succeeded);
             }
 
             await delivery;
             ulong? applyState = null;
-            await manager.SendRequest(
+            await poll(
                 tracer,
                 request =>
                 {

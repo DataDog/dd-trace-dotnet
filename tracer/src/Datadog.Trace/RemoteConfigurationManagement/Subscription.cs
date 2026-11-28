@@ -18,6 +18,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         Dictionary<string, List<RemoteConfigurationPath>>? removals,
         Func<Action, bool> tryCommit);
 
+    internal delegate bool DeliveryAdmission(
+        Dictionary<string, List<RemoteConfiguration>>? rawUpserts,
+        Dictionary<string, List<RemoteConfigurationPath>>? rawRemovals);
+
     internal delegate bool ChangeCommit(
         Dictionary<string, List<RemoteConfiguration>> upserts,
         Dictionary<string, List<RemoteConfigurationPath>>? removals,
@@ -51,9 +55,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         // Retained configuration may need a withdrawal after poll interest changes.
         internal IReadOnlyCollection<string>? RemovalProductKeys { get; init; }
 
-#if SHARED_REMOTE_CONFIG
         internal object? DeliveryOwner { get; init; }
-#endif
 
         internal bool HasSameProducts(string[] productKeys) => _productKeys.SetEquals(productKeys);
     }

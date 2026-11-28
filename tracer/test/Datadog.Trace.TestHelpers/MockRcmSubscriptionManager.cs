@@ -5,12 +5,10 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.TestHelpers;
 
@@ -53,6 +51,5 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
 
     public byte[] GetCapabilities() => [];
 
-    public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback, Func<bool>? acceptResponse = null, Action<Action>? commitResponse = null)
-        => Task.CompletedTask;
+    public ManagedRcmPoll CreateManagedPoller() => static (_, _, _, _) => Task.CompletedTask;
 }

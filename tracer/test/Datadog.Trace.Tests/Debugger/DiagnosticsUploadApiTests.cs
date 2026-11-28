@@ -52,8 +52,7 @@ public class DiagnosticsUploadApiTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task UsesOnlyDiscoveryForTheCurrentExporter(bool discoveryFirst)
     {
         const string endpoint = "debugger/v1/diagnostics";
@@ -78,12 +77,14 @@ public class DiagnosticsUploadApiTests
         var api = new DiagnosticsUploadApi(transport, _nullGitMetadataProvider);
         _discoveryServiceMock.TriggerChange(diagnosticsEndpoint: endpoint, discoverySettings: originalExporter);
         (await api.SendBatchAsync(_data)).Should().BeTrue();
+        var originalDiscovery = _discoveryServiceMock.CurrentConfiguration;
 
         var manual = new ManualInstrumentationConfigurationSource(
             new Dictionary<string, object> { ["DD_TRACE_AGENT_URL"] = new Uri("http://updated:8126") }, useDefaultSources: true);
         settings.UpdateManualConfigurationSettings(manual, new ConfigurationTelemetry()).Should().BeTrue();
         updatedExporter.Should().NotBeNull();
-        _discoveryServiceMock.TriggerChange(diagnosticsEndpoint: endpoint, discoverySettings: originalExporter);
+        var replay = _discoveryServiceMock.Callbacks.Should().ContainSingle().Which;
+        replay(originalDiscovery);
         if (!discoveryFirst)
         {
             (await api.SendBatchAsync(_data)).Should().BeFalse();
@@ -107,6 +108,8 @@ public class DiagnosticsUploadApiTests
         var settings = new TracerSettings(new DictionaryConfigurationSource(
             new Dictionary<string, string> { ["DD_TRACE_AGENT_URL"] = "http://original:8126" })).Manager;
         var originalExporter = settings.InitialExporterSettings;
+        _discoveryServiceMock.TriggerChange(diagnosticsEndpoint: endpoint, discoverySettings: originalExporter);
+        var originalDiscovery = _discoveryServiceMock.CurrentConfiguration;
         var updatedFactory = new TestRequestFactory();
         var manual = new ManualInstrumentationConfigurationSource(
             new Dictionary<string, object> { ["DD_TRACE_AGENT_URL"] = new Uri("http://updated:8126") }, useDefaultSources: true);
@@ -128,6 +131,9 @@ public class DiagnosticsUploadApiTests
             IsBackground = true
         };
         var discovery = new Mock<IDiscoveryService>();
+        discovery.SetupGet(service => service.CurrentConfiguration).Returns(() => _discoveryServiceMock.CurrentConfiguration);
+        discovery.Setup(service => service.TryRunWithCurrentConfiguration(It.IsAny<Func<AgentConfiguration, bool>>()))
+                 .Returns((Func<AgentConfiguration, bool> apply) => _discoveryServiceMock.TryRunWithCurrentConfiguration(apply));
         discovery.Setup(service => service.SubscribeToChanges(It.IsAny<Action<AgentConfiguration>>())).Callback<Action<AgentConfiguration>>(callback =>
         {
             _discoveryServiceMock.SubscribeToChanges(callback);
@@ -135,10 +141,10 @@ public class DiagnosticsUploadApiTests
             try
             {
                 // Discovery is either waiting to enter the transport or has returned to the settings publisher.
-                Assert.True(SpinWait.SpinUntil(
+                SpinWait.SpinUntil(
                     () => Volatile.Read(ref publishing) && (publisher.ThreadState & ThreadState.WaitSleepJoin) != 0,
-                    timeout));
-                _discoveryServiceMock.TriggerChange(diagnosticsEndpoint: endpoint, discoverySettings: originalExporter);
+                    timeout).Should().BeTrue();
+                callback(originalDiscovery);
             }
             finally
             {
@@ -150,9 +156,9 @@ public class DiagnosticsUploadApiTests
 
         using var transport = new DebuggerAgentTransport(
             settings, discovery.Object, exporter => ReferenceEquals(exporter, originalExporter) ? _testRequestFactory : updatedFactory);
-        Assert.True(publisher.Join(timeout));
-        Assert.True(updated);
-        Assert.True(exporterNotificationReleased);
+        publisher.Join(timeout).Should().BeTrue();
+        updated.Should().BeTrue();
+        exporterNotificationReleased.Should().BeTrue();
 
         var api = new DiagnosticsUploadApi(transport, _nullGitMetadataProvider);
         (await api.SendBatchAsync(_data)).Should().BeTrue();

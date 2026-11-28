@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -13,7 +14,20 @@ namespace Datadog.Trace.Tests.Agent;
 
 internal class DiscoveryServiceMock : IDiscoveryService
 {
+    private readonly object _publicationGate = new();
+    private AgentConfiguration _configuration;
+
     public List<Action<AgentConfiguration>> Callbacks { get; } = new();
+
+    public AgentConfiguration CurrentConfiguration => Volatile.Read(ref _configuration);
+
+    public bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply)
+    {
+        lock (_publicationGate)
+        {
+            return _configuration is { } configuration && apply(configuration);
+        }
+    }
 
     public void TriggerChange(
         string configurationEndpoint = "configurationEndpoint",
@@ -55,7 +69,13 @@ internal class DiscoveryServiceMock : IDiscoveryService
 
     public void TriggerChange(AgentConfiguration config)
     {
-        var callbacks = Callbacks.ToArray();
+        Action<AgentConfiguration>[] callbacks;
+        lock (_publicationGate)
+        {
+            Volatile.Write(ref _configuration, config);
+            callbacks = Callbacks.ToArray();
+        }
+
         foreach (var callback in callbacks)
         {
             callback(config);
@@ -64,12 +84,18 @@ internal class DiscoveryServiceMock : IDiscoveryService
 
     public void SubscribeToChanges(Action<AgentConfiguration> callback)
     {
-        Callbacks.Add(callback);
+        lock (_publicationGate)
+        {
+            Callbacks.Add(callback);
+        }
     }
 
     public void RemoveSubscription(Action<AgentConfiguration> callback)
     {
-        Callbacks.Remove(callback);
+        lock (_publicationGate)
+        {
+            Callbacks.Remove(callback);
+        }
     }
 
     public void SetCurrentConfigStateHash(string configStateHash)

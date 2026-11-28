@@ -28,7 +28,7 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         Directory.CreateDirectory(directory);
 
         var id = Guid.NewGuid().ToString();
-        using var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result = FlareClaimStore.TryToCreateSentinelFile(directory, id);
         result.Should().NotBeNull();
     }
 
@@ -41,8 +41,8 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         var id1 = Guid.NewGuid().ToString();
         var id2 = Guid.NewGuid().ToString();
 
-        using var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id1);
-        using var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id2);
+        using var result1 = FlareClaimStore.TryToCreateSentinelFile(directory, id1);
+        using var result2 = FlareClaimStore.TryToCreateSentinelFile(directory, id2);
 
         result1.Should().NotBeNull();
         result2.Should().NotBeNull();
@@ -56,8 +56,8 @@ public class DebugLogReaderTests(ITestOutputHelper output)
 
         var id = Guid.NewGuid().ToString();
 
-        using var result1 = DebugLogReader.TryToCreateSentinelFile(directory, id);
-        using var result2 = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result1 = FlareClaimStore.TryToCreateSentinelFile(directory, id);
+        using var result2 = FlareClaimStore.TryToCreateSentinelFile(directory, id);
 
         result1.Should().NotBeNull();
         result2.Should().BeNull();
@@ -76,7 +76,7 @@ public class DebugLogReaderTests(ITestOutputHelper output)
             var tryToCreateSentinel = () =>
             {
                 barrier.SignalAndWait();
-                using var claim = DebugLogReader.TryToCreateSentinelFile(directory, id);
+                using var claim = FlareClaimStore.TryToCreateSentinelFile(directory, id);
                 return claim is not null;
             };
 
@@ -94,7 +94,7 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         var id = Guid.NewGuid().ToString();
 
-        using var result = DebugLogReader.TryToCreateSentinelFile(directory, id);
+        using var result = FlareClaimStore.TryToCreateSentinelFile(directory, id);
 
         result.Should().BeNull();
     }
@@ -111,13 +111,13 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         {
             const string Id = "claim";
             var claimDirectory = Directory.CreateDirectory(Path.Combine(directory, $"dotnet-tracer-sentinel-{Id}.log")).FullName;
-            using var claim = DebugLogReader.TryToCreateSentinelFile(directory, Id);
+            using var claim = FlareClaimStore.TryToCreateSentinelFile(directory, Id);
             claim.Should().NotBeNull();
 
-            var outcome = DebugLogReader.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
+            var outcome = FlareClaimStore.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
             outcome.IsCompleted.Should().BeFalse();
             Directory.Move(claimDirectory, Path.Combine(directory, "moved-claim"));
-            DebugLogReader.RecordSentinelResult(claim!, true);
+            FlareClaimStore.RecordSentinelResult(claim!, true);
 
             (await outcome).Should().BeTrue();
         }
@@ -135,10 +135,10 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         try
         {
             var id = Guid.NewGuid().ToString();
-            using var claim = DebugLogReader.TryToCreateSentinelFile(directory, id);
+            using var claim = FlareClaimStore.TryToCreateSentinelFile(directory, id);
             claim.Should().NotBeNull();
 
-            var result = await DebugLogReader.WaitForSentinelResult(directory, id, TimeSpan.Zero);
+            var result = await FlareClaimStore.WaitForSentinelResult(directory, id, TimeSpan.Zero);
 
             result.Should().BeNull();
         }
@@ -164,13 +164,13 @@ public class DebugLogReaderTests(ITestOutputHelper output)
             async Task<bool> Claim()
             {
                 await start.Task;
-                using var claim = DebugLogReader.TryToCreateSentinelFile(directory, Id);
+                using var claim = FlareClaimStore.TryToCreateSentinelFile(directory, Id);
                 if (claim is not null)
                 {
-                    DebugLogReader.RecordSentinelResult(claim, succeeded: false);
+                    FlareClaimStore.RecordSentinelResult(claim, succeeded: false);
                 }
 
-                var result = await DebugLogReader.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
+                var result = await FlareClaimStore.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
                 result.Should().BeFalse();
                 return claim is not null;
             }
@@ -190,12 +190,12 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         {
             var id = Guid.NewGuid().ToString();
             Task<bool?> replay;
-            using (var claim = DebugLogReader.TryToCreateSentinelFile(directory, id))
+            using (var claim = FlareClaimStore.TryToCreateSentinelFile(directory, id))
             {
                 claim.Should().NotBeNull();
-                replay = DebugLogReader.WaitForSentinelResult(directory, id, TimeSpan.FromSeconds(5));
+                replay = FlareClaimStore.WaitForSentinelResult(directory, id, TimeSpan.FromSeconds(5));
                 replay.IsCompleted.Should().BeFalse();
-                DebugLogReader.RecordSentinelResult(claim!, succeeded: true);
+                FlareClaimStore.RecordSentinelResult(claim!, succeeded: true);
             }
 
             (await replay).Should().BeTrue();
@@ -273,7 +273,7 @@ public class DebugLogReaderTests(ITestOutputHelper output)
 
         // Create a sentinel file in the logs directory
         // It shouldn't be included in the archive
-        using var result = DebugLogReader.TryToCreateSentinelFile(directory, Guid.NewGuid().ToString());
+        using var result = FlareClaimStore.TryToCreateSentinelFile(directory, Guid.NewGuid().ToString());
         result.Should().NotBeNull();
         var interrupted = Path.Combine(directory, "dotnet-tracer-sentinel-stage-interrupted.log");
         File.WriteAllBytes(interrupted, [3]);

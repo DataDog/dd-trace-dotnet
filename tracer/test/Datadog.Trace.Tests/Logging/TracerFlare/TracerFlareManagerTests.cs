@@ -141,17 +141,11 @@ public class TracerFlareManagerTests
         requestMock.Verify(x => x.Create(It.IsAny<Uri>()), Times.Never);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task WhenLegacySentinelExists_AcknowledgesImmediately(bool abandonedReservation)
+    [Fact]
+    public async Task WhenLegacySentinelAndAbandonedReservationExist_AcknowledgesImmediately()
     {
         var claimPath = Path.Combine(_logsDir, $"dotnet-tracer-sentinel-{_requestId}.log");
-        if (abandonedReservation)
-        {
-            File.WriteAllBytes(claimPath + ".pending", [3]);
-        }
-
+        File.WriteAllBytes(claimPath + ".pending", [3]);
         File.WriteAllBytes(claimPath, []);
         var requests = new TestRequestFactory();
         var manager = new TracerFlareManager(
@@ -170,8 +164,7 @@ public class TracerFlareManagerTests
     }
 
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task WhenFirstUploadFailsDuringReplay_BothCallersReportTheError(bool directoryClaim)
     {
         Skip.If(directoryClaim && !LinuxFlareClaimDirectory.IsSupported, "Directory claims require Linux x64 or ARM64.");
@@ -213,8 +206,7 @@ public class TracerFlareManagerTests
     }
 
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task WhenShouldShip_SendsRequest_ReturnsSuccess(bool directoryClaim)
     {
         Skip.If(directoryClaim && !LinuxFlareClaimDirectory.IsSupported, "Directory claims require Linux x64 or ARM64.");

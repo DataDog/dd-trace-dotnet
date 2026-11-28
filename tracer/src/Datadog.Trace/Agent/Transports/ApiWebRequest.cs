@@ -188,16 +188,14 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         private Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task> writeBody, CancellationToken cancellationToken = default)
-        {
-            if (!cancellationToken.CanBeCanceled)
-            {
-                return SendAsync(method, contentType, contentEncoding, state, writeBody, new CancellationTokenSource(_request.Timeout));
-            }
-
-            var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None);
-            deadline.CancelAfter(_request.Timeout);
-            return SendAsync(method, contentType, contentEncoding, state, writeBody, deadline, cancellationToken);
-        }
+            => SendAsync(
+                method,
+                contentType,
+                contentEncoding,
+                state,
+                writeBody,
+                RequestDeadline.Create(TimeSpan.FromMilliseconds(_request.Timeout), cancellationToken),
+                cancellationToken);
 
         [TestingOnly]
         internal Task<IApiResponse> SendAsync(string method, string? contentType, string? contentEncoding, Func<Stream, Task>? writeBody, CancellationTokenSource cts)

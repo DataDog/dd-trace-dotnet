@@ -32,7 +32,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
     private const string ResponseTooLarge = "Agent Remote Configuration response exceeded the size limit";
     private const int MaxPooledResponseBytes = 256 * 1024;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NativeAgentPoller>();
-    private static readonly ArrayPool<byte> ResponseBuffers = ArrayPool<byte>.Create(MaxPooledResponseBytes, maxArraysPerBucket: 1);
+    private static readonly ArrayPool<byte> TransportBuffers = ArrayPool<byte>.Create(MaxPooledResponseBytes, maxArraysPerBucket: 1);
 
     private readonly string _libraryPath = libraryPath;
     private readonly RcmSubscriptionManager _subscriptions = subscriptions;
@@ -80,6 +80,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
         var reactor = _reactor ?? Activate();
         var pollOutstanding = false;
+        ArraySegment<byte> request = default;
         try
         {
             var (subscriptions, owner) = PreparePoll(reactor, tracer);
@@ -102,7 +103,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             if (firstEvent != 0)
             {
                 var http = ReadEvent(reactor, firstEvent, "http");
-                var bytes = reactor.Take(http.GetProperty("body").GetInt32());
+                request = reactor.TakePooled(http.GetProperty("body").GetInt32(), TransportBuffers);
                 if (stop.IsCompleted || !isCurrent())
                 {
                     reactor.Check(reactor.Cancel(_client));
@@ -115,7 +116,8 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 var timerId = timer.GetProperty("id").GetInt32();
                 using var cancellation = new CancellationTokenSource();
                 var deadline = Task.Delay(timer.GetProperty("delayMs").GetInt32(), cancellation.Token);
-                var pending = Fetch(api, endpoint, bytes, cancellation.Token);
+                var pending = Fetch(api, endpoint, request, cancellation.Token);
+                request = default;
                 var completed = pending.IsCompleted ? pending : await Task.WhenAny(pending, deadline, stop).ConfigureAwait(false);
                 cancellation.Cancel();
                 if (stop.IsCompleted || !isCurrent() || completed == deadline)
@@ -151,7 +153,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 }
                 else
                 {
-                    reactor.CompleteHttp(_client, operation, reply.Body.Span, reply.Status);
+                    reply.Complete(reactor, _client, operation);
                 }
 
                 DrainEvents(reactor);
@@ -230,6 +232,10 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
             throw;
         }
+        finally
+        {
+            ReturnBuffer(request.Array);
+        }
     }
 
     private static JsonElement ReadEvent(Reactor reactor, int handle, string kind)
@@ -267,16 +273,20 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         output.Advance(4 + length);
     }
 
-    private static RemoteConfiguration ReadFile(Reactor reactor, int view, int index, RemoteConfigurationPath path, JsonElement file)
+    private static ChangeRecord<TFile>[] Describe<TFile>(Reactor reactor, int view)
+        => reactor.TakeJson<BatchDescriptor<TFile>>(reactor.Check(reactor.Describe(view))).Records
+           ?? throw new InvalidDataException("Remote Config view is missing its records");
+
+    private static RemoteConfiguration ReadFile(Reactor reactor, int view, int index, RemoteConfigurationPath path, FileDescriptor file)
     {
         var content = reactor.Take(reactor.Check(reactor.File(view, index, 0)));
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var pair in file.GetProperty("hashes").EnumerateArray())
+        foreach (var pair in file.Hashes)
         {
-            hashes[pair[0].GetString()!] = pair[1].GetString()!;
+            hashes[pair[0]] = pair[1];
         }
 
-        var version = long.Parse(file.GetProperty("version").GetString()!, CultureInfo.InvariantCulture);
+        var version = long.Parse(file.Version, CultureInfo.InvariantCulture);
         return new RemoteConfiguration(path, content, content.Length, hashes, version);
     }
 
@@ -291,13 +301,13 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         list.Add(entry);
     }
 
-    private static async Task<Reply> Fetch(IRemoteConfigurationApi api, string endpoint, byte[] bytes, CancellationToken cancellationToken)
+    private static async Task<Reply> Fetch(IRemoteConfigurationApi api, string endpoint, ArraySegment<byte> request, CancellationToken cancellationToken)
     {
         byte[]? rented = null;
+        List<ArraySegment<byte>>? rentedSegments = null;
         try
         {
-            var body = new ArraySegment<byte>(bytes);
-            using var response = await api.PostStreamingAsync(endpoint, body, cancellationToken).ConfigureAwait(false);
+            using var response = await api.PostStreamingAsync(endpoint, request, cancellationToken).ConfigureAwait(false);
             var status = response.StatusCode;
             if (status is < 200 or >= 300)
             {
@@ -345,19 +355,27 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 int count;
                 while ((count = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) != 0)
                 {
-                    if (count > Reactor.MaxBufferBytes - used)
+                    var total = used + count;
+                    if (total > MaxPooledResponseBytes)
                     {
-                        ReturnResponseBuffer(rented);
-                        return Reply.TooLarge;
+                        rentedSegments = [new(storage, 0, used)];
+                        rented = null;
+                        var reply = await ReadSegmentedReply(stream, status, rentedSegments, buffer, count, cancellationToken).ConfigureAwait(false);
+                        if (reply.Failure != FetchFailure.None)
+                        {
+                            ReturnResponseSegments(rentedSegments);
+                            rentedSegments = null;
+                        }
+
+                        return reply;
                     }
 
-                    var total = used + count;
                     if (total > storage.Length)
                     {
-                        var capacity = Math.Min(Reactor.MaxBufferBytes, Math.Max(total, storage.Length * 2));
+                        var capacity = Math.Min(MaxPooledResponseBytes, Math.Max(total, storage.Length * 2));
                         var expanded = AllocateResponseBuffer(capacity, out var nextRented);
                         storage.AsSpan(0, used).CopyTo(expanded);
-                        ReturnResponseBuffer(rented);
+                        ReturnBuffer(rented);
                         rented = nextRented;
                         storage = expanded;
                     }
@@ -375,7 +393,12 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         }
         catch (Exception exception)
         {
-            ReturnResponseBuffer(rented);
+            ReturnBuffer(rented);
+            if (rentedSegments is not null)
+            {
+                ReturnResponseSegments(rentedSegments);
+            }
+
             if (exception is IOException or HttpRequestException or OperationCanceledException)
             {
                 return Reply.Unavailable;
@@ -383,13 +406,74 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
             throw;
         }
+        finally
+        {
+            ReturnBuffer(request.Array);
+        }
+    }
+
+    private static async Task<Reply> ReadSegmentedReply(
+        Stream stream,
+        int status,
+        List<ArraySegment<byte>> segments,
+        byte[] scratch,
+        int firstRead,
+        CancellationToken cancellationToken)
+    {
+        byte[]? segment = null;
+        try
+        {
+            segment = TransportBuffers.Rent(MaxPooledResponseBytes);
+            scratch.AsSpan(0, firstRead).CopyTo(segment);
+            var used = firstRead;
+            var total = segments[0].Count + firstRead;
+
+            while (total < Reactor.MaxBufferBytes)
+            {
+                if (used == segment.Length)
+                {
+                    segments.Add(new ArraySegment<byte>(segment));
+                    segment = null;
+                    segment = TransportBuffers.Rent(MaxPooledResponseBytes);
+                    used = 0;
+                }
+
+                var remaining = Math.Min(segment.Length - used, Reactor.MaxBufferBytes - total);
+                var count = await stream.ReadAsync(segment.AsMemory(used, remaining), cancellationToken).ConfigureAwait(false);
+                if (count == 0)
+                {
+                    break;
+                }
+
+                used += count;
+                total += count;
+            }
+
+            if (total == Reactor.MaxBufferBytes &&
+                await stream.ReadAsync(scratch.AsMemory(0, 1), cancellationToken).ConfigureAwait(false) != 0)
+            {
+                return Reply.TooLarge;
+            }
+
+            if (used != 0)
+            {
+                segments.Add(new ArraySegment<byte>(segment, 0, used));
+                segment = null;
+            }
+
+            return new Reply(status, default, Segments: segments, SegmentedLength: total);
+        }
+        finally
+        {
+            ReturnBuffer(segment);
+        }
     }
 
     private static byte[] AllocateResponseBuffer(int size, out byte[]? rented)
     {
         if (size <= MaxPooledResponseBytes)
         {
-            rented = ResponseBuffers.Rent(size);
+            rented = TransportBuffers.Rent(size);
             return rented;
         }
 
@@ -397,11 +481,19 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         return new byte[size];
     }
 
-    private static void ReturnResponseBuffer(byte[]? buffer)
+    private static void ReturnBuffer(byte[]? buffer)
     {
         if (buffer is not null)
         {
-            ResponseBuffers.Return(buffer);
+            TransportBuffers.Return(buffer);
+        }
+    }
+
+    private static void ReturnResponseSegments(List<ArraySegment<byte>> segments)
+    {
+        foreach (var segment in segments)
+        {
+            ReturnBuffer(segment.Array);
         }
     }
 
@@ -425,7 +517,6 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         _activationFailed = true;
         var reactor = Reactor.OpenNative(_libraryPath);
         _reactor = reactor;
-        _subscriptions.RetireManagedSession();
         _activationFailed = false;
         return reactor;
     }
@@ -452,7 +543,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                     language = "dotnet",
                     tracerVersion = tracer.TracerVersion ?? string.Empty,
                     url = "http://127.0.0.1",
-                    timeoutMs = 15_000,
+                    timeoutMs = RemoteConfigurationApiFactory.AgentTimeoutMs,
                 },
                 reactor.Open);
         }
@@ -521,7 +612,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         if (owner is not null)
         {
             var calls = _watchCalls ??= reactor.BindWatch();
-            _watch = reactor.WithBytes("{\"delivery\":\"latestState\",\"products\":[\"APM_TRACING\"]}"u8, options => calls.Open(_client, options));
+            _watch = reactor.WithJson(new { delivery = "latestState", products = new[] { ApmProduct } }, options => calls.Open(_client, options));
             _watchOwner = owner;
         }
 
@@ -551,11 +642,10 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             var configuration = new List<RemoteConfiguration>();
             try
             {
-                var desired = reactor.TakeJson(reactor.Check(reactor.Describe(snapshot))).GetProperty("records");
-                foreach (var record in desired.EnumerateArray())
+                foreach (var record in Describe<FileDescriptor>(reactor, snapshot))
                 {
-                    var file = record.GetProperty("file");
-                    var path = RemoteConfigurationPath.FromPath(file.GetProperty("path").GetString()!);
+                    var file = record.File;
+                    var path = RemoteConfigurationPath.FromPath(file.Path);
                     configuration.Add(ReadFile(reactor, snapshot, configuration.Count, path, file));
                 }
             }
@@ -564,7 +654,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 reactor.Check(reactor.Release(snapshot));
             }
 
-            var records = reactor.TakeJson(reactor.Check(reactor.Describe(view))).GetProperty("records");
+            var records = Describe<PathDescriptor>(reactor, view);
             var rejections = new Dictionary<string, string>(StringComparer.Ordinal);
             string? failure = null;
             if (!CanInstall())
@@ -590,7 +680,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 return;
             }
 
-            var count = records.GetArrayLength();
+            var count = records.Length;
             var limit = (Reactor.MaxBufferBytes - 5 - (9 * count)) / (count + 1);
             var plan = new ArrayBufferWriter<byte>(1 + (5 * count));
             plan.GetSpan(1)[0] = failure is null ? (byte)0 : (byte)2;
@@ -601,11 +691,11 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             }
 
             var index = 0;
-            foreach (var record in records.EnumerateArray())
+            foreach (var record in records)
             {
-                if (record.GetProperty("kind").GetString() == "upsert")
+                if (record.Kind == "upsert")
                 {
-                    var path = record.GetProperty("file").GetProperty("path").GetString()!;
+                    var path = record.File.Path;
                     var rejected = rejections.TryGetValue(path, out var error);
                     var entry = plan.GetSpan(5);
                     BinaryPrimitives.WriteInt32LittleEndian(entry, index);
@@ -740,12 +830,12 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         var upserts = new Dictionary<string, List<RemoteConfiguration>>();
         var removals = new Dictionary<string, List<RemoteConfigurationPath>>();
         var sourceIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var records = reactor.TakeJson(reactor.Check(reactor.Describe(batch))).GetProperty("records");
+        var records = Describe<FileDescriptor>(reactor, batch);
         var index = 0;
-        foreach (var record in records.EnumerateArray())
+        foreach (var record in records)
         {
-            var file = record.GetProperty("file");
-            var path = RemoteConfigurationPath.FromPath(file.GetProperty("path").GetString()!);
+            var file = record.File;
+            var path = RemoteConfigurationPath.FromPath(file.Path);
             if ((_watchOwner is not null && path.Product == ApmProduct) ||
                 (replayProducts is not null && !replayProducts.Contains(path.Product)))
             {
@@ -753,7 +843,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 continue;
             }
 
-            switch (record.GetProperty("kind").GetString())
+            switch (record.Kind)
             {
                 case "remove":
                     Add(removals, path.Product, path);
@@ -773,7 +863,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         var assignedPaths = completeAssignment ? new HashSet<string>(sourceIndices.Keys, StringComparer.Ordinal) : null;
         var interrupted = false;
         var results = await _subscriptions.ApplyChanges(
-                          upserts, removals, _watchOwner, subscriptions, CanDispatch, assignedPaths, replayProducts, CommitChanges).ConfigureAwait(false);
+                          upserts, removals, (_, _) => CanDispatch(), CommitChanges, _watchOwner, subscriptions, assignedPaths, replayProducts).ConfigureAwait(false);
         if (!CanDispatch())
         {
             return false;
@@ -857,12 +947,45 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
     private readonly record struct Target(string Service, string Env, string AppVersion, IReadOnlyCollection<string> ProcessTags);
 
-    private readonly record struct Reply(int Status, ReadOnlyMemory<byte> Body, FetchFailure Failure = FetchFailure.None, byte[]? Rented = null) : IDisposable
+    private readonly record struct BatchDescriptor<TFile>(ChangeRecord<TFile>[] Records);
+
+    private readonly record struct ChangeRecord<TFile>(string Kind, TFile File);
+
+    private readonly record struct FileDescriptor(string Path, string Version, string[][] Hashes);
+
+    private readonly record struct PathDescriptor(string Path);
+
+    private readonly record struct Reply(
+        int Status,
+        ReadOnlyMemory<byte> Body,
+        FetchFailure Failure = FetchFailure.None,
+        byte[]? Rented = null,
+        List<ArraySegment<byte>>? Segments = null,
+        int SegmentedLength = 0) : IDisposable
     {
         public static readonly Reply Unavailable = new(0, default, FetchFailure.Transport);
         public static readonly Reply TooLarge = new(0, default, FetchFailure.TooLarge);
 
-        public void Dispose() => ReturnResponseBuffer(Rented);
+        public void Complete(Reactor reactor, int client, int operation)
+        {
+            if (Segments is { } segments)
+            {
+                reactor.CompleteHttp(client, operation, segments, SegmentedLength, Status);
+            }
+            else
+            {
+                reactor.CompleteHttp(client, operation, Body.Span, Status);
+            }
+        }
+
+        public void Dispose()
+        {
+            ReturnBuffer(Rented);
+            if (Segments is { } segments)
+            {
+                ReturnResponseSegments(segments);
+            }
+        }
     }
 
     private sealed record Identity(string ClientId, string RuntimeId, string[] Tags, string[] ExtraServices);

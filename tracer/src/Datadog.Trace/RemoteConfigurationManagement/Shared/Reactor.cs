@@ -6,9 +6,13 @@
 #nullable enable
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+#if SHARED_REMOTE_CONFIG
+using Datadog.Trace.SourceGenerators;
+#endif
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Shared;
 
@@ -79,12 +83,18 @@ internal sealed class Reactor : IDisposable
 
     internal Func<int, int> Cancel { get; }
 
+#if SHARED_REMOTE_CONFIG
+    [TestingAndPrivateOnly]
+#endif
     internal Func<int, int> Close { get; }
 
     public void Dispose() => _binding.Dispose();
 
     internal static Reactor OpenNative(string path) => OpenBinding(new NativeReactorBinding(path));
 
+#if SHARED_REMOTE_CONFIG
+    [TestingAndPrivateOnly]
+#endif
     internal static Reactor OpenBinding(IReactorBinding binding)
     {
         try
@@ -128,41 +138,30 @@ internal sealed class Reactor : IDisposable
     }
 
     internal int WithJson<TValue>(TValue value, Func<int, int> operation)
-    {
-        var handle = Write(JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions));
-        try
-        {
-            return Check(operation(handle));
-        }
-        finally
-        {
-            Free(handle);
-        }
-    }
+        => WithBytes(JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions), operation);
 
     internal void CompleteHttp(int client, int operation, ReadOnlySpan<byte> input, int statusCode = 200)
+        => ReplyHttp(client, operation, Write(input), statusCode);
+
+    internal void CompleteHttp(int client, int operation, List<ArraySegment<byte>> segments, int length, int statusCode)
     {
-        var metadata = Write(statusCode == 200 ? "{\"status\":200}"u8 : JsonSerializer.SerializeToUtf8Bytes(new { status = statusCode }));
+        var body = Check(_allocate(length));
         try
         {
-            var body = Write(input);
-            var status = _reply(client, operation, metadata, body);
-            if (status == -1)
+            var destination = _binding.BorrowWrite(body, length);
+            foreach (var segment in segments)
             {
-                try
-                {
-                    Check(status);
-                }
-                finally
-                {
-                    Free(body);
-                }
+                segment.AsSpan().CopyTo(destination);
+                destination = destination[segment.Count..];
             }
         }
-        finally
+        catch
         {
-            Free(metadata);
+            Free(body);
+            throw;
         }
+
+        ReplyHttp(client, operation, body, statusCode);
     }
 
     internal int WithText(string value, Func<int, int> operation)
@@ -185,11 +184,13 @@ internal sealed class Reactor : IDisposable
 
     internal WatchOperations BindWatch() => new(_binding);
 
-    internal JsonElement TakeJson(int handle)
+    internal JsonElement TakeJson(int handle) => TakeJson<JsonElement>(handle);
+
+    internal TValue TakeJson<TValue>(int handle)
     {
         try
         {
-            return JsonSerializer.Deserialize<JsonElement>(Read(handle));
+            return JsonSerializer.Deserialize<TValue>(Read(handle), JsonOptions)!;
         }
         finally
         {
@@ -209,9 +210,73 @@ internal sealed class Reactor : IDisposable
         }
     }
 
+    internal ArraySegment<byte> TakePooled(int handle, ArrayPool<byte> pool)
+    {
+        byte[]? bytes = null;
+        try
+        {
+            int length;
+            try
+            {
+                var input = Read(handle);
+                length = input.Length;
+                bytes = pool.Rent(length);
+                input.CopyTo(bytes);
+            }
+            finally
+            {
+                Free(handle);
+            }
+
+            return new ArraySegment<byte>(bytes, 0, length);
+        }
+        catch
+        {
+            if (bytes is not null)
+            {
+                pool.Return(bytes);
+            }
+
+            throw;
+        }
+    }
+
+#if SHARED_REMOTE_CONFIG
+    [TestingAndPrivateOnly]
+#endif
     internal byte[] Copy(int handle) => Read(handle).ToArray();
 
     internal void Free(int handle) => Check(_free(handle));
+
+    private void ReplyHttp(int client, int operation, int body, int statusCode)
+    {
+        var metadata = 0;
+        var transferred = false;
+        try
+        {
+            metadata = Write(statusCode == 200 ? "{\"status\":200}"u8 : JsonSerializer.SerializeToUtf8Bytes(new { status = statusCode }));
+            // The reactor takes the body on success. Metadata stays with the caller.
+            Check(_reply(client, operation, metadata, body));
+            transferred = true;
+        }
+        finally
+        {
+            try
+            {
+                if (!transferred)
+                {
+                    Free(body);
+                }
+            }
+            finally
+            {
+                if (metadata != 0)
+                {
+                    Free(metadata);
+                }
+            }
+        }
+    }
 
     private ReadOnlySpan<byte> Read(int handle)
     {

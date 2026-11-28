@@ -112,7 +112,7 @@ namespace Datadog.Trace.Logging
                 }
 
                 CleanInstrumentationVerificationLogFiles(logsDirectory, date);
-                DebugLogReader.CleanExpiredClaimDirectories(logsDirectory, date);
+                FlareClaimStore.CleanExpiredClaimDirectories(logsDirectory, date);
             }
             catch
             {

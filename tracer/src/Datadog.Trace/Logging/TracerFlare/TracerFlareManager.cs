@@ -301,10 +301,10 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                 return emailError.Value;
             }
 
-            using var sentinel = DebugLogReader.TryToCreateSentinelFile(fileLogDirectory, configId);
+            using var sentinel = FlareClaimStore.TryToCreateSentinelFile(fileLogDirectory, configId);
             if (sentinel is null)
             {
-                var uploadSucceeded = await DebugLogReader.WaitForSentinelResult(fileLogDirectory, configId, UploadReceiptWait).ConfigureAwait(false);
+                var uploadSucceeded = await FlareClaimStore.WaitForSentinelResult(fileLogDirectory, configId, UploadReceiptWait).ConfigureAwait(false);
                 return uploadSucceeded switch
                 {
                     true => ApplyDetails.FromOk(configPath),
@@ -321,7 +321,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                                              hostname: hostname)
                                         .ConfigureAwait(false);
 
-            DebugLogReader.RecordSentinelResult(sentinel, result.Key);
+            FlareClaimStore.RecordSentinelResult(sentinel, result.Key);
             if (result.Key)
             {
                 return ApplyDetails.FromOk(configPath);

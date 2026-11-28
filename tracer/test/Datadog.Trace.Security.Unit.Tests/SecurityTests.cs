@@ -35,7 +35,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void EquivalentProductInterestsKeepTheExistingSubscription()
         {
             var source = new NameValueConfigurationSource(new NameValueCollection { [ConfigurationKeys.AppSec.Enabled] = "false" });
-            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new SecuritySettings(source, new ConfigurationTelemetry());
             var subscriptions = new MockRcmSubscriptionManager();
             using var security = new AppSec.Security(settings, rcmSubscriptionManager: subscriptions);
 

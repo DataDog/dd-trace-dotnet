@@ -52,7 +52,7 @@ namespace Datadog.Trace.Configuration
                 InstallChanges = (upserts, removals, tryCommit) => ConfigurationUpdated(owner, upserts, removals, tryCommit),
 #if SHARED_REMOTE_CONFIG
                 InstallSnapshot = _subscriptionManager is RcmSubscriptionManager
-                                      ? (files, rejections, generation, tryCommit) => ApplyMergedConfiguration(owner, files, rejections, generation, tryCommit)
+                                      ? (files, rejections, generation, tryCommit) => ApplyMergedConfiguration(owner, files, tryCommit, rejections, generation)
                                       : null,
 #endif
             };
@@ -264,7 +264,7 @@ namespace Datadog.Trace.Configuration
                 var candidate = new Dictionary<string, RemoteConfiguration>(_activeConfigurations);
                 var valuesToApply = CombineApmTracingConfiguration(candidate, configByProduct, removedConfigByProduct, applyDetailsResult);
 
-                return ApplyMergedConfiguration(owner, valuesToApply, tryCommit: Commit) ? [..applyDetailsResult] : null;
+                return ApplyMergedConfiguration(owner, valuesToApply, Commit) ? [..applyDetailsResult] : null;
 
                 bool Commit(Action publishSettings)
                 {
@@ -293,9 +293,9 @@ namespace Datadog.Trace.Configuration
         private bool ApplyMergedConfiguration(
             TracerManager owner,
             List<RemoteConfiguration> remoteConfigurations,
+            Func<Action, bool> tryCommit,
             Dictionary<string, string>? rejections = null,
-            long targetGeneration = 0,
-            Func<Action, bool>? tryCommit = null)
+            long targetGeneration = 0)
         {
             var currentSettings = owner.PerTraceSettings.Settings;
             var accepted = rejections is not null ? new Dictionary<string, ApmTracingConfig>(remoteConfigurations.Count, StringComparer.Ordinal) : null;

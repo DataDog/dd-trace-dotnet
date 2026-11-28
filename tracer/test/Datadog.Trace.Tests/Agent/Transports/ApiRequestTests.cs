@@ -86,8 +86,7 @@ public class ApiRequestTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task ApiWebRequest_GetAsync_AbortedMidFlight_ExcludesUserInfo(bool includeUserInfo)
     {
         using var listener = new BlackHoleTcpListener();

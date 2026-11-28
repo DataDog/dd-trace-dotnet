@@ -15,6 +15,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// </summary>
     internal interface IDiscoveryService
     {
+        AgentConfiguration? CurrentConfiguration { get; }
+
         /// <summary>
         /// Subscribe to changes in the agent configuration. The callback should exit quickly when called.
         /// If an <see cref="AgentConfiguration"/> has already been fetched when <see cref="SubscribeToChanges"/>
@@ -33,6 +35,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         /// <param name="configStateHash">The sha256 hash of the config state, as returned by the agent</param>
         void SetCurrentConfigStateHash(string configStateHash);
+
+        // Hold publication through the synchronous effect. Subscribers run outside this guard.
+        bool TryRunWithCurrentConfiguration(Func<AgentConfiguration, bool> apply);
 
         Task DisposeAsync();
     }

@@ -27,12 +27,23 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ContainerMetadata _containerMetadata;
+#if SHARED_REMOTE_CONFIG
+        private readonly IStreamingApiRequestFactory? _streamingFactory;
+#endif
 
         internal RemoteConfigurationApi(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
             _containerMetadata = ContainerMetadata.Instance;
         }
+
+#if SHARED_REMOTE_CONFIG
+        internal RemoteConfigurationApi(IStreamingApiRequestFactory streamingFactory)
+            : this(apiRequestFactory: streamingFactory)
+        {
+            _streamingFactory = streamingFactory;
+        }
+#endif
 
         public async Task<GetRcmResponse?> GetConfigs(GetRcmRequest request, string endpoint, CancellationToken cancellationToken = default)
         {
@@ -72,9 +83,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         }
 
 #if SHARED_REMOTE_CONFIG
-        // The streaming factory uses HttpClient for TCP, named pipes, and Unix sockets.
         public Task<IApiResponse> PostStreamingAsync(string endpoint, ArraySegment<byte> body, CancellationToken cancellationToken)
-            => ((HttpClientRequest)CreateRequest(endpoint)).PostStreamingAsync(body, MimeTypes.Json, cancellationToken);
+        {
+            var factory = _streamingFactory ?? throw new InvalidOperationException("The Remote Configuration transport does not support streaming.");
+            var request = factory.CreateStreamingRequest(factory.GetEndpoint(endpoint));
+            request.AddContainerMetadataHeaders(_containerMetadata);
+            return request.PostStreamingAsync(body, MimeTypes.Json, cancellationToken);
+        }
 #endif
 
         private IApiRequest CreateRequest(string endpoint)
