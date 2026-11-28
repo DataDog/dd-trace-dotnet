@@ -85,12 +85,15 @@ public class ApiRequestTests
         }
     }
 
-    [Fact]
-    public async Task ApiWebRequest_GetAsync_AbortedMidFlight_ThrowsOperationCanceledException()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ApiWebRequest_GetAsync_AbortedMidFlight_ExcludesUserInfo(bool includeUserInfo)
     {
         using var listener = new BlackHoleTcpListener();
         using var cts = new CancellationTokenSource();
-        var request = CreateWebRequest(listener.Port);
+        var userInfo = includeUserInfo ? "fixture-user:fixture-password@" : string.Empty;
+        var request = new ApiWebRequest(WebRequest.CreateHttp($"http://{userInfo}127.0.0.1:{listener.Port}/"));
 
         try
         {
@@ -100,7 +103,9 @@ public class ApiRequestTests
             cts.Cancel();
 
             Func<Task> act = () => pending;
-            await act.Should().ThrowAsync<OperationCanceledException>();
+            var error = await act.Should().ThrowAsync<OperationCanceledException>();
+            error.Which.Message.Should().Contain($"http://127.0.0.1:{listener.Port}/")
+                 .And.NotContain("fixture-user").And.NotContain("fixture-password");
         }
         finally
         {

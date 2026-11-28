@@ -84,7 +84,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         {
             var (subscriptions, owner) = PreparePoll(reactor, tracer);
             if (!_reconcile && _rawReplayProducts is { Count: > 0 } products &&
-                !await ApplySnapshot(reactor, subscriptions, stop, isCurrent, products).ConfigureAwait(false))
+                !await ApplySnapshot(reactor, subscriptions, stop, isCurrent, tryCommitResponse, products).ConfigureAwait(false))
             {
                 if (stop.IsCompleted || !isCurrent())
                 {
@@ -177,7 +177,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                     }
                     else if (!_reconcile && !CanSkipRawBatch(result))
                     {
-                        await ApplyBatch(reactor, batch, subscriptions, stop, isCurrent).ConfigureAwait(false);
+                        await ApplyBatch(reactor, batch, subscriptions, stop, isCurrent, tryCommitResponse).ConfigureAwait(false);
                     }
                 }
                 finally
@@ -189,13 +189,13 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             {
                 if (fetchFailure == FetchFailure.Transport)
                 {
-                    Log.Warning("Failed to read the Agent's Remote Configuration response");
+                    Log.Debug("Failed to read the Agent's Remote Configuration response");
                     return;
                 }
 
                 if (fetchFailure == FetchFailure.TooLarge)
                 {
-                    Log.Error(ResponseTooLarge);
+                    Log.Debug(ResponseTooLarge);
                     return;
                 }
 
@@ -206,7 +206,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             {
                 if (_reconcile)
                 {
-                    await ApplySnapshot(reactor, subscriptions, stop, isCurrent).ConfigureAwait(false);
+                    await ApplySnapshot(reactor, subscriptions, stop, isCurrent, tryCommitResponse).ConfigureAwait(false);
                 }
 
                 if (!_resetTarget && owner is { InstallSnapshot: { } install } && !stop.IsCompleted && isCurrent())
@@ -320,7 +320,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 }
 
                 var size = (int)length;
-                var storage = size <= MaxPooledResponseBytes ? (rented = ResponseBuffers.Rent(size)) : new byte[size];
+                var storage = AllocateResponseBuffer(size, out rented);
                 var destination = storage.AsMemory(0, size);
                 var used = 0;
                 while (used < destination.Length)
@@ -337,22 +337,36 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
                 return new Reply(status, destination[..used], Rented: rented);
             }
 
-            using var output = new MemoryStream();
             var buffer = ArrayPool<byte>.Shared.Rent(8192);
             try
             {
+                var storage = Array.Empty<byte>();
+                var used = 0;
                 int count;
                 while ((count = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) != 0)
                 {
-                    if (count > Reactor.MaxBufferBytes - output.Length)
+                    if (count > Reactor.MaxBufferBytes - used)
                     {
+                        ReturnResponseBuffer(rented);
                         return Reply.TooLarge;
                     }
 
-                    output.Write(buffer, 0, count);
+                    var total = used + count;
+                    if (total > storage.Length)
+                    {
+                        var capacity = Math.Min(Reactor.MaxBufferBytes, Math.Max(total, storage.Length * 2));
+                        var expanded = AllocateResponseBuffer(capacity, out var nextRented);
+                        storage.AsSpan(0, used).CopyTo(expanded);
+                        ReturnResponseBuffer(rented);
+                        rented = nextRented;
+                        storage = expanded;
+                    }
+
+                    buffer.AsSpan(0, count).CopyTo(storage.AsSpan(used));
+                    used = total;
                 }
 
-                return new Reply(status, output.GetBuffer().AsMemory(0, (int)output.Length));
+                return new Reply(status, storage.AsMemory(0, used), Rented: rented);
             }
             finally
             {
@@ -371,6 +385,18 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         }
     }
 
+    private static byte[] AllocateResponseBuffer(int size, out byte[]? rented)
+    {
+        if (size <= MaxPooledResponseBytes)
+        {
+            rented = ResponseBuffers.Rent(size);
+            return rented;
+        }
+
+        rented = null;
+        return new byte[size];
+    }
+
     private static void ReturnResponseBuffer(byte[]? buffer)
     {
         if (buffer is not null)
@@ -378,6 +404,18 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             ResponseBuffers.Return(buffer);
         }
     }
+
+    private static bool TryCommitIfCurrent(Func<Func<bool>, bool> tryCommitResponse, Func<bool> canPublish, Action publish)
+        => tryCommitResponse(() =>
+        {
+            if (!canPublish())
+            {
+                return false;
+            }
+
+            publish();
+            return true;
+        });
 
     private static Target CreateTarget(RcmClientTracer tracer)
         => new(tracer.Service ?? string.Empty, tracer.Env ?? string.Empty, tracer.AppVersion ?? string.Empty, tracer.ProcessTags ?? Array.Empty<string>());
@@ -595,16 +633,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
         bool CanInstall() => !stop.IsCompleted && isCurrent() && ReferenceEquals(owner, _subscriptions.GetSnapshotSubscription(ApmProduct));
 
-        bool CommitSettings(Action publish) => tryCommitResponse(() =>
-        {
-            if (!CanInstall())
-            {
-                return false;
-            }
-
-            publish();
-            return true;
-        });
+        bool CommitSettings(Action publish) => TryCommitIfCurrent(tryCommitResponse, CanInstall, publish);
 
         void Abandon()
         {
@@ -668,6 +697,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         IReadOnlyList<ISubscription> subscriptions,
         Task stop,
         Func<bool> isCurrent,
+        Func<Func<bool>, bool> tryCommitResponse,
         HashSet<string>? products = null)
     {
         var snapshot = reactor.Check(reactor.Snapshot(_client));
@@ -675,7 +705,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         {
             try
             {
-                if (!await ApplyBatch(reactor, snapshot, subscriptions, stop, isCurrent, products).ConfigureAwait(false))
+                if (!await ApplyBatch(reactor, snapshot, subscriptions, stop, isCurrent, tryCommitResponse, products).ConfigureAwait(false))
                 {
                     return false;
                 }
@@ -696,6 +726,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         IReadOnlyList<ISubscription> subscriptions,
         Task stop,
         Func<bool> isCurrent,
+        Func<Func<bool>, bool> tryCommitResponse,
         HashSet<string>? replayProducts = null)
     {
         if (stop.IsCompleted || !isCurrent())
@@ -742,7 +773,7 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         var assignedPaths = completeAssignment ? new HashSet<string>(sourceIndices.Keys, StringComparer.Ordinal) : null;
         var interrupted = false;
         var results = await _subscriptions.ApplyChanges(
-                          upserts, removals, _watchOwner, subscriptions, CanDispatch, assignedPaths, replayProducts).ConfigureAwait(false);
+                          upserts, removals, _watchOwner, subscriptions, CanDispatch, assignedPaths, replayProducts, CommitChanges).ConfigureAwait(false);
         if (!CanDispatch())
         {
             return false;
@@ -791,6 +822,9 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
         }
 
         return true;
+
+        bool CommitChanges(Dictionary<string, List<RemoteConfiguration>> unusedUpserts, Dictionary<string, List<RemoteConfigurationPath>>? unusedRemovals, Action publish) =>
+            TryCommitIfCurrent(tryCommitResponse, CanDispatch, publish);
 
         bool CanDispatch()
         {

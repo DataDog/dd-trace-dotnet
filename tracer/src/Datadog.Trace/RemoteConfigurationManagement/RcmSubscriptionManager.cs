@@ -38,6 +38,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     /// Key is the path
     /// </summary>
     private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
+    private Dictionary<string, RemoteConfigurationPath>? _installedWithoutReceipt;
 
     // Persistent request object, mutated in-place each poll
     private GetRcmRequest _request;
@@ -163,7 +164,8 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         IReadOnlyList<ISubscription>? subscriptions = null,
         Func<bool>? tryBeginDelivery = null,
         HashSet<string>? assignedPaths = null,
-        HashSet<string>? replayProducts = null)
+        HashSet<string>? replayProducts = null,
+        ChangeCommit? tryCommit = null)
     {
         List<ApplyDetails>? results = null;
 
@@ -190,8 +192,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
 
             var productKeys = subscription.ProductKeys;
+            var install = tryCommit is not null ? (subscription as Subscription)?.InstallChanges : null;
             var filteredConfigs = FilterProductChanges(productKeys, configByProducts);
-            var filteredRemovals = subscriptions is null ? removedConfigsByProduct : FilterProductChanges(GetRemovalProducts(subscription), removedConfigsByProduct);
+            var filteredRemovals = subscriptions is null && install is null ? removedConfigsByProduct : FilterProductChanges(GetRemovalProducts(subscription), removedConfigsByProduct);
 
 #if SHARED_REMOTE_CONFIG
             if (assignedPaths is not null)
@@ -213,11 +216,30 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
             try
             {
+                ApplyDetails[] applied;
+                if (tryCommit is not null && install is not null)
+                {
+                    var upserts = filteredConfigs ?? [];
+                    var committed = install(upserts, filteredRemovals, publish => tryCommit(upserts, filteredRemovals, publish));
+                    if (committed is null)
+                    {
+                        continue;
+                    }
+
+                    applied = committed;
 #if SHARED_REMOTE_CONFIG
-                RememberDeliveredPaths(subscription, filteredConfigs);
+                    RememberDeliveredPaths(subscription, filteredConfigs);
 #endif
-                results ??= new();
-                results.AddRange(await subscription.Invoke(filteredConfigs ?? [], filteredRemovals).ConfigureAwait(false));
+                }
+                else
+                {
+#if SHARED_REMOTE_CONFIG
+                    RememberDeliveredPaths(subscription, filteredConfigs);
+#endif
+                    applied = await subscription.Invoke(filteredConfigs ?? [], filteredRemovals).ConfigureAwait(false);
+                }
+
+                (results ??= new()).AddRange(applied);
 #if SHARED_REMOTE_CONFIG
                 ForgetWithdrawnPaths(subscription, filteredRemovals);
 #endif
@@ -757,21 +779,17 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct = null;
 
         // handle removed configurations
-        foreach (var appliedConfiguration in _appliedConfigurations)
+        foreach (var appliedConfiguration in _appliedConfigurations.Values)
         {
-            if (receivedPaths is not null && receivedPaths.Contains(appliedConfiguration.Key))
-            {
-                continue;
-            }
+            AddRemoval(appliedConfiguration.Path);
+        }
 
-            removedConfigsByProduct ??= [];
-            if (!removedConfigsByProduct.TryGetValue(appliedConfiguration.Value.Path.Product, out var removedConfig))
+        if (_installedWithoutReceipt is { Count: > 0 } pending)
+        {
+            foreach (var path in pending.Values)
             {
-                removedConfig ??= [];
-                removedConfigsByProduct[appliedConfiguration.Value.Path.Product] = removedConfig;
+                AddRemoval(path);
             }
-
-            removedConfig.Add(appliedConfiguration.Value.Path);
         }
 
 #if SHARED_REMOTE_CONFIG
@@ -779,12 +797,79 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 #else
         HashSet<string>? assignedPaths = null;
 #endif
-        var results = await ApplyChanges(
-                          configByProducts,
-                          removedConfigsByProduct,
-                          tryBeginDelivery: acceptResponse,
-                          assignedPaths: assignedPaths).ConfigureAwait(false);
-        PublishIfCurrent(Commit, acceptResponse, commitResponse);
+        var deliveryDeclined = false;
+        var results = await ApplyChanges(configByProducts, removedConfigsByProduct, tryBeginDelivery: TryBeginDelivery, assignedPaths: assignedPaths, tryCommit: TryCommitChanges).ConfigureAwait(false);
+        if (!deliveryDeclined)
+        {
+            PublishIfCurrent(Commit, acceptResponse, commitResponse);
+        }
+
+        void AddRemoval(RemoteConfigurationPath path)
+        {
+            if (receivedPaths?.Contains(path.Path) == true)
+            {
+                return;
+            }
+
+            removedConfigsByProduct ??= [];
+            if (!removedConfigsByProduct.TryGetValue(path.Product, out var removedConfigs))
+            {
+                removedConfigs = [];
+                removedConfigsByProduct[path.Product] = removedConfigs;
+            }
+
+            removedConfigs.Add(path);
+        }
+
+        bool TryBeginDelivery()
+        {
+            deliveryDeclined |= acceptResponse?.Invoke() is false;
+            return !deliveryDeclined;
+        }
+
+        bool TryCommitChanges(Dictionary<string, List<RemoteConfiguration>> upserts, Dictionary<string, List<RemoteConfigurationPath>>? removals, Action publish)
+        {
+            var committed = false;
+            PublishIfCurrent(Apply, acceptResponse, commitResponse);
+            deliveryDeclined |= !committed;
+            return committed;
+
+            void Apply()
+            {
+                publish();
+                // Settings may already be active when the route rejects the final receipt.
+                if (removals is not null)
+                {
+                    foreach (var paths in removals.Values)
+                    {
+                        foreach (var path in paths)
+                        {
+                            _installedWithoutReceipt?.Remove(path.Path);
+                            ForgetReceipt(path.Path);
+                        }
+                    }
+                }
+
+                foreach (var configs in upserts.Values)
+                {
+                    foreach (var config in configs)
+                    {
+                        (_installedWithoutReceipt ??= new(StringComparer.Ordinal))[config.Path.Path] = config.Path;
+                        ForgetReceipt(config.Path.Path);
+                    }
+                }
+
+                committed = true;
+            }
+        }
+
+        void ForgetReceipt(string path)
+        {
+            if (_appliedConfigurations.Remove(path))
+            {
+                _appliedConfigsVersion++;
+            }
+        }
 
         void Commit()
         {
@@ -797,6 +882,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             {
                 foreach (var update in updates)
                 {
+                    _installedWithoutReceipt?.Remove(update.Path.Path);
                     _appliedConfigurations[update.Path.Path] = update;
                     _appliedConfigsVersion++;
                 }
@@ -808,8 +894,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 {
                     foreach (var value in removedConfig)
                     {
-                        _appliedConfigurations.Remove(value.Path);
-                        _appliedConfigsVersion++;
+                        ForgetReceipt(value.Path);
                     }
                 }
             }

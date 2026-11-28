@@ -317,7 +317,10 @@ namespace Datadog.Trace.Agent.Transports
 
             [DoesNotReturn]
             static void ThrowCancelledException(HttpWebRequest request, CancellationToken token, Exception? innerException)
-                => throw new OperationCanceledException(StringUtil.Invariant($"The request to {request.RequestUri} timed out after {request.Timeout}ms."), innerException, token);
+            {
+                var endpoint = request.RequestUri.GetComponents(UriComponents.HttpRequestUrl, UriFormat.UriEscaped);
+                throw new OperationCanceledException(StringUtil.Invariant($"The request to {endpoint} timed out after {request.Timeout}ms."), innerException, token);
+            }
 
             static void ObserveOrphanedResponse(Task<WebResponse> task)
             {

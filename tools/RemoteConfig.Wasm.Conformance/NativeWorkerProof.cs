@@ -1046,6 +1046,95 @@ internal static class NativeWorkerProof
         }
     }
 
+    public static async Task VerifyRawApmPublication(bool native, string artifact)
+    {
+        const string endpoint = "/v0.7/config";
+        const string obsolete = """{"lib_config":{"tracing_sampling_rate":0.42}}""";
+        const string current = """{"lib_config":{"tracing_enabled":true}}""";
+        AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, native ? artifact : null);
+        Environment.SetEnvironmentVariable("DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS", "0.05");
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var requests = Channel.CreateUnbounded<Exchange>();
+        var endpoints = new[] { endpoint };
+        await using var agent = CreateAgent(endpoint, null, requests.Writer, timeout.Token);
+        agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
+        await agent.StartAsync(timeout.Token);
+
+        var tracerSettings = ReplacementSettings(agent.Urls.Single(), "raw-apm-publication", remoteConfigEnabled: true);
+        await using var discovery = CreateManualDiscovery(tracerSettings.Manager.InitialExporterSettings);
+        await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+        TracerManager.ReplaceGlobalManager(tracerSettings, new DiscoveryTracerManagerFactory(discovery));
+        var owner = Tracer.Instance.TracerManager;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            owner.Start();
+            var first = await requests.Reader.ReadAsync(timeout.Token);
+            VerifyPollBackend(first, native);
+
+            var subscriptions = (RcmSubscriptionManager)RcmSubscriptionManager.Instance;
+            if (subscriptions.GetSnapshotSubscription(Product) is not { InstallChanges: { } install } original)
+            {
+                throw new InvalidOperationException("The tracer did not register guarded APM delivery");
+            }
+
+            var observing = new Subscription(original.Invoke, Product)
+            {
+                InstallChanges = (upserts, removals, tryCommit) =>
+                {
+                    var paused = upserts.TryGetValue(Product, out var files) && files.Exists(file => file.Path.Id == "obsolete");
+                    if (paused)
+                    {
+                        entered.TrySetResult();
+                        resume.Task.WaitAsync(timeout.Token).GetAwaiter().GetResult();
+                    }
+
+                    try
+                    {
+                        return install(upserts, removals, tryCommit);
+                    }
+                    finally
+                    {
+                        if (paused)
+                        {
+                            completed.TrySetResult();
+                        }
+                    }
+                },
+            };
+            subscriptions.Replace(original, observing);
+            first.Completion.SetResult(new Reply(204, []));
+
+            var pending = await requests.Reader.ReadAsync(timeout.Token);
+            pending.Completion.SetResult(new Reply(200, WatchAssignment(1, ("obsolete", 1, obsolete))));
+            await entered.Task.WaitAsync(timeout.Token);
+            Volatile.Write(ref endpoints, new[] { "/debugger/v1/input" });
+            await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+            Require(discovery.CurrentConfiguration?.ConfigurationEndpoint is null, "Discovery did not withdraw the Remote Configuration route");
+            resume.TrySetResult();
+            await completed.Task.WaitAsync(timeout.Token);
+            Require(owner.PerTraceSettings.Settings.GlobalSamplingRate == 1.0, "Raw APM published a sampling rate after route withdrawal");
+
+            Volatile.Write(ref endpoints, new[] { endpoint });
+            await discovery.RunOneIterationAsync(null).WaitAsync(timeout.Token);
+            var restored = await requests.Reader.ReadAsync(timeout.Token);
+            restored.Completion.SetResult(new Reply(200, WatchAssignment(2, ("current", 2, current))));
+            var acknowledged = await requests.Reader.ReadAsync(timeout.Token);
+            acknowledged.Completion.SetResult(new Reply(204, []));
+            VerifyReceipt(acknowledged, "current", 2, version: 2);
+            Require(owner.PerTraceSettings.Settings.GlobalSamplingRate == 1.0, "Raw APM retained an assignment that never committed");
+        }
+        finally
+        {
+            resume.TrySetResult();
+            await owner.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        Console.WriteLine($"Raw APM ignored settings after route withdrawal with the {(native ? "native" : "managed")} worker");
+    }
+
     public static async Task VerifyRemoteConfigRouteWithdrawal(string backend, string artifact)
     {
         const string endpoint = "/v0.7/config";
@@ -1822,7 +1911,11 @@ internal static class NativeWorkerProof
             subscriptions.Replace(rawSubscription, rawOwner);
             if (pipeName is null && socketPath is null)
             {
-                first.Completion.SetResult(new Reply(200, valid, OmitContentLength: true));
+                var padded = new byte[Reactor.MaxBufferBytes];
+                var offset = padded.Length - valid.Length;
+                padded.AsSpan(0, offset).Fill((byte)' ');
+                valid.CopyTo(padded, offset);
+                first.Completion.SetResult(new Reply(200, padded, OmitContentLength: true));
             }
             else
             {
@@ -1859,6 +1952,11 @@ internal static class NativeWorkerProof
                 acknowledged = await Next("/rc/current");
                 Require(ConfigStates(acknowledged).GetRawText() == states.GetRawText(), "An oversized response lost the current receipts");
                 Require(!deliveries.Reader.TryRead(out _), "An oversized response changed the current assignment");
+
+                acknowledged.Completion.SetResult(new Reply(200, new byte[Reactor.MaxBufferBytes + 1], OmitContentLength: true));
+                acknowledged = await Next("/rc/current");
+                Require(ConfigStates(acknowledged).GetRawText() == states.GetRawText(), "An oversized chunked response lost the current receipts");
+                Require(!deliveries.Reader.TryRead(out _), "An oversized chunked response changed the current assignment");
             }
 
             subscriptions.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, false);

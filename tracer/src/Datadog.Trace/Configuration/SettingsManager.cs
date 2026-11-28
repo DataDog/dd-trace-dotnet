@@ -74,7 +74,7 @@ public sealed partial record TracerSettings
             get
             {
                 var latest = Volatile.Read(ref _latest);
-                return latest?.UpdatedExporter ?? latest?.PreviousExporter ?? InitialExporterSettings;
+                return latest?.EffectiveExporter ?? InitialExporterSettings;
             }
         }
 
@@ -245,7 +245,7 @@ public sealed partial record TracerSettings
 
             var current = _latest;
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
-            var currentExporter = current?.UpdatedExporter ?? current?.PreviousExporter ?? InitialExporterSettings;
+            var currentExporter = current?.EffectiveExporter ?? InitialExporterSettings;
 
             // we create a temporary ConfigurationTelemetry object to hold the changes to settings
             // if nothing is actually written, and nothing changes compared to the default, then we
@@ -378,6 +378,8 @@ public sealed partial record TracerSettings
             /// Gets the previous <see cref="ExporterSettings"/>, prior to this update.
             /// </summary>
             public ExporterSettings PreviousExporter { get; } = previousExporter;
+
+            internal ExporterSettings EffectiveExporter => UpdatedExporter ?? PreviousExporter;
         }
     }
 }

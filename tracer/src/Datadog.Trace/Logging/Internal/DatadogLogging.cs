@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -111,6 +112,7 @@ namespace Datadog.Trace.Logging
                 }
 
                 CleanInstrumentationVerificationLogFiles(logsDirectory, date);
+                DebugLogReader.CleanExpiredClaimDirectories(logsDirectory, date);
             }
             catch
             {

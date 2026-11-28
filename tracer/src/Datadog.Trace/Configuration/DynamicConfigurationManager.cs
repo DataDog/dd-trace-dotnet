@@ -31,7 +31,7 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
-        private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
+        private Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
         private ISubscription? _subscription;
         private Dictionary<string, ApmTracingConfig>? _watchedConfigurations;
         private long _watchTargetGeneration;
@@ -45,18 +45,17 @@ namespace Datadog.Trace.Configuration
         {
             ApplyDetails[] ApplyChanges(
                 Dictionary<string, List<RemoteConfiguration>> upserts,
-                Dictionary<string, List<RemoteConfigurationPath>>? removals) => ConfigurationUpdated(owner, upserts, removals);
+                Dictionary<string, List<RemoteConfigurationPath>>? removals) => ConfigurationUpdated(owner, upserts, removals, tryCommit: null) ?? [];
 
-#if SHARED_REMOTE_CONFIG
             var subscription = new Subscription(ApplyChanges, ProductName)
             {
+                InstallChanges = (upserts, removals, tryCommit) => ConfigurationUpdated(owner, upserts, removals, tryCommit),
+#if SHARED_REMOTE_CONFIG
                 InstallSnapshot = _subscriptionManager is RcmSubscriptionManager
                                       ? (files, rejections, generation, tryCommit) => ApplyMergedConfiguration(owner, files, rejections, generation, tryCommit)
                                       : null,
-            };
-#else
-            var subscription = new Subscription(ApplyChanges, ProductName);
 #endif
+            };
             if (Interlocked.CompareExchange(ref _subscription, subscription, null) == null)
             {
                 _subscriptionManager.SubscribeToChanges(subscription);
@@ -251,27 +250,43 @@ namespace Datadog.Trace.Configuration
             return [..activeConfigurations.Values];
         }
 
-        private ApplyDetails[] ConfigurationUpdated(
+        private ApplyDetails[]? ConfigurationUpdated(
             TracerManager owner,
             Dictionary<string, List<RemoteConfiguration>> configByProduct,
-            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct,
+            Func<Action, bool>? tryCommit)
         {
+            var applyDetailsResult = new List<ApplyDetails>();
+
+            try
             {
-                var applyDetailsResult = new List<ApplyDetails>();
+                // Delivery is serialized. Keep the last applied files until the new settings commit.
+                var candidate = new Dictionary<string, RemoteConfiguration>(_activeConfigurations);
+                var valuesToApply = CombineApmTracingConfiguration(candidate, configByProduct, removedConfigByProduct, applyDetailsResult);
 
-                try
-                {
-                    // This is all non-thread safe, but we're called in a single threaded way by
-                    // the RcmSubscriptionManager so that's fine
-                    var valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
+                return ApplyMergedConfiguration(owner, valuesToApply, tryCommit: Commit) ? [..applyDetailsResult] : null;
 
-                    return ApplyMergedConfiguration(owner, valuesToApply) ? [..applyDetailsResult] : [];
-                }
-                catch (Exception ex)
+                bool Commit(Action publishSettings)
                 {
-                    Log.Error(ex, "Error while applying dynamic configuration");
-                    return [..applyDetailsResult.Select(r => ApplyDetails.FromError(r.Filename, ex.ToString()))];
+                    if (tryCommit is not null)
+                    {
+                        return tryCommit(Publish);
+                    }
+
+                    Publish();
+                    return true;
+
+                    void Publish()
+                    {
+                        publishSettings();
+                        _activeConfigurations = candidate;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while applying dynamic configuration");
+                return [..applyDetailsResult.Select(r => ApplyDetails.FromError(r.Filename, ex.ToString()))];
             }
         }
 

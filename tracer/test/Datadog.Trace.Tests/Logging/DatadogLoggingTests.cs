@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
@@ -253,6 +254,50 @@ namespace Datadog.Trace.Tests.Logging
             deletedLogFiles.Should().Be(0);
             retainedLogFiles.Should().Be(2);
             ignoredLogFiles.Should().Be(3);
+        }
+
+        [SkippableFact]
+        public void DuringStartup_ExpiredFlareClaimDirectoriesAreCleaned()
+        {
+            Skip.IfNot(LinuxFlareClaimDirectory.IsSupported, "Directory claims require Linux x64 or ARM64.");
+            var logs = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+            try
+            {
+                var expired = CreateClaimDirectory("expired", expired: true, withReceipt: true);
+                var orphaned = CreateClaimDirectory("orphaned", expired: true, withReceipt: false);
+                var current = CreateClaimDirectory("current", expired: false, withReceipt: true);
+                var withOtherFile = CreateClaimDirectory("with-other-file", expired: true, withReceipt: true);
+                var otherFile = Path.Combine(withOtherFile, "other.log");
+                File.WriteAllText(otherFile, "keep");
+                Directory.SetLastWriteTime(withOtherFile, DateTime.Now.AddDays(-3));
+
+                DatadogLogging.CleanLogFiles(1, logs);
+
+                Directory.Exists(expired).Should().BeFalse();
+                Directory.Exists(orphaned).Should().BeFalse();
+                File.Exists(Path.Combine(current, "flare-outcome")).Should().BeTrue();
+                File.Exists(Path.Combine(withOtherFile, "flare-outcome")).Should().BeFalse();
+                File.ReadAllText(otherFile).Should().Be("keep");
+            }
+            finally
+            {
+                Directory.Delete(logs, recursive: true);
+            }
+
+            string CreateClaimDirectory(string id, bool expired, bool withReceipt)
+            {
+                var claim = Directory.CreateDirectory(Path.Combine(logs, $"dotnet-tracer-sentinel-{id}.log")).FullName;
+                var timestamp = expired ? DateTime.Now.AddDays(-3) : DateTime.Now;
+                if (withReceipt)
+                {
+                    var receipt = Path.Combine(claim, "flare-outcome");
+                    File.WriteAllBytes(receipt, [2]);
+                    File.SetLastWriteTime(receipt, timestamp);
+                }
+
+                Directory.SetLastWriteTime(claim, timestamp);
+                return claim;
+            }
         }
 
         [Fact]

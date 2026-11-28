@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -952,6 +953,85 @@ public class RcmSubscriptionManagerTests
             sentErrors.Add(request.Client.State.Error);
             return Task.FromResult<GetRcmResponse>(null);
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SendRequest_ReconcilesSettingsPublishedBeforeRouteWithdrawal(bool rollback)
+    {
+        var manager = new RcmSubscriptionManager();
+        var tracer = CreateTracer();
+        const string Product = DynamicConfigurationManager.ProductName;
+        var previous = MakeConfig(Product, "apm", "previous");
+        var current = new ConfigEntry(previous.Path, Encoding.UTF8.GetBytes("current"), "sha256-current", 2);
+        string activeHash = null;
+        var routeCurrent = true;
+        var withdrawAfterPublish = false;
+
+        manager.SubscribeToChanges(new Subscription(static ApplyDetails[] (_, _) => throw new InvalidOperationException("Expected guarded publication"), Product)
+        {
+            InstallChanges = (upserts, removals, tryCommit) =>
+            {
+                var configs = upserts.TryGetValue(Product, out var changes) ? changes : [];
+                if (!tryCommit(() =>
+                    {
+                        if (removals?.ContainsKey(Product) == true)
+                        {
+                            activeHash = null;
+                        }
+
+                        foreach (var config in configs)
+                        {
+                            activeHash = config.Hashes["sha256"];
+                        }
+                    }))
+                {
+                    return null;
+                }
+
+                routeCurrent = !withdrawAfterPublish;
+                return configs.Select(config => ApplyDetails.FromOk(config.Path.Path)).ToArray();
+            },
+        });
+
+        if (rollback)
+        {
+            await Poll(CreateSingleProductResponse([previous]));
+            activeHash.Should().Be(previous.Hash);
+        }
+
+        withdrawAfterPublish = true;
+        await Poll(CreateSingleProductResponse([current], targetsVersion: 2));
+        activeHash.Should().Be(current.Hash);
+        routeCurrent = true;
+        withdrawAfterPublish = false;
+
+        GetRcmRequest recorded = null;
+        await Poll(CreateSingleProductResponse(rollback ? [previous] : [], targetsVersion: 3), captureRequest: true);
+        activeHash.Should().Be(rollback ? previous.Hash : null);
+        recorded.CachedTargetFiles.Should().BeEmpty();
+        recorded.Client.State.ConfigStates.Should().BeEmpty();
+
+        Task Poll(GetRcmResponse response, bool captureRequest = false) => manager.SendRequest(
+            tracer,
+            request =>
+            {
+                if (captureRequest)
+                {
+                    recorded = request;
+                }
+
+                return Task.FromResult(response);
+            },
+            () => routeCurrent,
+            publish =>
+            {
+                if (routeCurrent)
+                {
+                    publish();
+                }
+            });
     }
 
     [Theory]

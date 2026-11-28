@@ -138,6 +138,8 @@ jobs:
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-admission exporter
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-admission replay
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-debugger-upload-blocked-connect
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-raw-apm-publication managed "$reactor"
+              dotnet /fixture/Datadog.Trace.Tests.dll --verify-raw-apm-publication native "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal managed "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal native "$reactor"
               dotnet /fixture/Datadog.Trace.Tests.dll --verify-rc-route-withdrawal watch "$reactor"

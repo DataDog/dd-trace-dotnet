@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.TracerFlare;
 using FluentAssertions;
 using Xunit;
@@ -98,19 +99,106 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         result.Should().BeNull();
     }
 
+    [SkippableFact]
+    public async Task WaitForSentinelResult_RenamedClaimDirectory_ReadsOpenedReceipt()
+    {
+        Skip.IfNot(
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux) &&
+            RuntimeInformation.ProcessArchitecture is Architecture.X64 or Architecture.Arm64,
+            "Directory claims require Linux x64 or ARM64.");
+        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+        try
+        {
+            const string Id = "claim";
+            var claimDirectory = Directory.CreateDirectory(Path.Combine(directory, $"dotnet-tracer-sentinel-{Id}.log")).FullName;
+            using var claim = DebugLogReader.TryToCreateSentinelFile(directory, Id);
+            claim.Should().NotBeNull();
+
+            var outcome = DebugLogReader.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
+            outcome.IsCompleted.Should().BeFalse();
+            Directory.Move(claimDirectory, Path.Combine(directory, "moved-claim"));
+            DebugLogReader.RecordSentinelResult(claim!, true);
+
+            (await outcome).Should().BeTrue();
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
-    public async Task WaitForSentinelResult_ExpiredEmptyClaim_HasNoOutcome()
+    public async Task WaitForSentinelResult_ExpiredPendingClaim_HasNoOutcome()
     {
         var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(directory);
         try
         {
             var id = Guid.NewGuid().ToString();
-            File.WriteAllBytes(Path.Combine(directory, $"dotnet-tracer-sentinel-{id}.log"), []);
+            using var claim = DebugLogReader.TryToCreateSentinelFile(directory, id);
+            claim.Should().NotBeNull();
 
             var result = await DebugLogReader.WaitForSentinelResult(directory, id, TimeSpan.Zero);
 
             result.Should().BeNull();
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task TryToCreateSentinelFile_ConcurrentWaitersReadTheWinningOutcome()
+    {
+        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+        try
+        {
+            const string Id = "contended";
+            var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var contenders = Enumerable.Range(0, 16).Select(_ => Claim()).ToArray();
+            start.SetResult(true);
+            var outcomes = await Task.WhenAll(contenders);
+            outcomes.Count(won => won).Should().Be(1);
+
+            async Task<bool> Claim()
+            {
+                await start.Task;
+                using var claim = DebugLogReader.TryToCreateSentinelFile(directory, Id);
+                if (claim is not null)
+                {
+                    DebugLogReader.RecordSentinelResult(claim, succeeded: false);
+                }
+
+                var result = await DebugLogReader.WaitForSentinelResult(directory, Id, TimeSpan.FromSeconds(5));
+                result.Should().BeFalse();
+                return claim is not null;
+            }
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task WaitForSentinelResult_PendingOwnerPublishesOutcome()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var id = Guid.NewGuid().ToString();
+            Task<bool?> replay;
+            using (var claim = DebugLogReader.TryToCreateSentinelFile(directory, id))
+            {
+                claim.Should().NotBeNull();
+                replay = DebugLogReader.WaitForSentinelResult(directory, id, TimeSpan.FromSeconds(5));
+                replay.IsCompleted.Should().BeFalse();
+                DebugLogReader.RecordSentinelResult(claim!, succeeded: true);
+            }
+
+            (await replay).Should().BeTrue();
         }
         finally
         {
@@ -187,6 +275,16 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         // It shouldn't be included in the archive
         using var result = DebugLogReader.TryToCreateSentinelFile(directory, Guid.NewGuid().ToString());
         result.Should().NotBeNull();
+        var interrupted = Path.Combine(directory, "dotnet-tracer-sentinel-stage-interrupted.log");
+        File.WriteAllBytes(interrupted, [3]);
+        var directoryClaim = Directory.CreateDirectory(Path.Combine(directory, "dotnet-tracer-sentinel-fallback.log"));
+        File.WriteAllBytes(Path.Combine(directoryClaim.FullName, "flare-outcome"), [1]);
+
+        // Older tracers include all top-level .log files outside the original sentinel namespace.
+        Directory.GetFiles(directory, "*.log", SearchOption.TopDirectoryOnly)
+                 .Select(Path.GetFileName)
+                 .Where(filename => !filename!.StartsWith("dotnet-tracer-sentinel-", StringComparison.Ordinal))
+                 .Should().BeEquivalentTo(files);
 
         var extractTo = await CreateAndExtractZipFile(directory, files);
 
@@ -201,6 +299,10 @@ public class DebugLogReaderTests(ITestOutputHelper output)
         Directory.GetFiles(extractTo, "*sentinel*.*", SearchOption.AllDirectories)
                  .Should()
                  .BeEmpty();
+
+        File.SetLastWriteTime(interrupted, DateTime.Now.AddDays(-3));
+        DatadogLogging.CleanLogFiles(1, directory);
+        File.Exists(interrupted).Should().BeFalse();
     }
 
     [Fact]

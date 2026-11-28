@@ -141,20 +141,56 @@ public class TracerFlareManagerTests
         requestMock.Verify(x => x.Create(It.IsAny<Uri>()), Times.Never);
     }
 
-    [Fact]
-    public async Task WhenEarlierUploadFailed_ReplayPreservesTheErrorReceipt()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WhenLegacySentinelExists_AcknowledgesImmediately(bool abandonedReservation)
     {
+        var claimPath = Path.Combine(_logsDir, $"dotnet-tracer-sentinel-{_requestId}.log");
+        if (abandonedReservation)
+        {
+            File.WriteAllBytes(claimPath + ".pending", [3]);
+        }
+
+        File.WriteAllBytes(claimPath, []);
+        var requests = new TestRequestFactory();
+        var manager = new TracerFlareManager(
+            new DiscoveryServiceMock(),
+            Mock.Of<IRcmSubscriptionManager>(),
+            NullTelemetryController.Instance,
+            new TracerFlareApi(requests));
+
+        var upload = manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
+
+        upload.IsCompleted.Should().BeTrue();
+        var result = await upload;
+        result.Filename.Should().Be(ConfigPath);
+        result.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
+        requests.RequestsSent.Should().BeEmpty();
+    }
+
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WhenFirstUploadFailsDuringReplay_BothCallersReportTheError(bool directoryClaim)
+    {
+        Skip.If(directoryClaim && !LinuxFlareClaimDirectory.IsSupported, "Directory claims require Linux x64 or ARM64.");
+        if (directoryClaim)
+        {
+            Directory.CreateDirectory(Path.Combine(_logsDir, $"dotnet-tracer-sentinel-{_requestId}.log"));
+        }
+
+        var uploadStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finishUpload = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var failedRequests = new TestRequestFactory(
-            endpoint => new TestApiRequest(endpoint, statusCode: 500, responseContent: """{"error":"mock upload failed"}"""));
+            endpoint => new HeldUploadRequest(endpoint, uploadStarted, finishUpload.Task));
         var original = new TracerFlareManager(
             new DiscoveryServiceMock(),
             Mock.Of<IRcmSubscriptionManager>(),
             NullTelemetryController.Instance,
             new TracerFlareApi(failedRequests));
-        var result = await original.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
-        result.ApplyState.Should().Be(ApplyStates.ERROR);
-        result.Error.Should().Contain("mock upload failed");
-        failedRequests.RequestsSent.Should().ContainSingle();
+        var firstUpload = original.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
+        (await Task.WhenAny(uploadStarted.Task, firstUpload)).Should().BeSameAs(uploadStarted.Task);
 
         var replayRequests = new TestRequestFactory();
         var successor = new TracerFlareManager(
@@ -162,15 +198,26 @@ public class TracerFlareManagerTests
             Mock.Of<IRcmSubscriptionManager>(),
             NullTelemetryController.Instance,
             new TracerFlareApi(replayRequests));
-        var replay = await successor.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
-        replay.ApplyState.Should().Be(ApplyStates.ERROR);
-        replay.Error.Should().Be("There was an error uploading the debug log archive");
+        var waiting = successor.TrySendDebugLogs(ConfigPath, _validConfigBytes, _requestId, _logsDir);
+        var completedBeforeUpload = waiting.IsCompleted;
+        finishUpload.SetResult(true);
+        var outcomes = await Task.WhenAll(firstUpload, waiting);
+
+        completedBeforeUpload.Should().BeFalse();
+        outcomes[0].ApplyState.Should().Be(ApplyStates.ERROR);
+        outcomes[0].Error.Should().Contain("mock upload failed");
+        outcomes[1].ApplyState.Should().Be(ApplyStates.ERROR);
+        outcomes[1].Error.Should().Be("There was an error uploading the debug log archive");
+        failedRequests.RequestsSent.Should().ContainSingle();
         replayRequests.RequestsSent.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task WhenShouldShip_SendsRequest_ReturnsSuccess()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WhenShouldShip_SendsRequest_ReturnsSuccess(bool directoryClaim)
     {
+        Skip.If(directoryClaim && !LinuxFlareClaimDirectory.IsSupported, "Directory claims require Linux x64 or ARM64.");
         var requestFactory = new TestRequestFactory();
         var manager = new TracerFlareManager(
             new DiscoveryServiceMock(),
@@ -180,6 +227,10 @@ public class TracerFlareManagerTests
 
         // Create a new sentinel to make sure there's no flake
         var configId = Guid.NewGuid().ToString();
+        if (directoryClaim)
+        {
+            Directory.CreateDirectory(Path.Combine(_logsDir, $"dotnet-tracer-sentinel-{configId}.log"));
+        }
 
         var result = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
 
@@ -190,5 +241,16 @@ public class TracerFlareManagerTests
         var replay = await manager.TrySendDebugLogs(ConfigPath, _validConfigBytes, configId, _logsDir);
         replay.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
         requestFactory.RequestsSent.Should().ContainSingle();
+    }
+
+    private sealed class HeldUploadRequest(Uri endpoint, TaskCompletionSource<bool> started, Task finishUpload)
+        : TestApiRequest(endpoint, statusCode: 500, responseContent: """{"error":"mock upload failed"}""")
+    {
+        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+        {
+            started.SetResult(true);
+            await finishUpload.ConfigureAwait(false);
+            return await base.PostAsync(bytes, contentType, contentEncoding).ConfigureAwait(false);
+        }
     }
 }

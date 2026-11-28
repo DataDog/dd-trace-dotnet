@@ -13,6 +13,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal delegate bool SnapshotInstaller(List<RemoteConfiguration> files, Dictionary<string, string> rejections, long targetGeneration, Func<Action, bool> tryCommit);
 
+    internal delegate ApplyDetails[]? ChangeInstaller(
+        Dictionary<string, List<RemoteConfiguration>> upserts,
+        Dictionary<string, List<RemoteConfigurationPath>>? removals,
+        Func<Action, bool> tryCommit);
+
+    internal delegate bool ChangeCommit(
+        Dictionary<string, List<RemoteConfiguration>> upserts,
+        Dictionary<string, List<RemoteConfigurationPath>>? removals,
+        Action publish);
+
     internal sealed class Subscription : ISubscription
     {
         private readonly HashSet<string> _productKeys;
@@ -34,6 +44,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, Task<ApplyDetails[]>> Invoke { get; }
 
         internal SnapshotInstaller? InstallSnapshot { get; init; }
+
+        // Return null when the assignment could not be committed.
+        internal ChangeInstaller? InstallChanges { get; init; }
 
         // Retained configuration may need a withdrawal after poll interest changes.
         internal IReadOnlyCollection<string>? RemovalProductKeys { get; init; }

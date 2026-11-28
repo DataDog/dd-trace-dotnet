@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             if (BuildTarget() is not { } target || !TryStartPost(target, data, out var post))
             {
-                Log.Warning("Failed to upload log: debugger route unavailable");
+                Log.Debug("Failed to upload log: debugger route unavailable");
                 return false;
             }
 

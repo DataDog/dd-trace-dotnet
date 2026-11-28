@@ -75,6 +75,8 @@ The `--verify-debugger-upload-blocked-connect` case pauses a synchronous stream 
 
 The `--verify-rc-route-withdrawal` cases hold a Remote Configuration reply while `/info` withdraws that endpoint on the same Agent. They check that the managed poller, raw native poller, and native watch discard the held reply before discovery finishes notifying subscribers. The `watch-commit` case withdraws the route after the watch builds new settings and checks that those settings never reach subscribers.
 
+The `--verify-raw-apm-publication` cases withdraw the route after an APM callback begins. The callback must leave the sampling rate and retained files unchanged. A poll on the restored route must acknowledge a valid assignment.
+
 The `--verify-native-debugger-disable` case applies a disable update while debugger startup waits for Agent discovery. It checks that startup ends and that the tracer has no Live Debugging subscription.
 
 The `--verify-debugger-startup-replacement` case replaces the tracer after startup captures its settings. The debugger must send a snapshot through the successor's Agent route and label it with the successor's service.

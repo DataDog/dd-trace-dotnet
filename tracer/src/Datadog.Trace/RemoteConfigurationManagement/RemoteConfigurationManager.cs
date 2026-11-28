@@ -90,7 +90,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     UpdateRcmClientTracer(updated);
                 }
 
-                var exporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+                var exporter = changes.EffectiveExporter;
                 if (!ReferenceEquals(exporter, Volatile.Read(ref _transport).Exporter))
                 {
                     Volatile.Write(ref _transport, CreateTransport(exporter));

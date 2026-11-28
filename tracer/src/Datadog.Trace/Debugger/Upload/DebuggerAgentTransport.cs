@@ -145,7 +145,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
 
     private void UpdateExporter(TracerSettings.SettingsManager.SettingChanges changes)
     {
-        var exporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+        var exporter = changes.EffectiveExporter;
         lock (_gate)
         {
             if (_disposed || (ReferenceEquals(_exporter, exporter) && _factory is not null))

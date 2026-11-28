@@ -125,6 +125,12 @@ if (args is ["--verify-debugger-upload-blocked-connect"])
     return;
 }
 
+if (args is ["--verify-raw-apm-publication", "managed" or "native", var rawApmArtifact])
+{
+    await NativeWorkerProof.VerifyRawApmPublication(args[1] == "native", rawApmArtifact);
+    return;
+}
+
 if (args is ["--verify-rc-route-withdrawal", "managed" or "native" or "watch" or "watch-commit", var routeArtifact])
 {
     await NativeWorkerProof.VerifyRemoteConfigRouteWithdrawal(args[1], routeArtifact);
