@@ -28,9 +28,8 @@ internal abstract class DebuggerUploadApiBase
     private readonly DebuggerAgentTransport? _liveTransport;
     private readonly Func<AgentConfiguration, string?>? _selectEndpoint;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
-
     private string? _endpoint;
-    private string? _tags;
+    private UploadTags? _tags;
 
     protected DebuggerUploadApiBase(IApiRequestFactory apiRequestFactory, IGitMetadataTagsProvider? gitMetadataTagsProvider)
     {
@@ -74,8 +73,16 @@ internal abstract class DebuggerUploadApiBase
         var uri = factory.GetEndpoint(endpoint);
         var builder = new UriBuilder(uri);
         var query = HttpUtility.ParseQueryString(builder.Query);
-        _tags ??= GetDefaultTagsMergedWithGlobalTags();
-        query["ddtags"] = _tags;
+        var settings = _liveTransport?.CurrentMutableSettings;
+        var tags = Volatile.Read(ref _tags);
+        if (tags is null || !ReferenceEquals(tags.Settings, settings))
+        {
+            var rendered = GetDefaultTagsMergedWithGlobalTags(settings ?? Tracer.Instance.Settings.Manager.InitialMutableSettings);
+            tags = new UploadTags(settings, rendered);
+            Volatile.Write(ref _tags, tags);
+        }
+
+        query["ddtags"] = tags.Value;
         builder.Query = query.ToString();
         return new UploadTarget(factory, builder.ToString(), route);
     }
@@ -99,15 +106,12 @@ internal abstract class DebuggerUploadApiBase
         return true;
     }
 
-    private string GetDefaultTagsMergedWithGlobalTags()
+    private string GetDefaultTagsMergedWithGlobalTags(MutableSettings mutableSettings)
     {
         var sb = StringBuilderCache.Acquire();
 
         try
         {
-            // TODO: this only gets the original values, before any updates from remote config or config in code
-            // this should be refactored to subscribe to changes instead
-            var mutableSettings = Tracer.Instance.Settings.Manager.InitialMutableSettings;
             var environment = TraceUtil.NormalizeTag(mutableSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
@@ -166,4 +170,6 @@ internal abstract class DebuggerUploadApiBase
 
         public DebuggerAgentTransport.Route? LiveRoute { get; } = liveRoute;
     }
+
+    private sealed record UploadTags(MutableSettings? Settings, string Value);
 }

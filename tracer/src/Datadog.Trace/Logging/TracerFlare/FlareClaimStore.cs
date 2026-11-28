@@ -68,33 +68,46 @@ internal static class FlareClaimStore
             Log.Information("Sentinel file for config {FlareRequestID} found in {LogDirectory}", flareRequestId, logDirectory);
             return null;
         }
-        catch (Exception ex)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // check if the log directory exists, to see if this is an "expected" consequence
             if (Directory.Exists(logDirectory))
             {
-                // strange error
-                Log.Warning(ex, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}", flareRequestId, logDirectory);
+                Log.Warning(error, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}", flareRequestId, logDirectory);
             }
             else
             {
-                Log.Warning(ex, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}: Directory does not exist", flareRequestId, logDirectory);
+                Log.Warning(error, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}: Directory does not exist", flareRequestId, logDirectory);
             }
 
             return null;
         }
+        catch (Exception error)
+        {
+            Log.Error(error, "Error creating sentinel file for config {FlareRequestID} in {LogDirectory}", flareRequestId, logDirectory);
+            return null;
+        }
         finally
         {
-            pendingClaim?.Dispose();
-            if (staged)
+            try
             {
-                try
+                pendingClaim?.Dispose();
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                Log.Warning(error, "Error closing unpublished sentinel for config {FlareRequestID} in {LogDirectory}", flareRequestId, logDirectory);
+            }
+            finally
+            {
+                if (staged)
                 {
-                    File.Delete(temporaryPath);
-                }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                    Log.Debug(exception, "Could not remove unpublished sentinel for {FlareRequestID}", flareRequestId);
+                    try
+                    {
+                        File.Delete(temporaryPath);
+                    }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        Log.Debug(error, "Could not remove unpublished sentinel for {FlareRequestID}", flareRequestId);
+                    }
                 }
             }
         }

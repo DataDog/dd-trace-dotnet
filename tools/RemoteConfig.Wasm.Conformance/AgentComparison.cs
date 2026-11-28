@@ -64,7 +64,7 @@ internal static class AgentComparison
                 var subscriptions = new RcmSubscriptionManager();
                 subscriptions.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);
                 subscriptions.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
-                var capabilityBits = subscriptions.GetCapabilities();
+                var capabilityBits = subscriptions.GetCachedCapabilities();
                 var poll = reactor is null
                                ? CreateLegacyPoll(subscriptions, factory, Observe)
                                : CreateReactorPoll(reactor, factory, Observe, Reactor.GetCapabilityIndices(capabilityBits));

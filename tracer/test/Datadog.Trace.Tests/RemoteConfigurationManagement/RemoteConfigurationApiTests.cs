@@ -52,7 +52,7 @@ public class RemoteConfigurationApiTests
         {
             header = await reader.ReadLineAsync().WaitAsync(timeout.Token);
         }
-        while (!string.IsNullOrEmpty(header));
+        while (!StringUtil.IsNullOrEmpty(header));
 
         header.Should().BeEmpty();
         var responseHeaders = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n"u8.ToArray();
@@ -258,7 +258,7 @@ public class RemoteConfigurationApiTests
         // make sure we test with something valid at least
         var rcm = new RcmSubscriptionManager();
         rcm.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
-        var capabilities = rcm.GetCapabilities();
+        var capabilities = rcm.GetCachedCapabilities();
 
         var client = new RcmClient(Guid.NewGuid().ToString(), state)
         {

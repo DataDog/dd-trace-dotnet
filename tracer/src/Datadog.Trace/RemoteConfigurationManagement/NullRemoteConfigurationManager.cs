@@ -5,15 +5,32 @@
 
 #nullable enable
 
+using System;
+using System.Threading.Tasks;
+
+#nullable enable
+
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal sealed class NullRemoteConfigurationManager : IRemoteConfigurationManager
 {
+    public bool IsEnabled => false;
+
+    public Task? StopRequested => null;
+
     public void Dispose()
     {
     }
 
-    public void Start()
+    public void Start(TracerManager owner)
     {
     }
+
+    public Func<Task>? PrepareRetirement(out bool drainAtProcessExit)
+    {
+        drainAtProcessExit = false;
+        return null;
+    }
+
+    public Func<Task>? PrepareShutdownDrain() => null;
 }

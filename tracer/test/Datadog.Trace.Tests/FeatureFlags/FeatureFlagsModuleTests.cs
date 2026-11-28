@@ -1087,8 +1087,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task RemoteConfigurationDiagnosticsDistinguishEmptyAndRejectedFlags(bool invalid)
     {
         var logger = CreateDebugLogger();
@@ -1109,7 +1108,7 @@ public class FeatureFlagsModuleTests
         module.HasConfiguration.Should().BeTrue();
         module.Evaluate("broken", FeatureFlagsValueType.Boolean, false, null, null).Error.Should().Be(invalid ? "PARSE_ERROR" : "FLAG_NOT_FOUND");
         ArgumentsOf(logger, "applied successfully").Take(2).Should().Equal(0, invalid ? 1 : 0);
-        LoggedTemplates(logger).Should().Contain(x => x.Contains("Error while updating FFE RCM config"));
+        ArgumentsOf(logger, "could not parse remote_config configuration file").Should().Contain(path.Path);
     }
 
     [Theory]

@@ -8,10 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.Configuration;
@@ -69,6 +72,10 @@ public sealed partial record TracerSettings
         /// </summary>
         public ExporterSettings InitialExporterSettings { get; }
 
+        internal MutableSettings CurrentMutableSettings => Volatile.Read(ref _latest)?.EffectiveMutable ?? InitialMutableSettings;
+
+        internal long CurrentRemoteConfigurationTargetGeneration => Volatile.Read(ref _latest)?.RemoteConfigurationTargetGeneration ?? 0;
+
         internal ExporterSettings CurrentExporterSettings
         {
             get
@@ -78,11 +85,11 @@ public sealed partial record TracerSettings
             }
         }
 
-        internal bool TryRunWithCurrentExporter(ExporterSettings exporter, Func<bool> apply)
+        internal bool TryRunWithCurrentAgentConfiguration(ExporterSettings exporter, IDiscoveryService discoveryService, Func<AgentConfiguration, bool> apply)
         {
             lock (_exporterPublicationGate)
             {
-                return ReferenceEquals(CurrentExporterSettings, exporter) && apply();
+                return ReferenceEquals(CurrentExporterSettings, exporter) && discoveryService.TryRunWithCurrentConfiguration(apply);
             }
         }
 
@@ -216,6 +223,30 @@ public sealed partial record TracerSettings
             return names;
         }
 
+        private static bool HasSameRemoteConfigurationTarget(MutableSettings previous, MutableSettings updated)
+        {
+            if ((previous.ServiceVersion ?? string.Empty) != (updated.ServiceVersion ?? string.Empty)
+             || !HaveSameTag(previous.DefaultServiceName, updated.DefaultServiceName)
+             || !HaveSameTag(previous.Environment, updated.Environment))
+            {
+                return false;
+            }
+
+            var before = previous.ProcessTags;
+            var after = updated.ProcessTags;
+            if (ReferenceEquals(before, after))
+            {
+                return true;
+            }
+
+            IEnumerable<string> previousTags = before is null ? Array.Empty<string>() : before.TagsList;
+            IEnumerable<string> updatedTags = after is null ? Array.Empty<string>() : after.TagsList;
+            return previousTags.SequenceEqual(updatedTags);
+
+            static bool HaveSameTag(string? previous, string? updated)
+                => previous == updated || (TraceUtil.NormalizeTag(previous) ?? string.Empty) == (TraceUtil.NormalizeTag(updated) ?? string.Empty);
+        }
+
         private PreparedSettings? BuildNewSettings(
             IConfigurationSource dynamicConfigSource,
             ManualInstrumentationConfigurationSourceBase manualSource)
@@ -244,7 +275,7 @@ public sealed partial record TracerSettings
             }
 
             var current = _latest;
-            var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
+            var currentMutable = current?.EffectiveMutable ?? InitialMutableSettings;
             var currentExporter = current?.EffectiveExporter ?? InitialExporterSettings;
 
             // we create a temporary ConfigurationTelemetry object to hold the changes to settings
@@ -285,10 +316,17 @@ public sealed partial record TracerSettings
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
             var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, tempTelemetry, _pipeNames);
 
-            return new PreparedSettings(
-                new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter),
-                defaultTelemetry,
-                tempTelemetry);
+            var targetGeneration = current?.RemoteConfigurationTargetGeneration ?? 0;
+            if (updatedMutableSettings is not null && !HasSameRemoteConfigurationTarget(currentMutable, updatedMutableSettings))
+            {
+                targetGeneration++;
+            }
+
+            var changes = new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter)
+            {
+                RemoteConfigurationTargetGeneration = targetGeneration,
+            };
+            return new PreparedSettings(changes, defaultTelemetry, tempTelemetry);
         }
 
         [MemberNotNull(nameof(_noDefaultSettingsTelemetry))]
@@ -378,6 +416,10 @@ public sealed partial record TracerSettings
             /// Gets the previous <see cref="ExporterSettings"/>, prior to this update.
             /// </summary>
             public ExporterSettings PreviousExporter { get; } = previousExporter;
+
+            internal long RemoteConfigurationTargetGeneration { get; init; }
+
+            internal MutableSettings EffectiveMutable => UpdatedMutable ?? PreviousMutable;
 
             internal ExporterSettings EffectiveExporter => UpdatedExporter ?? PreviousExporter;
         }

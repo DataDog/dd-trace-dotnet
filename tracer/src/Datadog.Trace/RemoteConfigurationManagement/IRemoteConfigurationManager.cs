@@ -4,11 +4,22 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
+
+#nullable enable
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal interface IRemoteConfigurationManager : IDisposable
     {
-        void Start();
+        bool IsEnabled { get; }
+
+        Task? StopRequested { get; }
+
+        void Start(TracerManager owner);
+
+        Func<Task>? PrepareRetirement(out bool drainAtProcessExit);
+
+        Func<Task>? PrepareShutdownDrain();
     }
 }

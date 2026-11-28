@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
@@ -58,7 +59,7 @@ public class DynamicInstrumentationTests
             new LogUploaderMock(),
             new UploaderMock(),
             new ProbeStatusPollerMock(),
-            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            ConfigurationUpdater.Create(static () => new(string.Empty, string.Empty), 0, globalRateLimiter),
             NoOpStatsd.Instance,
             globalRateLimiter);
 
@@ -88,7 +89,7 @@ public class DynamicInstrumentationTests
             logUploader,
             new UploaderMock(),
             new ProbeStatusPollerMock(),
-            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            ConfigurationUpdater.Create(static () => new(string.Empty, string.Empty), 0, globalRateLimiter),
             NoOpStatsd.Instance,
             globalRateLimiter,
             memoryPressureMonitor);
@@ -124,7 +125,7 @@ public class DynamicInstrumentationTests
             logUploader,
             new UploaderMock(),
             new ProbeStatusPollerMock(),
-            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            ConfigurationUpdater.Create(static () => new(string.Empty, string.Empty), 0, globalRateLimiter),
             NoOpStatsd.Instance,
             globalRateLimiter,
             memoryPressureMonitor);
@@ -155,7 +156,7 @@ public class DynamicInstrumentationTests
 
         var globalRateLimiter = new GlobalRateLimiterMock();
         var subscriptionManager = new RcmSubscriptionManagerMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new(string.Empty, string.Empty), 0, globalRateLimiter);
         var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
@@ -197,7 +198,7 @@ public class DynamicInstrumentationTests
 
         var globalRateLimiter = new GlobalRateLimiterMock();
         var subscriptionManager = new RcmSubscriptionManagerMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new(string.Empty, string.Empty), 0, globalRateLimiter);
         var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
@@ -264,7 +265,7 @@ public class DynamicInstrumentationTests
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, new LineProbeResolverMock(), snapshotUploader, new LogUploaderMock(), diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
         try
@@ -299,7 +300,7 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0);
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
         try
@@ -338,7 +339,7 @@ public class DynamicInstrumentationTests
         var snapshots = new SnapshotUploaderMock();
         var poller = new ProbeStatusPollerMock();
         var rateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, rateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, rateLimiter);
         using var debugger = new DynamicInstrumentation(settings, discovery, subscriptions, new LineProbeResolverMock(), snapshots, new LogUploaderMock(), new UploaderMock(), poller, updater, NoOpStatsd.Instance, rateLimiter);
 
         var current = true;
@@ -348,8 +349,6 @@ public class DynamicInstrumentationTests
             {
                 effect();
             }
-
-            return false;
         });
         debugger.IsInitialized.Should().BeFalse();
         Volatile.Write(ref current, stillCurrent);
@@ -472,13 +471,14 @@ public class DynamicInstrumentationTests
         }
 
         [Fact]
-        public async Task ProbeFile_ValidProbe_AppliesInstrumentation()
+        public async Task ProbeFile_UsesOneTargetForStartupAndInstallation()
         {
             var probeJson = @"[
                 {
                     ""id"": ""applied-file-probe"",
                     ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
+                    ""tags"": [""env:env""],
                     ""where"": { ""sourceFile"": ""MyClass.cs"", ""lines"": [""25""] },
                     ""captureSnapshot"": true
                 }
@@ -496,7 +496,12 @@ public class DynamicInstrumentationTests
 
             var lineProbeResolver = new LineProbeResolverMock();
             var probeStatusPoller = new ProbeStatusPollerMock();
-            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var targetReads = 0;
+            var debugger = CreateDebugger(
+                settings,
+                lineProbeResolver: lineProbeResolver,
+                probeStatusPoller: probeStatusPoller,
+                getProbeTarget: () => new(++targetReads == 1 ? "env" : "updated", "version"));
             debugger.Initialize();
 
             await debugger.GetInitializationTask();
@@ -504,6 +509,79 @@ public class DynamicInstrumentationTests
             lineProbeResolver.Called.Should().BeTrue("file probes should be applied to the owning DynamicInstrumentation instance");
             probeStatusPoller.Called.Should().BeTrue("applying a file probe should update probe statuses");
             GetCurrentConfiguration(debugger).LogProbes.Should().ContainSingle(probe => probe.Id == "applied-file-probe");
+        }
+
+        [Theory]
+        [InlineData("DD_ENV", "env", true)]
+        [InlineData("DD_VERSION", "version", true)]
+        [InlineData("DD_ENV", "env", false)]
+        [InlineData("DD_VERSION", "version", false)]
+        public async Task ProbeFile_OwnerSettingsChangeRefreshesActiveRuntimeOnly(string setting, string tag, bool initiallyActive)
+        {
+            var tempFile = CreateTempProbeFile(
+                $$"""
+                [
+                    {
+                        "id": "initial-target",
+                        "language": "dotnet",
+                        "type": "LOG_PROBE",
+                        "where": { "sourceFile": "OwnerSettingsProbeFixture.cs", "lines": ["25"] },
+                        "tags": ["{{tag}}:initial"]
+                    },
+                    {
+                        "id": "updated-target",
+                        "language": "dotnet",
+                        "type": "LOG_PROBE",
+                        "where": { "sourceFile": "OwnerSettingsProbeFixture.cs", "lines": ["26"] },
+                        "tags": ["{{tag}}:updated"]
+                    }
+                ]
+                """);
+            var tracerSettings = new TracerSettings(new DictionaryConfigurationSource(
+                new Dictionary<string, string> { [setting] = initiallyActive ? "initial" : "excluded" }));
+            var debuggerSettings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, tempFile }
+                }),
+                NullConfigurationTelemetry.Instance);
+            var discovery = new DiscoveryServiceMock { DeferNotification = true };
+            var debugger = DebuggerFactory.CreateDynamicInstrumentation(
+                discovery,
+                new RcmSubscriptionManagerMock(),
+                tracerSettings,
+                () => "probe-file-owner-test",
+                debuggerSettings,
+                new NullGitMetadataProvider());
+            _debuggers.Add(debugger);
+
+            var fileApplied = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            debugger.Initialize(apply =>
+            {
+                apply();
+                fileApplied.TrySetResult(true);
+            });
+
+            var completed = await Task.WhenAny(fileApplied.Task, debugger.GetInitializationTask());
+            completed.Should().BeSameAs(fileApplied.Task);
+            debugger.IsInitialized.Should().Be(initiallyActive);
+            GetCurrentConfiguration(debugger).LogProbes.Select(probe => probe.Id)
+                                             .Should().Equal(initiallyActive ? ["initial-target"] : []);
+
+            var manual = new ManualInstrumentationConfigurationSource(
+                new Dictionary<string, object?> { [setting] = "updated" },
+                useDefaultSources: true);
+            tracerSettings.Manager.UpdateManualConfigurationSettings(manual, new ConfigurationTelemetry()).Should().BeTrue();
+
+            debugger.IsInitialized.Should().Be(initiallyActive);
+            GetCurrentConfiguration(debugger).LogProbes.Select(probe => probe.Id)
+                                             .Should().Equal(initiallyActive ? ["updated-target"] : []);
+
+            discovery.Publish();
+            await debugger.GetInitializationTask();
+            debugger.IsRegisteredForRemoteConfiguration.Should().BeTrue();
+            GetCurrentConfiguration(debugger).LogProbes.Select(probe => probe.Id).Should().Equal("updated-target");
         }
 
         [Fact]
@@ -1092,7 +1170,8 @@ public class DynamicInstrumentationTests
             DebuggerSettings settings,
             IDiscoveryService? discoveryService = null,
             LineProbeResolverMock? lineProbeResolver = null,
-            ProbeStatusPollerMock? probeStatusPoller = null)
+            ProbeStatusPollerMock? probeStatusPoller = null,
+            Func<ConfigurationUpdater.ProbeTarget>? getProbeTarget = null)
         {
             var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
             lineProbeResolver ??= new LineProbeResolverMock();
@@ -1110,7 +1189,7 @@ public class DynamicInstrumentationTests
                 logUploader,
                 diagnosticsUploader,
                 probeStatusPoller,
-                ConfigurationUpdater.Create("env", "version", 0),
+                ConfigurationUpdater.Create(getProbeTarget ?? (static () => new("env", "version")), 0),
                 global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance,
                 instrumentProbes: (_, _, _, _) => { });
             _debuggers.Add(debugger);
@@ -1183,7 +1262,7 @@ public class DynamicInstrumentationTests
         [Fact]
         public void RcmRemovalSuppressesFileProbeWithSameId()
         {
-            var updater = ConfigurationUpdater.Create("env", "version", 0);
+            var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0);
 
             updater.AcceptFile(
                 new ProbeConfiguration
@@ -1412,7 +1491,7 @@ public class DynamicInstrumentationTests
         private static DynamicInstrumentation CreateDebugger(DebuggerSettings settings, NativeInstrumentationRecorder nativeRequests, out ConfigurationUpdater updater)
         {
             var globalRateLimiter = new GlobalRateLimiterMock();
-            updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+            updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
             return new DynamicInstrumentation(
                 settings,
                 new DiscoveryServiceMock(),
@@ -1692,11 +1771,6 @@ public class DynamicInstrumentationTests
         }
 
         public void SetCapability(BigInteger index, bool available)
-        {
-            throw new NotImplementedException();
-        }
-
-        public byte[] GetCapabilities()
         {
             throw new NotImplementedException();
         }

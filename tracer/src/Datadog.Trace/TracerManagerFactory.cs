@@ -195,7 +195,7 @@ namespace Datadog.Trace
                 settings,
                 RcmSubscriptionManager.Instance,
                 discoveryService: discoveryService,
-                deferRemoteConfigSubscription: remoteConfigurationManager is RemoteConfigurationManager);
+                deferRemoteConfigSubscription: remoteConfigurationManager.IsEnabled);
 
             return CreateTracerManagerFrom(
                 settings,

@@ -311,10 +311,8 @@ namespace Datadog.Trace.Configuration
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
 
-            var committed = false;
             // Match tracer replacement's lock order: owner first, settings second.
-            owner.TryRunWhileCurrent(() => committed = Commit());
-            return committed;
+            return owner.TryRunWhileCurrent(Commit);
 
             bool Commit()
             {

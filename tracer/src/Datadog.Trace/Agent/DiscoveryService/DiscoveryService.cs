@@ -54,6 +54,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly ServiceRemappingHash _serviceRemappingHash;
         private ApiFactoryHolder _apiRequestFactory;
         private AgentConfiguration? _configuration;
+        private long _remoteConfigurationEndpointGeneration;
         private string? _configurationHash;
         private string _agentConfigStateHash = string.Empty;
         private long _agentConfigStateHashUnixTime;
@@ -257,7 +258,15 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 }
 
                 _configurationHash = configurationHash;
-                if (newConfig.Equals(_configuration))
+                var previous = _configuration;
+                if (!ReferenceEquals(previous?.DiscoverySettings, newConfig.DiscoverySettings)
+                 || !string.Equals(previous?.ConfigurationEndpoint, newConfig.ConfigurationEndpoint, StringComparison.Ordinal))
+                {
+                    _remoteConfigurationEndpointGeneration++;
+                }
+
+                newConfig = newConfig with { RemoteConfigurationEndpointGeneration = _remoteConfigurationEndpointGeneration };
+                if (newConfig.Equals(previous))
                 {
                     return;
                 }

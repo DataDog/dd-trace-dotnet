@@ -65,10 +65,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         [JsonProperty("tags")]
         public List<string> Tags { get; }
 
-#if SHARED_REMOTE_CONFIG
         [JsonIgnore]
         internal long TargetGeneration { get; set; }
-#endif
 
         public static RcmClientTracer Create(
             string runtimeId,

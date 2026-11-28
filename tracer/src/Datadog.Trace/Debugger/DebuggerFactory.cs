@@ -37,7 +37,8 @@ internal sealed class DebuggerFactory
         var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Log);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
-        var uploadTransport = new DebuggerAgentTransport(tracerSettings.Manager, discoveryService, CreateAgentRequestFactory);
+        var settings = tracerSettings.Manager;
+        var uploadTransport = new DebuggerAgentTransport(settings, discoveryService, CreateAgentRequestFactory);
         try
         {
             var snapshotUploader = SnapshotUploader.Create(snapshotSink, BatchUploader.Create(new SnapshotUploadApi(uploadTransport, gitMetadataTagsProvider)), debuggerSettings);
@@ -45,7 +46,14 @@ internal sealed class DebuggerFactory
             var diagnosticsUploader = DiagnosticsUploader.Create(diagnosticsSink, BatchUploader.Create(new DiagnosticsUploadApi(uploadTransport, gitMetadataTagsProvider)), debuggerSettings);
             var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
             var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-            var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
+            var configurationUpdater = ConfigurationUpdater.Create(
+                () =>
+                {
+                    var target = settings.CurrentMutableSettings;
+                    return new(target.Environment, target.ServiceVersion);
+                },
+                debuggerSettings.MaxProbesPerType,
+                globalRateLimiter);
             var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
             var statsd = GetDogStatsd(tracerSettings);
@@ -63,7 +71,8 @@ internal sealed class DebuggerFactory
                 dogStats: statsd,
                 globalRateLimiter: globalRateLimiter,
                 memoryPressureMonitor: memoryPressureMonitor,
-                uploadTransport: uploadTransport);
+                uploadTransport: uploadTransport,
+                ownerSettings: settings);
         }
         catch
         {

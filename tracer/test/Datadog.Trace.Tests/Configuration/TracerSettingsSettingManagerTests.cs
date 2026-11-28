@@ -18,6 +18,47 @@ namespace Datadog.Trace.Tests.Configuration;
 public class TracerSettingsSettingManagerTests
 {
     [Fact]
+    public void RemoteConfigurationTargetGenerationFollowsPublishedSettings()
+    {
+        var telemetry = new ConfigurationTelemetry();
+        var source = new DictionaryConfigurationSource(new Dictionary<string, string> { ["DD_ENV"] = "staging" });
+        var settings = new TracerSettings(source, telemetry).Manager;
+        var generations = new List<long>();
+        settings.SubscribeToChanges(changes =>
+        {
+            settings.CurrentRemoteConfigurationTargetGeneration.Should().Be(changes.RemoteConfigurationTargetGeneration);
+            generations.Add(changes.RemoteConfigurationTargetGeneration);
+        });
+
+        var dynamic = new DynamicConfigConfigurationSource("""{"lib_config":{"tracing_sampling_rate":0.42}}""", ConfigurationOrigins.RemoteConfig);
+        settings.TryUpdateDynamicConfigurationSettings(dynamic, telemetry, tryCommit: null, out var updated).Should().BeTrue();
+        updated.Should().BeTrue();
+        settings.CurrentMutableSettings.ServiceVersion.Should().BeNull();
+        UpdateTarget("staging", string.Empty);
+        UpdateTarget("production", string.Empty);
+        UpdateTarget("PRODUCTION", string.Empty);
+        UpdateTarget("PRODUCTION", "1.2.3");
+        UpdateTarget("PRODUCTION", string.Empty);
+        UpdateTarget("PRODUCTION");
+        UpdateTarget("staging");
+
+        generations.Should().Equal(0L, 0L, 1L, 1L, 2L, 3L, 3L, 4L);
+
+        void UpdateTarget(string environment, string serviceVersion = null)
+        {
+            var values = new Dictionary<string, object> { ["DD_ENV"] = environment };
+            if (serviceVersion is not null)
+            {
+                values["DD_VERSION"] = serviceVersion;
+            }
+
+            var manual = new ManualInstrumentationConfigurationSource(values, useDefaultSources: true);
+            settings.UpdateManualConfigurationSettings(manual, telemetry).Should().BeTrue();
+            settings.CurrentMutableSettings.ServiceVersion.Should().Be(serviceVersion);
+        }
+    }
+
+    [Fact]
     public void UpdateSettings_HandlesDynamicConfigurationChanges()
     {
         var initialTelemetry = new ConfigurationTelemetry();

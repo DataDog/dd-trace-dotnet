@@ -111,7 +111,7 @@ namespace Datadog.Trace.FeatureFlags
         private int _initializationTimedOut;
         private bool _activated;
         private bool _disposed;
-        private bool _deliveryStarted;
+        private bool _deliveryAvailable;
         private FlagSelection _claimedFlagSelection = FlagSelection.AllFlags;
         private int _flagSelectionClaims;
 
@@ -210,9 +210,17 @@ namespace Datadog.Trace.FeatureFlags
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
-            if (!deferRemoteConfigSubscription && settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            if (settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
             {
-                module.SubscribeToRemoteConfiguration();
+                if (deferRemoteConfigSubscription)
+                {
+                    // A successor can wait for configuration while its predecessor drains.
+                    module._deliveryAvailable = module._isRemoteConfigurationAvailable;
+                }
+                else
+                {
+                    module.SubscribeToRemoteConfiguration();
+                }
             }
 
             return module;
@@ -335,7 +343,7 @@ namespace Datadog.Trace.FeatureFlags
 
                         _agentlessSource = source;
                         sourceToStart = source;
-                        _deliveryStarted = true;
+                        _deliveryAvailable = true;
                         break;
                 }
             }
@@ -393,11 +401,11 @@ namespace Datadog.Trace.FeatureFlags
 
             // Read under the lock so a concurrent activation is seen through, rather than reporting no
             // delivery because its source had not finished starting.
-            bool deliveryStarted;
+            bool deliveryAvailable;
             string? deliveryUnavailableReason;
             lock (_stateLock)
             {
-                deliveryStarted = _deliveryStarted;
+                deliveryAvailable = _deliveryAvailable;
                 deliveryUnavailableReason = _deliveryUnavailableReason;
             }
 
@@ -407,7 +415,7 @@ namespace Datadog.Trace.FeatureFlags
             // Returning instead would report the provider as usable while every evaluation keeps
             // returning its default, so the failure is raised: the SDK turns it into an error status
             // and an error event without taking the application down.
-            if (!deliveryStarted)
+            if (!deliveryAvailable)
             {
                 var exception = new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
 
@@ -1027,12 +1035,12 @@ namespace Datadog.Trace.FeatureFlags
                 _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
                 _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
-                _deliveryStarted = true;
+                _deliveryAvailable = true;
                 _log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Starting remote_config configuration source (Agent Remote Configuration)");
             }
         }
 
-        private void ApplyRemoteConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
+        private bool ApplyRemoteConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
         {
             _log.Debug<int>("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration received ({FileCount} file(s))", list.Count);
             try
@@ -1041,9 +1049,12 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     var selectedConfig = MergeConfigs(list);
 
-                    // Logged only once applied: "applied" must not be reported for a configuration
-                    // the evaluator rejected, which ApplyConfiguration already warns about.
-                    if (ApplyConfiguration(selectedConfig) && _log.IsEnabled(LogEventLevel.Debug))
+                    if (!ApplyConfiguration(selectedConfig))
+                    {
+                        return false;
+                    }
+
+                    if (_log.IsEnabled(LogEventLevel.Debug))
                     {
                         _log.Debug<int, int, string, string, string>(
                             "FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration applied successfully ({UsableFlagCount} usable flag(s), {RejectedFlagCount} rejected, configuration env={Environment}, createdAt={CreatedAt}, files={Files})",
@@ -1064,10 +1075,13 @@ namespace Datadog.Trace.FeatureFlags
                     _log.Debug("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration removed; evaluations return default values until a new configuration is applied");
                     NotifyNewConfiguration("ApplyRemoteConfigurations");
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 _log.Warning(ex, "FeatureFlagsModule::ApplyRemoteConfigurations -> Error processing new config");
+                return false;
             }
 
             static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)

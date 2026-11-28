@@ -21,11 +21,74 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FfeProductTests
 {
+    [Theory]
+    [CombinatorialData]
+    public void UpdateFromRcm_InstallsValidFilesAndReportsAnInvalidSibling(bool invalidFirst, bool malformed)
+    {
+        var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
+        var product = new FfeProduct(configurations =>
+        {
+            delivered = configurations;
+            return true;
+        });
+        var validPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/valid/config");
+        var invalidPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/invalid/config");
+        var valid = ConfigUpdate(validPath, 1)[RcmProducts.FfeFlags][0];
+        var invalid = ConfigUpdate(invalidPath, 1, malformed ? "{" : "null")[RcmProducts.FfeFlags][0];
+        var updates = new Dictionary<string, List<RemoteConfiguration>>
+        {
+            [RcmProducts.FfeFlags] = invalidFirst ? [invalid, valid] : [valid, invalid]
+        };
+
+        var outcomes = product.UpdateFromRcm(updates, null);
+
+        delivered.Should().ContainSingle().Which.Key.Should().Be(validPath.Path);
+        outcomes.Should().ContainSingle(outcome => outcome.Filename == validPath.Path)
+                .Which.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
+        outcomes.Should().ContainSingle(outcome => outcome.Filename == invalidPath.Path)
+                .Which.ApplyState.Should().Be(ApplyStates.ERROR);
+    }
+
+    [Fact]
+    public void UpdateFromRcm_RetriesWithdrawalsWhenTheEvaluatorRejectsAnUpdate()
+    {
+        var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
+        var reject = false;
+        var product = new FfeProduct(configurations =>
+        {
+            if (reject)
+            {
+                return false;
+            }
+
+            delivered = configurations;
+            return true;
+        });
+        var installedPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/installed/config");
+        var rejectedPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/rejected/config");
+        var successorPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/successor/config");
+        product.UpdateFromRcm(ConfigUpdate(installedPath, 1), null);
+
+        reject = true;
+        var removals = new Dictionary<string, List<RemoteConfigurationPath>> { [RcmProducts.FfeFlags] = [installedPath] };
+        var rejected = product.UpdateFromRcm(ConfigUpdate(rejectedPath, 1), removals);
+        rejected.Should().ContainSingle().Which.ApplyState.Should().Be(ApplyStates.ERROR);
+        delivered.Should().ContainSingle().Which.Key.Should().Be(installedPath.Path);
+
+        reject = false;
+        product.UpdateFromRcm(ConfigUpdate(successorPath, 1), null);
+        delivered.Should().ContainSingle().Which.Key.Should().Be(successorPath.Path);
+    }
+
     [Fact]
     public void UpdateFromRcm_WhenTheSameFileIsModifiedRepeatedly_HoldsOneVersionOfIt()
     {
         var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
-        var product = new FfeProduct(configurations => delivered = configurations);
+        var product = new FfeProduct(configurations =>
+        {
+            delivered = configurations;
+            return true;
+        });
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
 
         for (var version = 1; version <= 3; version++)
@@ -47,7 +110,11 @@ public class FfeProductTests
         // Default Newtonsoft date parsing turns these into dates, in the host's time zone for offsets. The
         // agentless parser keeps them as strings.
         var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
-        var product = new FfeProduct(configurations => delivered = configurations);
+        var product = new FfeProduct(configurations =>
+        {
+            delivered = configurations;
+            return true;
+        });
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
         var json = """
             {"flags":{"date-flag":{"key":"date-flag","enabled":true,"variationType":"STRING",
@@ -69,7 +136,11 @@ public class FfeProductTests
     public void UpdateFromRcm_KeepsDateLikeStringsInConditionsJsonValuesAndAllocationDates(string text)
     {
         var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
-        var product = new FfeProduct(configurations => delivered = configurations);
+        var product = new FfeProduct(configurations =>
+        {
+            delivered = configurations;
+            return true;
+        });
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
         var json = """
             {"flags":{"json-flag":{"key":"json-flag","enabled":true,"variationType":"JSON",

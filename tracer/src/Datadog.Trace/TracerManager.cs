@@ -63,7 +63,7 @@ namespace Datadog.Trace
         private PerTraceSettings _perTraceSettings;
         private volatile bool _isClosing;
         private Task _remoteConfigurationPredecessor;
-        private Task _nativeRemoteConfigurationPredecessor;
+        private Task _remoteConfigurationExitPredecessor;
         private bool _remoteConfigurationStartScheduled;
 
         public TracerManager(
@@ -199,6 +199,8 @@ namespace Datadog.Trace
 
         public ServiceRemappingHash ServiceRemappingHash { get; }
 
+        internal bool IsCurrent => !_isClosing && ReferenceEquals(Volatile.Read(ref _instance), this);
+
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
         /// which use the global <see cref="TracerManager"/>
@@ -216,18 +218,18 @@ namespace Datadog.Trace
                 newManager = CreateInitializedTracer(settings, factory);
                 if (oldManager is not null)
                 {
+                    oldManager._isClosing = true;
                     newManager._remoteConfigurationPredecessor = oldManager._remoteConfigurationPredecessor;
-                    newManager._nativeRemoteConfigurationPredecessor = oldManager._nativeRemoteConfigurationPredecessor;
-                    if (oldManager.RemoteConfigurationManager is RemoteConfigurationManager oldConfiguration
-                     && !ReferenceEquals(oldConfiguration, newManager.RemoteConfigurationManager))
+                    newManager._remoteConfigurationExitPredecessor = oldManager._remoteConfigurationExitPredecessor;
+                    if (oldManager.RemoteConfigurationManager is { } oldConfiguration
+                     && !ReferenceEquals(oldConfiguration, newManager.RemoteConfigurationManager)
+                     && oldConfiguration.PrepareRetirement(out var drainAtProcessExit) is { } finishRetirement)
                     {
-                        oldManager._isClosing = true;
-                        oldConfiguration.RequestStop();
-                        remoteConfigurationRetirement = oldManager.RetireRemoteConfiguration(newManager, oldConfiguration);
+                        remoteConfigurationRetirement = oldManager.RetireRemoteConfiguration(newManager, finishRetirement);
                         newManager._remoteConfigurationPredecessor = remoteConfigurationRetirement;
-                        if (oldConfiguration.HasNativeWorkerToDrain)
+                        if (drainAtProcessExit)
                         {
-                            newManager._nativeRemoteConfigurationPredecessor = remoteConfigurationRetirement;
+                            newManager._remoteConfigurationExitPredecessor = remoteConfigurationRetirement;
                         }
                     }
                 }
@@ -238,8 +240,6 @@ namespace Datadog.Trace
 
             if (oldManager is not null)
             {
-                // Clean up the old TracerManager instance
-                oldManager._isClosing = true;
                 // Fire and forget
                 _ = CleanUpOldTracerManager(oldManager, newManager, remoteConfigurationRetirement);
             }
@@ -262,13 +262,21 @@ namespace Datadog.Trace
         {
             lock (_globalInstanceLock)
             {
-                if (!ReferenceEquals(_instance, this) || _isClosing)
+                if (!IsCurrent)
                 {
                     return false;
                 }
 
                 update();
                 return true;
+            }
+        }
+
+        internal bool TryRunWhileCurrent(Func<bool> update)
+        {
+            lock (_globalInstanceLock)
+            {
+                return IsCurrent && update();
             }
         }
 
@@ -287,14 +295,14 @@ namespace Datadog.Trace
 
         private void StartRemoteConfiguration()
         {
-            if (RemoteConfigurationManager is RemoteConfigurationManager && Settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            if (RemoteConfigurationManager.IsEnabled && Settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
             {
                 FeatureFlags?.SubscribeToRemoteConfiguration();
             }
 
             DynamicConfigurationManager.Start(this);
             TracerFlareManager.Start();
-            RemoteConfigurationManager.Start();
+            RemoteConfigurationManager.Start(this);
         }
 
         private void ScheduleRemoteConfigurationStart()
@@ -335,14 +343,14 @@ namespace Datadog.Trace
             }
         }
 
-        private Task RetireRemoteConfiguration(TracerManager successor, RemoteConfigurationManager configuration)
+        private Task RetireRemoteConfiguration(TracerManager successor, Func<Task> finishRetirement)
         {
             return Task.Run(async () =>
             {
                 try
                 {
                     // Another replacement can arrive while this instance is waiting for its predecessor.
-                    await AwaitRemoteConfigurationAsync(_remoteConfigurationPredecessor, configuration.RetireAsync()).ConfigureAwait(false);
+                    await AwaitRemoteConfigurationAsync(_remoteConfigurationPredecessor, finishRetirement()).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -355,11 +363,11 @@ namespace Datadog.Trace
             });
         }
 
-        private async Task ShutdownRemoteConfigurationAsync(RemoteConfigurationManager nativeConfiguration)
+        private async Task ShutdownRemoteConfigurationAsync(Func<Task> finishDrain)
         {
             try
             {
-                await AwaitRemoteConfigurationAsync(_nativeRemoteConfigurationPredecessor, nativeConfiguration?.StopAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                await AwaitRemoteConfigurationAsync(_remoteConfigurationExitPredecessor, finishDrain?.Invoke() ?? Task.CompletedTask).ConfigureAwait(false);
             }
             catch (Exception error)
             {
@@ -1044,16 +1052,15 @@ namespace Datadog.Trace
 
                 if (instance is not null)
                 {
-                    RemoteConfigurationManager nativeConfiguration;
+                    Func<Task> finishDrain;
                     lock (_globalInstanceLock)
                     {
                         instance._isClosing = true;
-                        nativeConfiguration = instance.RemoteConfigurationManager is RemoteConfigurationManager { HasNativeWorkerToDrain: true } native ? native : null;
-                        nativeConfiguration?.RequestStop();
+                        finishDrain = instance.RemoteConfigurationManager?.PrepareShutdownDrain();
                     }
 
-                    var waitForRemoteConfiguration = nativeConfiguration is not null ||
-                                                     instance._nativeRemoteConfigurationPredecessor is { Status: not TaskStatus.RanToCompletion };
+                    var waitForRemoteConfiguration = finishDrain is not null ||
+                                                     instance._remoteConfigurationExitPredecessor is { Status: not TaskStatus.RanToCompletion };
                     instance._settingSubscription.Dispose();
                     if (!waitForRemoteConfiguration)
                     {
@@ -1075,10 +1082,10 @@ namespace Datadog.Trace
                     var remoteConfigurationTask = Task.CompletedTask;
                     if (waitForRemoteConfiguration)
                     {
-                        remoteConfigurationTask = instance.ShutdownRemoteConfigurationAsync(nativeConfiguration);
+                        remoteConfigurationTask = instance.ShutdownRemoteConfigurationAsync(finishDrain);
                     }
 
-                    if (nativeConfiguration is null)
+                    if (finishDrain is null)
                     {
                         instance.RemoteConfigurationManager?.Dispose();
                     }

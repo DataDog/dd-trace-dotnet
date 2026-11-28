@@ -6,89 +6,119 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
-using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags.Rcm;
 
 internal sealed class FfeProduct
 {
-    private readonly Action<List<KeyValuePair<string, ServerConfiguration>>> _onNewConfig;
+    private readonly Func<List<KeyValuePair<string, ServerConfiguration>>, bool> _tryApplyConfigurations;
     private readonly IDatadogLogger _log;
-    private List<KeyValuePair<string, ServerConfiguration>> _serverConfigurations = new List<KeyValuePair<string, ServerConfiguration>>();
+    private readonly HashSet<string> _pendingWithdrawals = [];
+    private List<KeyValuePair<string, ServerConfiguration>> _serverConfigurations = [];
 
-    public FfeProduct(Action<List<KeyValuePair<string, ServerConfiguration>>> onNewConfig, IDatadogLogger? logger = null)
+    public FfeProduct(Func<List<KeyValuePair<string, ServerConfiguration>>, bool> tryApplyConfigurations, IDatadogLogger? logger = null)
     {
-        _onNewConfig = onNewConfig;
+        _tryApplyConfigurations = tryApplyConfigurations;
         _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FfeProduct));
     }
 
     public ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
         _log.Debug("FfeProduct::UpdateFromRcm -> Processing new config...");
-        List<ApplyDetails> res = new List<ApplyDetails>();
-        bool apply = false;
-
-        try
+        configsByProduct.TryGetValue(RcmProducts.FfeFlags, out var files);
+        List<RemoteConfigurationPath>? removals = null;
+        removedConfigsByProduct?.TryGetValue(RcmProducts.FfeFlags, out removals);
+        if (files is not { Count: > 0 } && removals is not { Count: > 0 } && _pendingWithdrawals.Count == 0)
         {
-            if (removedConfigsByProduct is not null && removedConfigsByProduct.TryGetValue(RcmProducts.FfeFlags, out var removedConfigs))
+            return [];
+        }
+
+        var candidate = new List<KeyValuePair<string, ServerConfiguration>>(_serverConfigurations);
+        var changed = _pendingWithdrawals.Count != 0;
+        if (changed)
+        {
+            candidate.RemoveAll(file => _pendingWithdrawals.Contains(file.Key));
+        }
+
+        if (removals is not null)
+        {
+            foreach (var removal in removals)
             {
-                foreach (var removedConfig in removedConfigs)
+                if (candidate.RemoveAll(file => file.Key == removal.Path) != 0)
                 {
-                    var removed = _serverConfigurations.RemoveAll((x) => x.Key == removedConfig.Path) > 0;
-                    apply |= removed;
-                    if (removed)
-                    {
-                        _log.Debug<string>("Feature Flags: remote_config configuration file {Path} removed", removedConfig.Path);
-                    }
+                    _pendingWithdrawals.Add(removal.Path);
+                    changed = true;
                 }
             }
+        }
 
-            if (configsByProduct.TryGetValue(RcmProducts.FfeFlags, out var ffeConfigs))
+        ApplyDetails[] outcomes = files is null ? [] : new ApplyDetails[files.Count];
+        if (files is not null)
+        {
+            for (var index = 0; index < files.Count; index++)
             {
-                foreach (var ffeConfig in ffeConfigs)
+                var file = files[index];
+                var path = file.Path.Path;
+                _log.Debug<string, long, long>(
+                    "Feature Flags: remote_config configuration file {Path} received (version {Version}, {Length} bytes)",
+                    path,
+                    file.Version,
+                    file.Length);
+
+                ServerConfiguration? configuration;
+                try
                 {
-                    _log.Debug<string, long, long>(
-                        "Feature Flags: remote_config configuration file {Path} received (version {Version}, {Length} bytes)",
-                        ffeConfig.Path.Path,
-                        ffeConfig.Version,
-                        ffeConfig.Length);
                     // Keep date-like strings as text, as the agentless parser does.
-                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None);
-                    if (serverConfigFile.TypedFile is null)
-                    {
-                        // Not acknowledged either, so the file is not reported as applied anywhere.
-                        _log.Debug<string>("Feature Flags: remote_config configuration file {Path} was rejected: it holds no configuration, so the version of it applied before, if any, stays in use", ffeConfig.Path.Path);
-                    }
-                    else
-                    {
-                        // A modified file arrives under the path it already has, and never in the
-                        // removed set. The configurations are merged, and a merge cannot delete a
-                        // flag, so a stale version left here keeps serving flags the new one dropped.
-                        _serverConfigurations.RemoveAll(x => x.Key == ffeConfig.Path.Path);
-                        _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
-                        res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
-                        apply = true;
-                    }
+                    configuration = new NamedRawFile(file.Path, file.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None).TypedFile;
                 }
-            }
+                catch (JsonException error)
+                {
+                    _log.Debug(error, "Feature Flags: could not parse remote_config configuration file {Path}", path);
+                    outcomes[index] = ApplyDetails.FromError(path, "Could not parse Feature Flags configuration");
+                    continue;
+                }
 
-            if (apply)
-            {
-                _onNewConfig?.Invoke(_serverConfigurations);
+                if (configuration is null)
+                {
+                    outcomes[index] = ApplyDetails.FromError(path, "Feature Flags configuration is empty");
+                    continue;
+                }
+
+                // A replacement keeps its path. Leaving the old file in the merge keeps flags it dropped.
+                candidate.RemoveAll(previous => previous.Key == path);
+                candidate.Add(new KeyValuePair<string, ServerConfiguration>(path, configuration));
+                outcomes[index] = new ApplyDetails(path);
+                changed = true;
             }
         }
-        catch (Exception ex)
+
+        if (!changed)
         {
-            _log.Error(ex, "Error while updating FFE RCM config");
+            return outcomes;
         }
 
-        return [.. res];
+        var applied = _tryApplyConfigurations(candidate);
+        if (applied)
+        {
+            _serverConfigurations = candidate;
+            _pendingWithdrawals.Clear();
+        }
+
+        for (var index = 0; index < outcomes.Length; index++)
+        {
+            if (outcomes[index].ApplyState == ApplyStates.UNACKNOWLEDGED)
+            {
+                var path = outcomes[index].Filename;
+                outcomes[index] = applied
+                                      ? ApplyDetails.FromOk(path)
+                                      : ApplyDetails.FromError(path, "Feature Flags evaluator did not install the configuration");
+            }
+        }
+
+        return outcomes;
     }
 }

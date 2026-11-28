@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return null;
             }
 
-            var key = str.Substring(0, index.Value + 1);
+            var key = str.Substring(0, index.Value);
             var value = str.Substring(index.Value + 1);
 
             return new Tag() { Key = key, Value = value };

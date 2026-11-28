@@ -455,14 +455,6 @@ internal sealed partial class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    public byte[] GetCapabilities()
-    {
-        lock (_syncRoot)
-        {
-            return EncodeCapabilities(_capabilities);
-        }
-    }
-
     public ManagedRcmPoll CreateManagedPoller() => new ManagedSession(this).SendRequest;
 
     internal byte[] GetCachedCapabilities()

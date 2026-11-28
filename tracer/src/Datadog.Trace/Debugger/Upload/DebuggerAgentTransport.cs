@@ -55,6 +55,8 @@ internal sealed class DebuggerAgentTransport : IDisposable
 
     internal Route? Current => Volatile.Read(ref _current);
 
+    internal MutableSettings CurrentMutableSettings => _settings.CurrentMutableSettings;
+
     private bool HasRemoteConfigRoute
         => _current is { HasRemoteConfigEndpoints: true } route &&
            ReferenceEquals(route.Configuration.DiscoverySettings, _settings.CurrentExporterSettings) &&
@@ -89,9 +91,10 @@ internal sealed class DebuggerAgentTransport : IDisposable
             return false;
         }
 
-        return _settings.TryRunWithCurrentExporter(
+        return _settings.TryRunWithCurrentAgentConfiguration(
             exporter,
-            () => _discoveryService.TryRunWithCurrentConfiguration(configuration => ReferenceEquals(configuration, route.Configuration) && ApplyIfCurrent()));
+            _discoveryService,
+            configuration => ReferenceEquals(configuration, route.Configuration) && ApplyIfCurrent());
 
         bool ApplyIfCurrent()
         {
@@ -188,6 +191,7 @@ internal sealed class DebuggerAgentTransport : IDisposable
 
         public AgentConfiguration Configuration { get; } = configuration;
 
-        public bool HasRemoteConfigEndpoints => !string.IsNullOrEmpty(Configuration.ConfigurationEndpoint) && !string.IsNullOrEmpty(Configuration.DebuggerEndpoint);
+        public bool HasRemoteConfigEndpoints =>
+            !StringUtil.IsNullOrEmpty(Configuration.ConfigurationEndpoint) && !StringUtil.IsNullOrEmpty(Configuration.DebuggerEndpoint);
     }
 }

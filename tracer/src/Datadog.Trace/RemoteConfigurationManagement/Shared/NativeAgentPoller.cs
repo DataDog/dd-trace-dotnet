@@ -61,16 +61,6 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
 
     public void Dispose() => _reactor?.Dispose();
 
-    internal static bool HasSameTarget(RcmClientTracer previous, RcmClientTracer current)
-    {
-        var before = CreateTarget(previous);
-        var after = CreateTarget(current);
-        return before.Service == after.Service &&
-               before.Env == after.Env &&
-               before.AppVersion == after.AppVersion &&
-               (ReferenceEquals(before.ProcessTags, after.ProcessTags) || before.ProcessTags.SequenceEqual(after.ProcessTags));
-    }
-
     internal async Task Poll(IRemoteConfigurationApi api, string endpoint, RcmClientTracer tracer, Task stop, Func<bool> isCurrent, Func<Func<bool>, bool> tryCommitResponse)
     {
         if (_activationFailed || stop.IsCompleted || !isCurrent())
@@ -78,7 +68,11 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
             return;
         }
 
-        var reactor = _reactor ?? Activate();
+        if ((_reactor ?? Activate()) is not { } reactor)
+        {
+            return;
+        }
+
         var pollOutstanding = false;
         ArraySegment<byte> request = default;
         try
@@ -512,13 +506,21 @@ internal sealed class NativeAgentPoller(string libraryPath, RcmSubscriptionManag
     private static Target CreateTarget(RcmClientTracer tracer)
         => new(tracer.Service ?? string.Empty, tracer.Env ?? string.Empty, tracer.AppVersion ?? string.Empty, tracer.ProcessTags ?? Array.Empty<string>());
 
-    private Reactor Activate()
+    private Reactor? Activate()
     {
         _activationFailed = true;
-        var reactor = Reactor.OpenNative(_libraryPath);
-        _reactor = reactor;
+        try
+        {
+            _reactor = Reactor.OpenNative(_libraryPath);
+        }
+        catch (DllNotFoundException error)
+        {
+            Log.Warning(error, "Could not load the native Remote Configuration library");
+            return null;
+        }
+
         _activationFailed = false;
-        return reactor;
+        return _reactor;
     }
 
     private void UpdateOptions(Reactor reactor, RcmClientTracer tracer, ICollection<string> products, byte[] bits)

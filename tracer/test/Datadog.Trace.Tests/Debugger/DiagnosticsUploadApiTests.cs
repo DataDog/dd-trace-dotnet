@@ -101,6 +101,37 @@ public class DiagnosticsUploadApiTests
     }
 
     [Fact]
+    public async Task UsesCurrentOwnerSettingsForLiveDiagnosticsTags()
+    {
+        var settings = new TracerSettings(new DictionaryConfigurationSource(
+            new Dictionary<string, string>
+            {
+                ["DD_ENV"] = "rc-debugger-owner",
+                ["DD_VERSION"] = "rc-debugger-owner-version"
+            })).Manager;
+        using var transport = new DebuggerAgentTransport(settings, _discoveryServiceMock, _ => _testRequestFactory);
+        var api = new DiagnosticsUploadApi(transport, _nullGitMetadataProvider);
+        _discoveryServiceMock.TriggerChange(diagnosticsEndpoint: "debugger/v1/diagnostics", discoverySettings: settings.InitialExporterSettings);
+
+        (await api.SendBatchAsync(_data)).Should().BeTrue();
+
+        var request = _testRequestFactory.RequestsSent.Should().ContainSingle().Which;
+        Uri.UnescapeDataString(request.Endpoint.Query).Should().Contain("env:rc-debugger-owner")
+           .And.Contain("version:rc-debugger-owner-version");
+
+        var manual = new ManualInstrumentationConfigurationSource(
+            new Dictionary<string, object> { ["DD_ENV"] = "rc-debugger-updated", ["DD_VERSION"] = "rc-debugger-updated-version" },
+            useDefaultSources: true);
+        settings.UpdateManualConfigurationSettings(manual, new ConfigurationTelemetry()).Should().BeTrue();
+
+        (await api.SendBatchAsync(_data)).Should().BeTrue();
+
+        _testRequestFactory.RequestsSent.Should().HaveCount(2);
+        Uri.UnescapeDataString(_testRequestFactory.RequestsSent[1].Endpoint.Query).Should().Contain("env:rc-debugger-updated")
+           .And.Contain("version:rc-debugger-updated-version");
+    }
+
+    [Fact]
     public async Task KeepsNewAgentDiscoveryWhenStartupReplaysThePreviousAgent()
     {
         const string endpoint = "debugger/v1/diagnostics";

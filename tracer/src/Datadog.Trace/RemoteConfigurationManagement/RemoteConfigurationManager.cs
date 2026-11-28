@@ -43,6 +43,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #endif
         private CancellationTokenSource? _managedPollCancellation;
         private Task? _worker;
+        private TracerManager? _owner;
         private int _disposed;
 
         private ManagedRcmPoll? _managedPoll;
@@ -70,17 +71,23 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #endif
 
             _transport = CreateTransport(_settings.InitialExporterSettings);
-            UpdateRcmClientTracer(_settings.InitialMutableSettings);
+            var mutableSettings = _settings.InitialMutableSettings;
+            UpdateRcmClientTracer(mutableSettings, targetGeneration: 0);
             _settingSubscription = _settings.SubscribeToChanges(changes =>
             {
-#if SHARED_REMOTE_CONFIG
-                if (changes.UpdatedMutable is { } updated
-                 && (_nativeLibraryPath is null || HasRcmMetadataChanged(changes.PreviousMutable, updated)))
-#else
-                if (changes.UpdatedMutable is { } updated)
-#endif
+                var updated = changes.EffectiveMutable;
+                var targetGeneration = changes.RemoteConfigurationTargetGeneration;
+                var targetChanged = targetGeneration != _rcmTracer.TargetGeneration;
+                if (targetChanged || !ReferenceEquals(mutableSettings, updated))
                 {
-                    UpdateRcmClientTracer(updated);
+#if SHARED_REMOTE_CONFIG
+                    if (targetChanged || _nativeLibraryPath is null || HasRcmMetadataChanged(mutableSettings, updated))
+#endif
+                    {
+                        UpdateRcmClientTracer(updated, targetGeneration);
+                    }
+
+                    mutableSettings = updated;
                 }
 
                 var exporter = changes.EffectiveExporter;
@@ -91,7 +98,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             });
 
             [MemberNotNull(nameof(_rcmTracer))]
-            void UpdateRcmClientTracer(MutableSettings mutable)
+            void UpdateRcmClientTracer(MutableSettings mutable, long targetGeneration)
             {
                 var rcmTracer = RcmClientTracer.Create(
                     runtimeId: Util.RuntimeId.Get(),
@@ -102,25 +109,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     appVersion: mutable.ServiceVersion,
                     globalTags: mutable.GlobalTags,
                     processTags: mutable.ProcessTags?.TagsList);
-#if SHARED_REMOTE_CONFIG
-                if (_nativeLibraryPath is not null)
-                {
-                    lock (_workerGate)
-                    {
-                        var previous = _rcmTracer;
-                        var generation = previous?.TargetGeneration ?? 0;
-                        if (previous is not null && !NativeAgentPoller.HasSameTarget(previous, rcmTracer))
-                        {
-                            generation++;
-                        }
-
-                        rcmTracer.TargetGeneration = generation;
-                        Volatile.Write(ref _rcmTracer!, rcmTracer);
-                    }
-
-                    return;
-                }
-#endif
+                rcmTracer.TargetGeneration = targetGeneration;
                 Interlocked.Exchange(ref _rcmTracer!, rcmTracer);
             }
 
@@ -138,33 +127,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
 #if SHARED_REMOTE_CONFIG
             static bool HasRcmMetadataChanged(MutableSettings previous, MutableSettings updated)
-                => previous.DefaultServiceName != updated.DefaultServiceName
-                   || previous.Environment != updated.Environment
-                   || previous.ServiceVersion != updated.ServiceVersion
-                   || previous.ProcessTags?.SerializedTags != updated.ProcessTags?.SerializedTags
-                   || previous.GitCommitSha != updated.GitCommitSha
+                => previous.GitCommitSha != updated.GitCommitSha
                    || previous.GitRepositoryUrl != updated.GitRepositoryUrl
                    || (!ReferenceEquals(previous.GlobalTags, updated.GlobalTags) && !previous.GlobalTags.SequenceEqual(updated.GlobalTags));
 #endif
         }
 
-        internal Task StopRequested => _processExit.Task;
+        public bool IsEnabled => true;
 
-        internal bool HasNativeWorkerToDrain
+        public Task StopRequested => _processExit.Task;
+
+        private bool RequiresProcessExitDrain
         {
             get
             {
 #if SHARED_REMOTE_CONFIG
-                if (_nativeLibraryPath is not null)
-                {
-                    lock (_workerGate)
-                    {
-                        return _worker is not null;
-                    }
-                }
-#endif
-
+                return _nativeLibraryPath is not null && _worker is not null;
+#else
                 return false;
+#endif
             }
         }
 
@@ -183,16 +164,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     subscriptionManager);
         }
 
-        public void Start()
+        public void Start(TracerManager? owner)
         {
             lock (_workerGate)
             {
-                if (_processExit.Task.IsCompleted || _worker is not null)
+                if (_processExit.Task.IsCompleted || owner is { IsCurrent: false })
                 {
                     return;
                 }
 
-                _worker = SchedulePolling();
+                if (owner is not null)
+                {
+                    Volatile.Write(ref _owner, owner);
+                }
+
+                _worker ??= SchedulePolling();
             }
         }
 
@@ -210,7 +196,31 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        internal void RequestStop() => _processExit.TrySetResult(true);
+        public Func<Task> PrepareRetirement(out bool drainAtProcessExit)
+        {
+            lock (_workerGate)
+            {
+                RequestStop();
+                drainAtProcessExit = RequiresProcessExitDrain;
+                return RetireAsync;
+            }
+        }
+
+        public Func<Task>? PrepareShutdownDrain()
+        {
+            lock (_workerGate)
+            {
+                if (!RequiresProcessExitDrain)
+                {
+                    return null;
+                }
+
+                RequestStop();
+                return StopAsync;
+            }
+        }
+
+        internal void Start() => Start(null);
 
         internal Task StopAsync()
         {
@@ -242,6 +252,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
         }
+
+        private void RequestStop() => _processExit.TrySetResult(true);
 
         private Task SchedulePolling()
         {
@@ -278,20 +290,29 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #endif
             while (!_processExit.Task.IsCompleted)
             {
+                var owner = Volatile.Read(ref _owner);
                 var transport = Volatile.Read(ref _transport);
-                if (GetConfigEndpoint(transport, _discoveryService.CurrentConfiguration) is { Length: > 0 } endpoint && _subscriptionManager.HasAnySubscription)
+                var tracer = Volatile.Read(ref _rcmTracer);
+                if (IsPollOwnerCurrent(owner)
+                 && tracer.TargetGeneration == _settings.CurrentRemoteConfigurationTargetGeneration
+                 && _discoveryService.CurrentConfiguration is { } configuration
+                 && GetConfigEndpoint(transport, configuration) is { Length: > 0 } endpoint
+                 && _subscriptionManager.HasAnySubscription)
                 {
                     try
                     {
+                        var context = new PollContext(owner, transport, endpoint, configuration.RemoteConfigurationEndpointGeneration, tracer.TargetGeneration);
+                        EnrichTagsWithGitMetadata(tracer);
+                        tracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
 #if SHARED_REMOTE_CONFIG
                         if (nativePoller is not null)
                         {
-                            await PollNative(nativePoller, transport, endpoint).ConfigureAwait(false);
+                            await PollNative(nativePoller, context, tracer).ConfigureAwait(false);
                         }
                         else
 #endif
                         {
-                            await Poll(transport, endpoint, managedPollCancellation).ConfigureAwait(false);
+                            await Poll(context, tracer, managedPollCancellation).ConfigureAwait(false);
                         }
                     }
                     catch (Exception ex)
@@ -311,75 +332,44 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        private Task Poll(AgentTransport transport, string endpoint, CancellationToken cancellationToken)
+        private Task Poll(PollContext context, RcmClientTracer tracer, CancellationToken cancellationToken)
         {
-            var owner = ReferenceEquals(_subscriptionManager, RcmSubscriptionManager.Instance) ? TracerManager.Instance : null;
-            if (owner is not null && !ReferenceEquals(owner.RemoteConfigurationManager, this))
-            {
-                return Task.CompletedTask;
-            }
-
-            var rcm = CapturePollIdentity();
             var poll = _managedPoll ??= _subscriptionManager.CreateManagedPoller();
-            return poll(rcm, request => transport.Api.GetConfigs(request, endpoint, cancellationToken), AcceptResponse, CommitResponse);
+            return poll(tracer, request => context.Transport.Api.GetConfigs(request, context.Endpoint, cancellationToken), AcceptResponse, CommitResponse);
 
-            bool AcceptResponse() => CanAcceptResponse() && IsCurrentTransport(transport, endpoint, _discoveryService.CurrentConfiguration);
+            bool AcceptResponse() => IsPollCurrent(context, _discoveryService.CurrentConfiguration);
 
-            bool CanAcceptResponse()
-                => !_processExit.Task.IsCompleted &&
-                   (owner is null || ReferenceEquals(owner, TracerManager.Instance));
-
-            void CommitResponse(Action update)
+            void CommitResponse(Action update) => TryCommitResponse(context, () =>
             {
-                if (owner is null)
-                {
-                    CommitIfCurrent();
-                }
-                else
-                {
-                    owner.TryRunWhileCurrent(CommitIfCurrent);
-                }
-
-                void CommitIfCurrent() => TryCommitResponse(transport, endpoint, TryCommit);
-
-                bool TryCommit()
-                {
-                    if (!CanAcceptResponse())
-                    {
-                        return false;
-                    }
-
-                    update();
-                    return true;
-                }
-            }
+                update();
+                return true;
+            });
         }
 
 #if SHARED_REMOTE_CONFIG
-        private Task PollNative(NativeAgentPoller poller, AgentTransport transport, string endpoint)
+        private Task PollNative(NativeAgentPoller poller, PollContext context, RcmClientTracer tracer)
         {
-            var tracer = CapturePollIdentity();
-            return poller.Poll(transport.Api, endpoint, tracer, _processExit.Task, IsCurrent, TryCommit);
+            return poller.Poll(context.Transport.Api, context.Endpoint, tracer, _processExit.Task, IsCurrent, TryCommit);
 
-            bool IsCurrent() => tracer.TargetGeneration == Volatile.Read(ref _rcmTracer).TargetGeneration &&
-                                IsCurrentTransport(transport, endpoint, _discoveryService.CurrentConfiguration);
+            bool IsCurrent() => IsPollCurrent(context, _discoveryService.CurrentConfiguration);
 
-            bool TryCommit(Func<bool> publish) => TryCommitResponse(transport, endpoint, publish);
+            bool TryCommit(Func<bool> publish) => TryCommitResponse(context, publish);
         }
 #endif
 
-        private RcmClientTracer CapturePollIdentity()
-        {
-            var tracer = Volatile.Read(ref _rcmTracer);
-            EnrichTagsWithGitMetadata(tracer);
-            tracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
-            return tracer;
-        }
+        private bool IsPollOwnerCurrent(TracerManager? owner)
+            => !_processExit.Task.IsCompleted && ReferenceEquals(Volatile.Read(ref _owner), owner) && (owner is null || owner.IsCurrent);
 
-        private bool TryCommitResponse(AgentTransport transport, string endpoint, Func<bool> publish)
-            => _settings.TryRunWithCurrentExporter(
-                transport.Exporter,
-                () => _discoveryService.TryRunWithCurrentConfiguration(configuration => IsCurrentTransport(transport, endpoint, configuration) && publish()));
+        private bool TryCommitResponse(PollContext context, Func<bool> publish)
+        {
+            return context.Owner is { } owner ? owner.TryRunWhileCurrent(CommitCurrentRoute) : CommitCurrentRoute();
+
+            bool CommitCurrentRoute()
+                => _settings.TryRunWithCurrentAgentConfiguration(
+                    context.Transport.Exporter,
+                    _discoveryService,
+                    configuration => IsPollCurrent(context, configuration) && publish());
+        }
 
         private string? GetConfigEndpoint(AgentTransport transport, AgentConfiguration? configuration)
             => configuration is not null &&
@@ -388,9 +378,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                    ? configuration.ConfigurationEndpoint
                    : null;
 
-        private bool IsCurrentTransport(AgentTransport transport, string endpoint, AgentConfiguration? configuration)
-            => ReferenceEquals(transport, Volatile.Read(ref _transport)) &&
-               string.Equals(endpoint, GetConfigEndpoint(transport, configuration), StringComparison.Ordinal);
+        private bool IsPollCurrent(PollContext context, AgentConfiguration? configuration)
+            => IsPollOwnerCurrent(context.Owner) &&
+               context.TargetGeneration == _settings.CurrentRemoteConfigurationTargetGeneration &&
+               ReferenceEquals(context.Transport, Volatile.Read(ref _transport)) &&
+               context.EndpointGeneration == configuration?.RemoteConfigurationEndpointGeneration &&
+               string.Equals(context.Endpoint, GetConfigEndpoint(context.Transport, configuration), StringComparison.Ordinal);
 
         private void EnrichTagsWithGitMetadata(RcmClientTracer details)
         {
@@ -413,6 +406,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             details.IsGitMetadataAddedToRequestTags = true;
         }
+
+        private readonly record struct PollContext(
+            TracerManager? Owner,
+            AgentTransport Transport,
+            string Endpoint,
+            long EndpointGeneration,
+            long TargetGeneration);
 
         private sealed class AgentTransport(ExporterSettings exporter, IRemoteConfigurationApi api)
         {

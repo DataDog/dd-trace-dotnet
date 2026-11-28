@@ -8,6 +8,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -106,6 +109,53 @@ public class ConfigurationUpdaterTests
         GetCurrentConfiguration(updater).LogProbes.Should().ContainSingle().Which.Template.Should().Be("From RCM");
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void ReconciliationUsesTheOwningTracersCurrentProbeTarget(bool explicitRemoval)
+    {
+        var settings = new TracerSettings(new DictionaryConfigurationSource(
+            new Dictionary<string, string> { ["DD_ENV"] = "startup", ["DD_VERSION"] = "1" })).Manager;
+        var updater = ConfigurationUpdater.Create(
+            () =>
+            {
+                var target = settings.CurrentMutableSettings;
+                return new(target.Environment, target.ServiceVersion);
+            },
+            maxProbesPerType: 0);
+        var added = new List<string>();
+        var removed = new List<string>();
+        updater.SetProbeInstrumentationHandlers(
+            probes =>
+            {
+                added.AddRange(probes.Select(probe => probe.Id));
+                return [];
+            },
+            removed.AddRange);
+        var startupProbe = CreateLogProbe("startup-probe");
+        startupProbe.Tags = ["env:startup", "version:1"];
+        var updatedProbe = CreateLogProbe("updated-probe");
+        updatedProbe.Tags = ["env:updated", "version:2"];
+        var configuration = new ProbeConfiguration { LogProbes = [startupProbe, updatedProbe] };
+
+        updater.AcceptFile(configuration);
+        added.Should().Equal(startupProbe.Id);
+
+        var manual = new ManualInstrumentationConfigurationSource(
+            new Dictionary<string, object?> { ["DD_ENV"] = "updated", ["DD_VERSION"] = "2" }, useDefaultSources: true);
+        settings.UpdateManualConfigurationSettings(manual, new ConfigurationTelemetry()).Should().BeTrue();
+        if (explicitRemoval)
+        {
+            updater.AcceptRemoved([CreateRcmPath(DefinitionPaths.LogProbe, startupProbe.Id)]);
+        }
+        else
+        {
+            updater.AcceptFile(configuration);
+        }
+
+        added.Should().Equal(startupProbe.Id, updatedProbe.Id);
+        removed.Should().Equal(startupProbe.Id);
+    }
+
     [Fact]
     public void AcceptRemoved_RemovesRcmProbeAndSuppressesFileProbeWithSameId()
     {
@@ -123,10 +173,10 @@ public class ConfigurationUpdaterTests
             });
 
         updater.AcceptRemoved([CreateRcmPath(DefinitionPaths.LogProbe, "shared-id")]);
+        updater.AcceptFile(fileConfiguration);
 
         removedProbeIds.Should().Equal("shared-id");
         GetCurrentConfiguration(updater).LogProbes.Should().BeEmpty();
-        updater.HasAnyEffectiveProbeForFile(fileConfiguration).Should().BeFalse();
     }
 
     [Fact]
@@ -152,7 +202,6 @@ public class ConfigurationUpdaterTests
                 LogProbes = [CreateLogProbe("shared-id", "From RCM again", sourceFile: "rcm.cs")]
             });
 
-        updater.HasAnyEffectiveProbeForFile(fileConfiguration).Should().BeTrue();
         GetCurrentConfiguration(updater).LogProbes.Should().ContainSingle().Which.Template.Should().Be("From RCM again");
     }
 
@@ -160,7 +209,7 @@ public class ConfigurationUpdaterTests
     public void AcceptAdded_ServiceConfigurationOnly_UpdatesGlobalRateLimiter()
     {
         var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
 
         updater.AcceptAdded(
             new ProbeConfiguration
@@ -179,7 +228,7 @@ public class ConfigurationUpdaterTests
     public void AcceptAdded_ServiceConfigurationAndProbe_UpdatesGlobalRateLimiterBeforeAddingProbe()
     {
         var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
         double? rateWhenAddingProbe = null;
         updater.SetProbeInstrumentationHandlers(
             probes =>
@@ -207,7 +256,7 @@ public class ConfigurationUpdaterTests
     public void AcceptAdded_ProbeOnlyChange_DoesNotResetGlobalRateLimiter()
     {
         var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
         updater.AcceptAdded(
             new ProbeConfiguration
             {
@@ -236,7 +285,7 @@ public class ConfigurationUpdaterTests
     public void AcceptRemoved_ServiceConfiguration_ResetsGlobalRateLimiterToDefaultRate()
     {
         var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), 0, globalRateLimiter);
         updater.AcceptAdded(
             new ProbeConfiguration
             {
@@ -270,7 +319,7 @@ public class ConfigurationUpdaterTests
 
         var addedProbesCapture = addedProbes;
         var removedProbeIdsCapture = removedProbeIds;
-        var updater = ConfigurationUpdater.Create("env", "version", maxProbesPerType);
+        var updater = ConfigurationUpdater.Create(static () => new("env", "version"), maxProbesPerType);
         updater.SetProbeInstrumentationHandlers(
             probes =>
             {

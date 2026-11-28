@@ -5,12 +5,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -21,11 +25,17 @@ namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
 public class RemoteConfigurationManagerTests
 {
+    public enum DiscoveryRefresh
+    {
+        None,
+        KeepEndpoint,
+        RemoveEndpoint,
+        RestoreEndpoint,
+    }
+
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    public async Task ManagedReceiptCommitChecksDiscoveryPublication(bool refreshDuringCommit, bool removesConfigEndpoint)
+    [CombinatorialData]
+    public async Task ManagedReceiptCommitChecksDiscoveryPublication(DiscoveryRefresh refresh)
     {
         var telemetry = new ConfigurationTelemetry();
         var source = new DictionaryConfigurationSource(new Dictionary<string, string>
@@ -34,8 +44,14 @@ public class RemoteConfigurationManagerTests
         });
         var settings = new TracerSettings(source, telemetry);
         const string endpoint = "/v0.7/config";
-        var ready = Configuration(endpoint);
-        var replacement = removesConfigEndpoint ? Configuration(null) : Configuration(endpoint, "/debugger/v1/input");
+        var ready = Configuration(settings.Manager.InitialExporterSettings, endpoint) with { RemoteConfigurationEndpointGeneration = 1 };
+        var replacement = refresh switch
+        {
+            DiscoveryRefresh.RemoveEndpoint => Configuration(settings.Manager.InitialExporterSettings, null) with { RemoteConfigurationEndpointGeneration = 2 },
+            DiscoveryRefresh.RestoreEndpoint => ready with { RemoteConfigurationEndpointGeneration = 3 },
+            _ => Configuration(settings.Manager.InitialExporterSettings, endpoint, "/debugger/v1/input") with { RemoteConfigurationEndpointGeneration = 1 },
+        };
+        var keepsEndpoint = refresh is DiscoveryRefresh.None or DiscoveryRefresh.KeepEndpoint;
         var published = ready;
         var publishOnRead = false;
         var gate = new object();
@@ -65,7 +81,7 @@ public class RemoteConfigurationManagerTests
         ManagedRcmPoll poll = (_, _, _, commit) =>
         {
             var applied = false;
-            publishOnRead = refreshDuringCommit;
+            publishOnRead = refresh != DiscoveryRefresh.None;
             commit(() => applied = true);
             committed.TrySetResult(applied);
             return Task.CompletedTask;
@@ -75,7 +91,7 @@ public class RemoteConfigurationManagerTests
         using var manager = RemoteConfigurationManager.Create(
             discovery.Object, RemoteConfigurationSettings.FromSource(source, telemetry), settings, new NullGitMetadataProvider(), subscriptions.Object);
         manager.Start();
-        (await committed.Task.WaitAsync(TimeSpan.FromSeconds(10))).Should().Be(!removesConfigEndpoint);
+        (await committed.Task.WaitAsync(TimeSpan.FromSeconds(10))).Should().Be(keepsEndpoint);
 
         void PublishPending()
         {
@@ -85,24 +101,6 @@ public class RemoteConfigurationManagerTests
                 published = replacement;
             }
         }
-
-        AgentConfiguration Configuration(string configurationEndpoint, string debuggerEndpoint = null) => new(
-            configurationEndpoint: configurationEndpoint,
-            debuggerEndpoint: debuggerEndpoint,
-            debuggerV2Endpoint: null,
-            diagnosticsEndpoint: null,
-            symbolDbEndpoint: null,
-            agentVersion: null,
-            statsEndpoint: null,
-            dataStreamsMonitoringEndpoint: null,
-            eventPlatformProxyEndpoint: null,
-            telemetryProxyEndpoint: null,
-            tracerFlareEndpoint: null,
-            containerTagsHash: null,
-            clientDropP0: false,
-            spanMetaStructs: false,
-            spanEvents: false,
-            discoverySettings: settings.Manager.InitialExporterSettings);
     }
 
     [Fact]
@@ -135,5 +133,110 @@ public class RemoteConfigurationManagerTests
         }
 
         discovery.Callbacks.Should().BeEmpty();
+    }
+
+    private static AgentConfiguration Configuration(ExporterSettings exporter, string configurationEndpoint, string debuggerEndpoint = null) => new(
+        configurationEndpoint: configurationEndpoint,
+        debuggerEndpoint: debuggerEndpoint,
+        debuggerV2Endpoint: null,
+        diagnosticsEndpoint: null,
+        symbolDbEndpoint: null,
+        agentVersion: null,
+        statsEndpoint: null,
+        dataStreamsMonitoringEndpoint: null,
+        eventPlatformProxyEndpoint: null,
+        telemetryProxyEndpoint: null,
+        tracerFlareEndpoint: null,
+        containerTagsHash: null,
+        clientDropP0: false,
+        spanMetaStructs: false,
+        spanEvents: false,
+        discoverySettings: exporter);
+
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
+    public class PublicationOwnershipTests
+    {
+        [Fact]
+        public async Task SharedWorkerRejectsThePreviousOwnersResponse()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            var source = new DictionaryConfigurationSource(new Dictionary<string, string>
+            {
+                ["DD_TRACE_AGENT_URL"] = "http://127.0.0.1:8126",
+                ["DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS"] = "0.01",
+            });
+            var settings = new TracerSettings(source, telemetry);
+            var route = Configuration(settings.Manager.InitialExporterSettings, "/v0.7/config");
+            var discovery = new Mock<IDiscoveryService>();
+            discovery.SetupGet(service => service.CurrentConfiguration).Returns(route);
+            discovery.Setup(service => service.TryRunWithCurrentConfiguration(It.IsAny<Func<AgentConfiguration, bool>>()))
+                     .Returns((Func<AgentConfiguration, bool> apply) => apply(route));
+
+            var pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var previous = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var successor = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var polls = 0;
+            var subscriptions = new Mock<IRcmSubscriptionManager>();
+            subscriptions.SetupGet(manager => manager.HasAnySubscription).Returns(true);
+            ManagedRcmPoll poll = async (_, _, _, commit) =>
+            {
+                var first = Interlocked.Increment(ref polls) == 1;
+                if (first)
+                {
+                    pending.SetResult(true);
+                    await release.Task;
+                }
+
+                var published = false;
+                commit(() => published = true);
+                (first ? previous : successor).TrySetResult(published);
+            };
+            subscriptions.Setup(manager => manager.CreateManagedPoller()).Returns(poll);
+            using var manager = RemoteConfigurationManager.Create(
+                discovery.Object, RemoteConfigurationSettings.FromSource(source, telemetry), settings, new NullGitMetadataProvider(), subscriptions.Object);
+
+            try
+            {
+                StartOwner();
+                await pending.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                StartOwner();
+                release.SetResult(true);
+
+                (await previous.Task.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeFalse();
+                (await successor.Task.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeTrue();
+            }
+            finally
+            {
+                release.TrySetResult(true);
+                await manager.StopAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            }
+
+            void StartOwner()
+            {
+                var owner = new TracerManager(
+                    settings,
+                    agentWriter: null,
+                    scopeManager: null,
+                    statsd: null,
+                    runtimeMetricsWriter: null,
+                    directLogSubmission: null,
+                    telemetry: null,
+                    discovery.Object,
+                    dataStreamsManager: null,
+                    new NullGitMetadataProvider(),
+                    traceSampler: null,
+                    spanSampler: null,
+                    manager,
+                    new NullDynamicConfigurationManager(),
+                    new NullTracerFlareManager(),
+                    new NullSpanEventsManager(),
+                    featureFlagsModule: null,
+                    serviceRemappingHash: null);
+                TracerManager.UnsafeReplaceGlobalManager(owner);
+                owner.Start();
+            }
+        }
     }
 }

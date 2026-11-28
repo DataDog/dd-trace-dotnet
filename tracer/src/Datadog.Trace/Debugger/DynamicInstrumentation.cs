@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
@@ -58,6 +59,7 @@ namespace Datadog.Trace.Debugger
         private readonly ISnapshotUploader _logUploader;
         private readonly IDebuggerUploader _diagnosticsUploader;
         private readonly DebuggerAgentTransport? _uploadTransport;
+        private readonly IDisposable? _probeTargetSubscription;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly Dictionary<string, LineProbeResolveErrorKey> _lastReportedUnboundProbeErrors;
@@ -88,7 +90,8 @@ namespace Datadog.Trace.Debugger
             IDebuggerGlobalRateLimiter? globalRateLimiter = null,
             MemoryPressureMonitor? memoryPressureMonitor = null,
             NativeProbeInstrumentationRequester? instrumentProbes = null,
-            DebuggerAgentTransport? uploadTransport = null)
+            DebuggerAgentTransport? uploadTransport = null,
+            TracerSettings.SettingsManager? ownerSettings = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
@@ -117,6 +120,7 @@ namespace Datadog.Trace.Debugger
                     return addedResult;
                 },
                 RcmProducts.LiveDebugging);
+            _probeTargetSubscription = ownerSettings?.SubscribeToChanges(OnProbeTargetChanged);
         }
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
@@ -128,7 +132,19 @@ namespace Datadog.Trace.Debugger
         internal bool TryRunWithRemoteConfigRoute(Action apply)
             => _uploadTransport?.TryRunWithRemoteConfigRoute(apply) is true;
 
-        internal void Initialize(Func<Action, bool>? applyAndCheckForRouteChange = null, bool requireRemoteConfiguration = false)
+        internal void Initialize(Action<Action>? apply = null)
+            => StartInitialization(() => InitializeAsync(apply ?? (static effect => effect())));
+
+        internal void InitializeTakeover(Func<Action, bool> applyAndCheckForRouteChange)
+            => StartInitialization(() => InitializeTakeoverAsync(applyAndCheckForRouteChange));
+
+        /// <summary>
+        /// Returns the task for the current initialization attempt. Call after starting ordinary
+        /// initialization or takeover. The owner serializes the startup calls.
+        /// </summary>
+        internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
+
+        private void StartInitialization(Func<Task<bool>> initialize)
         {
             var enabled = _settings.DynamicInstrumentationCanBeEnabled
                        && (_settings.DynamicSettings.DynamicInstrumentationEnabled ?? _settings.DynamicInstrumentationEnabled);
@@ -142,49 +158,18 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            _initializationTask = InitializeAsync(applyAndCheckForRouteChange, requireRemoteConfiguration);
+            _initializationTask = RunInitializationAsync(initialize);
         }
 
-        /// <summary>
-        /// Returns the task representing in-flight initialization (or a completed
-        /// task if <see cref="Initialize"/> has not been called yet). DI enablement
-        /// is serialized by the owning initialization flow, so callers are expected
-        /// to request this task after invoking <see cref="Initialize"/>.
-        /// </summary>
-        internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
-
-        private async Task InitializeAsync(Func<Action, bool>? applyAndCheckForRouteChange, bool requireRemoteConfiguration)
+        private async Task RunInitializationAsync(Func<Task<bool>> initialize)
         {
             try
             {
-                // Start loading probes from file and checking RCM availability in parallel
-                var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
-                var rcmAvailabilityTask = requireRemoteConfiguration ? null : WaitForRcmAvailabilityAsync();
-
-                var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
-                if (requireRemoteConfiguration)
+                if (!await initialize().ConfigureAwait(false))
                 {
-                    if (!await InitializeTakeoverAsync().ConfigureAwait(false))
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    if (probeConfiguration is not null)
-                    {
-                        Apply(() => ApplyConfiguration(registerWithRcm: false));
-                    }
-
-                    if (await rcmAvailabilityTask!.ConfigureAwait(false))
-                    {
-                        Apply(() => StartRuntimeIfNeeded(subscribeToRcm: true));
-                    }
+                    return;
                 }
 
-                // Start background processing and register the assembly load callback if either:
-                // - RCM is available
-                // - There are probes from file
                 if (IsInitialized)
                 {
                     Log.Information("Dynamic Instrumentation initialization completed successfully");
@@ -192,62 +177,6 @@ namespace Datadog.Trace.Debugger
                 else
                 {
                     Log.Information("Dynamic Instrumentation not initialized because RCM isn't available and no valid probes have loaded from file");
-                }
-
-                async Task<bool> InitializeTakeoverAsync()
-                {
-                    if (_uploadTransport is not { } transport)
-                    {
-                        return false;
-                    }
-
-                    var timeout = Task.Delay(RcmAvailabilityTimeout);
-                    Action takeOver = () => ApplyConfiguration(registerWithRcm: true);
-                    while (!timeout.IsCompleted)
-                    {
-                        var ready = transport.WaitForRemoteConfigRouteAsync();
-                        var completed = await Task.WhenAny(ready, timeout, _disposalSignal.Task).ConfigureAwait(false);
-                        if (completed == timeout)
-                        {
-                            break;
-                        }
-
-                        if (completed != ready || !await ready.ConfigureAwait(false))
-                        {
-                            return false;
-                        }
-
-                        if (!Apply(takeOver))
-                        {
-                            return true;
-                        }
-                    }
-
-                    Log.Warning("Dynamic Instrumentation could not replace the file runtime because the Agent did not provide both the Debugger and Remote Configuration endpoints.");
-                    return false;
-                }
-
-                void ApplyConfiguration(bool registerWithRcm)
-                {
-                    if (IsDisposed)
-                    {
-                        return;
-                    }
-
-                    if (probeConfiguration is not null)
-                    {
-                        if (_configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration))
-                        {
-                            StartRuntimeIfNeeded(subscribeToRcm: false);
-                        }
-
-                        _configurationUpdater.AcceptFile(probeConfiguration);
-                    }
-
-                    if (registerWithRcm)
-                    {
-                        StartRuntimeIfNeeded(subscribeToRcm: true);
-                    }
                 }
             }
             catch (OperationCanceledException e)
@@ -262,16 +191,96 @@ namespace Datadog.Trace.Debugger
             {
                 Interlocked.CompareExchange(ref _initializationState, 0, 1);
             }
+        }
 
-            bool Apply(Action effect)
+        private async Task<bool> InitializeAsync(Action<Action> apply)
+        {
+            var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
+            var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
+            var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
+
+            if (probeConfiguration is not null)
             {
-                if (applyAndCheckForRouteChange is { } apply)
+                apply(() => ApplyConfiguration(probeConfiguration, registerWithRcm: false));
+            }
+
+            if (await rcmAvailabilityTask.ConfigureAwait(false))
+            {
+                apply(() => ApplyConfiguration(probeConfiguration, registerWithRcm: true));
+            }
+
+            return true;
+        }
+
+        private async Task<bool> InitializeTakeoverAsync(Func<Action, bool> applyAndCheckForRouteChange)
+        {
+            var probeConfiguration = await ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile).ConfigureAwait(false);
+            if (_uploadTransport is not { } transport)
+            {
+                return false;
+            }
+
+            var timeout = Task.Delay(RcmAvailabilityTimeout);
+            Action takeOver = () => ApplyConfiguration(probeConfiguration, registerWithRcm: true);
+            while (!timeout.IsCompleted)
+            {
+                var ready = transport.WaitForRemoteConfigRouteAsync();
+                var completed = await Task.WhenAny(ready, timeout, _disposalSignal.Task).ConfigureAwait(false);
+                if (completed == timeout)
                 {
-                    return apply(effect);
+                    break;
                 }
 
-                effect();
-                return false;
+                if (completed != ready || !await ready.ConfigureAwait(false))
+                {
+                    return false;
+                }
+
+                if (!applyAndCheckForRouteChange(takeOver))
+                {
+                    return true;
+                }
+            }
+
+            Log.Warning("Dynamic Instrumentation could not replace the file runtime because the Agent did not provide both the Debugger and Remote Configuration endpoints.");
+            return false;
+        }
+
+        private void ApplyConfiguration(ProbeConfiguration? probeConfiguration, bool registerWithRcm)
+        {
+            lock (_instanceLock)
+            {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
+                if (!IsInitialized && probeConfiguration is not null)
+                {
+                    _configurationUpdater.AcceptFile(probeConfiguration, () => StartRuntimeIfNeeded(subscribeToRcm: false));
+                }
+
+                if (registerWithRcm)
+                {
+                    StartRuntimeIfNeeded(subscribeToRcm: true);
+                }
+            }
+        }
+
+        private void OnProbeTargetChanged(TracerSettings.SettingsManager.SettingChanges changes)
+        {
+            if (changes.UpdatedMutable is not { } updated
+             || (updated.Environment == changes.PreviousMutable.Environment && updated.ServiceVersion == changes.PreviousMutable.ServiceVersion))
+            {
+                return;
+            }
+
+            lock (_instanceLock)
+            {
+                if (!IsDisposed && IsInitialized)
+                {
+                    _configurationUpdater.ReconcileProbeTarget();
+                }
             }
         }
 
@@ -1129,25 +1138,18 @@ namespace Datadog.Trace.Debugger
         /// Process shutdown only calls <see cref="Dispose"/>, as reverting there would only add ReJIT work.
         /// </summary>
         internal void RemoveProbesAndDispose()
-        {
-            // Holding the lock until the instance is disposed keeps a concurrent probe update from instrumenting a method after the removal.
-            lock (_instanceLock)
-            {
-                try
-                {
-                    RemoveBoundProbes();
-                }
-                finally
-                {
-                    SafeDisposal.TryDispose(this);
-                }
-            }
-        }
+            => SafeDisposal.TryExecute(PrepareProbeRetirement(), "disposing Dynamic Instrumentation");
 
-        internal Action? RemoveProbesForTakeover()
+        internal Action? PrepareProbeRetirement()
         {
+            // Prevent probe updates between removal and retirement. Cleanup may wait for settings callbacks.
             lock (_instanceLock)
             {
+                if (IsDisposed)
+                {
+                    return null;
+                }
+
                 RemoveBoundProbes();
                 return BeginDisposal() ? CompleteDisposal : null;
             }
@@ -1178,6 +1180,8 @@ namespace Datadog.Trace.Debugger
         private void CompleteDisposal()
         {
             _disposalSignal.TrySetResult(true);
+            // A settings callback can acquire the instance lock.
+            SafeDisposal.TryDispose(_probeTargetSubscription);
             SafeDisposal.TryDispose(_uploadTransport);
 
             lock (_instanceLock)

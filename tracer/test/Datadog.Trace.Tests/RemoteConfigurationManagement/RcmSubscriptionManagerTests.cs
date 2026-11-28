@@ -48,7 +48,7 @@ public class RcmSubscriptionManagerTests
     [InlineData(30)]
     [InlineData(31)] // 31 is the last index of the fourth byte
     [InlineData(32)]
-    public void GetCapabilities(int capabilityIndex)
+    public void CachedCapabilitiesEncodeBitsInNetworkOrder(int capabilityIndex)
     {
         var byteCount = (capabilityIndex / 8) + 1;
         var expectedBytes = new byte[byteCount];
@@ -58,7 +58,7 @@ public class RcmSubscriptionManagerTests
 
         var subscriptionManager = new RcmSubscriptionManager();
         subscriptionManager.SetCapability(1UL << capabilityIndex, true);
-        subscriptionManager.GetCapabilities().Should().BeEquivalentTo(expectedBytes);
+        subscriptionManager.GetCachedCapabilities().Should().BeEquivalentTo(expectedBytes);
     }
 
     [Fact]
@@ -1186,9 +1186,8 @@ public class RcmSubscriptionManagerTests
     }
 
     [Theory]
-    [InlineData(true, ApplyStates.ACKNOWLEDGED)]
-    [InlineData(false, ApplyStates.ERROR)]
-    public async Task SendRequest_SharedFlareClaim_ReportsTheUploadOutcomeOnTheNextPoll(bool succeeded, ulong expectedState)
+    [CombinatorialData]
+    public async Task SendRequest_SharedFlareClaim_ReportsTheUploadOutcomeOnTheNextPoll(bool succeeded)
     {
         var logDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
         try
@@ -1234,7 +1233,7 @@ public class RcmSubscriptionManagerTests
                     return Task.FromResult(response);
                 });
 
-            applyState.Should().Be(expectedState);
+            applyState.Should().Be(succeeded ? ApplyStates.ACKNOWLEDGED : ApplyStates.ERROR);
             deliveries.Should().Be(1);
             requests.RequestsSent.Should().BeEmpty();
         }

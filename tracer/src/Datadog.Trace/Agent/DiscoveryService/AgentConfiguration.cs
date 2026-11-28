@@ -113,4 +113,6 @@ internal sealed record AgentConfiguration
     // Bind capabilities to the immutable exporter snapshot used for discovery, including UDS
     // and named pipes. Internal so record diagnostics do not print endpoint configuration.
     internal ExporterSettings? DiscoverySettings { get; }
+
+    internal long RemoteConfigurationEndpointGeneration { get; init; }
 }

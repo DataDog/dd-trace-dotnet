@@ -20,7 +20,9 @@ using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Shared;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -36,6 +38,7 @@ internal static class NativeWorkerProof
     public static async Task Run(string artifact)
     {
         AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, artifact);
+        await VerifyUnavailableNativeLibrary();
         await VerifyPipePeerDisconnect();
         await Verify(socketPath: null);
         await Verify(socketPath: null, pipeName: $"dd-rc-{Guid.NewGuid():N}");
@@ -624,15 +627,20 @@ internal static class NativeWorkerProof
                 var duringHandoff = FeatureFlagsSubscriptions();
                 Require(duringHandoff.Length == 1 && ReferenceEquals(duringHandoff[0], originalSubscription),
                         "The successor registered Feature Flags before the predecessor finished delivery");
+                var successorFlags = successor.FeatureFlags ?? throw new InvalidOperationException("The successor has no Feature Flags module");
+                var initialization = successorFlags.InitializeAsync(timeout.Token);
+                var initializedBeforeDelivery = initialization.IsCompleted;
                 release.TrySetResult();
 
                 var first = await requests.Reader.ReadAsync(timeout.Token);
                 var active = FeatureFlagsSubscriptions();
-                first.Completion.SetResult(new Reply(204, []));
+                first.Completion.SetResult(new Reply(200, Assignment(RcmProducts.FfeFlags, 1, ("successor-flags", 1, configuration))));
                 Require(first.Request.GetProperty("client").GetProperty("client_tracer").GetProperty("service").GetString() == "replacement-feature-flags",
                         "The first poll after handoff did not come from the successor");
                 Require(AdvertisesProduct(first, RcmProducts.FfeFlags), "The successor omitted Feature Flags from its first poll");
                 Require(active.Length == 1 && !ReferenceEquals(active[0], originalSubscription), "Feature Flags was not handed to the successor");
+                await initialization.WaitAsync(timeout.Token);
+                Require(!initializedBeforeDelivery && successorFlags.HasConfiguration, "The successor did not wait for its first Feature Flags configuration");
             }
             else
             {
@@ -755,14 +763,14 @@ internal static class NativeWorkerProof
                 throw new InvalidOperationException("The replacement did not register its APM watch");
             }
 
-            var reachedInstall = new TaskCompletionSource<Thread>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var obsoleteDelivery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var observing = new Subscription(original.Invoke, Product)
             {
                 InstallSnapshot = (files, rejections, generation, tryCommit) =>
                 {
                     if (files.Exists(file => file.Path.Id == "obsolete"))
                     {
-                        reachedInstall.TrySetResult(Thread.CurrentThread);
+                        obsoleteDelivery.TrySetResult();
                     }
 
                     return install(files, rejections, generation, tryCommit);
@@ -781,10 +789,9 @@ internal static class NativeWorkerProof
                 try
                 {
                     await beforeRetarget.Task.WaitAsync(timeout.Token);
-                    obsolete.Completion.SetResult(new Reply(200, WatchAssignment(2, ("obsolete", 1, late))));
-                    var installerThread = await reachedInstall.Task.WaitAsync(timeout.Token);
-                    Require(SpinWait.SpinUntil(() => (installerThread.ThreadState & ThreadState.WaitSleepJoin) != 0, TimeSpan.FromSeconds(5)),
-                            "The installer did not reach the held settings lock");
+                    var bodySent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    obsolete.Completion.SetResult(new Reply(200, WatchAssignment(2, ("obsolete", 1, late)), BodySent: bodySent));
+                    await bodySent.Task.WaitAsync(timeout.Token);
                 }
                 finally
                 {
@@ -793,6 +800,7 @@ internal static class NativeWorkerProof
                 }
 
                 var retargeted = await Next("retargeted");
+                Require(!obsoleteDelivery.Task.IsCompleted, "The obsolete watch reached the retargeted service's callback");
                 Require(Tracer.Instance.CurrentTraceSettings.Settings.GlobalSamplingRate == 0.54, "The obsolete watch changed the retargeted service's sample rate");
                 Require(ConfigStates(retargeted).GetArrayLength() == 0, "The retargeted tracer advertised an obsolete receipt");
                 retargeted.Completion.SetResult(new Reply(204, []));
@@ -1005,9 +1013,9 @@ internal static class NativeWorkerProof
         const string configurationEndpoint = "/v0.7/config";
         const string debuggerEndpoint = "/debugger/v1/input";
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-        var readyEndpoints = new[] { configurationEndpoint, debuggerEndpoint };
-        var configOnlyEndpoints = new[] { configurationEndpoint };
-        var endpoints = new[] { debuggerEndpoint };
+        string[] readyEndpoints = [configurationEndpoint, debuggerEndpoint];
+        string[] configOnlyEndpoints = [configurationEndpoint];
+        string[] endpoints = [debuggerEndpoint];
         await using var agent = CreateAgent(configurationEndpoint, socketPath: null, Channel.CreateUnbounded<Exchange>().Writer, timeout.Token);
         agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
         await agent.StartAsync(timeout.Token);
@@ -1082,7 +1090,7 @@ internal static class NativeWorkerProof
         Environment.SetEnvironmentVariable("DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS", "0.05");
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var requests = Channel.CreateUnbounded<Exchange>();
-        var endpoints = new[] { endpoint };
+        string[] endpoints = [endpoint];
         await using var agent = CreateAgent(endpoint, null, requests.Writer, timeout.Token);
         agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
         await agent.StartAsync(timeout.Token);
@@ -1168,7 +1176,7 @@ internal static class NativeWorkerProof
         const string debuggerEndpoint = "/debugger/v1/input";
         AppDomain.CurrentDomain.SetData(NativeAgentPoller.LibraryPathSetting, backend == "managed" ? null : artifact);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-        var endpoints = new[] { endpoint, debuggerEndpoint };
+        string[] endpoints = [endpoint, debuggerEndpoint];
         var requests = Channel.CreateUnbounded<Exchange>();
         await using var agent = CreateAgent(endpoint, socketPath: null, requests.Writer, timeout.Token);
         agent.MapGet("/info", () => Results.Json(new { endpoints = Volatile.Read(ref endpoints) }));
@@ -1890,6 +1898,11 @@ internal static class NativeWorkerProof
             }
 
             await context.Response.Body.WriteAsync(reply.Body, cancellationToken);
+            if (reply.BodySent is { } bodySent)
+            {
+                await context.Response.CompleteAsync();
+                bodySent.SetResult();
+            }
         });
 
         return server;
@@ -1897,11 +1910,15 @@ internal static class NativeWorkerProof
 
     private static async Task Verify(string? socketPath, string? pipeName = null, bool watch = false)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var maxWait = TimeSpan.FromSeconds(20);
+        using var timeout = new CancellationTokenSource();
         var requests = Channel.CreateUnbounded<Exchange>();
         var deliveries = Channel.CreateUnbounded<Delivery>();
         await using var server = CreateAgent("/rc/{endpoint}", socketPath, requests.Writer, timeout.Token);
-        await server.StartAsync(timeout.Token);
+        using (var startupTimeout = new CancellationTokenSource(maxWait))
+        {
+            await server.StartAsync(startupTimeout.Token);
+        }
 
         var discovery = new Discovery();
         var subscriptions = new RcmSubscriptionManager();
@@ -1918,6 +1935,7 @@ internal static class NativeWorkerProof
         var (empty, _) = AgentComparison.CreateFixture(0, 8, 2);
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
         var relay = pipeName is null ? Task.CompletedTask : RelayPipe(pipeName, new Uri(agentUrl), relayCancellation.Token);
+        timeout.CancelAfter(maxWait);
         manager.Start();
         Task? stopped = null;
         try
@@ -2259,6 +2277,23 @@ internal static class NativeWorkerProof
         }
     }
 
+    private static async Task VerifyUnavailableNativeLibrary()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "remote-config");
+        using var worker = new NativeAgentPoller(missingPath, new RcmSubscriptionManager());
+        var requests = new HttpClientRequestFactory(new Uri("http://127.0.0.1:1"), []);
+        var tracer = new RcmClientTracer("native-library-proof", "1", "proof", "proof", null, [], null);
+        var stop = new TaskCompletionSource();
+        await worker.Poll(
+            new RemoteConfigurationApi(requests),
+            "/v0.7/config",
+            tracer,
+            stop.Task,
+            static () => true,
+            static _ => throw new InvalidOperationException("The unavailable worker attempted to publish"));
+        Console.WriteLine("Unavailable native library was handled");
+    }
+
     private static async Task VerifyPipePeerDisconnect()
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -2404,7 +2439,8 @@ internal static class NativeWorkerProof
         string? Location = null,
         bool Truncate = false,
         long? DeclaredLength = null,
-        bool OmitContentLength = false);
+        bool OmitContentLength = false,
+        TaskCompletionSource? BodySent = null);
 
     private sealed record Delivery(Dictionary<string, byte[]> Files, string[] Removed);
 

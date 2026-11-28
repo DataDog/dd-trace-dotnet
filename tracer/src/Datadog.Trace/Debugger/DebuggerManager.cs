@@ -630,7 +630,7 @@ namespace Datadog.Trace.Debugger
                 Log.Debug("Previous DI update request exists: {Value}", pending is not null);
             }
 
-            var ownerStop = (owner?.RemoteConfigurationManager as RemoteConfigurationManager)?.StopRequested;
+            var ownerStop = owner?.RemoteConfigurationManager?.StopRequested;
             try
             {
                 Log.Debug("Waiting {Timeout}ms before updating Dynamic Instrumentation", _diDebounceDelay.TotalMilliseconds);
@@ -735,7 +735,15 @@ namespace Datadog.Trace.Debugger
                 }
 
                 // Initialization can apply a ready route synchronously and dispose the previous runtime.
-                candidate.Initialize(ApplyAndCheckForRouteChange, requireRemoteConfiguration: replaceFileRuntime);
+                if (replaceFileRuntime)
+                {
+                    candidate.InitializeTakeover(ApplyTakeoverAndCheckForRouteChange);
+                }
+                else
+                {
+                    candidate.Initialize(ApplyAndPublish);
+                }
+
                 var initialization = candidate.GetInitializationTask();
                 var wait = ownerStop is null
                                ? Task.WhenAny(initialization, activation.Canceled, _processExit.Task)
@@ -746,7 +754,16 @@ namespace Datadog.Trace.Debugger
                     RunForActivation(activation, ownerStop, Publish);
                 }
 
-                bool ApplyAndCheckForRouteChange(Action effect)
+                void ApplyAndPublish(Action effect)
+                {
+                    RunForActivation(activation, ownerStop, () =>
+                    {
+                        effect();
+                        Publish();
+                    });
+                }
+
+                bool ApplyTakeoverAndCheckForRouteChange(Action effect)
                 {
                     var routeChanged = false;
                     Action? finishRetirement = null;
@@ -754,20 +771,13 @@ namespace Datadog.Trace.Debugger
                     {
                         RunForActivation(activation, ownerStop, () =>
                         {
-                            if (!replaceFileRuntime)
-                            {
-                                effect();
-                                Publish();
-                                return;
-                            }
-
                             lock (_syncLock)
                             {
                                 routeChanged = !candidate.TryRunWithRemoteConfigRoute(() =>
                                 {
                                     if (_dynamicInstrumentation is { } previous)
                                     {
-                                        finishRetirement = previous.RemoveProbesForTakeover();
+                                        finishRetirement = previous.PrepareProbeRetirement();
                                         _dynamicInstrumentation = null;
                                         tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
                                     }

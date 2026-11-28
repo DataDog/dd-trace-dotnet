@@ -49,7 +49,5 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
     {
     }
 
-    public byte[] GetCapabilities() => [];
-
     public ManagedRcmPoll CreateManagedPoller() => static (_, _, _, _) => Task.CompletedTask;
 }

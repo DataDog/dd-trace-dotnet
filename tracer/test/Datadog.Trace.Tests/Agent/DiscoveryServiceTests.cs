@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,35 @@ public class DiscoveryServiceTests
     private const int RecheckIntervalMs = 300_000;
 
     private static readonly ServiceRemappingHash DisabledServiceRemappingHash = new(null);
+
+    [Fact]
+    public async Task RemoteConfigurationGenerationFollowsPublishedEndpoints()
+    {
+        const string ready = """{"endpoints":["/v0.7/config"]}""";
+        const string updated = """{"version":"7.65.2","endpoints":["/v0.7/config"]}""";
+        var exporter = new ExporterSettings();
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: ready),
+            uri => new TestApiRequest(uri, responseContent: updated),
+            uri => new TestApiRequest(uri, responseContent: """{"version":"7.65.2","endpoints":[]}"""),
+            uri => new TestApiRequest(uri, responseContent: ready));
+        await using var discovery = new DiscoveryService(factory, DisabledServiceRemappingHash, 1, 1, RecheckIntervalMs, autoStartLoop: false, exporterSettings: exporter);
+        var notifications = new List<AgentConfiguration>();
+        discovery.SubscribeToChanges(notifications.Add);
+
+        await discovery.RunOneIterationAsync(null);
+        await discovery.RunOneIterationAsync(null);
+        await discovery.RunOneIterationAsync(null);
+        await discovery.RunOneIterationAsync(null);
+
+        var replacement = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: ready));
+        discovery.UpdateRequestFactory(replacement, exporter);
+        discovery.CurrentConfiguration.Should().BeNull();
+        await discovery.RunOneIterationAsync(null);
+
+        notifications.Select(config => config.ConfigurationEndpoint).Should().Equal("v0.7/config", "v0.7/config", null, "v0.7/config", "v0.7/config");
+        notifications.Select(config => config.RemoteConfigurationEndpointGeneration).Should().Equal(1L, 1L, 2L, 3L, 4L);
+    }
 
     [Fact]
     public async Task EndpointReplacementClearsCachedCapabilitiesAndPublishesEqualConfiguration()
