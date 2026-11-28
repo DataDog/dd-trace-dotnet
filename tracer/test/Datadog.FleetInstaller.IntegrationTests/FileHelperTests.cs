@@ -7,6 +7,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Datadog.FleetInstaller;
 using FluentAssertions;
 using Xunit;
@@ -49,6 +51,52 @@ public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase
 
         FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
         Directory.Exists(tempDirectory).Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public void CreateLogDirectory_GrantsEveryoneModifyAccess()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
+
+        var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+        var everyoneRules = new DirectoryInfo(tempDirectory)
+                           .GetAccessControl()
+                           .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+                           .Cast<FileSystemAccessRule>()
+                           .Where(r => r.IdentityReference == everyone && r.AccessControlType == AccessControlType.Allow && !r.IsInherited)
+                           .ToList();
+
+        // Matches the MSI's GenericWrite grant
+        const FileSystemRights genericWrite = FileSystemRights.Write | FileSystemRights.ReadPermissions | FileSystemRights.Synchronize;
+        everyoneRules.Should().Contain(r => (r.FileSystemRights & genericWrite) == genericWrite);
+
+        // ...but must not allow deleting other processes' logs
+        const FileSystemRights deleteRights = FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles;
+        everyoneRules.Should().NotContain(r => (r.FileSystemRights & deleteRights) != 0);
+    }
+
+    [SkippableFact]
+    public void CreateLogDirectory_WhenParentIsJunction_ReturnsFalseAndDoesNotModifyTarget()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var target = Path.Combine(root, "target");
+        var junction = Path.Combine(root, "junction");
+        Directory.CreateDirectory(target);
+
+        // Junctions don't require elevation
+        using (var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{junction}\" \"{target}\"") { CreateNoWindow = true, UseShellExecute = false }))
+        {
+            process!.WaitForExit();
+            process.ExitCode.Should().Be(0);
+        }
+
+        var logDirectory = Path.Combine(junction, "logs");
+
+        FileHelper.CreateLogDirectory(Log, logDirectory).Should().BeFalse();
+
+        Directory.Exists(Path.Combine(target, "logs")).Should().BeFalse();
     }
 
     [SkippableFact]
